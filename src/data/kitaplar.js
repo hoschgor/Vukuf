@@ -5,16 +5,41 @@ export const kategoriler = [
     alimler: [
       { id: "imam-rabbani", isim: "İmam Rabbânî", kitaplar: [] },
       { id: "muhyiddin-arabi", isim: "Muhyiddin-i Arabî", kitaplar: [] },
-      { id: "abdulkadir-geylani", isim: "Abdülkâdir Geylânî", kitaplar: [] },
+      { id: "abdulkadir-geylani", isim: "Abdülkâdir Geylânî", kitaplar: [
+        {
+          id:"geylani-futuhulgayb",
+          baslik: "Fütuh-ul Gayb",
+          aciklama:"Abdülkâdir Geylânî'nin (1077-1166) sohbetlerinden derlenen ve manevi eğitim, nefis terbiyesi ile Allah'a yakınlaşma yollarını anlatan 78 altın öğütten oluşan tasavvuf klasiği",
+          dosya:"futuhulgayb-metin.json"  
+        },
+        {
+          id:"sırrulesrar",
+          baslik: "Sırru'l Esrâr",
+          aciklama:"Abdülkâdir Geylânî'nin tasavvufun derin sırlarını, manevi makamları ve Allah'a giden yolda kalbin tasfiyesini anlatan önemli eseri",
+          dosya:"sırrulesrar-metin.json"  
+        },
+      ] },
       {
         id: "imam-gazali",
         isim: "İmam Gazâlî",
         kitaplar: [
           {
             id: "munkiz",
-            baslik: "El-Münkız Mine'd-Dalâl",
-            aciklama: "Gazâlî'nin dalâletten kurtuluşunu anlattığı otobiyografik eseri.",
+            baslik: "El-Münkiz Mine'd Dalal",
+            aciklama: "İmam Gazali'nin (1058-1111) kendi entelektüel ve manevi yolculuğunu anlattığı otobiyografik eseridir.",
             dosya: "munkiz-metin.json",
+          },
+          {
+          id:"kiyametveahiret",
+          baslik: "Kıyâmet ve Âhiret",
+          aciklama:"Ölüm anı, kabir hayatı, kıyamet sahneleri, cennet ve cehennem tasvirleri gibi ahiretin hallerini ele alır",
+          dosya:"kıyametveahiret-metin.json"  
+          },
+          {
+          id:"mukasefetulkulub",
+          baslik: "Mükâşefetü'l Kulûb",
+          aciklama:"İmam Gazâli'nin dilinden kalplerin keşfi",
+          dosya:"mukasefetulkulub-metin.json"  
           },
         ],
       },
@@ -117,15 +142,7 @@ export const kategoriler = [
           {
             id: "kucuk-eserler",
             baslik: "Küçük Eserler",
-            kitaplar: [
-              {
-                id: "ayetul-kubra",
-                baslik: "Âyetü'l-Kübrâ",
-                aciklama: "Kâinattan Hâlıkını soran bir seyyahın müşâhedatı.",
-                dosya: "ayetul-kubra-metin.json",
-              },
-            ],
-          },
+            kitaplar: [] },
           {
             id: "buyuk-eserler",
             baslik: "Büyük Eserler",

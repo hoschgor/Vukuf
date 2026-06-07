@@ -62,6 +62,6 @@ def odt_isle(dosya_yolu, cikti_adi):
 
 if __name__ == "__main__":
     odt_isle(
-        "/home/hosgoer/Projeler/vukuf/public/Writer/İLCÂM-ÜL AVÂM AN İLM-İL KELÂM.odt",
-        "ilcam-metin"
+        "/home/hosgoer/Projeler/vukuf/public/Writer/Tasavvuf/İmâm-ı Gazzâlî/KIYÂMET ve ÂHİRET.odt",
+        "kıyametveahiret-metin"
     )

@@ -1,0 +1,81 @@
+@font-face {
+  font-family: "LivaNur";
+  src: url("/fonts/liva-nur.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "SouvenirDemi";
+  src: url("/fonts/souvenir-demi.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "AriaScript";
+  src: url("/fonts/aria-script.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "PlayfairDisplay";
+  src: url("/fonts/PlayfairDisplay-Regular.ttf") format("truetype");
+  font-weight: normal;
+}
+
+@font-face {
+  font-family: "PlayfairDisplay";
+  src: url("/fonts/PlayfairDisplay-Bold.ttf") format("truetype");
+  font-weight: bold;
+}
+
+.okuma-icerik {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.lugat-kelime {
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  user-select: text;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: "SouvenirDemi", "Georgia", serif;
+  line-height: 1.8;
+  overflow-x: hidden;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  border-radius: 3px;
+  opacity: 0.5;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  background: none;
+  font-family: inherit;
+}
+
+input {
+  font-family: inherit;
+}

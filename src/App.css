@@ -1,0 +1,21 @@
+.justify-text {
+  text-align: justify;
+  text-align-last: left;
+  word-spacing: normal;
+  letter-spacing: normal;
+  -webkit-hyphens: auto;
+  -ms-hyphens: auto;
+  hyphens: auto;
+}
+
+.justify-text br {
+  display: none; /* <br> taglerini gizle */
+}
+
+.left-text {
+  text-align: left;
+}
+
+.center-text {
+  text-align: center;
+}

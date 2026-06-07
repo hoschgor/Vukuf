@@ -1,0 +1,54 @@
+export const themes = {
+  sepia: {
+    name: "Sepya",
+    background: "#f4ecd8",
+    surface: "#ede0c4",
+    text: "#3b2f2f",
+    textSecondary: "#6b4c3b",
+    accent: "#8b5e3c",
+    lugatHighlight: "#c0392b",
+    border: "#d4b896",
+  },
+  dark: {
+    name: "Koyu",
+    background: "#1a1a2e",
+    surface: "#16213e",
+    text: "#e0e0e0",
+    textSecondary: "#a0a0b0",
+    accent: "#7f8fcf",
+    lugatHighlight: "#e8a87c",
+    border: "#2d2d4e",
+  },
+  light: {
+    name: "Açık",
+    background: "#ffffff",
+    surface: "#f5f5f5",
+    text: "#222222",
+    textSecondary: "#555555",
+    accent: "#2c7a4b",
+    lugatHighlight: "#c0392b",
+    border: "#dddddd",
+  },
+  night: {
+    name: "Gece",
+    background: "#0d0d0d",
+    surface: "#1a1a1a",
+    text: "#c8c8c8",
+    textSecondary: "#888888",
+    accent: "#5a8a6a",
+    lugatHighlight: "#d4a054",
+    border: "#2a2a2a",
+  },
+}
+
+export const defaultTheme = "sepia"
+export const defaultCustomTheme = {
+  name: "Özel",
+  background: "#f4ecd8",
+  surface: "#ede0c4",
+  text: "#3b2f2f",
+  textSecondary: "#6b4c3b",
+  accent: "#8b5e3c",
+  lugatHighlight: "#c0392b",
+  border: "#d4b896",
+}

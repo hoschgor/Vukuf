@@ -19,7 +19,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
-import { Pencil, Check, GripVertical, GripHorizontal } from "lucide-react"
+import { Pencil, Check, GripVertical, GripHorizontal, Search, X, BookOpen } from "lucide-react"
 
 const kitapRenkleri = [
   "#8B4513", "#A0522D", "#6B3A2A", "#7B3F00",
@@ -224,9 +224,31 @@ function SortableAlimRafi({ alim, duzenlemeMode, theme, sensors, kitapSiralama, 
   )
 }
 
-function SortableKategori({ kategori, duzenlemeMode, theme, sensors, kitapSiralama, setKitapSiralama, acikKategori, setAcikKategori, alimSira, handleAlimDragEnd }) {
+function SortableKategori({ kategori, duzenlemeMode, theme, sensors, kitapSiralama, setKitapSiralama, acikKategori, setAcikKategori, alimSira, handleAlimDragEnd, kategoriArama, setKategoriArama }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: kategori.id })
   const style = { transform: CSS.Transform.toString(transform), transition }
+  
+  // Arama panelinin açık olup olmadığını kontrol et
+  const aramaAcik = kategoriArama[kategori.id] !== undefined
+
+  // Arama butonuna tıklama handler'ı
+  const handleAramaClick = (e) => {
+    e.stopPropagation()
+    
+    if (aramaAcik) {
+      // Arama açıksa: SADECE aramayı kapat, kategori açık kalsın
+      const newState = { ...kategoriArama }
+      delete newState[kategori.id]
+      setKategoriArama(newState)
+    } else {
+      // Arama kapalıysa: Önce kategoriyi aç (kapalıysa), sonra aramayı aç
+      if (acikKategori !== kategori.id) {
+        setAcikKategori(kategori.id)
+      }
+      // Arama panelini aç
+      setKategoriArama(prev => ({ ...prev, [kategori.id]: "" }))
+    }
+  }
 
   return (
     <div ref={setNodeRef} style={{ ...style, marginBottom: "32px", background: theme.surface, borderRadius: "16px", overflow: "hidden", border: `1px solid ${theme.border}`, boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}>
@@ -259,35 +281,116 @@ function SortableKategori({ kategori, duzenlemeMode, theme, sensors, kitapSirala
             {kategori.baslik.toUpperCase()}
           </span>
         </div>
-        <span style={{ fontSize: "12px", color: theme.textSecondary }}>
-          {kategori.alimler.length} alim {acikKategori === kategori.id ? "▲" : "▼"}
-        </span>
+        
+        {/* Sağ taraf - alim sayısı ve arama butonu */}
+        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          {/* Arama butonu - toggle mantığı */}
+          <button
+            onClick={handleAramaClick}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "4px",
+              padding: "4px 10px",
+              borderRadius: "20px",
+              background: aramaAcik ? theme.accent : `${theme.accent}15`,
+              color: aramaAcik ? "#fff" : theme.text,
+              border: `1px solid ${aramaAcik ? theme.accent : theme.border}`,
+              fontSize: "12px",
+              cursor: "pointer",
+              transition: "all 0.2s",
+            }}
+          >
+            <Search size={13} />
+            <span>{aramaAcik ? "" : ""}</span>
+          </button>
+          <span style={{ fontSize: "12px", color: theme.textSecondary }}>
+            {kategori.alimler.length} alim {acikKategori === kategori.id ? "▲" : "▼"}
+          </span>
+        </div>
       </button>
 
       {acikKategori === kategori.id && (
-        <div style={{ padding: "16px" }}>
-          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={(e) => handleAlimDragEnd(e, kategori.id)}>
-            <SortableContext
-              items={alimSira[kategori.id] || kategori.alimler.map(a => a.id)}
-              strategy={verticalListSortingStrategy}
-            >
-              {(alimSira[kategori.id] || kategori.alimler.map(a => a.id))
-                .map(alimId => kategori.alimler.find(a => a.id === alimId))
-                .filter(Boolean)
-                .map(alim => (
-                  <SortableAlimRafi
-                    key={alim.id}
-                    alim={alim}
-                    duzenlemeMode={duzenlemeMode}
-                    theme={theme}
-                    sensors={sensors}
-                    kitapSiralama={kitapSiralama}
-                    setKitapSiralama={setKitapSiralama}
-                  />
-                ))}
-            </SortableContext>
-          </DndContext>
-        </div>
+        <>
+          {/* Arama paneli - sadece aramaAcik true ise göster */}
+          {aramaAcik && (
+            <div style={{ padding: "12px 16px", borderBottom: `1px solid ${theme.border}` }}>
+              <div style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "10px",
+                background: theme.background,
+                border: `1px solid ${theme.accent}40`,
+                borderRadius: "24px",
+                padding: "8px 16px",
+              }}>
+                <Search size={14} color={theme.accent} />
+                <input
+                  type="text"
+                  placeholder=""
+                  value={kategoriArama[kategori.id] || ""}
+                  onChange={(e) => setKategoriArama(prev => ({ ...prev, [kategori.id]: e.target.value }))}
+                  style={{
+                    flex: 1,
+                    background: "transparent",
+                    border: "none",
+                    outline: "none",
+                    fontSize: "13px",
+                    color: theme.text,
+                  }}
+                  autoFocus={aramaAcik} // Sadece yeni açıldığında focus
+                />
+                {kategoriArama[kategori.id] && (
+                  <button
+                    onClick={() => setKategoriArama(prev => ({ ...prev, [kategori.id]: "" }))}
+                    style={{
+                      display: "flex",
+                      color: theme.textSecondary,
+                      background: "none",
+                      border: "none",
+                      cursor: "pointer",
+                      padding: "2px",
+                    }}
+                  >
+                    <X size={14} />
+                  </button>
+                )}
+              </div>
+              <div style={{ fontSize: "11px", color: theme.textSecondary, marginTop: "6px", marginLeft: "8px" }}>
+                🔍 Âlim ismi giriniz...
+              </div>
+            </div>
+          )}
+
+          {/* İçerik - her zaman göster */}
+          <div style={{ padding: "16px" }}>
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={(e) => handleAlimDragEnd(e, kategori.id)}>
+              <SortableContext
+                items={alimSira[kategori.id] || kategori.alimler.map(a => a.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                {(alimSira[kategori.id] || kategori.alimler.map(a => a.id))
+                  .map(alimId => kategori.alimler.find(a => a.id === alimId))
+                  .filter(Boolean)
+                  .filter(alim => {
+                    const arama = kategoriArama[kategori.id] || ""
+                    return arama === "" ? true : alim.isim.toLowerCase().includes(arama.toLowerCase())
+                  })
+                  .map(alim => (
+                    <SortableAlimRafi
+                      key={alim.id}
+                      alim={alim}
+                      duzenlemeMode={duzenlemeMode}
+                      theme={theme}
+                      sensors={sensors}
+                      kitapSiralama={kitapSiralama}
+                      setKitapSiralama={setKitapSiralama}
+                    />
+                  ))}
+              </SortableContext>
+            </DndContext>
+          </div>
+        </>
       )}
     </div>
   )
@@ -297,7 +400,9 @@ export default function Kutuphane() {
   const { theme } = useApp()
   const [acikKategori, setAcikKategori] = useState(null)
   const [duzenlemeMode, setDuzenlemeMode] = useState(false)
-
+  const [genelArama, setGenelArama] = useState("")
+  const [genelAramaAcik, setGenelAramaAcik] = useState(false) // YENİ: genel arama paneli açık mı?
+  const [kategoriArama, setKategoriArama] = useState({})
   const [kategoriSira, setKategoriSira] = useState(() => {
     const kayitli = localStorage.getItem("vukuf-kategori-sira")
     return kayitli ? JSON.parse(kayitli) : kategoriler.map(k => k.id)
@@ -347,30 +452,244 @@ export default function Kutuphane() {
     }
   }
 
+  // Genel arama butonuna tıklama handler'ı
+  const handleGenelAramaClick = () => {
+    if (genelAramaAcik) {
+      // Arama açıksa: SADECE aramayı kapat, değeri temizle
+      setGenelAramaAcik(false)
+      setGenelArama("")
+    } else {
+      // Arama kapalıysa: Aç
+      setGenelAramaAcik(true)
+    }
+  }
+
   return (
     <div style={{ maxWidth: "900px", margin: "0 auto", padding: "40px 24px" }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "32px" }}>
-        <h1 style={{ fontSize: "28px", color: theme.text, letterSpacing: "1px", fontFamily: "PlayfairDisplay, serif" }}>
-          Kitaplık
-        </h1>
-        <button
-          onClick={() => setDuzenlemeMode(!duzenlemeMode)}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "6px",
-            padding: "8px 14px",
-            borderRadius: "8px",
-            background: duzenlemeMode ? `${theme.accent}20` : "transparent",
-            border: `1px solid ${duzenlemeMode ? theme.accent : theme.border}`,
-            color: duzenlemeMode ? theme.accent : theme.textSecondary,
-            fontSize: "13px",
-            cursor: "pointer",
-          }}
-        >
-          {duzenlemeMode ? <Check size={15} /> : <Pencil size={15} />}
-          {duzenlemeMode ? "Bitti" : "Rafları Düzenle"}
-        </button>
+      <div style={{ marginBottom: "32px" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
+          <h1 style={{ fontSize: "28px", color: theme.text, letterSpacing: "1px", fontFamily: "PlayfairDisplay, serif" }}>
+            Kitaplık
+          </h1>
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            {/* Genel Arama Butonu */}
+            <button
+              onClick={handleGenelAramaClick}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
+                padding: "8px 14px",
+                borderRadius: "20px",
+                background: genelAramaAcik ? theme.accent : `${theme.accent}15`,
+                color: genelAramaAcik ? "#fff" : theme.text,
+                border: `1px solid ${genelAramaAcik ? theme.accent : theme.border}`,
+                fontSize: "13px",
+                cursor: "pointer",
+                transition: "all 0.2s",
+              }}
+            >
+              <Search size={15} />
+              <span>{genelAramaAcik ? "" : ""}</span>
+            </button>
+            
+            {/* Düzenle Butonu */}
+            <button
+              onClick={() => setDuzenlemeMode(!duzenlemeMode)}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
+                padding: "8px 14px",
+                borderRadius: "8px",
+                background: duzenlemeMode ? `${theme.accent}20` : "transparent",
+                border: `1px solid ${duzenlemeMode ? theme.accent : theme.border}`,
+                color: duzenlemeMode ? theme.accent : theme.textSecondary,
+                fontSize: "13px",
+                cursor: "pointer",
+              }}
+            >
+              {duzenlemeMode ? <Check size={15} /> : <Pencil size={15} />}
+              {duzenlemeMode ? "Bitti" : "Düzenle"}
+            </button>
+          </div>
+        </div>
+
+        {/* Genel arama paneli - sadece genelAramaAcik true ise göster */}
+        {genelAramaAcik && (
+          <div style={{
+            marginBottom: "16px",
+            background: theme.surface,
+            border: `1px solid ${theme.accent}40`,
+            borderRadius: "16px",
+            overflow: "hidden",
+          }}>
+            {/* Arama input alanı */}
+            <div style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "10px",
+              background: theme.background,
+              borderBottom: `1px solid ${theme.border}`,
+              padding: "12px 16px",
+            }}>
+              <Search size={16} color={theme.accent} />
+              <input
+                type="text"
+                placeholder=""
+                value={genelArama}
+                onChange={(e) => setGenelArama(e.target.value)}
+                style={{
+                  flex: 1,
+                  background: "transparent",
+                  border: "none",
+                  outline: "none",
+                  fontSize: "14px",
+                  color: theme.text,
+                }}
+                autoFocus
+              />
+              {genelArama && (
+                <button
+                  onClick={() => setGenelArama("")}
+                  style={{
+                    display: "flex",
+                    color: theme.textSecondary,
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    padding: "2px",
+                  }}
+                >
+                  <X size={14} />
+                </button>
+              )}
+            </div>
+
+            {/* Arama sonuçları */}
+            {genelArama && (
+              <div style={{
+                maxHeight: "400px",
+                overflowY: "auto",
+              }}>
+                {(() => {
+                  const aramaKucuk = genelArama.toLowerCase()
+                  const sonuclar = []
+
+                  kategoriler.forEach(kategori => {
+                    kategori.alimler.forEach(alim => {
+                      // Alim adı eşleşiyor mu
+                      if (alim.isim.toLowerCase().includes(aramaKucuk)) {
+                        sonuclar.push({
+                          tip: "alim",
+                          isim: alim.isim,
+                          kategori: kategori.baslik,
+                          alimId: alim.id,
+                          kategoriId: kategori.id,
+                        })
+                      }
+                      // Kitaplar
+                      const kitaplar = alim.altKategoriler
+                        ? alim.altKategoriler.flatMap(a => a.kitaplar)
+                        : alim.kitaplar
+                      kitaplar.forEach(kitap => {
+                        if (kitap.baslik.toLowerCase().includes(aramaKucuk)) {
+                          sonuclar.push({
+                            tip: "kitap",
+                            baslik: kitap.baslik,
+                            yazar: alim.isim,
+                            kategori: kategori.baslik,
+                            kitapId: kitap.id,
+                            dosya: kitap.dosya,
+                          })
+                        }
+                      })
+                    })
+                  })
+
+                  if (sonuclar.length === 0) {
+                    return (
+                      <div style={{ padding: "20px", textAlign: "center", color: theme.textSecondary, fontSize: "14px" }}>
+                        Sonuç bulunamadı
+                      </div>
+                    )
+                  }
+
+                  return sonuclar.map((s, i) => (
+                    <div key={i}>
+                      {s.tip === "kitap" ? (
+                        <Link
+                          to={`/kitap/${s.kitapId}`}
+                          onClick={() => {
+                            setGenelArama("")
+                            setGenelAramaAcik(false)
+                          }}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "12px",
+                            padding: "12px 16px",
+                            color: theme.text,
+                            borderBottom: `1px solid ${theme.border}`,
+                            transition: "background 0.15s",
+                            textDecoration: "none",
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.background = `${theme.accent}10`}
+                          onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
+                        >
+                          <BookOpen size={16} color={theme.accent} />
+                          <div>
+                            <div style={{ fontSize: "14px" }}>{s.baslik}</div>
+                            <div style={{ fontSize: "11px", color: theme.textSecondary }}>{s.yazar} · {s.kategori}</div>
+                          </div>
+                        </Link>
+                      ) : (
+                        <div
+                          onClick={() => {
+                            // Alime tıklayınca ilgili kategoriyi aç ve alimi göster
+                            setGenelArama("")
+                            setGenelAramaAcik(false)
+                            setAcikKategori(s.kategoriId)
+                          }}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "12px",
+                            padding: "12px 16px",
+                            color: theme.text,
+                            borderBottom: `1px solid ${theme.border}`,
+                            cursor: "pointer",
+                            transition: "background 0.15s",
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.background = `${theme.accent}10`}
+                          onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
+                        >
+                          <Search size={16} color={theme.accent} />
+                          <div>
+                            <div style={{ fontSize: "14px" }}>{s.isim}</div>
+                            <div style={{ fontSize: "11px", color: theme.textSecondary }}>{s.kategori}</div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))
+                })()}
+              </div>
+            )}
+
+            {/* Arama ipucu */}
+            {!genelArama && (
+              <div style={{
+                padding: "16px",
+                textAlign: "center",
+                fontSize: "12px",
+                color: theme.textSecondary,
+              }}>
+                🔍 Kitap veya Âlim ismi giriniz...
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleKategoriDragEnd}>
@@ -382,6 +701,8 @@ export default function Kutuphane() {
               duzenlemeMode={duzenlemeMode}
               theme={theme}
               sensors={sensors}
+              kategoriArama={kategoriArama}
+              setKategoriArama={setKategoriArama}
               kitapSiralama={kitapSiralama}
               setKitapSiralama={setKitapSiralama}
               acikKategori={acikKategori}

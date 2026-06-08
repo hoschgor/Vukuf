@@ -257,7 +257,7 @@ function SortableAlimRafi({ alim, duzenlemeMode, theme, sensors, kitapSiralama, 
                 <Search size={14} color={theme.accent} />
                 <input
                   type="text"
-                  placeholder="Kitap ismi giriniz..."
+                  placeholder="📚 Kitap ismi giriniz..."
                   value={kitapArama[alim.id] || ""}
                   onChange={(e) => setKitapArama(prev => ({ ...prev, [alim.id]: e.target.value }))}
                   style={{
@@ -492,7 +492,7 @@ function SortableKategori({ kategori,
                 )}
               </div>
               <div style={{ fontSize: "11px", color: theme.textSecondary, marginTop: "6px", marginLeft: "8px" }}>
-                🔍 Âlim ismi giriniz...
+                Âlim ismi giriniz...
               </div>
             </div>
           )}

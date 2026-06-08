@@ -4,6 +4,7 @@ import Kutuphane from "./pages/Kutuphane"
 import Lugat from "./pages/Lugat"
 import Tefeul from "./pages/Tefeul"
 import OkumaEkrani from "./pages/OkumaEkrani"
+import Hakkinda from "./pages/Hakkinda"
 import { useApp } from "./AppContext"
 
 export default function App() {
@@ -19,6 +20,7 @@ export default function App() {
         <Route path="/lugat" element={<Lugat />} />
         <Route path="/tefeul" element={<Tefeul />} />
         <Route path="/kitap/:id" element={<OkumaEkrani />} />
+        <Route path="/hakkinda" element={<Hakkinda />} />
       </Routes>
     </div>
   )

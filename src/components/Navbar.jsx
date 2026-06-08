@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { Link, useLocation } from "react-router-dom"
-import { BookOpen, Search, Shuffle, Menu, X, Palette, Pencil } from "lucide-react"
+import { BookOpen, Search, Shuffle, Menu, X, Palette, Pencil, Info } from "lucide-react"
 import { useApp } from "../AppContext"
 
 const temaAciklamalari = {
@@ -30,10 +30,16 @@ export default function Navbar() {
   const [ozelRenkler, setOzelRenkler] = useState(customTheme)
   const [aktifRenk, setAktifRenk] = useState(null)
 
-  const navItems = [
+  // Ana menü öğeleri (Hakkında hariç)
+  const anaNavItems = [
     { path: "/", label: "Kitaplık", icon: BookOpen },
     { path: "/lugat", label: "Lügat", icon: Search },
     { path: "/tefeul", label: "Tefeül", icon: Shuffle },
+  ]
+
+  // Alt menü öğesi (Hakkında)
+  const altNavItems = [
+    { path: "/hakkinda", label: "Hakkında", icon: Info },
   ]
 
   const temaListesi = [
@@ -202,7 +208,6 @@ export default function Navbar() {
               {paletRenkleri.map(palet => (
                 <div key={palet.key}>
                   <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                    {/* Renk kutusu */}
                     <button
                       onClick={() => setAktifRenk(aktifRenk === palet.key ? null : palet.key)}
                       style={{
@@ -216,14 +221,12 @@ export default function Navbar() {
                         boxShadow: aktifRenk === palet.key ? `0 0 0 2px ${theme.accent}40` : "none",
                       }}
                     />
-                    {/* Açıklama */}
                     <div style={{ flex: 1 }}>
                       <div style={{ fontSize: "13px", color: theme.text }}>{palet.label}</div>
                       <div style={{ fontSize: "11px", color: theme.textSecondary }}>{ozelRenkler[palet.key]}</div>
                     </div>
                   </div>
 
-                  {/* Renk seçici */}
                   {aktifRenk === palet.key && (
                     <div style={{ marginTop: "8px", marginLeft: "48px" }}>
                       <input
@@ -240,7 +243,6 @@ export default function Navbar() {
                           background: theme.background,
                         }}
                       />
-                      {/* Hazır renk önerileri */}
                       <div style={{ display: "flex", gap: "6px", marginTop: "8px", flexWrap: "wrap" }}>
                         {["#f4ecd8", "#ffffff", "#1a1a2e", "#0d0d0d", "#2c3e50", "#8b5e3c",
                           "#c0392b", "#27ae60", "#2980b9", "#8e44ad", "#d4b896", "#3b2f2f"].map(renk => (
@@ -264,7 +266,6 @@ export default function Navbar() {
               ))}
             </div>
 
-            {/* Önizleme */}
             <div style={{
               marginTop: "20px",
               padding: "12px",
@@ -300,7 +301,6 @@ export default function Navbar() {
               </span>
             </div>
 
-            {/* Kaydet butonu */}
             <button
               onClick={kaydet}
               style={{
@@ -322,7 +322,7 @@ export default function Navbar() {
         </>
       )}
 
-      {/* Menü overlay */}
+      {/* Menü overlay - Hakkında en altta */}
       {menuAcik && (
         <>
           <div
@@ -338,39 +338,79 @@ export default function Navbar() {
             background: theme.surface,
             borderRight: `1px solid ${theme.border}`,
             zIndex: 200,
-            padding: "20px 0",
+            padding: "5px 0",
             display: "flex",
             flexDirection: "column",
+            justifyContent: "space-between", // İçeriği üst ve alt olarak ayırır
           }}>
-            <div style={{ padding: "0 20px 20px", borderBottom: `1px solid ${theme.border}`, marginBottom: "12px" }}>
-              <span style={{ color: theme.accent, fontSize: "18px", fontWeight: "bold", letterSpacing: "3px" }}>
-                VUKUF
-              </span>
+            {/* Üst kısım - Logo ve ana menü */}
+            <div>
+              <div style={{ padding: "0 20px 20px", borderBottom: `1px solid ${theme.border}`, marginBottom: "12px" }}>
+                <span style={{ color: theme.accent, fontSize: "18px", fontWeight: "bold", letterSpacing: "3px" }}>
+                  VUKUF
+                </span>
+              </div>
+              
+              {/* Ana menü öğeleri (Kitaplık, Lügat, Tefeül) */}
+              {anaNavItems.map(({ path, label, icon: Icon }) => {
+                const isActive = location.pathname === path
+                return (
+                  <Link
+                    key={path}
+                    to={path}
+                    onClick={() => setMenuAcik(false)}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "12px",
+                      padding: "14px 20px",
+                      color: isActive ? theme.accent : theme.text,
+                      background: isActive ? `${theme.accent}15` : "transparent",
+                      borderLeft: isActive ? `3px solid ${theme.accent}` : "3px solid transparent",
+                      fontSize: "15px",
+                      transition: "all 0.2s",
+                    }}
+                  >
+                    <Icon size={18} />
+                    {label}
+                  </Link>
+                )
+              })}
             </div>
-            {navItems.map(({ path, label, icon: Icon }) => {
-              const isActive = location.pathname === path
-              return (
-                <Link
-                  key={path}
-                  to={path}
-                  onClick={() => setMenuAcik(false)}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "12px",
-                    padding: "14px 20px",
-                    color: isActive ? theme.accent : theme.text,
-                    background: isActive ? `${theme.accent}15` : "transparent",
-                    borderLeft: isActive ? `3px solid ${theme.accent}` : "3px solid transparent",
-                    fontSize: "15px",
-                    transition: "all 0.2s",
-                  }}
-                >
-                  <Icon size={18} />
-                  {label}
-                </Link>
-              )
-            })}
+
+            {/* Alt kısım - Hakkında (çizgi ile ayrılmış) */}
+            <div style={{ 
+              marginTop: "auto", 
+              borderTop: `1px solid ${theme.border}`, 
+              paddingTop: "4px",
+              marginBottom: "0px",
+            }}>
+              {altNavItems.map(({ path, label, icon: Icon }) => {
+                const isActive = location.pathname === path
+                return (
+                  <Link
+                    key={path}
+                    to={path}
+                    onClick={() => setMenuAcik(false)}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "3px",
+                      padding: "5px 12px",
+                      color: isActive ? theme.accent : theme.textSecondary,
+                      background: isActive ? `${theme.accent}15` : "transparent",
+                      borderLeft: isActive ? `3px solid ${theme.accent}` : "3px solid transparent",
+                      fontSize: "13px",
+                      transition: "all 0.2s",
+                      opacity: 0.9,
+                    }}
+                  >
+                    <Icon size={16} />
+                    {label}
+                  </Link>
+                )
+              })}
+            </div>
           </div>
         </>
       )}

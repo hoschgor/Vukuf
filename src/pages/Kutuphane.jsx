@@ -155,14 +155,31 @@ function KitapRafi({ kitaplar, rafId, duzenlemeMode, theme, sensors, kitapSirala
   )
 }
 
-function SortableAlimRafi({ alim, duzenlemeMode, theme, sensors, kitapSiralama, setKitapSiralama }) {
+function SortableAlimRafi({ alim, duzenlemeMode, theme, sensors, kitapSiralama, setKitapSiralama, kitapArama, setKitapArama }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: alim.id })
   const style = { transform: CSS.Transform.toString(transform), transition }
   const [acik, setAcik] = useState(false)
+  
+  const kitapAramaAcik = kitapArama[alim.id] !== undefined
 
   const tumKitaplar = alim.altKategoriler
     ? alim.altKategoriler.flatMap(a => a.kitaplar)
     : alim.kitaplar
+
+  const handleKitapAramaClick = (e) => {
+    e.stopPropagation()
+    
+    if (kitapAramaAcik) {
+      const newState = { ...kitapArama }
+      delete newState[alim.id]
+      setKitapArama(newState)
+    } else {
+      if (!acik) {
+        setAcik(true)
+      }
+      setKitapArama(prev => ({ ...prev, [alim.id]: "" }))
+    }
+  }
 
   return (
     <div ref={setNodeRef} style={{ ...style, marginBottom: "8px", background: theme.background, borderRadius: "8px", overflow: "hidden", border: `1px solid ${theme.border}` }}>
@@ -195,36 +212,153 @@ function SortableAlimRafi({ alim, duzenlemeMode, theme, sensors, kitapSiralama, 
           )}
           <span>{alim.isim}</span>
         </div>
-        <span style={{ fontSize: "11px", color: theme.textSecondary }}>
-          {tumKitaplar.length > 0 ? `${tumKitaplar.length} eser` : "Yakında"} {acik ? "▲" : "▼"}
-        </span>
+        
+        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          {/* Mercek SADECE âlim bölümü AÇIKken göster */}
+          {acik && (
+            <button
+              onClick={handleKitapAramaClick}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "4px",
+                padding: "4px 10px",
+                borderRadius: "20px",
+                background: kitapAramaAcik ? theme.accent : `${theme.accent}15`,
+                color: kitapAramaAcik ? "#fff" : theme.text,
+                border: `1px solid ${kitapAramaAcik ? theme.accent : theme.border}`,
+                fontSize: "12px",
+                cursor: "pointer",
+                transition: "all 0.2s",
+              }}
+            >
+              <Search size={13} />
+            </button>
+          )}
+          <span style={{ fontSize: "11px", color: theme.textSecondary }}>
+            {tumKitaplar.length > 0 ? `${tumKitaplar.length} eser` : "Yakında"} {acik ? "▲" : "▼"}
+          </span>
+        </div>
       </button>
 
       {acik && (
-        alim.altKategoriler ? (
-          <div>
-            {alim.altKategoriler.map(alt => (
-              <div key={alt.id}>
-                <div style={{ padding: "8px 16px", fontSize: "12px", color: theme.accent, fontWeight: "bold", letterSpacing: "1px", borderBottom: `1px solid ${theme.border}` }}>
-                  {alt.baslik.toUpperCase()}
-                </div>
-                <KitapRafi kitaplar={alt.kitaplar} rafId={alt.id} duzenlemeMode={duzenlemeMode} theme={theme} sensors={sensors} kitapSiralama={kitapSiralama} setKitapSiralama={setKitapSiralama} />
-                <div style={{ height: "8px", background: `linear-gradient(to bottom, ${theme.accent}40, ${theme.accent}20)`, borderTop: `2px solid ${theme.accent}60`, margin: "0 0 4px" }} />
+        <>
+          {kitapAramaAcik && (
+            <div style={{ padding: "12px 16px", borderBottom: `1px solid ${theme.border}`, background: `${theme.accent}05` }}>
+              <div style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "10px",
+                background: theme.background,
+                border: `1px solid ${theme.accent}40`,
+                borderRadius: "24px",
+                padding: "8px 16px",
+              }}>
+                <Search size={14} color={theme.accent} />
+                <input
+                  type="text"
+                  placeholder="Kitap ismi giriniz..."
+                  value={kitapArama[alim.id] || ""}
+                  onChange={(e) => setKitapArama(prev => ({ ...prev, [alim.id]: e.target.value }))}
+                  style={{
+                    flex: 1,
+                    background: "transparent",
+                    border: "none",
+                    outline: "none",
+                    fontSize: "13px",
+                    color: theme.text,
+                  }}
+                  autoFocus
+                />
+                {kitapArama[alim.id] && (
+                  <button
+                    onClick={() => setKitapArama(prev => ({ ...prev, [alim.id]: "" }))}
+                    style={{
+                      display: "flex",
+                      color: theme.textSecondary,
+                      background: "none",
+                      border: "none",
+                      cursor: "pointer",
+                      padding: "2px",
+                    }}
+                  >
+                    <X size={14} />
+                  </button>
+                )}
               </div>
-            ))}
-          </div>
-        ) : (
-          <>
-            <KitapRafi kitaplar={alim.kitaplar} rafId={alim.id} duzenlemeMode={duzenlemeMode} theme={theme} sensors={sensors} kitapSiralama={kitapSiralama} setKitapSiralama={setKitapSiralama} />
-            <div style={{ height: "8px", background: `linear-gradient(to bottom, ${theme.accent}40, ${theme.accent}20)`, borderTop: `2px solid ${theme.accent}60`, margin: "4px 0 0" }} />
-          </>
-        )
+            </div>
+          )}
+
+          {/* Kitap listesi - filtreli (aynı kalacak) */}
+          {alim.altKategoriler ? (
+            <div>
+              {alim.altKategoriler.map(alt => {
+                const filtrelenmisKitaplar = kitapAramaAcik && kitapArama[alim.id]
+                  ? alt.kitaplar.filter(kitap => 
+                      kitap.baslik.toLowerCase().includes(kitapArama[alim.id].toLowerCase())
+                    )
+                  : alt.kitaplar
+
+                if (filtrelenmisKitaplar.length === 0 && kitapArama[alim.id]) return null
+
+                return (
+                  <div key={alt.id}>
+                    <div style={{ padding: "8px 16px", fontSize: "12px", color: theme.accent, fontWeight: "bold", letterSpacing: "1px", borderBottom: `1px solid ${theme.border}` }}>
+                      {alt.baslik.toUpperCase()}
+                    </div>
+                    <KitapRafi 
+                      kitaplar={filtrelenmisKitaplar} 
+                      rafId={alt.id} 
+                      duzenlemeMode={duzenlemeMode} 
+                      theme={theme} 
+                      sensors={sensors} 
+                      kitapSiralama={kitapSiralama} 
+                      setKitapSiralama={setKitapSiralama} 
+                    />
+                    <div style={{ height: "8px", background: `linear-gradient(to bottom, ${theme.accent}40, ${theme.accent}20)`, borderTop: `2px solid ${theme.accent}60`, margin: "0 0 4px" }} />
+                  </div>
+                )
+              })}
+            </div>
+          ) : (
+            <>
+              <KitapRafi 
+                kitaplar={kitapAramaAcik && kitapArama[alim.id]
+                  ? alim.kitaplar.filter(kitap => 
+                      kitap.baslik.toLowerCase().includes(kitapArama[alim.id].toLowerCase())
+                    )
+                  : alim.kitaplar
+                } 
+                rafId={alim.id} 
+                duzenlemeMode={duzenlemeMode} 
+                theme={theme} 
+                sensors={sensors} 
+                kitapSiralama={kitapSiralama} 
+                setKitapSiralama={setKitapSiralama} 
+              />
+              <div style={{ height: "8px", background: `linear-gradient(to bottom, ${theme.accent}40, ${theme.accent}20)`, borderTop: `2px solid ${theme.accent}60`, margin: "4px 0 0" }} />
+            </>
+          )}
+        </>
       )}
     </div>
   )
 }
 
-function SortableKategori({ kategori, duzenlemeMode, theme, sensors, kitapSiralama, setKitapSiralama, acikKategori, setAcikKategori, alimSira, handleAlimDragEnd, kategoriArama, setKategoriArama }) {
+function SortableKategori({ kategori, 
+  duzenlemeMode, 
+  theme, 
+  sensors, 
+  kitapSiralama, 
+  setKitapSiralama, 
+  acikKategori, 
+  setAcikKategori, 
+  alimSira, 
+  handleAlimDragEnd, 
+  kategoriArama, 
+  setKategoriArama,
+  kitapArama,
+  setKitapArama }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: kategori.id })
   const style = { transform: CSS.Transform.toString(transform), transition }
   
@@ -284,26 +418,27 @@ function SortableKategori({ kategori, duzenlemeMode, theme, sensors, kitapSirala
         
         {/* Sağ taraf - alim sayısı ve arama butonu */}
         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          {/* Arama butonu - toggle mantığı */}
-          <button
-            onClick={handleAramaClick}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "4px",
-              padding: "4px 10px",
-              borderRadius: "20px",
-              background: aramaAcik ? theme.accent : `${theme.accent}15`,
-              color: aramaAcik ? "#fff" : theme.text,
-              border: `1px solid ${aramaAcik ? theme.accent : theme.border}`,
-              fontSize: "12px",
-              cursor: "pointer",
-              transition: "all 0.2s",
-            }}
-          >
-            <Search size={13} />
-            <span>{aramaAcik ? "" : ""}</span>
-          </button>
+          {/* Arama butonu - SADECE KATEGORİ AÇIKKEN GÖSTER */}
+          {acikKategori === kategori.id && (
+            <button
+              onClick={handleAramaClick}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "4px",
+                padding: "4px 10px",
+                borderRadius: "20px",
+                background: aramaAcik ? theme.accent : `${theme.accent}15`,
+                color: aramaAcik ? "#fff" : theme.text,
+                border: `1px solid ${aramaAcik ? theme.accent : theme.border}`,
+                fontSize: "12px",
+                cursor: "pointer",
+                transition: "all 0.2s",
+              }}
+            >
+              <Search size={13} />
+            </button>
+          )}
           <span style={{ fontSize: "12px", color: theme.textSecondary }}>
             {kategori.alimler.length} alim {acikKategori === kategori.id ? "▲" : "▼"}
           </span>
@@ -385,8 +520,11 @@ function SortableKategori({ kategori, duzenlemeMode, theme, sensors, kitapSirala
                       sensors={sensors}
                       kitapSiralama={kitapSiralama}
                       setKitapSiralama={setKitapSiralama}
+                      kitapArama={kitapArama}
+                      setKitapArama={setKitapArama}
                     />
-                  ))}
+                  ))
+                }
               </SortableContext>
             </DndContext>
           </div>
@@ -401,8 +539,9 @@ export default function Kutuphane() {
   const [acikKategori, setAcikKategori] = useState(null)
   const [duzenlemeMode, setDuzenlemeMode] = useState(false)
   const [genelArama, setGenelArama] = useState("")
-  const [genelAramaAcik, setGenelAramaAcik] = useState(false) // YENİ: genel arama paneli açık mı?
+  const [genelAramaAcik, setGenelAramaAcik] = useState(false)
   const [kategoriArama, setKategoriArama] = useState({})
+  const [kitapArama, setKitapArama] = useState({}) // YENİ
   const [kategoriSira, setKategoriSira] = useState(() => {
     const kayitli = localStorage.getItem("vukuf-kategori-sira")
     return kayitli ? JSON.parse(kayitli) : kategoriler.map(k => k.id)
@@ -709,6 +848,8 @@ export default function Kutuphane() {
               setAcikKategori={setAcikKategori}
               alimSira={alimSira}
               handleAlimDragEnd={handleAlimDragEnd}
+              kitapArama={kitapArama}
+              setKitapArama={setKitapArama}
             />
           ))}
         </SortableContext>

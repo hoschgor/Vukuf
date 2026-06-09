@@ -338,7 +338,7 @@ export default function Navbar() {
             background: theme.surface,
             borderRight: `1px solid ${theme.border}`,
             zIndex: 200,
-            padding: "5px 0",
+            padding: "0px 0",
             display: "flex",
             flexDirection: "column",
             justifyContent: "space-between", // İçeriği üst ve alt olarak ayırır

@@ -150,7 +150,7 @@ export default function Hakkinda() {
             marginTop: 0
           }}>
             <span style={{ fontSize: "12px", color: theme.textSecondary, marginRight: "12px" }}>
-              Necati Aksu (necatiaksu.net) (İmam Gazzâli Eserleri)
+              Necati Aksu (necatiaksu.net) (İmam Gazzâli Eserleri, Abdülkâdir Geylânî Eserleri)
             </span>
           </p>
           

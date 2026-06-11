@@ -131,7 +131,7 @@ export default function Hakkinda() {
           )}
           
           <p style={{ marginBottom: "20px", color: theme.textSecondary, fontSize: "14px" }}>
-            Vukuf, İslam Âlimlerinin, istifade edileceği ümit edilen seçkin eserlerini kolaylıkla okuyabilmeyi amaçlanarak derlenmiştir. 
+            Vukuf, İslam Âlimlerinin, istifade edileceği ümit edilen seçkin eserlerini ve islâmî diğer eserleri kolaylıkla okuyabilmeyi ve inceleyebilmeyi amaçlanarak derlenmiştir. 
           </p>
 
           <p style={{ 
@@ -150,7 +150,7 @@ export default function Hakkinda() {
             marginTop: 0
           }}>
             <span style={{ fontSize: "12px", color: theme.textSecondary, marginRight: "12px" }}>
-              Necati Aksu (necatiaksu.net)
+              Necati Aksu (necatiaksu.net) (İmam Gazzâli Eserleri)
             </span>
           </p>
           

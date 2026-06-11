@@ -399,7 +399,7 @@ export default function Navbar() {
                       alignItems: "center",
                       justifyContent: "center",  // Ortalamak için eklendi
                       gap: "8px",                 // Boşluk artırıldı
-                      padding: "10px 12px",
+                      padding: "12px 12px",
                       color: isActive ? theme.accent : theme.textSecondary,
                       background: isActive ? `${theme.accent}15` : "transparent",
                       borderRadius: "8px",        // Yuvarlak köşeler eklendi

@@ -8,8 +8,9 @@ import {
   Plus, Minus, AlignJustify, ChevronsUp, ChevronsDown,
   Bookmark, X, Type, StickyNote, Palette,
   Search, Highlighter, ChevronDown, Clock, Settings,
-  ChevronUp,
+  ChevronUp, Edit2, Pencil,
 } from "lucide-react"
+import { useMediaQuery } from '../data/hooks/useMediaQuery'
 
 // ════════════════════════════════════════════════════════════════
 // SABİTLER
@@ -112,8 +113,8 @@ function sureyiKaydet(saniye) {
 }
 
 function dakikaFormatla(saniye) {
-  if (saniye < 60) return `${saniye} sn.`
-  return `${Math.floor(saniye / 60)} dk.`
+  const dakika = Math.floor(saniye / 60)
+  return `${dakika} dk.`
 }
 
 function fontYukle(fontId) {
@@ -369,6 +370,7 @@ const [sadeMode, setSadeMode]               = useState(false)
 const [otomatikGizleme, setOtomatikGizleme] = useState(true)
 const [gizlemeSuresi, setGizlemeSuresi]     = useState(5)
 const [sureGoster, setSureGoster]           = useState(true)
+const isMobile = useMediaQuery('(max-width: 768px)')
 
 // ── Paneller
 const [ayarlarAcik, setAyarlarAcik]     = useState(false)
@@ -404,6 +406,7 @@ const [bugunSure, setBugunSure] = useState(sureyiYukle)
 const sureSayacRef = useRef(null)
 
 // ── Özel tema
+const [ozelTemaPanelAcik, setOzelTemaPanelAcik] = useState(false)
 const [ozelRenkler, setOzelRenkler] = useState(customTheme || {})
 const [aktifRenk, setAktifRenk]     = useState(null)
 
@@ -645,7 +648,8 @@ if (yukleniyor) return <div style={{ padding: "40px", color: theme.text }}>Yükl
 const barButonStil = (aktif = false) => ({
   color: aktif ? theme.accent : theme.textSecondary,
   display: "flex", alignItems: "center", gap: "4px",
-  fontSize: "13px", padding: "4px 8px", borderRadius: "6px",
+  fontSize: "13px", padding: "6px 8px",  // 16px 12px yerine 6px 8px yapın
+  borderRadius: "6px",
   background: aktif ? `${theme.accent}15` : "transparent",
   border: "none", cursor: "pointer",
 })
@@ -833,6 +837,9 @@ const KayitPanel = kayitAcik && (
 )
 
 // ════════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════════
 // TEMA PANELİ
 // ════════════════════════════════════════════════════════════════
 
@@ -848,19 +855,43 @@ const TemaPanel = temaAcik && (
         { id: "night",  label: "Gece",   renk: "#0d0d0d", aciklama: "Tam karanlık mod" },
         { id: "custom", label: "Özel",   renk: customTheme?.background || "#888", aciklama: "Kişisel renk ayarları" },
       ].map(t => (
-        <button key={t.id} onClick={() => { setCurrentTheme(t.id); if (t.id !== "custom") setTemaAcik(false) }} style={{
-          width: "100%", display: "flex", alignItems: "center", gap: "10px",
-          padding: "8px 10px", borderRadius: "8px", fontSize: "13px",
-          color: currentTheme === t.id ? theme.accent : theme.text,
-          background: currentTheme === t.id ? `${theme.accent}15` : "transparent",
-          border: "none", cursor: "pointer", marginBottom: "2px",
-        }}>
-          <div style={{ width: "16px", height: "16px", borderRadius: "50%", background: t.renk, border: `2px solid ${currentTheme === t.id ? theme.accent : theme.border}`, flexShrink: 0 }} />
+        <button 
+          key={t.id} 
+          onClick={() => {
+            if (t.id === "custom") {
+              setTemaAcik(false);
+              setOzelTemaPanelAcik(true);  // Yeni paneli aç
+            } else {
+              setCurrentTheme(t.id);
+              setTemaAcik(false);
+            }
+          }} 
+          style={{
+            width: "100%", display: "flex", alignItems: "center", gap: "10px",
+            padding: "8px 10px", borderRadius: "8px", fontSize: "13px",
+            color: currentTheme === t.id ? theme.accent : theme.text,
+            background: currentTheme === t.id ? `${theme.accent}15` : "transparent",
+            border: "none", cursor: "pointer", marginBottom: "2px",
+          }}
+        >
+          <div style={{ 
+            width: "16px", 
+            height: "16px", 
+            borderRadius: "50%", 
+            background: t.renk, 
+            border: `2px solid ${currentTheme === t.id ? theme.accent : theme.border}`,
+            flexShrink: 0 
+          }} />
           <div style={{ flex: 1, textAlign: "left" }}>
-            <div>{t.label}</div>
+            <div style={{ fontSize: "13px" }}>{t.label}</div>
             <div style={{ fontSize: "10px", color: theme.textSecondary }}>{t.aciklama}</div>
           </div>
-          {currentTheme === t.id && <span style={{ fontSize: "12px", color: theme.accent }}>✓</span>}
+          {currentTheme === t.id && t.id !== "custom" && (
+            <span style={{ fontSize: "10px", color: theme.accent }}>✓</span>
+          )}
+          {t.id === "custom" && (
+            <Pencil size={12} color={theme.textSecondary} />
+          )}
         </button>
       ))}
     </div>
@@ -868,13 +899,14 @@ const TemaPanel = temaAcik && (
 )
 
 // ════════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════════
 // AYARLAR PANELİ
 // ════════════════════════════════════════════════════════════════
 
 const AyarlarPanel = ayarlarAcik && (
   <>
     <div onClick={() => setAyarlarAcik(false)} style={{ position: "fixed", inset: 0, zIndex: 95 }} />
-    <div className="okuma-panel" style={{ ...panelStil("right"), width: "260px", maxHeight: "80vh", overflowY: "auto", display: "flex", flexDirection: "column", gap: "16px" }}>
+    <div className="okuma-panel" style={{ ...panelStil("right"), width: "280px", maxHeight: "80vh", overflowY: "auto", display: "flex", flexDirection: "column", gap: "16px" }}>
 
       {/* Bar konumu */}
       <div>
@@ -946,56 +978,169 @@ const AyarlarPanel = ayarlarAcik && (
           />
         </div>
       )}
+    </div>
+    </>
+)
 
-      {/* Özel tema editörü */}
-      <div>
-        <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "10px", letterSpacing: "1px" }}>ÖZEL TEMA</div>
-        <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-          {PALET_ALANLARI.map(palet => (
-            <div key={palet.key}>
-              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                <button onClick={() => setAktifRenk(aktifRenk === palet.key ? null : palet.key)} style={{
-                  width: "26px", height: "26px", borderRadius: "50%",
-                  background: ozelRenkler[palet.key] || "#888",
-                  border: `2px solid ${aktifRenk === palet.key ? theme.accent : theme.border}`,
-                  cursor: "pointer", flexShrink: 0,
-                }} />
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: "12px", color: theme.text }}>{palet.label}</div>
-                  <div style={{ fontSize: "10px", color: theme.textSecondary }}>{ozelRenkler[palet.key]}</div>
-                </div>
-              </div>
-              {aktifRenk === palet.key && (
-                <div style={{ marginTop: "8px", marginLeft: "36px" }}>
-                  <input type="color" value={ozelRenkler[palet.key] || "#000000"}
-                    onChange={e => setOzelRenkler(prev => ({ ...prev, [palet.key]: e.target.value }))}
-                    style={{ width: "100%", height: "36px", borderRadius: "8px", border: `1px solid ${theme.border}`, cursor: "pointer", padding: "2px", background: theme.background }}
-                  />
-                  <div style={{ display: "flex", gap: "5px", marginTop: "6px", flexWrap: "wrap" }}>
-                    {HAZIR_RENKLER.map(renk => (
-                      <button key={renk} onClick={() => setOzelRenkler(prev => ({ ...prev, [palet.key]: renk }))} style={{
-                        width: "20px", height: "20px", borderRadius: "50%", background: renk,
-                        border: `2px solid ${ozelRenkler[palet.key] === renk ? theme.accent : theme.border}`,
-                        cursor: "pointer",
-                      }} />
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-        <button onClick={() => { ozelTemaKaydet(ozelRenkler); setAktifRenk(null) }} style={{
-          width: "100%", marginTop: "12px", padding: "10px", borderRadius: "24px",
-          background: theme.accent, color: "#fff", fontSize: "13px", cursor: "pointer", border: "none",
-        }}>
-          Temayı Kaydet
+// ════════════════════════════════════════════════════════════════
+// ÖZEL TEMA PANELİ
+// ════════════════════════════════════════════════════════════════
+
+const OzelTemaPanel = ozelTemaPanelAcik && (
+  <>
+    <div
+      onClick={() => setOzelTemaPanelAcik(false)}
+      style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 300 }}
+    />
+    <div style={{
+      position: "fixed",
+      top: "50%",
+      left: "50%",
+      transform: "translate(-50%, -50%)",
+      background: theme.surface,
+      border: `1px solid ${theme.border}`,
+      borderRadius: "24px",
+      padding: "24px",
+      zIndex: 400,
+      width: "320px",
+      maxHeight: "90vh",
+      overflowY: "auto",
+      boxShadow: "0 8px 32px rgba(0,0,0,0.2)",
+    }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "20px" }}>
+        <h2 style={{ fontSize: "16px", color: theme.text, fontFamily: "PlayfairDisplay, serif" }}>
+          Özel Tema
+        </h2>
+        <button onClick={() => setOzelTemaPanelAcik(false)} style={{ color: theme.textSecondary }}>
+          <X size={18} />
         </button>
       </div>
+
+      {/* Renk paleti */}
+      <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+        {PALET_ALANLARI.map(palet => (
+          <div key={palet.key}>
+            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+              <button
+                onClick={() => setAktifRenk(aktifRenk === palet.key ? null : palet.key)}
+                style={{
+                  width: "32px",
+                  height: "32px",
+                  borderRadius: "24px",
+                  background: ozelRenkler[palet.key] || theme[palet.key] || "#888",
+                  border: `2px solid ${aktifRenk === palet.key ? theme.accent : theme.border}`,
+                  cursor: "pointer",
+                  flexShrink: 0,
+                  boxShadow: aktifRenk === palet.key ? `0 0 0 2px ${theme.accent}40` : "none",
+                }}
+              />
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: "13px", color: theme.text }}>{palet.label}</div>
+                <div style={{ fontSize: "11px", color: theme.textSecondary }}>
+                  {ozelRenkler[palet.key] || theme[palet.key]}
+                </div>
+              </div>
+            </div>
+
+            {aktifRenk === palet.key && (
+              <div style={{ marginTop: "8px", marginLeft: "48px" }}>
+                <input
+                  type="color"
+                  value={ozelRenkler[palet.key] || theme[palet.key] || "#000000"}
+                  onChange={(e) => setOzelRenkler(prev => ({ ...prev, [palet.key]: e.target.value }))}
+                  style={{
+                    width: "100%",
+                    height: "40px",
+                    borderRadius: "24px",
+                    border: `1px solid ${theme.border}`,
+                    cursor: "pointer",
+                    padding: "2px",
+                    background: theme.background,
+                  }}
+                />
+                <div style={{ display: "flex", gap: "6px", marginTop: "8px", flexWrap: "wrap" }}>
+                  {HAZIR_RENKLER.map(renk => (
+                    <button
+                      key={renk}
+                      onClick={() => setOzelRenkler(prev => ({ ...prev, [palet.key]: renk }))}
+                      style={{
+                        width: "24px",
+                        height: "24px",
+                        borderRadius: "24px",
+                        background: renk,
+                        border: `2px solid ${(ozelRenkler[palet.key] || theme[palet.key]) === renk ? theme.accent : theme.border}`,
+                        cursor: "pointer",
+                      }}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Önizleme */}
+      <div style={{
+        marginTop: "16px",
+        padding: "12px",
+        borderRadius: "10px",
+        background: ozelRenkler.background || theme.background,
+        border: `1px solid ${ozelRenkler.border || theme.border}`,
+      }}>
+        <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "6px", letterSpacing: "1px" }}>
+          ÖNİZLEME
+        </div>
+        <div style={{ fontSize: "13px", color: ozelRenkler.text || theme.text, marginBottom: "4px" }}>
+          Örnek metin rengi
+        </div>
+        <div style={{ fontSize: "12px", color: ozelRenkler.textSecondary || theme.textSecondary, marginBottom: "6px" }}>
+          İkincil metin rengi
+        </div>
+        <span style={{
+          fontSize: "12px",
+          color: ozelRenkler.lugatHighlight || theme.lugatHighlight,
+          borderBottom: `1px dotted ${ozelRenkler.lugatHighlight || theme.lugatHighlight}`,
+        }}>
+          lügat kelimesi
+        </span>
+        {" "}
+        <span style={{
+          fontSize: "12px",
+          padding: "2px 8px",
+          borderRadius: "4px",
+          background: `${ozelRenkler.accent || theme.accent}20`,
+          color: ozelRenkler.accent || theme.accent,
+        }}>
+          vurgu
+        </span>
+      </div>
+
+      <button
+        onClick={() => { 
+          ozelTemaKaydet(ozelRenkler); 
+          setAktifRenk(null); 
+          setOzelTemaPanelAcik(false);
+          setCurrentTheme("custom");
+        }}
+        style={{
+          width: "100%",
+          marginTop: "16px",
+          padding: "12px",
+          borderRadius: "10px",
+          background: theme.accent,
+          color: "#fff",
+          fontSize: "14px",
+          cursor: "pointer",
+          border: "none",
+          fontFamily: "PlayfairDisplay, serif",
+        }}
+      >
+        Temayı Kaydet
+      </button>
     </div>
   </>
 )
-
 // ════════════════════════════════════════════════════════════════
 // ARAMA PANELİ
 // ════════════════════════════════════════════════════════════════
@@ -1152,22 +1297,35 @@ const Bar = (
       </>
     )}
 
-    <div style={{ marginLeft: "auto", display: "flex", gap: "4px", alignItems: "center" }}>
+    <div style={{ 
+      display: "flex", 
+      gap: "8px", 
+      alignItems: "center",
+      ...(isMobile 
+        ? { 
+            justifyContent: "center", 
+            flex: 1,  // Mobilde genişliği kapla ve ortala
+          }  
+        : { 
+            marginLeft: "auto"  // Masaüstünde sağa yasla
+          }
+      )
+    }}>
       {sureGoster && !sadeMode && (
         <span style={{ fontSize: "11px", color: theme.textSecondary, padding: "4px 6px", display: "flex", alignItems: "center", gap: "3px" }}>
           <Clock size={11} /> Bugün {dakikaFormatla(bugunSure)}
         </span>
       )}
 
-      <button onClick={() => setSadeMode(!sadeMode)} style={{ ...barButonStil(sadeMode), padding: "4px" }} title="Sade mod">
+        <button onClick={() => setSadeMode(!sadeMode)} style={{ ...barButonStil(sadeMode), padding: "4px" }} title="Sade mod">
         <AlignJustify size={15} />
       </button>
 
-      <button onClick={() => togglePanel(setTemaAcik, !temaAcik)} style={{ ...barButonStil(temaAcik), padding: "4px" }} title="Tema">
+        <button onClick={() => togglePanel(setTemaAcik, !temaAcik)} style={{ ...barButonStil(temaAcik), padding: "4px" }} title="Tema">
         <Palette size={15} />
       </button>
 
-      <button onClick={() => togglePanel(setAyarlarAcik, !ayarlarAcik)} style={{ ...barButonStil(ayarlarAcik), padding: "4px" }} title="Ayarlar">
+        <button onClick={() => togglePanel(setAyarlarAcik, !ayarlarAcik)} style={{ ...barButonStil(ayarlarAcik), padding: "4px" }} title="Ayarlar">
         <Settings size={15} />
       </button>
     </div>
@@ -1187,6 +1345,7 @@ return (
     {AaPanel}
     {KayitPanel}
     {TemaPanel}
+    {OzelTemaPanel}
     {AyarlarPanel}
     {AramaPanel}
 

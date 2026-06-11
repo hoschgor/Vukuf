@@ -1226,7 +1226,7 @@ const Bar = (
     background: theme.surface,
     borderTop:    barKonum === "alt" ? `1px solid ${theme.border}` : "none",
     borderBottom: barKonum === "ust" ? `1px solid ${theme.border}` : "none",
-    padding: "8px 16px",
+    padding: isMobile ? "10px 55px" : "3px 10px",
     display: "flex", alignItems: "center", gap: "4px",
     zIndex: 90, flexWrap: "wrap",
     transition: "opacity 0.3s ease",
@@ -1398,7 +1398,7 @@ return (
 
         {/* Kitap başlığı */}
         <div style={{ textAlign: "center", marginBottom: "48px", paddingTop: "24px" }}>
-          <h1 style={{ fontSize: "48px", color: theme.accent, marginBottom: "8px", fontFamily: "LivaNur, serif" }}>
+          <h1 style={{ fontSize: "48px", color: theme.accent, marginBottom: "8px", fontFamily: "PlayfairDisplay, serif" }}>
             {kitap.baslik}
           </h1>
           <p style={{ color: theme.textSecondary, fontSize: "14px" }}>{kitap.yazar}</p>

@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { useApp } from "../AppContext"
 import { Link } from "react-router-dom"
-import { kategoriler } from "../data/kitaplar"
+import { kategoriler, kitapFontGetir } from "../data/kitaplar"
 import {
   DndContext,
   closestCenter,
@@ -33,7 +33,7 @@ function kitapSirtiRengi(id) {
   return kitapRenkleri[hash % kitapRenkleri.length]
 }
 
-function SortableKitap({ kitap, duzenlemeMode, theme }) {
+function SortableKitap({ kitap, duzenlemeMode, theme, alimId }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: kitap.id })
   const style = { transform: CSS.Transform.toString(transform), transition }
 
@@ -91,7 +91,7 @@ function SortableKitap({ kitap, duzenlemeMode, theme }) {
               color: "rgba(255,255,255,0.85)",
               textAlign: "center",
               lineHeight: "1.3",
-              fontFamily: "PlayfairDisplay, serif",
+              fontFamily: kitapFontGetir(alimId) || "PlayfairDisplay, serif",
               writingMode: "vertical-rl",
               textOrientation: "mixed",
               transform: "rotate(180deg)",
@@ -101,6 +101,7 @@ function SortableKitap({ kitap, duzenlemeMode, theme }) {
           </div>
           <div style={{
             fontSize: "10px",
+            fontFamily: kitapFontGetir(alimId) || "inherit",
             color: theme.textSecondary,
             textAlign: "center",
             marginTop: "6px",
@@ -115,7 +116,7 @@ function SortableKitap({ kitap, duzenlemeMode, theme }) {
   )
 }
 
-function KitapRafi({ kitaplar, rafId, duzenlemeMode, theme, sensors, kitapSiralama, setKitapSiralama }) {
+function KitapRafi({ kitaplar, rafId, duzenlemeMode, theme, sensors, kitapSiralama, setKitapSiralama, alimId }) {
   if (kitaplar.length === 0) {
     return (
       <div style={{ padding: "20px", color: theme.textSecondary, fontSize: "13px", fontStyle: "italic" }}>
@@ -147,7 +148,7 @@ function KitapRafi({ kitaplar, rafId, duzenlemeMode, theme, sensors, kitapSirala
       <SortableContext items={sirali.map(k => k.id)} strategy={horizontalListSortingStrategy}>
         <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", padding: "20px 16px 0" }}>
           {sirali.map(kitap => (
-            <SortableKitap key={kitap.id} kitap={kitap} duzenlemeMode={duzenlemeMode} theme={theme} />
+            <SortableKitap key={kitap.id} kitap={kitap} duzenlemeMode={duzenlemeMode} theme={theme} alimId={alimId} />
           ))}
         </div>
       </SortableContext>
@@ -314,6 +315,7 @@ function SortableAlimRafi({ alim, duzenlemeMode, theme, sensors, kitapSiralama, 
                       sensors={sensors} 
                       kitapSiralama={kitapSiralama} 
                       setKitapSiralama={setKitapSiralama} 
+                      alimId={alim.id}
                     />
                     <div style={{ height: "8px", background: `linear-gradient(to bottom, ${theme.accent}40, ${theme.accent}20)`, borderTop: `2px solid ${theme.accent}60`, margin: "0 0 4px" }} />
                   </div>
@@ -335,6 +337,7 @@ function SortableAlimRafi({ alim, duzenlemeMode, theme, sensors, kitapSiralama, 
                 sensors={sensors} 
                 kitapSiralama={kitapSiralama} 
                 setKitapSiralama={setKitapSiralama} 
+                alimId={alim.id}
               />
               <div style={{ height: "8px", background: `linear-gradient(to bottom, ${theme.accent}40, ${theme.accent}20)`, borderTop: `2px solid ${theme.accent}60`, margin: "4px 0 0" }} />
             </>

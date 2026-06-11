@@ -163,3 +163,8 @@ export const kitaplar = kategoriler.flatMap(k =>
       : a.kitaplar
   )
 )
+
+export function kitapFontGetir(alimId) {
+  if (alimId === "bediuzzaman") return "LivaNur, serif"
+  return null
+}

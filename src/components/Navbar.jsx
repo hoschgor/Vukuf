@@ -382,8 +382,10 @@ export default function Navbar() {
             <div style={{ 
               marginTop: "auto", 
               borderTop: `1px solid ${theme.border}`, 
-              paddingTop: "4px",
+              paddingTop: "0px",
               marginBottom: "0px",
+              marginLeft: "0px",
+              marginRight: "0px",
             }}>
               {altNavItems.map(({ path, label, icon: Icon }) => {
                 const isActive = location.pathname === path
@@ -395,17 +397,19 @@ export default function Navbar() {
                     style={{
                       display: "flex",
                       alignItems: "center",
-                      gap: "3px",
-                      padding: "5px 12px",
+                      justifyContent: "center",  // Ortalamak için eklendi
+                      gap: "8px",                 // Boşluk artırıldı
+                      padding: "10px 12px",
                       color: isActive ? theme.accent : theme.textSecondary,
                       background: isActive ? `${theme.accent}15` : "transparent",
-                      borderLeft: isActive ? `3px solid ${theme.accent}` : "3px solid transparent",
-                      fontSize: "13px",
+                      borderRadius: "8px",        // Yuvarlak köşeler eklendi
+                      fontSize: "14px",           // Font biraz büyütüldü
                       transition: "all 0.2s",
                       opacity: 0.9,
+                      width: "100%",              // Tam genişlik
                     }}
                   >
-                    <Icon size={16} />
+                    <Icon size={18} />
                     {label}
                   </Link>
                 )

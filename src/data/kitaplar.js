@@ -154,6 +154,24 @@ export const kategoriler = [
       { id: "ibn-arabi-diger", isim: "İbn Arabî", kitaplar: [] },
     ],
   },
+  {
+    id: "orijinal-eserler",
+    baslik: "Orijinal Eserler",
+    alimler: [
+      {
+        id: "kuran-i-kerim",
+        isim: "Kur'ân-ı Kerîm",
+        kitaplar: [
+          {
+            id: "kuran",
+            baslik: "Kur'ân-ı Kerîm",
+            aciklama: "Yüce Allah ﷻ 'ın, efendimiz Hz. Muhammed Mustafa ﷺ'e vahyettiği, tüm zamanların en büyük mucizesi",
+            dosya: "kuran.json"
+          }
+        ]
+      }
+    ]
+  },
 ]
 
 export const kitaplar = kategoriler.flatMap(k =>
@@ -167,4 +185,25 @@ export const kitaplar = kategoriler.flatMap(k =>
 export function kitapFontGetir(alimId) {
   if (alimId === "bediuzzaman") return "LivaNur, serif"
   return null
+}
+export const kuranKitapligi = {
+  id: "kuran-kitapligi",
+  baslik: "Kur'ân-ı Kerîm",
+  sureler: [] // kuran.js'den ayrı yönetilecek
+}
+
+export const duaKitapligi = {
+  id: "dua-kitapligi", 
+  baslik: "Dua Kitaplığı",
+  kitaplar: [
+    // İleride: Cevşenü'l Kebîr, Celcelûtiye vb.
+  ]
+}
+
+export const hadisKitapligi = {
+  id: "hadis-kitapligi",
+  baslik: "Hadis-i Şerîf",
+  koleksiyonlar: [
+    // İleride: Buhari, Müslim vb.
+  ]
 }

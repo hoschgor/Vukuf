@@ -8,7 +8,7 @@ import {
   Plus, Minus, AlignJustify, ChevronsUp, ChevronsDown,
   Bookmark, X, Type, StickyNote, Palette,
   Search, Highlighter, ChevronDown, Clock, Settings,
-  ChevronUp, Edit2, Pencil,
+  ChevronUp, Edit2, Pencil, Circle,
 } from "lucide-react"
 import { useMediaQuery } from '../data/hooks/useMediaQuery'
 
@@ -344,9 +344,12 @@ const kitap = kitaplar.find(k => k.id === id)
 const kitapIsaretleri = isaretler[id] || []
 
 // ── Okuma ayarları
-const [yaziBoyutu, setYaziBoyutu]     = useState(16)
-const [hizalama, setHizalama]         = useState("justify")
-const [fontSecimler, setFontSecimler] = useState({ turkce: "georgia", osmanlica: null, arapca: null })
+const [yaziBoyutu, setYaziBoyutu] = useState(() => parseInt(localStorage.getItem("vukuf-yazi-boyutu") || "16"))
+const [hizalama, setHizalama] = useState(() => localStorage.getItem("vukuf-hizalama") || "justify")
+const [fontSecimler, setFontSecimler] = useState(() => {
+  const kayitli = localStorage.getItem("vukuf-fontlar")
+  return kayitli ? JSON.parse(kayitli) : { turkce: "georgia", osmanlica: null, arapca: null }
+})
 const aktifFontId = fontSecimler.turkce || fontSecimler.osmanlica || fontSecimler.arapca || "georgia"
 const aktifFont   = fontBul(aktifFontId)
 
@@ -365,10 +368,10 @@ const [duraklatildi, setDuraklatildi]         = useState(false)
 // ── Bar
 const barZamanRef = useRef(null)
 const [barGorunur, setBarGorunur]           = useState(true)
-const [barKonum, setBarKonum]               = useState("alt")
-const [sadeMode, setSadeMode]               = useState(false)
-const [otomatikGizleme, setOtomatikGizleme] = useState(true)
-const [gizlemeSuresi, setGizlemeSuresi]     = useState(5)
+const [barKonum, setBarKonum] = useState(() => localStorage.getItem("vukuf-bar-konum") || "alt")
+const [sadeMode, setSadeMode]               = useState(() => localStorage.getItem("vukuf-sade-mode") !== "false")
+const [otomatikGizleme, setOtomatikGizleme] = useState(() => localStorage.getItem("vukuf-otomatik-gizleme") !== "false")
+const [gizlemeSuresi, setGizlemeSuresi] = useState(() => parseInt(localStorage.getItem("vukuf-gizleme-suresi") || "5"))
 const [sureGoster, setSureGoster]           = useState(true)
 const isMobile = useMediaQuery('(max-width: 768px)')
 
@@ -528,6 +531,14 @@ useEffect(() => {
   const eslesme = aramaEslesmeler[aramaIndeks]
   if (eslesme) sayfayaGit(eslesme.sayfaNo)
 }, [aramaIndeks, aramaEslesmeler])
+
+useEffect(() => { localStorage.setItem("vukuf-yazi-boyutu", yaziBoyutu) }, [yaziBoyutu])
+useEffect(() => { localStorage.setItem("vukuf-hizalama", hizalama) }, [hizalama])
+useEffect(() => { localStorage.setItem("vukuf-fontlar", JSON.stringify(fontSecimler)) }, [fontSecimler])
+useEffect(() => { localStorage.setItem("vukuf-bar-konum", barKonum) }, [barKonum])
+useEffect(() => { localStorage.setItem("vukuf-otomatik-gizleme", otomatikGizleme) }, [otomatikGizleme])
+useEffect(() => { localStorage.setItem("vukuf-gizleme-suresi", gizlemeSuresi) }, [gizlemeSuresi])
+useEffect(() => { localStorage.setItem("vukuf-sade-mode", sadeMode) }, [sadeMode])
 
 // ════════════════════════════════════════════════════
 // Dokunma
@@ -1246,7 +1257,7 @@ const Bar = (
     {!sadeMode && (
       <>
         <button onClick={() => setLugatActive(!lugatActive)} style={barButonStil(lugatActive)}>
-          {lugatActive ? <Eye size={15} /> : <EyeOff size={15} />} Lügat
+          {lugatActive ? <Eye size={15} /> : <Circle size={15} />} Lügat
         </button>
 
         <button onClick={() => togglePanel(setAaAcik, !aaAcik)} style={barButonStil(aaAcik)}>
@@ -1318,7 +1329,7 @@ const Bar = (
       )}
 
         <button onClick={() => setSadeMode(!sadeMode)} style={{ ...barButonStil(sadeMode), padding: "4px" }} title="Sade mod">
-        <AlignJustify size={15} />
+        <Circle size={15} />
       </button>
 
         <button onClick={() => togglePanel(setTemaAcik, !temaAcik)} style={{ ...barButonStil(temaAcik), padding: "4px" }} title="Tema">
@@ -1405,56 +1416,89 @@ return (
         </div>
 
         {/* Sayfalar */}
-        {kitapMetni.map((sayfa, index) => (
-          <div key={sayfa.sayfa} ref={el => { if (el) sayfaRefs.current[sayfa.sayfa] = el }} style={{ position: "relative" }}>
-
-            {/* İşaret göstergesi — kırmızı nokta */}
-            {kitapIsaretleri.includes(sayfa.sayfa) && (
-              <div style={{
-                position: "absolute", top: "6px", right: "-8px",
-                width: "8px", height: "8px", borderRadius: "50%",
-                background: "#ef4444", boxShadow: "0 0 4px rgba(239,68,68,0.6)",
-              }} />
-            )}
-
-            <MetinParcasi
-              metin={sayfa.metin}
-              sayfaNo={sayfa.sayfa}
-              lugatAktif={lugatActive}
-              onKelimeTikla={kelimeTikla}
-              theme={theme}
-              fontSize={yaziBoyutu}
-              hizalama={hizalama}
-              fontStyle={aktifFont.style}
-              vurguModu={vurguModu}
-              vurguRengi={vurguRengi}
-              sayfaVurgulari={vurgular[sayfa.sayfa] || []}
-              onVurguEkle={vurguEkle}
-            />
-
-            {/* Sayfa notu göstergesi */}
-            {notlar[sayfa.sayfa]?.length > 0 && (
-              <div
-                onClick={() => { setMevcutSayfa(sayfa.sayfa); togglePanel(setKayitAcik, true); setKayitSekme("notlar") }}
-                style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "11px", color: theme.accent, cursor: "pointer", marginBottom: "4px", opacity: 0.8 }}
-              >
-                <StickyNote size={11} /> {notlar[sayfa.sayfa].length} not
+        {kitap.id === "kuran" ? (
+          <div style={{ direction: "rtl", fontFamily: "Scheherazade New, serif" }}>
+            {kitapMetni.map((sure) => (
+              <div key={sure.id} style={{ marginBottom: "48px" }}>
+                <div style={{
+                  textAlign: "center",
+                  fontSize: "22px",
+                  color: theme.accent,
+                  borderBottom: `1px solid ${theme.border}`,
+                  paddingBottom: "12px",
+                  marginBottom: "24px",
+                  fontFamily: "PlayfairDisplay, serif",
+                  direction: "ltr",
+                }}>
+                  {sure.id}. {sure.isim}
+                </div>
+                {sure.ayetler.map((ayet) => (
+                  <div key={ayet.no} style={{
+                    marginBottom: "16px",
+                    lineHeight: "2.2",
+                    fontSize: `${yaziBoyutu + 4}px`,
+                    color: theme.text,
+                  }}>
+                    {ayet.arapca}
+                    <span style={{
+                      fontSize: "14px",
+                      color: theme.accent,
+                      marginRight: "8px",
+                      fontFamily: "PlayfairDisplay, serif",
+                      direction: "ltr",
+                      display: "inline-block",
+                    }}>
+                      ﴿{ayet.no}﴾
+                    </span>
+                  </div>
+                ))}
               </div>
-            )}
-
-            {/* Sayfa ayracı */}
-            {index < kitapMetni.length - 1 && (
-              <div style={{ display: "flex", alignItems: "center", gap: "12px", margin: "32px 0" }}>
-                <div style={{ flex: 1, height: "1px", background: theme.border }} />
-                <span style={{ fontSize: "11px", color: theme.textSecondary, opacity: 0.6 }}>{sayfa.sayfa}</span>
-                <div style={{ flex: 1, height: "1px", background: theme.border }} />
-              </div>
-            )}
+            ))}
           </div>
-        ))}
+        ) : (
+          kitapMetni.map((sayfa, index) => (
+            <div key={sayfa.sayfa} ref={el => { if (el) sayfaRefs.current[sayfa.sayfa] = el }} style={{ position: "relative" }}>
+              {kitapIsaretleri.includes(sayfa.sayfa) && (
+                <div style={{
+                  position: "absolute", top: "6px", right: "-8px",
+                  width: "8px", height: "8px", borderRadius: "50%",
+                  background: "#ef4444", boxShadow: "0 0 4px rgba(239,68,68,0.6)",
+                }} />
+              )}
+              <MetinParcasi
+                metin={sayfa.metin}
+                sayfaNo={sayfa.sayfa}
+                lugatAktif={lugatActive}
+                onKelimeTikla={kelimeTikla}
+                theme={theme}
+                fontSize={yaziBoyutu}
+                hizalama={hizalama}
+                fontStyle={aktifFont.style}
+                vurguModu={vurguModu}
+                vurguRengi={vurguRengi}
+                sayfaVurgulari={vurgular[sayfa.sayfa] || []}
+                onVurguEkle={vurguEkle}
+              />
+              {notlar[sayfa.sayfa]?.length > 0 && (
+                <div
+                  onClick={() => { setMevcutSayfa(sayfa.sayfa); togglePanel(setKayitAcik, true); setKayitSekme("notlar") }}
+                  style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "11px", color: theme.accent, cursor: "pointer", marginBottom: "4px", opacity: 0.8 }}
+                >
+                  <StickyNote size={11} /> {notlar[sayfa.sayfa].length} not
+                </div>
+              )}
+              {index < kitapMetni.length - 1 && (
+                <div style={{ display: "flex", alignItems: "center", gap: "12px", margin: "32px 0" }}>
+                  <div style={{ flex: 1, height: "1px", background: theme.border }} />
+                  <span style={{ fontSize: "11px", color: theme.textSecondary, opacity: 0.6 }}>{sayfa.sayfa}</span>
+                  <div style={{ flex: 1, height: "1px", background: theme.border }} />
+                </div>
+              )}
+            </div>
+          ))
+        )}
       </div>
     </div>
-
     {barKonum === "alt" && Bar}
   </div>
 )

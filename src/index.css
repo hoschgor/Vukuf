@@ -25,6 +25,13 @@
   font-weight: bold;
 }
 
+@font-face {
+  font-family: 'ArabicCustom';
+  src: url('/fonts/arabic.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+}
+
 .okuma-icerik {
   -webkit-user-select: none;
   -moz-user-select: none;

@@ -1,4 +1,4 @@
-import KuranOkuma from "./KuranOkuma.jsx"
+import KuranOkuma from "./KuranOkuma"
 import { useState, useEffect, useRef, useCallback, useMemo } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import { useApp } from "../AppContext"
@@ -1457,7 +1457,7 @@ return (
                 </div>
               )}
             </div>
-          ))}
+        ))}
       </div>
     </div>
     {barKonum === "alt" && Bar}

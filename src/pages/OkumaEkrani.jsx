@@ -1,9 +1,9 @@
-import { useState, useEffect, useRef, useCallback } from "react"
+import KuranOkuma from "./KuranOkuma.jsx"
+import { useState, useEffect, useRef, useCallback, useMemo } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import { useApp } from "../AppContext"
 import { kitaplar } from "../data/kitaplar"
 import lugatVerisi from "../data/lugat.json"
-import arapcaLugat from "../data/arapca-lugat.json"
 import {
   ArrowLeft, BookOpen, Eye, EyeOff, Play, Pause,
   Plus, Minus, AlignJustify, ChevronsUp, ChevronsDown,
@@ -81,10 +81,6 @@ const VURGU_RENKLERI = [
 function kelimeAra(kelime) {
   const temiz = kelime.toLowerCase().replace(/[.,!?;:'"()\[\]]/g, "").trim()
   return lugatVerisi[temiz] || null
-}
-
-function harekeSil(k) {
-  return k.replace(/[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06DC\u06DF-\u06E4\u06E7\u06E8\u06EA-\u06ED\u06E1\u0671]/g, "")
 }
 
 function bugunAnahtar() {
@@ -655,6 +651,7 @@ const toplamKayit = kitapIsaretleri.length + toplamNot + toplamVurgu
 // ════════════════════════════════════════════════════
 
 if (!kitap)     return <div style={{ padding: "40px", color: theme.text }}>Kitap bulunamadı.</div>
+if (kitap.id === "kuran") return <KuranOkuma kitap={kitap} />
 if (yukleniyor) return <div style={{ padding: "40px", color: theme.text }}>Yükleniyor...</div>
 
 // ════════════════════════════════════════════════════
@@ -1421,80 +1418,7 @@ return (
         </div>
 
         {/* Sayfalar */}
-        {kitap.id === "kuran" ? (
-          <div style={{ direction: "rtl", fontFamily: "Scheherazade New, serif" }}>
-            {kitapMetni.map((sure) => (
-              <div key={sure.id} style={{ marginBottom: "48px" }}>
-                <div style={{
-                  textAlign: "center",
-                  fontSize: "22px",
-                  color: theme.accent,
-                  borderBottom: `1px solid ${theme.border}`,
-                  paddingBottom: "12px",
-                  marginBottom: "24px",
-                  fontFamily: "PlayfairDisplay, serif",
-                  direction: "ltr",
-                }}>
-                  {sure.id}. {sure.isim}
-                </div>
-                {sure.ayetler.map((ayet) => (
-                  <div key={ayet.no} style={{
-                    marginBottom: "16px",
-                    lineHeight: "2.2",
-                    fontSize: `${yaziBoyutu + 4}px`,
-                    color: theme.text,
-                  }}>
-                    <span
-                      onClick={(e) => {
-                        const x = Math.min(e.clientX, window.innerWidth - 300)
-                        const y = e.clientY + 12 + 200 > window.innerHeight ? e.clientY - 180 : e.clientY + 12
-                        setPopup({ kelime: `${sure.isim} - ${ayet.no}. Âyet`, anlam: ayet.meal || "Meal henüz eklenmemiş", x, y })
-                      }}
-                      style={{
-                        fontSize: "13px",
-                        color: theme.accent,
-                        marginLeft: "6px",
-                        cursor: "pointer",
-                        fontFamily: "PlayfairDisplay, serif",
-                        direction: "ltr",
-                        display: "inline-block",
-                      }}
-                    >
-                      ﴿{ayet.no}﴾
-                    </span>
-                    {ayet.arapca.split(" ").map((kelime, ki) => {
-                      const temiz = harekeSil(kelime).trim()
-                      const lugat = arapcaLugat[temiz]
-                      return (
-                        <span
-                          key={ki}
-                          onClick={(e) => kelimeTikla(
-                            `${kelime}  ${lugat?.okunuş ? `(${lugat.okunuş})` : ""}`,
-                            lugat
-                              ? lugat.anlamlar.map((a, i) => `${i + 1}. ${a}`).join("\n")
-                              : "Bu kelime için anlam bulunamadı",
-                            e
-                          )}
-                          style={{
-                            cursor: "pointer",
-                            padding: "0 3px",
-                            borderRadius: "3px",
-                            transition: "background 0.15s",
-                          }}
-                          onMouseEnter={(e) => e.currentTarget.style.background = `${theme.accent}25`}
-                          onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
-                        >
-                          {kelime}{" "}
-                        </span>
-                      )
-                    })}
-                  </div>
-                ))}
-              </div>
-            ))}
-          </div>
-        ) : (
-          kitapMetni.map((sayfa, index) => (
+          {kitapMetni.map((sayfa, index) => (
             <div key={sayfa.sayfa} ref={el => { if (el) sayfaRefs.current[sayfa.sayfa] = el }} style={{ position: "relative" }}>
               {kitapIsaretleri.includes(sayfa.sayfa) && (
                 <div style={{
@@ -1533,8 +1457,7 @@ return (
                 </div>
               )}
             </div>
-          ))
-        )}
+          ))}
       </div>
     </div>
     {barKonum === "alt" && Bar}

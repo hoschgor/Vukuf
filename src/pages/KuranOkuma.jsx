@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom"
 import { useApp } from "../AppContext"
 import { useVirtualizer } from "@tanstack/react-virtual"
 import arapcaLugat from "../data/arapca-lugat.json"
+import ayetMeal from "../data/ayet-meal.json"
 import SureBasligi from "../components/SureBasligi"
 import AyetNo from "../components/AyetNo"
 import Besmele from "../components/Besmele"
@@ -839,11 +840,15 @@ const OzelTemaPanel = ozelTemaPanelAcik && (
                         sure={satir.sure}
                         theme={theme}
                         onClick={(e) => {
+                          const sureId = satir.sure.id
+                          const ayetNo = satir.ayet.no
+                          const meal = ayetMeal[sureId]?.[ayetNo] || "Bu ayet için meal henüz eklenmemiş"
+                          
                           const x = Math.min(e.clientX, window.innerWidth - 300)
                           const y = e.clientY + 12 + 200 > window.innerHeight ? e.clientY - 180 : e.clientY + 12
                           setPopup({
-                            kelime: `${satir.sure.isim} · ${satir.ayet.no}. Âyet`,
-                            anlam: satir.ayet.meal || "Meal henüz eklenmemiş",
+                            kelime: `${satir.sure.isim} · ${ayetNo}. Âyet`,
+                            anlam: meal,
                             x, y,
                           })
                         }}

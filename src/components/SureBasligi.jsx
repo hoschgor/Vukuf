@@ -752,7 +752,7 @@ export default function SureBasligi({ sure, theme, onTikla }) {
           strokeWidth="0.35"
           strokeOpacity="0.18"
         />
-
+      
         <ellipse
           cx={w/2}
           cy={h/2}
@@ -763,6 +763,25 @@ export default function SureBasligi({ sure, theme, onTikla }) {
           strokeWidth="0.25"
           strokeOpacity="0.12"
         />
+
+                {/* ========================================================= */}
+        {/* SURE İSMİ - MERKEZ OVAL İÇİ */}
+        {/* ========================================================= */}
+
+        {/* Arapça sure ismi */}
+        <text
+          x={w/2}
+          y={h/2 + 11}
+          textAnchor="middle"
+          fontFamily="'Scheherazade New', 'Traditional Arabic', 'Noto Naskh Arabic', serif"
+          fontSize="24"
+          fontWeight="700"
+          fill={ac}
+          fillOpacity="0.85"
+          direction="rtl"
+        >
+          {sure.isimArapca || sure.isim}
+        </text>
 
                 {/* ========================================================= */}
                 {/* GÜL (ROSE) SİMGELERİ - MERKEZ YAKINI */}

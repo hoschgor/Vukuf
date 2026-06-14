@@ -20,451 +20,1095 @@ export default function SureBasligi({ sure, theme, onTikla }) {
     >
       <svg
         width="100%"
-        viewBox={`0 0 ${w} ${h}`}
+        viewBox="0 0 580 110"
         preserveAspectRatio="xMidYMid meet"
-        xmlns="http://www.w3.org/2000/svg"
-        role="img"
       >
-        <title>{sure.isim} Suresi</title>
-
-        {/* ========== FAZ 1 — MİMARİ ========== */}
         
-        {/* Dış çerçeve */}
-        <rect x="3" y="3" width={w-6} height={h-6}
+        {/* ========================================================= */}
+        {/* MUSHAF TEZHİBİ V2 - BLOK 1 */}
+        {/* Ana çerçeve ve altyapı */}
+        {/* ========================================================= */}
+
+        <defs>
+
+          <linearGradient id="tezhipGlow" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor={ac} stopOpacity="0.10" />
+            <stop offset="50%" stopColor={ac} stopOpacity="0.22" />
+            <stop offset="100%" stopColor={ac} stopOpacity="0.10" />
+          </linearGradient>
+
+          <linearGradient id="tezhipSoft" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor={ac} stopOpacity="0.16" />
+            <stop offset="100%" stopColor={ac} stopOpacity="0.02" />
+          </linearGradient>
+
+        </defs>
+
+        {/* Dış ana çerçeve */}
+
+        <rect
+          x="2"
+          y="2"
+          width={w-4}
+          height={h-4}
+          rx="5"
           fill="none"
           stroke={ac}
-          strokeWidth="1.2"
-          rx="6"
-          strokeOpacity="0.7"
+          strokeWidth="1"
         />
-        
-        {/* İç çerçeve */}
-        <rect x="10" y="10" width={w-20} height={h-20}
+
+        {/* İkinci çerçeve */}
+
+        <rect
+          x="7"
+          y="7"
+          width={w-14}
+          height={h-14}
+          rx="4"
           fill="none"
-          stroke={ac}
-          strokeWidth="0.6"
-          strokeDasharray="6 4"
-          rx="3"
-          strokeOpacity="0.5"
-        />
-
-        {/* Köşe rumi çıkıntıları */}
-        {[[16,16], [w-16,16], [16,h-16], [w-16,h-16]].map(([cx,cy], idx) => (
-          <g key={`cikinti-${idx}`}>
-            <path
-              d={`M${cx-8},${cy} Q${cx-4},${cy-8} ${cx},${cy-8} Q${cx+4},${cy-8} ${cx+8},${cy}`}
-              fill="none"
-              stroke={ac}
-              strokeWidth="0.8"
-              strokeOpacity="0.5"
-            />
-            <path
-              d={`M${cx},${cy-8} Q${cx+8},${cy-4} ${cx+8},${cy} Q${cx+8},${cy+4} ${cx},${cy+8}`}
-              fill="none"
-              stroke={ac}
-              strokeWidth="0.8"
-              strokeOpacity="0.5"
-            />
-            <circle cx={cx} cy={cy} r="3" fill="none" stroke={ac} strokeWidth="0.6" strokeOpacity="0.4"/>
-            <circle cx={cx} cy={cy} r="1" fill={ac} fillOpacity="0.6"/>
-          </g>
-        ))}
-
-        {/* Merkez oval alan */}
-        <ellipse cx={w/2} cy={h/2} rx="160" ry="35"
-          fill={ac}
-          fillOpacity="0.05"
           stroke={ac}
           strokeWidth="0.5"
-          strokeOpacity="0.25"
+          strokeOpacity="0.55"
         />
 
-        {/* ========== FAZ 2 — OSMANLI ROZETLERİ (Sol) ========== */}
-        <g transform="translate(38, 55)">
+        {/* Üçüncü iç çerçeve */}
+
+        <rect
+          x="13"
+          y="13"
+          width={w-26}
+          height={h-26}
+          rx="3"
+          fill="none"
+          stroke={ac}
+          strokeWidth="0.35"
+          strokeOpacity="0.35"
+        />
+
+        {/* ========================================================= */}
+        {/* KÖŞE TEZHİPLERİ */}
+        {/* ========================================================= */}
+
+        {[
+          [18,18],
+          [w-18,18],
+          [18,h-18],
+          [w-18,h-18]
+        ].map(([cx,cy],i)=>(
+          <g key={`corner-rosette-${i}`}>
+
+            <circle
+              cx={cx}
+              cy={cy}
+              r="7"
+              fill="none"
+              stroke={ac}
+              strokeWidth="0.4"
+              strokeOpacity="0.6"
+            />
+
+            <circle
+              cx={cx}
+              cy={cy}
+              r="4"
+              fill="none"
+              stroke={ac}
+              strokeWidth="0.35"
+              strokeOpacity="0.45"
+            />
+
+            <circle
+              cx={cx}
+              cy={cy}
+              r="1.3"
+              fill={ac}
+              fillOpacity="0.85"
+            />
+
+            {[45,135,225,315].map((deg,j)=>(
+              <circle
+                key={j}
+                cx={cx + Math.cos(deg*Math.PI/180)*10}
+                cy={cy + Math.sin(deg*Math.PI/180)*10}
+                r="1.1"
+                fill={ac}
+                fillOpacity="0.45"
+              />
+            ))}
+
+          </g>
+        ))}
+
+        {/* ========================================================= */}
+        {/* MERKEZ OVAL */}
+        {/* ========================================================= */}
+
+        <ellipse
+          cx={w/2}
+          cy={h/2}
+          rx="155"
+          ry="34"
+          fill="url(#tezhipSoft)"
+          stroke={ac}
+          strokeWidth="0.6"
+          strokeOpacity="0.35"
+        />
+
+        <ellipse
+          cx={w/2}
+          cy={h/2}
+          rx="147"
+          ry="29"
+          fill="none"
+          stroke={ac}
+          strokeWidth="0.35"
+          strokeOpacity="0.28"
+        />
+
+        {/* ========================================================= */}
+        {/* ÜST TEZHİP ZİNCİRİ */}
+        {/* ========================================================= */}
+
+        {Array.from({length:24}).map((_,i)=>{
+
+          const x = 120 + i*14
+
+          return (
+            <g key={`top-chain-${i}`}>
+
+              <circle
+                cx={x}
+                cy="18"
+                r="0.8"
+                fill={ac}
+                fillOpacity="0.35"
+              />
+
+              <path
+                d={`M ${x-5} 18 Q ${x} 13 ${x+5} 18`}
+                fill="none"
+                stroke={ac}
+                strokeWidth="0.45"
+                strokeOpacity="0.35"
+              />
+
+            </g>
+          )
+
+        })}
+
+        {/* ========================================================= */}
+        {/* ALT TEZHİP ZİNCİRİ */}
+        {/* ========================================================= */}
+
+        {Array.from({length:24}).map((_,i)=>{
+
+          const x = 120 + i*14
+
+          return (
+            <g key={`bottom-chain-${i}`}>
+
+              <circle
+                cx={x}
+                cy={h-18}
+                r="0.8"
+                fill={ac}
+                fillOpacity="0.35"
+              />
+
+              <path
+                d={`M ${x-5} ${h-18}
+                    Q ${x} ${h-13}
+                    ${x+5} ${h-18}`}
+                fill="none"
+                stroke={ac}
+                strokeWidth="0.45"
+                strokeOpacity="0.35"
+              />
+
+            </g>
+          )
+
+        })}
+
+        {/* ========================================================= */}
+        {/* BÜYÜK ROZET ALAN İŞARETLERİ */}
+        {/* BLOK 2 BURAYA BAĞLANACAK */}
+        {/* ========================================================= */}
+
+        <circle
+          cx="30"
+          cy={h/2}
+          r="28"
+          fill="url(#tezhipGlow)"
+          fillOpacity="0.25"
+        />
+
+        <circle
+          cx={w-30}
+          cy={h/2}
+          r="28"
+          fill="url(#tezhipGlow)"
+          fillOpacity="0.25"
+        />
+        {/* ========================================================= */}
+        {/* MUSHAF TEZHİBİ V2 - BLOK 2 */}
+        {/* Büyük Osmanlı rozetleri ve hatayi katmanı */}
+        {/* ========================================================= */}
+
+        {/* SOL BÜYÜK ROZET */}
+
+        <g transform="translate(30,55)">
+
           {/* 32 inci halkası */}
-          {Array.from({length: 32}).map((_, i) => {
-            const angle = i * 11.25 * Math.PI/180
-            return (
-              <circle
-                key={`sol-inci-${i}`}
-                cx={Math.cos(angle) * 26}
-                cy={Math.sin(angle) * 26}
-                r="1.2"
-                fill={ac}
-                fillOpacity={i % 2 === 0 ? 0.5 : 0.3}
-              />
-            )
-          })}
-          
+          {[...Array(32)].map((_,i)=>(
+            <circle
+              key={`l-pearl-${i}`}
+              cx={Math.cos(i*11.25*Math.PI/180)*26}
+              cy={Math.sin(i*11.25*Math.PI/180)*26}
+              r="1"
+              fill={ac}
+              fillOpacity="0.35"
+            />
+          ))}
+
           {/* 16 uzun yaprak */}
-          {Array.from({length: 16}).map((_, i) => {
-            const angle = i * 22.5 * Math.PI/180
+          {[...Array(16)].map((_,i)=>{
+            const ang=i*22.5
+            const x=Math.cos(ang*Math.PI/180)*18
+            const y=Math.sin(ang*Math.PI/180)*18
             return (
               <ellipse
-                key={`sol-uzun-${i}`}
-                cx={Math.cos(angle) * 20}
-                cy={Math.sin(angle) * 20}
-                rx="5" ry="2.5"
+                key={`l-long-${i}`}
+                cx={x}
+                cy={y}
+                rx="6"
+                ry="2.2"
+                transform={`rotate(${ang} ${x} ${y})`}
                 fill={ac}
-                fillOpacity="0.5"
-                transform={`rotate(${i*22.5}, ${Math.cos(angle)*20}, ${Math.sin(angle)*20})`}
+                fillOpacity="0.75"
               />
             )
           })}
-          
+
           {/* 16 kısa yaprak */}
-          {Array.from({length: 16}).map((_, i) => {
-            const angle = (i * 22.5 + 11.25) * Math.PI/180
+          {[...Array(16)].map((_,i)=>{
+            const ang=i*22.5+11.25
+            const x=Math.cos(ang*Math.PI/180)*10
+            const y=Math.sin(ang*Math.PI/180)*10
             return (
               <ellipse
-                key={`sol-kisa-${i}`}
-                cx={Math.cos(angle) * 14}
-                cy={Math.sin(angle) * 14}
-                rx="3.5" ry="1.8"
+                key={`l-short-${i}`}
+                cx={x}
+                cy={y}
+                rx="3.5"
+                ry="1.4"
+                transform={`rotate(${ang} ${x} ${y})`}
                 fill={ac}
-                fillOpacity="0.7"
-                transform={`rotate(${i*22.5+11.25}, ${Math.cos(angle)*14}, ${Math.sin(angle)*14})`}
+                fillOpacity="0.9"
               />
             )
           })}
-          
-          {/* 8 kollu yıldız */}
-          {Array.from({length: 8}).map((_, i) => {
-            const angle = i * 45 * Math.PI/180
-            return (
-              <path
-                key={`sol-yildiz-${i}`}
-                d={`M${Math.cos(angle)*9},${Math.sin(angle)*9} 
-                   L${Math.cos(angle+0.4)*5},${Math.sin(angle+0.4)*5}
-                   L${Math.cos(angle+0.8)*9},${Math.sin(angle+0.8)*9}`}
-                fill={ac}
-                fillOpacity="0.8"
+
+          {/* 8 kollu iç yıldız */}
+          {[0,45,90,135,180,225,270,315].map((d,i)=>(
+            <g key={`l-star-${i}`} transform={`rotate(${d})`}>
+              <line
+                x1="0" y1="0"
+                x2="11" y2="0"
+                stroke={ac}
+                strokeWidth="0.55"
+                strokeOpacity="0.7"
               />
-            )
-          })}
-          
+              <line
+                x1="6" y1="-2"
+                x2="9" y2="0"
+                stroke={ac}
+                strokeWidth="0.45"
+              />
+              <line
+                x1="6" y1="2"
+                x2="9" y2="0"
+                stroke={ac}
+                strokeWidth="0.45"
+              />
+            </g>
+          ))}
+
+          {/* İç halka */}
+          <circle
+            r="8"
+            fill="none"
+            stroke={ac}
+            strokeWidth="0.55"
+            strokeOpacity="0.7"
+          />
+
           {/* Merkez şemse */}
-          <circle cx="0" cy="0" r="5" fill={ac} fillOpacity="0.85"/>
-          <circle cx="0" cy="0" r="2.5" fill={ac} fillOpacity="0.5"/>
-          <circle cx="0" cy="0" r="1" fill="white" fillOpacity="0.3"/>
+          <circle r="4" fill={ac} />
+          <circle r="1.4" fill="white" fillOpacity="0.35" />
+
         </g>
 
-        {/* ========== FAZ 2 — OSMANLI ROZETLERİ (Sağ) ========== */}
-        <g transform={`translate(${w-38}, 55)`}>
-          {Array.from({length: 32}).map((_, i) => {
-            const angle = i * 11.25 * Math.PI/180
+        {/* SAĞ BÜYÜK ROZET */}
+
+        <g transform={`translate(${w-30},55)`}>
+
+          {[...Array(32)].map((_,i)=>(
+            <circle
+              key={`r-pearl-${i}`}
+              cx={Math.cos(i*11.25*Math.PI/180)*26}
+              cy={Math.sin(i*11.25*Math.PI/180)*26}
+              r="1"
+              fill={ac}
+              fillOpacity="0.35"
+            />
+          ))}
+
+          {[...Array(16)].map((_,i)=>{
+            const ang=i*22.5
+            const x=Math.cos(ang*Math.PI/180)*18
+            const y=Math.sin(ang*Math.PI/180)*18
             return (
+              <ellipse
+                key={`r-long-${i}`}
+                cx={x}
+                cy={y}
+                rx="6"
+                ry="2.2"
+                transform={`rotate(${ang} ${x} ${y})`}
+                fill={ac}
+                fillOpacity="0.75"
+              />
+            )
+          })}
+
+          {[...Array(16)].map((_,i)=>{
+            const ang=i*22.5+11.25
+            const x=Math.cos(ang*Math.PI/180)*10
+            const y=Math.sin(ang*Math.PI/180)*10
+            return (
+              <ellipse
+                key={`r-short-${i}`}
+                cx={x}
+                cy={y}
+                rx="3.5"
+                ry="1.4"
+                transform={`rotate(${ang} ${x} ${y})`}
+                fill={ac}
+                fillOpacity="0.9"
+              />
+            )
+          })}
+
+          {[0,45,90,135,180,225,270,315].map((d,i)=>(
+            <g key={`r-star-${i}`} transform={`rotate(${d})`}>
+              <line
+                x1="0" y1="0"
+                x2="11" y2="0"
+                stroke={ac}
+                strokeWidth="0.55"
+                strokeOpacity="0.7"
+              />
+              <line
+                x1="6" y1="-2"
+                x2="9" y2="0"
+                stroke={ac}
+                strokeWidth="0.45"
+              />
+              <line
+                x1="6" y1="2"
+                x2="9" y2="0"
+                stroke={ac}
+                strokeWidth="0.45"
+              />
+            </g>
+          ))}
+
+          <circle
+            r="8"
+            fill="none"
+            stroke={ac}
+            strokeWidth="0.55"
+            strokeOpacity="0.7"
+          />
+
+          <circle r="4" fill={ac} />
+          <circle r="1.4" fill="white" fillOpacity="0.35" />
+
+        </g>
+
+        {/* ========================================================= */}
+        {/* ARA HATAYİ ÇİÇEKLERİ */}
+        {/* ========================================================= */}
+
+        {[
+          [66,55],
+          [92,55],
+          [w-66,55],
+          [w-92,55]
+        ].map(([cx,cy],i)=>(
+          <g key={`hatayi-${i}`} transform={`translate(${cx},${cy})`}>
+
+            <circle r="1.4" fill={ac} fillOpacity="0.8" />
+
+            {[0,60,120,180,240,300].map((d,j)=>(
               <circle
-                key={`sag-inci-${i}`}
-                cx={Math.cos(angle) * 26}
-                cy={Math.sin(angle) * 26}
+                key={j}
+                cx={Math.cos(d*Math.PI/180)*5.5}
+                cy={Math.sin(d*Math.PI/180)*5.5}
                 r="1.2"
                 fill={ac}
-                fillOpacity={i % 2 === 0 ? 0.5 : 0.3}
+                fillOpacity="0.55"
               />
-            )
-          })}
-          {Array.from({length: 16}).map((_, i) => {
-            const angle = i * 22.5 * Math.PI/180
-            return (
-              <ellipse
-                key={`sag-uzun-${i}`}
-                cx={Math.cos(angle) * 20}
-                cy={Math.sin(angle) * 20}
-                rx="5" ry="2.5"
-                fill={ac}
-                fillOpacity="0.5"
-                transform={`rotate(${i*22.5}, ${Math.cos(angle)*20}, ${Math.sin(angle)*20})`}
-              />
-            )
-          })}
-          {Array.from({length: 16}).map((_, i) => {
-            const angle = (i * 22.5 + 11.25) * Math.PI/180
-            return (
-              <ellipse
-                key={`sag-kisa-${i}`}
-                cx={Math.cos(angle) * 14}
-                cy={Math.sin(angle) * 14}
-                rx="3.5" ry="1.8"
-                fill={ac}
-                fillOpacity="0.7"
-                transform={`rotate(${i*22.5+11.25}, ${Math.cos(angle)*14}, ${Math.sin(angle)*14})`}
-              />
-            )
-          })}
-          {Array.from({length: 8}).map((_, i) => {
-            const angle = i * 45 * Math.PI/180
-            return (
-              <path
-                key={`sag-yildiz-${i}`}
-                d={`M${Math.cos(angle)*9},${Math.sin(angle)*9} 
-                   L${Math.cos(angle+0.4)*5},${Math.sin(angle+0.4)*5}
-                   L${Math.cos(angle+0.8)*9},${Math.sin(angle+0.8)*9}`}
-                fill={ac}
-                fillOpacity="0.8"
-              />
-            )
-          })}
-          <circle cx="0" cy="0" r="5" fill={ac} fillOpacity="0.85"/>
-          <circle cx="0" cy="0" r="2.5" fill={ac} fillOpacity="0.5"/>
-          <circle cx="0" cy="0" r="1" fill="white" fillOpacity="0.3"/>
-        </g>
+            ))}
 
-        {/* ========== FAZ 3 — HATAİ ÇİÇEKLERİ (Sol) ========== */}
-        <g transform="translate(78, 48)">
-          <ellipse cx="0" cy="0" rx="3" ry="1.5" fill={ac} fillOpacity="0.6" transform="rotate(0)"/>
-          <ellipse cx="0" cy="0" rx="3" ry="1.5" fill={ac} fillOpacity="0.6" transform="rotate(60)"/>
-          <ellipse cx="0" cy="0" rx="3" ry="1.5" fill={ac} fillOpacity="0.6" transform="rotate(120)"/>
-          <circle cx="0" cy="0" r="1.5" fill={ac} fillOpacity="0.8"/>
-          {/* Tomurcuk */}
-          <ellipse cx="6" cy="-4" rx="2" ry="1.2" fill={ac} fillOpacity="0.5" transform="rotate(30, 6, -4)"/>
-          {/* Yaprak */}
-          <path d="M-4,5 Q-8,8 -6,12 Q-3,9 -4,5" fill={ac} fillOpacity="0.4"/>
-        </g>
+            {[30,90,150,210,270,330].map((d,j)=>{
+              const x=Math.cos(d*Math.PI/180)*3.5
+              const y=Math.sin(d*Math.PI/180)*3.5
+              return (
+                <ellipse
+                  key={`p-${j}`}
+                  cx={x}
+                  cy={y}
+                  rx="2"
+                  ry="1"
+                  transform={`rotate(${d} ${x} ${y})`}
+                  fill={ac}
+                  fillOpacity="0.65"
+                />
+              )
+            })}
 
-        <g transform="translate(78, 62)">
-          <ellipse cx="0" cy="0" rx="2.5" ry="1.2" fill={ac} fillOpacity="0.5" transform="rotate(0)"/>
-          <ellipse cx="0" cy="0" rx="2.5" ry="1.2" fill={ac} fillOpacity="0.5" transform="rotate(90)"/>
-          <circle cx="0" cy="0" r="1" fill={ac} fillOpacity="0.7"/>
-        </g>
+          </g>
+        ))}
 
-        {/* ========== FAZ 3 — HATAİ ÇİÇEKLERİ (Sağ) ========== */}
-        <g transform={`translate(${w-78}, 48)`}>
-          <ellipse cx="0" cy="0" rx="3" ry="1.5" fill={ac} fillOpacity="0.6" transform="rotate(0)"/>
-          <ellipse cx="0" cy="0" rx="3" ry="1.5" fill={ac} fillOpacity="0.6" transform="rotate(60)"/>
-          <ellipse cx="0" cy="0" rx="3" ry="1.5" fill={ac} fillOpacity="0.6" transform="rotate(120)"/>
-          <circle cx="0" cy="0" r="1.5" fill={ac} fillOpacity="0.8"/>
-          <ellipse cx="-6" cy="-4" rx="2" ry="1.2" fill={ac} fillOpacity="0.5" transform="rotate(-30, -6, -4)"/>
-          <path d="M4,5 Q8,8 6,12 Q3,9 4,5" fill={ac} fillOpacity="0.4"/>
-        </g>
+        {/* ========================================================= */}
+        {/* İNCE YAN NOKTA ZİNCİRLERİ */}
+        {/* ========================================================= */}
 
-        <g transform={`translate(${w-78}, 62)`}>
-          <ellipse cx="0" cy="0" rx="2.5" ry="1.2" fill={ac} fillOpacity="0.5" transform="rotate(0)"/>
-          <ellipse cx="0" cy="0" rx="2.5" ry="1.2" fill={ac} fillOpacity="0.5" transform="rotate(90)"/>
-          <circle cx="0" cy="0" r="1" fill={ac} fillOpacity="0.7"/>
-        </g>
+        {[22,30,38,72,80,88].map((y,i)=>(
+          <g key={`left-chain-${i}`}>
+            <circle cx="106" cy={y} r="1.2" fill={ac} fillOpacity="0.45" />
+            <circle cx="112" cy={y} r="0.8" fill={ac} fillOpacity="0.35" />
+          </g>
+        ))}
 
-        {/* ========== FAZ 4 — KAR TANESİ BÖLGESİ (Crosshair yerine) ========== */}
+        {[22,30,38,72,80,88].map((y,i)=>(
+          <g key={`right-chain-${i}`}>
+            <circle cx={w-106} cy={y} r="1.2" fill={ac} fillOpacity="0.45" />
+            <circle cx={w-112} cy={y} r="0.8" fill={ac} fillOpacity="0.35" />
+          </g>
+        ))}
+
+        {/* ========================================================= */}
+        {/* MUSHAF TEZHİBİ V2 - BLOK 3 */}
+                {/* ========================================================= */}
+        {/* KAR TANESİ MOTİFLERİ - KONTROL EDİLEBİLİR EKSENLER */}
+        {/* ========================================================= */}
+
+        {/* 
+          KONTROL PARAMETRELERİ:
+          - offsetX: Yatay kaydırma (merkeze göre)
+          - offsetY: Dikey kaydırma (merkeze göre)
+          - spacing: Motifler arası mesafe
+        */}
         
-        {/* Sol kar tanesi bölgesi */}
-        <g transform="translate(110, 55)">
-          {/* 8 kollu kar tanesi */}
-          {Array.from({length: 8}).map((_, i) => {
-            const angle = i * 45 * Math.PI/180
-            return (
-              <g key={`kar-8-${i}`}>
-                <line x1="0" y1="0" x2={Math.cos(angle)*12} y2={Math.sin(angle)*12} 
-                  stroke={ac} strokeWidth="0.6" strokeOpacity="0.5"/>
-                {[-20,20].map(offset => (
+        {(() => {
+          // ----- AYARLAR -----
+          const offsetX = 0;      // Yatay kaydırma (+ sağa, - sola)
+          const offsetY = -30;    // Dikey kaydırma (+ aşağı, - yukarı) 
+          const spacing = 30;     // Motifler arası mesafe
+          // -------------------
+          
+          const positions = [
+            w/2 - 110 + offsetX,   // sol
+            w/2 - 80 + offsetX,
+            w/2 - 50 + offsetX,
+            w/2 + 50 + offsetX,
+            w/2 + 80 + offsetX,
+            w/2 + 110 + offsetX
+          ];
+          
+          return positions.map((cx, i) => (
+            <g key={`snow-${i}`} transform={`translate(${cx}, ${55 + offsetY})`}>
+              {[0, 45, 90, 135, 180, 225, 270, 315].map((d, j) => (
+                <g key={j} transform={`rotate(${d})`}>
                   <line
-                    key={`kar-dal-${offset}`}
-                    x1={Math.cos(angle)*7}
-                    y1={Math.sin(angle)*7}
-                    x2={Math.cos((angle+offset)*Math.PI/180)*9}
-                    y2={Math.sin((angle+offset)*Math.PI/180)*9}
+                    x1="0"
+                    y1="0"
+                    x2="10"
+                    y2="0"
+                    stroke={ac}
+                    strokeWidth="0.55"
+                    strokeOpacity="0.75"
+                  />
+                  <line
+                    x1="5"
+                    y1="-2"
+                    x2="8"
+                    y2="0"
                     stroke={ac}
                     strokeWidth="0.4"
-                    strokeOpacity="0.3"
                   />
-                ))}
-              </g>
-            )
-          })}
-          
-          {/* 12 kollu yıldız */}
-          {Array.from({length: 12}).map((_, i) => {
-            const angle = i * 30 * Math.PI/180
-            return (
-              <circle
-                key={`kar-12-${i}`}
-                cx={Math.cos(angle)*6}
-                cy={Math.sin(angle)*6}
-                r="0.8"
-                fill={ac}
-                fillOpacity="0.4"
-              />
-            )
-          })}
-          
-          <circle cx="0" cy="0" r="2.5" fill={ac} fillOpacity="0.6"/>
-          <circle cx="0" cy="0" r="1" fill="white" fillOpacity="0.25"/>
-        </g>
-
-        {/* Sağ kar tanesi bölgesi */}
-        <g transform={`translate(${w-110}, 55)`}>
-          {Array.from({length: 8}).map((_, i) => {
-            const angle = i * 45 * Math.PI/180
-            return (
-              <g key={`rkar-8-${i}`}>
-                <line x1="0" y1="0" x2={Math.cos(angle)*12} y2={Math.sin(angle)*12} 
-                  stroke={ac} strokeWidth="0.6" strokeOpacity="0.5"/>
-                {[-20,20].map(offset => (
                   <line
-                    key={`rkar-dal-${offset}`}
-                    x1={Math.cos(angle)*7}
-                    y1={Math.sin(angle)*7}
-                    x2={Math.cos((angle+offset)*Math.PI/180)*9}
-                    y2={Math.sin((angle+offset)*Math.PI/180)*9}
+                    x1="5"
+                    y1="2"
+                    x2="8"
+                    y2="0"
                     stroke={ac}
                     strokeWidth="0.4"
-                    strokeOpacity="0.3"
                   />
-                ))}
-              </g>
-            )
-          })}
-          {Array.from({length: 12}).map((_, i) => {
-            const angle = i * 30 * Math.PI/180
-            return (
-              <circle
-                key={`rkar-12-${i}`}
-                cx={Math.cos(angle)*6}
-                cy={Math.sin(angle)*6}
-                r="0.8"
+                </g>
+              ))}
+              <circle r="1.5" fill={ac} fillOpacity="0.8" />
+            </g>
+          ));
+        })()}
+
+        {/* ========================================================= */}
+        {/* ========================================================= */}
+        {/* YILDIZ ÇİÇEKLERİ - OVAL DIŞI KONUMLAR */}
+        {/* ========================================================= */}
+        {/* SOL ÜST KÖŞE ÇİÇEKLERİ */}
+        {[
+          { x: 55, y: 30 },
+          { x: 85, y: 22 },
+          { x: 115, y: 18 }
+        ].map((pos, idx) => (
+          <g key={`flower-ul-${idx}`} transform={`translate(${pos.x}, ${pos.y})`}>
+            <circle r="1.2" fill={ac} fillOpacity="0.8" />
+            {[0, 60, 120, 180, 240, 300].map((d, j) => (
+              <ellipse
+                key={j}
+                cx={Math.cos(d * Math.PI / 180) * 3.5}
+                cy={Math.sin(d * Math.PI / 180) * 3.5}
+                rx="1.8"
+                ry="0.9"
+                transform={`rotate(${d} ${Math.cos(d * Math.PI / 180) * 3.5} ${Math.sin(d * Math.PI / 180) * 3.5})`}
                 fill={ac}
-                fillOpacity="0.4"
+                fillOpacity="0.55"
               />
-            )
-          })}
-          <circle cx="0" cy="0" r="2.5" fill={ac} fillOpacity="0.6"/>
-          <circle cx="0" cy="0" r="1" fill="white" fillOpacity="0.25"/>
-        </g>
+            ))}
+          </g>
+        ))}
 
-        {/* ========== FAZ 5 — ARABESK AĞ ========== */}
-        
-        {/* Üst rumi kıvrımlar */}
-        {[145, 195, 245, 295, 345, 395, 435].map((x, i) => (
-          <g key={`ust-kivrim-${i}`}>
+        {/* SAĞ ÜST KÖŞE ÇİÇEKLERİ */}
+        {[
+          { x: w - 55, y: 30 },
+          { x: w - 85, y: 22 },
+          { x: w - 115, y: 18 }
+        ].map((pos, idx) => (
+          <g key={`flower-ur-${idx}`} transform={`translate(${pos.x}, ${pos.y})`}>
+            <circle r="1.2" fill={ac} fillOpacity="0.8" />
+            {[0, 60, 120, 180, 240, 300].map((d, j) => (
+              <ellipse
+                key={j}
+                cx={Math.cos(d * Math.PI / 180) * 3.5}
+                cy={Math.sin(d * Math.PI / 180) * 3.5}
+                rx="1.8"
+                ry="0.9"
+                transform={`rotate(${d} ${Math.cos(d * Math.PI / 180) * 3.5} ${Math.sin(d * Math.PI / 180) * 3.5})`}
+                fill={ac}
+                fillOpacity="0.55"
+              />
+            ))}
+          </g>
+        ))}
+
+        {/* SOL ALT KÖŞE ÇİÇEKLERİ */}
+        {[
+          { x: 55, y: h - 30 },
+          { x: 85, y: h - 22 },
+          { x: 115, y: h - 18 }
+        ].map((pos, idx) => (
+          <g key={`flower-bl-${idx}`} transform={`translate(${pos.x}, ${pos.y})`}>
+            <circle r="1.2" fill={ac} fillOpacity="0.8" />
+            {[0, 60, 120, 180, 240, 300].map((d, j) => (
+              <ellipse
+                key={j}
+                cx={Math.cos(d * Math.PI / 180) * 3.5}
+                cy={Math.sin(d * Math.PI / 180) * 3.5}
+                rx="1.8"
+                ry="0.9"
+                transform={`rotate(${d} ${Math.cos(d * Math.PI / 180) * 3.5} ${Math.sin(d * Math.PI / 180) * 3.5})`}
+                fill={ac}
+                fillOpacity="0.55"
+              />
+            ))}
+          </g>
+        ))}
+
+        {/* SAĞ ALT KÖŞE ÇİÇEKLERİ */}
+        {[
+          { x: w - 55, y: h - 30 },
+          { x: w - 85, y: h - 22 },
+          { x: w - 115, y: h - 18 }
+        ].map((pos, idx) => (
+          <g key={`flower-br-${idx}`} transform={`translate(${pos.x}, ${pos.y})`}>
+            <circle r="1.2" fill={ac} fillOpacity="0.8" />
+            {[0, 60, 120, 180, 240, 300].map((d, j) => (
+              <ellipse
+                key={j}
+                cx={Math.cos(d * Math.PI / 180) * 3.5}
+                cy={Math.sin(d * Math.PI / 180) * 3.5}
+                rx="1.8"
+                ry="0.9"
+                transform={`rotate(${d} ${Math.cos(d * Math.PI / 180) * 3.5} ${Math.sin(d * Math.PI / 180) * 3.5})`}
+                fill={ac}
+                fillOpacity="0.55"
+              />
+            ))}
+          </g>
+        ))}
+
+        {/* ========================================================= */}
+        {/* ÜST ARABESK KATMAN 2 */}
+        {/* ========================================================= */}
+
+        {Array.from({length:18}).map((_,i)=>{
+
+          const x = 150 + i*16
+
+          return (
             <path
-              d={`M${x},20 Q${x+10},12 ${x+20},20`}
+              key={`arabesk-top-${i}`}
+              d={`
+                M ${x-5} 28
+                Q ${x} 22
+                ${x+5} 28
+              `}
               fill="none"
               stroke={ac}
-              strokeWidth="0.5"
-              strokeOpacity="0.35"
+              strokeWidth="0.35"
+              strokeOpacity="0.28"
             />
-            <circle cx={x+10} cy={14} r="1" fill={ac} fillOpacity="0.4"/>
-          </g>
-        ))}
+          )
 
-        {/* Alt rumi kıvrımlar */}
-        {[145, 195, 245, 295, 345, 395, 435].map((x, i) => (
-          <g key={`alt-kivrim-${i}`}>
+        })}
+
+        {/* ========================================================= */}
+        {/* ALT ARABESK KATMAN 2 */}
+        {/* ========================================================= */}
+
+        {Array.from({length:18}).map((_,i)=>{
+
+          const x = 150 + i*16
+
+          return (
             <path
-              d={`M${x},${h-20} Q${x+10},${h-12} ${x+20},${h-20}`}
+              key={`arabesk-bottom-${i}`}
+              d={`
+                M ${x-5} ${h-28}
+                Q ${x} ${h-22}
+                ${x+5} ${h-28}
+              `}
               fill="none"
               stroke={ac}
-              strokeWidth="0.5"
-              strokeOpacity="0.35"
-            />
-            <circle cx={x+10} cy={h-16} r="1" fill={ac} fillOpacity="0.4"/>
-          </g>
-        ))}
-
-        {/* Nokta zincirleri - üst */}
-        {Array.from({length: 18}).map((_, i) => {
-          const x = 130 + i * 18
-          if (x > w-130) return null
-          return (
-            <circle
-              key={`ust-nokta-${i}`}
-              cx={x}
-              cy="26"
-              r="0.8"
-              fill={ac}
-              fillOpacity={i % 2 === 0 ? 0.4 : 0.2}
+              strokeWidth="0.35"
+              strokeOpacity="0.28"
             />
           )
+
         })}
 
-        {/* Nokta zincirleri - alt */}
-        {Array.from({length: 18}).map((_, i) => {
-          const x = 130 + i * 18
-          if (x > w-130) return null
+        {/* ========================================================= */}
+        {/* MERKEZ OVAL İÇ SÜSLEMESİ */}
+        {/* ========================================================= */}
+
+        {Array.from({length:24}).map((_,i)=>{
+
+          const angle = i * 15
+          const x =
+            w/2 + Math.cos(angle*Math.PI/180) * 125
+
+          const y =
+            h/2 + Math.sin(angle*Math.PI/180) * 18
+
           return (
             <circle
-              key={`alt-nokta-${i}`}
+              key={`oval-dot-${i}`}
               cx={x}
-              cy={h-26}
+              cy={y}
               r="0.8"
               fill={ac}
-              fillOpacity={i % 2 === 0 ? 0.4 : 0.2}
+              fillOpacity="0.25"
             />
           )
+
         })}
 
-        {/* Yarım palmet motifleri - üst */}
-        {[160, 220, 280, 340, 400].map((x, i) => (
-          <g key={`ust-palmet-${i}`}>
-            <path
-              d={`M${x},24 Q${x+5},18 ${x+10},24 Q${x+5},22 ${x},24`}
-              fill={ac}
-              fillOpacity="0.25"
-            />
-            <path
-              d={`M${x+10},24 Q${x+15},18 ${x+20},24 Q${x+15},22 ${x+10},24`}
-              fill={ac}
-              fillOpacity="0.25"
-            />
-          </g>
-        ))}
+        {/* ========================================================= */}
+        {/* MERKEZ İÇ HALKA */}
+        {/* ========================================================= */}
 
-        {/* Yarım palmet motifleri - alt */}
-        {[160, 220, 280, 340, 400].map((x, i) => (
-          <g key={`alt-palmet-${i}`}>
-            <path
-              d={`M${x},${h-24} Q${x+5},${h-18} ${x+10},${h-24} Q${x+5},${h-22} ${x},${h-24}`}
-              fill={ac}
-              fillOpacity="0.25"
-            />
-            <path
-              d={`M${x+10},${h-24} Q${x+15},${h-18} ${x+20},${h-24} Q${x+15},${h-22} ${x+10},${h-24}`}
-              fill={ac}
-              fillOpacity="0.25"
-            />
-          </g>
-        ))}
+        <ellipse
+          cx={w/2}
+          cy={h/2}
+          rx="118"
+          ry="22"
+          fill="none"
+          stroke={ac}
+          strokeWidth="0.35"
+          strokeOpacity="0.18"
+        />
 
-        {/* ========== FAZ 6 — METİN ALANI ========== */}
+        <ellipse
+          cx={w/2}
+          cy={h/2}
+          rx="108"
+          ry="18"
+          fill="none"
+          stroke={ac}
+          strokeWidth="0.25"
+          strokeOpacity="0.12"
+        />
 
-        {/* Sure sıra numarası - sol */}
-        <text
-          x={w/2 - 140}
-          y={h/2 + 5}
-          textAnchor="middle"
-          fontFamily="PlayfairDisplay, Georgia, serif"
-          fontSize="13"
-          fill={ac}
-          fillOpacity="0.7"
-        >
-          {sure.id}
-        </text>
+                {/* ========================================================= */}
+                {/* GÜL (ROSE) SİMGELERİ - MERKEZ YAKINI */}
+                {/* ========================================================= */}
 
-        {/* Arapça sure ismi - ortada */}
-        <text
-          x={w/2}
-          y={h/2 + 12}
-          textAnchor="middle"
-          fontFamily="Scheherazade New, 'Traditional Arabic', serif"
-          fontSize="30"
-          fill={ac}
-          direction="rtl"
-        >
-          {sure.isimArapca}
-        </text>
+                {/* SOL GÜL */}
+                <g transform={`translate(${w/2 - 160}, ${h/2})`}>
+                  {/* Dış taç yapraklar (5 büyük) */}
+                  {[0, 72, 144, 216, 288].map((ang, i) => {
+                    const rad = ang * Math.PI / 180;
+                    const x = Math.cos(rad) * 10;
+                    const y = Math.sin(rad) * 10;
+                    return (
+                      <ellipse
+                        key={`rose-outer-${i}`}
+                        cx={x}
+                        cy={y}
+                        rx="7"
+                        ry="3.5"
+                        transform={`rotate(${ang} ${x} ${y})`}
+                        fill="none"
+                        stroke={ac}
+                        strokeWidth="0.6"
+                        strokeOpacity="0.5"
+                      />
+                    );
+                  })}
+                  {/* İç taç yapraklar (5 küçük, döndürülmüş) */}
+                  {[36, 108, 180, 252, 324].map((ang, i) => {
+                    const rad = ang * Math.PI / 180;
+                    const x = Math.cos(rad) * 5.5;
+                    const y = Math.sin(rad) * 5.5;
+                    return (
+                      <ellipse
+                        key={`rose-inner-${i}`}
+                        cx={x}
+                        cy={y}
+                        rx="4"
+                        ry="2"
+                        transform={`rotate(${ang} ${x} ${y})`}
+                        fill={ac}
+                        fillOpacity="0.35"
+                      />
+                    );
+                  })}
+                  {/* Merkez nokta */}
+                  <circle r="2.2" fill={ac} fillOpacity="0.7" />
+                  <circle r="0.9" fill="white" fillOpacity="0.4" />
+                </g>
 
-        {/* Ayet sayısı - sağ */}
-        <text
-          x={w/2 + 140}
-          y={h/2 + 5}
-          textAnchor="middle"
-          fontFamily="PlayfairDisplay, Georgia, serif"
-          fontSize="11"
-          fill={ac}
-          fillOpacity="0.7"
-        >
-          {sure.ayetSayisi} âyet
-        </text>
+                {/* SAĞ GÜL */}
+                <g transform={`translate(${w/2 + 160}, ${h/2})`}>
+                  {[0, 72, 144, 216, 288].map((ang, i) => {
+                    const rad = ang * Math.PI / 180;
+                    const x = Math.cos(rad) * 10;
+                    const y = Math.sin(rad) * 10;
+                    return (
+                      <ellipse
+                        key={`rose-outer-${i}`}
+                        cx={x}
+                        cy={y}
+                        rx="7"
+                        ry="3.5"
+                        transform={`rotate(${ang} ${x} ${y})`}
+                        fill="none"
+                        stroke={ac}
+                        strokeWidth="0.6"
+                        strokeOpacity="0.5"
+                      />
+                    );
+                  })}
+                  {[36, 108, 180, 252, 324].map((ang, i) => {
+                    const rad = ang * Math.PI / 180;
+                    const x = Math.cos(rad) * 5.5;
+                    const y = Math.sin(rad) * 5.5;
+                    return (
+                      <ellipse
+                        key={`rose-inner-${i}`}
+                        cx={x}
+                        cy={y}
+                        rx="4"
+                        ry="2"
+                        transform={`rotate(${ang} ${x} ${y})`}
+                        fill={ac}
+                        fillOpacity="0.35"
+                      />
+                    );
+                  })}
+                  <circle r="2.2" fill={ac} fillOpacity="0.7" />
+                  <circle r="0.9" fill="white" fillOpacity="0.4" />
+                </g>
 
+                {/* ÜST GÜL */}
+                <g transform={`translate(${w/2}, ${h/2 - 32})`}>
+                  {[0, 72, 144, 216, 288].map((ang, i) => {
+                    const rad = ang * Math.PI / 180;
+                    const x = Math.cos(rad) * 8;
+                    const y = Math.sin(rad) * 8;
+                    return (
+                      <ellipse
+                        key={`rose-outer-${i}`}
+                        cx={x}
+                        cy={y}
+                        rx="6"
+                        ry="3"
+                        transform={`rotate(${ang} ${x} ${y})`}
+                        fill="none"
+                        stroke={ac}
+                        strokeWidth="0.5"
+                        strokeOpacity="0.45"
+                      />
+                    );
+                  })}
+                  {[36, 108, 180, 252, 324].map((ang, i) => {
+                    const rad = ang * Math.PI / 180;
+                    const x = Math.cos(rad) * 4.5;
+                    const y = Math.sin(rad) * 4.5;
+                    return (
+                      <ellipse
+                        key={`rose-inner-${i}`}
+                        cx={x}
+                        cy={y}
+                        rx="3.5"
+                        ry="1.8"
+                        transform={`rotate(${ang} ${x} ${y})`}
+                        fill={ac}
+                        fillOpacity="0.3"
+                      />
+                    );
+                  })}
+                  <circle r="1.8" fill={ac} fillOpacity="0.65" />
+                  <circle r="0.7" fill="white" fillOpacity="0.35" />
+                </g>
+
+                {/* ALT GÜL */}
+                <g transform={`translate(${w/2}, ${h/2 + 32})`}>
+                  {[0, 72, 144, 216, 288].map((ang, i) => {
+                    const rad = ang * Math.PI / 180;
+                    const x = Math.cos(rad) * 8;
+                    const y = Math.sin(rad) * 8;
+                    return (
+                      <ellipse
+                        key={`rose-outer-${i}`}
+                        cx={x}
+                        cy={y}
+                        rx="6"
+                        ry="3"
+                        transform={`rotate(${ang} ${x} ${y})`}
+                        fill="none"
+                        stroke={ac}
+                        strokeWidth="0.5"
+                        strokeOpacity="0.45"
+                      />
+                    );
+                  })}
+                  {[36, 108, 180, 252, 324].map((ang, i) => {
+                    const rad = ang * Math.PI / 180;
+                    const x = Math.cos(rad) * 4.5;
+                    const y = Math.sin(rad) * 4.5;
+                    return (
+                      <ellipse
+                        key={`rose-inner-${i}`}
+                        cx={x}
+                        cy={y}
+                        rx="3.5"
+                        ry="1.8"
+                        transform={`rotate(${ang} ${x} ${y})`}
+                        fill={ac}
+                        fillOpacity="0.3"
+                      />
+                    );
+                  })}
+                  <circle r="1.8" fill={ac} fillOpacity="0.65" />
+                  <circle r="0.7" fill="white" fillOpacity="0.35" />
+                </g>
+                        {/* ========================================================= */}
+                        {/* ÇEPER GÜLLERİ - FARKLI MOTİF (KARANFİL TARZI) */}
+                        {/* ========================================================= */}
+
+                        {/* ÜST SIRA - 5 adet */}
+                        {[
+                          { x: w/2 - 200, y: 12 },
+                          { x: w/2 - 100, y: 10 },
+                          { x: w/2, y: 9 },
+                          { x: w/2 + 100, y: 10 },
+                          { x: w/2 + 200, y: 12 }
+                        ].map((pos, idx) => (
+                          <g key={`top-border-${idx}`} transform={`translate(${pos.x}, ${pos.y})`}>
+                            {/* 6 yapraklı minyatür çiçek */}
+                            {[0, 60, 120, 180, 240, 300].map((ang, i) => {
+                              const rad = ang * Math.PI / 180;
+                              const x = Math.cos(rad) * 5;
+                              const y = Math.sin(rad) * 5;
+                              return (
+                                <path
+                                  key={i}
+                                  d={`M ${x} ${y} Q ${x*0.6} ${y*0.6} 0 0 Q ${x*0.6} ${y*0.6} ${x} ${y}`}
+                                  fill={ac}
+                                  fillOpacity="0.5"
+                                  stroke={ac}
+                                  strokeWidth="0.3"
+                                  strokeOpacity="0.7"
+                                />
+                              );
+                            })}
+                            <circle r="1.8" fill={ac} fillOpacity="0.9" />
+                            <circle r="0.7" fill="white" fillOpacity="0.5" />
+                          </g>
+                        ))}
+
+                        {/* ALT SIRA - 5 adet */}
+                        {[
+                          { x: w/2 - 200, y: h - 12 },
+                          { x: w/2 - 100, y: h - 10 },
+                          { x: w/2, y: h - 9 },
+                          { x: w/2 + 100, y: h - 10 },
+                          { x: w/2 + 200, y: h - 12 }
+                        ].map((pos, idx) => (
+                          <g key={`bottom-border-${idx}`} transform={`translate(${pos.x}, ${pos.y})`}>
+                            {[0, 60, 120, 180, 240, 300].map((ang, i) => {
+                              const rad = ang * Math.PI / 180;
+                              const x = Math.cos(rad) * 5;
+                              const y = Math.sin(rad) * 5;
+                              return (
+                                <path
+                                  key={i}
+                                  d={`M ${x} ${y} Q ${x*0.6} ${y*0.6} 0 0 Q ${x*0.6} ${y*0.6} ${x} ${y}`}
+                                  fill={ac}
+                                  fillOpacity="0.5"
+                                  stroke={ac}
+                                  strokeWidth="0.3"
+                                  strokeOpacity="0.7"
+                                />
+                              );
+                            })}
+                            <circle r="1.8" fill={ac} fillOpacity="0.9" />
+                            <circle r="0.7" fill="white" fillOpacity="0.5" />
+                          </g>
+                        ))}
+
+                        {/* SOL SIRA - 4 adet (üst/alt boşluk bırak) */}
+                        {[
+                          { x: 14, y: h/2 - 40 },
+                          { x: 12, y: h/2 - 15 },
+                          { x: 12, y: h/2 + 15 },
+                          { x: 14, y: h/2 + 40 }
+                        ].map((pos, idx) => (
+                          <g key={`left-border-${idx}`} transform={`translate(${pos.x}, ${pos.y})`}>
+                            {[0, 60, 120, 180, 240, 300].map((ang, i) => {
+                              const rad = ang * Math.PI / 180;
+                              const x = Math.cos(rad) * 4.5;
+                              const y = Math.sin(rad) * 4.5;
+                              return (
+                                <path
+                                  key={i}
+                                  d={`M ${x} ${y} Q ${x*0.5} ${y*0.5} 0 0 Q ${x*0.5} ${y*0.5} ${x} ${y}`}
+                                  fill={ac}
+                                  fillOpacity="0.45"
+                                  stroke={ac}
+                                  strokeWidth="0.3"
+                                  strokeOpacity="0.6"
+                                />
+                              );
+                            })}
+                            <circle r="1.5" fill={ac} fillOpacity="0.85" />
+                            <circle r="0.6" fill="white" fillOpacity="0.45" />
+                          </g>
+                        ))}
+
+                        {/* SAĞ SIRA - 4 adet */}
+                        {[
+                          { x: w - 14, y: h/2 - 40 },
+                          { x: w - 12, y: h/2 - 15 },
+                          { x: w - 12, y: h/2 + 15 },
+                          { x: w - 14, y: h/2 + 40 }
+                        ].map((pos, idx) => (
+                          <g key={`right-border-${idx}`} transform={`translate(${pos.x}, ${pos.y})`}>
+                            {[0, 60, 120, 180, 240, 300].map((ang, i) => {
+                              const rad = ang * Math.PI / 180;
+                              const x = Math.cos(rad) * 4.5;
+                              const y = Math.sin(rad) * 4.5;
+                              return (
+                                <path
+                                  key={i}
+                                  d={`M ${x} ${y} Q ${x*0.5} ${y*0.5} 0 0 Q ${x*0.5} ${y*0.5} ${x} ${y}`}
+                                  fill={ac}
+                                  fillOpacity="0.45"
+                                  stroke={ac}
+                                  strokeWidth="0.3"
+                                  strokeOpacity="0.6"
+                                />
+                              );
+                            })}
+                            <circle r="1.5" fill={ac} fillOpacity="0.85" />
+                            <circle r="0.6" fill="white" fillOpacity="0.45" />
+                          </g>
+                        ))}
+
+                        {/* KÖŞELER - 4 adet (daha süslü) */}
+                        {[
+                          { x: 22, y: 22 },
+                          { x: w - 22, y: 22 },
+                          { x: 22, y: h - 22 },
+                          { x: w - 22, y: h - 22 }
+                        ].map((pos, idx) => (
+                          <g key={`corner-${idx}`} transform={`translate(${pos.x}, ${pos.y})`}>
+                            {/* 4 yapraklı + ortada tomurcuk */}
+                            {[0, 90, 180, 270].map((ang, i) => {
+                              const rad = ang * Math.PI / 180;
+                              const x = Math.cos(rad) * 6;
+                              const y = Math.sin(rad) * 6;
+                              return (
+                                <ellipse
+                                  key={i}
+                                  cx={x}
+                                  cy={y}
+                                  rx="4"
+                                  ry="2"
+                                  transform={`rotate(${ang} ${x} ${y})`}
+                                  fill={ac}
+                                  fillOpacity="0.6"
+                                  stroke={ac}
+                                  strokeWidth="0.4"
+                                />
+                              );
+                            })}
+                            {/* Küçük yardımcı yapraklar */}
+                            {[45, 135, 225, 315].map((ang, i) => {
+                              const rad = ang * Math.PI / 180;
+                              const x = Math.cos(rad) * 3.5;
+                              const y = Math.sin(rad) * 3.5;
+                              return (
+                                <circle
+                                  key={i}
+                                  cx={x}
+                                  cy={y}
+                                  r="1.2"
+                                  fill={ac}
+                                  fillOpacity="0.4"
+                                />
+                              );
+                            })}
+                            <circle r="2" fill={ac} fillOpacity="0.95" />
+                            <circle r="0.9" fill="white" fillOpacity="0.55" />
+                          </g>
+                        ))}
       </svg>
     </div>
   )

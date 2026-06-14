@@ -4,6 +4,8 @@ import { useApp } from "../AppContext"
 import { useVirtualizer } from "@tanstack/react-virtual"
 import arapcaLugat from "../data/arapca-lugat.json"
 import SureBasligi from "../components/SureBasligi"
+import AyetNo from "../components/AyetNo"
+import Besmele from "../components/Besmele"
 import { useMediaQuery } from "../data/hooks/useMediaQuery"
 import {
   ArrowLeft, Search, X, ChevronRight, ChevronDown, Menu,
@@ -54,7 +56,7 @@ export default function KuranOkuma({ kitap }) {
   const barZamanRef = useRef(null)
   const otomatikRef = useRef(null)
   const sureSayacRef = useRef(null)
-
+  
   // ── Veri
   const [kitapMetni, setKitapMetni] = useState([])
   const [yukleniyor, setYukleniyor] = useState(true)
@@ -185,7 +187,8 @@ export default function KuranOkuma({ kitap }) {
     const liste = []
     kuranIslenmiş.forEach(sure => {
       liste.push({ tip: "sure-baslik", sure })
-      if (sure.id !== 9 && sure.id !== 1) {
+      // Besmele: Fatiha (1) ve Tevbe (9) hariç tüm surelerde göster
+      if (sure.id !== 1 && sure.id !== 9) {
         liste.push({ tip: "besmele", sure })
       }
       sure.ayetler.forEach(ayet => {
@@ -804,38 +807,37 @@ const OzelTemaPanel = ozelTemaPanelAcik && (
                   }}
                 >
                   {satir.tip === "besmele" ? (
-                    <div style={{
-                      textAlign: "center",
-                      fontSize: `${yaziBoyutu + 6}px`,
-                      fontFamily: "Scheherazade New, serif",
-                      color: theme.text,
-                      direction: "rtl",
-                      padding: "12px 0",
-                    }}>
-                      بِسۡمِ ٱللَّهِ ٱلرَّحۡمَٰنِ ٱلرَّحِيمِ
+                    <div style={{ marginTop: "8px", marginBottom: "8px" }}>
+                      <Besmele theme={theme} sureId={satir.sure.id} />
                     </div>
                   ) : satir.tip === "sure-baslik" ? (
-                    <SureBasligi
-                      sure={satir.sure}
-                      theme={theme}
-                      onTikla={(e) => {
-                        const x = Math.min(e.clientX, window.innerWidth - 300)
-                        const y = e.clientY + 12 + 200 > window.innerHeight ? e.clientY - 180 : e.clientY + 12
-                        setPopup({
-                          kelime: `${satir.sure.isimArapca || satir.sure.isim} · ${satir.sure.isim}`,
-                          anlam: `Anlam: ${satir.sure.anlam}\nNüzul: ${satir.sure.yer}\nÂyet sayısı: ${satir.sure.ayetSayisi}`,
-                          x, y,
-                        })
-                      }}
-                    />
+                    <div style={{ marginBottom: "16px" }}>
+                      <SureBasligi
+                        sure={satir.sure}
+                        theme={theme}
+                        onTikla={(e) => {
+                          const x = Math.min(e.clientX, window.innerWidth - 300)
+                          const y = e.clientY + 12 + 200 > window.innerHeight ? e.clientY - 180 : e.clientY + 12
+                          setPopup({
+                            kelime: `${satir.sure.isimArapca || satir.sure.isim} · ${satir.sure.isim}`,
+                            anlam: `Anlam: ${satir.sure.anlam}\nNüzul: ${satir.sure.yer}\nÂyet sayısı: ${satir.sure.ayetSayisi}`,
+                            x, y,
+                          })
+                        }}
+                      />
+                    </div>
                   ) : (
                     <div style={{
                       lineHeight: "2.4",
                       fontSize: `${yaziBoyutu + 4}px`,
                       color: theme.text,
-                      paddingBottom: "8px",
+                      paddingBottom: "16px",
+                      marginTop: "80px",      
                     }}>
-                      <span
+                      <AyetNo
+                        no={satir.ayet.no}
+                        sure={satir.sure}
+                        theme={theme}
                         onClick={(e) => {
                           const x = Math.min(e.clientX, window.innerWidth - 300)
                           const y = e.clientY + 12 + 200 > window.innerHeight ? e.clientY - 180 : e.clientY + 12
@@ -845,15 +847,7 @@ const OzelTemaPanel = ozelTemaPanelAcik && (
                             x, y,
                           })
                         }}
-                        style={{
-                          fontSize: "12px", color: theme.accent,
-                          marginLeft: "8px", cursor: "pointer",
-                          fontFamily: "PlayfairDisplay, serif",
-                          direction: "ltr", display: "inline-block", opacity: 0.8,
-                        }}
-                      >
-                        ﴿{satir.ayet.no}﴾
-                      </span>
+                      />
                       {satir.ayet.kelimeler.map((k, ki) => (
                         <span
                           key={ki}

@@ -17,11 +17,18 @@ import {
 
 // Arapça font listesi
 const ARAPCA_FONTLAR = [
-  { id: "kfgqpc", label: "KFGQPC Uthmanic (Mushaf)", style: "'KFGQPC Uthmanic', serif", google: null },
+  // === RESMİ MUSHAF FONTLARI ===
+  { id: "kfgqpc", label: "KFGQPC Uthmanic (Mushaf)", style: "'KFGQPC Uthmanic', 'KFGQPC Uthmanic Script', serif", google: null },
+  { id: "osman-taha", label: "Osman Taha (Mushaf)", style: "'Osman Taha', 'Ottoman Script', serif", google: null },
+  
+  // === KLASİK NASKH FONTLARI ===
   { id: "amiri", label: "Amiri", style: "'Amiri', serif", google: "Amiri:ital,wght@0,400;0,700;1,400" },
   { id: "scheherazade", label: "Scheherazade New", style: "'Scheherazade New', serif", google: "Scheherazade+New:wght@400;700" },
+  
+  // === MODERN ARAPÇA FONTLARI ===
   { id: "noto-arabic", label: "Noto Sans Arabic", style: "'Noto Sans Arabic', sans-serif", google: "Noto+Sans+Arabic:wght@400;600" },
   { id: "reem-kufi", label: "Reem Kufi", style: "'Reem Kufi', sans-serif", google: "Reem+Kufi:wght@400;600" },
+  { id: "hasenat", label: "Hasenat", style: "'Hasenat', 'Hasenat Font', serif", google: null },
 ]
 
 // Özel tema sabitleri
@@ -384,6 +391,7 @@ const TemaPanel = temaAcik && (
         { id: "light",  label: "Açık",   renk: "#ffffff", aciklama: "Sade beyaz arka plan" },
         { id: "dark",   label: "Koyu",   renk: "#1a1a2e", aciklama: "Koyu mavi gece modu" },
         { id: "night",  label: "Gece",   renk: "#0d0d0d", aciklama: "Tam karanlık mod" },
+        { id: "coffee",  label: "Kahve",   renk: "#251b04", aciklama: "Koyu kahve tonları" },
         { id: "custom", label: "Özel",   renk: customTheme?.background || "#888", aciklama: "Kişisel renk ayarları" },
       ].map(t => (
         <button 

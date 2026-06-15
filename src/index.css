@@ -25,6 +25,55 @@
   font-weight: bold;
 }
 
+/* ============================================
+   KUR'AN-ı KERİM ÖZEL FONTLARI
+   ============================================ */
+
+/* 1. KFGQPC Uthmanic - Resmi Medine Mushafı */
+@font-face {
+  font-family: 'KFGQPC Uthmanic';
+  src: url('/fonts/KFGQPC-Uthmanic-Script-HAFS-Regular.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* 2. Osman Taha - Mushaf Hattı (Modern) */
+@font-face {
+  font-family: 'Osman Taha';
+  src: url('/fonts/Osman-Taha-Regular.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* 3. Şeyh Hamdullah - Klasik Osmanlı Hattı */
+@font-face {
+  font-family: 'Shaikh Hamdullah';
+  src: url('/fonts/Shaikh-Hamdullah-Regular.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* 4. Islamic Font */
+@font-face {
+  font-family: 'Islamic Font';
+  src: url('/fonts/Islamic-Font.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* 5. Hasenat */
+@font-face {
+  font-family: 'Hasenat';
+  src: url('/fonts/Hasenat.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
 @font-face {
   font-family: 'ArabicCustom';
   src: url('/fonts/arabic.otf') format('opentype');

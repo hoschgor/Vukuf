@@ -39,7 +39,18 @@ export const themes = {
     lugatHighlight: "#d4a054",
     border: "#2a2a2a",
   },
+  coffee: {
+    name: "Kahve",
+    background: "#0d0d0d",
+    surface: "#1a100a",
+    text: "#999999",
+    textSecondary: "#6b5b4e",
+    accent: "#8b5e3c",
+    lugatHighlight: "#c41e3a",
+    border: "#8b5e3c",
+  },
 }
+
 
 export const defaultTheme = "sepia"
 export const defaultCustomTheme = {

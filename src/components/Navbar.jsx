@@ -8,6 +8,7 @@ const temaAciklamalari = {
   light: "Sade beyaz arka plan",
   dark: "Koyu mavi gece modu",
   night: "Tam karanlık mod",
+  night2: "ekstra",
   custom: "Kişisel renk ayarları",
 }
 
@@ -47,6 +48,7 @@ export default function Navbar() {
     { id: "light", label: "Açık", renk: "#ffffff" },
     { id: "dark", label: "Koyu", renk: "#1a1a2e" },
     { id: "night", label: "Gece", renk: "#0d0d0d" },
+    { id: "coffee", label: "Kahve", renk: "#0d0d0d" },
     { id: "custom", label: "Özel", renk: customTheme.background },
   ]
 

@@ -32,6 +32,15 @@
   font-style: normal;
 }
 
+/* KFGQPC Uthmanic Script - Resmi Mushaf Fontu */
+@font-face {
+  font-family: 'KFGQPC Uthmanic';
+  src: url('/fonts/KFGQPC Uthmanic Script HAFS Regular.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
 .okuma-icerik {
   -webkit-user-select: none;
   -moz-user-select: none;

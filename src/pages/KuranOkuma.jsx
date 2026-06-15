@@ -15,6 +15,15 @@ import {
   Pencil, Eye, Highlighter,
 } from "lucide-react"
 
+// Arapça font listesi
+const ARAPCA_FONTLAR = [
+  { id: "kfgqpc", label: "KFGQPC Uthmanic (Mushaf)", style: "'KFGQPC Uthmanic', serif", google: null },
+  { id: "amiri", label: "Amiri", style: "'Amiri', serif", google: "Amiri:ital,wght@0,400;0,700;1,400" },
+  { id: "scheherazade", label: "Scheherazade New", style: "'Scheherazade New', serif", google: "Scheherazade+New:wght@400;700" },
+  { id: "noto-arabic", label: "Noto Sans Arabic", style: "'Noto Sans Arabic', sans-serif", google: "Noto+Sans+Arabic:wght@400;600" },
+  { id: "reem-kufi", label: "Reem Kufi", style: "'Reem Kufi', sans-serif", google: "Reem+Kufi:wght@400;600" },
+]
+
 // Özel tema sabitleri
 const PALET_ALANLARI = [
   { key: "background", label: "Ana Arka Plan" },
@@ -99,6 +108,14 @@ export default function KuranOkuma({ kitap }) {
   })
   const [aktifRenk, setAktifRenk] = useState(null)
 
+// ── Arapça font seçimi
+const [arapcaFontId, setArapcaFontId] = useState(() => {
+  const kayitli = localStorage.getItem("vukuf-kuran-arapca-font")
+  return kayitli || "scheherazade"
+})
+const [fontSeciciAcik, setFontSeciciAcik] = useState(false)
+const aktifArapcaFont = ARAPCA_FONTLAR.find(f => f.id === arapcaFontId) || ARAPCA_FONTLAR[0]
+
   // ── Otomatik kaydırma
   const [otomatikKaydirma, setOtomatikKaydirma] = useState(false)
   const [kaydirmaHizi, setKaydirmaHizi] = useState(1)
@@ -113,8 +130,6 @@ export default function KuranOkuma({ kitap }) {
   const [menuArama, setMenuArama] = useState("")
   const [acikSure, setAcikSure] = useState(null)
   const [ayetArama, setAyetArama] = useState({})
-
-  // ... devamı aynen kalır
   
 
   // ── localStorage kayıt
@@ -135,6 +150,22 @@ export default function KuranOkuma({ kitap }) {
     }, 1000)
     return () => clearInterval(sureSayacRef.current)
   }, [])
+
+// Arapça font yükleme
+useEffect(() => {
+  const font = ARAPCA_FONTLAR.find(f => f.id === arapcaFontId)
+  if (font?.google) {
+    const linkId = `kuran-font-${arapcaFontId}`
+    if (!document.getElementById(linkId)) {
+      const link = document.createElement("link")
+      link.id = linkId
+      link.rel = "stylesheet"
+      link.href = `https://fonts.googleapis.com/css2?family=${font.google}&display=swap`
+      document.head.appendChild(link)
+    }
+  }
+  localStorage.setItem("vukuf-kuran-arapca-font", arapcaFontId)
+}, [arapcaFontId])
 
   // ── Bar zamanlayıcı
   const barGoster = useCallback(() => {
@@ -278,23 +309,67 @@ export default function KuranOkuma({ kitap }) {
     </div>
   )
 
-  // ── Aa Paneli
-  const AaPanel = aaAcik && (
-    <>
-      <div onClick={() => setAaAcik(false)} style={{ position: "fixed", inset: 0, zIndex: 95 }} />
-      <div style={{ ...panelStil("center"), width: "280px" }}>
-        <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px" }}>YAZI BOYUTU</div>
-        <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "14px" }}>
-          <button onClick={() => setYaziBoyutu(Math.max(12, yaziBoyutu - 1))} style={barButonStil()}><Minus size={14} /></button>
-          <div style={{ flex: 1, textAlign: "center" }}>
-            <span style={{ fontSize: `${Math.min(yaziBoyutu, 22)}px`, color: theme.text }}>Aa</span>
-            <span style={{ fontSize: "11px", color: theme.textSecondary, marginLeft: "6px" }}>{yaziBoyutu}px</span>
-          </div>
-          <button onClick={() => setYaziBoyutu(Math.min(32, yaziBoyutu + 1))} style={barButonStil()}><Plus size={14} /></button>
+// ── Aa Paneli (kaydırılabilir versiyon)
+const AaPanel = aaAcik && (
+  <>
+    <div onClick={() => setAaAcik(false)} style={{ position: "fixed", inset: 0, zIndex: 95 }} />
+    <div style={{ ...panelStil("center"), width: "300px", maxHeight: "80vh", overflowY: "auto" }}>
+      <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px" }}>YAZI BOYUTU</div>
+      <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "20px" }}>
+        <button onClick={() => setYaziBoyutu(Math.max(12, yaziBoyutu - 1))} style={barButonStil()}><Minus size={14} /></button>
+        <div style={{ flex: 1, textAlign: "center" }}>
+          <span style={{ fontSize: `${Math.min(yaziBoyutu, 28)}px`, color: theme.text }}>Aa</span>
+          <span style={{ fontSize: "11px", color: theme.textSecondary, marginLeft: "6px" }}>{yaziBoyutu}px</span>
         </div>
+        <button onClick={() => setYaziBoyutu(Math.min(32, yaziBoyutu + 1))} style={barButonStil()}><Plus size={14} /></button>
       </div>
-    </>
-  )
+
+      <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px" }}>YAZI TİPİ</div>
+      <div style={{ position: "relative", marginBottom: "16px" }}>
+        <button
+          onClick={() => setFontSeciciAcik(!fontSeciciAcik)}
+          style={{
+            width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
+            padding: "8px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`,
+            background: theme.background, color: theme.text, fontSize: "13px", cursor: "pointer",
+          }}
+        >
+          <span style={{ fontFamily: aktifArapcaFont.style }}>
+            {aktifArapcaFont.label}
+          </span>
+          <ChevronDown size={14} color={theme.textSecondary} />
+        </button>
+
+        {fontSeciciAcik && (
+          <>
+            <div onClick={() => setFontSeciciAcik(false)} style={{ position: "fixed", inset: 0, zIndex: 96 }} />
+            <div style={{
+              position: "absolute", top: "100%", left: 0, right: 0, marginTop: "4px",
+              background: theme.surface, border: `1px solid ${theme.border}`, borderRadius: "10px",
+              zIndex: 97, overflow: "hidden", boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+              maxHeight: "200px", overflowY: "auto",  // ← BURASI ÖNEMLİ
+            }}>
+              {ARAPCA_FONTLAR.map(font => (
+                <button
+                  key={font.id}
+                  onClick={() => { setArapcaFontId(font.id); setFontSeciciAcik(false) }}
+                  style={{
+                    width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
+                    padding: "8px 12px", border: "none", background: arapcaFontId === font.id ? `${theme.accent}15` : "transparent",
+                    cursor: "pointer", borderBottom: `1px solid ${theme.border}`,
+                  }}
+                >
+                  <span style={{ fontFamily: font.style, fontSize: "13px", color: theme.text }}>{font.label}</span>
+                  <span style={{ fontFamily: font.style, fontSize: "14px", color: theme.textSecondary }}>بسم</span>
+                </button>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  </>
+)
 
   // TEMA PANELİ
 // ════════════════════════════════════════════════════════════════
@@ -504,7 +579,7 @@ const OzelTemaPanel = ozelTemaPanelAcik && (
           fontSize: "14px",
           cursor: "pointer",
           border: "none",
-          fontFamily: "PlayfairDisplay, serif",
+          fontFamily: ARAPCA_FONTLAR.find(f => f.id === arapcaFontId)?.style,
         }}
       >
         Temayı Kaydet
@@ -792,7 +867,7 @@ const OzelTemaPanel = ozelTemaPanelAcik && (
             height: `${virtualizer.getTotalSize()}px`,
             position: "relative",
             direction: "rtl",
-            fontFamily: "ArabicCustom, Scheherazade New, serif",
+            fontFamily: ARAPCA_FONTLAR.find(f => f.id === arapcaFontId)?.style,
             maxWidth: "680px",
             margin: "0 auto",
           }}>

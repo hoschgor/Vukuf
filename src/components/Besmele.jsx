@@ -97,7 +97,7 @@ export default function Besmele({ theme, sureId, sureNo, ayetSayisi, player }) {
       textAlign: "center",
       direction: "rtl",
       // 📱 Mobilde padding ekle
-      margin: isMobile ? "4px 0 8px" : "46px 0 8px",
+      margin: isMobile ? "0px 0 4px" : "0px 0 0px",
       padding: isMobile ? "0px 0px" : "0", // Mobilde iç boşluk
       position: "relative",
     }}>
@@ -172,20 +172,22 @@ export default function Besmele({ theme, sureId, sureNo, ayetSayisi, player }) {
 
         {/* Ses butonu — SVG içinde foreignObject ile */}
         {player && (
-          <foreignObject 
-            x={isMobile ? w - 50 : w - 58} 
-            y={h/2 - 11} 
-            width="22" 
-            height="22"
+          <foreignObject
+            x={isMobile ? "70%" : "135%"}   // Yüzdelik konum (mobilde daha solda)
+            y={isMobile ? "20%" : "100%"}
+            width="5%"                     // Yüzdelik boyut (ekranla orantılı)
+            height="4%"                    // Yüzdelik boyut (ekranla orantılı)
+            style={{ overflow: "visible", transform: "translate(-50%, -50%)" }}
           >
             <button
               onClick={sesTikla}
               title={caliniyor ? "Duraklat" : "Sureyi dinle"}
               style={{
-                width: "22px",
-                height: "22px",
+                width: "100%",
+                height: "100%",
+                aspectRatio: "1/1",
                 borderRadius: "50%",
-                border: `1px solid ${ac}40`,
+                border: `1.5px solid ${ac}40`,
                 background: caliniyor ? ac : `${ac}18`,
                 color: caliniyor ? "#fff" : ac,
                 cursor: "pointer",
@@ -193,15 +195,16 @@ export default function Besmele({ theme, sureId, sureNo, ayetSayisi, player }) {
                 alignItems: "center",
                 justifyContent: "center",
                 padding: 0,
+                margin: 0,
                 transition: "all 0.15s",
-                // 📱 Mobilde butonu daha görünür yap
-                transform: isMobile ? "scale(1.1)" : "scale(1)",
+                boxShadow: "none",
+                transform: "scale(1)",
+                position: "relative",
+                zIndex: 10,
+                fontSize: "clamp(8px, 1.2vw, 14px)", // Otomatik icon boyutu
               }}
             >
-              {caliniyor
-                ? <Pause size={isMobile ? 12 : 10} />
-                : <Play size={isMobile ? 12 : 10} />
-              }
+              {caliniyor ? <Pause size="1em" /> : <Play size="1em" />}
             </button>
           </foreignObject>
         )}

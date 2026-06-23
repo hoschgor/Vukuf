@@ -131,7 +131,7 @@ export default function Hakkinda() {
           )}
           
           <p style={{ marginBottom: "20px", color: theme.textSecondary, fontSize: "14px" }}>
-            Vukuf, İslam Âlimlerinin, istifade edileceği ümit edilen seçkin eserlerini ve islâmî diğer eserleri kolaylıkla okuyabilmeyi ve inceleyebilmeyi amaçlanarak derlenmiştir. 
+            Vukuf, İslam Âlimlerinin, istifade edileceği ümit edilen seçkin eserlerini ve islâmî diğer eserleri kolaylıkla okuyabilmeyi ve inceleyebilmeyi amaçlanarak derlenmiştir, herhangi bir ticari amacı yoktur. 
           </p>
 
           <p style={{ 

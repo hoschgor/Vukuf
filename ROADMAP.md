@@ -35,8 +35,8 @@ Proje dizini: `/home/hosgoer/Projeler/vukuf/src`
 | Dosya | Hedef Konum | Durum |
 |-------|-------------|-------|
 | `kuran_mushaf_hazirla.py` | `src/data/kuran_mushaf_hazirla.py` | ✅ Hazır |
-| `kuran-mushaf.json` | `src/data/kuran-mushaf.json` | 🔲 Sırada |
-| `sayfa-harita.json` | `src/data/sayfa-harita.json` | 🔲 Sırada |
+| `kuran-mushaf.json` | `src/data/kuran-mushaf.json` | ✅ Hazır |
+| `sayfa-harita.json` | `src/data/sayfa-harita.json` | ✅ Hazır |
 
 ### Aşama 4 — Mushaf Layout
 | Dosya | Hedef Konum | Durum |

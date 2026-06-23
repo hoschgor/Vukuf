@@ -1,5 +1,6 @@
 // components/Besmele.jsx
 import { Play, Pause, Volume2 } from "lucide-react"
+import { useMediaQuery } from '../data/hooks/useMediaQuery' // Mobil tespiti için
 
 /**
  * Besmele
@@ -14,6 +15,9 @@ import { Play, Pause, Volume2 } from "lucide-react"
 export default function Besmele({ theme, sureId, sureNo, ayetSayisi, player }) {
   if (sureId === 9) return null
 
+  // 📱 Mobil kontrolü
+  const isMobile = useMediaQuery('(max-width: 768px)')
+  
   const ac = theme.accent
   const w = 500
   const h = 52
@@ -92,13 +96,20 @@ export default function Besmele({ theme, sureId, sureNo, ayetSayisi, player }) {
     <div style={{
       textAlign: "center",
       direction: "rtl",
-      margin: "46px 0 8px",
+      // 📱 Mobilde padding ekle
+      margin: isMobile ? "4px 0 8px" : "46px 0 8px",
+      padding: isMobile ? "0px 0px" : "0", // Mobilde iç boşluk
       position: "relative",
     }}>
       <svg
         width="100%"
         viewBox="0 0 500 52"
         preserveAspectRatio="xMidYMid meet"
+        style={{
+          // 📱 Mobilde SVG boyutunu küçült
+          maxWidth: isMobile ? "100%" : "100%",
+          margin: "0 auto",
+        }}
       >
         <defs>
           <linearGradient id="besmeleGrad" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -151,7 +162,8 @@ export default function Besmele({ theme, sureId, sureNo, ayetSayisi, player }) {
           x={w/2} y={h/2 + 7}
           textAnchor="middle"
           fontFamily="'Scheherazade New', 'Traditional Arabic', 'Noto Naskh Arabic', serif"
-          fontSize="18" fontWeight="500"
+          fontSize={isMobile ? "16" : "18"} // 📱 Mobilde yazı boyutunu küçült
+          fontWeight="500"
           fill={ac} fillOpacity="0.7"
           direction="rtl"
         >
@@ -160,7 +172,12 @@ export default function Besmele({ theme, sureId, sureNo, ayetSayisi, player }) {
 
         {/* Ses butonu — SVG içinde foreignObject ile */}
         {player && (
-          <foreignObject x={w - 58} y={h/2 - 11} width="22" height="22">
+          <foreignObject 
+            x={isMobile ? w - 50 : w - 58} 
+            y={h/2 - 11} 
+            width="22" 
+            height="22"
+          >
             <button
               onClick={sesTikla}
               title={caliniyor ? "Duraklat" : "Sureyi dinle"}
@@ -177,11 +194,13 @@ export default function Besmele({ theme, sureId, sureNo, ayetSayisi, player }) {
                 justifyContent: "center",
                 padding: 0,
                 transition: "all 0.15s",
+                // 📱 Mobilde butonu daha görünür yap
+                transform: isMobile ? "scale(1.1)" : "scale(1)",
               }}
             >
               {caliniyor
-                ? <Pause size={10} />
-                : <Play size={10} />
+                ? <Pause size={isMobile ? 12 : 10} />
+                : <Play size={isMobile ? 12 : 10} />
               }
             </button>
           </foreignObject>

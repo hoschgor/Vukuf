@@ -238,11 +238,19 @@ export default function KuranOkuma({ kitap }) {
   // Virtualizer Kısmı
   // ════════════════════════════════════════════════════════════════
 
+  // ════════════════════════════════════════════════════════════════
+  // Virtualizer Kısmı (DÜZELTİLMİŞ)
+  // ════════════════════════════════════════════════════════════════
+
   // ── SAYFA LİSTESİ ──
   const sayfaListesi = useMemo(() => {
-    if (!sayfaMap || sayfaMap.size === 0) return []
+    if (!sayfaMap || sayfaMap.size === 0) {
+      console.warn('⚠️ sayfaMap boş!')
+      return []
+    }
     
     const sayfaNolari = Array.from(sayfaMap.keys()).sort((a, b) => a - b)
+    console.log('📄 Sayfa listesi:', sayfaNolari.length, 'sayfa')
     
     return sayfaNolari.map(sayfaNo => ({
       tip: "sayfa",
@@ -253,9 +261,13 @@ export default function KuranOkuma({ kitap }) {
 
   // ── SAYFA YÜKSEKLİKLERİ (Dinamik) ──
   const sayfaYukseklikleri = useMemo(() => {
-    if (!sayfaListesi.length) return []
+    if (!sayfaListesi.length) {
+      console.warn('⚠️ sayfaListesi boş, yükseklik hesaplanamıyor')
+      return []
+    }
     
-    const isMobile = window.innerWidth <= 768
+    // ⬇️ useMediaQuery'den gelen isMobile'i kullan
+    const mobile = isMobile
     
     return sayfaListesi.map((sayfa) => {
       const elemanlar = sayfa.elemanlar
@@ -265,31 +277,32 @@ export default function KuranOkuma({ kitap }) {
       const baslikVar = elemanlar.some(el => el.tip === "sure-baslik")
       const besmeleVar = elemanlar.some(el => el.tip === "besmele")
       
-      const fontBoyutu = isMobile ? yaziBoyutu : yaziBoyutu + 2
-      const lineHeight = isMobile ? 2.2 : 2.0
+      const fontBoyutu = mobile ? yaziBoyutu : yaziBoyutu + 2
+      const lineHeight = mobile ? 2.2 : 2.0
       
       const satirYuksekligi = fontBoyutu * lineHeight
-      const kelimeSatirSayisi = Math.ceil(kelimeSayisi / (isMobile ? 14 : 18))
+      const kelimeSatirSayisi = Math.ceil(kelimeSayisi / (mobile ? 14 : 18))
       const kelimeYuksekligi = kelimeSatirSayisi * satirYuksekligi
-      const ayetYuksekligi = ayetSayisi * (isMobile ? 22 : 25)
-      const baslikYuksekligi = baslikVar ? (isMobile ? 60 : 90) : 0
-      const besmeleYuksekligi = besmeleVar ? (isMobile ? 35 : 50) : 0
+      const ayetYuksekligi = ayetSayisi * (mobile ? 22 : 25)
+      const baslikYuksekligi = baslikVar ? (mobile ? 60 : 90) : 0
+      const besmeleYuksekligi = besmeleVar ? (mobile ? 35 : 50) : 0
       
-      const padding = isMobile ? 30 : 50
-      const between = isMobile ? 4 : 8
+      const padding = mobile ? 30 : 50
+      const between = mobile ? 4 : 8
       
       let toplam = padding + between + baslikYuksekligi + besmeleYuksekligi + kelimeYuksekligi + ayetYuksekligi
       
-      return Math.max(toplam, isMobile ? 150 : 220)
+      return Math.max(toplam, mobile ? 150 : 220)
     })
-  }, [sayfaListesi, yaziBoyutu])
+  }, [sayfaListesi, yaziBoyutu, isMobile])  // ⬇️ isMobile eklendi
 
   // ── VIRTUALIZER ──
   const virtualizer = useVirtualizer({
     count: sayfaListesi.length,
     getScrollElement: () => scrollRef.current,
     estimateSize: (index) => {
-      return sayfaYukseklikleri[index] || (isMobile ? 400 : 600)
+      const height = sayfaYukseklikleri[index] || (isMobile ? 400 : 600)
+      return height
     },
     overscan: 5,
   })

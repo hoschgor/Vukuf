@@ -1,5 +1,4 @@
-import { useRef, useState } from "react"
-import { useMediaQuery } from "../data/hooks/useMediaQuery"
+import { useRef } from "react"
 
 /**
  * MushafKelime
@@ -29,8 +28,6 @@ export default function MushafKelime({
   onTikla,
 }) {
   const ref = useRef(null)
-  const [hover, setHover] = useState(false)
-  const isMobile = useMediaQuery("(max-width: 768px)")
 
   // Vakıf ve secde renkleri
   const vakifRenkleri = {
@@ -46,61 +43,53 @@ export default function MushafKelime({
     ? (vakifRenkleri[kelime.vakif] || theme.accent) 
     : null
 
-  // 📱 Mobil ve masaüstü için ayrı font boyutu
-  const fontBoyutu = isMobile ? yaziBoyutu * 0.95 : yaziBoyutu
-  const satirYuksekligi = isMobile ? 2.2 : 2.2
-
   // ⬇️ Vakıf işaretini kelimenin SON harfinin ÜZERİNE koy
-  // Mobilde daha yakın, masaüstünde normal
+  // top değeri: 0 = kelimeyle aynı hizada, negatif = yukarıda
+  // right değeri: kelimenin sağına kaydırma
   const vakifKonumu = {
-    top: isMobile 
-      ? `-${fontBoyutu * 0.15}px`    // ← Mobilde daha yakın
-      : `-${fontBoyutu * 0.3}px`,    // ← Masaüstü normal
-    right: `-${fontBoyutu * 0.05}px`,
-    fontSize: isMobile 
-      ? `${fontBoyutu * 0.45}px`     // ← Mobilde daha küçük
-      : `${fontBoyutu * 0.55}px`,
+    top: `-${yaziBoyutu * 0.35}px`,    // ← Kelimenin hemen üzerinde
+    right: `-${yaziBoyutu * 0.1}px`,    // ← Sağa hafif kayık
+    fontSize: `${yaziBoyutu * 0.55}px`, // ← Kelimenin yarısı kadar
   }
 
   // Secde işareti konumu (vakıf varsa onun da üstünde)
   const secdeKonumu = {
     top: kelime.vakif 
-      ? `-${fontBoyutu * 0.45}px`      
-      : `-${fontBoyutu * 0.25}px`,
-    right: `-${fontBoyutu * 0.05}px`,
-    fontSize: isMobile 
-      ? `${fontBoyutu * 0.35}px` 
-      : `${fontBoyutu * 0.45}px`,
+      ? `-${yaziBoyutu * 0.55}px`      // ← Vakıf varsa daha yukarıda
+      : `-${yaziBoyutu * 0.35}px`,      // ← Vakıf yoksa kelimenin üzerinde
+    right: kelime.vakif 
+      ? `-${yaziBoyutu * 0.05}px` 
+      : `-${yaziBoyutu * 0.1}px`,
+    fontSize: `${yaziBoyutu * 0.45}px`,
   }
 
   return (
     <span
       ref={ref}
       onClick={(e) => onTikla?.(kelime, e)}
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
       style={{
         position: "relative",
         display: "inline-block",
         cursor: "pointer",
-        padding: kelime.vakif || kelime.secde 
-          ? (isMobile ? "2px 4px" : "4px 6px") 
-          : (isMobile ? "0 1px" : "0 2px"),
-        margin: kelime.vakif || kelime.secde 
-          ? (isMobile ? "2px 0" : "8px 0") 
-          : "0",
+        padding: kelime.vakif || kelime.secde ? "4px 6px" : "0 2px",
+        margin: kelime.vakif || kelime.secde ? "8px 0" : "0",
         borderRadius: "4px",
-        background: aktif ? `${theme.accent}20` : (hover ? `${theme.accent}08` : "transparent"),
+        background: aktif ? `${theme.accent}20` : "transparent",
         transition: "all 0.2s ease",
         borderBottom: aktif ? `2px solid ${theme.accent}` : "none",
         transform: aktif ? "scale(1.02)" : "scale(1)",
-        // 📱 Mobilde satır yüksekliği
-        lineHeight: satirYuksekligi,
-        fontSize: `${fontBoyutu}px`,
-        fontFamily: arapcaFont,
-        color: theme.text,
       }}
       className="mushaf-kelime"
+      onMouseEnter={(e) => {
+        if (kelime.vakif || kelime.secde) {
+          e.currentTarget.style.background = `${theme.accent}08`
+        }
+      }}
+      onMouseLeave={(e) => {
+        if (!aktif) {
+          e.currentTarget.style.background = "transparent"
+        }
+      }}
     >
       {/* ── VAKIF İŞARETİ ── */}
       {kelime.vakif && (
@@ -116,13 +105,10 @@ export default function MushafKelime({
             lineHeight: 1,
             pointerEvents: "none",
             whiteSpace: "nowrap",
-            opacity: hover ? 1 : 0.85,
+            opacity: 0.85,
             transition: "all 0.2s ease",
-            textShadow: hover 
-              ? `0 0 12px ${vakifRengi}50` 
-              : `0 0 8px ${vakifRengi}30`,
+            textShadow: `0 0 8px ${vakifRengi}30`,
             zIndex: 5,
-            transform: hover ? "scale(1.15)" : "scale(1)",
           }}
           title={`Vakıf işareti: ${kelime.vakif}`}
         >
@@ -159,9 +145,9 @@ export default function MushafKelime({
       <span
         style={{
           fontFamily: arapcaFont,
-          fontSize: `${fontBoyutu}px`,
+          fontSize: `${yaziBoyutu}px`,
           color: theme.text,
-          lineHeight: satirYuksekligi,
+          lineHeight: 2.2,
           userSelect: "none",
           transition: "color 0.2s ease",
           opacity: aktif ? 1 : 0.95,

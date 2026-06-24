@@ -27,23 +27,43 @@ export default function MushafSayfa({
 }) {
   const isMobile = useMediaQuery("(max-width: 768px)")
   
-  // 📱 Responsive ayarlar
-  const responsive = {
-    // Padding
-    paddingX: isMobile ? 16 : 48,
-    paddingY: isMobile ? 4 : 8,
-    
-    // Font
-    fontSize: isMobile ? yaziBoyutu : yaziBoyutu + 2,
-    lineHeight: isMobile ? 2.4 : 2.2,
-    
-    // Boşluklar
-    baslikMargin: isMobile ? 4 : 8,
-    besmeleMargin: isMobile ? 2 : 4,
-    sayfaNumaraMargin: isMobile ? 2 : 6,
-    
-    // Kelime aralığı
-    kelimeGap: isMobile ? 2 : 3,
+  // ── PİXEL BAZINDA BOŞLUK KONTROLÜ ──
+  const PADDING = {
+    // Sayfa içi boşluklar
+    page: {
+      mobile: { top: 2, right: 12, bottom: 2, left: 12 },
+      desktop: { top: 4, right: 36, bottom: 4, left: 36 },
+    },
+    // Sayfa numarası
+    pageNumber: {
+      mobile: { marginBottom: 2, paddingY: 2 },
+      desktop: { marginBottom: 4, paddingY: 4 },
+    },
+    // Sure başlığı
+    baslik: {
+      mobile: { marginBottom: 4 },
+      desktop: { marginBottom: 8 },
+    },
+    // Besmele
+    besmele: {
+      mobile: { marginBottom: 2 },
+      desktop: { marginBottom: 4 },
+    },
+    // Ayet sonu
+    ayetSonu: {
+      mobile: { marginX: 1, marginY: 0 },
+      desktop: { marginX: 2, marginY: 0 },
+    },
+    // Sayfa alt çizgisi
+    footer: {
+      mobile: { marginTop: 4, height: 0.5 },
+      desktop: { marginTop: 8, height: 0.5 },
+    },
+    // Sayfa arası (bir sonraki sayfaya geçiş)
+    between: {
+      mobile: 4,
+      desktop: 8,
+    }
   }
 
   const secdeAyetleriMap = new Map()
@@ -57,15 +77,32 @@ export default function MushafSayfa({
   })
   const secdeAyetleri = [...secdeAyetleriMap.values()]
 
+  // Responsive seçimler
+  const pagePadding = isMobile ? PADDING.page.mobile : PADDING.page.desktop
+  const pageNumber = isMobile ? PADDING.pageNumber.mobile : PADDING.pageNumber.desktop
+  const baslik = isMobile ? PADDING.baslik.mobile : PADDING.baslik.desktop
+  const besmele = isMobile ? PADDING.besmele.mobile : PADDING.besmele.desktop
+  const ayetSonu = isMobile ? PADDING.ayetSonu.mobile : PADDING.ayetSonu.desktop
+  const footer = isMobile ? PADDING.footer.mobile : PADDING.footer.desktop
+  const between = isMobile ? PADDING.between.mobile : PADDING.between.desktop
+
+  // 📱 Responsive font
+  const fontSize = isMobile ? yaziBoyutu : yaziBoyutu + 2
+  const lineHeight = isMobile ? 2.2 : 2.0
+
   return (
     <div
       style={{
         position: "relative",
         width: "100%",
-        maxWidth: "680px",
+        maxWidth: "720px",
         margin: "0 auto",
-        padding: `${responsive.paddingY}px ${responsive.paddingX}px 4px`,
+        paddingTop: pagePadding.top,
+        paddingRight: pagePadding.right,
+        paddingBottom: pagePadding.bottom,
+        paddingLeft: pagePadding.left,
         boxSizing: "border-box",
+        marginBottom: between,
       }}
     >
       {/* ── Sayfa numarası ── */}
@@ -74,23 +111,24 @@ export default function MushafSayfa({
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        gap: "12px",
-        padding: `${responsive.sayfaNumaraMargin}px 0`,
-        marginBottom: responsive.sayfaNumaraMargin,
+        gap: "8px",
+        paddingTop: pageNumber.paddingY,
+        paddingBottom: pageNumber.paddingY,
+        marginBottom: pageNumber.marginBottom,
       }}>
         <div style={{
           flex: 1,
-          maxWidth: isMobile ? "30px" : "60px",
-          height: "1px",
-          background: `${theme.accent}25`,
+          maxWidth: isMobile ? "24px" : "48px",
+          height: "0.5px",
+          background: `${theme.accent}20`,
         }} />
         
         <span style={{
           fontFamily: "'Scheherazade New', serif",
-          fontSize: isMobile ? "10px" : "12px",
+          fontSize: isMobile ? "9px" : "11px",
           color: theme.accent,
-          opacity: 0.5,
-          padding: "0 8px",
+          opacity: 0.4,
+          padding: "0 6px",
           letterSpacing: "1px",
         }}>
           {sayfaNo}
@@ -98,9 +136,9 @@ export default function MushafSayfa({
         
         <div style={{
           flex: 1,
-          maxWidth: isMobile ? "30px" : "60px",
-          height: "1px",
-          background: `${theme.accent}25`,
+          maxWidth: isMobile ? "24px" : "48px",
+          height: "0.5px",
+          background: `${theme.accent}20`,
         }} />
       </div>
 
@@ -125,12 +163,12 @@ export default function MushafSayfa({
           flexWrap: "wrap",
           justifyContent: "flex-start",
           alignItems: "baseline",
-          columnGap: `${responsive.kelimeGap}px`,
+          columnGap: isMobile ? "2px" : "3px",
           rowGap: "0px",
-          // 📱 Sabit satır aralığı
-          lineHeight: responsive.lineHeight,
-          fontSize: responsive.fontSize,
+          fontSize: `${fontSize}px`,
+          lineHeight: lineHeight,
           fontFamily: arapcaFont,
+          color: theme.text,
         }}
       >
         {elemanlar.map((el, idx) => {
@@ -138,7 +176,10 @@ export default function MushafSayfa({
             return (
               <div
                 key={`baslik-${el.sure.id}`}
-                style={{ width: "100%", marginBottom: responsive.baslikMargin }}
+                style={{ 
+                  width: "100%", 
+                  marginBottom: baslik.marginBottom,
+                }}
               >
                 <SureBasligi
                   sure={el.sure}
@@ -154,7 +195,10 @@ export default function MushafSayfa({
             return (
               <div
                 key={`besmele-${el.sure.id}`}
-                style={{ width: "100%", marginBottom: responsive.besmeleMargin }}
+                style={{ 
+                  width: "100%", 
+                  marginBottom: besmele.marginBottom,
+                }}
               >
                 <Besmele
                   theme={theme}
@@ -179,7 +223,7 @@ export default function MushafSayfa({
                 aktif={aktif}
                 theme={theme}
                 arapcaFont={arapcaFont}
-                yaziBoyutu={responsive.fontSize}
+                yaziBoyutu={fontSize}
                 onTikla={(kelime, e) =>
                   onKelimeTikla?.(kelime, el.sure, el.ayet, e)
                 }
@@ -189,7 +233,7 @@ export default function MushafSayfa({
 
           if (el.tip === "ayet-sonu") {
             const arapcaSayi = arapcaRakamla(el.ayet.no)
-            const boyut = responsive.fontSize * 0.7
+            const boyut = fontSize * 0.7
             
             return (
               <span
@@ -201,7 +245,7 @@ export default function MushafSayfa({
                   justifyContent: "center",
                   position: "relative",
                   cursor: "pointer",
-                  margin: "0 2px",
+                  margin: `${ayetSonu.marginY}px ${ayetSonu.marginX}px`,
                   userSelect: "none",
                   opacity: 0.85,
                   verticalAlign: "middle",
@@ -217,12 +261,12 @@ export default function MushafSayfa({
                 >
                   <circle
                     cx="20" cy="20" r="16"
-                    fill={theme.accent} fillOpacity="0.08"
-                    stroke={theme.accent} strokeWidth="1.2" strokeOpacity="0.4"
+                    fill={theme.accent} fillOpacity="0.06"
+                    stroke={theme.accent} strokeWidth="1" strokeOpacity="0.35"
                   />
                   <circle
                     cx="20" cy="20" r="12"
-                    fill="none" stroke={theme.accent} strokeWidth="0.6" strokeOpacity="0.2"
+                    fill="none" stroke={theme.accent} strokeWidth="0.5" strokeOpacity="0.15"
                   />
                   {[0, 45, 90, 135, 180, 225, 270, 315].map((deg, i) => {
                     const rad = (deg * Math.PI) / 180
@@ -235,7 +279,7 @@ export default function MushafSayfa({
                       <line
                         key={i}
                         x1={x1} y1={y1} x2={x2} y2={y2}
-                        stroke={theme.accent} strokeWidth="0.8" strokeOpacity="0.3"
+                        stroke={theme.accent} strokeWidth="0.6" strokeOpacity="0.25"
                       />
                     )
                   })}
@@ -248,8 +292,8 @@ export default function MushafSayfa({
                       return (
                         <circle
                           key={i}
-                          cx={x} cy={y} r="1.2"
-                          fill={theme.accent} fillOpacity="0.3"
+                          cx={x} cy={y} r="1"
+                          fill={theme.accent} fillOpacity="0.25"
                         />
                       )
                     }
@@ -264,8 +308,8 @@ export default function MushafSayfa({
                     return (
                       <circle
                         key={`dot-${i}`}
-                        cx={x} cy={y} r="0.8"
-                        fill={theme.accent} fillOpacity="0.25"
+                        cx={x} cy={y} r="0.6"
+                        fill={theme.accent} fillOpacity="0.2"
                       />
                     )
                   })}
@@ -273,9 +317,9 @@ export default function MushafSayfa({
                     x="20" y="22"
                     textAnchor="middle"
                     fontFamily="'Scheherazade New', serif"
-                    fontSize={isMobile ? "10" : "12"}
+                    fontSize={isMobile ? "9" : "11"}
                     fontWeight="500"
-                    fill={theme.accent} fillOpacity="0.8"
+                    fill={theme.accent} fillOpacity="0.7"
                     dominantBaseline="middle"
                   >
                     {arapcaSayi}
@@ -291,10 +335,11 @@ export default function MushafSayfa({
 
       {/* ── Sayfa alt çizgisi ── */}
       <div style={{
-        marginTop: isMobile ? "4px" : "8px",
-        height: "0.5px",
+        marginTop: footer.marginTop,
+        height: footer.height,
         background: `${theme.border}`,
-        opacity: 0.15,
+        opacity: 0.12,
+        width: "100%",
       }} />
     </div>
   )

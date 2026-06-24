@@ -29,13 +29,39 @@ export default function MushafKelime({
 }) {
   const ref = useRef(null)
 
-  // Vakıf ve secde ikisi aynı anda olabilir
-  // Secde daha üstte, vakıf hemen üstünde durur
-  const ustOffset = kelime.secde && kelime.vakif
-    ? { secde: -38, vakif: -20 }
-    : kelime.secde
-    ? { secde: -24, vakif: null }
-    : { secde: null, vakif: -20 }
+  // Vakıf ve secde renkleri
+  const vakifRenkleri = {
+    'م': '#e74c3c',   // Vakf-ı Lazım
+    'ط': '#e67e22',   // Vakf-ı Mutlak
+    'ج': '#f39c12',   // Vakf-ı Câiz
+    'ص': '#2ecc71',   // Vakf-ı Mücevvez
+    'ق': '#3498db',   // Vakf-ı Murahhas
+    '۩': '#e84393',   // Secde
+  }
+  
+  const vakifRengi = kelime.vakif 
+    ? (vakifRenkleri[kelime.vakif] || theme.accent) 
+    : null
+
+  // ⬇️ Vakıf işaretini kelimenin SON harfinin ÜZERİNE koy
+  // top değeri: 0 = kelimeyle aynı hizada, negatif = yukarıda
+  // right değeri: kelimenin sağına kaydırma
+  const vakifKonumu = {
+    top: `-${yaziBoyutu * 0.0}px`,    // ← Kelimenin hemen üzerinde
+    right: `-${yaziBoyutu * 0.1}px`,    // ← Sağa hafif kayık
+    fontSize: `${yaziBoyutu * 0.55}px`, // ← Kelimenin yarısı kadar
+  }
+
+  // Secde işareti konumu (vakıf varsa onun da üstünde)
+  const secdeKonumu = {
+    top: kelime.vakif 
+      ? `-${yaziBoyutu * 0.55}px`      // ← Vakıf varsa daha yukarıda
+      : `-${yaziBoyutu * 0.35}px`,      // ← Vakıf yoksa kelimenin üzerinde
+    right: kelime.vakif 
+      ? `-${yaziBoyutu * 0.05}px` 
+      : `-${yaziBoyutu * 0.1}px`,
+    fontSize: `${yaziBoyutu * 0.45}px`,
+  }
 
   return (
     <span
@@ -45,75 +71,77 @@ export default function MushafKelime({
         position: "relative",
         display: "inline-block",
         cursor: "pointer",
-        padding: "0 2px",
-        // Üstte işaret varsa boşluk bırak
-        marginTop: (kelime.secde || kelime.vakif) ? "28px" : "0",
-        borderRadius: "3px",
-        background: aktif ? `${theme.accent}25` : "transparent",
-        transition: "background 0.2s",
+        padding: kelime.vakif || kelime.secde ? "4px 6px" : "0 2px",
+        margin: kelime.vakif || kelime.secde ? "8px 0" : "0",
+        borderRadius: "4px",
+        background: aktif ? `${theme.accent}20` : "transparent",
+        transition: "all 0.2s ease",
+        borderBottom: aktif ? `2px solid ${theme.accent}` : "none",
+        transform: aktif ? "scale(1.02)" : "scale(1)",
       }}
       className="mushaf-kelime"
+      onMouseEnter={(e) => {
+        if (kelime.vakif || kelime.secde) {
+          e.currentTarget.style.background = `${theme.accent}08`
+        }
+      }}
+      onMouseLeave={(e) => {
+        if (!aktif) {
+          e.currentTarget.style.background = "transparent"
+        }
+      }}
     >
-      {/* Secde etiketi */}
-      {kelime.secde && (
-        <span
-          style={{
-            position: "absolute",
-            top: ustOffset.secde,
-            left: "50%",
-            transform: "translateX(-50%)",
-            whiteSpace: "nowrap",
-            fontSize: `${yaziBoyutu * 0.52}px`,
-            color: "#2e7d4f",
-            fontFamily: arapcaFont,
-            lineHeight: 1,
-            pointerEvents: "none",
-            display: "flex",
-            alignItems: "center",
-            gap: "2px",
-          }}
-        >
-          {/* Küçük rozet SVG */}
-          <svg
-            width="10"
-            height="10"
-            viewBox="0 0 24 24"
-            style={{ flexShrink: 0 }}
-          >
-            <path
-              d="M12 2 L14.5 8.5 L21.5 8.5 L16 13 L18.5 20 L12 16 L5.5 20 L8 13 L2.5 8.5 L9.5 8.5 Z"
-              fill="none"
-              stroke="#2e7d4f"
-              strokeWidth="1.5"
-              strokeLinejoin="round"
-            />
-            <circle cx="12" cy="11" r="2.5" fill="#2e7d4f" />
-          </svg>
-          {kelime.secde}
-        </span>
-      )}
-
-      {/* Vakıf işareti */}
+      {/* ── VAKIF İŞARETİ ── */}
       {kelime.vakif && (
         <span
           style={{
             position: "absolute",
-            top: ustOffset.vakif,
-            left: "50%",
-            transform: "translateX(-50%)",
-            fontSize: `${yaziBoyutu * 0.6}px`,
-            color: theme.accent,
-            fontFamily: "'Scheherazade New', serif",
+            top: vakifKonumu.top,
+            right: vakifKonumu.right,
+            fontSize: vakifKonumu.fontSize,
+            color: vakifRengi,
+            fontFamily: "'Scheherazade New', 'Traditional Arabic', serif",
+            fontWeight: "bold",
             lineHeight: 1,
             pointerEvents: "none",
             whiteSpace: "nowrap",
+            opacity: 0.85,
+            transition: "all 0.2s ease",
+            textShadow: `0 0 8px ${vakifRengi}30`,
+            zIndex: 5,
           }}
+          title={`Vakıf işareti: ${kelime.vakif}`}
         >
           {kelime.vakif}
         </span>
       )}
 
-      {/* Arapça metin */}
+      {/* ── SECDE İŞARETİ ── */}
+      {kelime.secde && (
+        <span
+          style={{
+            position: "absolute",
+            top: secdeKonumu.top,
+            right: secdeKonumu.right,
+            fontSize: secdeKonumu.fontSize,
+            color: '#e84393',
+            fontFamily: "'Scheherazade New', serif",
+            fontWeight: "bold",
+            lineHeight: 1,
+            pointerEvents: "none",
+            whiteSpace: "nowrap",
+            opacity: 0.85,
+            transition: "all 0.2s ease",
+            textShadow: `0 0 8px #e8439330`,
+            zIndex: 6,
+          }}
+          title="Secde ayeti"
+        >
+          ۩
+        </span>
+      )}
+
+      {/* ── ARAPÇA METİN ── */}
       <span
         style={{
           fontFamily: arapcaFont,
@@ -121,6 +149,8 @@ export default function MushafKelime({
           color: theme.text,
           lineHeight: 2.2,
           userSelect: "none",
+          transition: "color 0.2s ease",
+          opacity: aktif ? 1 : 0.95,
         }}
       >
         {kelime.arabic}

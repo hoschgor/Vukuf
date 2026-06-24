@@ -1,11 +1,12 @@
 // ════════════════════════════════════════════════════════════════
-// KuranOkuma.jsx — Parça 1: Import, Sabitler, State, Effect, Veri
+// KuranOkuma.jsx — Tam Dosya (Virtualizer ile)
 // Konum: src/pages/KuranOkuma.jsx
 // ════════════════════════════════════════════════════════════════
 
 import { useState, useEffect, useRef, useCallback, useMemo } from "react"
 import { useNavigate } from "react-router-dom"
 import { useApp } from "../AppContext"
+import { useVirtualizer } from "@tanstack/react-virtual"
 import arapcaLugat from "../data/arapca-lugat.json"
 import ayetMeal from "../data/ayet-meal.json"
 import sayfaHaritaJson from "../data/sayfa-harita.json"
@@ -95,6 +96,7 @@ export default function KuranOkuma({ kitap }) {
   } = useApp()
   const navigate  = useNavigate()
   const isMobile  = useMediaQuery("(max-width: 768px)")
+  const scrollRef = useRef(null)
   const barZamanRef  = useRef(null)
   const sureSayacRef = useRef(null)
 
@@ -106,7 +108,6 @@ export default function KuranOkuma({ kitap }) {
   const [yukleniyor, setYukleniyor] = useState(true)
 
   // ── Popup: kelime veya ayet
-  // tip: "kelime" | "ayet" | null
   const [popup, setPopup] = useState(null)
 
   // ── Sayfa navigasyonu
@@ -168,7 +169,6 @@ export default function KuranOkuma({ kitap }) {
   // EFFECT'LER
   // ════════════════════════════════════════════════════════════════
 
-  // localStorage kayıt
   useEffect(() => { localStorage.setItem("vukuf-yazi-boyutu",       String(yaziBoyutu))     }, [yaziBoyutu])
   useEffect(() => { localStorage.setItem("vukuf-bar-konum",         barKonum)               }, [barKonum])
   useEffect(() => { localStorage.setItem("vukuf-sade-mod",          String(sadeMode))       }, [sadeMode])
@@ -176,7 +176,6 @@ export default function KuranOkuma({ kitap }) {
   useEffect(() => { localStorage.setItem("vukuf-gizleme-suresi",    String(gizlemeSuresi))  }, [gizlemeSuresi])
   useEffect(() => { localStorage.setItem("vukuf-son-sayfa",         String(mevcutSayfa))    }, [mevcutSayfa])
 
-  // Okuma süresi sayacı
   useEffect(() => {
     sureSayacRef.current = setInterval(() => {
       setBugunSure(prev => {
@@ -188,7 +187,6 @@ export default function KuranOkuma({ kitap }) {
     return () => clearInterval(sureSayacRef.current)
   }, [])
 
-  // Arapça font yükleme (Google Fonts)
   useEffect(() => {
     const font = ARAPCA_FONTLAR.find(f => f.id === arapcaFontId)
     if (font?.google) {
@@ -204,7 +202,6 @@ export default function KuranOkuma({ kitap }) {
     localStorage.setItem("vukuf-kuran-arapca-font", arapcaFontId)
   }, [arapcaFontId])
 
-  // Bar otomatik gizleme
   const barGoster = useCallback(() => {
     setBarGorunur(true)
     if (barZamanRef.current) clearTimeout(barZamanRef.current)
@@ -215,7 +212,6 @@ export default function KuranOkuma({ kitap }) {
 
   useEffect(() => { barGoster() }, [])
 
-  // kuran-mushaf.json yükle
   useEffect(() => {
     fetch("/kuran-mushaf.json")
       .then(r => r.json())
@@ -227,16 +223,8 @@ export default function KuranOkuma({ kitap }) {
   // VERİ HAZIRLAMA
   // ════════════════════════════════════════════════════════════════
 
-  // useMushaf: sayfaMap ve sureler
   const { sayfaMap, sureler, toplamSayfa } = useMushaf(mushafData, sayfaHaritaJson)
 
-  // Aktif sayfa elemanları
-  const mevcutSayfaElemanlar = useMemo(() =>
-    sayfaMap.get(mevcutSayfa) || [],
-    [sayfaMap, mevcutSayfa]
-  )
-
-  // Sure menüsü için filtrelenmiş liste
   const filtreliSureler = useMemo(() => {
     if (!menuArama) return sureler
     return sureler.filter(s =>
@@ -244,6 +232,60 @@ export default function KuranOkuma({ kitap }) {
       String(s.id).includes(menuArama)
     )
   }, [sureler, menuArama])
+
+  // ════════════════════════════════════════════════════════════════
+  // SAYFA LİSTESİ (Virtualizer için)
+  // ════════════════════════════════════════════════════════════════
+
+  const sayfaListesi = useMemo(() => {
+    if (!sayfaMap || sayfaMap.size === 0) return []
+    
+    const sayfaNolari = Array.from(sayfaMap.keys()).sort((a, b) => a - b)
+    return sayfaNolari.map(sayfaNo => ({
+      tip: "sayfa",
+      sayfaNo,
+      elemanlar: sayfaMap.get(sayfaNo) || [],
+    }))
+  }, [sayfaMap])
+
+  // ════════════════════════════════════════════════════════════════
+  // VIRTUALIZER
+  // ════════════════════════════════════════════════════════════════
+
+  const sayfaYukseklikleri = useMemo(() => {
+    if (!sayfaListesi.length) return []
+    
+    return sayfaListesi.map((sayfa) => {
+      const elemanlar = sayfa.elemanlar
+      
+      const kelimeSayisi = elemanlar.filter(el => el.tip === "kelime").length
+      const ayetSayisi = elemanlar.filter(el => el.tip === "ayet-sonu").length
+      const baslikVar = elemanlar.some(el => el.tip === "sure-baslik")
+      const besmeleVar = elemanlar.some(el => el.tip === "besmele")
+      
+      // Sabit line-height: 1.8
+      const satirYuksekligi = yaziBoyutu * 5.8
+      const kelimeSatirSayisi = Math.ceil(kelimeSayisi / 18)
+      const kelimeYuksekligi = kelimeSatirSayisi * satirYuksekligi
+      const ayetYuksekligi = ayetSayisi * 25
+      const baslikYuksekligi = baslikVar ? (isMobile ? 70 : 90) : 0
+      const besmeleYuksekligi = besmeleVar ? (isMobile ? 40 : 50) : 0
+      const padding = isMobile ? 10 : 100
+      
+      let toplam = padding + baslikYuksekligi + besmeleYuksekligi + kelimeYuksekligi + ayetYuksekligi
+      
+      return Math.max(toplam, isMobile ? 180 : 250)
+    })
+  }, [sayfaListesi, yaziBoyutu, isMobile])
+
+  const virtualizer = useVirtualizer({
+    count: sayfaListesi.length,
+    getScrollElement: () => scrollRef.current,
+    estimateSize: (index) => {
+      return sayfaYukseklikleri[index] || 800
+    },
+    overscan: 5,
+  })
 
   // ════════════════════════════════════════════════════════════════
   // NAVİGASYON
@@ -263,6 +305,11 @@ export default function KuranOkuma({ kitap }) {
     const n = parseInt(no)
     if (n >= 1 && n <= toplamSayfa) {
       setMevcutSayfa(n)
+      // Virtualizer'ı o sayfaya kaydır
+      const index = sayfaListesi.findIndex(s => s.sayfaNo === n)
+      if (index !== -1) {
+        virtualizer.scrollToIndex(index, { align: "start" })
+      }
       setPopup(null)
     }
   }
@@ -272,6 +319,11 @@ export default function KuranOkuma({ kitap }) {
       ? ayetSayfasi(sureId, ayetNo, sayfaMap)
       : sureBaslangicSayfasi(sureId, sayfaMap)
     setMevcutSayfa(sayfa)
+    // Virtualizer'ı o sayfaya kaydır
+    const index = sayfaListesi.findIndex(s => s.sayfaNo === sayfa)
+    if (index !== -1) {
+      virtualizer.scrollToIndex(index, { align: "start" })
+    }
     setMenuAcik(false)
     setMenuArama("")
     setAcikSure(null)
@@ -319,17 +371,16 @@ export default function KuranOkuma({ kitap }) {
     })
   }, [])
 
-  // ── Panel toggle (aynı anda tek panel)
   function togglePanel(setter, deger) {
     setAaAcik(false); setTemaAcik(false)
     setAyarlarAcik(false); setOzelTemaPanelAcik(false)
     setter(deger)
   }
-// ════════════════════════════════════════════════════════════════
-// KuranOkuma.jsx — Parça 2: Paneller ve Bar
-// ════════════════════════════════════════════════════════════════
 
-  // ── Panel ve bar stil yardımcıları
+  // ════════════════════════════════════════════════════════════════
+  // PANEL ve BAR STİLLERİ
+  // ════════════════════════════════════════════════════════════════
+
   const panelStil = (konum) => ({
     position: "fixed",
     [barKonum === "alt" ? "bottom" : "top"]: "56px",
@@ -355,13 +406,12 @@ export default function KuranOkuma({ kitap }) {
   })
 
   // ════════════════════════════════════════════════════════════════
-  // AA PANELİ — yazı boyutu + font seçimi
+  // AA PANELİ
   // ════════════════════════════════════════════════════════════════
   const AaPanel = aaAcik && (
     <>
       <div onClick={() => setAaAcik(false)} style={{ position: "fixed", inset: 0, zIndex: 195 }} />
       <div style={{ ...panelStil("center"), width: "300px", maxHeight: "80vh", overflowY: "auto", zIndex: 200 }}>
-
         <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px" }}>YAZI BOYUTU</div>
         <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "20px" }}>
           <button onClick={() => setYaziBoyutu(v => Math.max(14, v - 1))} style={barButonStil()}><Minus size={14} /></button>
@@ -371,7 +421,6 @@ export default function KuranOkuma({ kitap }) {
           </div>
           <button onClick={() => setYaziBoyutu(v => Math.min(36, v + 1))} style={barButonStil()}><Plus size={14} /></button>
         </div>
-
         <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px" }}>YAZI TİPİ</div>
         <div style={{ position: "relative", marginBottom: "8px" }}>
           <button
@@ -385,7 +434,6 @@ export default function KuranOkuma({ kitap }) {
             <span style={{ fontFamily: aktifArapcaFont.style }}>{aktifArapcaFont.label}</span>
             <ChevronDown size={14} color={theme.textSecondary} />
           </button>
-
           {fontSeciciAcik && (
             <>
               <div onClick={() => setFontSeciciAcik(false)} style={{ position: "fixed", inset: 0, zIndex: 201 }} />
@@ -484,7 +532,6 @@ export default function KuranOkuma({ kitap }) {
             <X size={18} />
           </button>
         </div>
-
         <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
           {PALET_ALANLARI.map(palet => (
             <div key={palet.key}>
@@ -528,8 +575,6 @@ export default function KuranOkuma({ kitap }) {
             </div>
           ))}
         </div>
-
-        {/* Önizleme */}
         <div style={{
           marginTop: "16px", padding: "12px", borderRadius: "10px",
           background: ozelRenkler.background, border: `1px solid ${ozelRenkler.border}`,
@@ -541,7 +586,6 @@ export default function KuranOkuma({ kitap }) {
             lügat kelimesi
           </span>
         </div>
-
         <button
           onClick={() => {
             ozelTemaKaydetFromContext(ozelRenkler)
@@ -562,14 +606,12 @@ export default function KuranOkuma({ kitap }) {
   )
 
   // ════════════════════════════════════════════════════════════════
-  // AYARLAR PANELİ — bar konumu, gizleme, okuma süresi, kari
+  // AYARLAR PANELİ
   // ════════════════════════════════════════════════════════════════
   const AyarlarPanel = ayarlarAcik && (
     <>
       <div onClick={() => setAyarlarAcik(false)} style={{ position: "fixed", inset: 0, zIndex: 195 }} />
       <div style={{ ...panelStil("right"), width: "270px", display: "flex", flexDirection: "column", gap: "16px", zIndex: 200 }}>
-
-        {/* Bar konumu */}
         <div>
           <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px" }}>BAR KONUMU</div>
           <div style={{ display: "flex", gap: "6px" }}>
@@ -587,8 +629,6 @@ export default function KuranOkuma({ kitap }) {
             ))}
           </div>
         </div>
-
-        {/* Otomatik gizleme */}
         <div>
           <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px" }}>OTOMATİK GİZLEME</div>
           <button onClick={() => setOtomatikGizleme(!otomatikGizleme)} style={{
@@ -613,8 +653,6 @@ export default function KuranOkuma({ kitap }) {
             </div>
           )}
         </div>
-
-        {/* Okuma süresi */}
         <div>
           <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px" }}>OKUMA SÜRESİ</div>
           <button onClick={() => setSureGoster(!sureGoster)} style={{
@@ -628,8 +666,6 @@ export default function KuranOkuma({ kitap }) {
             <span style={{ fontSize: "12px" }}>{sureGoster ? "Açık" : "Kapalı"}</span>
           </button>
         </div>
-
-        {/* Kari seçimi */}
         <div style={{ position: "relative" }}>
           <KariSecici
             kariId={player.kariId}
@@ -638,7 +674,6 @@ export default function KuranOkuma({ kitap }) {
             barKonum={barKonum}
           />
         </div>
-
       </div>
     </>
   )
@@ -663,22 +698,15 @@ export default function KuranOkuma({ kitap }) {
         pointerEvents: barGorunur ? "auto" : "none",
       }}
     >
-      {/* Geri */}
       <button onClick={() => navigate(-1)} style={barButonStil()}>
         <ArrowLeft size={16} /> Geri
       </button>
-
-      {/* Sure menüsü */}
       <button onClick={() => setMenuAcik(!menuAcik)} style={barButonStil(menuAcik)}>
         <Menu size={15} />
       </button>
-
-      {/* Sayfa navigasyonu */}
       <button onClick={oncekiSayfa} disabled={mevcutSayfa <= 1} style={barButonStil()}>
         <ChevronRight size={15} />
       </button>
-
-      {/* Sayfa numarası — tıklanınca input açılır */}
       {sayfaGirdiAcik ? (
         <input
           type="number"
@@ -704,18 +732,14 @@ export default function KuranOkuma({ kitap }) {
           {mevcutSayfa} / {toplamSayfa}
         </button>
       )}
-
       <button onClick={sonrakiSayfa} disabled={mevcutSayfa >= toplamSayfa} style={barButonStil()}>
         <ChevronLeft size={15} />
       </button>
-
       {!sadeMode && (
         <button onClick={() => togglePanel(setAaAcik, !aaAcik)} style={barButonStil(aaAcik)}>
           <Type size={15} /> Aa
         </button>
       )}
-
-      {/* Sağ grup */}
       <div style={{
         display: "flex", gap: "6px", alignItems: "center",
         ...(isMobile ? { justifyContent: "center", flex: 1 } : { marginLeft: "auto" }),
@@ -737,11 +761,11 @@ export default function KuranOkuma({ kitap }) {
       </div>
     </div>
   )
-// ════════════════════════════════════════════════════════════════
-// KuranOkuma.jsx — Parça 3: Ana Render + Sure Menüsü
-// ════════════════════════════════════════════════════════════════
 
-  // ── Yükleniyor ekranı
+  // ════════════════════════════════════════════════════════════════
+  // ANA RENDER
+  // ════════════════════════════════════════════════════════════════
+
   if (yukleniyor) return (
     <div style={{
       display: "flex", alignItems: "center", justifyContent: "center",
@@ -757,13 +781,13 @@ export default function KuranOkuma({ kitap }) {
       onMouseMove={barGoster}
       onTouchStart={barGoster}
     >
-      {/* ── Paneller */}
+      {/* Paneller */}
       {AaPanel}
       {TemaPanel}
       {AyarlarPanel}
       {OzelTemaPanel}
 
-      {/* ── Popup'lar */}
+      {/* Popup'lar */}
       {popup?.tip === "kelime" && (
         <KelimePopup
           kelime={popup.kelime}
@@ -788,10 +812,9 @@ export default function KuranOkuma({ kitap }) {
         />
       )}
 
-      {/* ── Sure menüsü — sol panel */}
+      {/* Sure menüsü */}
       {menuAcik && (
         <>
-          {/* Mobilde backdrop */}
           <div
             onClick={() => setMenuAcik(false)}
             style={{ position: "fixed", inset: 0, zIndex: 79, background: "rgba(0,0,0,0.3)" }}
@@ -806,7 +829,6 @@ export default function KuranOkuma({ kitap }) {
             zIndex: 80,
             ...(isMobile ? { left: 0, top: 0, bottom: 0 } : {}),
           }}>
-            {/* Arama */}
             <div style={{ padding: "12px 16px", borderBottom: `1px solid ${theme.border}`, display: "flex", alignItems: "center", gap: "8px" }}>
               <div style={{
                 display: "flex", alignItems: "center", gap: "8px",
@@ -832,8 +854,6 @@ export default function KuranOkuma({ kitap }) {
                 <X size={16} />
               </button>
             </div>
-
-            {/* Sure listesi */}
             <div style={{ flex: 1, overflowY: "auto" }}>
               {filtreliSureler.map(sure => (
                 <div key={sure.id}>
@@ -853,10 +873,8 @@ export default function KuranOkuma({ kitap }) {
                       <span style={{ fontSize: "10px", color: theme.textSecondary, marginLeft: "auto", paddingRight: "8px" }}>{sure.ayetSayisi}</span>
                     </button>
                   </div>
-
                   {acikSure === sure.id && (
                     <div style={{ background: `${theme.accent}08`, borderBottom: `1px solid ${theme.border}` }}>
-                      {/* Ayet numarası girişi */}
                       <div style={{ padding: "8px 12px", borderBottom: `1px solid ${theme.border}` }}>
                         <div style={{
                           display: "flex", alignItems: "center", gap: "6px",
@@ -879,10 +897,7 @@ export default function KuranOkuma({ kitap }) {
                           />
                           {ayetArama[sure.id] && (
                             <button
-                              onClick={() => {
-                                const no = parseInt(ayetArama[sure.id])
-                                if (no >= 1 && no <= sure.ayetSayisi) sureGit(sure.id, no)
-                              }}
+                              onClick={() => { const no = parseInt(ayetArama[sure.id]); if (no >= 1 && no <= sure.ayetSayisi) sureGit(sure.id, no) }}
                               style={{ fontSize: "11px", color: theme.accent, background: "none", border: "none", cursor: "pointer" }}
                             >
                               Git
@@ -890,8 +905,6 @@ export default function KuranOkuma({ kitap }) {
                           )}
                         </div>
                       </div>
-
-                      {/* Ayet ızgarası */}
                       <div style={{ display: "flex", flexWrap: "wrap", gap: "4px", padding: "8px 12px", maxHeight: "200px", overflowY: "auto" }}>
                         {Array.from({ length: sure.ayetSayisi }, (_, i) => i + 1).map(no => (
                           <button
@@ -918,13 +931,10 @@ export default function KuranOkuma({ kitap }) {
         </>
       )}
 
-      {/* ── Ana içerik alanı */}
+      {/* Ana içerik alanı */}
       <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, overflow: "hidden" }}>
-
-        {/* Bar üstte ise */}
         {barKonum === "ust" && Bar}
 
-        {/* PlayerBar — ses çalarken çıkar */}
         <PlayerBar
           player={player}
           sureler={sureler}
@@ -932,8 +942,9 @@ export default function KuranOkuma({ kitap }) {
           barKonum={barKonum}
         />
 
-        {/* Sayfa içeriği */}
+        {/* Virtualizer ile sayfa içeriği */}
         <div
+          ref={scrollRef}
           style={{
             flex: 1,
             overflowY: "auto",
@@ -943,22 +954,48 @@ export default function KuranOkuma({ kitap }) {
           }}
           onClick={barGoster}
         >
-          <MushafSayfa
-            sayfaNo={mevcutSayfa}
-            elemanlar={mevcutSayfaElemanlar}
-            sureler={mushafData}
-            theme={theme}
-            arapcaFont={aktifArapcaFont.style}
-            yaziBoyutu={yaziBoyutu}
-            player={player}
-            aktifAyet={player.aktifAyet}
-            onKelimeTikla={kelimeTikla}
-            onAyetTikla={ayetTikla}
-            onSureTikla={sureTikla}
-          />
+          <div
+            style={{
+              height: `${virtualizer.getTotalSize()}px`,
+              position: "relative",
+              maxWidth: "720px",
+              margin: "0 auto",
+            }}
+          >
+            {virtualizer.getVirtualItems().map(vItem => {
+              const sayfa = sayfaListesi[vItem.index]
+              if (!sayfa) return null
+
+              return (
+                <div
+                  key={vItem.key}
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    transform: `translateY(${vItem.start}px)`,
+                  }}
+                >
+                  <MushafSayfa
+                    sayfaNo={sayfa.sayfaNo}
+                    elemanlar={sayfa.elemanlar}
+                    sureler={mushafData}
+                    theme={theme}
+                    arapcaFont={aktifArapcaFont.style}
+                    yaziBoyutu={yaziBoyutu}
+                    player={player}
+                    aktifAyet={player.aktifAyet}
+                    onKelimeTikla={kelimeTikla}
+                    onAyetTikla={ayetTikla}
+                    onSureTikla={sureTikla}
+                  />
+                </div>
+              )
+            })}
+          </div>
         </div>
 
-        {/* Bar altta ise */}
         {barKonum === "alt" && Bar}
       </div>
     </div>

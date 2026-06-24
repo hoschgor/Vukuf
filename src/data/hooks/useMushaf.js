@@ -23,16 +23,35 @@ const BESMELE_YOK = new Set([1, 9])
 
 /**
  * Hook versiyonu — bileşen içinde kullanılır
- *
- * Kullanım:
- *   const { sayfaMap, sureler, toplamSayfa } = useMushaf(mushafData, sayfaHarita)
  */
 export function useMushaf(mushafData, sayfaHarita) {
   return useMemo(() => {
-    if (!mushafData?.length || !sayfaHarita?.length) {
+    // Veri kontrolü
+    if (!mushafData?.length) {
+      console.warn('⚠️ useMushaf: mushafData boş')
       return { sayfaMap: new Map(), sureler: [], toplamSayfa: 0 }
     }
-    return buildMushaf(mushafData, sayfaHarita)
+    
+    if (!sayfaHarita?.length) {
+      console.warn('⚠️ useMushaf: sayfaHarita boş')
+      return { sayfaMap: new Map(), sureler: [], toplamSayfa: 0 }
+    }
+
+    console.log('🔍 useMushaf başladı:', {
+      mushafLength: mushafData.length,
+      haritaLength: sayfaHarita.length,
+      ilkSure: mushafData[0]?.isim,
+    })
+
+    const result = buildMushaf(mushafData, sayfaHarita)
+    
+    console.log('✅ useMushaf tamamlandı:', {
+      sayfaMapSize: result.sayfaMap.size,
+      toplamSayfa: result.toplamSayfa,
+      surelerLength: result.sureler.length,
+    })
+    
+    return result
   }, [mushafData, sayfaHarita])
 }
 
@@ -40,18 +59,25 @@ export function useMushaf(mushafData, sayfaHarita) {
  * Saf fonksiyon versiyonu
  */
 export function buildMushaf(mushafData, sayfaHarita) {
-  // Her ayet için sayfa numarasını bul
-  // sayfa-harita: [{ sayfa, sure, ayet }, ...]
-  // Bir ayetin sayfası = o ayetin başladığı veya önceki sayfa başının sayfası
+  // ── 1. Her ayet için sayfa numarasını bul ──
   const ayetSayfaMap = new Map()
 
-  // Haritayı indeksle
-  const haritaSirali = [...sayfaHarita].sort((a, b) =>
-    a.sure !== b.sure ? a.sure - b.sure : a.ayet - b.ayet
-  )
+  // Haritayı indeksle - sayfaHarita format: [{ sayfa: 1, sure: 1, ayet: 1 }, ...]
+  const haritaSirali = [...sayfaHarita].sort((a, b) => {
+    if (a.sure !== b.sure) return a.sure - b.sure
+    return a.ayet - b.ayet
+  })
 
-  // Her sure için sayfa başlarını bul
+  // Debug: İlk 5 harita girişi
+  console.log('📄 sayfaHarita ilk 5:', haritaSirali.slice(0, 5))
+
+  // Her sure ve ayet için sayfa numarasını ata
   mushafData.forEach(sure => {
+    if (!sure.ayetler) {
+      console.warn(`⚠️ Sure ${sure.id} için ayetler bulunamadı`)
+      return
+    }
+
     sure.ayetler.forEach(ayet => {
       // Bu ayetin sayfasını bul: en yakın sayfa başını geç
       let sayfa = 1
@@ -63,59 +89,84 @@ export function buildMushaf(mushafData, sayfaHarita) {
     })
   })
 
-  // Sayfa bazlı eleman listesi oluştur
+  console.log('📊 ayetSayfaMap size:', ayetSayfaMap.size)
+
+  // ── 2. Sayfa bazlı eleman listesi oluştur ──
   const sayfaMap = new Map()
 
   mushafData.forEach(sure => {
-    let oncekiSayfa = null
+    if (!sure.ayetler) return
 
     sure.ayetler.forEach(ayet => {
       const sayfaNo = ayetSayfaMap.get(`${sure.id}:${ayet.no}`)
+      
+      if (!sayfaNo) {
+        console.warn(`⚠️ Ayet ${sure.id}:${ayet.no} için sayfa bulunamadı`)
+        return
+      }
 
+      // Sayfa için Map'e ekle
       if (!sayfaMap.has(sayfaNo)) {
         sayfaMap.set(sayfaNo, [])
       }
       const elemanlar = sayfaMap.get(sayfaNo)
 
-      // Sayfa veya sure değişince başlık/besmele ekle
-      if (sayfaNo !== oncekiSayfa || ayet.no === 1) {
-        // Sure başlığı — sadece ilk ayette
-        if (ayet.no === 1) {
+      // ── Sure başlığı ve Besmele ──
+      // Sayfa başlangıcı veya ayet 1 ise
+      if (ayet.no === 1) {
+        // Sadece bu sayfada yoksa ekle
+        const baslikVar = elemanlar.some(el => el.tip === "sure-baslik")
+        if (!baslikVar) {
           elemanlar.push({ tip: "sure-baslik", sure })
-
-          // Besmele — 1 ve 9 hariç
+          
+          // Besmele - Tevbe suresi hariç
           if (!BESMELE_YOK.has(sure.id)) {
-            elemanlar.push({ tip: "besmele", sure })
+            const besmeleVar = elemanlar.some(el => el.tip === "besmele")
+            if (!besmeleVar) {
+              elemanlar.push({ tip: "besmele", sure })
+            }
           }
         }
       }
 
-      // Kelimeleri ekle
-      ayet.kelimeler.forEach(kelime => {
-        elemanlar.push({ tip: "kelime", sure, ayet, kelime })
-      })
+      // ── Kelimeler ──
+      if (ayet.kelimeler && ayet.kelimeler.length > 0) {
+        ayet.kelimeler.forEach(kelime => {
+          elemanlar.push({ 
+            tip: "kelime", 
+            sure, 
+            ayet, 
+            kelime: {
+              ...kelime,
+              // Varsa vakıf ve secde bilgilerini koru
+              vakif: kelime.vakif || null,
+              secde: kelime.secde || false,
+            }
+          })
+        })
+      } else {
+        console.warn(`⚠️ Ayet ${sure.id}:${ayet.no} için kelime bulunamadı`)
+      }
 
-      // Ayet sonu işareti ﴿١﴾
+      // ── Ayet sonu işareti ──
       elemanlar.push({ tip: "ayet-sonu", sure, ayet })
-
-      oncekiSayfa = sayfaNo
     })
   })
 
-  // Sure başlığı/besmele sayfa başına taşı
-  // Eğer bir surenin 1. ayeti yeni sayfada başlıyorsa başlık zaten doğru yerde
-  // Ama önceki sayfanın son elemanları sure-baslik/besmele ise sorun yok
+  // ── 3. Sayfa numaralarını sırala ──
+  const sayfaNolari = [...sayfaMap.keys()].sort((a, b) => a - b)
+  const toplamSayfa = sayfaNolari.length > 0 ? Math.max(...sayfaNolari) : 0
 
-  const toplamSayfa = Math.max(...sayfaMap.keys())
+  console.log('📚 Oluşturulan sayfalar:', sayfaNolari.slice(0, 10))
 
-  // sure listesi (navigasyon için)
+  // ── 4. Sure listesi (navigasyon için) ──
   const sureler = mushafData.map(s => ({
     id: s.id,
     isim: s.isim,
-    isimArapca: s.isimArapca,
-    anlam: s.anlam,
-    yer: s.yer,
-    ayetSayisi: s.ayetSayisi,
+    isimArapca: s.isimArapca || '',
+    anlam: s.anlam || '',
+    yer: s.yer || '',
+    ayetSayisi: s.ayetSayisi || s.ayetler?.length || 0,
   }))
 
   return { sayfaMap, sureler, toplamSayfa }

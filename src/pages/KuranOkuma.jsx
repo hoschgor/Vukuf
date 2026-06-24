@@ -979,7 +979,9 @@ export default function KuranOkuma({ kitap }) {
               height: `${virtualizer.getTotalSize()}px`,
               position: "relative",
               maxWidth: "720px",
+              width: "100%",
               margin: "0 auto",
+              boxSizing: "border-box",
             }}
           >
             {virtualizer.getVirtualItems().map(vItem => {
@@ -994,6 +996,8 @@ export default function KuranOkuma({ kitap }) {
                     top: 0,
                     left: 0,
                     right: 0,
+                    width: "100%",        // ← ekle
+                    boxSizing: "border-box", // ← ekle
                     transform: `translateY(${vItem.start}px)`,
                   }}
                 >

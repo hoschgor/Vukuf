@@ -2,22 +2,11 @@ import MushafKelime from "./MushafKelime"
 import SecdeKenar from "./SecdeKenar"
 import SureBasligi from "./SureBasligi"
 import Besmele from "./Besmele"
+import { useMediaQuery } from "../data/hooks/useMediaQuery"
 
-/**
- * MushafSayfa
- * ───────────
- * Konum: src/components/MushafSayfa.jsx
- *
- * Tek bir mushaf sayfasını render eder.
- * Kelimeler flex-wrap ile akar — CSS satır kırar, sayfa sabit kalır.
- * Zoom değişse de sayfa içeriği değişmez, sadece font boyutu değişir.
- */
 function arapcaRakamla(sayi) {
   const rakamlar = '٠١٢٣٤٥٦٧٨٩'
-  return String(sayi)
-    .split('')
-    .map(d => rakamlar[parseInt(d)] || d)
-    .join('')
+  return String(sayi).split('').map(d => rakamlar[parseInt(d)] || d).join('')
 }
 
 export default function MushafSayfa({
@@ -33,6 +22,10 @@ export default function MushafSayfa({
   onAyetTikla,
   onSureTikla,
 }) {
+  const isMobile = useMediaQuery("(max-width: 768px)")
+  const fontSize = isMobile ? yaziBoyutu : yaziBoyutu + 2
+  const lineHeight = isMobile ? 2.6 : 2.4
+
   // Secde ayetlerini topla
   const secdeAyetleriMap = new Map()
   elemanlar.forEach(el => {
@@ -45,26 +38,64 @@ export default function MushafSayfa({
   })
   const secdeAyetleri = [...secdeAyetleriMap.values()]
 
+  // ── Elemanları grupla
+  // Kural: sure-baslik ve besmele kendi bloğunda
+  // Aralarındaki TÜM kelime+ayet-sonu elemanları TEK bir inline gruba girer
+  // Böylece ayetler birbirinin devamında akar, satır CSS'e bırakılır
+  const gruplar = []
+  let mevcutInlineElemanlar = []
+
+  const inlineGrupKapat = () => {
+    if (mevcutInlineElemanlar.length > 0) {
+      gruplar.push({ tip: "inline", elemanlar: [...mevcutInlineElemanlar] })
+      mevcutInlineElemanlar = []
+    }
+  }
+
+  elemanlar.forEach((el) => {
+    if (el.tip === "sure-baslik" || el.tip === "besmele") {
+      inlineGrupKapat()
+      gruplar.push({ tip: "block", eleman: el })
+    } else {
+      // kelime ve ayet-sonu — hepsi aynı inline gruba
+      mevcutInlineElemanlar.push(el)
+    }
+  })
+  inlineGrupKapat()
+  
   return (
-    <div
-      style={{
-        position: "relative",
-        width: "100%",
-        maxWidth: "680px",
-        margin: "0 auto",
-        padding: "24px 48px 32px",
-        boxSizing: "border-box",
-      }}
-    >
+    <div style={{
+      position: "relative",
+      overflow: "hidden",
+      width: "100%",
+      border: "2px solid red",
+      margin: "0 auto",
+      padding: isMobile ? "2px 12px" : "4px 32px",
+      boxSizing: "border-box",
+    }}>
+
       {/* Sayfa numarası */}
       <div style={{
         textAlign: "center",
-        fontSize: "11px",
-        color: theme.textSecondary,
-        marginBottom: "16px",
-        letterSpacing: "2px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: "6px",
+        marginBottom: isMobile ? 4 : 6,
+        paddingTop: isMobile ? 2 : 4,
       }}>
-        {sayfaNo}
+        <div style={{ flex: 1, height: "0.5px", background: `${theme.accent}30` }} />
+        <span style={{
+          fontFamily: "'Scheherazade New', serif",
+          fontSize: isMobile ? "9px" : "11px",
+          color: theme.accent,
+          opacity: 0.5,
+          padding: "0 8px",
+          letterSpacing: "2px",
+        }}>
+          {sayfaNo}
+        </span>
+        <div style={{ flex: 1, height: "0.5px", background: `${theme.accent}30` }} />
       </div>
 
       {/* Secde kenar rozeti */}
@@ -80,219 +111,161 @@ export default function MushafSayfa({
         />
       )}
 
-      {/* Sayfa içeriği */}
-      <div
-        style={{
-          direction: "rtl",
-          display: "flex",
-          flexWrap: "wrap",
-          justifyContent: "flex-start",
-          alignItems: "baseline",
-          columnGap: "4px",
-          rowGap: "0px",
-        }}
-      >
-        {elemanlar.map((el, idx) => {
-          if (el.tip === "sure-baslik") {
-            return (
-              <div
-                key={`baslik-${el.sure.id}`}
-                style={{ width: "100%", marginBottom: "8px" }}
-              >
-                <SureBasligi
-                  sure={el.sure}
-                  theme={theme}
-                  onTikla={(e) => onSureTikla?.(el.sure, e)}
-                />
-              </div>
-            )
-          }
+      {/* Gruplar */}
+      {gruplar.map((grup, gi) => {
 
-          if (el.tip === "besmele") {
-            const sureDetay = sureler.find(s => s.id === el.sure.id)
-            return (
-              <div
-                key={`besmele-${el.sure.id}`}
-                style={{ width: "100%", marginBottom: "8px" }}
-              >
-                <Besmele
-                  theme={theme}
-                  sureId={el.sure.id}
-                  sureNo={el.sure.id}
-                  ayetSayisi={sureDetay?.ayetSayisi}
-                  player={player}
-                />
-              </div>
-            )
-          }
-
-          if (el.tip === "kelime") {
-            const aktif =
-              aktifAyet?.sureNo === el.sure.id &&
-              aktifAyet?.ayetNo === el.ayet.no
-
-            return (
-              <MushafKelime
-                key={el.kelime.id}
-                kelime={el.kelime}
-                aktif={aktif}
+        // BLOCK: sure başlığı
+        if (grup.tip === "block" && grup.eleman.tip === "sure-baslik") {
+          return (
+            <div key={`baslik-${grup.eleman.sure.id}-${gi}`} style={{
+              width: "100%",
+              marginTop: gi > 0 ? (isMobile ? 8 : 16) : 0,
+              marginBottom: isMobile ? 4 : 8,
+            }}>
+              <SureBasligi
+                sure={grup.eleman.sure}
                 theme={theme}
-                arapcaFont={arapcaFont}
-                yaziBoyutu={yaziBoyutu}
-                onTikla={(kelime, e) =>
-                  onKelimeTikla?.(kelime, el.sure, el.ayet, e)
-                }
+                yaziBoyutu={fontSize}
+                onTikla={(e) => onSureTikla?.(grup.eleman.sure, e)}
               />
-            )
-          }
+            </div>
+          )
+        }
 
-          if (el.tip === "ayet-sonu") {
-            const arapcaSayi = arapcaRakamla(el.ayet.no)
-            const boyut = yaziBoyutu * 0.75
-            
-            return (
-              <span
-                key={`ayet-sonu-${el.sure.id}-${el.ayet.no}`}
-                onClick={(e) => onAyetTikla?.(el.sure, el.ayet.no, e)}
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  position: "relative",
-                  cursor: "pointer",
-                  margin: "0 2px",
-                  userSelect: "none",
-                  opacity: 0.9,
-                  verticalAlign: "middle",
-                  transform: "translateY(-1px)",
-                }}
-                title={`${el.sure.isim} · ${el.ayet.no}. Âyet`}
-              >
-                {/* ── SVG Ayet Gülü ── */}
-                <svg
-                  width={boyut * 1.4}
-                  height={boyut * 1.4}
-                  viewBox="0 0 40 40"
-                  style={{
-                    display: "block",
-                    transition: "all 0.15s ease",
-                  }}
-                >
-                  {/* Ana daire */}
-                  <circle
-                    cx="20"
-                    cy="20"
-                    r="16"
-                    fill={theme.accent}
-                    fillOpacity="0.08"
-                    stroke={theme.accent}
-                    strokeWidth="1.2"
-                    strokeOpacity="0.4"
-                  />
-                  
-                  {/* İç içe daireler */}
-                  <circle
-                    cx="20"
-                    cy="20"
-                    r="12"
-                    fill="none"
-                    stroke={theme.accent}
-                    strokeWidth="0.6"
-                    strokeOpacity="0.2"
-                  />
-                  
-                  {/* Işınlar - 8 kollu yıldız */}
-                  {[0, 45, 90, 135, 180, 225, 270, 315].map((deg, i) => {
-                    const rad = (deg * Math.PI) / 180
-                    const r1 = 14
-                    const r2 = 17
-                    const x1 = 20 + Math.cos(rad) * r1
-                    const y1 = 20 + Math.sin(rad) * r1
-                    const x2 = 20 + Math.cos(rad) * r2
-                    const y2 = 20 + Math.sin(rad) * r2
-                    return (
-                      <line
-                        key={i}
-                        x1={x1}
-                        y1={y1}
-                        x2={x2}
-                        y2={y2}
-                        stroke={theme.accent}
-                        strokeWidth="0.8"
-                        strokeOpacity="0.3"
-                      />
-                    )
-                  })}
-                  
-                  {/* Ana yıldız - 8 köşeli */}
-                  {[0, 45, 90, 135, 180, 225, 270, 315].map((deg, i) => {
-                    const rad = (deg * Math.PI) / 180
-                    const r = i % 2 === 0 ? 11 : 7
-                    const x = 20 + Math.cos(rad) * r
-                    const y = 20 + Math.sin(rad) * r
-                    if (i % 2 === 0) {
-                      return (
-                        <circle
-                          key={i}
-                          cx={x}
-                          cy={y}
-                          r="1.2"
-                          fill={theme.accent}
-                          fillOpacity="0.3"
+        // BLOCK: besmele
+        if (grup.tip === "block" && grup.eleman.tip === "besmele") {
+          const sureDetay = sureler.find(s => s.id === grup.eleman.sure.id)
+          return (
+            <div key={`besmele-${grup.eleman.sure.id}-${gi}`} style={{
+              width: "100%",
+              marginBottom: isMobile ? 4 : 8,
+            }}>
+              <Besmele
+                theme={theme}
+                sureId={grup.eleman.sure.id}
+                sureNo={grup.eleman.sure.id}
+                ayetSayisi={sureDetay?.ayetSayisi}
+                player={player}
+                yaziBoyutu={fontSize}
+              />
+            </div>
+          )
+        }
+
+        // INLINE: tüm kelimeler ve ayet sonları tek akışta
+        if (grup.tip === "inline") {
+          return (
+            <div
+              key={`inline-${gi}`}
+              style={{
+                direction: "rtl",
+                textAlign: "center",
+                fontSize: `${fontSize}px`,
+                lineHeight: lineHeight,
+                fontFamily: arapcaFont,
+                color: theme.text,
+                paddingTop: `${fontSize * 0.55}px`,
+                marginBottom: isMobile ? 4 : 8,
+                // Kelimeler arası boşluk — wordSpacing RTL'de çalışır
+                wordSpacing: isMobile ? "3px" : "4px",
+                // Satır kırılmasını engelleyen hiçbir şey olmamalı
+                whiteSpace: "normal",
+                overflowWrap: "break-word",
+              }}
+            >
+              {grup.elemanlar.map((el) => {
+
+                if (el.tip === "kelime") {
+                  const aktif =
+                    aktifAyet?.sureNo === el.sure.id &&
+                    aktifAyet?.ayetNo === el.ayet.no
+
+                  return (
+                    <MushafKelime
+                      key={el.kelime.id}
+                      kelime={el.kelime}
+                      aktif={aktif}
+                      theme={theme}
+                      arapcaFont={arapcaFont}
+                      yaziBoyutu={fontSize}
+                      lineHeight={lineHeight}
+                      onTikla={(kelime, e) => onKelimeTikla?.(kelime, el.sure, el.ayet, e)}
+                    />
+                  )
+                }
+
+                if (el.tip === "ayet-sonu") {
+                  const arapcaSayi = arapcaRakamla(el.ayet.no)
+                  const boyut = fontSize * 0.72
+
+                  return (
+                    <span
+                      key={`ayet-sonu-${el.sure.id}-${el.ayet.no}`}
+                      onClick={(e) => onAyetTikla?.(el.sure, el.ayet.no, e)}
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        cursor: "pointer",
+                        margin: `0 ${isMobile ? 2 : 3}px`,
+                        userSelect: "none",
+                        verticalAlign: "middle",
+                      }}
+                      title={`${el.sure.isim} · ${el.ayet.no}. Âyet`}
+                    >
+                      <svg
+                        width={boyut * 1.4}
+                        height={boyut * 1.4}
+                        viewBox="0 0 40 40"
+                        style={{ display: "block" }}
+                      >
+                        <circle cx="20" cy="20" r="16"
+                          fill={theme.accent} fillOpacity="0.06"
+                          stroke={theme.accent} strokeWidth="1" strokeOpacity="0.35"
                         />
-                      )
-                    }
-                    return null
-                  })}
-                  
-                  {/* Noktalar - 12 küçük inci */}
-                  {Array.from({ length: 12 }).map((_, i) => {
-                    const deg = i * 30 + 15
-                    const rad = (deg * Math.PI) / 180
-                    const r = 15
-                    const x = 20 + Math.cos(rad) * r
-                    const y = 20 + Math.sin(rad) * r
-                    return (
-                      <circle
-                        key={`dot-${i}`}
-                        cx={x}
-                        cy={y}
-                        r="0.8"
-                        fill={theme.accent}
-                        fillOpacity="0.25"
-                      />
-                    )
-                  })}
-                  
-                  {/* Ayet numarası */}
-                  <text
-                    x="20"
-                    y="22"
-                    textAnchor="middle"
-                    fontFamily="'Scheherazade New', serif"
-                    fontSize="12"
-                    fontWeight="500"
-                    fill={theme.accent}
-                    fillOpacity="0.8"
-                    dominantBaseline="middle"
-                  >
-                    {arapcaSayi}
-                  </text>
-                </svg>
-              </span>
-            )
-          }
+                        <circle cx="20" cy="20" r="12"
+                          fill="none" stroke={theme.accent} strokeWidth="0.5" strokeOpacity="0.15"
+                        />
+                        {[0,45,90,135,180,225,270,315].map((deg, i) => {
+                          const rad = deg * Math.PI / 180
+                          return (
+                            <line key={i}
+                              x1={20 + Math.cos(rad)*14} y1={20 + Math.sin(rad)*14}
+                              x2={20 + Math.cos(rad)*17} y2={20 + Math.sin(rad)*17}
+                              stroke={theme.accent} strokeWidth="0.6" strokeOpacity="0.25"
+                            />
+                          )
+                        })}
+                        <text x="20" y="22"
+                          textAnchor="middle"
+                          fontFamily="'Scheherazade New', serif"
+                          fontSize={isMobile ? "9" : "11"}
+                          fontWeight="500"
+                          fill={theme.accent} fillOpacity="0.7"
+                          dominantBaseline="middle"
+                        >
+                          {arapcaSayi}
+                        </text>
+                      </svg>
+                    </span>
+                  )
+                }
 
-          return null
-        })}
-      </div>
+                return null
+              })}
+            </div>
+          )
+        }
 
-      {/* Sayfa alt çizgisi */}
+        return null
+      })}
+
+      {/* Sayfa alt çizgisi — daha belirgin */}
       <div style={{
-        marginTop: "20px",
+        marginTop: isMobile ? 8 : 16,
         height: "1px",
-        background: `${theme.border}`,
-        opacity: 0.4,
+        background: `linear-gradient(to right, transparent, ${theme.accent}50, transparent)`,
+        width: "100%",
       }} />
     </div>
   )

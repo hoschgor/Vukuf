@@ -420,6 +420,7 @@ const dokunusBaslangicRef = useRef(null)
 // Bar zamanlayıcısı
 // ════════════════════════════════════════════════════
 
+
 const barGoster = useCallback(() => {
   setBarGorunur(true)
   if (barZamanRef.current) clearTimeout(barZamanRef.current)
@@ -427,6 +428,11 @@ const barGoster = useCallback(() => {
     barZamanRef.current = setTimeout(() => setBarGorunur(false), gizlemeSuresi * 1000)
   }
 }, [otomatikGizleme, herhangiPanelAcik, gizlemeSuresi])
+
+const barGizle = useCallback(() => {
+  if (barZamanRef.current) clearTimeout(barZamanRef.current)
+  setBarGorunur(false)
+}, [])
 
 useEffect(() => {
   if (herhangiPanelAcik) {

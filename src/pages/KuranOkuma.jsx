@@ -121,6 +121,12 @@ export default function KuranOkuma({ kitap }) {
   const [yaziBoyutu, setYaziBoyutu] = useState(() =>
     parseInt(localStorage.getItem("vukuf-yazi-boyutu") || "20")
   )
+  const [satirAraligi, setSatirAraligi] = useState(() =>
+  parseFloat(localStorage.getItem("vukuf-satir-araligi") || "2.4")
+)
+const [harfAraligi, setHarfAraligi] = useState(() =>
+  parseFloat(localStorage.getItem("vukuf-harf-araligi") || "0")
+)
 
   // ── Bar
   const [barGorunur, setBarGorunur]       = useState(true)
@@ -136,6 +142,7 @@ export default function KuranOkuma({ kitap }) {
   const [ayarlarAcik, setAyarlarAcik]           = useState(false)
   const [ozelTemaPanelAcik, setOzelTemaPanelAcik] = useState(false)
   const [fontSeciciAcik, setFontSeciciAcik]     = useState(false)
+  
 
   // ── Özel tema
   const [ozelRenkler, setOzelRenkler] = useState(() => {
@@ -175,6 +182,8 @@ export default function KuranOkuma({ kitap }) {
   useEffect(() => { localStorage.setItem("vukuf-otomatik-gizleme",  String(otomatikGizleme))}, [otomatikGizleme])
   useEffect(() => { localStorage.setItem("vukuf-gizleme-suresi",    String(gizlemeSuresi))  }, [gizlemeSuresi])
   useEffect(() => { localStorage.setItem("vukuf-son-sayfa",         String(mevcutSayfa))    }, [mevcutSayfa])
+  useEffect(() => { localStorage.setItem("vukuf-satir-araligi", String(satirAraligi)) }, [satirAraligi])
+  useEffect(() => { localStorage.setItem("vukuf-harf-araligi", String(harfAraligi)) }, [harfAraligi])
 
   useEffect(() => {
     sureSayacRef.current = setInterval(() => {
@@ -218,6 +227,11 @@ export default function KuranOkuma({ kitap }) {
       .then(data => { setMushafData(data); setYukleniyor(false) })
       .catch(() => setYukleniyor(false))
   }, [])
+
+  const barGizle = useCallback(() => {
+  if (barZamanRef.current) clearTimeout(barZamanRef.current)
+  setBarGorunur(false)
+}, [])
 
   // ════════════════════════════════════════════════════════════════
   // VERİ HAZIRLAMA
@@ -428,63 +442,104 @@ export default function KuranOkuma({ kitap }) {
   // ════════════════════════════════════════════════════════════════
   // AA PANELİ
   // ════════════════════════════════════════════════════════════════
+  // KuranOkuma.jsx içindeki AaPanel'i bu ile değiştir
+// fontSeciciAcik state'i artık gerekmiyor, kaldırılabilir
+
   const AaPanel = aaAcik && (
     <>
       <div onClick={() => setAaAcik(false)} style={{ position: "fixed", inset: 0, zIndex: 195 }} />
       <div style={{ ...panelStil("center"), width: "300px", maxHeight: "80vh", overflowY: "auto", zIndex: 200 }}>
+
+        {/* ── Yazı boyutu ── */}
         <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px" }}>YAZI BOYUTU</div>
         <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "20px" }}>
-          <button onClick={() => setYaziBoyutu(v => Math.max(14, v - 1))} style={barButonStil()}><Minus size={14} /></button>
+          <button onClick={() => setYaziBoyutu(v => Math.max(14, v - 1))} style={barButonStil()}>
+            <Minus size={14} />
+          </button>
           <div style={{ flex: 1, textAlign: "center" }}>
-            <span style={{ fontSize: `${Math.min(yaziBoyutu, 28)}px`, color: theme.text }}>Aa</span>
+            <span style={{ fontSize: `${Math.min(yaziBoyutu, 28)}px`, color: theme.text, fontFamily: aktifArapcaFont.style }}>ب</span>
             <span style={{ fontSize: "11px", color: theme.textSecondary, marginLeft: "6px" }}>{yaziBoyutu}px</span>
           </div>
-          <button onClick={() => setYaziBoyutu(v => Math.min(36, v + 1))} style={barButonStil()}><Plus size={14} /></button>
-        </div>
-        <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px" }}>YAZI TİPİ</div>
-        <div style={{ position: "relative", marginBottom: "8px" }}>
-          <button
-            onClick={() => setFontSeciciAcik(!fontSeciciAcik)}
-            style={{
-              width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
-              padding: "8px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`,
-              background: theme.background, color: theme.text, fontSize: "13px", cursor: "pointer",
-            }}
-          >
-            <span style={{ fontFamily: aktifArapcaFont.style }}>{aktifArapcaFont.label}</span>
-            <ChevronDown size={14} color={theme.textSecondary} />
+          <button onClick={() => setYaziBoyutu(v => Math.min(36, v + 1))} style={barButonStil()}>
+            <Plus size={14} />
           </button>
-          {fontSeciciAcik && (
-            <>
-              <div onClick={() => setFontSeciciAcik(false)} style={{ position: "fixed", inset: 0, zIndex: 201 }} />
-              <div style={{
-                position: "absolute", top: "100%", left: 0, right: 0, marginTop: "4px",
-                background: theme.surface, border: `1px solid ${theme.border}`, borderRadius: "10px",
-                zIndex: 202, overflow: "hidden", boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-                maxHeight: "200px", overflowY: "auto",
-              }}>
-                {ARAPCA_FONTLAR.map(font => (
-                  <button
-                    key={font.id}
-                    onClick={() => { setArapcaFontId(font.id); setFontSeciciAcik(false) }}
-                    style={{
-                      width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
-                      padding: "8px 12px", border: "none",
-                      background: arapcaFontId === font.id ? `${theme.accent}15` : "transparent",
-                      cursor: "pointer", borderBottom: `1px solid ${theme.border}`,
-                    }}
-                  >
-                    <span style={{ fontFamily: font.style, fontSize: "13px", color: theme.text }}>{font.label}</span>
-                    <span style={{ fontFamily: font.style, fontSize: "16px", color: theme.textSecondary }}>بسم</span>
-                  </button>
-                ))}
-              </div>
-            </>
-          )}
         </div>
+
+        {/* ── Satır aralığı ── */}
+        <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px" }}>SATIR ARALIĞI</div>
+        <div style={{ marginBottom: "20px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", color: theme.textSecondary, marginBottom: "6px" }}>
+            <span>Sıkışık</span>
+            <span style={{ color: theme.accent, fontWeight: "bold" }}>{satirAraligi.toFixed(1)}</span>
+            <span>Geniş</span>
+          </div>
+          <input
+            type="range" min="1.6" max="3.5" step="0.1"
+            value={satirAraligi}
+            onChange={e => setSatirAraligi(parseFloat(e.target.value))}
+            style={{ width: "100%", accentColor: theme.accent }}
+          />
+          {/* Önizleme */}
+          <div style={{
+            marginTop: "8px", padding: "8px 12px", borderRadius: "8px",
+            background: theme.background, border: `1px solid ${theme.border}`,
+            direction: "rtl", textAlign: "center",
+            fontFamily: aktifArapcaFont.style,
+            fontSize: `${Math.min(yaziBoyutu, 22)}px`,
+            lineHeight: satirAraligi,
+            color: theme.text,
+          }}>
+            بِسۡمِ ٱللَّهِ ٱلرَّحۡمَٰنِ ٱلرَّحِيمِ
+          </div>
+        </div>
+
+        {/* ── Harf aralığı ── */}
+        <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px" }}>HARF ARALIĞI</div>
+        <div style={{ marginBottom: "20px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", color: theme.textSecondary, marginBottom: "6px" }}>
+            <span>Normal</span>
+            <span style={{ color: theme.accent, fontWeight: "bold" }}>{harfAraligi.toFixed(1)}px</span>
+            <span>Geniş</span>
+          </div>
+          <input
+            type="range" min="0" max="6" step="0.5"
+            value={harfAraligi}
+            onChange={e => setHarfAraligi(parseFloat(e.target.value))}
+            style={{ width: "100%", accentColor: theme.accent }}
+          />
+        </div>
+
+        {/* ── Yazı tipi — kari menüsü tarzı ── */}
+        <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px" }}>YAZI TİPİ</div>
+        <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+          {ARAPCA_FONTLAR.map(font => (
+            <button
+              key={font.id}
+              onClick={() => setArapcaFontId(font.id)}
+              style={{
+                display: "flex", alignItems: "center", justifyContent: "space-between",
+                padding: "10px 12px", borderRadius: "8px",
+                border: `1px solid ${arapcaFontId === font.id ? theme.accent : theme.border}`,
+                background: arapcaFontId === font.id ? `${theme.accent}12` : theme.background,
+                cursor: "pointer", transition: "all 0.15s",
+              }}
+            >
+              <span style={{ fontSize: "12px", color: theme.textSecondary }}>{font.label}</span>
+              <span style={{
+                fontFamily: font.style,
+                fontSize: "18px",
+                color: arapcaFontId === font.id ? theme.accent : theme.text,
+              }}>
+                بِسۡمِ
+              </span>
+            </button>
+          ))}
+        </div>
+
       </div>
     </>
   )
+
 
   // ════════════════════════════════════════════════════════════════
   // TEMA PANELİ
@@ -798,7 +853,9 @@ export default function KuranOkuma({ kitap }) {
   return (
     <div
       style={{ height: "100vh", display: "flex", background: theme.background, overflow: "hidden" }}
-      onMouseMove={barGoster}
+      onMouseMove={(e) => {
+        if (e.movementX !== 0 || e.movementY !== 0) barGoster()
+      }}
       onTouchStart={barGoster}
     >
       {/* Paneller */}
@@ -972,7 +1029,16 @@ export default function KuranOkuma({ kitap }) {
             paddingTop:    barKonum === "ust" ? "8px" : "16px",
             paddingBottom: barKonum === "alt" ? "80px" : "16px",
           }}
-          onClick={barGoster}
+          onClick={(e) => {
+            if (popup) return
+            barGorunur ? barGizle() : barGoster()
+          }}
+          onScroll={() => {
+            if (!herhangiPanelAcik && otomatikGizleme) {
+              if (barZamanRef.current) clearTimeout(barZamanRef.current)
+              setBarGorunur(false)
+            }
+          }}
         >
           <div
             style={{
@@ -1008,6 +1074,8 @@ export default function KuranOkuma({ kitap }) {
                     theme={theme}
                     arapcaFont={aktifArapcaFont.style}
                     yaziBoyutu={yaziBoyutu}
+                    satirAraligi={satirAraligi}
+                    harfAraligi={harfAraligi}
                     player={player}
                     aktifAyet={player.aktifAyet}
                     onKelimeTikla={kelimeTikla}

@@ -16,6 +16,8 @@ export default function MushafSayfa({
   theme,
   arapcaFont,
   yaziBoyutu = 20,
+  satirAraligi, 
+  harfAraligi,
   player,
   aktifAyet,
   onKelimeTikla,
@@ -24,7 +26,7 @@ export default function MushafSayfa({
 }) {
   const isMobile = useMediaQuery("(max-width: 768px)")
   const fontSize = isMobile ? yaziBoyutu : yaziBoyutu + 2
-  const lineHeight = isMobile ? 2.6 : 2.4
+  const lineHeight = satirAraligi || (isMobile ? 2.6 : 2.4)
 
   // Secde ayetlerini topla
   const secdeAyetleriMap = new Map()
@@ -119,8 +121,8 @@ export default function MushafSayfa({
           return (
             <div key={`baslik-${grup.eleman.sure.id}-${gi}`} style={{
               width: "100%",
-              marginTop: gi > 0 ? (isMobile ? 8 : 16) : 0,
-              marginBottom: isMobile ? 4 : 8,
+              marginTop: gi > 0 ? (isMobile ? 8 : 6) * (fontSize / 20) : 0,
+              marginBottom: (isMobile ? 4 :1) * (fontSize / 20),
             }}>
               <SureBasligi
                 sure={grup.eleman.sure}
@@ -138,7 +140,7 @@ export default function MushafSayfa({
           return (
             <div key={`besmele-${grup.eleman.sure.id}-${gi}`} style={{
               width: "100%",
-              marginBottom: isMobile ? 4 : 8,
+              marginBottom: (isMobile ? 4 : 8) * (fontSize / 20),
             }}>
               <Besmele
                 theme={theme}
@@ -164,7 +166,7 @@ export default function MushafSayfa({
                 lineHeight: lineHeight,
                 fontFamily: arapcaFont,
                 color: theme.text,
-                paddingTop: `${fontSize * 0.55}px`,
+                paddingTop: `${fontSize * (isMobile ? 0.5 : 0.55)}px`,
                 marginBottom: isMobile ? 4 : 8,
                 // Kelimeler arası boşluk — wordSpacing RTL'de çalışır
                 wordSpacing: isMobile ? "3px" : "4px",
@@ -189,6 +191,7 @@ export default function MushafSayfa({
                       arapcaFont={arapcaFont}
                       yaziBoyutu={fontSize}
                       lineHeight={lineHeight}
+                      harfAraligi={harfAraligi}
                       onTikla={(kelime, e) => onKelimeTikla?.(kelime, el.sure, el.ayet, e)}
                     />
                   )

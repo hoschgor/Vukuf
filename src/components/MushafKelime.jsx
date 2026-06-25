@@ -17,6 +17,7 @@ export default function MushafKelime({
   arapcaFont,
   yaziBoyutu = 20,
   lineHeight = 2.4,
+  harfAraligi = 0,
   onTikla,
 }) {
   const [hover, setHover] = useState(false)
@@ -114,7 +115,14 @@ export default function MushafKelime({
         display: "inline",
         opacity: aktif ? 1 : 0.95,
       }}>
-        {kelime.arabic}
+        {kelime.arabic.split('').map((harf, i) => (
+          <span key={i} style={{
+            letterSpacing: i === kelime.arabic.length - 1 ? '0px' : `${harfAraligi}px`,
+            marginLeft: i === kelime.arabic.length - 1 ? '0px' : `${harfAraligi}px`,
+          }}>
+            {harf}
+          </span>
+        ))}
       </span>
     </span>
   )

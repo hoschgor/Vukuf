@@ -273,42 +273,83 @@ const [harfAraligi, setHarfAraligi] = useState(() =>
     }))
   }, [sayfaMap])
 
-  // ── SAYFA YÜKSEKLİKLERİ (Dinamik) ──
   const sayfaYukseklikleri = useMemo(() => {
-    if (!sayfaListesi.length) {
-      console.warn('⚠️ sayfaListesi boş, yükseklik hesaplanamıyor')
-      return []
-    }
+    if (!sayfaListesi.length) return []
     
-    // ⬇️ useMediaQuery'den gelen isMobile'i kullan
     const mobile = isMobile
     
     return sayfaListesi.map((sayfa) => {
       const elemanlar = sayfa.elemanlar
       
-      const kelimeSayisi = elemanlar.filter(el => el.tip === "kelime").length
-      const ayetSayisi = elemanlar.filter(el => el.tip === "ayet-sonu").length
-      const baslikVar = elemanlar.some(el => el.tip === "sure-baslik")
-      const besmeleVar = elemanlar.some(el => el.tip === "besmele")
+      // Her bir bloğun yüksekliğini hesapla
+      let toplamYukseklik = 0
       
-      const fontBoyutu = mobile ? yaziBoyutu : yaziBoyutu + 2
-      const lineHeight = mobile ? 2.2 : 2.0
+      // 1. Padding (üst ve alt)
+      const padding = mobile ? 20 : 30
+      toplamYukseklik += padding
       
-      const satirYuksekligi = fontBoyutu * lineHeight
-      const kelimeSatirSayisi = Math.ceil(kelimeSayisi / (mobile ? 14 : 18))
-      const kelimeYuksekligi = kelimeSatirSayisi * satirYuksekligi
-      const ayetYuksekligi = ayetSayisi * (mobile ? 22 : 25)
-      const baslikYuksekligi = baslikVar ? (mobile ? 60 : 90) : 0
-      const besmeleYuksekligi = besmeleVar ? (mobile ? 35 : 50) : 0
+      // 2. Her elemanı gez ve yükseklikleri topla
+      let mevcutInlineElemanlar = []
+      let inlineYukseklik = 0
       
-      const padding = mobile ? 30 : 50
-      const between = mobile ? 4 : 8
+      elemanlar.forEach((el, index) => {
+        if (el.tip === "sure-baslik" || el.tip === "besmele") {
+          // Önceki inline grubu kapat
+          if (mevcutInlineElemanlar.length > 0) {
+            const kelimeSayisi = mevcutInlineElemanlar.filter(e => e.tip === "kelime").length
+            const ayetSayisi = mevcutInlineElemanlar.filter(e => e.tip === "ayet-sonu").length
+            
+            const fontBoyutu = mobile ? yaziBoyutu : yaziBoyutu + 2
+            const lineHeight = mobile ? 2.2 : 2.0
+            const satirYuksekligi = fontBoyutu * lineHeight
+            
+            const kelimeSatirSayisi = Math.ceil(kelimeSayisi / (mobile ? 14 : 18))
+            const kelimeYuksekligi = kelimeSatirSayisi * satirYuksekligi
+            const ayetYuksekligi = ayetSayisi * (mobile ? 18 : 20)
+            
+            inlineYukseklik = Math.max(kelimeYuksekligi + ayetYuksekligi, mobile ? 60 : 80)
+            toplamYukseklik += inlineYukseklik
+            mevcutInlineElemanlar = []
+          }
+          
+          // Block eleman (sure-baslik veya besmele)
+          if (el.tip === "sure-baslik") {
+            toplamYukseklik += mobile ? 60 : 80
+            toplamYukseklik += mobile ? 4 : 6 // margin
+          } else if (el.tip === "besmele") {
+            toplamYukseklik += mobile ? 40 : 55
+            toplamYukseklik += mobile ? 4 : 6 // margin
+          }
+        } else {
+          // İnline eleman (kelime veya ayet-sonu)
+          mevcutInlineElemanlar.push(el)
+        }
+      })
       
-      let toplam = padding + between + baslikYuksekligi + besmeleYuksekligi + kelimeYuksekligi + ayetYuksekligi
+      // Kalan inline grubu kapat
+      if (mevcutInlineElemanlar.length > 0) {
+        const kelimeSayisi = mevcutInlineElemanlar.filter(e => e.tip === "kelime").length
+        const ayetSayisi = mevcutInlineElemanlar.filter(e => e.tip === "ayet-sonu").length
+        
+        const fontBoyutu = mobile ? yaziBoyutu : yaziBoyutu + 2
+        const lineHeight = mobile ? 2.2 : 2.0
+        const satirYuksekligi = fontBoyutu * lineHeight
+        
+        const kelimeSatirSayisi = Math.ceil(kelimeSayisi / (mobile ? 14 : 18))
+        const kelimeYuksekligi = kelimeSatirSayisi * satirYuksekligi
+        const ayetYuksekligi = ayetSayisi * (mobile ? 18 : 20)
+        
+        inlineYukseklik = Math.max(kelimeYuksekligi + ayetYuksekligi, mobile ? 60 : 80)
+        toplamYukseklik += inlineYukseklik
+      }
       
-      return Math.max(toplam, mobile ? 150 : 220)
+      // Son padding (alt)
+      toplamYukseklik += mobile ? 16 : 24
+      
+      // Minimum yükseklik
+      return Math.max(toplamYukseklik, mobile ? 200 : 300)
     })
-  }, [sayfaListesi, yaziBoyutu, isMobile])  // ⬇️ isMobile eklendi
+  }, [sayfaListesi, yaziBoyutu, isMobile])
 
   // ── VIRTUALIZER ──
   const virtualizer = useVirtualizer({
@@ -487,6 +528,7 @@ const [harfAraligi, setHarfAraligi] = useState(() =>
             fontFamily: aktifArapcaFont.style,
             fontSize: `${Math.min(yaziBoyutu, 22)}px`,
             lineHeight: satirAraligi,
+            letterSpacing: `${harfAraligi}px`,
             color: theme.text,
           }}>
             بِسۡمِ ٱللَّهِ ٱلرَّحۡمَٰنِ ٱلرَّحِيمِ
@@ -502,7 +544,7 @@ const [harfAraligi, setHarfAraligi] = useState(() =>
             <span>Geniş</span>
           </div>
           <input
-            type="range" min="0" max="6" step="0.5"
+            type="range" min="0" max="1" step="0.1"
             value={harfAraligi}
             onChange={e => setHarfAraligi(parseFloat(e.target.value))}
             style={{ width: "100%", accentColor: theme.accent }}
@@ -1044,9 +1086,10 @@ const [harfAraligi, setHarfAraligi] = useState(() =>
             style={{
               height: `${virtualizer.getTotalSize()}px`,
               position: "relative",
-              maxWidth: "720px",
+              maxWidth: `${Math.round((isMobile ? 480 : 720) * (yaziBoyutu / 20))}px`,
               width: "100%",
               margin: "0 auto",
+              padding: isMobile ? "4px 12px" : "6px 24px",
               boxSizing: "border-box",
             }}
           >

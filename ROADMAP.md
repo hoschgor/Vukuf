@@ -203,3 +203,23 @@ player.setKariId(id)
 - everyayah.com API key gerektirmiyor, URL formatı: `/{kariId}/{sure3}{ayet3}.mp3`
 - Muanaka vakfı (`∴`) iki kelime arasında ortak — veri yapısında özel işlem gerekebilir
 - Kari seçimi globaldir — PlayerBar değil, AyarlarPanel > KariSecici üzerinden yapılır
+
+---
+
+## Gelecek Özellikler (Planlandı)
+
+### Kitaplık
+- Son açılan kitapları kaydet (localStorage)
+- Ana sayfaya "Son Okunanlar" bölümü
+- Raf state'i korunmalı (geri gelince sıfırlanmamalı)
+
+### Kitap İçi Arama
+- Ayarlar bölümüne kitap simgesi ile erişim
+- Bölüm/alt bölüm seçimi ile filtreleme
+- Arama sonuçları: kitap başlığı üstte, eşleşen kelime kalın+renkli
+- Sonuca tıklayınca kitap açılır ilgili bölüme gider
+
+### Scrollbar
+- 10 saniye içinde 2 kez veya 2 sayfa kaydırılınca görünür
+- Scrollbar üzerinden navigasyon
+- 2 sn sonra otomatik gizlenir

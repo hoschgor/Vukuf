@@ -981,6 +981,8 @@ const [harfAraligi, setHarfAraligi] = useState(() =>
           sureler={sureler}
           theme={theme}
           barKonum={barKonum}
+          barGorunur={barGorunur}
+          barYuksekligi={isMobile ? 48 : 32} // Main bar'ın yüksekliği
         />
 
         {/* Virtualizer ile sayfa içeriği */}

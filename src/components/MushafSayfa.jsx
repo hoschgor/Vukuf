@@ -72,8 +72,6 @@ export default function MushafSayfa({
       margin: "0 auto",
       padding: isMobile ? "2px 12px" : "2px 32px",  // top/bottom 2px
       boxSizing: "border-box",
-      outline: "2px solid blue",  // wrapper sınırı
-      background: "rgba(255,0,0,0.05)",  // içini renklendir
     }}>
 
       {/* Sayfa numarası */}
@@ -82,11 +80,11 @@ export default function MushafSayfa({
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        gap: "6px",
+        gap: "3px",
         marginBottom: isMobile ? 1 : 2,
         paddingTop: isMobile ? 2 : 4,
       }}>
-        <div style={{ flex: 1, height: "1px", background: `linear-gradient(to right, transparent, ${theme.accent}60, transparent)` }} />
+        <div style={{ flex: 1, height: "2px", background: `linear-gradient(to right, transparent, ${theme.accent}60, transparent)` }} />
         <span style={{
           fontFamily: "'Scheherazade New', serif",
           fontSize: isMobile ? "9px" : "11px",
@@ -97,7 +95,7 @@ export default function MushafSayfa({
         }}>
           {sayfaNo}
         </span>
-        <div style={{ flex: 1, height: "1px", background: `linear-gradient(to right, transparent, ${theme.accent}60, transparent)` }} />
+        <div style={{ flex: 1, height: "2px", background: `linear-gradient(to right, transparent, ${theme.accent}60, transparent)` }} />
       </div>
 
       {/* Secde kenar rozeti */}

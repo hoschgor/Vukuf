@@ -1,3 +1,4 @@
+// MushafKelime.jsx
 import { useState } from "react"
 import { useMediaQuery } from "../data/hooks/useMediaQuery"
 
@@ -24,7 +25,8 @@ export default function MushafKelime({
   const isMobile = useMediaQuery("(max-width: 768px)")
   const vakifRengi = kelime.vakif ? (VAKIF_RENKLERI[kelime.vakif] || theme.accent) : null
 
-  const ustIsaretVar = kelime.vakif || kelime.secde
+  // Vakıf ve secde işaretlerinin varlığını kontrol et
+  const hasUpperIndicator = kelime.vakif || kelime.secde
 
   return (
     <span
@@ -36,12 +38,11 @@ export default function MushafKelime({
         position: "relative",
         display: "inline-block",
         cursor: "pointer",
-        // Vakıf/secde için üst boşluk — marginTop yerine paddingTop
-        // marginTop inline-block'ta satır yüksekliğini etkiler
-        paddingTop: ustIsaretVar ? `${yaziBoyutu * 0.65}px` : "0",
+        // ÖNEMLİ: paddingTop yerine marginTop kullan, inline-block'da daha stabil
+        marginTop: hasUpperIndicator ? `${yaziBoyutu * 0.35}px` : "0",
         paddingLeft: isMobile ? "2px" : "3px",
         paddingRight: isMobile ? "2px" : "3px",
-        paddingBottom: "0",
+        paddingBottom: "2px", // Alt padding ekle
         borderRadius: "3px",
         background: aktif
           ? `${theme.accent}22`
@@ -49,19 +50,23 @@ export default function MushafKelime({
         boxShadow: aktif ? `inset 0 -2px 0 ${theme.accent}` : "none",
         transition: "background 0.15s",
         whiteSpace: "nowrap",
-        verticalAlign: "bottom", // ← baseline yerine bottom, hizalamayı düzeltir
+        // ÖNEMLİ: verticalAlign: "middle" ile hizala
+        verticalAlign: "middle",
         userSelect: "none",
+        // ÖNEMLİ: lineHeight'i miras al
+        lineHeight: lineHeight,
       }}
     >
-      {/* Vakıf işareti — kelimenin tam ortasında */}
+      {/* Vakıf işareti - absolute ile üste konumlandır */}
       {kelime.vakif && (
         <span
           style={{
             position: "absolute",
-            top: `${yaziBoyutu * 0.9}px`,  // ← bunu artır, örn. 0.25 veya 0.4
+            // ÖNEMLİ: Top değerini negatif yaparak kelimenin üzerine çık
+            top: `-${yaziBoyutu * 0.15}px`,
             left: "50%",
-            transform: "translateX(-300%)",
-            fontSize: `${yaziBoyutu * 0.52}px`,
+            transform: "translateX(-50%)",
+            fontSize: `${yaziBoyutu * 0.48}px`,
             color: vakifRengi,
             fontFamily: "'Scheherazade New', serif",
             fontWeight: "bold",
@@ -74,28 +79,29 @@ export default function MushafKelime({
         </span>
       )}
 
-      {/* Secde işareti — vakıf varsa daha üste */}
+      {/* Secde işareti - vakıf varsa yanına, yoksa üste */}
       {kelime.secde && (
         <span
           style={{
             position: "absolute",
-            top: kelime.vakif ? `-${yaziBoyutu * 0.15}px` : `${yaziBoyutu * 0.05}px`,
-            left: 0,
-            right: 0,
-            textAlign: "center",
-            fontSize: `${yaziBoyutu * 0.36}px`,
+            // ÖNEMLİ: Vakıf varsa üstüne, yoksa kelimenin üstüne
+            top: kelime.vakif ? `-${yaziBoyutu * 0.1}px` : `-${yaziBoyutu * 0.05}px`,
+            right: kelime.vakif ? "auto" : "0",
+            left: kelime.vakif ? "auto" : "50%",
+            transform: kelime.vakif ? "translateX(120%)" : "translateX(-50%)",
+            fontSize: `${yaziBoyutu * 0.32}px`,
             color: "#2e7d4f",
             fontFamily: "'Scheherazade New', serif",
             lineHeight: 1,
             pointerEvents: "none",
             zIndex: 2,
-            display: "flex",
+            display: "inline-flex",
             alignItems: "center",
-            justifyContent: "center",
             gap: "2px",
+            whiteSpace: "nowrap",
           }}
         >
-          <svg width="9" height="9" viewBox="0 0 24 24">
+          <svg width="9" height="9" viewBox="0 0 24 24" style={{ display: "inline-block" }}>
             <path
               d="M12 2 L14.5 8.5 L21.5 8.5 L16 13 L18.5 20 L12 16 L5.5 20 L8 13 L2.5 8.5 L9.5 8.5 Z"
               fill="none" stroke="#2e7d4f" strokeWidth="1.5" strokeLinejoin="round"
@@ -107,19 +113,25 @@ export default function MushafKelime({
       )}
 
       {/* Arapça metin */}
-      <span style={{
-        fontFamily: arapcaFont,
-        fontSize: `${yaziBoyutu}px`,
-        lineHeight: lineHeight,
-        color: theme.text,
-        display: "inline",
-        opacity: aktif ? 1 : 0.95,
-      }}>
+      <span
+        style={{
+          fontFamily: arapcaFont,
+          fontSize: `${yaziBoyutu}px`,
+          lineHeight: lineHeight,
+          color: theme.text,
+          display: "inline",
+          opacity: aktif ? 1 : 0.95,
+          verticalAlign: "middle",
+        }}
+      >
         {kelime.arabic.split('').map((harf, i) => (
-          <span key={i} style={{
-            letterSpacing: i === kelime.arabic.length - 1 ? '0px' : `${harfAraligi}px`,
-            marginLeft: i === kelime.arabic.length - 1 ? '0px' : `${harfAraligi}px`,
-          }}>
+          <span
+            key={i}
+            style={{
+              letterSpacing: i === kelime.arabic.length - 1 ? '0px' : `${harfAraligi}px`,
+              marginLeft: i === kelime.arabic.length - 1 ? '0px' : `${harfAraligi}px`,
+            }}
+          >
             {harf}
           </span>
         ))}

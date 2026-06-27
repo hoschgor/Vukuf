@@ -273,95 +273,17 @@ const [harfAraligi, setHarfAraligi] = useState(() =>
     }))
   }, [sayfaMap])
 
-  const sayfaYukseklikleri = useMemo(() => {
-    if (!sayfaListesi.length) return []
-    
-    const mobile = isMobile
-    
-    return sayfaListesi.map((sayfa) => {
-      const elemanlar = sayfa.elemanlar
-      
-      // Her bir bloğun yüksekliğini hesapla
-      let toplamYukseklik = 0
-      
-      // 1. Padding (üst ve alt)
-      const padding = mobile ? 20 : 30
-      toplamYukseklik += padding
-      
-      // 2. Her elemanı gez ve yükseklikleri topla
-      let mevcutInlineElemanlar = []
-      let inlineYukseklik = 0
-      
-      elemanlar.forEach((el, index) => {
-        if (el.tip === "sure-baslik" || el.tip === "besmele") {
-          // Önceki inline grubu kapat
-          if (mevcutInlineElemanlar.length > 0) {
-            const kelimeSayisi = mevcutInlineElemanlar.filter(e => e.tip === "kelime").length
-            const ayetSayisi = mevcutInlineElemanlar.filter(e => e.tip === "ayet-sonu").length
-            
-            const fontBoyutu = mobile ? yaziBoyutu : yaziBoyutu + 2
-            const lineHeight = mobile ? 2.2 : 2.0
-            const satirYuksekligi = fontBoyutu * lineHeight
-            
-            const kelimeSatirSayisi = Math.ceil(kelimeSayisi / (mobile ? 14 : 18))
-            const kelimeYuksekligi = kelimeSatirSayisi * satirYuksekligi
-            const ayetYuksekligi = ayetSayisi * (mobile ? 18 : 20)
-            
-            inlineYukseklik = Math.max(kelimeYuksekligi + ayetYuksekligi, mobile ? 60 : 80)
-            toplamYukseklik += inlineYukseklik
-            mevcutInlineElemanlar = []
-          }
-          
-          // Block eleman (sure-baslik veya besmele)
-          if (el.tip === "sure-baslik") {
-            toplamYukseklik += mobile ? 60 : 80
-            toplamYukseklik += mobile ? 4 : 6 // margin
-          } else if (el.tip === "besmele") {
-            toplamYukseklik += mobile ? 40 : 55
-            toplamYukseklik += mobile ? 4 : 6 // margin
-          }
-        } else {
-          // İnline eleman (kelime veya ayet-sonu)
-          mevcutInlineElemanlar.push(el)
-        }
-      })
-      
-      // Kalan inline grubu kapat
-      if (mevcutInlineElemanlar.length > 0) {
-        const kelimeSayisi = mevcutInlineElemanlar.filter(e => e.tip === "kelime").length
-        const ayetSayisi = mevcutInlineElemanlar.filter(e => e.tip === "ayet-sonu").length
-        
-        const fontBoyutu = mobile ? yaziBoyutu : yaziBoyutu + 2
-        const lineHeight = mobile ? 2.2 : 2.0
-        const satirYuksekligi = fontBoyutu * lineHeight
-        
-        const kelimeSatirSayisi = Math.ceil(kelimeSayisi / (mobile ? 14 : 18))
-        const kelimeYuksekligi = kelimeSatirSayisi * satirYuksekligi
-        const ayetYuksekligi = ayetSayisi * (mobile ? 18 : 20)
-        
-        inlineYukseklik = Math.max(kelimeYuksekligi + ayetYuksekligi, mobile ? 60 : 80)
-        toplamYukseklik += inlineYukseklik
-      }
-      
-      // Son padding (alt)
-      toplamYukseklik += mobile ? 16 : 24
-      
-      // Minimum yükseklik
-      return Math.max(toplamYukseklik, mobile ? 200 : 300)
-    })
-  }, [sayfaListesi, yaziBoyutu, isMobile])
+  // ── SAYFA YÜKSEKLİKLERİ ──
+  
 
   // ── VIRTUALIZER ──
   const virtualizer = useVirtualizer({
     count: sayfaListesi.length,
     getScrollElement: () => scrollRef.current,
-    estimateSize: (index) => {
-      const height = sayfaYukseklikleri[index] || (isMobile ? 400 : 600)
-      return height
-    },
-    overscan: 5,
+    estimateSize: () => 650,
+    overscan: 3,
+    // measureElement KALDIR — ref ile otomatik ölçüm yapılıyor
   })
-
   // ════════════════════════════════════════════════════════════════
   // NAVİGASYON
   // ════════════════════════════════════════════════════════════════
@@ -1100,13 +1022,15 @@ const [harfAraligi, setHarfAraligi] = useState(() =>
               return (
                 <div
                   key={vItem.key}
+                  ref={virtualizer.measureElement}  // bu yeterli v3'te
+                  data-index={vItem.index}
                   style={{
                     position: "absolute",
                     top: 0,
                     left: 0,
                     right: 0,
-                    width: "100%",        // ← ekle
-                    boxSizing: "border-box", // ← ekle
+                    width: "100%",
+                    boxSizing: "border-box",
                     transform: `translateY(${vItem.start}px)`,
                   }}
                 >

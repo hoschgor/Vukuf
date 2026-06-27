@@ -68,12 +68,12 @@ export default function MushafSayfa({
   return (
     <div style={{
       position: "relative",
-      overflow: "hidden",
       width: "100%",
-      border: "2px solid red",
       margin: "0 auto",
-      padding: isMobile ? "2px 12px" : "4px 32px",
+      padding: isMobile ? "2px 12px" : "2px 32px",  // top/bottom 2px
       boxSizing: "border-box",
+      outline: "2px solid blue",  // wrapper sınırı
+      background: "rgba(255,0,0,0.05)",  // içini renklendir
     }}>
 
       {/* Sayfa numarası */}
@@ -83,10 +83,10 @@ export default function MushafSayfa({
         alignItems: "center",
         justifyContent: "center",
         gap: "6px",
-        marginBottom: isMobile ? 4 : 6,
+        marginBottom: isMobile ? 1 : 2,
         paddingTop: isMobile ? 2 : 4,
       }}>
-        <div style={{ flex: 1, height: "0.5px", background: `${theme.accent}30` }} />
+        <div style={{ flex: 1, height: "1px", background: `linear-gradient(to right, transparent, ${theme.accent}60, transparent)` }} />
         <span style={{
           fontFamily: "'Scheherazade New', serif",
           fontSize: isMobile ? "9px" : "11px",
@@ -97,7 +97,7 @@ export default function MushafSayfa({
         }}>
           {sayfaNo}
         </span>
-        <div style={{ flex: 1, height: "0.5px", background: `${theme.accent}30` }} />
+        <div style={{ flex: 1, height: "1px", background: `linear-gradient(to right, transparent, ${theme.accent}60, transparent)` }} />
       </div>
 
       {/* Secde kenar rozeti */}
@@ -121,8 +121,10 @@ export default function MushafSayfa({
           return (
             <div key={`baslik-${grup.eleman.sure.id}-${gi}`} style={{
               width: "100%",
-              marginTop: gi > 0 ? (isMobile ? 8 : 6) * (fontSize / 20) : 0,
-              marginBottom: (isMobile ? 4 :1) * (fontSize / 20),
+              marginTop: gi > 0 ? fontSize * 0.6 : 0,
+              marginBottom: fontSize * 0.3,
+              // ÖNEMLİ: clear: "both" ile taşmaları engelle
+              clear: "both",
             }}>
               <SureBasligi
                 sure={grup.eleman.sure}
@@ -140,7 +142,9 @@ export default function MushafSayfa({
           return (
             <div key={`besmele-${grup.eleman.sure.id}-${gi}`} style={{
               width: "100%",
-              marginBottom: (isMobile ? 4 : 8) * (fontSize / 20),
+              marginBottom: fontSize * 0.3,
+              // ÖNEMLİ: clear: "both" ile taşmaları engelle
+              clear: "both",
             }}>
               <Besmele
                 theme={theme}
@@ -166,17 +170,20 @@ export default function MushafSayfa({
                 lineHeight: lineHeight,
                 fontFamily: arapcaFont,
                 color: theme.text,
-                paddingTop: `${fontSize * (isMobile ? 0.5 : 0.55)}px`,
-                marginBottom: isMobile ? 4 : 8,
-                // Kelimeler arası boşluk — wordSpacing RTL'de çalışır
+                // ÖNEMLİ: paddingTop'u azalt, kelimeler zaten kendi padding'lerini alıyor
+                paddingTop: `${fontSize * 0.3}px`,
+                paddingBottom: `${fontSize * 0.15}px`,
+                marginBottom: fontSize * (isMobile ? 20 : 20),
                 wordSpacing: isMobile ? "3px" : "4px",
-                // Satır kırılmasını engelleyen hiçbir şey olmamalı
+                // ÖNEMLİ: whiteSpace: "normal" ile satır kırılımına izin ver
                 whiteSpace: "normal",
                 overflowWrap: "break-word",
+                // ÖNEMLİ: Kelimeler arası boşluk
+                display: "block",
+                width: "100%",
               }}
             >
-              {grup.elemanlar.map((el) => {
-
+              {grup.elemanlar.map((el, index) => {
                 if (el.tip === "kelime") {
                   const aktif =
                     aktifAyet?.sureNo === el.sure.id &&
@@ -206,13 +213,16 @@ export default function MushafSayfa({
                       key={`ayet-sonu-${el.sure.id}-${el.ayet.no}`}
                       onClick={(e) => onAyetTikla?.(el.sure, el.ayet.no, e)}
                       style={{
-                        display: "inline-flex",
+                        display: "inline-block",
                         alignItems: "center",
                         justifyContent: "center",
                         cursor: "pointer",
                         margin: `0 ${isMobile ? 2 : 3}px`,
                         userSelect: "none",
+                        // ÖNEMLİ: verticalAlign: "middle" ile hizala
                         verticalAlign: "middle",
+                        // ÖNEMLİ: lineHeight'i miras al
+                        lineHeight: lineHeight,
                       }}
                       title={`${el.sure.isim} · ${el.ayet.no}. Âyet`}
                     >
@@ -220,7 +230,10 @@ export default function MushafSayfa({
                         width={boyut * 1.4}
                         height={boyut * 1.4}
                         viewBox="0 0 40 40"
-                        style={{ display: "block" }}
+                        style={{
+                          display: "inline-block",
+                          verticalAlign: "middle",
+                        }}
                       >
                         <circle cx="20" cy="20" r="16"
                           fill={theme.accent} fillOpacity="0.06"
@@ -263,11 +276,11 @@ export default function MushafSayfa({
         return null
       })}
 
-      {/* Sayfa alt çizgisi — daha belirgin */}
+      {/* Sayfa alt çizgisi */}
       <div style={{
-        marginTop: isMobile ? 8 : 16,
-        height: "1px",
-        background: `linear-gradient(to right, transparent, ${theme.accent}50, transparent)`,
+        marginTop: isMobile ? 4 : 8,
+        height: "0px",
+        background: `linear-gradient(to right, transparent, ${theme.accent}60, transparent)`,
         width: "100%",
       }} />
     </div>

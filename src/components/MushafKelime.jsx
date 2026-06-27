@@ -63,8 +63,8 @@ export default function MushafKelime({
           style={{
             position: "absolute",
             // ÖNEMLİ: Top değerini negatif yaparak kelimenin üzerine çık
-            top: `-${yaziBoyutu * 0.15}px`,
-            left: "50%",
+            top: `-${yaziBoyutu * 0.05}px`,
+            left: "10%",
             transform: "translateX(-50%)",
             fontSize: `${yaziBoyutu * 0.48}px`,
             color: vakifRengi,

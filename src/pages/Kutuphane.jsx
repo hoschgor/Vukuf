@@ -159,13 +159,25 @@ function KitapRafi({ kitaplar, rafId, duzenlemeMode, theme, sensors, kitapSirala
 function SortableAlimRafi({ alim, duzenlemeMode, theme, sensors, kitapSiralama, setKitapSiralama, kitapArama, setKitapArama }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: alim.id })
   const style = { transform: CSS.Transform.toString(transform), transition }
-  const [acik, setAcik] = useState(false)
+  
+  // ── Alim Rafı açık/kapalı durumu (localStorage'dan oku)
+  const [acik, setAcik] = useState(() => {
+    const kayitli = localStorage.getItem(`vukuf-alim-rafi-${alim.id}`)
+    return kayitli ? JSON.parse(kayitli) : false
+  })
   
   const kitapAramaAcik = kitapArama[alim.id] !== undefined
 
   const tumKitaplar = alim.altKategoriler
     ? alim.altKategoriler.flatMap(a => a.kitaplar)
     : alim.kitaplar
+
+  // ── Alim Rafı açma/kapama
+  const toggleAlimRafi = () => {
+    const yeniDurum = !acik
+    setAcik(yeniDurum)
+    localStorage.setItem(`vukuf-alim-rafi-${alim.id}`, JSON.stringify(yeniDurum))
+  }
 
   const handleKitapAramaClick = (e) => {
     e.stopPropagation()
@@ -176,7 +188,9 @@ function SortableAlimRafi({ alim, duzenlemeMode, theme, sensors, kitapSiralama, 
       setKitapArama(newState)
     } else {
       if (!acik) {
+        // Arama açılırken rafı da aç
         setAcik(true)
+        localStorage.setItem(`vukuf-alim-rafi-${alim.id}`, JSON.stringify(true))
       }
       setKitapArama(prev => ({ ...prev, [alim.id]: "" }))
     }
@@ -185,7 +199,7 @@ function SortableAlimRafi({ alim, duzenlemeMode, theme, sensors, kitapSiralama, 
   return (
     <div ref={setNodeRef} style={{ ...style, marginBottom: "8px", background: theme.background, borderRadius: "8px", overflow: "hidden", border: `1px solid ${theme.border}` }}>
       <button
-        onClick={() => setAcik(!acik)}
+        onClick={toggleAlimRafi}
         style={{
           width: "100%",
           display: "flex",
@@ -381,6 +395,7 @@ function SortableKategori({ kategori,
       // Arama kapalıysa: Önce kategoriyi aç (kapalıysa), sonra aramayı aç
       if (acikKategori !== kategori.id) {
         setAcikKategori(kategori.id)
+        localStorage.setItem("vukuf-acik-kategori", JSON.stringify(kategori.id))
       }
       // Arama panelini aç
       setKategoriArama(prev => ({ ...prev, [kategori.id]: "" }))
@@ -390,7 +405,11 @@ function SortableKategori({ kategori,
   return (
     <div ref={setNodeRef} style={{ ...style, marginBottom: "32px", background: theme.surface, borderRadius: "16px", overflow: "hidden", border: `1px solid ${theme.border}`, boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}>
       <button
-        onClick={() => setAcikKategori(acikKategori === kategori.id ? null : kategori.id)}
+        onClick={() => {
+        const yeni = acikKategori === kategori.id ? null : kategori.id
+        setAcikKategori(yeni)
+        localStorage.setItem("vukuf-acik-kategori", JSON.stringify(yeni))
+      }}
         style={{
           width: "100%",
           padding: "20px 24px",
@@ -539,7 +558,10 @@ function SortableKategori({ kategori,
 
 export default function Kutuphane() {
   const { theme } = useApp()
-  const [acikKategori, setAcikKategori] = useState(null)
+  const [acikKategori, setAcikKategori] = useState(() => {
+  const kayitli = localStorage.getItem("vukuf-acik-kategori")
+  return kayitli ? JSON.parse(kayitli) : null
+})
   const [duzenlemeMode, setDuzenlemeMode] = useState(false)
   const [genelArama, setGenelArama] = useState("")
   const [genelAramaAcik, setGenelAramaAcik] = useState(false)

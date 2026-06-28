@@ -94,7 +94,6 @@ export default function KuranOkuma({ kitap }) {
   const scrollRef = useRef(null)
   const barZamanRef  = useRef(null)
   const sureSayacRef = useRef(null)
-  const scrollbarTimeoutRef = useRef(null)
   const scrollHiziRef = useRef({ sonScrollTop: 0, sonZaman: Date.now(), scrollSayisi: 0 })
 
   // ── Ses sistemi
@@ -137,6 +136,8 @@ export default function KuranOkuma({ kitap }) {
 
   // ── Scrollbar
   const [scrollbarGorunur, setScrollbarGorunur] = useState(false)
+  const scrollbarTimeoutRef = useRef(null)
+
 
   // ── Paneller
   const [aaAcik, setAaAcik]                     = useState(false)
@@ -299,7 +300,6 @@ export default function KuranOkuma({ kitap }) {
     if (scrollbarTimeoutRef.current) {
       clearTimeout(scrollbarTimeoutRef.current)
     }
-    // 2 saniye sonra gizle
     scrollbarTimeoutRef.current = setTimeout(() => {
       setScrollbarGorunur(false)
     }, 2000)
@@ -314,33 +314,37 @@ export default function KuranOkuma({ kitap }) {
     const deltaZaman = suAn - scrollHiziRef.current.sonZaman
     const deltaScroll = Math.abs(el.scrollTop - scrollHiziRef.current.sonScrollTop)
 
-    // Hızlı scroll algıla (100ms içinde 100px'den fazla kayma)
-    if (deltaZaman < 150 && deltaScroll > 80) {
+    // Mobil için daha hassas değerler
+    const zamanEsik = isMobile ? 400 : 300
+    const scrollEsik = isMobile ? 20 : 30
+    
+    if (deltaZaman < zamanEsik && deltaScroll > scrollEsik) {
       scrollHiziRef.current.scrollSayisi += 1
       
-      // 3 kez hızlı scroll yapıldıysa scrollbar'ı göster
-      if (scrollHiziRef.current.scrollSayisi >= 3) {
+      // Mobilde 1 kez yeterli olsun
+      const sayiEsik = isMobile ? 2 : 1
+      if (scrollHiziRef.current.scrollSayisi >= sayiEsik) {
         scrollbarGoster()
         scrollHiziRef.current.scrollSayisi = 0
       }
     } else {
-      // Yavaş scroll'da sayacı sıfırla
       scrollHiziRef.current.scrollSayisi = Math.max(0, scrollHiziRef.current.scrollSayisi - 1)
     }
 
-    // Değerleri güncelle
     scrollHiziRef.current.sonScrollTop = el.scrollTop
     scrollHiziRef.current.sonZaman = suAn
-  }, [scrollbarGoster])
+  }, [scrollbarGoster, isMobile])
 
   // ════════════════════════════════════════════════════════════════
   // SCROLL OLAYLARI
   // ════════════════════════════════════════════════════════════════
 
   const handleScroll = useCallback(() => {
-    scrollHiziAlgila()
-  }, [scrollHiziAlgila])
+    scrollHiziAlgila()    // ← hız algılama ayrı devam eder
 
+  }, [scrollbarGoster, scrollHiziAlgila])
+
+  
   // ════════════════════════════════════════════════════════════════
   // DOKUNMA FONKSİYONLARI
   // ════════════════════════════════════════════════════════════════
@@ -355,7 +359,7 @@ export default function KuranOkuma({ kitap }) {
 
   // Scroll event listener'ları
   useEffect(() => {
-    const scrollElement = scrollRef.current
+  const scrollElement = scrollRef.current
     if (!scrollElement) return
 
     scrollElement.addEventListener('scroll', handleScroll, { passive: true })
@@ -367,6 +371,30 @@ export default function KuranOkuma({ kitap }) {
       }
     }
   }, [handleScroll])
+
+  // Zoom Out
+  useEffect(() => {
+    if (!isMobile) return
+    
+    const viewport = window.visualViewport
+    if (!viewport) return
+
+    const zoomSifirla = () => {
+      // Zoom varsa (scale > 1) sıfırla
+      if (viewport.scale > 1) {
+        const meta = document.querySelector('meta[name="viewport"]')
+        if (meta) {
+          meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no'
+          setTimeout(() => {
+            meta.content = 'width=device-width, initial-scale=1.0, user-scalable=yes'
+          }, 50)
+        }
+      }
+    }
+
+    viewport.addEventListener('resize', zoomSifirla)
+    return () => viewport.removeEventListener('resize', zoomSifirla)
+  }, [isMobile])
 
   // ════════════════════════════════════════════════════════════════
   // VERİ HAZIRLAMA
@@ -457,6 +485,30 @@ export default function KuranOkuma({ kitap }) {
     overscan: 3,
   })
 
+
+  // Mevcut scroll event listener'ı — KORU
+
+// Sayfa numarası güncelleme — YENİ, ayrı useEffect olarak ekle
+useEffect(() => {
+  const el = scrollRef.current
+  if (!el) return
+
+  const sayfaGuncelle = () => {
+    const items = virtualizer.getVirtualItems()
+    if (!items.length) return
+    const ortaY = el.scrollTop + el.clientHeight / 2
+    const aktif = items.find(item =>
+      item.start <= ortaY && item.end >= ortaY
+    ) || items[0]
+
+    if (aktif && sayfaListesi[aktif.index]) {
+      setMevcutSayfa(sayfaListesi[aktif.index].sayfaNo)
+    }
+  }
+
+  el.addEventListener('scroll', sayfaGuncelle, { passive: true })
+  return () => el.removeEventListener('scroll', sayfaGuncelle)
+}, [virtualizer, sayfaListesi])
   // ════════════════════════════════════════════════════════════════
   // NAVİGASYON
   // ════════════════════════════════════════════════════════════════
@@ -538,6 +590,7 @@ export default function KuranOkuma({ kitap }) {
       konum: e ? popupKonum(e) : { x: window.innerWidth / 2 - 150, y: 120 },
     })
   }, [])
+
 
   function togglePanel(setter, deger) {
     setAaAcik(false); setTemaAcik(false)
@@ -1231,6 +1284,7 @@ export default function KuranOkuma({ kitap }) {
         {/* Virtualizer ile sayfa içeriği */}
         <div
           ref={scrollRef}
+          className="kuran-scroll-container" 
           style={{
             flex: 1,
             overflowY: "auto",
@@ -1298,26 +1352,24 @@ export default function KuranOkuma({ kitap }) {
         >
           {/* Scrollbar için CSS - WebKit tarayıcılar için */}
           <style>{`
-            .kuran-scroll-container {
-              scrollbar-width: ${scrollbarGorunur ? 'thin' : 'none'};
-              -ms-overflow-style: ${scrollbarGorunur ? 'auto' : 'none'};
-            }
             .kuran-scroll-container::-webkit-scrollbar {
               width: ${scrollbarGorunur ? '6px' : '0px'};
-              height: ${scrollbarGorunur ? '6px' : '0px'};
-              transition: width 0.3s ease, height 0.3s ease;
+              transition: width 0.3s ease;
             }
             .kuran-scroll-container::-webkit-scrollbar-track {
-              background: ${theme.surface}40;
-              border-radius: 10px;
+              background: transparent;
             }
             .kuran-scroll-container::-webkit-scrollbar-thumb {
-              background: ${theme.accent}60;
+              background: ${theme.accent}70;
               border-radius: 10px;
-              transition: background 0.3s ease;
+              min-height: 40px;
             }
             .kuran-scroll-container::-webkit-scrollbar-thumb:hover {
-              background: ${theme.accent}80;
+              background: ${theme.accent}90;
+            }
+            .kuran-scroll-container {
+              scrollbar-width: ${scrollbarGorunur ? 'thin' : 'none'};
+              scrollbar-color: ${theme.accent}70 transparent;
             }
           `}</style>
           

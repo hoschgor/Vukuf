@@ -908,6 +908,7 @@ export default function KuranOkuma({ kitap }) {
         transform: barGorunur ? "translateY(0)" : 
                    barKonum === "alt" ? "translateY(100%)" : "translateY(-100%)",
         justifyContent: isMobile ? "center" : "flex-start",
+        paddingLeft: isMobile ? "41px" : "4px",
       }}
     >
       <button onClick={() => navigate(-1)} style={barButonStil()}>
@@ -1011,17 +1012,10 @@ export default function KuranOkuma({ kitap }) {
       {/* Sağdaki butonlar */}
       <div style={{
         display: "flex", 
-        gap: isMobile ? "4px" : "6px", 
+        gap: isMobile ? "4px" : "3px", 
         alignItems: "center",
-        ...(isMobile 
-          ? { 
-              justifyContent: "center", 
-              flex: 1,
-            }  
-          : { 
-              marginLeft: "auto"
-            }
-        )
+        marginLeft: "auto",
+        paddingRight: isMobile ? "34px" : "4px",
       }}>
         {sureGoster && !sadeMode && (
           <span style={{ 

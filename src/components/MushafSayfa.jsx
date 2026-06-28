@@ -26,7 +26,7 @@ export default function MushafSayfa({
 }) {
   const isMobile = useMediaQuery("(max-width: 768px)")
   const fontSize = isMobile ? yaziBoyutu : yaziBoyutu + 2
-  const lineHeight = satirAraligi || (isMobile ? 2.6 : 2.4)
+  const lineHeight = satirAraligi || (isMobile ? 2.2 : 2.0) // Azaltıldı
 
   // Secde ayetlerini topla
   const secdeAyetleriMap = new Map()
@@ -41,9 +41,6 @@ export default function MushafSayfa({
   const secdeAyetleri = [...secdeAyetleriMap.values()]
 
   // ── Elemanları grupla
-  // Kural: sure-baslik ve besmele kendi bloğunda
-  // Aralarındaki TÜM kelime+ayet-sonu elemanları TEK bir inline gruba girer
-  // Böylece ayetler birbirinin devamında akar, satır CSS'e bırakılır
   const gruplar = []
   let mevcutInlineElemanlar = []
 
@@ -59,7 +56,6 @@ export default function MushafSayfa({
       inlineGrupKapat()
       gruplar.push({ tip: "block", eleman: el })
     } else {
-      // kelime ve ayet-sonu — hepsi aynı inline gruba
       mevcutInlineElemanlar.push(el)
     }
   })
@@ -70,7 +66,7 @@ export default function MushafSayfa({
       position: "relative",
       width: "100%",
       margin: "0 auto",
-      padding: isMobile ? "2px 12px" : "2px 32px",  // top/bottom 2px
+      padding: isMobile ? "2px 12px" : "2px 32px",
       boxSizing: "border-box",
     }}>
 
@@ -82,20 +78,20 @@ export default function MushafSayfa({
         justifyContent: "center",
         gap: "3px",
         marginBottom: isMobile ? 1 : 2,
-        paddingTop: isMobile ? 2 : 4,
+        paddingTop: isMobile ? 1 : 2, // Azaltıldı
       }}>
-        <div style={{ flex: 1, height: "2px", background: `linear-gradient(to right, transparent, ${theme.accent}60, transparent)` }} />
+        <div style={{ flex: 1, height: "1px", background: `linear-gradient(to right, transparent, ${theme.accent}40, transparent)` }} />
         <span style={{
           fontFamily: "'Scheherazade New', serif",
-          fontSize: isMobile ? "9px" : "11px",
+          fontSize: isMobile ? "8px" : "10px", // Azaltıldı
           color: theme.accent,
-          opacity: 0.5,
-          padding: "0 8px",
-          letterSpacing: "2px",
+          opacity: 0.4,
+          padding: "0 6px",
+          letterSpacing: "1px",
         }}>
           {sayfaNo}
         </span>
-        <div style={{ flex: 1, height: "2px", background: `linear-gradient(to right, transparent, ${theme.accent}60, transparent)` }} />
+        <div style={{ flex: 1, height: "1px", background: `linear-gradient(to right, transparent, ${theme.accent}40, transparent)` }} />
       </div>
 
       {/* Secde kenar rozeti */}
@@ -119,9 +115,8 @@ export default function MushafSayfa({
           return (
             <div key={`baslik-${grup.eleman.sure.id}-${gi}`} style={{
               width: "100%",
-              marginTop: gi > 0 ? fontSize * 0.6 : 0,
-              marginBottom: fontSize * 0.3,
-              // ÖNEMLİ: clear: "both" ile taşmaları engelle
+              marginTop: gi > 0 ? fontSize * 0.3 : 0, // Azaltıldı
+              marginBottom: fontSize * 0.15, // Azaltıldı
               clear: "both",
             }}>
               <SureBasligi
@@ -140,8 +135,7 @@ export default function MushafSayfa({
           return (
             <div key={`besmele-${grup.eleman.sure.id}-${gi}`} style={{
               width: "100%",
-              marginBottom: fontSize * 0.3,
-              // ÖNEMLİ: clear: "both" ile taşmaları engelle
+              marginBottom: fontSize * 0.15, // Azaltıldı
               clear: "both",
             }}>
               <Besmele
@@ -168,15 +162,12 @@ export default function MushafSayfa({
                 lineHeight: lineHeight,
                 fontFamily: arapcaFont,
                 color: theme.text,
-                // ÖNEMLİ: paddingTop'u azalt, kelimeler zaten kendi padding'lerini alıyor
-                paddingTop: `${fontSize * 0.3}px`,
-                paddingBottom: `${fontSize * 0.15}px`,
-                marginBottom: fontSize * (isMobile ? 20 : 20),
-                wordSpacing: isMobile ? "3px" : "4px",
-                // ÖNEMLİ: whiteSpace: "normal" ile satır kırılımına izin ver
+                paddingTop: `${fontSize * 0.15}px`, // Azaltıldı
+                paddingBottom: `${fontSize * 0.1}px`, // Azaltıldı
+                marginBottom: fontSize * (isMobile ? 0.15 : 0.2), // ÇOK AZALTILDI (20'den 0.15'e)
+                wordSpacing: isMobile ? "2px" : "3px",
                 whiteSpace: "normal",
                 overflowWrap: "break-word",
-                // ÖNEMLİ: Kelimeler arası boşluk
                 display: "block",
                 width: "100%",
               }}
@@ -204,7 +195,7 @@ export default function MushafSayfa({
 
                 if (el.tip === "ayet-sonu") {
                   const arapcaSayi = arapcaRakamla(el.ayet.no)
-                  const boyut = fontSize * 0.72
+                  const boyut = fontSize * 0.65 // Azaltıldı
 
                   return (
                     <span
@@ -215,18 +206,16 @@ export default function MushafSayfa({
                         alignItems: "center",
                         justifyContent: "center",
                         cursor: "pointer",
-                        margin: `0 ${isMobile ? 2 : 3}px`,
+                        margin: `0 ${isMobile ? 1 : 2}px`,
                         userSelect: "none",
-                        // ÖNEMLİ: verticalAlign: "middle" ile hizala
                         verticalAlign: "middle",
-                        // ÖNEMLİ: lineHeight'i miras al
                         lineHeight: lineHeight,
                       }}
                       title={`${el.sure.isim} · ${el.ayet.no}. Âyet`}
                     >
                       <svg
-                        width={boyut * 1.4}
-                        height={boyut * 1.4}
+                        width={boyut * 1.3}
+                        height={boyut * 1.3}
                         viewBox="0 0 40 40"
                         style={{
                           display: "inline-block",
@@ -234,11 +223,11 @@ export default function MushafSayfa({
                         }}
                       >
                         <circle cx="20" cy="20" r="16"
-                          fill={theme.accent} fillOpacity="0.06"
-                          stroke={theme.accent} strokeWidth="1" strokeOpacity="0.35"
+                          fill={theme.accent} fillOpacity="0.04"
+                          stroke={theme.accent} strokeWidth="0.8" strokeOpacity="0.25"
                         />
                         <circle cx="20" cy="20" r="12"
-                          fill="none" stroke={theme.accent} strokeWidth="0.5" strokeOpacity="0.15"
+                          fill="none" stroke={theme.accent} strokeWidth="0.4" strokeOpacity="0.1"
                         />
                         {[0,45,90,135,180,225,270,315].map((deg, i) => {
                           const rad = deg * Math.PI / 180
@@ -246,16 +235,16 @@ export default function MushafSayfa({
                             <line key={i}
                               x1={20 + Math.cos(rad)*14} y1={20 + Math.sin(rad)*14}
                               x2={20 + Math.cos(rad)*17} y2={20 + Math.sin(rad)*17}
-                              stroke={theme.accent} strokeWidth="0.6" strokeOpacity="0.25"
+                              stroke={theme.accent} strokeWidth="0.4" strokeOpacity="0.15"
                             />
                           )
                         })}
                         <text x="20" y="22"
                           textAnchor="middle"
                           fontFamily="'Scheherazade New', serif"
-                          fontSize={isMobile ? "9" : "11"}
+                          fontSize={isMobile ? "8" : "10"} // Azaltıldı
                           fontWeight="500"
-                          fill={theme.accent} fillOpacity="0.7"
+                          fill={theme.accent} fillOpacity="0.6"
                           dominantBaseline="middle"
                         >
                           {arapcaSayi}
@@ -276,7 +265,7 @@ export default function MushafSayfa({
 
       {/* Sayfa alt çizgisi */}
       <div style={{
-        marginTop: isMobile ? 4 : 8,
+        marginTop: isMobile ? 2 : 4, // Azaltıldı
         height: "0px",
         background: `linear-gradient(to right, transparent, ${theme.accent}60, transparent)`,
         width: "100%",

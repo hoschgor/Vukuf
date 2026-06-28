@@ -46,7 +46,6 @@ const PALET_ALANLARI = [
   { key: "textSecondary",label: "İkincil Yazı" },
   { key: "accent",       label: "Vurgu Rengi" },
   { key: "border",       label: "Kenarlık Rengi" },
-  { key: "lugatHighlight",label: "Lügat Vurgu" },
 ]
 
 const HAZIR_RENKLER = [
@@ -790,7 +789,6 @@ export default function KuranOkuma({ kitap }) {
           <div style={{ fontSize: "13px", color: ozelRenkler.text, marginBottom: "4px" }}>Örnek metin</div>
           <div style={{ fontSize: "12px", color: ozelRenkler.textSecondary, marginBottom: "6px" }}>İkincil metin</div>
           <span style={{ fontSize: "12px", color: ozelRenkler.lugatHighlight, borderBottom: `1px dotted ${ozelRenkler.lugatHighlight}` }}>
-            lügat kelimesi
           </span>
         </div>
         <button

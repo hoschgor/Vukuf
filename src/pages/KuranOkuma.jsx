@@ -29,13 +29,9 @@ import {
 
 // ── Arapça font listesi
 const ARAPCA_FONTLAR = [
-  { id: "kfgqpc",       label: "KFGQPC Uthmanic (Mushaf)", style: "'KFGQPC Uthmanic', serif",        google: null },
-  { id: "osman-taha",   label: "Osman Taha (Mushaf)",       style: "'Osman Taha', serif",              google: null },
-  { id: "amiri",        label: "Amiri",                     style: "'Amiri', serif",                   google: "Amiri:ital,wght@0,400;0,700;1,400" },
-  { id: "scheherazade", label: "Scheherazade New",          style: "'Scheherazade New', serif",        google: "Scheherazade+New:wght@400;700" },
-  { id: "noto-arabic",  label: "Noto Sans Arabic",          style: "'Noto Sans Arabic', sans-serif",   google: "Noto+Sans+Arabic:wght@400;600" },
-  { id: "reem-kufi",    label: "Reem Kufi",                 style: "'Reem Kufi', sans-serif",          google: "Reem+Kufi:wght@400;600" },
-  { id: "hasenat",      label: "Hasenat",                   style: "'Hasenat', serif",                 google: null },
+  { id: "kfgqpc",    label: "KFGQPC Uthmanic (Mushaf)", style: "'KFGQPC Uthmanic', serif",  google: null },
+  { id: "amiri",     label: "Amiri",                    style: "'Amiri', serif",              google: "Amiri:ital,wght@0,400;0,700;1,400" },
+  { id: "reem-kufi", label: "Reem Kufi",                style: "'Reem Kufi', sans-serif",     google: "Reem+Kufi:wght@400;600" },
 ]
 
 // ── Özel tema sabitleri
@@ -163,7 +159,7 @@ export default function KuranOkuma({ kitap }) {
   const [arapcaFontId, setArapcaFontId] = useState(() =>
     localStorage.getItem("vukuf-kuran-arapca-font") || "scheherazade"
   )
-  const aktifArapcaFont = ARAPCA_FONTLAR.find(f => f.id === arapcaFontId) || ARAPCA_FONTLAR[3]
+  const aktifArapcaFont = ARAPCA_FONTLAR.find(f => f.id === arapcaFontId) || ARAPCA_FONTLAR[0]
 
   // ── Okuma süresi
   const [bugunSure, setBugunSure] = useState(() =>

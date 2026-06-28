@@ -1229,7 +1229,7 @@ export default function KuranOkuma({ kitap }) {
           theme={theme}
           barKonum={barKonum}
           barGorunur={barGorunur}
-          barYuksekligi={isMobile ? 39 : 33}
+          barYuksekligi={isMobile ? 47 : 33}
         />
 
         {/* Virtualizer ile sayfa içeriği */}

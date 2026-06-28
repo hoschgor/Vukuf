@@ -137,6 +137,8 @@ export default function KuranOkuma({ kitap }) {
   const [otomatikGizleme, setOtomatikGizleme] = useState(() => localStorage.getItem("vukuf-otomatik-gizleme") !== "false")
   const [gizlemeSuresi, setGizlemeSuresi] = useState(() => parseInt(localStorage.getItem("vukuf-gizleme-suresi") || "5"))
   const [sureGoster, setSureGoster]       = useState(true)
+  const touchBaslangicRef = useRef({ x: 0, y: 0 })
+  const touchHareketRef = useRef(false)
 
   // ── Scrollbar
   const [scrollbarGorunur, setScrollbarGorunur] = useState(false)
@@ -1229,7 +1231,7 @@ export default function KuranOkuma({ kitap }) {
           theme={theme}
           barKonum={barKonum}
           barGorunur={barGorunur}
-          barYuksekligi={isMobile ? 47 : 33}
+          barYuksekligi={isMobile ? 47 : 40}
         />
 
         {/* Virtualizer ile sayfa içeriği */}
@@ -1256,23 +1258,48 @@ export default function KuranOkuma({ kitap }) {
           }}
           onTouchStart={(e) => {
             dokunusBasladi()
+            
+            // Touch başlangıç pozisyonunu kaydet
+            const touch = e.touches[0]
+            if (touch) {
+              touchBaslangicRef.current = {
+                x: touch.clientX,
+                y: touch.clientY
+              }
+            }
+            touchHareketRef.current = false
+          }}
+          onTouchMove={(e) => {
+            // Hareket varsa işaretle
+            const touch = e.touches[0]
+            if (touch && touchBaslangicRef.current) {
+              const deltaX = Math.abs(touch.clientX - touchBaslangicRef.current.x)
+              const deltaY = Math.abs(touch.clientY - touchBaslangicRef.current.y)
+              
+              // 10px'den fazla hareket varsa kaydırma olarak kabul et
+              if (deltaX > 10 || deltaY > 10) {
+                touchHareketRef.current = true
+              }
+            }
           }}
           onTouchEnd={(e) => {
             dokunusBitti()
             
             // Eğer popup veya panel açık ise işlemi engelle
-            if (popup || menuAcik || aaAcik || temaAcik || ayarlarAcik || ozelTemaPanelAcik) return
+            if (popup || menuAcik || aaAcik || temaAcik || ayarlarAcik || ozelTemaPanelAcik) {
+              return
+            }
             
-            // Küçük bir gecikme ile toggle yap (çift tetiklemeyi önlemek için)
-            setTimeout(() => {
-              barToggle()
-            }, 50)
+            // Eğer hareket varsa (kaydırma), toggle yapma
+            if (touchHareketRef.current) {
+              return
+            }
+            
+            // Tıklama ise bar'ı toggle et
+            barToggle()
           }}
           onScroll={() => {
-            if (!herhangiPanelAcik && otomatikGizleme) {
-              if (barZamanRef.current) clearTimeout(barZamanRef.current)
-              setBarGorunur(false)
-            }
+            // Scroll'un bar'ı etkilemesini engelle
           }}
         >
           {/* Scrollbar için CSS - WebKit tarayıcılar için */}

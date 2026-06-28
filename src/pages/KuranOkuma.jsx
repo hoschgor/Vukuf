@@ -80,7 +80,7 @@ function popupKonum(e) {
   return { x, y }
 }
 
-// ── Lugat arama (hareke temizlenmiş kelimeyle)
+// ── Lugat arama
 function lugat(kelimeHam) {
   const temiz = harekeSil(kelimeHam).trim()
   return arapcaLugat[temiz] || null
@@ -99,6 +99,8 @@ export default function KuranOkuma({ kitap }) {
   const scrollRef = useRef(null)
   const barZamanRef  = useRef(null)
   const sureSayacRef = useRef(null)
+  const scrollbarTimeoutRef = useRef(null)
+  const scrollHiziRef = useRef({ sonScrollTop: 0, sonZaman: Date.now(), scrollSayisi: 0 })
 
   // ── Ses sistemi
   const player = useAudioPlayer()
@@ -107,7 +109,7 @@ export default function KuranOkuma({ kitap }) {
   const [mushafData, setMushafData] = useState([])
   const [yukleniyor, setYukleniyor] = useState(true)
 
-  // ── Popup: kelime veya ayet
+  // ── Popup
   const [popup, setPopup] = useState(null)
 
   // ── Sayfa navigasyonu
@@ -122,11 +124,11 @@ export default function KuranOkuma({ kitap }) {
     parseInt(localStorage.getItem("vukuf-yazi-boyutu") || "20")
   )
   const [satirAraligi, setSatirAraligi] = useState(() =>
-  parseFloat(localStorage.getItem("vukuf-satir-araligi") || "2.4")
-)
-const [harfAraligi, setHarfAraligi] = useState(() =>
-  parseFloat(localStorage.getItem("vukuf-harf-araligi") || "0")
-)
+    parseFloat(localStorage.getItem("vukuf-satir-araligi") || "2.4")
+  )
+  const [harfAraligi, setHarfAraligi] = useState(() =>
+    parseFloat(localStorage.getItem("vukuf-harf-araligi") || "0")
+  )
 
   // ── Bar
   const [barGorunur, setBarGorunur]       = useState(true)
@@ -136,13 +138,14 @@ const [harfAraligi, setHarfAraligi] = useState(() =>
   const [gizlemeSuresi, setGizlemeSuresi] = useState(() => parseInt(localStorage.getItem("vukuf-gizleme-suresi") || "5"))
   const [sureGoster, setSureGoster]       = useState(true)
 
+  // ── Scrollbar
+  const [scrollbarGorunur, setScrollbarGorunur] = useState(false)
+
   // ── Paneller
   const [aaAcik, setAaAcik]                     = useState(false)
   const [temaAcik, setTemaAcik]                 = useState(false)
   const [ayarlarAcik, setAyarlarAcik]           = useState(false)
   const [ozelTemaPanelAcik, setOzelTemaPanelAcik] = useState(false)
-  const [fontSeciciAcik, setFontSeciciAcik]     = useState(false)
-  
 
   // ── Özel tema
   const [ozelRenkler, setOzelRenkler] = useState(() => {
@@ -172,6 +175,15 @@ const [harfAraligi, setHarfAraligi] = useState(() =>
   const [acikSure, setAcikSure]   = useState(null)
   const [ayetArama, setAyetArama] = useState({})
 
+  // ── Otomatik kaydırma
+  const [otomatikKaydirma, setOtomatikKaydirma] = useState(false)
+  const [kaydirmaHizi, setKaydirmaHizi] = useState(1)
+  const [duraklatildi, setDuraklatildi] = useState(false)
+  const otomatikRef = useRef(null)
+
+  // Panel açık mı kontrolü
+  const herhangiPanelAcik = aaAcik || temaAcik || ayarlarAcik || ozelTemaPanelAcik || menuAcik || popup !== null
+
   // ════════════════════════════════════════════════════════════════
   // EFFECT'LER
   // ════════════════════════════════════════════════════════════════
@@ -182,8 +194,8 @@ const [harfAraligi, setHarfAraligi] = useState(() =>
   useEffect(() => { localStorage.setItem("vukuf-otomatik-gizleme",  String(otomatikGizleme))}, [otomatikGizleme])
   useEffect(() => { localStorage.setItem("vukuf-gizleme-suresi",    String(gizlemeSuresi))  }, [gizlemeSuresi])
   useEffect(() => { localStorage.setItem("vukuf-son-sayfa",         String(mevcutSayfa))    }, [mevcutSayfa])
-  useEffect(() => { localStorage.setItem("vukuf-satir-araligi", String(satirAraligi)) }, [satirAraligi])
-  useEffect(() => { localStorage.setItem("vukuf-harf-araligi", String(harfAraligi)) }, [harfAraligi])
+  useEffect(() => { localStorage.setItem("vukuf-satir-araligi",     String(satirAraligi))   }, [satirAraligi])
+  useEffect(() => { localStorage.setItem("vukuf-harf-araligi",      String(harfAraligi))    }, [harfAraligi])
 
   useEffect(() => {
     sureSayacRef.current = setInterval(() => {
@@ -211,16 +223,6 @@ const [harfAraligi, setHarfAraligi] = useState(() =>
     localStorage.setItem("vukuf-kuran-arapca-font", arapcaFontId)
   }, [arapcaFontId])
 
-  const barGoster = useCallback(() => {
-    setBarGorunur(true)
-    if (barZamanRef.current) clearTimeout(barZamanRef.current)
-    if (otomatikGizleme) {
-      barZamanRef.current = setTimeout(() => setBarGorunur(false), gizlemeSuresi * 1000)
-    }
-  }, [otomatikGizleme, gizlemeSuresi])
-
-  useEffect(() => { barGoster() }, [])
-
   useEffect(() => {
     fetch("/kuran-mushaf.json")
       .then(r => r.json())
@@ -228,10 +230,146 @@ const [harfAraligi, setHarfAraligi] = useState(() =>
       .catch(() => setYukleniyor(false))
   }, [])
 
+  // ── Otomatik kaydırma
+  useEffect(() => {
+    if (!otomatikKaydirma || duraklatildi) {
+      if (otomatikRef.current) { 
+        clearInterval(otomatikRef.current); 
+        otomatikRef.current = null 
+      }
+      return
+    }
+    const ms = Math.max(20, 220 - kaydirmaHizi * 20)
+    otomatikRef.current = setInterval(() => {
+      if (scrollRef.current) {
+        scrollRef.current.scrollTop += 1
+      }
+    }, ms)
+    return () => { 
+      if (otomatikRef.current) { 
+        clearInterval(otomatikRef.current); 
+        otomatikRef.current = null 
+      } 
+    }
+  }, [otomatikKaydirma, kaydirmaHizi, duraklatildi])
+
+  // ════════════════════════════════════════════════════════════════
+  // BAR FONKSİYONLARI
+  // ════════════════════════════════════════════════════════════════
+
+  const barGoster = useCallback(() => {
+    if (sadeMode || !otomatikGizleme) return
+    setBarGorunur(true)
+    if (barZamanRef.current) {
+      clearTimeout(barZamanRef.current)
+    }
+    barZamanRef.current = setTimeout(() => {
+      setBarGorunur(false)
+    }, gizlemeSuresi * 1000)
+  }, [otomatikGizleme, gizlemeSuresi, sadeMode])
+
   const barGizle = useCallback(() => {
-  if (barZamanRef.current) clearTimeout(barZamanRef.current)
-  setBarGorunur(false)
-}, [])
+    if (barZamanRef.current) {
+      clearTimeout(barZamanRef.current)
+      barZamanRef.current = null
+    }
+    if (otomatikGizleme) {
+      setBarGorunur(false)
+    }
+  }, [otomatikGizleme])
+
+  // ── Bar toggle (görünür/gizli değiştir)
+  const barToggle = useCallback(() => {
+    // Panel açıkken bar'ı gizleme/göster işlemini engelle
+    if (herhangiPanelAcik) return
+    
+    // Timeout'u temizle
+    if (barZamanRef.current) {
+      clearTimeout(barZamanRef.current)
+      barZamanRef.current = null
+    }
+    
+    // Toggle: görünür ise gizle, gizli ise göster
+    setBarGorunur(prev => !prev)
+  }, [herhangiPanelAcik])
+
+  // ════════════════════════════════════════════════════════════════
+  // SCROLLBAR FONKSİYONLARI
+  // ════════════════════════════════════════════════════════════════
+
+  const scrollbarGoster = useCallback(() => {
+    setScrollbarGorunur(true)
+    if (scrollbarTimeoutRef.current) {
+      clearTimeout(scrollbarTimeoutRef.current)
+    }
+    // 2 saniye sonra gizle
+    scrollbarTimeoutRef.current = setTimeout(() => {
+      setScrollbarGorunur(false)
+    }, 2000)
+  }, [])
+
+  // ── Scroll hızını algıla
+  const scrollHiziAlgila = useCallback(() => {
+    const el = scrollRef.current
+    if (!el) return
+
+    const suAn = Date.now()
+    const deltaZaman = suAn - scrollHiziRef.current.sonZaman
+    const deltaScroll = Math.abs(el.scrollTop - scrollHiziRef.current.sonScrollTop)
+
+    // Hızlı scroll algıla (100ms içinde 100px'den fazla kayma)
+    if (deltaZaman < 150 && deltaScroll > 80) {
+      scrollHiziRef.current.scrollSayisi += 1
+      
+      // 3 kez hızlı scroll yapıldıysa scrollbar'ı göster
+      if (scrollHiziRef.current.scrollSayisi >= 3) {
+        scrollbarGoster()
+        scrollHiziRef.current.scrollSayisi = 0
+      }
+    } else {
+      // Yavaş scroll'da sayacı sıfırla
+      scrollHiziRef.current.scrollSayisi = Math.max(0, scrollHiziRef.current.scrollSayisi - 1)
+    }
+
+    // Değerleri güncelle
+    scrollHiziRef.current.sonScrollTop = el.scrollTop
+    scrollHiziRef.current.sonZaman = suAn
+  }, [scrollbarGoster])
+
+  // ════════════════════════════════════════════════════════════════
+  // SCROLL OLAYLARI
+  // ════════════════════════════════════════════════════════════════
+
+  const handleScroll = useCallback(() => {
+    scrollHiziAlgila()
+  }, [scrollHiziAlgila])
+
+  // ════════════════════════════════════════════════════════════════
+  // DOKUNMA FONKSİYONLARI
+  // ════════════════════════════════════════════════════════════════
+
+  function dokunusBasladi() {
+    setDuraklatildi(true)
+  }
+
+  function dokunusBitti() {
+    setDuraklatildi(false)
+  }
+
+  // Scroll event listener'ları
+  useEffect(() => {
+    const scrollElement = scrollRef.current
+    if (!scrollElement) return
+
+    scrollElement.addEventListener('scroll', handleScroll, { passive: true })
+
+    return () => {
+      scrollElement.removeEventListener('scroll', handleScroll)
+      if (scrollbarTimeoutRef.current) {
+        clearTimeout(scrollbarTimeoutRef.current)
+      }
+    }
+  }, [handleScroll])
 
   // ════════════════════════════════════════════════════════════════
   // VERİ HAZIRLAMA
@@ -247,25 +385,10 @@ const [harfAraligi, setHarfAraligi] = useState(() =>
     )
   }, [sureler, menuArama])
 
-  // ════════════════════════════════════════════════════════════════
-  // ════════════════════════════════════════════════════════════════
-  // Virtualizer Kısmı
-  // ════════════════════════════════════════════════════════════════
-
-  // ════════════════════════════════════════════════════════════════
-  // Virtualizer Kısmı (DÜZELTİLMİŞ)
-  // ════════════════════════════════════════════════════════════════
-
   // ── SAYFA LİSTESİ ──
   const sayfaListesi = useMemo(() => {
-    if (!sayfaMap || sayfaMap.size === 0) {
-      console.warn('⚠️ sayfaMap boş!')
-      return []
-    }
-    
+    if (!sayfaMap || sayfaMap.size === 0) return []
     const sayfaNolari = Array.from(sayfaMap.keys()).sort((a, b) => a - b)
-    console.log('📄 Sayfa listesi:', sayfaNolari.length, 'sayfa')
-    
     return sayfaNolari.map(sayfaNo => ({
       tip: "sayfa",
       sayfaNo,
@@ -274,16 +397,69 @@ const [harfAraligi, setHarfAraligi] = useState(() =>
   }, [sayfaMap])
 
   // ── SAYFA YÜKSEKLİKLERİ ──
-  
+  const sayfaYukseklikleri = useMemo(() => {
+    if (!sayfaListesi.length) return []
+    const mobile = isMobile
+    
+    return sayfaListesi.map((sayfa) => {
+      const elemanlar = sayfa.elemanlar
+      let toplamYukseklik = 0
+      toplamYukseklik += mobile ? 20 : 30
+      
+      let mevcutInlineElemanlar = []
+      
+      elemanlar.forEach((el) => {
+        if (el.tip === "sure-baslik" || el.tip === "besmele") {
+          if (mevcutInlineElemanlar.length > 0) {
+            const kelimeSayisi = mevcutInlineElemanlar.filter(e => e.tip === "kelime").length
+            const fontBoyutu = mobile ? yaziBoyutu : yaziBoyutu + 2
+            const lineHeight = mobile ? 2.2 : 2.0
+            const satirYuksekligi = fontBoyutu * lineHeight
+            const satirBasiKelime = mobile ? 12 : 16
+            const kelimeSatirSayisi = Math.max(1, Math.ceil(kelimeSayisi / satirBasiKelime))
+            const inlineYukseklik = kelimeSatirSayisi * satirYuksekligi + 20
+            toplamYukseklik += inlineYukseklik
+            mevcutInlineElemanlar = []
+          }
+          
+          if (el.tip === "sure-baslik") {
+            toplamYukseklik += mobile ? 55 : 75
+            toplamYukseklik += mobile ? 6 : 8
+          } else if (el.tip === "besmele") {
+            toplamYukseklik += mobile ? 35 : 50
+            toplamYukseklik += mobile ? 4 : 6
+          }
+        } else {
+          mevcutInlineElemanlar.push(el)
+        }
+      })
+      
+      if (mevcutInlineElemanlar.length > 0) {
+        const kelimeSayisi = mevcutInlineElemanlar.filter(e => e.tip === "kelime").length
+        const fontBoyutu = mobile ? yaziBoyutu : yaziBoyutu + 2
+        const lineHeight = mobile ? 2.2 : 2.0
+        const satirYuksekligi = fontBoyutu * lineHeight
+        const satirBasiKelime = mobile ? 12 : 16
+        const kelimeSatirSayisi = Math.max(1, Math.ceil(kelimeSayisi / satirBasiKelime))
+        const inlineYukseklik = kelimeSatirSayisi * satirYuksekligi + 20
+        toplamYukseklik += inlineYukseklik
+      }
+      
+      toplamYukseklik += mobile ? 16 : 24
+      return Math.max(toplamYukseklik, mobile ? 200 : 300)
+    })
+  }, [sayfaListesi, yaziBoyutu, isMobile])
 
   // ── VIRTUALIZER ──
   const virtualizer = useVirtualizer({
     count: sayfaListesi.length,
     getScrollElement: () => scrollRef.current,
-    estimateSize: () => 650,
+    estimateSize: (index) => {
+      return sayfaYukseklikleri[index] || (isMobile ? 500 : 700)
+    },
     overscan: 3,
-    // measureElement KALDIR — ref ile otomatik ölçüm yapılıyor
   })
+
   // ════════════════════════════════════════════════════════════════
   // NAVİGASYON
   // ════════════════════════════════════════════════════════════════
@@ -302,7 +478,6 @@ const [harfAraligi, setHarfAraligi] = useState(() =>
     const n = parseInt(no)
     if (n >= 1 && n <= toplamSayfa) {
       setMevcutSayfa(n)
-      // Virtualizer'ı o sayfaya kaydır
       const index = sayfaListesi.findIndex(s => s.sayfaNo === n)
       if (index !== -1) {
         virtualizer.scrollToIndex(index, { align: "start" })
@@ -316,7 +491,6 @@ const [harfAraligi, setHarfAraligi] = useState(() =>
       ? ayetSayfasi(sureId, ayetNo, sayfaMap)
       : sureBaslangicSayfasi(sureId, sayfaMap)
     setMevcutSayfa(sayfa)
-    // Virtualizer'ı o sayfaya kaydır
     const index = sayfaListesi.findIndex(s => s.sayfaNo === sayfa)
     if (index !== -1) {
       virtualizer.scrollToIndex(index, { align: "start" })
@@ -405,15 +579,11 @@ const [harfAraligi, setHarfAraligi] = useState(() =>
   // ════════════════════════════════════════════════════════════════
   // AA PANELİ
   // ════════════════════════════════════════════════════════════════
-  // KuranOkuma.jsx içindeki AaPanel'i bu ile değiştir
-// fontSeciciAcik state'i artık gerekmiyor, kaldırılabilir
 
   const AaPanel = aaAcik && (
     <>
       <div onClick={() => setAaAcik(false)} style={{ position: "fixed", inset: 0, zIndex: 195 }} />
       <div style={{ ...panelStil("center"), width: "300px", maxHeight: "80vh", overflowY: "auto", zIndex: 200 }}>
-
-        {/* ── Yazı boyutu ── */}
         <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px" }}>YAZI BOYUTU</div>
         <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "20px" }}>
           <button onClick={() => setYaziBoyutu(v => Math.max(14, v - 1))} style={barButonStil()}>
@@ -428,7 +598,6 @@ const [harfAraligi, setHarfAraligi] = useState(() =>
           </button>
         </div>
 
-        {/* ── Satır aralığı ── */}
         <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px" }}>SATIR ARALIĞI</div>
         <div style={{ marginBottom: "20px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", color: theme.textSecondary, marginBottom: "6px" }}>
@@ -442,7 +611,6 @@ const [harfAraligi, setHarfAraligi] = useState(() =>
             onChange={e => setSatirAraligi(parseFloat(e.target.value))}
             style={{ width: "100%", accentColor: theme.accent }}
           />
-          {/* Önizleme */}
           <div style={{
             marginTop: "8px", padding: "8px 12px", borderRadius: "8px",
             background: theme.background, border: `1px solid ${theme.border}`,
@@ -457,7 +625,6 @@ const [harfAraligi, setHarfAraligi] = useState(() =>
           </div>
         </div>
 
-        {/* ── Harf aralığı ── */}
         <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px" }}>HARF ARALIĞI</div>
         <div style={{ marginBottom: "20px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", color: theme.textSecondary, marginBottom: "6px" }}>
@@ -473,7 +640,6 @@ const [harfAraligi, setHarfAraligi] = useState(() =>
           />
         </div>
 
-        {/* ── Yazı tipi — kari menüsü tarzı ── */}
         <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px" }}>YAZI TİPİ</div>
         <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
           {ARAPCA_FONTLAR.map(font => (
@@ -499,15 +665,14 @@ const [harfAraligi, setHarfAraligi] = useState(() =>
             </button>
           ))}
         </div>
-
       </div>
     </>
   )
 
-
   // ════════════════════════════════════════════════════════════════
   // TEMA PANELİ
   // ════════════════════════════════════════════════════════════════
+
   const TemaPanel = temaAcik && (
     <>
       <div onClick={() => setTemaAcik(false)} style={{ position: "fixed", inset: 0, zIndex: 195 }} />
@@ -554,6 +719,7 @@ const [harfAraligi, setHarfAraligi] = useState(() =>
   // ════════════════════════════════════════════════════════════════
   // ÖZEL TEMA PANELİ
   // ════════════════════════════════════════════════════════════════
+
   const OzelTemaPanel = ozelTemaPanelAcik && (
     <>
       <div onClick={() => setOzelTemaPanelAcik(false)}
@@ -647,6 +813,7 @@ const [harfAraligi, setHarfAraligi] = useState(() =>
   // ════════════════════════════════════════════════════════════════
   // AYARLAR PANELİ
   // ════════════════════════════════════════════════════════════════
+
   const AyarlarPanel = ayarlarAcik && (
     <>
       <div onClick={() => setAyarlarAcik(false)} style={{ position: "fixed", inset: 0, zIndex: 195 }} />
@@ -720,32 +887,38 @@ const [harfAraligi, setHarfAraligi] = useState(() =>
   // ════════════════════════════════════════════════════════════════
   // BAR
   // ════════════════════════════════════════════════════════════════
+
   const Bar = (
     <div
-      onClick={barGoster}
       style={{
         position: "fixed", left: 0, right: 0,
         [barKonum === "alt" ? "bottom" : "top"]: 0,
         background: theme.surface,
         borderTop:    barKonum === "alt" ? `1px solid ${theme.border}` : "none",
         borderBottom: barKonum === "ust" ? `1px solid ${theme.border}` : "none",
-        padding: isMobile ? "10px 16px" : "4px 12px",
-        display: "flex", alignItems: "center", gap: "4px",
-        zIndex: 90, flexWrap: "wrap",
-        transition: "opacity 0.3s ease",
+        padding: isMobile ? "8px 12px" : "4px 12px",
+        display: "flex", 
+        alignItems: "center", 
+        gap: isMobile ? "3px" : "4px",
+        zIndex: 90, 
+        flexWrap: "wrap",
+        transition: "opacity 0.3s ease, transform 0.3s ease",
         opacity: barGorunur ? 1 : 0,
         pointerEvents: barGorunur ? "auto" : "none",
+        transform: barGorunur ? "translateY(0)" : 
+                   barKonum === "alt" ? "translateY(100%)" : "translateY(-100%)",
+        justifyContent: isMobile ? "center" : "flex-start",
       }}
     >
       <button onClick={() => navigate(-1)} style={barButonStil()}>
-        <ArrowLeft size={16} /> Geri
+        <ArrowLeft size={isMobile ? 14 : 16} /> {!isMobile && "Geri"}
       </button>
+      
       <button onClick={() => setMenuAcik(!menuAcik)} style={barButonStil(menuAcik)}>
-        <Menu size={15} />
+        <Menu size={isMobile ? 14 : 15} />
       </button>
-      <button onClick={oncekiSayfa} disabled={mevcutSayfa <= 1} style={barButonStil()}>
-        <ChevronRight size={15} />
-      </button>
+      
+      {/* Sayfa bilgisi - ok işaretleri kaldırıldı */}
       {sayfaGirdiAcik ? (
         <input
           type="number"
@@ -758,44 +931,122 @@ const [harfAraligi, setHarfAraligi] = useState(() =>
             if (e.key === "Escape") { setSayfaGirdiAcik(false); setSayfaGirdi("") }
           }}
           style={{
-            width: "52px", padding: "4px 6px", borderRadius: "6px", fontSize: "12px",
-            border: `1px solid ${theme.accent}`, background: theme.background,
-            color: theme.text, textAlign: "center", outline: "none",
+            width: isMobile ? "44px" : "52px", 
+            padding: "4px 6px", 
+            borderRadius: "6px", 
+            fontSize: isMobile ? "11px" : "12px",
+            border: `1px solid ${theme.accent}`, 
+            background: theme.background,
+            color: theme.text, 
+            textAlign: "center", 
+            outline: "none",
           }}
         />
       ) : (
         <button
           onClick={() => { setSayfaGirdiAcik(true); setSayfaGirdi(String(mevcutSayfa)) }}
-          style={{ ...barButonStil(), fontSize: "12px", minWidth: "48px", justifyContent: "center" }}
+          style={{ 
+            ...barButonStil(), 
+            fontSize: isMobile ? "11px" : "12px", 
+            minWidth: isMobile ? "40px" : "48px", 
+            justifyContent: "center",
+            fontWeight: "500",
+            color: theme.accent,
+          }}
         >
           {mevcutSayfa} / {toplamSayfa}
         </button>
       )}
-      <button onClick={sonrakiSayfa} disabled={mevcutSayfa >= toplamSayfa} style={barButonStil()}>
-        <ChevronLeft size={15} />
-      </button>
+      
       {!sadeMode && (
-        <button onClick={() => togglePanel(setAaAcik, !aaAcik)} style={barButonStil(aaAcik)}>
-          <Type size={15} /> Aa
-        </button>
+        <>
+          <button onClick={() => togglePanel(setAaAcik, !aaAcik)} style={barButonStil(aaAcik)}>
+            <Type size={isMobile ? 13 : 15} /> {!isMobile && "Aa"}
+          </button>
+
+          {/* Otomatik kaydırma butonu */}
+          <button 
+            onClick={() => setOtomatikKaydirma(!otomatikKaydirma)} 
+            style={barButonStil(otomatikKaydirma)}
+            title="Otomatik kaydırma"
+          >
+            {otomatikKaydirma ? <Pause size={isMobile ? 14 : 15} /> : <Play size={isMobile ? 14 : 15} />}
+          </button>
+
+          {/* Otomatik kaydırma hızı */}
+          {otomatikKaydirma && (
+            <div style={{ 
+              display: "flex", 
+              alignItems: "center", 
+              gap: "2px",
+              background: `${theme.accent}10`,
+              borderRadius: "6px",
+              padding: "2px 6px",
+            }}>
+              <button 
+                onClick={() => setKaydirmaHizi(Math.max(1, kaydirmaHizi - 1))} 
+                style={{ ...barButonStil(), padding: "2px" }}
+              >
+                <Minus size={isMobile ? 12 : 13} />
+              </button>
+              <span style={{ 
+                fontSize: isMobile ? "10px" : "12px", 
+                color: theme.textSecondary,
+                minWidth: "16px",
+                textAlign: "center",
+              }}>
+                {kaydirmaHizi}
+              </span>
+              <button 
+                onClick={() => setKaydirmaHizi(Math.min(20, kaydirmaHizi + 1))} 
+                style={{ ...barButonStil(), padding: "2px" }}
+              >
+                <Plus size={isMobile ? 12 : 13} />
+              </button>
+            </div>
+          )}
+        </>
       )}
+      
+      {/* Sağdaki butonlar */}
       <div style={{
-        display: "flex", gap: "6px", alignItems: "center",
-        ...(isMobile ? { justifyContent: "center", flex: 1 } : { marginLeft: "auto" }),
+        display: "flex", 
+        gap: isMobile ? "4px" : "6px", 
+        alignItems: "center",
+        ...(isMobile 
+          ? { 
+              justifyContent: "center", 
+              flex: 1,
+            }  
+          : { 
+              marginLeft: "auto"
+            }
+        )
       }}>
         {sureGoster && !sadeMode && (
-          <span style={{ fontSize: "11px", color: theme.textSecondary, padding: "4px 6px", display: "flex", alignItems: "center", gap: "3px" }}>
-            <Clock size={11} /> Bugün {dakikaFormatla(bugunSure)}
+          <span style={{ 
+            fontSize: isMobile ? "9px" : "11px", 
+            color: theme.textSecondary, 
+            padding: "4px 4px", 
+            display: "flex", 
+            alignItems: "center", 
+            gap: "2px" 
+          }}>
+            <Clock size={isMobile ? 9 : 11} /> 
+            {isMobile ? dakikaFormatla(bugunSure) : `Bugün ${dakikaFormatla(bugunSure)}`}
           </span>
         )}
-        <button onClick={() => setSadeMode(!sadeMode)} style={{ ...barButonStil(sadeMode), padding: "4px" }}>
-          <Circle size={15} />
+        
+        <button onClick={() => setSadeMode(!sadeMode)} style={{ ...barButonStil(sadeMode), padding: isMobile ? "3px" : "4px" }}>
+          <Circle size={isMobile ? 13 : 15} />
         </button>
-        <button onClick={() => togglePanel(setTemaAcik, !temaAcik)} style={{ ...barButonStil(temaAcik), padding: "4px" }}>
-          <Palette size={15} />
+        
+        <button onClick={() => togglePanel(setTemaAcik, !temaAcik)} style={{ ...barButonStil(temaAcik), padding: isMobile ? "3px" : "4px" }}>
+          <Palette size={isMobile ? 13 : 15} />
         </button>
-        <button onClick={() => togglePanel(setAyarlarAcik, !ayarlarAcik)} style={{ ...barButonStil(ayarlarAcik), padding: "4px" }}>
-          <Settings size={15} />
+        
+        <button onClick={() => togglePanel(setAyarlarAcik, !ayarlarAcik)} style={{ ...barButonStil(ayarlarAcik), padding: isMobile ? "3px" : "4px" }}>
+          <Settings size={isMobile ? 13 : 15} />
         </button>
       </div>
     </div>
@@ -817,10 +1068,6 @@ const [harfAraligi, setHarfAraligi] = useState(() =>
   return (
     <div
       style={{ height: "100vh", display: "flex", background: theme.background, overflow: "hidden" }}
-      onMouseMove={(e) => {
-        if (e.movementX !== 0 || e.movementY !== 0) barGoster()
-      }}
-      onTouchStart={barGoster}
     >
       {/* Paneller */}
       {AaPanel}
@@ -982,7 +1229,7 @@ const [harfAraligi, setHarfAraligi] = useState(() =>
           theme={theme}
           barKonum={barKonum}
           barGorunur={barGorunur}
-          barYuksekligi={isMobile ? 48 : 32} // Main bar'ın yüksekliği
+          barYuksekligi={isMobile ? 39 : 33}
         />
 
         {/* Virtualizer ile sayfa içeriği */}
@@ -994,10 +1241,32 @@ const [harfAraligi, setHarfAraligi] = useState(() =>
             overflowX: "hidden",
             paddingTop:    barKonum === "ust" ? "8px" : "16px",
             paddingBottom: barKonum === "alt" ? "80px" : "16px",
+            scrollbarWidth: scrollbarGorunur ? "thin" : "none",
+            msOverflowStyle: scrollbarGorunur ? "auto" : "none",
+            transition: "scrollbar-width 0.3s ease",
           }}
           onClick={(e) => {
-            if (popup) return
-            barGorunur ? barGizle() : barGoster()
+            // Mobilde tıklama olayını engelle
+            if (window.innerWidth <= 768) return
+            
+            // Eğer popup veya panel açık ise işlemi engelle
+            if (popup || menuAcik || aaAcik || temaAcik || ayarlarAcik || ozelTemaPanelAcik) return
+            
+            barToggle()
+          }}
+          onTouchStart={(e) => {
+            dokunusBasladi()
+          }}
+          onTouchEnd={(e) => {
+            dokunusBitti()
+            
+            // Eğer popup veya panel açık ise işlemi engelle
+            if (popup || menuAcik || aaAcik || temaAcik || ayarlarAcik || ozelTemaPanelAcik) return
+            
+            // Küçük bir gecikme ile toggle yap (çift tetiklemeyi önlemek için)
+            setTimeout(() => {
+              barToggle()
+            }, 50)
           }}
           onScroll={() => {
             if (!herhangiPanelAcik && otomatikGizleme) {
@@ -1006,6 +1275,31 @@ const [harfAraligi, setHarfAraligi] = useState(() =>
             }
           }}
         >
+          {/* Scrollbar için CSS - WebKit tarayıcılar için */}
+          <style>{`
+            .kuran-scroll-container {
+              scrollbar-width: ${scrollbarGorunur ? 'thin' : 'none'};
+              -ms-overflow-style: ${scrollbarGorunur ? 'auto' : 'none'};
+            }
+            .kuran-scroll-container::-webkit-scrollbar {
+              width: ${scrollbarGorunur ? '6px' : '0px'};
+              height: ${scrollbarGorunur ? '6px' : '0px'};
+              transition: width 0.3s ease, height 0.3s ease;
+            }
+            .kuran-scroll-container::-webkit-scrollbar-track {
+              background: ${theme.surface}40;
+              border-radius: 10px;
+            }
+            .kuran-scroll-container::-webkit-scrollbar-thumb {
+              background: ${theme.accent}60;
+              border-radius: 10px;
+              transition: background 0.3s ease;
+            }
+            .kuran-scroll-container::-webkit-scrollbar-thumb:hover {
+              background: ${theme.accent}80;
+            }
+          `}</style>
+          
           <div
             style={{
               height: `${virtualizer.getTotalSize()}px`,
@@ -1024,7 +1318,7 @@ const [harfAraligi, setHarfAraligi] = useState(() =>
               return (
                 <div
                   key={vItem.key}
-                  ref={virtualizer.measureElement}  // bu yeterli v3'te
+                  ref={virtualizer.measureElement}
                   data-index={vItem.index}
                   style={{
                     position: "absolute",

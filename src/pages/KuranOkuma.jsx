@@ -962,7 +962,13 @@ export default function KuranOkuma({ kitap }) {
       {!sadeMode && (
         <>
           <button onClick={() => togglePanel(setAaAcik, !aaAcik)} style={barButonStil(aaAcik)}>
-            <Type size={isMobile ? 13 : 15} /> {!isMobile && "Aa"}
+            <span style={{ 
+              fontSize: isMobile ? "16px" : "18px", 
+              fontWeight: "600",
+              fontFamily: "'Amiri', serif",
+              position: "relative",
+              top: "-3px",
+            }}>ن</span>
           </button>
 
           {/* Otomatik kaydırma butonu */}

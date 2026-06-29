@@ -9,7 +9,7 @@ export default function AyetNo({ no, sure, theme, onClick }) {
         display: "inline-flex",
         alignItems: "center",
         justifyContent: "center",
-        fontSize: "13px",
+        fontSize: "16px",
         fontFamily: "PlayfairDisplay, serif",
         color: ac,
         backgroundColor: `${ac}10`,

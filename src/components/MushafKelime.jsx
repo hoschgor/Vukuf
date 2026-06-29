@@ -63,9 +63,9 @@ export default function MushafKelime({
           style={{
             position: "absolute",
             // ÖNEMLİ: Top değerini negatif yaparak kelimenin üzerine çık
-            top: `-${yaziBoyutu * 0.02}px`,
-            left: isMobile ? "20px" : "3px",
-            transform: "translateX(-50%)",
+            top: `-${yaziBoyutu * 0.09 }px`,
+            left: isMobile ? "10px" : "3px",
+            transform: "translateX(-10%)",
             fontSize: `${yaziBoyutu * 0.48}px`,
             color: vakifRengi,
             fontFamily: "'Scheherazade New', serif",
@@ -87,7 +87,7 @@ export default function MushafKelime({
             // ÖNEMLİ: Vakıf varsa üstüne, yoksa kelimenin üstüne
             top: kelime.vakif ? `-${yaziBoyutu * 0.1}px` : `-${yaziBoyutu * 0.05}px`,
             right: kelime.vakif ? "auto" : "0",
-            left: kelime.vakif ? "auto" : "50%",
+            left: kelime.vakif ? "auto" : "40%",
             transform: kelime.vakif ? "translateX(120%)" : "translateX(-50%)",
             fontSize: `${yaziBoyutu * 0.32}px`,
             color: "#2e7d4f",

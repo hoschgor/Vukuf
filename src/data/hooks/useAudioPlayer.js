@@ -35,10 +35,13 @@ export default function useAudioPlayer() {
   const [durum, setDurum] = useState("kapali")
   const [aktifAyet, setAktifAyet] = useState(null)
   const [hata, setHata] = useState(null)
+  const kariIdRef = useRef(kariId)
+  
 
-  useEffect(() => {
-    localStorage.setItem("vukuf-kari", kariId)
-  }, [kariId])
+useEffect(() => {
+  kariIdRef.current = kariId
+  localStorage.setItem("vukuf-kari", kariId)
+}, [kariId])
 
   useEffect(() => {
     const audio = new Audio()
@@ -58,7 +61,14 @@ export default function useAudioPlayer() {
   }, [])
 
   useEffect(() => {
-    if (audioRef.current && durum !== "kapali") durdur()
+    kariIdRef.current = kariId
+    localStorage.setItem("vukuf-kari", kariId)
+    if (audioRef.current && durum !== "kapali") {
+      audioRef.current.pause()
+      audioRef.current.src = ""
+      setDurum("kapali")
+      setAktifAyet(null)
+    }
   }, [kariId])
 
   const sonrakiAyetCal = useCallback(() => {
@@ -80,11 +90,11 @@ export default function useAudioPlayer() {
     const audio = audioRef.current
     if (!audio) return
     setHata(null)
-    audio.src = mp3Url(kariId, sureNo, ayetNo)
+    audio.src = mp3Url(kariIdRef.current, sureNo, ayetNo)  // ← kariId değil
     audio.play()
       .then(() => { setDurum("caliyor"); setAktifAyet({ sureNo, ayetNo }) })
       .catch(() => { setHata("Oynatma başlatılamadı"); setDurum("kapali") })
-  }, [kariId])
+  }, [])  // ← artık kariId bağımlılığı yok, ref üzerinden okur
 
   const ayetCal = useCallback((sureNo, ayetNo) => {
     kuyrukRef.current = [{ sureNo, ayetNo }]

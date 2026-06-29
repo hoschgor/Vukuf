@@ -195,7 +195,7 @@ export default function MushafSayfa({
 
                 if (el.tip === "ayet-sonu") {
                   const arapcaSayi = arapcaRakamla(el.ayet.no)
-                  const boyut = fontSize * 0.65 // Azaltıldı
+                  const boyut = fontSize * 0.65
 
                   return (
                     <span
@@ -214,37 +214,54 @@ export default function MushafSayfa({
                       title={`${el.sure.isim} · ${el.ayet.no}. Âyet`}
                     >
                       <svg
-                        width={boyut * 1.3}
-                        height={boyut * 1.3}
-                        viewBox="0 0 40 40"
+                        width={boyut * 1.9}
+                        height={boyut * 1.5}
+                        viewBox="0 0 50 50"
                         style={{
                           display: "inline-block",
                           verticalAlign: "middle",
                         }}
                       >
-                        <circle cx="20" cy="20" r="16"
-                          fill={theme.accent} fillOpacity="0.04"
-                          stroke={theme.accent} strokeWidth="0.8" strokeOpacity="0.25"
-                        />
-                        <circle cx="20" cy="20" r="12"
-                          fill="none" stroke={theme.accent} strokeWidth="0.4" strokeOpacity="0.1"
-                        />
-                        {[0,45,90,135,180,225,270,315].map((deg, i) => {
+                        {/* 8 yapraklı çiçek */}
+                        {[0, 45, 90, 135, 180, 225, 270, 315].map((deg, i) => {
                           const rad = deg * Math.PI / 180
+                          const cx = 25 + Math.cos(rad) * 16
+                          const cy = 25 + Math.sin(rad) * 16
                           return (
-                            <line key={i}
-                              x1={20 + Math.cos(rad)*14} y1={20 + Math.sin(rad)*14}
-                              x2={20 + Math.cos(rad)*17} y2={20 + Math.sin(rad)*17}
-                              stroke={theme.accent} strokeWidth="0.4" strokeOpacity="0.15"
+                            <ellipse
+                              key={`petal-${i}`}
+                              cx={cx}
+                              cy={cy}
+                              rx="7"
+                              ry="11"
+                              transform={`rotate(${deg}, ${cx}, ${cy})`}
+                              fill={theme.accent}
+                              fillOpacity={i % 2 === 0 ? "0.10" : "0.06"}
+                              stroke={theme.accent}
+                              strokeWidth="0.6"
+                              strokeOpacity="0.2"
                             />
                           )
                         })}
-                        <text x="20" y="22"
+                        
+                        {/* Ortadaki daire */}
+                        <circle cx="25" cy="25" r="10"
+                          fill={theme.accent} fillOpacity="0.08"
+                          stroke={theme.accent} strokeWidth="0.8" strokeOpacity="0.25"
+                        />
+                        
+                        <circle cx="25" cy="25" r="6"
+                          fill="none" stroke={theme.accent} strokeWidth="0.4" strokeOpacity="0.15"
+                        />
+                        
+                        {/* Ayet numarası */}
+                        <text x="25" y="29"
                           textAnchor="middle"
                           fontFamily="'Scheherazade New', serif"
-                          fontSize={isMobile ? "8" : "10"} // Azaltıldı
-                          fontWeight="500"
-                          fill={theme.accent} fillOpacity="0.6"
+                          fontSize={isMobile ? "25" : "23"}
+                          fontWeight="600"
+                          fill={theme.accent}
+                          fillOpacity="0.8"
                           dominantBaseline="middle"
                         >
                           {arapcaSayi}

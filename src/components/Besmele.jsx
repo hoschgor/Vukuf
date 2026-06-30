@@ -87,102 +87,115 @@ export default function Besmele({ theme, sureId, sureNo, ayetSayisi, player }) {
       padding: isMobile ? "0px 0px" : "0",
       position: "relative",
     }}>
-      <svg
-        width="100%"
-        viewBox="0 0 500 52"
-        preserveAspectRatio="xMidYMid meet"
-        style={{
-          maxWidth: isMobile ? "100%" : "100%",
-          margin: "0 auto",
-        }}
-      >
-        <defs>
-          <linearGradient id="besmeleGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor={ac} stopOpacity="0.05" />
-            <stop offset="50%" stopColor={ac} stopOpacity="0.12" />
-            <stop offset="100%" stopColor={ac} stopOpacity="0.05" />
-          </linearGradient>
-        </defs>
-
-        <rect x="2" y="2" width={w-4} height={h-4} rx="4"
-          fill="url(#besmeleGrad)" stroke={ac} strokeWidth="0.6" strokeOpacity="0.4" />
-        <rect x="6" y="6" width={w-12} height={h-12} rx="3"
-          fill="none" stroke={ac} strokeWidth="0.35" strokeOpacity="0.25" />
-
-        <KucukRozet x={28} y={h/2} />
-        <KucukRozet x={w-28} y={h/2} />
-
-        {Array.from({ length: 14 }).map((_, i) => {
-          const x = 80 + i * 24
-          return (
-            <g key={`top-chain-${i}`}>
-              <circle cx={x} cy="11" r="0.5" fill={ac} fillOpacity="0.2" />
-              <path d={`M ${x-3.5} 11 Q ${x} 8.5 ${x+3.5} 11`}
-                fill="none" stroke={ac} strokeWidth="0.3" strokeOpacity="0.2" />
-            </g>
-          )
-        })}
-
-        {Array.from({ length: 14 }).map((_, i) => {
-          const x = 80 + i * 24
-          return (
-            <g key={`bottom-chain-${i}`}>
-              <circle cx={x} cy={h-11} r="0.5" fill={ac} fillOpacity="0.2" />
-              <path d={`M ${x-3.5} ${h-11} Q ${x} ${h-8.5} ${x+3.5} ${h-11}`}
-                fill="none" stroke={ac} strokeWidth="0.3" strokeOpacity="0.2" />
-            </g>
-          )
-        })}
-
-        <text
-          x={w/2} y={h/2 + 7}
-          textAnchor="middle"
-          fontFamily="'Scheherazade New', 'Traditional Arabic', 'Noto Naskh Arabic', serif"
-          fontSize={isMobile ? "16" : "18"}
-          fontWeight="500"
-          fill={ac} fillOpacity="0.7"
-          direction="rtl"
+      <div style={{
+        position: "relative",
+        display: "inline-block",
+        maxWidth: "100%",
+        width: "100%",
+      }}>
+        <svg
+          width="100%"
+          viewBox="0 0 500 52"
+          preserveAspectRatio="xMidYMid meet"
+          style={{
+            maxWidth: isMobile ? "100%" : "100%",
+            margin: "0 auto",
+            display: "block",
+          }}
         >
-          بِسۡمِ ٱللَّهِ ٱلرَّحۡمَٰنِ ٱلرَّحِيمِ
-        </text>
+          <defs>
+            <linearGradient id="besmeleGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor={ac} stopOpacity="0.05" />
+              <stop offset="50%" stopColor={ac} stopOpacity="0.12" />
+              <stop offset="100%" stopColor={ac} stopOpacity="0.05" />
+            </linearGradient>
+          </defs>
 
-        {/* ── SES BUTONU (DÜZELTİLDİ) ── */}
-        {player && (
-          <foreignObject
-            x={isMobile ? w - 75 : w - 68}
-            y={h/2 - 11}
-            width="22"
-            height="22"
-            style={{ overflow: "visible" }}
+          <rect x="2" y="2" width={w-4} height={h-4} rx="4"
+            fill="url(#besmeleGrad)" stroke={ac} strokeWidth="0.6" strokeOpacity="0.4" />
+          <rect x="6" y="6" width={w-12} height={h-12} rx="3"
+            fill="none" stroke={ac} strokeWidth="0.35" strokeOpacity="0.25" />
+
+          <KucukRozet x={28} y={h/2} />
+          <KucukRozet x={w-28} y={h/2} />
+
+          {Array.from({ length: 14 }).map((_, i) => {
+            const x = 80 + i * 24
+            return (
+              <g key={`top-chain-${i}`}>
+                <circle cx={x} cy="11" r="0.5" fill={ac} fillOpacity="0.2" />
+                <path d={`M ${x-3.5} 11 Q ${x} 8.5 ${x+3.5} 11`}
+                  fill="none" stroke={ac} strokeWidth="0.3" strokeOpacity="0.2" />
+              </g>
+            )
+          })}
+
+          {Array.from({ length: 14 }).map((_, i) => {
+            const x = 80 + i * 24
+            return (
+              <g key={`bottom-chain-${i}`}>
+                <circle cx={x} cy={h-11} r="0.5" fill={ac} fillOpacity="0.2" />
+                <path d={`M ${x-3.5} ${h-11} Q ${x} ${h-8.5} ${x+3.5} ${h-11}`}
+                  fill="none" stroke={ac} strokeWidth="0.3" strokeOpacity="0.2" />
+              </g>
+            )
+          })}
+
+          <text
+            x={w/2} y={h/2 + 7}
+            textAnchor="middle"
+            fontFamily="'Scheherazade New', 'Traditional Arabic', 'Noto Naskh Arabic', serif"
+            fontSize={isMobile ? "16" : "18"}
+            fontWeight="500"
+            fill={ac} fillOpacity="0.7"
+            direction="rtl"
           >
-            <button
-              onClick={sesTikla}
-              title={caliniyor ? "Duraklat" : "Sureyi dinle"}
-              style={{
-                width: "100%",
-                height: "100%",
-                borderRadius: "50%",
-                border: `1.5px solid ${ac}40`,
-                background: caliniyor ? ac : `${ac}18`,
-                color: caliniyor ? "#fff" : ac,
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                padding: 0,
-                margin: 0,
-                transition: "all 0.15s",
-                boxShadow: "none",
-                transform: "scale(1)",
-                position: "relative",
-                zIndex: 10,
-              }}
-            >
-              {caliniyor ? <Pause size={12} /> : <Play size={12} />}
-            </button>
-          </foreignObject>
+            بِسۡمِ ٱللَّهِ ٱلرَّحۡمَٰنِ ٱلرَّحِيمِ
+          </text>
+        </svg>
+
+        {/* ── SES BUTONU ── SVG DIŞINA ALINDI! */}
+        {player && (
+          <button
+            onClick={sesTikla}
+            title={caliniyor ? "Duraklat" : "Sureyi dinle"}
+            style={{
+              position: "absolute",
+              right: isMobile ? "9%" : "10%",
+              top: "50%",
+              transform: "translateY(-50%)",
+              width: isMobile ? "19px" : "28px",
+              height: isMobile ? "19px" : "28px",
+              borderRadius: "50%",
+              border: `1.5px solid ${ac}40`,
+              background: caliniyor ? ac : `${ac}18`,
+              color: caliniyor ? "#fff" : ac,
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: 0,
+              margin: 0,
+              lineHeight: 1,        // ← Ekle
+              transition: "all 0.15s",
+              boxShadow: "none",
+              zIndex: 10,
+              flexShrink: 0,
+            }}
+          >
+            <span style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              lineHeight: 1,
+              marginLeft: isMobile ? "0.05px" : "0px",  // ← Play ikonu için sağa kaydırma
+              marginTop: isMobile ? "0px" : "0px",
+            }}>
+              {caliniyor ? <Pause size={isMobile ? 10 : 12} /> : <Play size={isMobile ? 10 : 12} />}
+            </span>
+          </button>
         )}
-      </svg>
+      </div>
     </div>
   )
 }

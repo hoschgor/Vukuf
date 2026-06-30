@@ -1,23 +1,26 @@
 import { useState, useEffect, useRef, useCallback } from "react"
 
-// Çalıştığı doğrulanan karilar (everyayah.com)
+// Kariler (everyayah.com)
 export const KARILAR = [
   { id: "Alafasy_128kbps",            label: "Mishary Alafasy" },
+  { id: "AbdulSamad_64kbps_QuranExplorer.Com", label: "Abdulbasit Abdussamed" },
+  { id: "Abu_Bakr_Ash-Shaatree_128kbps",  label: "Abu Bakr Ash Shaatree" },
+  { id: "Nasser_Alqatami_128kbps",  label: "Nasser Alqatami" },
+  { id: "Yasser_Ad-Dussary_128kbps",  label: "Yasser Ad-Dussary" },
   { id: "Husary_128kbps",             label: "Mahmoud Khalil Husary" },
-  { id: "Husary_64kbps",              label: "Husary (64kbps)" },
   { id: "Hudhaify_128kbps",           label: "Ali Al-Hudhaify" },
   { id: "Ghamadi_40kbps",             label: "Saad el-Gamidi" },
   { id: "Mohammad_al_Tablaway_128kbps", label: "Mohammad al-Tablaway" },
   { id: "Ibrahim_Akhdar_32kbps",      label: "Ibrahim Akhdar" },
-  { id: "Yasser_Ad-Dussary_128kbps",  label: "Yasser Ad-Dussary" },
 ]
 
 const BASE_URL = "https://everyayah.com/data"
 
 export function mp3Url(kariId, sureNo, ayetNo) {
-  const s = String(sureNo).padStart(3, "0")
-  const a = String(ayetNo).padStart(3, "0")
-  return `${BASE_URL}/${kariId}/${s}${a}.mp3`
+  const s = String(sureNo).padStart(3, "0");
+  const a = String(ayetNo).padStart(3, "0");
+  let gercekKariId = kariId;
+  return `${BASE_URL}/${gercekKariId}/${s}${a}.mp3`;
 }
 
 export function besmeleUrl(kariId) {

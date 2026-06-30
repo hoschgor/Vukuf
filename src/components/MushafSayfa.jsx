@@ -182,6 +182,7 @@ export default function MushafSayfa({
                     <MushafKelime
                       key={el.kelime.id}
                       kelime={el.kelime}
+                      position={el.position || (index + 1)}
                       aktif={aktif}
                       theme={theme}
                       arapcaFont={arapcaFont}

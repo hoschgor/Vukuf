@@ -51,8 +51,11 @@ const HAZIR_RENKLER = [
 ]
 
 // ── Yardımcı fonksiyonlar
-function harekeSil(k) {
-  return k.replace(/[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06DC\u06DF-\u06E4\u06E7\u06E8\u06EA-\u06ED\u06E1\u0671]/g, "")
+function normalize(k) {
+  k = k.replace(/[\u0610-\u061A\u064B-\u065F\u0640\u0670\u06D6-\u06DC\u06DF-\u06E4\u06E7\u06E8\u06EA-\u06ED\u06E1]/g, "")
+  k = k.replace(/[\u0671\u0622\u0623\u0625]/g, "\u0627")
+  k = k.replace(/^\u0627\u0644/, "\u0644")
+  return k.trim()
 }
 
 function dakikaFormatla(saniye) {
@@ -77,7 +80,7 @@ function popupKonum(e) {
 
 // ── Lugat arama
 function lugat(kelimeHam) {
-  const temiz = harekeSil(kelimeHam).trim()
+  const temiz = normalize(kelimeHam)
   return arapcaLugat[temiz] || null
 }
 
@@ -557,12 +560,14 @@ useEffect(() => {
 
   const kelimeTikla = useCallback((kelime, sure, ayet, e) => {
     const lugatSonuc = lugat(kelime.arabic)
+    const position = kelime.position || kelime.index || 1
     setPopup({
       tip: "kelime",
       kelime: {
-        ham:     kelime.arabic,
-        okunus:  lugatSonuc?.okunuş || "",
+        ham:      kelime.arabic,
+        okunus:   lugatSonuc?.okunuş || "",
         anlamlar: lugatSonuc?.anlamlar || [],
+        position: position,
       },
       sureNo: sure.id,
       ayetNo: ayet.no,

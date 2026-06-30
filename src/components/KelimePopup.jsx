@@ -1,58 +1,85 @@
+import { useState, useRef } from "react"
 import { Play, Pause, X } from "lucide-react"
 
-/**
- * KelimePopup
- * ───────────
- * Konum: src/components/KelimePopup.jsx
- *
- * Kullanım:
- *   <KelimePopup
- *     kelime={{ ham, okunus, anlamlar: [] }}
- *     konum={{ x, y }}
- *     player={player}
- *     sureNo={1}
- *     ayetNo={1}
- *     theme={theme}
- *     onKapat={() => setPopup(null)}
- *   />
- *
- * Not: Kelime bazlı ses everyayah'ta yok.
- * Geçici çözüm: o ayeti çalıyoruz.
- * İleride kelime bazlı kaynak eklenirse buraya eklenir.
- */
+const WBW_BASE = "https://audio.qurancdn.com/wbw"
+
+function kelimeMp3(sureNo, ayetNo, position) {
+  const pos = position && position > 0 ? position : 1
+  const s = String(sureNo).padStart(3, "0")
+  const a = String(ayetNo).padStart(3, "0")
+  const k = String(position).padStart(3, "0")
+  return `${WBW_BASE}/${s}_${a}_${k}.mp3`
+}
+
 export default function KelimePopup({ kelime, konum, player, sureNo, ayetNo, theme, onKapat }) {
   if (!kelime) return null
 
-  const caliniyor =
+  const [kelimeCaliyor, setKelimeCaliyor] = useState(false)
+  const kelimeAudioRef = useRef(null)
+
+  const ayetCaliniyor =
     player?.durum === "caliyor" &&
     player?.aktifAyet?.sureNo === sureNo &&
     player?.aktifAyet?.ayetNo === ayetNo
 
-  const duraklatildi =
+  const ayetDuraklatildi =
     player?.durum === "duraklatildi" &&
     player?.aktifAyet?.sureNo === sureNo &&
     player?.aktifAyet?.ayetNo === ayetNo
 
-  function sesTikla() {
+  function kelimeTikla() {
+    if (!kelime.position) return
+
+    if (kelimeCaliyor) {
+      kelimeAudioRef.current?.pause()
+      setKelimeCaliyor(false)
+      return
+    }
+
+    // Ana player'ı duraklat
+    if (player?.durum === "caliyor") player.duraklat()
+
+    const audio = new Audio(kelimeMp3(sureNo, ayetNo, kelime.position))
+    kelimeAudioRef.current = audio
+    setKelimeCaliyor(true)
+
+    audio.play().catch(() => setKelimeCaliyor(false))
+    audio.addEventListener("ended", () => setKelimeCaliyor(false))
+    audio.addEventListener("error", () => setKelimeCaliyor(false))
+  }
+
+  function ayetTikla() {
     if (!player) return
-    if (caliniyor) {
+    if (ayetCaliniyor) {
       player.duraklat()
-    } else if (duraklatildi) {
+    } else if (ayetDuraklatildi) {
       player.devamEt()
     } else {
+      // Kelime sesini durdur
+      if (kelimeAudioRef.current) {
+        kelimeAudioRef.current.pause()
+        setKelimeCaliyor(false)
+      }
       player.ayetCal(sureNo, ayetNo)
     }
   }
 
+  const butonStil = (aktif) => ({
+    display: "flex", alignItems: "center", gap: "5px",
+    padding: "5px 10px", borderRadius: "20px", cursor: "pointer",
+    border: `1px solid ${theme.accent}40`,
+    background: aktif ? theme.accent : `${theme.accent}18`,
+    color: aktif ? "#fff" : theme.accent,
+    fontSize: "11px", fontWeight: "500",
+    transition: "all 0.15s",
+  })
+
   return (
     <>
       {/* Backdrop */}
-      <div
-        onClick={onKapat}
-        style={{ position: "fixed", inset: 0, zIndex: 299 }}
-      />
+      <div onClick={onKapat} style={{ position: "fixed", inset: 0, zIndex: 299 }} />
 
-      {/* Popup kutusu */}
+      {/* Popup */}
       <div style={{
         position: "fixed",
         left: konum.x,
@@ -64,34 +91,29 @@ export default function KelimePopup({ kelime, konum, player, sureNo, ayetNo, the
         padding: "14px 16px",
         maxWidth: "260px",
         minWidth: "180px",
+        maxHeight: "35vh",
+        overflowY: "auto",
         boxShadow: "0 4px 24px rgba(0,0,0,0.15)",
       }}>
 
-        {/* Üst satır: Arapça + kapat */}
+        {/* Üst: Arapça + kapat */}
         <div style={{
-          display: "flex",
-          alignItems: "center",
+          display: "flex", alignItems: "center",
           justifyContent: "space-between",
-          marginBottom: "6px",
-          gap: "8px",
+          marginBottom: "6px", gap: "8px",
         }}>
           <span style={{
-            fontSize: "22px",
-            color: theme.accent,
-            fontFamily: "'Scheherazade New', serif",
-            direction: "rtl",
-            lineHeight: 1.4,
+            fontSize: "22px", color: theme.accent,
+            fontFamily: "'KFGQPC Uthmanic Script HAFS', serif",
+            direction: "rtl", lineHeight: 1.4,
           }}>
             {kelime.ham}
           </span>
-          <button
-            onClick={onKapat}
-            style={{
-              background: "none", border: "none",
-              cursor: "pointer", color: theme.textSecondary,
-              display: "flex", padding: "2px", flexShrink: 0,
-            }}
-          >
+          <button onClick={onKapat} style={{
+            background: "none", border: "none",
+            cursor: "pointer", color: theme.textSecondary,
+            display: "flex", padding: "2px", flexShrink: 0,
+          }}>
             <X size={14} />
           </button>
         </div>
@@ -99,11 +121,8 @@ export default function KelimePopup({ kelime, konum, player, sureNo, ayetNo, the
         {/* Okunuş */}
         {kelime.okunus && (
           <div style={{
-            fontSize: "12px",
-            color: theme.textSecondary,
-            fontStyle: "italic",
-            marginBottom: "8px",
-            direction: "ltr",
+            fontSize: "12px", color: theme.textSecondary,
+            fontStyle: "italic", marginBottom: "8px",
           }}>
             {kelime.okunus}
           </div>
@@ -111,11 +130,8 @@ export default function KelimePopup({ kelime, konum, player, sureNo, ayetNo, the
 
         {/* Anlamlar */}
         <div style={{
-          fontSize: "13px",
-          color: theme.text,
-          lineHeight: "1.7",
-          direction: "ltr",
-          marginBottom: "10px",
+          fontSize: "13px", color: theme.text,
+          lineHeight: "1.7", marginBottom: "12px",
         }}>
           {kelime.anlamlar?.length > 0
             ? kelime.anlamlar.map((a, i) => (
@@ -130,33 +146,25 @@ export default function KelimePopup({ kelime, konum, player, sureNo, ayetNo, the
           }
         </div>
 
-        {/* Alt çizgi + ses butonu */}
+        {/* Alt: ses butonları */}
         <div style={{
           borderTop: `1px solid ${theme.border}`,
-          paddingTop: "8px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
+          paddingTop: "10px",
+          display: "flex", alignItems: "center",
+          justifyContent: "space-between", gap: "8px",
         }}>
-          <span style={{
-            fontSize: "11px",
-            color: theme.textSecondary,
-          }}>
-            Âyeti dinle
-          </span>
-          <button
-            onClick={sesTikla}
-            title={caliniyor ? "Duraklat" : "Dinle"}
-            style={{
-              display: "flex", alignItems: "center", justifyContent: "center",
-              width: "28px", height: "28px", borderRadius: "50%",
-              border: `1px solid ${theme.accent}40`,
-              background: caliniyor ? theme.accent : `${theme.accent}18`,
-              color: caliniyor ? "#fff" : theme.accent,
-              cursor: "pointer", transition: "all 0.15s",
-            }}
-          >
-            {caliniyor ? <Pause size={11} /> : <Play size={11} />}
+          {/* Kelime sesi */}
+          <button onClick={kelimeTikla} style={butonStil(kelimeCaliyor)}
+            title={kelimeCaliyor ? "Durdur" : "Kelimeyi dinle"}>
+            {kelimeCaliyor ? <Pause size={10} /> : <Play size={10} />}
+            Kelime
+          </button>
+
+          {/* Ayet sesi */}
+          <button onClick={ayetTikla} style={butonStil(ayetCaliniyor)}
+            title={ayetCaliniyor ? "Duraklat" : "Âyeti dinle"}>
+            {ayetCaliniyor ? <Pause size={10} /> : <Play size={10} />}
+            Âyet
           </button>
         </div>
       </div>

@@ -34,6 +34,9 @@ export default function AyetPopup({ sure, ayetNo, meal, konum, player, theme, on
     player?.durum === "caliyor" &&
     player?.aktifAyet?.sureNo === sure.id
 
+  const asagiMi = konum.y + window.innerHeight * 1 < window.innerHeight
+  const topDeger = asagiMi ? konum.y : konum.y - window.innerHeight * 0.2
+
   function sesTikla() {
     if (!player) return
     if (caliniyor) {
@@ -63,11 +66,16 @@ export default function AyetPopup({ sure, ayetNo, meal, konum, player, theme, on
         style={{ position: "fixed", inset: 0, zIndex: 299 }}
       />
 
+
+    
+
       {/* Popup kutusu */}
       <div style={{
         position: "fixed",
         left: konum.x,
-        top: konum.y,
+        top: topDeger,
+        maxHeight: "35vh",
+        overflowY: "auto",
         zIndex: 300,
         background: theme.surface,
         border: `1px solid ${theme.border}`,

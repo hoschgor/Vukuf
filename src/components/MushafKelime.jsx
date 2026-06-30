@@ -20,11 +20,18 @@ export default function MushafKelime({
   lineHeight = 2.4,
   harfAraligi = 0,
   onTikla,
+  position,
 }) {
+  
   const [hover, setHover] = useState(false)
   const isMobile = useMediaQuery("(max-width: 768px)")
   const vakifRengi = kelime.vakif ? (VAKIF_RENKLERI[kelime.vakif] || theme.accent) : null
-
+    const handleClick = (e) => {
+    onTikla?.({
+      ...kelime,
+      position: position || kelime.position || 0
+    }, e)
+  }
   // Vakıf ve secde işaretlerinin varlığını kontrol et
   const hasUpperIndicator = kelime.vakif || kelime.secde
 

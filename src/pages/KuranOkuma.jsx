@@ -560,14 +560,14 @@ useEffect(() => {
 
   const kelimeTikla = useCallback((kelime, sure, ayet, e) => {
     const lugatSonuc = lugat(kelime.arabic)
-    const position = kelime.position || kelime.index || 1
+    const position = kelime.id ? parseInt(kelime.id.split(":")[2]) : 0  // ← ekle
     setPopup({
       tip: "kelime",
       kelime: {
         ham:      kelime.arabic,
         okunus:   lugatSonuc?.okunuş || "",
         anlamlar: lugatSonuc?.anlamlar || [],
-        position: position,
+        position,                              // ← ekle
       },
       sureNo: sure.id,
       ayetNo: ayet.no,

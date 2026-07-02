@@ -547,6 +547,7 @@ useEffect(() => { localStorage.setItem("vukuf-otomatik-gizleme", otomatikGizleme
 useEffect(() => { localStorage.setItem("vukuf-gizleme-suresi", gizlemeSuresi) }, [gizlemeSuresi])
 useEffect(() => { localStorage.setItem("vukuf-sade-mode", sadeMode) }, [sadeMode])
 
+
 // ════════════════════════════════════════════════════
 // Dokunma
 // ════════════════════════════════════════════════════

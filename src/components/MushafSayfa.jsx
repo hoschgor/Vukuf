@@ -24,9 +24,9 @@ export default function MushafSayfa({
   onKelimeTikla,
   onAyetTikla,
   onSureTikla,
-  kitapAyraci,
   sayfaKaydi,
   onKayitTikla,
+  
 }) {
   
   const isMobile = useMediaQuery("(max-width: 768px)")
@@ -74,7 +74,22 @@ export default function MushafSayfa({
       padding: isMobile ? "2px 12px" : "2px 32px",
       boxSizing: "border-box",
     }}>
-      {kitapAyraci}
+      {sayfaKaydi && (
+        <div style={{
+          position: "absolute",
+          top: `${(sayfaKaydi.scrollY || 0) * 100}%`, // ← scrollY oranına göre
+          right: "4px",
+          zIndex: 50,
+          pointerEvents: "auto",
+          transform: "translateY(-50%)",
+        }}>
+          <KitapAyraci
+            kayit={sayfaKaydi}
+            theme={theme}
+            onTikla={() => onKayitTikla?.(sayfaKaydi)}
+          />
+        </div>
+      )}
       {/* Sayfa numarası */}
       <div style={{
         textAlign: "center",
@@ -83,7 +98,7 @@ export default function MushafSayfa({
         justifyContent: "center",
         gap: "3px",
         marginBottom: isMobile ? 1 : 2,
-        paddingTop: isMobile ? 1 : 2, // Azaltıldı
+        paddingTop: isMobile ? 1 : 2,
       }}>
         <div style={{ flex: 1, height: "1px", background: `linear-gradient(to right, transparent, ${theme.accent}40, transparent)` }} />
         <span style={{
@@ -109,13 +124,6 @@ export default function MushafSayfa({
             const sure = sureler.find(s => s.id === ayet.sureNo)
             if (sure) onAyetTikla?.(sure, ayet.ayetNo, null)
           }}
-        />
-      )}
-      {sayfaKaydi && (
-        <KitapAyraci
-          kayit={sayfaKaydi}
-          theme={theme}
-          onTikla={onKayitTikla}
         />
       )}
 

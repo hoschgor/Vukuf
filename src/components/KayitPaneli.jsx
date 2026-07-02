@@ -1,30 +1,28 @@
 import { useState } from "react"
 import { X, Bookmark, Trash2, ChevronRight, AlertTriangle, Pencil } from "lucide-react"
 
-const DEPO_KEY = "vukuf-kayitlar"
-
-function kayitlariYukle() {
-  try { return JSON.parse(localStorage.getItem(DEPO_KEY) || "[]") }
-  catch { return [] }
-}
-
-function kayitlariKaydet(liste) {
-  localStorage.setItem(DEPO_KEY, JSON.stringify(liste))
-}
-
 function tarihFormatla(ts) {
   const d = new Date(ts)
   return d.toLocaleDateString("tr-TR", { day: "numeric", month: "short", year: "numeric" })
 }
 
-export default function KayitPaneli({ theme, mevcutSayfa, scrollOran, onSayfaGit, onKapat }) {
-  const [kayitlar, setKayitlar] = useState(kayitlariYukle)
-  const [mod, setMod] = useState("liste")       // "liste" | "yeni" | "degistir"
+export default function KayitPaneli({ 
+  theme, 
+  kayitlar,        // ← Dışarıdan al
+  mevcutSayfa, 
+  scrollOran, 
+  onSayfaGit, 
+  onKayitEkle,     // ← Yeni kayıt ekleme fonksiyonu
+  onKayitGuncelle, // ← Kayıt güncelleme fonksiyonu (isteğe bağlı)
+  onKayitSil,      // ← Kayıt silme fonksiyonu (isteğe bağlı)
+  onKapat 
+}) {
+  const [mod, setMod] = useState("liste")
   const [duzenleId, setDuzenleId] = useState(null)
   const [baslik, setBaslik] = useState("")
   const [hepsiOnay, setHepsiOnay] = useState(0)
 
-  const mevcutKayit = kayitlar.find(k => k.sayfa === mevcutSayfa)
+  const mevcutKayit = kayitlar?.find(k => k.sayfa === mevcutSayfa)
 
   function yeniBaslat() {
     setBaslik(`Sayfa ${mevcutSayfa}`)
@@ -39,43 +37,25 @@ export default function KayitPaneli({ theme, mevcutSayfa, scrollOran, onSayfaGit
 
   function kayitOlustur() {
     if (!baslik.trim()) return
-    const yeni = {
-      id: Date.now().toString(),
-      baslik: baslik.trim(),
-      sayfa: mevcutSayfa,
-      scrollY: scrollOran ?? 0,
-      olusturma: Date.now(),
-    }
-    const guncellendi = [...kayitlar.filter(k => k.sayfa !== mevcutSayfa), yeni]
-      .sort((a, b) => a.sayfa - b.sayfa)
-    setKayitlar(guncellendi)
-    kayitlariKaydet(guncellendi)
+    onKayitEkle?.(baslik.trim()) // ← onKayitEkle'yi çağır
     setMod("liste")
   }
 
   function kayitDegistir() {
     if (!baslik.trim() || !duzenleId) return
-    const guncellendi = kayitlar.map(k =>
-      k.id === duzenleId
-        ? { ...k, baslik: baslik.trim(), sayfa: mevcutSayfa, scrollY: scrollOran ?? k.scrollY }
-        : k
-    )
-    setKayitlar(guncellendi)
-    kayitlariKaydet(guncellendi)
+    onKayitGuncelle?.(duzenleId, baslik.trim()) // ← onKayitGuncelle'yi çağır
     setMod("liste")
     setDuzenleId(null)
   }
 
   function kayitSil(id) {
-    const guncellendi = kayitlar.filter(k => k.id !== id)
-    setKayitlar(guncellendi)
-    kayitlariKaydet(guncellendi)
+    onKayitSil?.(id) // ← onKayitSil'i çağır
   }
 
   function hepsiniSil() {
     if (hepsiOnay < 2) { setHepsiOnay(hepsiOnay + 1); return }
-    setKayitlar([])
-    kayitlariKaydet([])
+    // Tüm kayıtları sil
+    kayitlar.forEach(k => onKayitSil?.(k.id))
     setHepsiOnay(0)
   }
 
@@ -140,7 +120,7 @@ export default function KayitPaneli({ theme, mevcutSayfa, scrollOran, onSayfaGit
             <span style={{ fontSize: "14px", fontWeight: "600", color: theme.text }}>
               Kayıtlar
             </span>
-            {kayitlar.length > 0 && (
+            {kayitlar?.length > 0 && (
               <span style={{
                 fontSize: "11px", color: theme.accent,
                 background: `${theme.accent}20`, borderRadius: "10px",
@@ -211,7 +191,7 @@ export default function KayitPaneli({ theme, mevcutSayfa, scrollOran, onSayfaGit
           </div>
 
           {/* Kayıt listesi */}
-          {kayitlar.length === 0 ? (
+          {!kayitlar || kayitlar.length === 0 ? (
             <div style={{ textAlign: "center", color: theme.textSecondary, fontSize: "13px", padding: "20px 0" }}>
               Henüz kayıt yok
             </div>
@@ -225,7 +205,6 @@ export default function KayitPaneli({ theme, mevcutSayfa, scrollOran, onSayfaGit
                   borderRadius: "10px", padding: "8px 10px",
                   gap: "8px",
                 }}>
-                  {/* Sayfa rozeti */}
                   <div style={{
                     minWidth: "30px", height: "30px", borderRadius: "8px",
                     background: `${theme.accent}20`,
@@ -236,7 +215,6 @@ export default function KayitPaneli({ theme, mevcutSayfa, scrollOran, onSayfaGit
                     {k.sayfa}
                   </div>
 
-                  {/* Başlık + tarih */}
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{
                       fontSize: "13px", fontWeight: "500", color: theme.text,
@@ -249,7 +227,6 @@ export default function KayitPaneli({ theme, mevcutSayfa, scrollOran, onSayfaGit
                     </div>
                   </div>
 
-                  {/* Sağ: düzenle + sil + git */}
                   <div style={{ display: "flex", alignItems: "center", gap: "4px", flexShrink: 0 }}>
                     <button
                       onClick={() => degistirBaslat(k)}
@@ -280,7 +257,7 @@ export default function KayitPaneli({ theme, mevcutSayfa, scrollOran, onSayfaGit
         </div>
 
         {/* Alt — tümünü sil */}
-        {kayitlar.length > 1 && (
+        {kayitlar && kayitlar.length > 1 && (
           <div style={{ borderTop: `1px solid ${theme.border}`, padding: "10px 16px" }}>
             {hepsiOnay === 0 && (
               <button onClick={hepsiniSil} style={{ ...s.buton(false, true), width: "100%" }}>

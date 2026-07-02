@@ -4,6 +4,7 @@
 // ════════════════════════════════════════════════════════════════
 
 import { useState, useEffect, useRef, useCallback, useMemo, } from "react"
+import { createPortal } from "react-dom"
 import { useNavigate } from "react-router-dom"
 import { useApp } from "../AppContext"
 import { useVirtualizer } from "@tanstack/react-virtual"
@@ -350,6 +351,7 @@ export default function KuranOkuma({ kitap }) {
     scrollOranRef.current = el.scrollHeight > el.clientHeight
       ? el.scrollTop / (el.scrollHeight - el.clientHeight)
       : 0
+      localStorage.setItem("vukuf-son-scroll", String(el.scrollTop))
     }, [scrollbarGoster, isMobile])
 
   // ════════════════════════════════════════════════════════════════
@@ -416,8 +418,10 @@ export default function KuranOkuma({ kitap }) {
   // VERİ HAZIRLAMA
   // ════════════════════════════════════════════════════════════════
 
+  
   const { sayfaMap, sureler, toplamSayfa } = useMushaf(mushafData, sayfaHaritaJson)
 
+  
   const filtreliSureler = useMemo(() => {
     if (!menuArama) return sureler
     return sureler.filter(s =>
@@ -436,6 +440,22 @@ export default function KuranOkuma({ kitap }) {
       elemanlar: sayfaMap.get(sayfaNo) || [],
     }))
   }, [sayfaMap])
+
+    useEffect(() => {
+    if (yukleniyor || !sayfaListesi.length) return
+    const index = sayfaListesi.findIndex(s => s.sayfaNo === mevcutSayfa)
+    if (index === -1) return
+    virtualizer.scrollToIndex(index, { align: "start" })
+    // Sayfa içi scroll pozisyonunu yükle
+    const kayitliScroll = localStorage.getItem("vukuf-son-scroll")
+    if (kayitliScroll) {
+      setTimeout(() => {
+        const el = scrollRef.current
+        if (!el) return
+        el.scrollTop = parseInt(kayitliScroll)
+      }, 200)
+    }
+  }, [yukleniyor, sayfaListesi.length])
 
   // ── SAYFA YÜKSEKLİKLERİ ──
   const sayfaYukseklikleri = useMemo(() => {
@@ -501,19 +521,76 @@ export default function KuranOkuma({ kitap }) {
     overscan: 3,
   })
 
-  // ════════════════════════════════════════════════════════════════
-  // KAYIT BÖLÜMÜ
-  // ════════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════════
+// KAYIT BÖLÜMÜ
+// ════════════════════════════════════════════════════════════════
+const kayitEkle = useCallback((baslik) => {
+  const el = scrollRef.current
+  if (!el) return
 
-  const kayitSayfaGit = useCallback((sayfa, scrollY) => {
-    const index = sayfaListesi.findIndex(s => s.sayfaNo === sayfa)
-    if (index !== -1) virtualizer.scrollToIndex(index, { align: "start" })
-    setTimeout(() => {
-      const el = scrollRef.current
-      if (!el) return
-      el.scrollTop += scrollY * (el.scrollHeight - el.clientHeight) * 0.1
-    }, 350)
-  }, [sayfaListesi, virtualizer])
+  // Sayfa içindeki görünen alanın orta noktasını bul
+  const ortaY = el.scrollTop + el.clientHeight * 0.25
+  
+  // O anki sayfanın index'ini bul
+  const sayfaIndex = sayfaListesi.findIndex(s => s.sayfaNo === mevcutSayfa)
+  if (sayfaIndex === -1) return
+  
+  const sayfaYukseklik = sayfaYukseklikleri[sayfaIndex] || 500
+  
+  // Sayfa içindeki oran (0-1 arası)
+  const virtualItem = virtualizer.getVirtualItems().find(v => v.index === sayfaIndex)
+  const sayfaBaslangic = virtualItem?.start || 0
+  const sayfaIciOran = (ortaY - sayfaBaslangic) / sayfaYukseklik
+
+  const yeniKayit = {
+    id: Date.now().toString(),
+    sayfa: mevcutSayfa,
+    scrollY: Math.max(0, Math.min(1, sayfaIciOran)), // 0-1 arası sınırla
+    baslik: baslik || `Sayfa ${mevcutSayfa}`,
+    olusturma: Date.now(),
+  }
+
+  setKayitlar(prev => {
+    const yeni = [...prev, yeniKayit]
+    localStorage.setItem("vukuf-kayitlar", JSON.stringify(yeni))
+    return yeni
+  })
+}, [mevcutSayfa, sayfaListesi, sayfaYukseklikleri, virtualizer])
+
+// Kayıt güncelleme fonksiyonu
+const kayitGuncelle = useCallback((id, baslik) => {
+  setKayitlar(prev => {
+    const yeni = prev.map(k => 
+      k.id === id ? { ...k, baslik: baslik } : k
+    )
+    localStorage.setItem("vukuf-kayitlar", JSON.stringify(yeni))
+    return yeni
+  })
+}, [])
+
+// Kayıt silme fonksiyonu
+const kayitSil = useCallback((id) => {
+  setKayitlar(prev => {
+    const yeni = prev.filter(k => k.id !== id)
+    localStorage.setItem("vukuf-kayitlar", JSON.stringify(yeni))
+    return yeni
+  })
+}, [])
+
+// Kayıtlı sayfaya gitme fonksiyonu
+const kayitSayfaGit = useCallback((sayfa, scrollY) => {
+  const index = sayfaListesi.findIndex(s => s.sayfaNo === sayfa)
+  if (index === -1) return
+  virtualizer.scrollToIndex(index, { align: "start" })
+  setTimeout(() => {
+    const el = scrollRef.current
+    if (!el) return
+    const virtualItem = virtualizer.getVirtualItems().find(v => v.index === index)
+    const sayfaBaslangic = virtualItem?.start || 0
+    const sayfaYukseklik = sayfaYukseklikleri[index] || 500
+    el.scrollTop = sayfaBaslangic + (scrollY || 0) * sayfaYukseklik
+  }, 150)
+}, [sayfaListesi, virtualizer, sayfaYukseklikleri])
 
 
   // Mevcut scroll event listener'ı — KORU
@@ -1169,6 +1246,7 @@ useEffect(() => {
       {/* Paneller */}
       {AaPanel}
       {TemaPanel}
+      
       {AyarlarPanel}
       {OzelTemaPanel}
 
@@ -1202,14 +1280,56 @@ useEffect(() => {
       {kayitPaneliAcik && (
         <KayitPaneli
           theme={theme}
+          kayitlar={kayitlar}
           mevcutSayfa={mevcutSayfa}
           scrollOran={scrollOranRef.current}
           onSayfaGit={kayitSayfaGit}
+          onKayitEkle={(baslik) => {
+            const el = scrollRef.current
+            if (!el) return
+
+            const ortaY = el.scrollTop + el.clientHeight / 2
+            const sayfaIndex = sayfaListesi.findIndex(s => s.sayfaNo === mevcutSayfa)
+            if (sayfaIndex === -1) return
+            
+            const sayfaYukseklik = sayfaYukseklikleri[sayfaIndex] || 500
+            const virtualItem = virtualizer.getVirtualItems().find(v => v.index === sayfaIndex)
+            const sayfaBaslangic = virtualItem?.start || 0
+            const sayfaIciOran = (ortaY - sayfaBaslangic) / sayfaYukseklik
+
+            const yeniKayit = {
+              id: Date.now().toString(),
+              sayfa: mevcutSayfa,
+              scrollY: Math.max(0, Math.min(1, sayfaIciOran)),
+              baslik: baslik,
+              olusturma: Date.now(),
+            }
+
+            setKayitlar(prev => {
+              const yeni = [...prev, yeniKayit]
+              localStorage.setItem("vukuf-kayitlar", JSON.stringify(yeni))
+              return yeni
+            })
+          }}
+          onKayitGuncelle={(id, baslik) => {
+            setKayitlar(prev => {
+              const yeni = prev.map(k => 
+                k.id === id ? { ...k, baslik: baslik } : k
+              )
+              localStorage.setItem("vukuf-kayitlar", JSON.stringify(yeni))
+              return yeni
+            })
+          }}
+          onKayitSil={(id) => {
+            setKayitlar(prev => {
+              const yeni = prev.filter(k => k.id !== id)
+              localStorage.setItem("vukuf-kayitlar", JSON.stringify(yeni))
+              return yeni
+            })
+          }}
           onKapat={() => {
             setKayitPaneliAcik(false)
-            try {
-              setKayitlar(JSON.parse(localStorage.getItem("vukuf-kayitlar") || "[]"))
-            } catch {}
+            setKayitlar(JSON.parse(localStorage.getItem("vukuf-kayitlar") || "[]"))
           }}
         />
       )}
@@ -1334,7 +1454,7 @@ useEffect(() => {
       )}
 
       {/* Ana içerik alanı */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, overflow: "hidden" }}>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, overflow: "hidden", position: "relative" }}>
         {barKonum === "ust" && Bar}
 
         <PlayerBar
@@ -1345,7 +1465,6 @@ useEffect(() => {
           barGorunur={barGorunur}
           barYuksekligi={isMobile ? 47 : 40}
         />
-
         {/* Virtualizer ile sayfa içeriği */}
         <div
           ref={scrollRef}
@@ -1482,15 +1601,15 @@ useEffect(() => {
                     onKelimeTikla={kelimeTikla}
                     onAyetTikla={ayetTikla}
                     onSureTikla={sureTikla}
-                    sayfaKaydi={kayitlar.find(k => k.sayfa === sayfa.sayfaNo) || null}
-                    onKayitTikla={(kayit) => {
+                    sayfaKaydi={kayitlar.find(k => k.sayfa === sayfa.sayfaNo) || null}  // ← EKLE
+                    onKayitTikla={(kayit) => {                                           // ← EKLE
                       if (window.confirm(`"${kayit.baslik}" kaydını silmek istiyor musun?`)) {
                         const yeni = kayitlar.filter(k => k.id !== kayit.id)
                         setKayitlar(yeni)
                         localStorage.setItem("vukuf-kayitlar", JSON.stringify(yeni))
                       }
                     }}
-                    />
+                  />
                 </div>
               )
             })}

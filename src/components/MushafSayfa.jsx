@@ -1,4 +1,5 @@
 import MushafKelime from "./MushafKelime"
+import KitapAyraci from "./KitapAyraci"
 import SecdeKenar from "./SecdeKenar"
 import SureBasligi from "./SureBasligi"
 import Besmele from "./Besmele"
@@ -23,7 +24,11 @@ export default function MushafSayfa({
   onKelimeTikla,
   onAyetTikla,
   onSureTikla,
+  kitapAyraci,
+  sayfaKaydi,
+  onKayitTikla,
 }) {
+  
   const isMobile = useMediaQuery("(max-width: 768px)")
   const fontSize = isMobile ? yaziBoyutu : yaziBoyutu + 2
   const lineHeight = satirAraligi || (isMobile ? 2.2 : 2.0) // Azaltıldı
@@ -69,7 +74,7 @@ export default function MushafSayfa({
       padding: isMobile ? "2px 12px" : "2px 32px",
       boxSizing: "border-box",
     }}>
-
+      {kitapAyraci}
       {/* Sayfa numarası */}
       <div style={{
         textAlign: "center",
@@ -104,6 +109,13 @@ export default function MushafSayfa({
             const sure = sureler.find(s => s.id === ayet.sureNo)
             if (sure) onAyetTikla?.(sure, ayet.ayetNo, null)
           }}
+        />
+      )}
+      {sayfaKaydi && (
+        <KitapAyraci
+          kayit={sayfaKaydi}
+          theme={theme}
+          onTikla={onKayitTikla}
         />
       )}
 

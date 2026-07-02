@@ -3,7 +3,7 @@
 // Konum: src/pages/KuranOkuma.jsx
 // ════════════════════════════════════════════════════════════════
 
-import { useState, useEffect, useRef, useCallback, useMemo } from "react"
+import { useState, useEffect, useRef, useCallback, useMemo, } from "react"
 import { useNavigate } from "react-router-dom"
 import { useApp } from "../AppContext"
 import { useVirtualizer } from "@tanstack/react-virtual"
@@ -14,6 +14,8 @@ import SureBasligi from "../components/SureBasligi"
 import Besmele from "../components/Besmele"
 import MushafSayfa from "../components/MushafSayfa"
 import PlayerBar from "../components/PlayerBar"
+import KitapAyraci from "../components/KitapAyraci"
+import KayitPaneli from "../components/KayitPaneli"
 import KariSecici from "../components/KariSecici"
 import KelimePopup from "../components/KelimePopup"
 import AyetPopup from "../components/AyetPopup"
@@ -24,7 +26,7 @@ import {
   ArrowLeft, Search, X, ChevronRight, ChevronDown, Menu,
   Play, Pause, Plus, Minus, Type, Palette,
   Settings, Circle, Clock, ChevronsUp, ChevronsDown,
-  Pencil, ChevronLeft,
+  Pencil, ChevronLeft, Bookmark,
 } from "lucide-react"
 
 // ── Arapça font listesi
@@ -98,6 +100,8 @@ export default function KuranOkuma({ kitap }) {
   const barZamanRef  = useRef(null)
   const sureSayacRef = useRef(null)
   const scrollHiziRef = useRef({ sonScrollTop: 0, sonZaman: Date.now(), scrollSayisi: 0 })
+  const scrollOranRef = useRef(0)
+  const [kayitPaneliAcik, setKayitPaneliAcik] = useState(false)
 
   // ── Ses sistemi
   const player = useAudioPlayer()
@@ -116,6 +120,13 @@ export default function KuranOkuma({ kitap }) {
   const [sayfaGirdi, setSayfaGirdi] = useState("")
   const [sayfaGirdiAcik, setSayfaGirdiAcik] = useState(false)
 
+  const [kayitlar, setKayitlar] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("vukuf-kayitlar") || "[]") }
+    catch { return [] }
+  })
+  const mevcutKayit = kayitlar.find(k => k.sayfa === mevcutSayfa)
+  
+  
   // ── Yazı boyutu
   const [yaziBoyutu, setYaziBoyutu] = useState(() =>
     parseInt(localStorage.getItem("vukuf-yazi-boyutu") || "20")
@@ -336,7 +347,10 @@ export default function KuranOkuma({ kitap }) {
 
     scrollHiziRef.current.sonScrollTop = el.scrollTop
     scrollHiziRef.current.sonZaman = suAn
-  }, [scrollbarGoster, isMobile])
+    scrollOranRef.current = el.scrollHeight > el.clientHeight
+      ? el.scrollTop / (el.scrollHeight - el.clientHeight)
+      : 0
+    }, [scrollbarGoster, isMobile])
 
   // ════════════════════════════════════════════════════════════════
   // SCROLL OLAYLARI
@@ -347,7 +361,6 @@ export default function KuranOkuma({ kitap }) {
 
   }, [scrollbarGoster, scrollHiziAlgila])
 
-  
   // ════════════════════════════════════════════════════════════════
   // DOKUNMA FONKSİYONLARI
   // ════════════════════════════════════════════════════════════════
@@ -488,6 +501,20 @@ export default function KuranOkuma({ kitap }) {
     overscan: 3,
   })
 
+  // ════════════════════════════════════════════════════════════════
+  // KAYIT BÖLÜMÜ
+  // ════════════════════════════════════════════════════════════════
+
+  const kayitSayfaGit = useCallback((sayfa, scrollY) => {
+    const index = sayfaListesi.findIndex(s => s.sayfaNo === sayfa)
+    if (index !== -1) virtualizer.scrollToIndex(index, { align: "start" })
+    setTimeout(() => {
+      const el = scrollRef.current
+      if (!el) return
+      el.scrollTop += scrollY * (el.scrollHeight - el.clientHeight) * 0.1
+    }, 350)
+  }, [sayfaListesi, virtualizer])
+
 
   // Mevcut scroll event listener'ı — KORU
 
@@ -509,9 +536,12 @@ useEffect(() => {
     }
   }
 
+
+  
   el.addEventListener('scroll', sayfaGuncelle, { passive: true })
   return () => el.removeEventListener('scroll', sayfaGuncelle)
 }, [virtualizer, sayfaListesi])
+
   // ════════════════════════════════════════════════════════════════
   // NAVİGASYON
   // ════════════════════════════════════════════════════════════════
@@ -554,20 +584,21 @@ useEffect(() => {
     setPopup(null)
   }
 
+
   // ════════════════════════════════════════════════════════════════
   // POPUP YÖNETİMİ
   // ════════════════════════════════════════════════════════════════
 
   const kelimeTikla = useCallback((kelime, sure, ayet, e) => {
     const lugatSonuc = lugat(kelime.arabic)
-    const position = kelime.id ? parseInt(kelime.id.split(":")[2]) : 0  // ← ekle
+    const position = kelime.id ? parseInt(kelime.id.split(":")[2]) : 0
     setPopup({
       tip: "kelime",
       kelime: {
         ham:      kelime.arabic,
         okunus:   lugatSonuc?.okunuş || "",
         anlamlar: lugatSonuc?.anlamlar || [],
-        position,                              // ← ekle
+        position,
       },
       sureNo: sure.id,
       ayetNo: ayet.no,
@@ -972,6 +1003,17 @@ useEffect(() => {
       <button onClick={() => setMenuAcik(!menuAcik)} style={barButonStil(menuAcik)}>
         <Menu size={isMobile ? 14 : 15} />
       </button>
+
+      <button
+        onClick={() => setKayitPaneliAcik(!kayitPaneliAcik)}
+        style={barButonStil(kayitPaneliAcik)}
+        title="Kayıtlar"
+      >
+        <Bookmark
+          size={isMobile ? 14 : 15}
+          fill={kayitlar.some(k => k.sayfa === mevcutSayfa) ? "currentColor" : "none"}
+        />
+      </button>
       
       {/* Sayfa bilgisi - ok işaretleri kaldırıldı */}
       {sayfaGirdiAcik ? (
@@ -1013,6 +1055,7 @@ useEffect(() => {
         </button>
       )}
       
+
       {!sadeMode && (
         <>
           <button onClick={() => togglePanel(setAaAcik, !aaAcik)} style={barButonStil(aaAcik)}>
@@ -1129,6 +1172,7 @@ useEffect(() => {
       {AyarlarPanel}
       {OzelTemaPanel}
 
+
       {/* Popup'lar */}
       {popup?.tip === "kelime" && (
         <KelimePopup
@@ -1151,6 +1195,22 @@ useEffect(() => {
           player={player}
           theme={theme}
           onKapat={() => setPopup(null)}
+        />
+      )}
+
+      {/* Kayıt paneli */}
+      {kayitPaneliAcik && (
+        <KayitPaneli
+          theme={theme}
+          mevcutSayfa={mevcutSayfa}
+          scrollOran={scrollOranRef.current}
+          onSayfaGit={kayitSayfaGit}
+          onKapat={() => {
+            setKayitPaneliAcik(false)
+            try {
+              setKayitlar(JSON.parse(localStorage.getItem("vukuf-kayitlar") || "[]"))
+            } catch {}
+          }}
         />
       )}
 
@@ -1422,7 +1482,15 @@ useEffect(() => {
                     onKelimeTikla={kelimeTikla}
                     onAyetTikla={ayetTikla}
                     onSureTikla={sureTikla}
-                  />
+                    sayfaKaydi={kayitlar.find(k => k.sayfa === sayfa.sayfaNo) || null}
+                    onKayitTikla={(kayit) => {
+                      if (window.confirm(`"${kayit.baslik}" kaydını silmek istiyor musun?`)) {
+                        const yeni = kayitlar.filter(k => k.id !== kayit.id)
+                        setKayitlar(yeni)
+                        localStorage.setItem("vukuf-kayitlar", JSON.stringify(yeni))
+                      }
+                    }}
+                    />
                 </div>
               )
             })}

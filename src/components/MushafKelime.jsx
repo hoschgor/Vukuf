@@ -20,18 +20,11 @@ export default function MushafKelime({
   lineHeight = 2.4,
   harfAraligi = 0,
   onTikla,
-  position,
 }) {
-  
   const [hover, setHover] = useState(false)
   const isMobile = useMediaQuery("(max-width: 768px)")
   const vakifRengi = kelime.vakif ? (VAKIF_RENKLERI[kelime.vakif] || theme.accent) : null
-    const handleClick = (e) => {
-    onTikla?.({
-      ...kelime,
-      position: position || kelime.position || 0
-    }, e)
-  }
+
   // Vakıf ve secde işaretlerinin varlığını kontrol et
   const hasUpperIndicator = kelime.vakif || kelime.secde
 
@@ -47,8 +40,8 @@ export default function MushafKelime({
         cursor: "pointer",
         // ÖNEMLİ: paddingTop yerine marginTop kullan, inline-block'da daha stabil
         marginTop: hasUpperIndicator ? `${yaziBoyutu * 0.35}px` : "0",
-        paddingLeft: isMobile ? "2px" : "3px",
-        paddingRight: isMobile ? "2px" : "3px",
+        paddingLeft: isMobile ? `${2 + harfAraligi * 3}px` : "3px",
+        paddingRight: isMobile ? `${2 + harfAraligi * 3}px` : "3px",
         paddingBottom: "2px", // Alt padding ekle
         borderRadius: "3px",
         background: aktif
@@ -131,17 +124,20 @@ export default function MushafKelime({
           verticalAlign: "middle",
         }}
       >
-        {kelime.arabic.split('').map((harf, i) => (
-          <span
-            key={i}
-            style={{
-              letterSpacing: i === kelime.arabic.length - 1 ? '0px' : `${harfAraligi}px`,
-              marginLeft: i === kelime.arabic.length - 1 ? '0px' : `${harfAraligi}px`,
-            }}
-          >
-            {harf}
-          </span>
-        ))}
+        {(() => {
+          const segmenter = new Intl.Segmenter('ar', { granularity: 'grapheme' })
+          const segmentler = [...segmenter.segment(kelime.arabic)].map(s => s.segment)
+          return segmentler.map((seg, i) => (
+            <span
+              key={i}
+              style={{
+                marginLeft: (!isMobile && i !== segmentler.length - 1) ? `${harfAraligi}px` : '0px',
+              }}
+            >
+              {seg}
+            </span>
+          ))
+        })()}
       </span>
     </span>
   )

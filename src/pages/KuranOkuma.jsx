@@ -796,7 +796,10 @@ useEffect(() => {
             <span>Geniş</span>
           </div>
           <input
-            type="range" min="0" max="1" step="0.1"
+            type="range"
+            min="0"
+            max={isMobile ? "1" : "1.9"}
+            step="0.1"
             value={harfAraligi}
             onChange={e => setHarfAraligi(parseFloat(e.target.value))}
             style={{ width: "100%", accentColor: theme.accent }}

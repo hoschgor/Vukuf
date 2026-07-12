@@ -6,6 +6,7 @@ import Tefeul from "./pages/Tefeul"
 import OkumaEkrani from "./pages/OkumaEkrani"
 import Hakkinda from "./pages/Hakkinda"
 import { useApp } from "./AppContext"
+import KuranOkuma from "./pages/KuranOkuma"
 
 export default function App() {
   const { theme } = useApp()
@@ -18,6 +19,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Kutuphane />} />
         <Route path="/lugat" element={<Lugat />} />
+        <Route path="/kuran" element={<KuranOkuma />} />
         <Route path="/tefeul" element={<Tefeul />} />
         <Route path="/kitap/:id" element={<OkumaEkrani />} />
         <Route path="/hakkinda" element={<Hakkinda />} />

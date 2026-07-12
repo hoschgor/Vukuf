@@ -1342,7 +1342,7 @@ useEffect(() => {
         <>
           <div
             onClick={() => setMenuAcik(false)}
-            style={{ position: "fixed", inset: 0, zIndex: 79, background: "rgba(0,0,0,0.3)" }}
+            style={{ position: "fixed", inset: 0, zIndex: 79, background: "rgba(0,0,0,0.1)" }}
           />
           <div style={{
             position: isMobile ? "fixed" : "relative",
@@ -1379,7 +1379,7 @@ useEffect(() => {
                 <X size={16} />
               </button>
             </div>
-            <div style={{ flex: 1, overflowY: "auto" }}>
+            <div style={{ flex: 1, overflowY: "auto", paddingBottom: isMobile ? "10px" : "0px" }}>
               {filtreliSureler.map(sure => (
                 <div key={sure.id}>
                   <div style={{ display: "flex", alignItems: "center", borderBottom: `1px solid ${theme.border}` }}>

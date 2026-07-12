@@ -125,6 +125,10 @@ export default function MushafKelime({
         }}
       >
         {(() => {
+          // Kufi fontu ise harf bölme yapma
+          if (arapcaFont.toLowerCase().includes('kufi') || arapcaFont.toLowerCase().includes('kûfi')) {
+            return <span style={{ letterSpacing: 0 }}>{kelime.arabic}</span>
+          }
           const segmenter = new Intl.Segmenter('ar', { granularity: 'grapheme' })
           const segmentler = [...segmenter.segment(kelime.arabic)].map(s => s.segment)
           return segmentler.map((seg, i) => (

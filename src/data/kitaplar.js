@@ -156,22 +156,16 @@ export const kategoriler = [
   },
   {
     id: "orijinal-eserler",
-    baslik: "Orijinal Eserler",
-    alimler: [
-      {
-        id: "kuran-i-kerim",
-        isim: "Kur'ân-ı Kerîm",
-        kitaplar: [
-          {
-            id: "kuran",
-            baslik: "Kur'ân-ı Kerîm",
-            aciklama: "Yüce Allah ﷻ 'ın, efendimiz Hz. Muhammed Mustafa ﷺ'e vahyettiği, tüm zamanların en büyük mucizesi",
-            dosya: "kuran.json"
-          }
-        ]
-      }
-    ]
-  },
+    baslik: "Kur'an-ı Kerim",
+    kuran: {
+      id: "kuran",
+      baslik: "Kur'ân-ı Kerîm",
+      aciklama: "Yüce Allah ﷻ'ın, efendimiz Hz. Muhammed Mustafa ﷺ'e vahyettiği, tüm zamanların en büyük mucizesi",
+      dosya: "kuran.json",
+      gorsel: "/kuran-icon.png",
+    },
+    alimler: [],
+  }
 ]
 
 export const kitaplar = kategoriler.flatMap(k =>

@@ -250,9 +250,6 @@ function SortableAlimRafi({ alim, duzenlemeMode, theme, sensors, kitapSiralama, 
               <Search size={13} />
             </button>
           )}
-          <span style={{ fontSize: "11px", color: theme.textSecondary }}>
-            {tumKitaplar.length > 0 ? `${tumKitaplar.length} eser` : "Yakında"} {acik ? "▲" : "▼"}
-          </span>
         </div>
       </button>
 
@@ -319,7 +316,7 @@ function SortableAlimRafi({ alim, duzenlemeMode, theme, sensors, kitapSiralama, 
                 return (
                   <div key={alt.id}>
                     <div style={{ padding: "8px 16px", fontSize: "12px", color: theme.accent, fontWeight: "bold", letterSpacing: "1px", borderBottom: `1px solid ${theme.border}` }}>
-                      {alt.baslik.toUpperCase()}
+                      {alt.baslik.toLocaleUpperCase('tr-TR')}
                     </div>
                     <KitapRafi 
                       kitaplar={filtrelenmisKitaplar} 
@@ -404,13 +401,13 @@ function SortableKategori({ kategori,
 
   return (
     <div ref={setNodeRef} style={{ ...style, marginBottom: "32px", background: theme.surface, borderRadius: "16px", overflow: "hidden", border: `1px solid ${theme.border}`, boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}>
-      <button
+      <div
         onClick={() => {
         const yeni = acikKategori === kategori.id ? null : kategori.id
         setAcikKategori(yeni)
         localStorage.setItem("vukuf-acik-kategori", JSON.stringify(yeni))
       }}
-        style={{
+      style={{
           width: "100%",
           padding: "20px 24px",
           display: "flex",
@@ -434,7 +431,7 @@ function SortableKategori({ kategori,
             </span>
           )}
           <span style={{ fontSize: "20px", fontFamily: "PlayfairDisplay, serif", letterSpacing: "2px", color: theme.accent }}>
-            {kategori.baslik.toUpperCase()}
+            {kategori.baslik.toLocaleUpperCase('tr-TR')}
           </span>
         </div>
         
@@ -459,13 +456,16 @@ function SortableKategori({ kategori,
               }}
             >
               <Search size={13} />
-            </button>
+        </button>
           )}
-          <span style={{ fontSize: "12px", color: theme.textSecondary }}>
-            {kategori.alimler.length} alim {acikKategori === kategori.id ? "▲" : "▼"}
-          </span>
+         <span style={{ fontSize: "12px", color: theme.textSecondary }}>
+          {kategori.kuran
+            ? (acikKategori === kategori.id ? "▲" : "▼")
+            : `${kategori.alimler.length} alim ${acikKategori === kategori.id ? "▲" : "▼"}`
+          }
+        </span>
         </div>
-      </button>
+        </div>
 
       {acikKategori === kategori.id && (
         <>
@@ -521,6 +521,44 @@ function SortableKategori({ kategori,
 
           {/* İçerik - her zaman göster */}
           <div style={{ padding: "16px" }}>
+            {/* Kur'an-ı Kerîm özel rafı */}
+            {kategori.kuran && (
+              <Link to="/kuran" style={{ textDecoration: "none" }}>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "80px" }}>
+                  <div
+                    style={{
+                      width: "60px", height: "88px",
+                      background: kategori.kuran.gorsel
+                        ? `url(${kategori.kuran.gorsel}) center/cover no-repeat`
+                        : kitapSirtiRengi(kategori.kuran.id),
+                      borderRadius: "2px 6px 6px 2px",
+                      boxShadow: `inset -3px 0 6px rgba(0,0,0,0.3), inset 3px 0 4px rgba(255,255,255,0.1), 2px 2px 6px rgba(0,0,0,0.3)`,
+                      cursor: "pointer",
+                      transition: "transform 0.2s",
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.transform = "translateY(-6px)"}
+                    onMouseLeave={e => e.currentTarget.style.transform = "translateY(0)"}
+                  >
+                    {!kategori.kuran.gorsel && (
+                      <span style={{
+                        fontSize: "8px", color: "white", textAlign: "center",
+                        fontFamily: "PlayfairDisplay, serif", lineHeight: 1.3,
+                        wordBreak: "break-word",
+                      }}>
+                        {kategori.kuran.baslik}
+                      </span>
+                    )}
+                  </div>
+                  <span style={{
+                    fontSize: "10px", color: theme.textSecondary,
+                    textAlign: "center", marginTop: "6px", width: "80px",
+                    overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                  }}>
+                    Kur'ân-ı Kerîm
+                  </span>
+                </div>
+              </Link>
+            )}
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={(e) => handleAlimDragEnd(e, kategori.id)}>
               <SortableContext
                 items={alimSira[kategori.id] || kategori.alimler.map(a => a.id)}

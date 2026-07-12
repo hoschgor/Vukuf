@@ -152,49 +152,7 @@ export default function Besmele({ theme, sureId, sureNo, ayetSayisi, player }) {
           >
             بِسۡمِ ٱللَّهِ ٱلرَّحۡمَٰنِ ٱلرَّحِيمِ
           </text>
-        </svg>
-
-        {/* ── SES BUTONU ── SVG DIŞINA ALINDI! */}
-        {player && (
-          <button
-            onClick={sesTikla}
-            title={caliniyor ? "Duraklat" : "Sureyi dinle"}
-            style={{
-              position: "absolute",
-              right: isMobile ? "9%" : "10%",
-              top: "50%",
-              transform: "translateY(-50%)",
-              width: isMobile ? "19px" : "28px",
-              height: isMobile ? "19px" : "28px",
-              borderRadius: "50%",
-              border: `1.5px solid ${ac}40`,
-              background: caliniyor ? ac : `${ac}18`,
-              color: caliniyor ? "#fff" : ac,
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              padding: 0,
-              margin: 0,
-              lineHeight: 1,        // ← Ekle
-              transition: "all 0.15s",
-              boxShadow: "none",
-              zIndex: 10,
-              flexShrink: 0,
-            }}
-          >
-            <span style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              lineHeight: 1,
-              marginLeft: isMobile ? "0.05px" : "0px",  // ← Play ikonu için sağa kaydırma
-              marginTop: isMobile ? "0px" : "0px",
-            }}>
-              {caliniyor ? <Pause size={isMobile ? 10 : 12} /> : <Play size={isMobile ? 10 : 12} />}
-            </span>
-          </button>
-        )}
+        </svg> 
       </div>
     </div>
   )

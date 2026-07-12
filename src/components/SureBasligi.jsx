@@ -1,4 +1,7 @@
-export default function SureBasligi({ sure, theme, onTikla }) {
+import { Play, Pause } from "lucide-react"
+import MushafPlayButton from "./MushafPlayButton"
+
+export default function SureBasligi({ sure, theme, onTikla, player }) {
   const ac = theme.accent
   const w = 580
   const h = 110
@@ -15,7 +18,10 @@ export default function SureBasligi({ sure, theme, onTikla }) {
   return (
     <div
       onClick={onTikla}
-      style={{ cursor: "pointer", userSelect: "none", margin: "32px 0 8px", direction: "ltr" }}
+      style={{ 
+        cursor: "pointer", userSelect: "none", margin: "32px 0 8px", 
+        direction: "ltr", position: "relative"  // ← ekle
+      }}
       title={`${sure.isim} · ${sure.anlam} · ${sure.yer}`}
     >
       <svg
@@ -764,7 +770,7 @@ export default function SureBasligi({ sure, theme, onTikla }) {
           strokeOpacity="0.12"
         />
 
-                {/* ========================================================= */}
+        {/* ========================================================= */}
         {/* SURE İSMİ - MERKEZ OVAL İÇİ */}
         {/* ========================================================= */}
 
@@ -804,7 +810,7 @@ export default function SureBasligi({ sure, theme, onTikla }) {
                         transform={`rotate(${ang} ${x} ${y})`}
                         fill="none"
                         stroke={ac}
-                        strokeWidth="0.6"
+                        strokeWidth="0."
                         strokeOpacity="0.5"
                       />
                     );
@@ -1129,6 +1135,43 @@ export default function SureBasligi({ sure, theme, onTikla }) {
                           </g>
                         ))}
       </svg>
+      {/* Oynat butonu */}
+      {player && (() => {
+        const caliniyor = player?.durum === "caliyor" && player?.aktifAyet?.sureNo === sure.id
+        const duraklatildi = player?.durum === "duraklatildi" && player?.aktifAyet?.sureNo === sure.id
+        return (
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              if (caliniyor) player.duraklat()
+              else if (duraklatildi) player.devamEt()
+              else player.sureCal(sure.id, sure.ayetSayisi, 1)
+            }}
+            style={{
+              position: "absolute",
+              right: "25%",
+              top: "50%",
+              transform: "translateY(-50%)",
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              padding: 0,
+              lineHeight: 0,
+              opacity: 0.85,
+              transition: "opacity 0.2s",
+              color: theme.accent,
+            }}
+            onMouseEnter={e => e.currentTarget.style.opacity = "1"}
+            onMouseLeave={e => e.currentTarget.style.opacity = "0.85"}
+          >
+            <MushafPlayButton
+              ac={theme.accent}
+              playing={caliniyor}
+              size={48}
+            />
+          </button>
+        )
+      })()}
     </div>
   )
 }

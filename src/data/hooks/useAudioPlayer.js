@@ -105,15 +105,32 @@ useEffect(() => {
     _ayetOynat(sureNo, ayetNo)
   }, [_ayetOynat])
 
-  const sureCal = useCallback((sureNo, toplamAyetSayisi, baslangicAyet = 1) => {
-    const kuyruk = []
-    for (let a = baslangicAyet; a <= toplamAyetSayisi; a++) {
-      kuyruk.push({ sureNo, ayetNo: a })
-    }
-    kuyrukRef.current = kuyruk
-    kuyrukIndisRef.current = 0
-    _ayetOynat(kuyruk[0].sureNo, kuyruk[0].ayetNo)
-  }, [_ayetOynat])
+
+const BESMELE_OKUYANLAR = [
+  "AbdulSamad_64kbps_QuranExplorer.Com",
+]
+
+const sureCal = useCallback((sureNo, toplamAyetSayisi, baslangicAyet = 1) => {
+  const kuyruk = []
+
+  // Besmele ekle — sure 1 ve 9 hariç, kari besmele okumuyorsa
+  const besmelEkle =
+    sureNo !== 1 &&
+    sureNo !== 9 &&
+    baslangicAyet === 1 &&
+    !BESMELE_OKUYANLAR.includes(kariIdRef.current)
+
+  if (besmelEkle) {
+    kuyruk.push({ sureNo: 1, ayetNo: 1 })
+  }
+
+  for (let a = baslangicAyet; a <= toplamAyetSayisi; a++) {
+    kuyruk.push({ sureNo, ayetNo: a })
+  }
+  kuyrukRef.current = kuyruk
+  kuyrukIndisRef.current = 0
+  _ayetOynat(kuyruk[0].sureNo, kuyruk[0].ayetNo)
+}, [_ayetOynat])
 
   const besmeleCal = useCallback(() => {
     kuyrukRef.current = [{ sureNo: 1, ayetNo: 1 }]

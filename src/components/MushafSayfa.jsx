@@ -26,7 +26,6 @@ export default function MushafSayfa({
   onSureTikla,
   sayfaKaydi,
   onKayitTikla,
-  
 }) {
   
   const isMobile = useMediaQuery("(max-width: 768px)")
@@ -144,6 +143,7 @@ export default function MushafSayfa({
                 theme={theme}
                 yaziBoyutu={fontSize}
                 onTikla={(e) => onSureTikla?.(grup.eleman.sure, e)}
+                player={player}
               />
             </div>
           )

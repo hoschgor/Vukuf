@@ -195,7 +195,7 @@ export default function KuranOkuma({ kitap }) {
   const otomatikRef = useRef(null)
 
   // Panel açık mı kontrolü
-  const herhangiPanelAcik = aaAcik || temaAcik || ayarlarAcik || ozelTemaPanelAcik || menuAcik || popup !== null
+  const herhangiPanelAcik = aaAcik || temaAcik || ozelTemaPanelAcik || popup !== null
 
   // ════════════════════════════════════════════════════════════════
   // EFFECT'LER
@@ -1379,7 +1379,7 @@ useEffect(() => {
                 <X size={16} />
               </button>
             </div>
-            <div style={{ flex: 1, overflowY: "auto", paddingBottom: isMobile ? "10px" : "0px" }}>
+            <div style={{ flex: 1, overflowY: "auto", paddingBottom: isMobile ? (player.durum !== "kapali" ? "100px" : "50px") : "80px" }}>
               {filtreliSureler.map(sure => (
                 <div key={sure.id}>
                   <div style={{ display: "flex", alignItems: "center", borderBottom: `1px solid ${theme.border}` }}>
@@ -1487,7 +1487,7 @@ useEffect(() => {
             if (window.innerWidth <= 768) return
             
             // Eğer popup veya panel açık ise işlemi engelle
-            if (popup || menuAcik || aaAcik || temaAcik || ayarlarAcik || ozelTemaPanelAcik) return
+            if (popup || aaAcik || temaAcik || ozelTemaPanelAcik) return
             
             barToggle()
           }}
@@ -1521,7 +1521,7 @@ useEffect(() => {
             dokunusBitti()
             
             // Eğer popup veya panel açık ise işlemi engelle
-            if (popup || menuAcik || aaAcik || temaAcik || ayarlarAcik || ozelTemaPanelAcik) {
+            if (popup || aaAcik || temaAcik || ozelTemaPanelAcik) {
               return
             }
             

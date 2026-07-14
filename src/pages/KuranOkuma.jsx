@@ -266,6 +266,20 @@ export default function KuranOkuma({ kitap }) {
     }
   }, [otomatikKaydirma, kaydirmaHizi, duraklatildi])
 
+  // menuAcik useEffect — dışarı tıklayınca kapat
+  useEffect(() => {
+    if (!menuAcik) return
+    function disariTikla(e) {
+      const menu = document.querySelector('.sure-menusu')
+      if (menu && !menu.contains(e.target)) {
+        setMenuAcik(false)
+        e.stopPropagation()
+      }
+    }
+    document.addEventListener('mousedown', disariTikla, true)
+    return () => document.removeEventListener('mousedown', disariTikla, true)
+  }, [menuAcik])
+
   // ════════════════════════════════════════════════════════════════
   // BAR FONKSİYONLARI
   // ════════════════════════════════════════════════════════════════
@@ -354,6 +368,12 @@ export default function KuranOkuma({ kitap }) {
       localStorage.setItem("vukuf-son-scroll", String(el.scrollTop))
     }, [scrollbarGoster, isMobile])
 
+
+    const menuAcikRef = useRef(false)
+
+    useEffect(() => {
+      menuAcikRef.current = menuAcik
+    }, [menuAcik])
   // ════════════════════════════════════════════════════════════════
   // SCROLL OLAYLARI
   // ════════════════════════════════════════════════════════════════
@@ -1342,7 +1362,12 @@ useEffect(() => {
         <>
           <div
             onClick={() => setMenuAcik(false)}
-            style={{ position: "fixed", inset: 0, zIndex: 79, background: "rgba(0,0,0,0.1)" }}
+            style={{ 
+              position: "fixed", 
+              inset: 0, 
+              zIndex: 78,
+              background: "transparent",
+            }}
           />
           <div style={{
             position: isMobile ? "fixed" : "relative",
@@ -1493,7 +1518,7 @@ useEffect(() => {
             if (window.innerWidth <= 768) return
             
             // Eğer popup veya panel açık ise işlemi engelle
-            if (popup || aaAcik || temaAcik || ozelTemaPanelAcik) return
+            if (popup || aaAcik || temaAcik || ozelTemaPanelAcik || menuAcikRef.current) return
             
             barToggle()
           }}
@@ -1527,7 +1552,7 @@ useEffect(() => {
             dokunusBitti()
             
             // Eğer popup veya panel açık ise işlemi engelle
-            if (popup || aaAcik || temaAcik || ozelTemaPanelAcik) {
+            if (popup || aaAcik || temaAcik || ozelTemaPanelAcik || menuAcikRef.current) {
               return
             }
             

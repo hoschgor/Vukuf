@@ -18,8 +18,26 @@
 
 import { useMemo } from "react"
 
+const BAGIMSIZ_ISARETLER = new Set([
+  "\u06DE", // ۞ hizb
+  "\u06E9", // ۩ secde
+  "\u06D6", // ۖ
+  "\u06D7", // ۗ
+  "\u06D8", // ۘ
+  "\u06D9", // ۙ
+  "\u06DA", // ۚ
+  "\u06DB", // ۛ
+  "\u06DC", // ۜ
+  "\u06DD", // ۝ ayet sonu
+  "\u06DF", // ۟
+  "\u06E0", // ۠
+])
+const TEMIZLE_RE = /[\u06DE\u06E9\u06D6\u06D7\u06D8\u06D9\u06DA\u06DB\u06DC\u06DD\u06DF\u06E0\u06ED]/g
+
 // Besmele gösterilmeyecek sureler
 const BESMELE_YOK = new Set([1, 9])
+
+
 
 /**
  * Hook versiyonu — bileşen içinde kullanılır
@@ -49,6 +67,7 @@ export function buildMushaf(mushafData, sayfaHarita) {
   const haritaSirali = [...sayfaHarita].sort((a, b) =>
     a.sure !== b.sure ? a.sure - b.sure : a.ayet - b.ayet
   )
+
 
   // Her sure için sayfa başlarını bul
   mushafData.forEach(sure => {
@@ -92,8 +111,10 @@ export function buildMushaf(mushafData, sayfaHarita) {
 
       // Kelimeleri ekle
       ayet.kelimeler.forEach(kelime => {
-        if (kelime.arabic === "۞") return  // hizb işareti — metin değil, süsleme
-        elemanlar.push({ tip: "kelime", sure, ayet, kelime })
+        if (BAGIMSIZ_ISARETLER.has(kelime.arabic.trim())) return
+        const temizArapca = kelime.arabic.replace(TEMIZLE_RE, '')
+        if (!temizArapca.trim()) return  // tamamen boş kaldıysa atla
+        elemanlar.push({ tip: "kelime", sure, ayet, kelime: { ...kelime, arabic: temizArapca } })
       })
 
       // Ayet sonu işareti ﴿١﴾

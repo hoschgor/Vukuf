@@ -92,6 +92,7 @@ export function buildMushaf(mushafData, sayfaHarita) {
 
       // Kelimeleri ekle
       ayet.kelimeler.forEach(kelime => {
+        if (kelime.arabic === "۞") return  // hizb işareti — metin değil, süsleme
         elemanlar.push({ tip: "kelime", sure, ayet, kelime })
       })
 

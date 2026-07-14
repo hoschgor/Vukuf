@@ -1061,10 +1061,10 @@ useEffect(() => {
         background: theme.surface,
         borderTop:    barKonum === "alt" ? `1px solid ${theme.border}` : "none",
         borderBottom: barKonum === "ust" ? `1px solid ${theme.border}` : "none",
-        padding: isMobile ? "8px 12px" : "4px 12px",
+        padding: isMobile ? "2px 14px" : "0px 14px",
         display: "flex", 
         alignItems: "center", 
-        gap: isMobile ? "3px" : "4px",
+        gap: isMobile ? "0px" : "5px",
         zIndex: 90, 
         flexWrap: "wrap",
         transition: "opacity 0.3s ease, transform 0.3s ease",
@@ -1346,7 +1346,7 @@ useEffect(() => {
           />
           <div style={{
             position: isMobile ? "fixed" : "relative",
-            width: "260px", flexShrink: 0,
+            width: "280px", flexShrink: 0,
             background: theme.surface,
             borderRight: `1px solid ${theme.border}`,
             display: "flex", flexDirection: "column",
@@ -1379,7 +1379,13 @@ useEffect(() => {
                 <X size={16} />
               </button>
             </div>
-            <div style={{ flex: 1, overflowY: "auto", paddingBottom: isMobile ? (player.durum !== "kapali" ? "100px" : "50px") : "80px" }}>
+            <div style={{ 
+              flex: 1, 
+              overflowY: "auto", 
+              paddingBottom: player.durum !== "kapali" 
+                ? (isMobile ? "80px" : "70px")   // PlayerBar açık
+                : (isMobile ? "40px" : "30px")    // PlayerBar kapalı
+            }}>
               {filtreliSureler.map(sure => (
                 <div key={sure.id}>
                   <div style={{ display: "flex", alignItems: "center", borderBottom: `1px solid ${theme.border}` }}>

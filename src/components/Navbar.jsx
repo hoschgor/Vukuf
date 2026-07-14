@@ -2,6 +2,7 @@ import { useState } from "react"
 import { Link, useLocation } from "react-router-dom"
 import { BookOpen, Search, Shuffle, Menu, X, Palette, Pencil, Info } from "lucide-react"
 import { useApp } from "../AppContext"
+import { useMediaQuery } from "../data/hooks/useMediaQuery"
 
 const temaAciklamalari = {
   sepia: "Göz yormayan sıcak ton",
@@ -77,7 +78,7 @@ export default function Navbar() {
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        height: "52px",
+        height: "42px",
         position: "sticky",
         top: 0,
         zIndex: 100,

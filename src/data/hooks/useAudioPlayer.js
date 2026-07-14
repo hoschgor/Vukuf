@@ -85,19 +85,19 @@ useEffect(() => {
       return
     }
     kuyrukIndisRef.current = indis
-    const { sureNo, ayetNo } = kuyruk[indis]
-    _ayetOynat(sureNo, ayetNo)
+    const { sureNo, ayetNo, besmeleIcin } = kuyruk[indis]
+    _ayetOynat(sureNo, ayetNo, besmeleIcin)
   }, [])
 
-  const _ayetOynat = useCallback((sureNo, ayetNo) => {
+  const _ayetOynat = useCallback((sureNo, ayetNo, besmeleIcin = null) => {
     const audio = audioRef.current
     if (!audio) return
     setHata(null)
-    audio.src = mp3Url(kariIdRef.current, sureNo, ayetNo)  // ← kariId değil
+    audio.src = mp3Url(kariIdRef.current, sureNo, ayetNo)
     audio.play()
-      .then(() => { setDurum("caliyor"); setAktifAyet({ sureNo, ayetNo }) })
+      .then(() => { setDurum("caliyor"); setAktifAyet({ sureNo, ayetNo, besmeleIcin }) })
       .catch(() => { setHata("Oynatma başlatılamadı"); setDurum("kapali") })
-  }, [])  // ← artık kariId bağımlılığı yok, ref üzerinden okur
+  }, [])
 
   const ayetCal = useCallback((sureNo, ayetNo) => {
     kuyrukRef.current = [{ sureNo, ayetNo }]
@@ -121,7 +121,7 @@ const sureCal = useCallback((sureNo, toplamAyetSayisi, baslangicAyet = 1) => {
     !BESMELE_OKUYANLAR.includes(kariIdRef.current)
 
   if (besmelEkle) {
-    kuyruk.push({ sureNo: 1, ayetNo: 1 })
+    kuyruk.push({ sureNo: 1, ayetNo: 1, besmeleIcin: sureNo })
   }
 
   for (let a = baslangicAyet; a <= toplamAyetSayisi; a++) {
@@ -129,7 +129,7 @@ const sureCal = useCallback((sureNo, toplamAyetSayisi, baslangicAyet = 1) => {
   }
   kuyrukRef.current = kuyruk
   kuyrukIndisRef.current = 0
-  _ayetOynat(kuyruk[0].sureNo, kuyruk[0].ayetNo)
+  _ayetOynat(kuyruk[0].sureNo, kuyruk[0].ayetNo, kuyruk[0].besmeleIcin)
 }, [_ayetOynat])
 
   const besmeleCal = useCallback(() => {
@@ -169,8 +169,8 @@ const sureCal = useCallback((sureNo, toplamAyetSayisi, baslangicAyet = 1) => {
     const indis = kuyrukIndisRef.current - 1
     if (indis < 0) return
     kuyrukIndisRef.current = indis
-    const { sureNo, ayetNo } = kuyrukRef.current[indis]
-    _ayetOynat(sureNo, ayetNo)
+    const { sureNo, ayetNo, besmeleIcin } = kuyrukRef.current[indis]
+    _ayetOynat(sureNo, ayetNo, besmeleIcin)
   }, [_ayetOynat])
 
   const sonrakiAyet = useCallback(() => {

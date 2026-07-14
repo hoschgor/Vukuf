@@ -196,7 +196,8 @@ export default function MushafSayfa({
                 if (el.tip === "kelime") {
                   const aktif =
                     aktifAyet?.sureNo === el.sure.id &&
-                    aktifAyet?.ayetNo === el.ayet.no
+                    aktifAyet?.ayetNo === el.ayet.no &&
+                    !aktifAyet?.besmeleIcin
 
                   return (
                     <MushafKelime

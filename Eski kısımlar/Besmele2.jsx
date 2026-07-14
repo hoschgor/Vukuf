@@ -1,8 +1,36 @@
+// components/Besmele.jsx
+import { Play, Pause } from "lucide-react"
 import { useMediaQuery } from '../data/hooks/useMediaQuery'
 
-function KucukRozet({ x, y, ac, caliniyor }) {
-  const cicekIcerik = (
-    <>
+export default function Besmele({ theme, sureId, sureNo, ayetSayisi, player }) {
+  if (sureId === 9) return null
+
+  const isMobile = useMediaQuery('(max-width: 768px)')
+  
+  const ac = theme.accent
+  const w = 500
+  const h = 52
+
+  const caliniyor =
+    player?.durum === "caliyor" &&
+    (player?.aktifAyet?.sureNo === sureNo ||
+    player?.aktifAyet?.besmeleIcin === sureNo)
+
+  function sesTikla(e) {
+    e.stopPropagation()
+    if (!player) return
+
+    if (caliniyor) {
+      player.duraklat()
+    } else if (player.durum === "duraklatildi" && player.aktifAyet?.sureNo === sureNo) {
+      player.devamEt()
+    } else {
+      player.sureCal(sureNo, ayetSayisi, 1)
+    }
+  }
+
+  const KucukRozet = ({ x, y }) => (
+    <g transform={`translate(${x}, ${y})`}>
       {[...Array(12)].map((_, i) => (
         <circle
           key={`pearl-${i}`}
@@ -49,41 +77,8 @@ function KucukRozet({ x, y, ac, caliniyor }) {
       <circle r="5" fill="none" stroke={ac} strokeWidth="0.45" strokeOpacity="0.6" />
       <circle r="2.5" fill={ac} fillOpacity="0.85" />
       <circle r="1" fill="white" fillOpacity="0.3" />
-    </>
-  )
-
-  return (
-    <g transform={`translate(${x}, ${y})`}>
-      <g>
-        {cicekIcerik}
-        {caliniyor && (
-          <animateTransform
-            attributeName="transform"
-            type="rotate"
-            from="0 0 0"
-            to="360 0 0"
-            dur="12s"
-            repeatCount="indefinite"
-          />
-        )}
-      </g>
     </g>
   )
-}
-
-export default function Besmele({ theme, sureId, sureNo, ayetSayisi, player }) {
-  if (sureId === 9) return null
-
-  const isMobile = useMediaQuery('(max-width: 768px)')
-
-  const ac = theme.accent
-  const w = 500
-  const h = 52
-
-  // Sadece bu sure için Besmele çalınıyorsa true olacak
-  const caliniyor =
-    player?.durum === "caliyor" &&
-    player?.aktifAyet?.besmeleIcin === sureNo
 
   return (
     <div style={{
@@ -109,47 +104,28 @@ export default function Besmele({ theme, sureId, sureNo, ayetSayisi, player }) {
             display: "block",
           }}
         >
-          <style>{`
-            @keyframes rozetSpin {
-              from { transform: rotate(0deg); }
-              to { transform: rotate(360deg); }
-            }
-          `}</style>
-
           <defs>
             <linearGradient id="besmeleGrad" x1="0%" y1="0%" x2="100%" y2="0%">
               <stop offset="0%" stopColor={ac} stopOpacity="0.05" />
               <stop offset="50%" stopColor={ac} stopOpacity="0.12" />
               <stop offset="100%" stopColor={ac} stopOpacity="0.05" />
             </linearGradient>
-
-            {/* Alt çizgi için uçları eriyen (fade-out) gradyan */}
-            <linearGradient id="altCizgiGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor={ac} stopOpacity="0" />
-              <stop offset="18%" stopColor={ac} stopOpacity="0.75" />
-              <stop offset="50%" stopColor={ac} stopOpacity="1" />
-              <stop offset="82%" stopColor={ac} stopOpacity="0.75" />
-              <stop offset="100%" stopColor={ac} stopOpacity="0" />
-            </linearGradient>
           </defs>
 
-          <rect x="2" y="2" width={w - 4} height={h - 4} rx="4"
-            fill="url(#besmeleGrad)" stroke={ac} strokeWidth={caliniyor ? "1" : "0.6"}
-            strokeOpacity={caliniyor ? "0.7" : "0.4"}
-            style={{ transition: "stroke-width 0.3s, stroke-opacity 0.3s" }} />
-
-          <rect x="6" y="6" width={w - 12} height={h - 12} rx="3"
+          <rect x="2" y="2" width={w-4} height={h-4} rx="4"
+            fill="url(#besmeleGrad)" stroke={ac} strokeWidth="0.6" strokeOpacity="0.4" />
+          <rect x="6" y="6" width={w-12} height={h-12} rx="3"
             fill="none" stroke={ac} strokeWidth="0.35" strokeOpacity="0.25" />
 
-          <KucukRozet x={28} y={h / 2} ac={ac} caliniyor={caliniyor} />
-          <KucukRozet x={w - 28} y={h / 2} ac={ac} caliniyor={caliniyor} />
+          <KucukRozet x={28} y={h/2} />
+          <KucukRozet x={w-28} y={h/2} />
 
           {Array.from({ length: 14 }).map((_, i) => {
             const x = 80 + i * 24
             return (
               <g key={`top-chain-${i}`}>
                 <circle cx={x} cy="11" r="0.5" fill={ac} fillOpacity="0.2" />
-                <path d={`M ${x - 3.5} 11 Q ${x} 8.5 ${x + 3.5} 11`}
+                <path d={`M ${x-3.5} 11 Q ${x} 8.5 ${x+3.5} 11`}
                   fill="none" stroke={ac} strokeWidth="0.3" strokeOpacity="0.2" />
               </g>
             )
@@ -159,54 +135,25 @@ export default function Besmele({ theme, sureId, sureNo, ayetSayisi, player }) {
             const x = 80 + i * 24
             return (
               <g key={`bottom-chain-${i}`}>
-                <circle cx={x} cy={h - 11} r="0.5" fill={ac} fillOpacity="0.2" />
-                <path d={`M ${x - 3.5} ${h - 11} Q ${x} ${h - 8.5} ${x + 3.5} ${h - 11}`}
+                <circle cx={x} cy={h-11} r="0.5" fill={ac} fillOpacity="0.2" />
+                <path d={`M ${x-3.5} ${h-11} Q ${x} ${h-8.5} ${x+3.5} ${h-11}`}
                   fill="none" stroke={ac} strokeWidth="0.3" strokeOpacity="0.2" />
               </g>
             )
           })}
 
           <text
-            x={w / 2} y={h / 2 + 7}
+            x={w/2} y={h/2 + 7}
             textAnchor="middle"
             fontFamily="'Scheherazade New', 'Traditional Arabic', 'Noto Naskh Arabic', serif"
             fontSize={isMobile ? "16" : "18"}
             fontWeight="500"
-            fill={ac} fillOpacity={caliniyor ? "0.95" : "0.7"}
+            fill={ac} fillOpacity="0.7"
             direction="rtl"
-            style={{ transition: "fill-opacity 0.3s" }}
           >
             بِسۡمِ ٱللَّهِ ٱلرَّحۡمَٰنِ ٱلرَّحِيمِ
           </text>
-
-          {/* Çalarken beliren alt çizgi — gradyanla uçları eriyen çizgi,
-              ortada küçük bir eşkenar dörtgen (diamond) süslemesi ile */}
-          <g style={{
-            opacity: caliniyor ? 1 : 0,
-            transition: "opacity 0.4s ease",
-          }}>
-            <rect
-              x={w / 2 - (caliniyor ? 110 : 0)}
-              y={h / 2 + 13.3}
-              width={caliniyor ? 220 : 0}
-              height="1.2"
-              fill="url(#altCizgiGrad)"
-              style={{ transition: "width 0.5s ease, x 0.5s ease" }}
-            />
-            <g transform={`translate(${w / 2}, ${h / 2 + 13.9})`}>
-              <rect
-                x="-2.5" y="-2.5" width="5" height="5"
-                fill={ac} fillOpacity="0.85"
-                transform="rotate(45)"
-              />
-              <rect
-                x="-1" y="-1" width="2" height="2"
-                fill="white" fillOpacity="0.4"
-                transform="rotate(45)"
-              />
-            </g>
-          </g>
-        </svg>
+        </svg> 
       </div>
     </div>
   )

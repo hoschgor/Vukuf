@@ -110,7 +110,9 @@ export default function PlayerBar({ player, sureler = [], theme, barKonum = "alt
           lineHeight: "1.2",
         }}>
           {aktifSure
-            ? `${aktifSure.isim} ${isMobile ? '·' : '·'} ${aktifAyet.ayetNo}`
+            ? (aktifAyet.besmeleIcin
+                ? "Bismillahirrahmanirrahim"
+                : `${aktifSure.isim} ${isMobile ? '·' : '·'} ${aktifAyet.ayetNo}`)
             : "Besmele"}
         </div>
         <div style={{

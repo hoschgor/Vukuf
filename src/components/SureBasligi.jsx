@@ -1137,8 +1137,8 @@ export default function SureBasligi({ sure, theme, onTikla, player }) {
       </svg>
       {/* Oynat butonu */}
       {player && (() => {
-        const caliniyor = player?.durum === "caliyor" && player?.aktifAyet?.sureNo === sure.id
-        const duraklatildi = player?.durum === "duraklatildi" && player?.aktifAyet?.sureNo === sure.id
+        const caliniyor = player?.durum === "caliyor" && player?.aktifAyet?.sureNo === sure.id && !player?.aktifAyet?.besmeleIcin
+        const duraklatildi = player?.durum === "duraklatildi" && player?.aktifAyet?.sureNo === sure.id && !player?.aktifAyet?.besmeleIcin
         return (
           <button
             onClick={(e) => {

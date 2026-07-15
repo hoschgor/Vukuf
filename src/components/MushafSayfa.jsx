@@ -25,8 +25,8 @@ export default function MushafSayfa({
   onKelimeTikla,
   onAyetTikla,
   onSureTikla,
-  sayfaKaydi,
   onKayitTikla,
+  sayfaKayitlari = [],
 }) {
   
   const isMobile = useMediaQuery("(max-width: 768px)")
@@ -74,22 +74,25 @@ export default function MushafSayfa({
       padding: isMobile ? "2px 12px" : "2px 32px",
       boxSizing: "border-box",
     }}>
-      {sayfaKaydi && (
-        <div style={{
-          position: "absolute",
-          top: `${(sayfaKaydi.scrollY || 0) * 100}%`, // ← scrollY oranına göre
-          right: "4px",
-          zIndex: 50,
-          pointerEvents: "auto",
-          transform: "translateY(-50%)",
-        }}>
+      {sayfaKayitlari.map((kayit, i) => (
+        <div
+          key={kayit.id}
+          style={{
+            position: "absolute",
+            top: `${(kayit.scrollY || 0) * 100}%`,
+            right: "4px",
+            zIndex: 50,
+            pointerEvents: "auto",
+            transform: "translateY(-50%)",
+          }}
+        >
           <KitapAyraci
-            kayit={sayfaKaydi}
+            kayit={kayit}
             theme={theme}
-            onTikla={() => onKayitTikla?.(sayfaKaydi)}
+            onTikla={() => onKayitTikla?.(kayit)}
           />
         </div>
-      )}
+      ))}
       {/* Sayfa numarası */}
       <div style={{
         textAlign: "center",
@@ -126,6 +129,17 @@ export default function MushafSayfa({
           }}
         />
       )}
+
+      {/* Sayfa Kayıtları */}
+      {sayfaKayitlari.map((kayit, i) => (
+        <KitapAyraci
+          key={kayit.id}
+          kayit={kayit}
+          theme={theme}
+          onTikla={onKayitTikla}
+          index={i}  // birden fazla varsa konumlandırma için
+        />
+      ))}
 
       {/* Gruplar */}
       {gruplar.map((grup, gi) => {

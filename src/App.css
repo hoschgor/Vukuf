@@ -19,3 +19,7 @@
 .center-text {
   text-align: center;
 }
+.kutuphane-container {
+  user-select: none;
+  -webkit-user-select: none;
+}

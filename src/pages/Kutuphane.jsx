@@ -1,4 +1,5 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useMediaQuery } from "../data/hooks/useMediaQuery"
 import { useApp } from "../AppContext"
 import { Link } from "react-router-dom"
 import { kategoriler, kitapFontGetir } from "../data/kitaplar"
@@ -43,7 +44,9 @@ function SortableKitap({ kitap, duzenlemeMode, theme, alimId }) {
         <div
           {...attributes}
           {...listeners}
-          style={{
+          style={{ 
+            cursor: "grab", 
+            touchAction: "none",
             position: "absolute",
             top: "2px",
             right: "2px",
@@ -124,6 +127,7 @@ function KitapRafi({ kitaplar, rafId, duzenlemeMode, theme, sensors, kitapSirala
       </div>
     )
   }
+
 
   const sirali = kitapSiralama[rafId]
     ? kitapSiralama[rafId].map(id => kitaplar.find(k => k.id === id)).filter(Boolean)
@@ -234,6 +238,8 @@ function SortableAlimRafi({ alim, duzenlemeMode, theme, sensors, kitapSiralama, 
             <button
               onClick={handleKitapAramaClick}
               style={{
+                cursor: "grab", 
+                touchAction: "none",
                 display: "flex",
                 alignItems: "center",
                 gap: "4px",
@@ -425,7 +431,7 @@ function SortableKategori({ kategori,
               {...attributes}
               {...listeners}
               onClick={e => e.stopPropagation()}
-              style={{ cursor: "grab", color: theme.accent, display: "flex" }}
+              style={{ cursor: "grab", touchAction: "none", color: theme.accent, display: "flex" }}
             >
               <GripVertical size={20} />
             </span>
@@ -620,6 +626,27 @@ export default function Kutuphane() {
     return kayitli ? JSON.parse(kayitli) : {}
   })
 
+  const isMobile = useMediaQuery("(max-width: 768px)")
+
+  useEffect(() => {
+    if (!isMobile) return
+    const viewport = window.visualViewport
+    if (!viewport) return
+    const zoomSifirla = () => {
+      if (viewport.scale > 1) {
+        const meta = document.querySelector('meta[name="viewport"]')
+        if (meta) {
+          meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no'
+          setTimeout(() => {
+            meta.content = 'width=device-width, initial-scale=1.0, user-scalable=yes'
+          }, 50)
+        }
+      }
+    }
+    viewport.addEventListener('resize', zoomSifirla)
+    return () => viewport.removeEventListener('resize', zoomSifirla)
+  }, [isMobile])
+
   const siralanmisKategoriler = kategoriSira.map(id => kategoriler.find(k => k.id === id)).filter(Boolean)
 
   const sensors = useSensors(
@@ -667,7 +694,14 @@ export default function Kutuphane() {
   }
 
   return (
-    <div style={{ maxWidth: "900px", margin: "0 auto", padding: "40px 24px" }}>
+    // Ana container — her zaman seçimi engelle
+    <div style={{ 
+      maxWidth: "900px", 
+      margin: "0 auto", 
+      padding: "40px 24px", 
+      userSelect: "none",
+      WebkitUserSelect: "none",
+    }}>
       <div style={{ marginBottom: "32px" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
           <h1 style={{ fontSize: "28px", color: theme.text, letterSpacing: "1px", fontFamily: "PlayfairDisplay, serif" }}>

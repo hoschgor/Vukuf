@@ -121,6 +121,9 @@ export default function KuranOkuma({ kitap }) {
   const [sayfaGirdi, setSayfaGirdi] = useState("")
   const [sayfaGirdiAcik, setSayfaGirdiAcik] = useState(false)
 
+  const [kayitKonumModu, setKayitKonumModu] = useState(false)
+  
+
   const [kayitlar, setKayitlar] = useState(() => {
     try { return JSON.parse(localStorage.getItem("vukuf-kayitlar") || "[]") }
     catch { return [] }
@@ -236,6 +239,13 @@ export default function KuranOkuma({ kitap }) {
     localStorage.setItem("vukuf-kuran-arapca-font", arapcaFontId)
   }, [arapcaFontId])
 
+  // kayitKonumModu true olduğunda 3 sn sonra iptal et
+  useEffect(() => {
+    if (!kayitKonumModu) return
+    const timer = setTimeout(() => setKayitKonumModu(false), 3000)
+    return () => clearTimeout(timer)
+  }, [kayitKonumModu])
+  
   useEffect(() => {
     fetch("/kuran-mushaf.json")
       .then(r => r.json())
@@ -544,28 +554,25 @@ export default function KuranOkuma({ kitap }) {
 // ════════════════════════════════════════════════════════════════
 // KAYIT BÖLÜMÜ
 // ════════════════════════════════════════════════════════════════
-const kayitEkle = useCallback((baslik) => {
+const kayitEkle = useCallback((baslik, scrollY) => {
   const el = scrollRef.current
   if (!el) return
 
-  // Sayfa içindeki görünen alanın orta noktasını bul
-  const ortaY = el.scrollTop + el.clientHeight * 0.25
-  
-  // O anki sayfanın index'ini bul
-  const sayfaIndex = sayfaListesi.findIndex(s => s.sayfaNo === mevcutSayfa)
-  if (sayfaIndex === -1) return
-  
-  const sayfaYukseklik = sayfaYukseklikleri[sayfaIndex] || 500
-  
-  // Sayfa içindeki oran (0-1 arası)
-  const virtualItem = virtualizer.getVirtualItems().find(v => v.index === sayfaIndex)
-  const sayfaBaslangic = virtualItem?.start || 0
-  const sayfaIciOran = (ortaY - sayfaBaslangic) / sayfaYukseklik
+  let oran = scrollY
+  if (oran === undefined) {
+    const ortaY = el.scrollTop + el.clientHeight * 0.25
+    const sayfaIndex = sayfaListesi.findIndex(s => s.sayfaNo === mevcutSayfa)
+    if (sayfaIndex === -1) return
+    const sayfaYukseklik = sayfaYukseklikleri[sayfaIndex] || 500
+    const virtualItem = virtualizer.getVirtualItems().find(v => v.index === sayfaIndex)
+    const sayfaBaslangic = virtualItem?.start || 0
+    oran = (ortaY - sayfaBaslangic) / sayfaYukseklik
+  }
 
   const yeniKayit = {
     id: Date.now().toString(),
     sayfa: mevcutSayfa,
-    scrollY: Math.max(0, Math.min(1, sayfaIciOran)), // 0-1 arası sınırla
+    scrollY: Math.max(0, Math.min(1, oran)),
     baslik: baslik || `Sayfa ${mevcutSayfa}`,
     olusturma: Date.now(),
   }
@@ -1106,11 +1113,16 @@ useEffect(() => {
       </button>
 
       <button
-        onClick={() => setKayitPaneliAcik(!kayitPaneliAcik)}
-        style={barButonStil(kayitPaneliAcik)}
-        title="Kayıtlar"
+        onClick={() => {
+          if (mevcutKayit) {
+            setKayitPaneliAcik(!kayitPaneliAcik)
+          } else {
+            setKayitKonumModu(true)
+            setKayitPaneliAcik(false)
+          }
+        }}
       >
-        <Bookmark
+        <Bookmark color={theme.accent}
           size={isMobile ? 14 : 15}
           fill={kayitlar.some(k => k.sayfa === mevcutSayfa) ? "currentColor" : "none"}
         />
@@ -1308,27 +1320,18 @@ useEffect(() => {
           mevcutSayfa={mevcutSayfa}
           scrollOran={scrollOranRef.current}
           onSayfaGit={kayitSayfaGit}
-          onKayitEkle={(baslik) => {
-            const el = scrollRef.current
-            if (!el) return
-
-            const ortaY = el.scrollTop + el.clientHeight / 2
-            const sayfaIndex = sayfaListesi.findIndex(s => s.sayfaNo === mevcutSayfa)
-            if (sayfaIndex === -1) return
-            
-            const sayfaYukseklik = sayfaYukseklikleri[sayfaIndex] || 500
-            const virtualItem = virtualizer.getVirtualItems().find(v => v.index === sayfaIndex)
-            const sayfaBaslangic = virtualItem?.start || 0
-            const sayfaIciOran = (ortaY - sayfaBaslangic) / sayfaYukseklik
-
+          onKonumSec={() => {
+            setKayitKonumModu(true)
+            setKayitPaneliAcik(false)
+          }}
+          onKayitEkle={(baslik, scrollY) => {
             const yeniKayit = {
               id: Date.now().toString(),
               sayfa: mevcutSayfa,
-              scrollY: Math.max(0, Math.min(1, sayfaIciOran)),
+              scrollY: scrollY !== undefined ? scrollY : scrollOranRef.current,
               baslik: baslik,
               olusturma: Date.now(),
             }
-
             setKayitlar(prev => {
               const yeni = [...prev, yeniKayit]
               localStorage.setItem("vukuf-kayitlar", JSON.stringify(yeni))
@@ -1358,6 +1361,24 @@ useEffect(() => {
         />
       )}
 
+      {kayitKonumModu && (
+        <div style={{
+          position: "fixed",
+          top: "50%", left: "50%",
+          transform: "translate(-50%, -50%)",
+          background: theme.surface,
+          border: `1px solid ${theme.accent}`,
+          borderRadius: "12px",
+          padding: "12px 20px",
+          fontSize: "13px",
+          color: theme.text,
+          zIndex: 499,
+          pointerEvents: "none",
+          boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
+        }}>
+          Kayıt koymak istediğiniz satıra dokunun
+        </div>
+      )}
       {/* Sure menüsü */}
       {menuAcik && (
         <>
@@ -1518,6 +1539,20 @@ useEffect(() => {
             transition: "scrollbar-width 0.3s ease",
           }}
           onClick={(e) => {
+            if (kayitKonumModu) {
+              const el = scrollRef.current
+              if (!el) return
+              const rect = el.getBoundingClientRect()
+              const tiklamaY = e.clientY - rect.top + el.scrollTop
+              const sayfaIndex = sayfaListesi.findIndex(s => s.sayfaNo === mevcutSayfa)
+              const virtualItem = virtualizer.getVirtualItems().find(v => v.index === sayfaIndex)
+              const sayfaBaslangic = virtualItem?.start || 0
+              const sayfaYukseklik = sayfaYukseklikleri[sayfaIndex] || 500
+              const oran = Math.max(0, Math.min(1, (tiklamaY - sayfaBaslangic) / sayfaYukseklik))
+              kayitEkle(`Sayfa ${mevcutSayfa}`, oran)
+              setKayitKonumModu(false)
+              return
+            }
             if (window.innerWidth <= 768) return
             if (menuKapatildiRef.current) return
             if (popup || aaAcik || temaAcik || ozelTemaPanelAcik || menuAcikRef.current) return
@@ -1636,8 +1671,8 @@ useEffect(() => {
                     onKelimeTikla={kelimeTikla}
                     onAyetTikla={ayetTikla}
                     onSureTikla={sureTikla}
-                    sayfaKaydi={kayitlar.find(k => k.sayfa === sayfa.sayfaNo) || null}  // ← EKLE
-                    onKayitTikla={(kayit) => {                                           // ← EKLE
+                    sayfaKayitlari={kayitlar.filter(k => k.sayfa === sayfa.sayfaNo)}
+                    onKayitTikla={(kayit) => {
                       if (window.confirm(`"${kayit.baslik}" kaydını silmek istiyor musun?`)) {
                         const yeni = kayitlar.filter(k => k.id !== kayit.id)
                         setKayitlar(yeni)

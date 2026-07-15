@@ -15,7 +15,8 @@ export default function KayitPaneli({
   onKayitEkle,     // ← Yeni kayıt ekleme fonksiyonu
   onKayitGuncelle, // ← Kayıt güncelleme fonksiyonu (isteğe bağlı)
   onKayitSil,      // ← Kayıt silme fonksiyonu (isteğe bağlı)
-  onKapat 
+  onKapat, 
+  onKonumSec
 }) {
   const [mod, setMod] = useState("liste")
   const [duzenleId, setDuzenleId] = useState(null)
@@ -153,7 +154,7 @@ export default function KayitPaneli({
               <div style={{ display: "flex", gap: "8px" }}>
                 {mevcutKayit ? (
                   <>
-                    <button onClick={yeniBaslat} style={s.buton(false, false)}>
+                    <button onClick={() => { onKonumSec(); onKapat() }} style={s.buton(true, false)}>
                       <Bookmark size={11} /> Yeni
                     </button>
                     <button onClick={() => degistirBaslat(mevcutKayit)} style={s.buton(false, false)}>

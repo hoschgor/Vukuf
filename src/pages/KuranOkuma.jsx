@@ -181,7 +181,7 @@ export default function KuranOkuma({ kitap }) {
   const [bugunSure, setBugunSure] = useState(() =>
     parseInt(localStorage.getItem(bugunAnahtari()) || "0")
   )
-
+  const menuKapatildiRef = useRef(false)
   // ── Sure menüsü
   const [menuAcik, setMenuAcik]   = useState(false)
   const [menuArama, setMenuArama] = useState("")
@@ -272,8 +272,9 @@ export default function KuranOkuma({ kitap }) {
     function disariTikla(e) {
       const menu = document.querySelector('.sure-menusu')
       if (menu && !menu.contains(e.target)) {
+        menuKapatildiRef.current = true
         setMenuAcik(false)
-        e.stopPropagation()
+        setTimeout(() => { menuKapatildiRef.current = false }, 100)
       }
     }
     document.addEventListener('mousedown', disariTikla, true)
@@ -307,16 +308,15 @@ export default function KuranOkuma({ kitap }) {
 
   // ── Bar toggle (görünür/gizli değiştir)
   const barToggle = useCallback(() => {
-    // Panel açıkken bar'ı gizleme/göster işlemini engelle
+    if (menuAcikRef.current) {
+      setMenuAcik(false)
+      return
+    }
     if (herhangiPanelAcik) return
-    
-    // Timeout'u temizle
     if (barZamanRef.current) {
       clearTimeout(barZamanRef.current)
       barZamanRef.current = null
     }
-    
-    // Toggle: görünür ise gizle, gizli ise göster
     setBarGorunur(prev => !prev)
   }, [herhangiPanelAcik])
 
@@ -1075,6 +1075,7 @@ useEffect(() => {
 
   const Bar = (
     <div
+      className="mushaf-bar"
       style={{
         position: "fixed", left: 0, right: 0,
         [barKonum === "alt" ? "bottom" : "top"]: 0,
@@ -1367,10 +1368,13 @@ useEffect(() => {
               inset: 0, 
               zIndex: 78,
               background: "transparent",
+              pointerEvents: "none",
             }}
           />
-          <div style={{
-            position: isMobile ? "fixed" : "relative",
+          <div 
+          className="sure-menusu"
+          style={{
+            position: "fixed",
             width: "280px", flexShrink: 0,
             background: theme.surface,
             borderRight: `1px solid ${theme.border}`,
@@ -1408,8 +1412,8 @@ useEffect(() => {
               flex: 1, 
               overflowY: "auto", 
               paddingBottom: player.durum !== "kapali" 
-                ? (isMobile ? "80px" : "70px")   // PlayerBar açık
-                : (isMobile ? "40px" : "30px")    // PlayerBar kapalı
+                ? (isMobile ? "80px" : "115px")   // PlayerBar açık
+                : (isMobile ? "40px" : "75px")    // PlayerBar kapalı
             }}>
               {filtreliSureler.map(sure => (
                 <div key={sure.id}>
@@ -1514,12 +1518,9 @@ useEffect(() => {
             transition: "scrollbar-width 0.3s ease",
           }}
           onClick={(e) => {
-            // Mobilde tıklama olayını engelle
             if (window.innerWidth <= 768) return
-            
-            // Eğer popup veya panel açık ise işlemi engelle
+            if (menuKapatildiRef.current) return
             if (popup || aaAcik || temaAcik || ozelTemaPanelAcik || menuAcikRef.current) return
-            
             barToggle()
           }}
           onTouchStart={(e) => {

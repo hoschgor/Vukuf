@@ -1,4 +1,5 @@
 import MushafKelime from "./MushafKelime"
+import MushafAyetRozeti from "./MushafAyetRozeti"
 import KitapAyraci from "./KitapAyraci"
 import SecdeKenar from "./SecdeKenar"
 import SureBasligi from "./SureBasligi"
@@ -216,17 +217,12 @@ export default function MushafSayfa({
                 }
 
                 if (el.tip === "ayet-sonu") {
-                  const arapcaSayi = arapcaRakamla(el.ayet.no)
-                  const boyut = fontSize * 0.65
-
                   return (
                     <span
                       key={`ayet-sonu-${el.sure.id}-${el.ayet.no}`}
                       onClick={(e) => onAyetTikla?.(el.sure, el.ayet.no, e)}
                       style={{
                         display: "inline-block",
-                        alignItems: "center",
-                        justifyContent: "center",
                         cursor: "pointer",
                         margin: `0 ${isMobile ? 1 : 2}px`,
                         userSelect: "none",
@@ -235,60 +231,11 @@ export default function MushafSayfa({
                       }}
                       title={`${el.sure.isim} · ${el.ayet.no}. Âyet`}
                     >
-                      <svg
-                        width={boyut * 1.9}
-                        height={boyut * 1.5}
-                        viewBox="0 0 50 50"
-                        style={{
-                          display: "inline-block",
-                          verticalAlign: "middle",
-                        }}
-                      >
-                        {/* 8 yapraklı çiçek */}
-                        {[0, 45, 90, 135, 180, 225, 270, 315].map((deg, i) => {
-                          const rad = deg * Math.PI / 180
-                          const cx = 25 + Math.cos(rad) * 16
-                          const cy = 25 + Math.sin(rad) * 16
-                          return (
-                            <ellipse
-                              key={`petal-${i}`}
-                              cx={cx}
-                              cy={cy}
-                              rx="7"
-                              ry="11"
-                              transform={`rotate(${deg}, ${cx}, ${cy})`}
-                              fill={theme.accent}
-                              fillOpacity={i % 2 === 0 ? "0.10" : "0.06"}
-                              stroke={theme.accent}
-                              strokeWidth="0.6"
-                              strokeOpacity="0.2"
-                            />
-                          )
-                        })}
-                        
-                        {/* Ortadaki daire */}
-                        <circle cx="25" cy="25" r="10"
-                          fill={theme.accent} fillOpacity="0.08"
-                          stroke={theme.accent} strokeWidth="0.8" strokeOpacity="0.25"
-                        />
-                        
-                        <circle cx="25" cy="25" r="6"
-                          fill="none" stroke={theme.accent} strokeWidth="0.4" strokeOpacity="0.15"
-                        />
-                        
-                        {/* Ayet numarası */}
-                        <text x="25" y="29"
-                          textAnchor="middle"
-                          fontFamily="'Scheherazade New', serif"
-                          fontSize={isMobile ? "25" : "23"}
-                          fontWeight="600"
-                          fill={theme.accent}
-                          fillOpacity="0.8"
-                          dominantBaseline="middle"
-                        >
-                          {arapcaSayi}
-                        </text>
-                      </svg>
+                      <MushafAyetRozeti
+                        sayi={el.ayet.no}
+                        size={fontSize * 1.4}
+                        ac={theme.accent}
+                      />
                     </span>
                   )
                 }

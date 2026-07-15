@@ -17,8 +17,9 @@ import { Play, Pause, X } from "lucide-react"
  *   />
  */
 export default function AyetPopup({ sure, ayetNo, meal, konum, player, theme, onKapat }) {
-  if (!sure || !ayetNo) return null
+  if (!sure) return null
 
+  
   const caliniyor =
     player?.durum === "caliyor" &&
     player?.aktifAyet?.sureNo === sure.id &&
@@ -102,13 +103,11 @@ export default function AyetPopup({ sure, ayetNo, meal, konum, player, theme, on
             }}>
               {sure.isim}
             </span>
-            <span style={{
-              fontSize: "12px",
-              color: theme.textSecondary,
-              marginLeft: "6px",
-            }}>
-              {ayetNo}. Âyet
-            </span>
+            {ayetNo && (
+              <span style={{ fontSize: "12px", color: theme.textSecondary, marginLeft: "6px" }}>
+                {ayetNo}. Âyet
+              </span>
+            )}
           </div>
           <button
             onClick={onKapat}
@@ -131,6 +130,7 @@ export default function AyetPopup({ sure, ayetNo, meal, konum, player, theme, on
           marginBottom: "12px",
           paddingBottom: "10px",
           borderBottom: `1px solid ${theme.border}`,
+          whiteSpace: "pre-line",
         }}>
           {meal || (
             <span style={{ color: theme.textSecondary, fontStyle: "italic" }}>
@@ -140,12 +140,13 @@ export default function AyetPopup({ sure, ayetNo, meal, konum, player, theme, on
         </div>
 
         {/* Alt: ses butonları */}
-        <div style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: "8px",
-        }}>
+        {ayetNo && (
+          <div style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: "8px",
+          }}>
           {/* Tek ayet dinle */}
           <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
             <button
@@ -188,6 +189,7 @@ export default function AyetPopup({ sure, ayetNo, meal, konum, player, theme, on
             </button>
           </div>
         </div>
+        )}
       </div>
     </>
   )

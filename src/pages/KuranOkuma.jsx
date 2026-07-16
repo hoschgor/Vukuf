@@ -318,17 +318,26 @@ export default function KuranOkuma({ kitap }) {
 
   // ── Bar toggle (görünür/gizli değiştir)
   const barToggle = useCallback(() => {
-    if (menuAcikRef.current) {
-      setMenuAcik(false)
-      return
+  if (menuAcikRef.current) {
+    setMenuAcik(false)
+    return
+  }
+  if (herhangiPanelAcik) return
+  if (barZamanRef.current) {
+    clearTimeout(barZamanRef.current)
+    barZamanRef.current = null
+  }
+  setBarGorunur(prev => {
+    const yeni = !prev
+    // Bar göründüğünde otomatik gizleme timer'ı başlat
+    if (yeni && otomatikGizleme && !sadeMode) {
+      barZamanRef.current = setTimeout(() => {
+        setBarGorunur(false)
+      }, gizlemeSuresi * 1000)
     }
-    if (herhangiPanelAcik) return
-    if (barZamanRef.current) {
-      clearTimeout(barZamanRef.current)
-      barZamanRef.current = null
-    }
-    setBarGorunur(prev => !prev)
-  }, [herhangiPanelAcik])
+    return yeni
+  })
+}, [herhangiPanelAcik, otomatikGizleme, gizlemeSuresi, sadeMode])
 
   // ════════════════════════════════════════════════════════════════
   // SCROLLBAR FONKSİYONLARI

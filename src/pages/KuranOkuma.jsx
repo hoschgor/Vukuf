@@ -770,24 +770,43 @@ useEffect(() => {
   // AA PANELİ
   // ════════════════════════════════════════════════════════════════
 
-  const AaPanel = aaAcik && (
+ const AaPanel = aaAcik && (
     <>
       <div onClick={() => setAaAcik(false)} style={{ position: "fixed", inset: 0, zIndex: 195 }} />
       <div style={{ ...panelStil("center"), width: "300px", maxHeight: "80vh", overflowY: "auto", zIndex: 200 }}>
+        
+        {/* YAZI BOYUTU */}
         <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px" }}>YAZI BOYUTU</div>
-        <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "20px" }}>
-          <button onClick={() => setYaziBoyutu(v => Math.max(14, v - 1))} style={barButonStil()}>
-            <Minus size={14} />
-          </button>
-          <div style={{ flex: 1, textAlign: "center" }}>
-            <span style={{ fontSize: `${Math.min(yaziBoyutu, 28)}px`, color: theme.text, fontFamily: aktifArapcaFont.style }}>ب</span>
-            <span style={{ fontSize: "11px", color: theme.textSecondary, marginLeft: "6px" }}>{yaziBoyutu}px</span>
+        <div style={{ marginBottom: "20px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", color: theme.textSecondary, marginBottom: "6px" }}>
+            <span>Küçük</span>
+            <span style={{ color: theme.accent, fontWeight: "bold" }}>{yaziBoyutu}px</span>
+            <span>Büyük</span>
           </div>
-          <button onClick={() => setYaziBoyutu(v => Math.min(36, v + 1))} style={barButonStil()}>
-            <Plus size={14} />
-          </button>
+          <input
+            type="range"
+            min="20"
+            max="100"
+            step="10"
+            value={yaziBoyutu}
+            onChange={e => setYaziBoyutu(parseInt(e.target.value))}
+            style={{ width: "100%", accentColor: theme.accent }}
+          />
+          <div style={{
+            marginTop: "8px", padding: "8px 12px", borderRadius: "8px",
+            background: theme.background, border: `1px solid ${theme.border}`,
+            direction: "rtl", textAlign: "center",
+            fontFamily: aktifArapcaFont.style,
+            fontSize: `${Math.min(yaziBoyutu, 100)}px`,
+            lineHeight: satirAraligi,
+            letterSpacing: `${harfAraligi}px`,
+            color: theme.text,
+          }}>
+            بِسۡمِ ٱللَّهِ ٱلرَّحۡمَٰنِ ٱلرَّحِيمِ
+          </div>
         </div>
 
+        {/* SATIR ARALIĞI */}
         <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px" }}>SATIR ARALIĞI</div>
         <div style={{ marginBottom: "20px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", color: theme.textSecondary, marginBottom: "6px" }}>
@@ -796,7 +815,10 @@ useEffect(() => {
             <span>Geniş</span>
           </div>
           <input
-            type="range" min="1.6" max="3.5" step="0.1"
+            type="range"
+            min="1.6"
+            max="3.5"
+            step="0.1"
             value={satirAraligi}
             onChange={e => setSatirAraligi(parseFloat(e.target.value))}
             style={{ width: "100%", accentColor: theme.accent }}
@@ -815,6 +837,7 @@ useEffect(() => {
           </div>
         </div>
 
+        {/* HARF ARALIĞI */}
         <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px" }}>HARF ARALIĞI</div>
         <div style={{ marginBottom: "20px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", color: theme.textSecondary, marginBottom: "6px" }}>
@@ -833,6 +856,7 @@ useEffect(() => {
           />
         </div>
 
+        {/* YAZI TİPİ */}
         <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px" }}>YAZI TİPİ</div>
         <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
           {ARAPCA_FONTLAR.map(font => (

@@ -32,7 +32,7 @@ import {
 
 // ── Arapça font listesi
 const ARAPCA_FONTLAR = [
-  { id: "kfgqpc",    label: "KFGQPC Uthmanic", style: "'KFGQPC Uthmanic', serif",  google: null },
+  { id: "kfgqpc",    label: "KFGQPC Uthmanic (Önerilen)", style: "'KFGQPC Uthmanic', serif",  google: null },
   { id: "noto-naskh", label: "Noto Naskh Arabic", style: "'Noto Naskh Arabic', serif", google: null },
   { id: "scheherazade", label: "Scheherazade New", style: "'Scheherazade New', serif", google: null },
   { id: "lateef", label: "Lateef", style: "'Lateef', serif", google: null },

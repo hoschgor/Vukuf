@@ -32,7 +32,7 @@ const BAGIMSIZ_ISARETLER = new Set([
   "\u06DF", // ۟
   "\u06E0", // ۠
 ])
-const TEMIZLE_RE = /[\u06DE\u06E9\u06D6\u06D7\u06D8\u06D9\u06DA\u06DB\u06DC\u06DD\u06DF\u06E0\u06ED]/g
+
 
 // Besmele gösterilmeyecek sureler
 const BESMELE_YOK = new Set([1, 9])
@@ -112,8 +112,13 @@ export function buildMushaf(mushafData, sayfaHarita) {
       // Kelimeleri ekle
       ayet.kelimeler.forEach(kelime => {
         if (BAGIMSIZ_ISARETLER.has(kelime.arabic.trim())) return
-        const temizArapca = kelime.arabic.replace(TEMIZLE_RE, '')
+        const temizArapca = kelime.arabic
+          .replace(/(\u0648\u0627)\u0652/g, '$1')  // وا + sükun → وا
+          .replace(/[\u06DE\u06E9\u06D6\u06D7\u06D8\u06D9\u06DA\u06DB\u06DC\u06DD\u06DF\u06E0\u06ED]/g, '')
+          .replace(/[\u0627\u0671]\u0652/g, match => match.replace('\u0652', '')) // Elif + cezm kaldır
+          .replace(/\u0671/g, '\u0627') // Elif Vasl'ı normal Elif'e çevir
         if (!temizArapca.trim()) return  // tamamen boş kaldıysa atla
+        
         elemanlar.push({ tip: "kelime", sure, ayet, kelime: { ...kelime, arabic: temizArapca } })
       })
 

@@ -90,6 +90,39 @@
   font-display: swap;
 }
 
+@font-face {
+  font-family: 'Noto Naskh Arabic';
+  src: url('/fonts/NotoNaskhArabic-Regular.ttf') format('truetype');
+  font-weight: normal;
+}
+@font-face {
+  font-family: 'Noto Naskh Arabic';
+  src: url('/fonts/NotoNaskhArabic-Bold.ttf') format('truetype');
+  font-weight: bold;
+}
+
+@font-face {
+  font-family: 'Scheherazade New';
+  src: url('/fonts/ScheherazadeNew-Regular.ttf') format('truetype');
+  font-weight: normal;
+}
+@font-face {
+  font-family: 'Scheherazade New';
+  src: url('/fonts/ScheherazadeNew-Bold.ttf') format('truetype');
+  font-weight: bold;
+}
+
+@font-face {
+  font-family: 'Lateef';
+  src: url('/fonts/Lateef-Regular.ttf') format('truetype');
+  font-weight: normal;
+}
+@font-face {
+  font-family: 'Aref Ruqaa';
+  src: url('/fonts/ArefRuqaa-Regular.ttf') format('truetype');
+  font-weight: normal;
+}
+
 .okuma-icerik {
   -webkit-user-select: none;
   -moz-user-select: none;

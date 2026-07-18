@@ -153,6 +153,7 @@ export default function KuranOkuma({ kitap }) {
   const [sureGoster, setSureGoster]       = useState(true)
   const touchBaslangicRef = useRef({ x: 0, y: 0 })
   const touchHareketRef = useRef(false)
+  const [barKilitli, setBarKilitli] = useState(false)
 
   // ── Scrollbar
   const [scrollbarGorunur, setScrollbarGorunur] = useState(false)
@@ -243,9 +244,13 @@ export default function KuranOkuma({ kitap }) {
 
   // kayitKonumModu true olduğunda 3 sn sonra iptal et
   useEffect(() => {
-    if (!kayitKonumModu) return
-    const timer = setTimeout(() => setKayitKonumModu(false), 3000)
-    return () => clearTimeout(timer)
+    if (kayitKonumModu) {
+      setBarKilitli(true)
+      const timer = setTimeout(() => setKayitKonumModu(false), 3000)
+      return () => clearTimeout(timer)
+    } else {
+      setBarKilitli(false)
+    }
   }, [kayitKonumModu])
   
   useEffect(() => {
@@ -1634,7 +1639,7 @@ function sureGit(sureId, ayetNo) {
           }}
           onTouchEnd={(e) => {
             dokunusBitti()
-            
+            if (barKilitli) return 
             // Eğer popup veya panel açık ise işlemi engelle
             if (popup || aaAcik || temaAcik || ozelTemaPanelAcik || menuAcikRef.current) {
               return

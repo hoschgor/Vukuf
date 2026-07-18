@@ -8,15 +8,15 @@ export default function KitapAyraci({ kayit, theme, onTikla }) {
       onClick={onTikla}
       style={{
         position: "absolute",
-        top: 0,
+        top: -30,
         right: 0,
         zIndex: 9999,
         cursor: "pointer",
-        width: "28px",
-        height: "52px",
-        opacity: 0.9,
+        width: "60px",
+        height: "32px",
+        overflow: "visible",
+        opacity: 0.8,
         transition: "all 0.2s ease",
-        // filter: "drop-shadow(...)" ← KALDIR
       }}
       onMouseEnter={(e) => {
         e.currentTarget.style.transform = "scale(1.06)"
@@ -28,174 +28,233 @@ export default function KitapAyraci({ kayit, theme, onTikla }) {
       }}
     >
       <svg
-        width="28"
-        height="52"
-        viewBox="0 0 28 52"
-        xmlns="http://www.w3.org/2000/svg"
-        style={{ display: "block" }}
+        width="60"
+        height="32"
+        viewBox="0 0 60 32"
+        style={{ overflow: "visible", color: ac }}
       >
-        <defs>
-          <linearGradient id="ayracGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={ac} stopOpacity="0.9" />
-            <stop offset="60%" stopColor={ac} stopOpacity="0.75" />
-            <stop offset="100%" stopColor={ac} stopOpacity="0.6" />
-          </linearGradient>
-          <linearGradient id="ayracParlak" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="rgba(255,255,255,0.25)" />
-            <stop offset="50%" stopColor="rgba(255,255,255,0)" />
-            <stop offset="100%" stopColor="rgba(255,255,255,0.06)" />
-          </linearGradient>
-        </defs>
-
-        {/* Ana gövde - DÜZ KENARLI, KAVİS SADECE ALTTE */}
+        {/* Hurma dalı - ana gövde */}
         <path
-          d="
-            M4 0 
-            L24 0 
-            L24 44 
-            L14 38 
-            L4 44 
-            Z
-          "
-          fill="url(#ayracGrad)"
-          stroke="rgba(255,255,255,0.08)"
-          strokeWidth="0.4"
-        />
-
-        <path
-          d="
-            M4 0 
-            L24 0 
-            L24 44 
-            L14 38 
-            L4 44 
-            Z
-          "
-          fill="url(#ayracParlak)"
-        />
-
-        {/* İç çerçeve */}
-        <path
-          d="
-            M6 2 
-            L22 2 
-            L22 39 
-            L14 35 
-            L6 39 
-            Z
-          "
+          d="M0 16 C8 14, 14 15, 22 16 C26 16.5, 30 15.5, 34 16"
           fill="none"
-          stroke="rgba(255,255,255,0.1)"
-          strokeWidth="0.3"
+          stroke="currentColor"
+          strokeWidth="1.2"
+          strokeLinecap="round"
+          opacity=".7"
         />
 
-        {/* İç çerçeve 2 */}
+        {/* Hurma dalı - yaprakçıklar (üst) */}
         <path
-          d="
-            M8 4 
-            L20 4 
-            L20 35 
-            L14 32 
-            L8 35 
-            Z
-          "
+          d="M4 15.5 C5 13, 7 11, 9 12"
           fill="none"
-          stroke="rgba(255,255,255,0.05)"
-          strokeWidth="0.2"
+          stroke="currentColor"
+          strokeWidth=".6"
+          strokeLinecap="round"
+          opacity=".4"
+        />
+        <path
+          d="M8 15.8 C9 13.2, 11 11.5, 13 12.5"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth=".6"
+          strokeLinecap="round"
+          opacity=".4"
+        />
+        <path
+          d="M12 16 C13 13.5, 15 12, 17 13"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth=".6"
+          strokeLinecap="round"
+          opacity=".4"
+        />
+        <path
+          d="M16 16.2 C17 13.8, 19 12.5, 21 13.5"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth=".6"
+          strokeLinecap="round"
+          opacity=".35"
+        />
+        <path
+          d="M20 16 C21 13.8, 23 12.8, 25 13.8"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth=".6"
+          strokeLinecap="round"
+          opacity=".35"
+        />
+        <path
+          d="M24 16.3 C25 14.2, 27 13.2, 29 14"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth=".5"
+          strokeLinecap="round"
+          opacity=".3"
         />
 
-        {/* ========================= */}
-        {/* ÜST ZERDÜZ */}
-        {/* ========================= */}
-        <g transform="translate(14 6)">
-          {[0, 60, 120, 180, 240, 300].map((deg, i) => {
-            const rad = deg * Math.PI / 180
-            const x = Math.cos(rad) * 3.5
-            const y = Math.sin(rad) * 3.5
+        {/* Hurma dalı - yaprakçıklar (alt) */}
+        <path
+          d="M4 16.5 C5 18.5, 7 19.5, 9 18.5"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth=".6"
+          strokeLinecap="round"
+          opacity=".4"
+        />
+        <path
+          d="M8 16.2 C9 18, 11 19.2, 13 18.2"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth=".6"
+          strokeLinecap="round"
+          opacity=".4"
+        />
+        <path
+          d="M12 16 C13 17.8, 15 19, 17 18"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth=".6"
+          strokeLinecap="round"
+          opacity=".4"
+        />
+        <path
+          d="M16 15.8 C17 17.5, 19 18.5, 21 17.5"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth=".6"
+          strokeLinecap="round"
+          opacity=".35"
+        />
+        <path
+          d="M20 16 C21 17.5, 23 18.2, 25 17.2"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth=".6"
+          strokeLinecap="round"
+          opacity=".35"
+        />
+        <path
+          d="M24 15.7 C25 17, 27 17.8, 29 17"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth=".5"
+          strokeLinecap="round"
+          opacity=".3"
+        />
+
+        {/* Hurma dalı - ince damarlar */}
+        <path
+          d="M0 16 C6 15.5, 12 16.5, 18 16 C22 15.5, 26 16, 30 15.5 C33 15.2, 35 15.8, 37 15.5"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth=".3"
+          strokeLinecap="round"
+          opacity=".2"
+        />
+
+        {/* Motif - PlayButton tarzı */}
+        <g transform="translate(40 16)">
+          {/* En dıştaki küçük noktalar */}
+          {[...Array(24)].map((_, i) => {
+            const a = i * 15 * Math.PI / 180
             return (
-              <path
-                key={`flower-${i}`}
-                d={`M ${x} ${y} Q ${x*0.3} ${y*0.3} 0 0 Q ${x*0.3} ${y*0.3} ${x} ${y}`}
-                fill="rgba(255,255,255,0.2)"
-                stroke="rgba(255,255,255,0.08)"
-                strokeWidth="0.2"
+              <circle 
+                key={i} 
+                cx={Math.cos(a) * 14} 
+                cy={Math.sin(a) * 14} 
+                r=".5" 
+                fill="currentColor" 
+                opacity=".3"
               />
             )
           })}
-          <circle r="2" fill="rgba(255,255,255,0.25)" />
-          <circle r="1" fill={ac} />
-        </g>
 
-        {/* ========================= */}
-        {/* ORTA İNCİ ZİNCİRİ */}
-        {/* ========================= */}
-        {[0, 1, 2, 3].map((i) => {
-          const y = 17 + i * 4
-          return (
-            <g key={`pearl-${i}`}>
-              <circle
-                cx="14"
+          {/* Orta boy elipsler */}
+          {[...Array(16)].map((_, i) => {
+            const a = i * 22.5
+            const r = 10.5
+            const x = Math.cos(a * Math.PI / 180) * r
+            const y = Math.sin(a * Math.PI / 180) * r
+            return (
+              <ellipse
+                key={"l"+i}
+                cx={x}
                 cy={y}
-                r={i === 1 || i === 2 ? 0.7 : 0.9}
-                fill={i === 1 || i === 2 ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.25)"}
+                rx="3.2"
+                ry="1.2"
+                transform={`rotate(${a} ${x} ${y})`}
+                fill="currentColor"
+                opacity=".7"
               />
-              {i < 3 && (
-                <line
-                  x1="14"
-                  y1={y}
-                  x2="14"
-                  y2={y + 4}
-                  stroke="rgba(255,255,255,0.05)"
-                  strokeWidth="0.2"
-                />
-              )}
-            </g>
-          )
-        })}
+            )
+          })}
 
-        {/* ========================= */}
-        {/* ALT LALE */}
-        {/* ========================= */}
-        <g transform="translate(14 42)">
-          <path
-            d="M0 0 C2 -2.5 3.5 -1 0 -5 C-3.5 -1 -2 -2.5 0 0"
-            fill="rgba(255,255,255,0.15)"
+          {/* İçteki küçük elipsler */}
+          {[...Array(16)].map((_, i) => {
+            const a = i * 22.5 + 11.25
+            const r = 7
+            const x = Math.cos(a * Math.PI / 180) * r
+            const y = Math.sin(a * Math.PI / 180) * r
+            return (
+              <ellipse
+                key={"s"+i}
+                cx={x}
+                cy={y}
+                rx="1.8"
+                ry=".7"
+                transform={`rotate(${a} ${x} ${y})`}
+                fill="currentColor"
+                opacity=".85"
+              />
+            )
+          })}
+
+          {/* Dış halka */}
+          <circle
+            r="8.5"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth=".6"
+            opacity=".45"
           />
-          <circle r="1" fill="rgba(255,255,255,0.3)" />
-          <circle r="0.5" fill={ac} />
-        </g>
 
-        {/* ========================= */}
-        {/* YAN SÜSLEMELER */}
-        {/* ========================= */}
-        {[0, 1, 2, 3, 4].map((i) => {
-          const y = 12 + i * 6
-          return (
-            <line
-              key={`l-${i}`}
-              x1="6"
-              y1={y}
-              x2="3"
-              y2={y}
-              stroke="rgba(255,255,255,0.06)"
-              strokeWidth="0.3"
-            />
-          )
-        })}
-        {[0, 1, 2, 3, 4].map((i) => {
-          const y = 12 + i * 6
-          return (
-            <line
-              key={`r-${i}`}
-              x1="22"
-              y1={y}
-              x2="25"
-              y2={y}
-              stroke="rgba(255,255,255,0.06)"
-              strokeWidth="0.3"
-            />
-          )
-        })}
+          {/* İç halka */}
+          <circle
+            r="5.5"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth=".4"
+            opacity=".35"
+          />
+
+          {/* İç noktalar */}
+          {[...Array(8)].map((_, i) => {
+            const a = i * 45 * Math.PI / 180
+            return (
+              <circle 
+                key={"p"+i} 
+                cx={Math.cos(a) * 4.2} 
+                cy={Math.sin(a) * 4.2} 
+                r=".4" 
+                fill="currentColor" 
+                opacity=".5"
+              />
+            )
+          })}
+
+          {/* Merkez */}
+          <circle
+            r="2.5"
+            fill="currentColor"
+            opacity=".9"
+          />
+          <circle
+            r="1"
+            fill={theme?.background || "#fff"}
+            opacity=".4"
+          />
+        </g>
       </svg>
     </div>
   )

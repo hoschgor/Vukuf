@@ -615,6 +615,19 @@ const kayitSil = useCallback((id) => {
   })
 }, [])
 
+
+// Yardımcı fonksiyon — diğer scroll fonksiyonlarının üstüne ekleyin
+const sayfayaKaydir = useCallback((index, align = "start") => {
+  virtualizer.scrollToIndex(index, { align })
+  // İlk çağrı tahmini boyutlarla sıçrar; ölçüm tamamlandıktan
+  // sonra ikinci çağrı gerçek konuma düzeltir.
+  requestAnimationFrame(() => {
+    virtualizer.scrollToIndex(index, { align })
+  })
+}, [virtualizer])
+
+
+const sayfaGercekYukseklikleriRef = useRef({})
 // Kayıtlı sayfaya gitme fonksiyonu
 const kayitSayfaGit = useCallback((sayfa, scrollY) => {
   const index = sayfaListesi.findIndex(s => s.sayfaNo === sayfa)
@@ -625,7 +638,9 @@ const kayitSayfaGit = useCallback((sayfa, scrollY) => {
     if (!el) return
     const virtualItem = virtualizer.getVirtualItems().find(v => v.index === index)
     const sayfaBaslangic = virtualItem?.start || 0
-    const sayfaYukseklik = sayfaYukseklikleri[index] || 500
+    const sayfaYukseklik = sayfaGercekYukseklikleriRef.current[mevcutSayfa] 
+  || sayfaYukseklikleri[sayfaIndex] 
+  || 500
     el.scrollTop = sayfaBaslangic + (scrollY || 0) * sayfaYukseklik
   }, 150)
 }, [sayfaListesi, virtualizer, sayfaYukseklikleri])
@@ -672,32 +687,28 @@ useEffect(() => {
   }
 
   function sayfayaGit(no) {
-    const n = parseInt(no)
-    if (n >= 1 && n <= toplamSayfa) {
-      setMevcutSayfa(n)
-      const index = sayfaListesi.findIndex(s => s.sayfaNo === n)
-      if (index !== -1) {
-        virtualizer.scrollToIndex(index, { align: "start" })
-      }
-      setPopup(null)
-    }
-  }
-
-  function sureGit(sureId, ayetNo) {
-    const sayfa = ayetNo
-      ? ayetSayfasi(sureId, ayetNo, sayfaMap)
-      : sureBaslangicSayfasi(sureId, sayfaMap)
-    setMevcutSayfa(sayfa)
-    const index = sayfaListesi.findIndex(s => s.sayfaNo === sayfa)
-    if (index !== -1) {
-      virtualizer.scrollToIndex(index, { align: "start" })
-    }
-    setMenuAcik(false)
-    setMenuArama("")
-    setAcikSure(null)
-    setAyetArama({})
+  const n = parseInt(no)
+  if (n >= 1 && n <= toplamSayfa) {
+    setMevcutSayfa(n)
+    const index = sayfaListesi.findIndex(s => s.sayfaNo === n)
+    if (index !== -1) sayfayaKaydir(index)
     setPopup(null)
   }
+}
+
+function sureGit(sureId, ayetNo) {
+  const sayfa = ayetNo
+    ? ayetSayfasi(sureId, ayetNo, sayfaMap)
+    : sureBaslangicSayfasi(sureId, sayfaMap)
+  setMevcutSayfa(sayfa)
+  const index = sayfaListesi.findIndex(s => s.sayfaNo === sayfa)
+  if (index !== -1) sayfayaKaydir(index)
+  setMenuAcik(false)
+  setMenuArama("")
+  setAcikSure(null)
+  setAyetArama({})
+  setPopup(null)
+}
 
 
   // ════════════════════════════════════════════════════════════════
@@ -1149,7 +1160,7 @@ useEffect(() => {
 
       <button
         onClick={() => {
-          if (mevcutKayit) {
+          if (kayitlar.length > 0) {
             setKayitPaneliAcik(!kayitPaneliAcik)
           } else {
             setKayitKonumModu(true)
@@ -1582,7 +1593,9 @@ useEffect(() => {
               const sayfaIndex = sayfaListesi.findIndex(s => s.sayfaNo === mevcutSayfa)
               const virtualItem = virtualizer.getVirtualItems().find(v => v.index === sayfaIndex)
               const sayfaBaslangic = virtualItem?.start || 0
-              const sayfaYukseklik = sayfaYukseklikleri[sayfaIndex] || 500
+              const sayfaYukseklik = sayfaGercekYukseklikleriRef.current[mevcutSayfa]
+                || sayfaYukseklikleri[sayfaIndex]
+                || 500
               const oran = Math.max(0, Math.min(1, (tiklamaY - sayfaBaslangic) / sayfaYukseklik))
               kayitEkle(`Sayfa ${mevcutSayfa}`, oran)
               setKayitKonumModu(false)
@@ -1713,6 +1726,9 @@ useEffect(() => {
                         setKayitlar(yeni)
                         localStorage.setItem("vukuf-kayitlar", JSON.stringify(yeni))
                       }
+                    }}
+                    onYukseklikOlcum={(sayfaNo, yukseklik) => {
+                      sayfaGercekYukseklikleriRef.current[sayfaNo] = yukseklik
                     }}
                   />
                 </div>

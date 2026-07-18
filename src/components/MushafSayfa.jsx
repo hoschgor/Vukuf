@@ -5,6 +5,7 @@ import SecdeKenar from "./SecdeKenar"
 import SureBasligi from "./SureBasligi"
 import Besmele from "./Besmele"
 import { useMediaQuery } from "../data/hooks/useMediaQuery"
+import { useRef, useEffect } from "react"
 
 function arapcaRakamla(sayi) {
   const rakamlar = '٠١٢٣٤٥٦٧٨٩'
@@ -27,6 +28,7 @@ export default function MushafSayfa({
   onSureTikla,
   onKayitTikla,
   sayfaKayitlari = [],
+  onYukseklikOlcum,
 }) {
   
   const isMobile = useMediaQuery("(max-width: 768px)")
@@ -66,20 +68,28 @@ export default function MushafSayfa({
   })
   inlineGrupKapat()
   
+  const sayfaRef = useRef(null)
+
+  useEffect(() => {
+    if (sayfaRef.current && onYukseklikOlcum) {
+      onYukseklikOlcum(sayfaNo, sayfaRef.current.offsetHeight)
+    }
+  })
+
   return (
-    <div style={{
+    <div ref={sayfaRef} style={{
       position: "relative",
       width: "100%",
       margin: "0 auto",
       padding: isMobile ? "2px 12px" : "2px 32px",
       boxSizing: "border-box",
     }}>
-      {sayfaKayitlari.map((kayit, i) => (
+      {sayfaKayitlari.map((kayit) => (
         <div
           key={kayit.id}
           style={{
             position: "absolute",
-            top: `${(kayit.scrollY || 0) * 100}%`,
+            top: `${(kayit.scrollY || 0) * 100}%`,   // ref yüksekliğine göre %
             right: "4px",
             zIndex: 50,
             pointerEvents: "auto",
@@ -130,16 +140,6 @@ export default function MushafSayfa({
         />
       )}
 
-      {/* Sayfa Kayıtları */}
-      {sayfaKayitlari.map((kayit, i) => (
-        <KitapAyraci
-          key={kayit.id}
-          kayit={kayit}
-          theme={theme}
-          onTikla={onKayitTikla}
-          index={i}  // birden fazla varsa konumlandırma için
-        />
-      ))}
 
       {/* Gruplar */}
       {gruplar.map((grup, gi) => {

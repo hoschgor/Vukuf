@@ -226,8 +226,9 @@ export default function MushafSayfa({
                       yaziBoyutu={fontSize}
                       lineHeight={lineHeight}
                       harfAraligi={harfAraligi}
+                      kayitKonumModu={kayitKonumModu}
                       onTikla={(kelime, e) => {
-                        if (kayitKonumModu) return        // ← ekle
+                        if (kayitKonumModu) return
                         onKelimeTikla?.(kelime, el.sure, el.ayet, e)
                       }}
                     />
@@ -238,10 +239,13 @@ export default function MushafSayfa({
                   return (
                     <span
                       key={`ayet-sonu-${el.sure.id}-${el.ayet.no}`}
-                      onClick={(e) => onAyetTikla?.(el.sure, el.ayet.no, e)}
+                      onClick={(e) => {
+                        if (kayitKonumModu) return
+                        onAyetTikla?.(el.sure, el.ayet.no, e)
+                      }}
                       style={{
                         display: "inline-block",
-                        cursor: "pointer",
+                        cursor: kayitKonumModu ? "crosshair" : "pointer",
                         margin: `0 ${isMobile ? 1 : 2}px`,
                         userSelect: "none",
                         verticalAlign: "middle",
@@ -257,7 +261,6 @@ export default function MushafSayfa({
                     </span>
                   )
                 }
-
                 return null
               })}
             </div>

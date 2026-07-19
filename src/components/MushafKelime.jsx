@@ -20,6 +20,7 @@ export default function MushafKelime({
   lineHeight = 2.4,
   harfAraligi = 0,
   onTikla,
+  kayitKonumModu = false,
 }) {
   const [hover, setHover] = useState(false)
   const isMobile = useMediaQuery("(max-width: 768px)")
@@ -32,22 +33,24 @@ export default function MushafKelime({
     <span
       className="mushaf-kelime"
       onClick={(e) => onTikla?.(kelime, e)}
-      onMouseEnter={() => setHover(true)}
+      onMouseEnter={() => { if (!kayitKonumModu) setHover(true) }}
       onMouseLeave={() => setHover(false)}
       style={{
         position: "relative",
         display: "inline-block",
-        cursor: "pointer",
+        cursor: kayitKonumModu ? "crosshair" : "pointer",
         // ÖNEMLİ: paddingTop yerine marginTop kullan, inline-block'da daha stabil
         marginTop: hasUpperIndicator ? `${yaziBoyutu * 0.35}px` : "0",
         paddingLeft: isMobile ? `${2 + harfAraligi * 3}px` : "3px",
         paddingRight: isMobile ? `${2 + harfAraligi * 3}px` : "3px",
         paddingBottom: "2px", // Alt padding ekle
         borderRadius: "3px",
-        background: aktif
-          ? `${theme.accent}22`
-          : hover ? `${theme.accent}0a` : "transparent",
-        boxShadow: aktif ? `inset 0 -2px 0 ${theme.accent}` : "none",
+        background: kayitKonumModu
+          ? "transparent"
+          : aktif
+            ? `${theme.accent}22`
+            : hover ? `${theme.accent}0a` : "transparent",
+        boxShadow: kayitKonumModu ? "none" : aktif ? `inset 0 -2px 0 ${theme.accent}` : "none",
         transition: "background 0.15s",
         whiteSpace: "nowrap",
         // ÖNEMLİ: verticalAlign: "middle" ile hizala

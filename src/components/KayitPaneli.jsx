@@ -152,18 +152,12 @@ export default function KayitPaneli({
 
             {mod === "liste" && (
               <div style={{ display: "flex", gap: "8px" }}>
-                {mevcutKayit ? (
-                  <>
-                    <button onClick={() => { onKonumSec(); onKapat() }} style={s.buton(true, false)}>
-                      <Bookmark size={11} /> Yeni
-                    </button>
-                    <button onClick={() => degistirBaslat(mevcutKayit)} style={s.buton(false, false)}>
-                      <Pencil size={11} /> Değiştir
-                    </button>
-                  </>
-                ) : (
-                  <button onClick={yeniBaslat} style={s.buton(true, false)}>
-                    <Bookmark size={11} /> Kayıt Oluştur
+                <button onClick={() => { onKonumSec(); onKapat() }} style={s.buton(true, false)}>
+                  <Bookmark size={11} /> Yeni
+                </button>
+                {mevcutKayit && (
+                  <button onClick={() => degistirBaslat(mevcutKayit)} style={s.buton(false, false)}>
+                    <Pencil size={11} /> Değiştir
                   </button>
                 )}
               </div>

@@ -29,6 +29,7 @@ export default function MushafSayfa({
   onKayitTikla,
   sayfaKayitlari = [],
   onYukseklikOlcum,
+  kayitKonumModu = false,
 }) {
   
   const isMobile = useMediaQuery("(max-width: 768px)")
@@ -225,7 +226,10 @@ export default function MushafSayfa({
                       yaziBoyutu={fontSize}
                       lineHeight={lineHeight}
                       harfAraligi={harfAraligi}
-                      onTikla={(kelime, e) => onKelimeTikla?.(kelime, el.sure, el.ayet, e)}
+                      onTikla={(kelime, e) => {
+                        if (kayitKonumModu) return        // ← ekle
+                        onKelimeTikla?.(kelime, el.sure, el.ayet, e)
+                      }}
                     />
                   )
                 }

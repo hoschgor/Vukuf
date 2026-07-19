@@ -1588,6 +1588,7 @@ function sureGit(sureId, ayetNo) {
             scrollbarWidth: scrollbarGorunur ? "thin" : "none",
             msOverflowStyle: scrollbarGorunur ? "auto" : "none",
             transition: "scrollbar-width 0.3s ease",
+            cursor: kayitKonumModu ? "crosshair" : "default",
           }}
           onClick={(e) => {
             if (kayitKonumModu) {
@@ -1723,7 +1724,11 @@ function sureGit(sureId, ayetNo) {
                     aktifAyet={player.aktifAyet}
                     onKelimeTikla={kelimeTikla}
                     onAyetTikla={ayetTikla}
-                    onSureTikla={sureTikla}
+                    onSureTikla={(sure, e) => {
+                      if (kayitKonumModu) return        // ← ekle
+                      sureTikla(sure, e)
+                    }}
+                    kayitKonumModu={kayitKonumModu}
                     sayfaKayitlari={kayitlar.filter(k => k.sayfa === sayfa.sayfaNo)}
                     onKayitTikla={(kayit) => {
                       if (window.confirm(`"${kayit.baslik}" kaydını silmek istiyor musun?`)) {

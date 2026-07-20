@@ -51,13 +51,13 @@ const FONT_GRUPLARI = {
 const TUM_FONTLAR = Object.values(FONT_GRUPLARI).flatMap(g => g.fontlar)
 
 const PALET_ALANLARI = [
-  { key: "background",     label: "Arka Plan" },
-  { key: "surface",        label: "Yüzey" },
-  { key: "text",           label: "Yazı" },
-  { key: "textSecondary",  label: "İkincil Yazı" },
-  { key: "accent",         label: "Vurgu" },
-  { key: "lugatHighlight", label: "Lügat Rengi" },
-  { key: "border",         label: "Kenarlık" },
+  { key: "background",   label: "Ana Arka Plan" },
+  { key: "surface",      label: "Yüzey Rengi" },
+  { key: "text",         label: "Yazı Rengi" },
+  { key: "textSecondary",label: "İkincil Yazı" },
+  { key: "accent",       label: "Vurgu Rengi" },
+  { key: "lugatHighlight",label: "Lügat Rengi" },
+  { key: "border",       label: "Kenarlık Rengi" },
 ]
 
 const HAZIR_RENKLER = [

@@ -36,7 +36,7 @@ export const themes = {
     text: "#c8c8c8",
     textSecondary: "#888888",
     accent: "#5a8a6a",
-    lugatHighlight: "#d4a054",
+    lugatHighlight: "#37cf6a",
     border: "#2a2a2a",
   },
   coffee: {
@@ -46,7 +46,7 @@ export const themes = {
     text: "#999999",
     textSecondary: "#99785d",
     accent: "#9e714f",
-    lugatHighlight: "#c41e3a",
+    lugatHighlight: "#e67e22",
     border: "#302010",
   },
   highcontrast:{
@@ -56,7 +56,7 @@ export const themes = {
     text: "#f4ecd8",
     textSecondary: "#eeb311",
     accent: "#eeb311",
-    lugatHighlight: "#c41e3a",
+    lugatHighlight: "#4eace2",
     border: "#363636",
   }
 }

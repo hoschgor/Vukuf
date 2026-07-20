@@ -46,6 +46,7 @@ const PALET_ALANLARI = [
   { key: "text",         label: "Yazı Rengi" },
   { key: "textSecondary",label: "İkincil Yazı" },
   { key: "accent",       label: "Vurgu Rengi" },
+  { key: "lugatHighlight",label: "Allah lafızları" },
   { key: "border",       label: "Kenarlık Rengi" },
 ]
 

@@ -18,6 +18,40 @@
 
 import { useMemo } from "react"
 
+function cezmEkle(arabic) {
+        const HAREKELER = new Set([
+          0x064B, 0x064C, 0x064D, // tenvin
+          0x064E, 0x064F, 0x0650, // fetha, damme, kesre
+          0x0651, 0x0652,          // şedde, cezm
+          0x0653, 0x0654, 0x0655, // medde, hemze
+          0x0656, 0x0657, 0x0658, // Uthmani özel fetha/damme/işaretler
+          0x065C, 0x065D, 0x065E, 0x065F, // Uthmani küçük harekeler
+          0x06E1,                  // ۡ küçük cezm
+          0x06ED,                  // küçük mim
+        ])
+        const UZUN_SESLI = new Set([0x0627,0x0671,0x0622,0x0623,0x0625,0x0648,0x064A,0x0649,0x0621,0x0624,0x0626])
+        const UNSUZ = (cp) => !UZUN_SESLI.has(cp) && !HAREKELER.has(cp) &&
+          (cp >= 0x0621 && cp <= 0x063A || cp >= 0x0641 && cp <= 0x064A)
+        const chars = [...arabic].map(c => c.codePointAt(0))
+        const result = []
+        for (let i = 0; i < chars.length; i++) {
+          const cp = chars[i]
+          result.push(cp)
+          if (!UNSUZ(cp)) continue
+          const s1 = chars[i+1]
+          const s2 = chars[i+2]
+          const s3 = chars[i+3]
+          if (s1 === 0x0651) continue
+          if (s1 && HAREKELER.has(s1)) continue
+          if (cp === 0x0644) {
+            if (s1 && UNSUZ(s1) && s2 === 0x0651) continue
+            if (s1 && UNSUZ(s1) && s2 && HAREKELER.has(s2) && s3 === 0x0651) continue
+          }
+          result.push(0x0652)
+        }
+        return result.map(cp => String.fromCodePoint(cp)).join('')
+      }
+
 const BAGIMSIZ_ISARETLER = new Set([
   "\u06DE", // ۞ hizb
   "\u06E9", // ۩ secde
@@ -37,8 +71,6 @@ const BAGIMSIZ_ISARETLER = new Set([
 // Besmele gösterilmeyecek sureler
 const BESMELE_YOK = new Set([1, 9])
 
-
-
 /**
  * Hook versiyonu — bileşen içinde kullanılır
  *
@@ -52,8 +84,7 @@ export function useMushaf(mushafData, sayfaHarita) {
     }
     return buildMushaf(mushafData, sayfaHarita)
   }, [mushafData, sayfaHarita])
-}
-
+}  
 /**
  * Saf fonksiyon versiyonu
  */
@@ -113,14 +144,16 @@ export function buildMushaf(mushafData, sayfaHarita) {
       ayet.kelimeler.forEach(kelime => {
         if (BAGIMSIZ_ISARETLER.has(kelime.arabic.trim())) return
         const temizArapca = kelime.arabic
-          .replace(/(\u0648\u0627)\u0652/g, '$1')  // وا + sükun → وا
-          .replace(/[\u06DE\u06E9\u06D6\u06D7\u06D8\u06D9\u06DA\u06DB\u06DC\u06DD\u06DF\u06E0\u06ED]/g, '')
-          .replace(/[\u0627\u0671]\u0652/g, match => match.replace('\u0652', '')) // Elif + cezm kaldır
-          .replace(/\u0671/g, '\u0627') // Elif Vasl'ı normal Elif'e çevir
-          .replace(/\u0648\u0652/g, '\u0648') // Vav + cezm → Vav
-        if (!temizArapca.trim()) return  // tamamen boş kaldıysa atla
-        
-        elemanlar.push({ tip: "kelime", sure, ayet, kelime: { ...kelime, arabic: temizArapca } })
+        .replace(/(\u0648\u0627)\u0652/g, '$1')
+        .replace(/[\u06DE\u06E9\u06D6\u06D7\u06D8\u06D9\u06DA\u06DB\u06DC\u06DD\u06DF\u06E0\u06ED]/g, '')
+        .replace(/[\u0627\u0671]\u0652/g, match => match.replace('\u0652', ''))
+        .replace(/\u0671/g, '\u0627')
+        .replace(/(?<=[أُإِآ])و\u0652/g, '\u0648')
+
+      if (!temizArapca.trim()) return
+
+        const cezmliArapca = cezmEkle(temizArapca)
+        elemanlar.push({ tip: "kelime", sure, ayet, kelime: { ...kelime, arabic: cezmliArapca } })
       })
 
       // Ayet sonu işareti ﴿١﴾

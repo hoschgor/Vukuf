@@ -10,6 +10,14 @@ const VAKIF_RENKLERI = {
   'ق': '#3498db',
   '∴': '#9b59b6',
 }
+// Component DIŞINA, VAKIF_RENKLERI'nin yanına ekleyin:
+function lafzatullahMi(arabic) {
+  const temiz = arabic
+    .replace(/[\u0671\u0622\u0623\u0625]/g, '\u0627')
+    .replace(/[\u064B-\u065F\u06D6-\u06ED]/g, '')
+    .trim()
+  return temiz === '\u0627\u0644\u0644\u0647'
+}
 
 export default function MushafKelime({
   kelime,
@@ -25,8 +33,7 @@ export default function MushafKelime({
   const [hover, setHover] = useState(false)
   const isMobile = useMediaQuery("(max-width: 768px)")
   const vakifRengi = kelime.vakif ? (VAKIF_RENKLERI[kelime.vakif] || theme.accent) : null
-
-  // Vakıf ve secde işaretlerinin varlığını kontrol et
+  const lafizkontrol = lafzatullahMi(kelime.arabic)
   const hasUpperIndicator = kelime.vakif || kelime.secde
 
   return (
@@ -39,7 +46,6 @@ export default function MushafKelime({
         position: "relative",
         display: "inline-block",
         cursor: kayitKonumModu ? "crosshair" : "pointer",
-        // ÖNEMLİ: paddingTop yerine marginTop kullan, inline-block'da daha stabil
         marginTop: hasUpperIndicator ? `${yaziBoyutu * 0.35}px` : "0",
         paddingLeft: isMobile ? `${2 + harfAraligi * 3}px` : "3px",
         paddingRight: isMobile ? `${2 + harfAraligi * 3}px` : "3px",
@@ -60,7 +66,7 @@ export default function MushafKelime({
         lineHeight: lineHeight,
       }}
     >
-      {/* Vakıf işareti - absolute ile üste konumlandır */}
+      {/* Vakıf işareti */}
       {kelime.vakif && (
         <span
           style={{
@@ -121,7 +127,7 @@ export default function MushafKelime({
           fontFamily: arapcaFont,
           fontSize: `${yaziBoyutu}px`,
           lineHeight: lineHeight,
-          color: theme.text,
+          color: lafizkontrol ? (theme.lugatHighlight || theme.accent) : theme.text,
           display: "inline",
           opacity: aktif ? 1 : 0.95,
           verticalAlign: "middle",

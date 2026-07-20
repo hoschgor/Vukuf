@@ -9,7 +9,7 @@ const temaAciklamalari = {
   light: "Sade beyaz arka plan",
   dark: "Koyu mavi gece modu",
   night: "Tam karanlık mod",
-  night2: "ekstra",
+  coffee: "Koyu kahve tonları",
   custom: "Kişisel renk ayarları",
 }
 
@@ -45,12 +45,13 @@ export default function Navbar() {
   ]
 
   const temaListesi = [
-    { id: "sepia", label: "Sepya", renk: "#f4ecd8" },
-    { id: "light", label: "Açık", renk: "#ffffff" },
-    { id: "dark", label: "Koyu", renk: "#1a1a2e" },
-    { id: "night", label: "Gece", renk: "#0d0d0d" },
-    { id: "coffee", label: "Kahve", renk: "#0d0d0d" },
-    { id: "custom", label: "Özel", renk: customTheme.background },
+    { id: "sepia",  label: "Sepya",  renk: "#f4ecd8", aciklama: "Göz yormayan sıcak ton" },
+          { id: "light",  label: "Açık",   renk: "#ffffff", aciklama: "Sade beyaz arka plan" },
+          { id: "dark",   label: "Koyu",   renk: "#1a1a2e", aciklama: "Koyu mavi gece modu" },
+          { id: "night",  label: "Gece",   renk: "#0d0d0d", aciklama: "Tam karanlık mod" },
+          { id: "coffee", label: "Kahve",  renk: "#251b04", aciklama: "Koyu kahve tonları" },
+          { id: "highcontrast", label: "Yüksek Karşıtlık",  renk: "#eeb311", aciklama: "Koyu zemin üzerinde sarı vurgular" },
+          { id: "custom", label: "Özel",   renk: customTheme?.background || "#888", aciklama: "Kişisel renk ayarları" },
   ]
 
   function ozelPanelAc() {

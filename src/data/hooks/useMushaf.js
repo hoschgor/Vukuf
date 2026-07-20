@@ -117,7 +117,7 @@ export function buildMushaf(mushafData, sayfaHarita) {
           .replace(/[\u06DE\u06E9\u06D6\u06D7\u06D8\u06D9\u06DA\u06DB\u06DC\u06DD\u06DF\u06E0\u06ED]/g, '')
           .replace(/[\u0627\u0671]\u0652/g, match => match.replace('\u0652', '')) // Elif + cezm kaldır
           .replace(/\u0671/g, '\u0627') // Elif Vasl'ı normal Elif'e çevir
-          .replace(/(?<=[أُإِآ])و\u0652/g, '\u0648')
+          .replace(/\u0648\u0652/g, '\u0648') // Vav + cezm → Vav
         if (!temizArapca.trim()) return  // tamamen boş kaldıysa atla
         
         elemanlar.push({ tip: "kelime", sure, ayet, kelime: { ...kelime, arabic: temizArapca } })

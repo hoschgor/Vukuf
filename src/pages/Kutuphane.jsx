@@ -233,6 +233,19 @@ function SortableAlimRafi({ alim, duzenlemeMode, theme, sensors, kitapSiralama, 
         </div>
         
         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+  
+          {/* Eser sayısı — her zaman görünsün */}
+          <span style={{
+            fontSize: "11px",
+            color: theme.textSecondary,
+            background: `${theme.accent}15`,
+            borderRadius: "10px",
+            padding: "1px 7px",
+            flexShrink: 0,
+          }}>
+            {tumKitaplar.length}
+          </span>
+
           {/* Mercek SADECE âlim bölümü AÇIKken göster */}
           {acik && (
             <button

@@ -11,8 +11,7 @@ import KuranOkuma from "./pages/KuranOkuma"
 export default function App() {
   const { theme } = useApp()
   const location = useLocation()
-  const okumadaMiyiz = location.pathname.startsWith("/kitap/")
-
+  const okumadaMiyiz = location.pathname.startsWith("/kitap/") || location.pathname === "/kuran"
   return (
     <div style={{ minHeight: "100vh", background: theme.background }}>
       {!okumadaMiyiz && <Navbar />}

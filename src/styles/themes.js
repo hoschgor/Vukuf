@@ -44,13 +44,22 @@ export const themes = {
     background: "#0d0d0d",
     surface: "#1a100a",
     text: "#999999",
-    textSecondary: "#6b5b4e",
-    accent: "#8b5e3c",
+    textSecondary: "#99785d",
+    accent: "#9e714f",
     lugatHighlight: "#c41e3a",
-    border: "#8b5e3c",
+    border: "#302010",
   },
+  highcontrast:{
+    name: "Yüksek Karşıtlık",
+    background: "#1c1c1c",
+    surface: "#1c1c1c",
+    text: "#f4ecd8",
+    textSecondary: "#eeb311",
+    accent: "#eeb311",
+    lugatHighlight: "#c41e3a",
+    border: "#363636",
+  }
 }
-
 
 export const defaultTheme = "sepia"
 export const defaultCustomTheme = {

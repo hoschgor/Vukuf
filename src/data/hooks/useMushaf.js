@@ -149,6 +149,7 @@ export function buildMushaf(mushafData, sayfaHarita) {
         .replace(/[\u0627\u0671]\u0652/g, match => match.replace('\u0652', ''))
         .replace(/\u0671/g, '\u0627')
         .replace(/(?<=[أُإِآ])و\u0652/g, '\u0648')
+        .replace(/\u06E1/g, '\u0652')
 
       if (!temizArapca.trim()) return
 

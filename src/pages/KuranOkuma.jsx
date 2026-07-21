@@ -36,7 +36,6 @@ const ARAPCA_FONTLAR = [
   { id: "noto-naskh", label: "Noto Naskh Arabic", style: "'Noto Naskh Arabic', serif", google: null },
   { id: "scheherazade", label: "Scheherazade New", style: "'Scheherazade New', serif", google: null },
   { id: "lateef", label: "Lateef", style: "'Lateef', serif", google: null },
-  { id: "reem-kufi", label: "Reem Kufi",                style: "'Reem Kufi', sans-serif",     google: "Reem+Kufi:wght@400;600" },
 ]
 
 // ── Özel tema sabitleri
@@ -230,13 +229,18 @@ export default function KuranOkuma({ kitap }) {
 
   useEffect(() => {
     const font = ARAPCA_FONTLAR.find(f => f.id === arapcaFontId)
-    if (font?.google) {
+    
+    const url = font?.google 
+      ? `https://fonts.googleapis.com/css2?family=${font.google}&display=swap`
+      : font?.cdnUrl || null
+
+    if (url) {
       const linkId = `kuran-font-${arapcaFontId}`
       if (!document.getElementById(linkId)) {
         const link = document.createElement("link")
         link.id   = linkId
         link.rel  = "stylesheet"
-        link.href = `https://fonts.googleapis.com/css2?family=${font.google}&display=swap`
+        link.href = url
         document.head.appendChild(link)
       }
     }
@@ -644,12 +648,13 @@ const kayitSayfaGit = useCallback((sayfa, scrollY) => {
     if (!el) return
     const virtualItem = virtualizer.getVirtualItems().find(v => v.index === index)
     const sayfaBaslangic = virtualItem?.start || 0
-    const sayfaYukseklik = sayfaGercekYukseklikleriRef.current[mevcutSayfa] 
-  || sayfaYukseklikleri[sayfaIndex] 
-  || 500
-    el.scrollTop = sayfaBaslangic + (scrollY || 0) * sayfaYukseklik
+    const sayfaYukseklik = sayfaGercekYukseklikleriRef.current[sayfa]
+      || sayfaYukseklikleri[index]
+      || 500
+    const barYuksekligi = isMobile ? 20 : 13
+    el.scrollTop = sayfaBaslangic + (scrollY || 0) * sayfaYukseklik - barYuksekligi
   }, 150)
-}, [sayfaListesi, virtualizer, sayfaYukseklikleri])
+}, [sayfaListesi, virtualizer, sayfaYukseklikleri, isMobile])
 
 
   // Mevcut scroll event listener'ı — KORU

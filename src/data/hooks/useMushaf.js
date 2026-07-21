@@ -144,12 +144,15 @@ export function buildMushaf(mushafData, sayfaHarita) {
       ayet.kelimeler.forEach(kelime => {
         if (BAGIMSIZ_ISARETLER.has(kelime.arabic.trim())) return
         const temizArapca = kelime.arabic
-        .replace(/(\u0648\u0627)\u0652/g, '$1')
-        .replace(/[\u06DE\u06E9\u06D6\u06D7\u06D8\u06D9\u06DA\u06DB\u06DC\u06DD\u06DF\u06E0\u06ED]/g, '')
-        .replace(/[\u0627\u0671]\u0652/g, match => match.replace('\u0652', ''))
-        .replace(/\u0671/g, '\u0627')
-        .replace(/(?<=[أُإِآ])و\u0652/g, '\u0648')
-        .replace(/\u06E1/g, '\u0652')
+          .replace(/(\u0648\u0627)\u0652/g, '$1')
+          .replace(/[\u06DE\u06E9\u06D6\u06D7\u06D8\u06D9\u06DA\u06DB\u06DC\u06DD\u06DF\u06E0\u06ED]/g, '')
+          .replace(/[\u0627\u0671]\u0652/g, match => match.replace('\u0652', ''))
+          .replace(/\u0671/g, '\u0627')
+          .replace(/(?<=[أُإِآ])و\u0652/g, '\u0648')
+          .replace(/\u06E1/g, '\u0652')        // Uthmani küçük cezm → standart cezm
+          .replace(/\u0656/g, '\u064D')        // ٖ küçük kesre tenvin → ٍ standart kesre tenvin
+          .replace(/\u065E/g, '\u064C')        // ٞ küçük damme tenvin → ٌ standart damme tenvin
+          .replace(/\u0657/g, '\u064B')        // ٗ küçük fetha tenvin → ً standart fetha tenvin
 
       if (!temizArapca.trim()) return
 

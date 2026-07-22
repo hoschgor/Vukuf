@@ -1207,7 +1207,7 @@ function sureGit(sureId, ayetNo) {
           </button>
         </div>
         <div>
-          <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px" }}>SURE BİLGİSİ</div>
+          <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px" }}>SÛRE BİLGİSİ</div>
           <button onClick={() => setSureBilgisiGoster(!sureBilgisiGoster)} style={{
             width: "100%", padding: "8px 12px", borderRadius: "8px", fontSize: "13px",
             background: sureBilgisiGoster ? `${theme.accent}15` : theme.background,
@@ -1215,7 +1215,7 @@ function sureGit(sureId, ayetNo) {
             border: `1px solid ${sureBilgisiGoster ? theme.accent : theme.border}`,
             cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between",
           }}>
-            <span>Sure bilgisi</span>
+            <span>Sûre bilgisi</span>
             <span style={{ fontSize: "12px" }}>{sureBilgisiGoster ? "Açık" : "Kapalı"}</span>
           </button>
         </div>

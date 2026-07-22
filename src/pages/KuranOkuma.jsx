@@ -27,7 +27,8 @@ import {
   ArrowLeft, Search, X, ChevronRight, ChevronDown, Menu,
   Play, Pause, Plus, Minus, Type, Palette,
   Settings, Circle, Clock, ChevronsUp, ChevronsDown,
-  Pencil, ChevronLeft, Bookmark,
+  Pencil, ChevronLeft, Bookmark, BookOpen,
+  Layers,
 } from "lucide-react"
 
 // ── Arapça font listesi
@@ -120,6 +121,7 @@ export default function KuranOkuma({ kitap }) {
   const [mevcutSayfa, setMevcutSayfa] = useState(() =>
     parseInt(localStorage.getItem("vukuf-son-sayfa") || "1")
   )
+  
   const [sayfaGirdi, setSayfaGirdi] = useState("")
   const [sayfaGirdiAcik, setSayfaGirdiAcik] = useState(false)
 
@@ -154,6 +156,9 @@ export default function KuranOkuma({ kitap }) {
   const touchBaslangicRef = useRef({ x: 0, y: 0 })
   const touchHareketRef = useRef(false)
   const [barKilitli, setBarKilitli] = useState(false)
+  const [sureBilgisiGoster, setSureBilgisiGoster] = useState(() =>
+  localStorage.getItem("vukuf-sure-bilgisi") !== "false"
+)
 
   // ── Scrollbar
   const [scrollbarGorunur, setScrollbarGorunur] = useState(false)
@@ -165,6 +170,8 @@ export default function KuranOkuma({ kitap }) {
   const [temaAcik, setTemaAcik]                 = useState(false)
   const [ayarlarAcik, setAyarlarAcik]           = useState(false)
   const [ozelTemaPanelAcik, setOzelTemaPanelAcik] = useState(false)
+  const [sayfaGitAcik, setSayfaGitAcik] = useState(false)
+  const [sayfaGitInput, setSayfaGitInput] = useState("")
 
   // ── Özel tema
   const [ozelRenkler, setOzelRenkler] = useState(() => {
@@ -215,6 +222,7 @@ export default function KuranOkuma({ kitap }) {
   useEffect(() => { localStorage.setItem("vukuf-son-sayfa",         String(mevcutSayfa))    }, [mevcutSayfa])
   useEffect(() => { localStorage.setItem("vukuf-satir-araligi",     String(satirAraligi))   }, [satirAraligi])
   useEffect(() => { localStorage.setItem("vukuf-harf-araligi",      String(harfAraligi))    }, [harfAraligi])
+  useEffect(() => { localStorage.setItem("vukuf-sure-bilgisi", String(sureBilgisiGoster)) }, [sureBilgisiGoster])
 
   useEffect(() => {
     sureSayacRef.current = setInterval(() => {
@@ -472,6 +480,14 @@ export default function KuranOkuma({ kitap }) {
   
   const { sayfaMap, sureler, toplamSayfa } = useMushaf(mushafData, sayfaHaritaJson)
 
+  const mevcutSureBilgisi = useMemo(() => {
+    if (!sayfaMap?.size) return null
+    const elemanlar = sayfaMap.get(mevcutSayfa) || []
+    const sureBaslik = elemanlar.find(el => el.tip === "sure-baslik")
+    if (sureBaslik) return sureBaslik.sure
+    const kelime = elemanlar.find(el => el.tip === "kelime")
+    return kelime?.sure || null
+  }, [sayfaMap, mevcutSayfa])
   
   const filtreliSureler = useMemo(() => {
     if (!menuArama) return sureler
@@ -799,6 +815,74 @@ function sureGit(sureId, ayetNo) {
     border: "none", cursor: "pointer", transition: "all 0.15s",
   })
 
+
+  // ════════════════════════════════════════════════════════════════
+  // SAYFAYA GİT POPUP
+  // ════════════════════════════════════════════════════════════════
+  const SayfaGitPopup = sayfaGitAcik && (
+  <>
+    <div onClick={() => setSayfaGitAcik(false)} style={{ position: "fixed", inset: 0, zIndex: 95 }} />
+    <div style={{ ...panelStil("center"), width: "280px", zIndex: 96 }}>
+      <div style={{ fontSize: "12px", color: theme.textSecondary, marginBottom: "10px" }}>
+        SAYFAYA GİT (1 – {toplamSayfa})
+      </div>
+      <div style={{ display: "flex", gap: "8px", marginBottom: "12px" }}>
+        <input
+          type="number" min={1} max={toplamSayfa}
+          value={sayfaGitInput}
+          onChange={e => setSayfaGitInput(e.target.value)}
+          onKeyDown={e => {
+            if (e.key === "Enter") {
+              const n = Math.min(Math.max(1, parseInt(sayfaGitInput)), toplamSayfa)
+              sayfayaGit(n)
+              setSayfaGitAcik(false)
+            }
+          }}
+          placeholder="Sayfa no..." autoFocus
+          style={{
+            flex: 1, padding: "8px 12px", borderRadius: "8px",
+            border: `1px solid ${theme.border}`,
+            background: theme.background, color: theme.text,
+            fontSize: "14px", outline: "none",
+          }}
+        />
+        <button
+          onClick={() => {
+            sayfayaGit(Math.min(Math.max(1, Number(sayfaGitInput)), toplamSayfa))
+            setSayfaGitAcik(false)
+          }}
+          style={{
+            padding: "8px 14px", borderRadius: "8px",
+            background: theme.accent, color: "#fff",
+            fontSize: "13px", border: "none", cursor: "pointer",
+          }}
+        >
+          Git
+        </button>
+      </div>
+      <input
+        type="range" min={1} max={toplamSayfa} value={mevcutSayfa}
+        onChange={e => setMevcutSayfa(Number(e.target.value))}
+        onMouseUp={e => {
+          sayfayaGit(parseInt(e.target.value))
+          setSayfaGitAcik(false)
+        }}
+        onTouchEnd={e => {
+          sayfayaGit(parseInt(e.target.value))
+          setSayfaGitAcik(false)
+        }}
+        style={{ width: "100%", accentColor: theme.accent }}
+      />
+      <div style={{
+        textAlign: "center", fontSize: "16px",
+        fontWeight: "bold", color: theme.accent, marginTop: "6px",
+      }}>
+        {mevcutSayfa}
+      </div>
+    </div>
+  </>
+)
+
   // ════════════════════════════════════════════════════════════════
   // AA PANELİ
   // ════════════════════════════════════════════════════════════════
@@ -1122,6 +1206,19 @@ function sureGit(sureId, ayetNo) {
             <span style={{ fontSize: "12px" }}>{sureGoster ? "Açık" : "Kapalı"}</span>
           </button>
         </div>
+        <div>
+          <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px" }}>SURE BİLGİSİ</div>
+          <button onClick={() => setSureBilgisiGoster(!sureBilgisiGoster)} style={{
+            width: "100%", padding: "8px 12px", borderRadius: "8px", fontSize: "13px",
+            background: sureBilgisiGoster ? `${theme.accent}15` : theme.background,
+            color: sureBilgisiGoster ? theme.accent : theme.textSecondary,
+            border: `1px solid ${sureBilgisiGoster ? theme.accent : theme.border}`,
+            cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between",
+          }}>
+            <span>Sure bilgisi</span>
+            <span style={{ fontSize: "12px" }}>{sureBilgisiGoster ? "Açık" : "Kapalı"}</span>
+          </button>
+        </div>
         <div style={{ position: "relative" }}>
           <KariSecici
             kariId={player.kariId}
@@ -1186,47 +1283,22 @@ function sureGit(sureId, ayetNo) {
         />
       </button>
       
-      {/* Sayfa bilgisi - ok işaretleri kaldırıldı */}
-      {sayfaGirdiAcik ? (
-        <input
-          type="number"
-          value={sayfaGirdi}
-          autoFocus
-          onChange={e => setSayfaGirdi(e.target.value)}
-          onBlur={() => { sayfayaGit(sayfaGirdi); setSayfaGirdiAcik(false); setSayfaGirdi("") }}
-          onKeyDown={e => {
-            if (e.key === "Enter") { sayfayaGit(sayfaGirdi); setSayfaGirdiAcik(false); setSayfaGirdi("") }
-            if (e.key === "Escape") { setSayfaGirdiAcik(false); setSayfaGirdi("") }
-          }}
-          style={{
-            width: isMobile ? "44px" : "52px", 
-            padding: "4px 6px", 
-            borderRadius: "6px", 
-            fontSize: isMobile ? "11px" : "12px",
-            border: `1px solid ${theme.accent}`, 
-            background: theme.background,
-            color: theme.text, 
-            textAlign: "center", 
-            outline: "none",
-          }}
-        />
-      ) : (
-        <button
-          onClick={() => { setSayfaGirdiAcik(true); setSayfaGirdi(String(mevcutSayfa)) }}
-          style={{ 
-            ...barButonStil(), 
-            fontSize: isMobile ? "11px" : "12px", 
-            minWidth: isMobile ? "40px" : "48px", 
-            justifyContent: "center",
-            fontWeight: "500",
-            color: theme.accent,
-          }}
-        >
-          {mevcutSayfa} / {toplamSayfa}
-        </button>
-      )}
+      {/* Sayfa bilgisi */}
+      <button
+        onClick={() => setSayfaGitAcik(!sayfaGitAcik)}
+        style={{
+          ...barButonStil(),
+          fontSize: isMobile ? "11px" : "12px",
+          minWidth: isMobile ? "40px" : "48px",
+          justifyContent: "center",
+          fontWeight: "500",
+          color: theme.accent,
+        }}
+      >
+        <BookOpen size={isMobile ? 12 : 16} />
+        {mevcutSayfa}
+      </button>
       
-
       {!sadeMode && (
         <>
           <button onClick={() => togglePanel(setAaAcik, !aaAcik)} style={barButonStil(aaAcik)}>
@@ -1304,6 +1376,19 @@ function sureGit(sureId, ayetNo) {
             {isMobile ? dakikaFormatla(bugunSure) : `Bugün ${dakikaFormatla(bugunSure)}`}
           </span>
         )}
+        {mevcutSureBilgisi && sureBilgisiGoster && (
+          <span style={{
+            fontSize: isMobile ? "9px" : "12px",
+            color: theme.textSecondary,
+            padding: "4px 4px",
+            display: "flex",
+            alignItems: "center",
+            gap: "2px",
+          }}>
+            <Layers size={isMobile ? 13 : 15} />
+            {mevcutSureBilgisi.isim}
+          </span>
+        )}
         
         <button onClick={() => setSadeMode(!sadeMode)} style={{ ...barButonStil(sadeMode), padding: isMobile ? "3px" : "4px" }}>
           <Circle size={isMobile ? 13 : 15} />
@@ -1343,6 +1428,7 @@ function sureGit(sureId, ayetNo) {
       
       {AyarlarPanel}
       {OzelTemaPanel}
+      {SayfaGitPopup}
 
 
       {/* Popup'lar */}

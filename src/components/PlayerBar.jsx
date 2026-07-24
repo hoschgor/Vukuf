@@ -15,19 +15,19 @@ export default function PlayerBar({ player, sureler = [], theme, barKonum = "alt
   const mainBarHeight = barYuksekligi || (isMobile ? 44 : 33)
   
   // PlayerBar kendi yüksekliği
-  const playerBarHeight = isMobile ? 41 : 40
+  const playerBarHeight = isMobile ? 46 : 41
 
   // PlayerBar'ın konumunu hesapla
   const getBottomPosition = () => {
   if (barKonum === "alt") {
-    return barGorunur ? `${mainBarHeight - 7}px` : "0px"  // 2 → 8
+    return barGorunur ? `${mainBarHeight}px` : "0px"
   }
   return "auto"
 }
 
 const getTopPosition = () => {
   if (barKonum === "ust") {
-    return barGorunur ? `${mainBarHeight + 8}px` : "0px"  // 2 → 8
+    return barGorunur ? `${mainBarHeight}px` : "0px"
   }
   return "auto"
 }
@@ -36,8 +36,8 @@ const getTopPosition = () => {
     display: "flex", 
     alignItems: "center", 
     justifyContent: "center",
-    width: isMobile ? "36px" : "32px", 
-    height: isMobile ? "36px" : "32px", 
+    width: isMobile ? "30px" : "32px", 
+    height: isMobile ? "30px" : "32px", 
     borderRadius: "50%",
     border: "none", 
     cursor: "pointer",
@@ -52,8 +52,8 @@ const getTopPosition = () => {
     display: "flex", 
     alignItems: "center", 
     justifyContent: "center",
-    width: isMobile ? "32px" : "26px", 
-    height: isMobile ? "32px" : "26px", 
+    width: isMobile ? "25px" : "26px", 
+    height: isMobile ? "25px" : "26px", 
     borderRadius: "50%",
     border: "none", 
     cursor: "pointer",

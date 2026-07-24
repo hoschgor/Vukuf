@@ -18,7 +18,7 @@ import { KARILAR } from "../data/hooks/useAudioPlayer"
  *     barKonum="alt"
  *   />
  */
-export default function KariSecici({ kariId, setKariId, theme, barKonum = "alt" }) {
+export default function KariSecici({ kariId, setKariId, theme, barUiOlcegi = 1, barKonum = "alt" }) {
   const [acik, setAcik] = useState(false)
 
   const aktifKari = KARILAR.find(k => k.id === kariId) || KARILAR[0]
@@ -31,7 +31,7 @@ export default function KariSecici({ kariId, setKariId, theme, barKonum = "alt" 
   return (
     <div>
       <div style={{
-        fontSize: "11px", color: theme.textSecondary,
+        fontSize: `${Math.round(11 * barUiOlcegi)}px`, color: theme.textSecondary,
         marginBottom: "8px", letterSpacing: "1px",
       }}>
         KARİ
@@ -46,16 +46,16 @@ export default function KariSecici({ kariId, setKariId, theme, barKonum = "alt" 
           padding: "8px 12px", borderRadius: "8px",
           border: `1px solid ${acik ? theme.accent : theme.border}`,
           background: acik ? `${theme.accent}10` : theme.background,
-          color: theme.text, fontSize: "13px", cursor: "pointer",
+          color: theme.text, fontSize: `${Math.round(13 * barUiOlcegi)}px`, cursor: "pointer",
           transition: "all 0.15s",
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <Music2 size={13} color={theme.accent} />
+          <Music2 size={Math.round(13 * barUiOlcegi)} color={theme.accent} />
           <span>{aktifKari.label}</span>
         </div>
         <ChevronDown
-          size={13}
+          size={Math.round(13 * barUiOlcegi)}
           color={theme.textSecondary}
           style={{
             transform: acik ? "rotate(180deg)" : "rotate(0deg)",
@@ -87,7 +87,7 @@ export default function KariSecici({ kariId, setKariId, theme, barKonum = "alt" 
             {/* Başlık */}
             <div style={{
               padding: "8px 12px",
-              fontSize: "10px", color: theme.textSecondary,
+              fontSize: `${Math.round(10 * barUiOlcegi)}px`, color: theme.textSecondary,
               letterSpacing: "1px",
               borderBottom: `1px solid ${theme.border}`,
             }}>
@@ -111,13 +111,13 @@ export default function KariSecici({ kariId, setKariId, theme, barKonum = "alt" 
                       : "none",
                     background: secili ? `${theme.accent}12` : "transparent",
                     color: secili ? theme.accent : theme.text,
-                    fontSize: "13px", cursor: "pointer",
+                    fontSize: `${Math.round(13 * barUiOlcegi)}px`, cursor: "pointer",
                     textAlign: "left",
                     transition: "background 0.1s",
                   }}
                 >
                   <span>{kari.label}</span>
-                  {secili && <Check size={13} color={theme.accent} />}
+                  {secili && <Check size={Math.round(13 * barUiOlcegi)} color={theme.accent} />}
                 </button>
               )
             })}

@@ -96,6 +96,7 @@ export default function KuranOkuma({ kitap }) {
   const navigate  = useNavigate()
   const isMobile  = useMediaQuery("(max-width: 768px)")
   const scrollRef = useRef(null)
+  const [odakAyet, setOdakAyet] = useState(null)
   const barZamanRef  = useRef(null)
   const sureSayacRef = useRef(null)
   const scrollHiziRef = useRef({ sonScrollTop: 0, sonZaman: Date.now(), scrollSayisi: 0 })
@@ -1734,6 +1735,7 @@ function sureGit(sureId, ayetNo) {
       <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, overflow: "hidden", position: "relative" }}>
         {barKonum === "ust" && Bar}
 
+
         <PlayerBar
           player={player}
           sureler={sureler}
@@ -1741,6 +1743,47 @@ function sureGit(sureId, ayetNo) {
           barKonum={barKonum}
           barGorunur={barGorunur}
           barYuksekligi={barYuksekligi}
+          onOdaklan={() => {
+            if (!player.aktifAyet) return
+            const { sureNo, ayetNo } = player.aktifAyet
+            const el = scrollRef.current
+            if (!el) return
+
+            const offset = (barKonum === "ust" ? barYuksekligi : 0) +
+              (player.durum !== "kapali" ? playerBarYuksekligi : 0) + 20
+
+            const hedefElementler = el.querySelectorAll(`[data-sure="${sureNo}"][data-ayet="${ayetNo}"]`)
+            
+            const odakla = () => {
+              if (hedefElementler.length === 0) return
+              const hedef = hedefElementler[0]
+              const oncekiNo = ayetNo - 1
+              const oncekiElementler = oncekiNo >= 1
+                ? el.querySelectorAll(`[data-sure="${sureNo}"][data-ayet="${oncekiNo}"]`)
+                : null
+              const baslangic = oncekiElementler?.length > 0 ? oncekiElementler[0] : hedef
+              baslangic.style.scrollMarginTop = `${offset}px`
+              baslangic.scrollIntoView({ behavior: "smooth", block: "start" })
+              baslangic.style.scrollMarginTop = "0"
+              
+              // Vurgulama kısmı
+            setOdakAyet({ sureNo, ayetNo })
+            setTimeout(() => setOdakAyet(null), 2000)
+            }
+
+            if (hedefElementler.length > 0) {
+              // Sayfa zaten render edilmiş, direkt odaklan
+              odakla()
+            } else {
+              // Farklı sayfada, önce sayfaya git
+              const sayfa = ayetSayfasi(sureNo, ayetNo, sayfaMap)
+              if (!sayfa) return
+              const index = sayfaListesi.findIndex(s => s.sayfaNo === sayfa)
+              if (index === -1) return
+              sayfayaKaydir(index)
+              setTimeout(odakla, 600)
+            }
+          }}
         />
         {/* Virtualizer ile sayfa içeriği */}
         <div
@@ -1892,6 +1935,7 @@ function sureGit(sureId, ayetNo) {
                     satirAraligi={satirAraligi}
                     harfAraligi={harfAraligi}
                     player={player}
+                    odakAyet={odakAyet}
                     aktifAyet={player.aktifAyet}
                     onKelimeTikla={kelimeTikla}
                     onAyetTikla={ayetTikla}

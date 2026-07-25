@@ -14,6 +14,7 @@ export default function MushafAyetRozeti({
   sayi,
   size = 60,
   ac = "currentColor",
+  aktif = false,
 }) {
   const yazi = arapcaRakam(sayi)
 
@@ -29,6 +30,9 @@ export default function MushafAyetRozeti({
         color: ac,
         overflow: "visible",
         display: "block",
+        transform: aktif ? "scale(1.3)" : "scale(1)",
+        transition: "transform 0.3s ease",
+        filter: aktif ? `drop-shadow(0 0 4px currentColor)` : "none",
       }}
     >
       {/* Sol taraf */}

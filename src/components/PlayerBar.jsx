@@ -1,8 +1,16 @@
-import { Play, Pause, Square, SkipBack, SkipForward } from "lucide-react"
+import { Play, Pause, Square, SkipBack, SkipForward, Glasses } from "lucide-react"
 import { KARILAR } from "../data/hooks/useAudioPlayer"
 import { useMediaQuery } from "../data/hooks/useMediaQuery"
 
-export default function PlayerBar({ player, sureler = [], theme, barKonum = "alt", barGorunur = true, barYuksekligi = 0 }) {
+export default function PlayerBar({ 
+  player, 
+  sureler = [], 
+  theme, 
+  barKonum = "alt", 
+  barGorunur = true, 
+  barYuksekligi = 0,
+  onOdaklan
+}) {
   const { durum, aktifAyet, kariId, duraklat, devamEt, durdur, oncekiAyet, sonrakiAyet } = player
   const isMobile = useMediaQuery("(max-width: 768px)")
 
@@ -11,26 +19,22 @@ export default function PlayerBar({ player, sureler = [], theme, barKonum = "alt
   const aktifSure = aktifAyet ? sureler.find(s => s.id === aktifAyet.sureNo) : null
   const aktifKari = KARILAR.find(k => k.id === kariId)
 
-  // Bar yüksekliğini hesapla
   const mainBarHeight = barYuksekligi || (isMobile ? 44 : 33)
-  
-  // PlayerBar kendi yüksekliği
   const playerBarHeight = isMobile ? 46 : 41
 
-  // PlayerBar'ın konumunu hesapla
   const getBottomPosition = () => {
-  if (barKonum === "alt") {
-    return barGorunur ? `${mainBarHeight}px` : "0px"
+    if (barKonum === "alt") {
+      return barGorunur ? `${mainBarHeight}px` : "0px"
+    }
+    return "auto"
   }
-  return "auto"
-}
 
-const getTopPosition = () => {
-  if (barKonum === "ust") {
-    return barGorunur ? `${mainBarHeight}px` : "0px"
+  const getTopPosition = () => {
+    if (barKonum === "ust") {
+      return barGorunur ? `${mainBarHeight}px` : "0px"
+    }
+    return "auto"
   }
-  return "auto"
-}
 
   const butonStil = (vurgulu = false) => ({
     display: "flex", 
@@ -78,7 +82,7 @@ const getTopPosition = () => {
       padding: isMobile ? "4px 16px" : "4px 24px",
       display: "flex", 
       alignItems: "center", 
-      justifyContent: "space-between", // ÖNEMLİ: İki tarafa yasla
+      justifyContent: "space-between",
       gap: isMobile ? "8px" : "12px",
       zIndex: 89,
       boxShadow: barKonum === "alt"
@@ -91,13 +95,12 @@ const getTopPosition = () => {
       maxWidth: "100%",
       boxSizing: "border-box",
     }}>
-      {/* Sol: sure · ayet · kari adı - ortaya yakın olacak şekilde padding ile */}
+      {/* Sol: sure · ayet · kari adı */}
       <div style={{ 
         flex: "0 1 auto",
         minWidth: 0,
         maxWidth: isMobile ? "45%" : "50%",
         overflow: "hidden",
-        // Sol tarafta ama ortaya yakın olması için paddingLeft ekle
         paddingLeft: isMobile ? "5%" : "1%",
       }}>
         <div style={{
@@ -127,16 +130,40 @@ const getTopPosition = () => {
         </div>
       </div>
 
-      {/* Orta: kontroller */}
+      {/* Sağ grup: Gözlük + kontroller */}
       <div style={{ 
         display: "flex", 
         alignItems: "center", 
-        justifyContent: "center",
-        gap: isMobile ? "4px" : "6px", 
+        gap: isMobile ? "4px" : "6px",
         flexShrink: 0,
-        // Butonları sağa kaydırmak için marginRight ekle
         marginRight: isMobile ? "3%" : "1%",
       }}>
+        {/* GÖZLÜK - En solda ama ayrı duruyor */}
+        <button
+          onClick={onOdaklan}
+          style={{
+            display: "flex", 
+            alignItems: "center", 
+            justifyContent: "center",
+            width: isMobile ? "28px" : "30px", 
+            height: isMobile ? "28px" : "30px", 
+            borderRadius: "50%",
+            border: "none", 
+            cursor: "pointer",
+            background: "transparent", 
+            color: theme.textSecondary,
+            transition: "all 0.15s", 
+            flexShrink: 0,
+            touchAction: "manipulation",
+            padding: 0,
+            marginRight: isMobile ? "4px" : "6px",
+          }}
+          title="Okunan ayete odaklan"
+        >
+          <Glasses size={isMobile ? 17 : 19} />
+        </button>
+
+        {/* Kontrol butonları */}
         <button 
           onClick={oncekiAyet} 
           style={kucukButonStil()} 

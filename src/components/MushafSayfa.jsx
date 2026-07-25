@@ -30,6 +30,7 @@ export default function MushafSayfa({
   sayfaKayitlari = [],
   onYukseklikOlcum,
   kayitKonumModu = false,
+  odakAyet = null,
 }) {
   
   const isMobile = useMediaQuery("(max-width: 768px)")
@@ -218,6 +219,8 @@ export default function MushafSayfa({
                   return (
                     <MushafKelime
                       key={el.kelime.id}
+                      data-sure={el.sure.id}
+                      data-ayet={el.ayet.no}
                       kelime={el.kelime}
                       position={el.position || (index + 1)}
                       aktif={aktif}
@@ -239,6 +242,8 @@ export default function MushafSayfa({
                   return (
                     <span
                       key={`ayet-sonu-${el.sure.id}-${el.ayet.no}`}
+                      data-sure={el.sure.id}      // EKLENDİ
+                      data-ayet={el.ayet.no}      // EKLENDİ
                       onClick={(e) => {
                         if (kayitKonumModu) return
                         onAyetTikla?.(el.sure, el.ayet.no, e)
@@ -251,7 +256,6 @@ export default function MushafSayfa({
                         userSelect: "none",
                         verticalAlign: "middle",
                         lineHeight: lineHeight,
-                        
                       }}
                       title={`${el.sure.isim} · ${el.ayet.no}. Âyet`}
                     >
@@ -259,6 +263,7 @@ export default function MushafSayfa({
                         sayi={el.ayet.no}
                         size={fontSize * 1.4}
                         ac={theme.accent}
+                        aktif={odakAyet?.sureNo === el.sure.id && odakAyet?.ayetNo === el.ayet.no}
                       />
                     </span>
                   )

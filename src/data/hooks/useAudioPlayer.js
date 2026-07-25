@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react"
 export const KARILAR = [
   { id: "Alafasy_128kbps",            label: "Mishary Alafasy" },
   { id: "AbdulSamad_64kbps_QuranExplorer.Com", label: "Abdulbasit Abdussamed" },
+  { id: "MaherAlMuaiqly128kbps", label: "Maher  Al Muaiqly" },
   { id: "Abu_Bakr_Ash-Shaatree_128kbps",  label: "Abu Bakr Ash Shaatree" },
   { id: "Nasser_Alqatami_128kbps",  label: "Nasser Alqatami" },
   { id: "Yasser_Ad-Dussary_128kbps",  label: "Yasser Ad-Dussary" },
@@ -12,6 +13,7 @@ export const KARILAR = [
   { id: "Ghamadi_40kbps",             label: "Saad el-Gamidi" },
   { id: "Mohammad_al_Tablaway_128kbps", label: "Mohammad al-Tablaway" },
   { id: "Ibrahim_Akhdar_32kbps",      label: "Ibrahim Akhdar" },
+
 ]
 
 const BASE_URL = "https://everyayah.com/data"

@@ -8,6 +8,7 @@ import {
   closestCenter,
   KeyboardSensor,
   PointerSensor,
+  TouchSensor,
   useSensor,
   useSensors,
 } from "@dnd-kit/core"
@@ -224,7 +225,7 @@ function SortableAlimRafi({ alim, duzenlemeMode, theme, sensors, kitapSiralama, 
               {...attributes}
               {...listeners}
               onClick={e => e.stopPropagation()}
-              style={{ cursor: "grab", color: theme.textSecondary, display: "flex" }}
+              style={{ cursor: "grab", touchAction: "none", color: theme.textSecondary, display: "flex" }}
             >
               <GripVertical size={16} />
             </span>
@@ -664,6 +665,7 @@ export default function Kutuphane() {
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   )
 

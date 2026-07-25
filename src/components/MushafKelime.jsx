@@ -64,6 +64,7 @@ export default function MushafKelime({
         userSelect: "none",
         // ÖNEMLİ: lineHeight'i miras al
         lineHeight: lineHeight,
+        WebkitTapHighlightColor: kayitKonumModu ? "transparent" : undefined,
       }}
     >
       {/* Vakıf işareti */}

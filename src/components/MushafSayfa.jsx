@@ -245,11 +245,13 @@ export default function MushafSayfa({
                       }}
                       style={{
                         display: "inline-block",
+                        WebkitTapHighlightColor: kayitKonumModu ? "transparent" : undefined,
                         cursor: kayitKonumModu ? "crosshair" : "pointer",
                         margin: `0 ${isMobile ? 1 : 2}px`,
                         userSelect: "none",
                         verticalAlign: "middle",
                         lineHeight: lineHeight,
+                        
                       }}
                       title={`${el.sure.isim} · ${el.ayet.no}. Âyet`}
                     >

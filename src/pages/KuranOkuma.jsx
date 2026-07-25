@@ -332,9 +332,9 @@ const [barUiOlcegi, setBarUiOlcegi] = useState(() =>
 useEffect(() => {
   localStorage.setItem("vukuf-bar-ui-olcegi", String(barUiOlcegi))
 }, [barUiOlcegi])
-const wrapAktif = barUiOlcegi > 1.2
+const wrapAktif = barUiOlcegi > 0.9
 const tekSatirYuksekligi = isMobile ? 44 : 36
-const cokSatir = wrapAktif && barYuksekligi > tekSatirYuksekligi * 1.3
+const cokSatir = wrapAktif && barYuksekligi > tekSatirYuksekligi * 1.0
 
   // ════════════════════════════════════════════════════════════════
   // BAR FONKSİYONLARI
@@ -929,7 +929,7 @@ function sureGit(sureId, ayetNo) {
             type="range"
             min="20"
             max="100"
-            step="10"
+            step="5"
             value={yaziBoyutu}
             onChange={e => setYaziBoyutu(parseInt(e.target.value))}
             style={{ width: "100%", accentColor: theme.accent }}

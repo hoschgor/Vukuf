@@ -332,7 +332,7 @@ const [barUiOlcegi, setBarUiOlcegi] = useState(() =>
 useEffect(() => {
   localStorage.setItem("vukuf-bar-ui-olcegi", String(barUiOlcegi))
 }, [barUiOlcegi])
-const wrapAktif = barUiOlcegi > 0.9
+const wrapAktif = isMobile && barUiOlcegi > 0.9
 const tekSatirYuksekligi = isMobile ? 44 : 36
 const cokSatir = wrapAktif && barYuksekligi > tekSatirYuksekligi * 1.0
 

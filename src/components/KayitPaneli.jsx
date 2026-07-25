@@ -7,15 +7,15 @@ function tarihFormatla(ts) {
 }
 
 export default function KayitPaneli({ 
-  theme, 
-  kayitlar,        // ← Dışarıdan al
-  mevcutSayfa, 
-  scrollOran, 
-  onSayfaGit, 
-  onKayitEkle,     // ← Yeni kayıt ekleme fonksiyonu
-  onKayitGuncelle, // ← Kayıt güncelleme fonksiyonu (isteğe bağlı)
-  onKayitSil,      // ← Kayıt silme fonksiyonu (isteğe bağlı)
-  onKapat, 
+  theme,
+  kayitlar,
+  mevcutSayfa,
+  scrollOran,
+  onSayfaGit,
+  onKayitEkle,
+  onKayitGuncelle,
+  onKayitSil,
+  onKapat,
   onKonumSec
 }) {
   const [mod, setMod] = useState("liste")

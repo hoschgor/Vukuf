@@ -1,19 +1,3 @@
-/**
- * SecdeKenar
- * ──────────
- * Konum: src/components/SecdeKenar.jsx
- *
- * Sayfanın sağ kenarında secde ayeti rozeti gösterir.
- * Birden fazla secde aynı sayfadaysa hepsi listelenir (nadir).
- *
- * Kullanım:
- *   <SecdeKenar
- *     secdeAyetleri={[{ sureNo, ayetNo }, ...]}
- *     theme={theme}
- *     arapcaFont="..."
- *     onTikla={(ayet) => ...}
- *   />
- */
 export default function SecdeKenar({ secdeAyetleri, theme, arapcaFont, onTikla }) {
   if (!secdeAyetleri?.length) return null
 

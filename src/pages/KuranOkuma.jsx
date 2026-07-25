@@ -1,8 +1,3 @@
-// ════════════════════════════════════════════════════════════════
-// KuranOkuma.jsx — Tam Dosya (Virtualizer ile)
-// Konum: src/pages/KuranOkuma.jsx
-// ════════════════════════════════════════════════════════════════
-
 import { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo, } from "react"
 import { createPortal } from "react-dom"
 import { useNavigate } from "react-router-dom"

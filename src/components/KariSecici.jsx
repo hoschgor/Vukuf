@@ -2,22 +2,6 @@ import { useState } from "react"
 import { Music2, ChevronDown, Check } from "lucide-react"
 import { KARILAR } from "../data/hooks/useAudioPlayer"
 
-/**
- * KariSecici
- * ──────────
- * Ayarlar paneline gömülür. Minik bir dropdown açar,
- * seçim useAudioPlayer'a ve localStorage'a kaydedilir.
- *
- * Konum: src/components/KariSecici.jsx
- *
- * Kullanım:
- *   <KariSecici
- *     kariId={player.kariId}
- *     setKariId={player.setKariId}
- *     theme={theme}
- *     barKonum="alt"
- *   />
- */
 export default function KariSecici({ kariId, setKariId, theme, barUiOlcegi = 1, barKonum = "alt" }) {
   const [acik, setAcik] = useState(false)
 

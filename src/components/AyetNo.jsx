@@ -1,4 +1,3 @@
-// components/AyetNo.jsx
 export default function AyetNo({ no, sure, theme, onClick }) {
   const ac = theme.accent
   

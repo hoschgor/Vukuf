@@ -1,4 +1,3 @@
-// MushafKelime.jsx
 import { useState } from "react"
 import { useMediaQuery } from "../data/hooks/useMediaQuery"
 

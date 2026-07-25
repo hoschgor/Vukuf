@@ -1,21 +1,5 @@
 import { Play, Pause, X } from "lucide-react"
 
-/**
- * AyetPopup
- * ─────────
- * Konum: src/components/AyetPopup.jsx
- *
- * Kullanım:
- *   <AyetPopup
- *     sure={{ id, isim, ayetSayisi }}
- *     ayetNo={3}
- *     meal="Hamd alemlerin rabbi..."
- *     konum={{ x, y }}
- *     player={player}
- *     theme={theme}
- *     onKapat={() => setPopup(null)}
- *   />
- */
 export default function AyetPopup({ sure, ayetNo, meal, konum, player, theme, onKapat }) {
   if (!sure) return null
 

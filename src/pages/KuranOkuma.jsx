@@ -664,11 +664,9 @@ const kayitSil = useCallback((id) => {
 
 const sayfayaKaydir = useCallback((index, align = "start") => {
   virtualizer.scrollToIndex(index, { align })
-  // İlk çağrı tahmini boyutlarla sıçrar; ölçüm tamamlandıktan
-  // sonra ikinci çağrı gerçek konuma düzeltir.
-  requestAnimationFrame(() => {
+  setTimeout(() => {
     virtualizer.scrollToIndex(index, { align })
-  })
+  }, 200)
 }, [virtualizer])
 
 
@@ -744,13 +742,17 @@ function sureGit(sureId, ayetNo) {
     ? ayetSayfasi(sureId, ayetNo, sayfaMap)
     : sureBaslangicSayfasi(sureId, sayfaMap)
   setMevcutSayfa(sayfa)
-  const index = sayfaListesi.findIndex(s => s.sayfaNo === sayfa)
-  if (index !== -1) sayfayaKaydir(index)
   setMenuAcik(false)
   setMenuArama("")
   setAcikSure(null)
   setAyetArama({})
   setPopup(null)
+  
+  // Menü kapandıktan sonra scroll yap
+  setTimeout(() => {
+    const index = sayfaListesi.findIndex(s => s.sayfaNo === sayfa)
+    if (index !== -1) sayfayaKaydir(index)
+  }, 300)
 }
 
 
@@ -1765,7 +1767,6 @@ function sureGit(sureId, ayetNo) {
               baslangic.style.scrollMarginTop = `${offset}px`
               baslangic.scrollIntoView({ behavior: "smooth", block: "start" })
               baslangic.style.scrollMarginTop = "0"
-              
               // Vurgulama kısmı
             setOdakAyet({ sureNo, ayetNo })
             setTimeout(() => setOdakAyet(null), 2000)

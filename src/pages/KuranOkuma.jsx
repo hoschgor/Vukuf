@@ -604,7 +604,7 @@ const cokSatir = wrapAktif && barYuksekligi > tekSatirYuksekligi * 1.0
     estimateSize: (index) => {
       return sayfaYukseklikleri[index] || (isMobile ? 500 : 700)
     },
-    overscan: 3,
+    overscan: isMobile ? 4:3,
   })
 
 // ════════════════════════════════════════════════════════════════
@@ -741,6 +741,7 @@ function sureGit(sureId, ayetNo) {
   const sayfa = ayetNo
     ? ayetSayfasi(sureId, ayetNo, sayfaMap)
     : sureBaslangicSayfasi(sureId, sayfaMap)
+  
   setMevcutSayfa(sayfa)
   setMenuAcik(false)
   setMenuArama("")
@@ -748,10 +749,53 @@ function sureGit(sureId, ayetNo) {
   setAyetArama({})
   setPopup(null)
   
-  // Menü kapandıktan sonra scroll yap
+  // Hedef sayfa indeksini bul
+  const hedefIndex = sayfaListesi.findIndex(s => s.sayfaNo === sayfa)
+  if (hedefIndex === -1) return
+  
+  // 3 aşamalı kontrol
+  let denemeSayisi = 0
+  const maxDeneme = 3
+  
+  function scrollKontrol() {
+    const el = scrollRef.current
+    if (!el) return
+    
+    const items = virtualizer.getVirtualItems()
+    const targetItem = items.find(item => item.index === hedefIndex)
+    
+    if (!targetItem) {
+      // Henüz render olmamış, bekle ve tekrar dene
+      if (denemeSayisi < maxDeneme) {
+        denemeSayisi++
+        setTimeout(scrollKontrol, 200)
+      }
+      return
+    }
+    
+    const hedefPozisyon = targetItem.start
+    const mevcutPozisyon = el.scrollTop
+    const fark = Math.abs(mevcutPozisyon - hedefPozisyon)
+    
+    // Eğer doğru yerdeyse (20px tolerans)
+    if (fark < 20) {
+      return // Tamam, işlem bitti
+    }
+    
+    // Yanlış yerdeyse düzelt
+    el.scrollTop = hedefPozisyon
+    
+    // Tekrar kontrol et
+    if (denemeSayisi < maxDeneme) {
+      denemeSayisi++
+      setTimeout(scrollKontrol, 150)
+    }
+  }
+  
+  // İlk denemeyi başlat
   setTimeout(() => {
-    const index = sayfaListesi.findIndex(s => s.sayfaNo === sayfa)
-    if (index !== -1) sayfayaKaydir(index)
+    virtualizer.scrollToIndex(hedefIndex, { align: "start" })
+    setTimeout(scrollKontrol, 100)
   }, 300)
 }
 

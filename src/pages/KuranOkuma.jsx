@@ -109,6 +109,7 @@ export default function KuranOkuma({ kitap }) {
   // ── Veri
   const [mushafData, setMushafData] = useState([])
   const [yukleniyor, setYukleniyor] = useState(true)
+  const [scrollKilitli, setScrollKilitli] = useState(false)
 
   // ── Popup
   const [popup, setPopup] = useState(null)
@@ -528,20 +529,18 @@ const cokSatir = wrapAktif && barYuksekligi > tekSatirYuksekligi * 1.0
   }, [sayfaMap])
 
     useEffect(() => {
-    if (yukleniyor || !sayfaListesi.length) return
-    const index = sayfaListesi.findIndex(s => s.sayfaNo === mevcutSayfa)
-    if (index === -1) return
+  if (yukleniyor || !sayfaListesi.length) return
+  if (scrollKilitli) return // Kilitliyken scroll yapma
+  
+  const index = sayfaListesi.findIndex(s => s.sayfaNo === mevcutSayfa)
+  if (index === -1) return
+  
+  const ilkYukleme = !sessionStorage.getItem("vukuf-ilk-yukleme")
+  if (ilkYukleme) {
     virtualizer.scrollToIndex(index, { align: "start" })
-    // Sayfa içi scroll pozisyonunu yükle
-    const kayitliScroll = localStorage.getItem("vukuf-son-scroll")
-    if (kayitliScroll) {
-      setTimeout(() => {
-        const el = scrollRef.current
-        if (!el) return
-        el.scrollTop = parseInt(kayitliScroll)
-      }, 200)
-    }
-  }, [yukleniyor, sayfaListesi.length])
+    sessionStorage.setItem("vukuf-ilk-yukleme", "true")
+  }
+}, [yukleniyor, sayfaListesi.length, scrollKilitli])
 
   // ── SAYFA YÜKSEKLİKLERİ ──
   const sayfaYukseklikleri = useMemo(() => {
@@ -663,10 +662,8 @@ const kayitSil = useCallback((id) => {
 
 
 const sayfayaKaydir = useCallback((index, align = "start") => {
+  // Tek seferlik scroll
   virtualizer.scrollToIndex(index, { align })
-  setTimeout(() => {
-    virtualizer.scrollToIndex(index, { align })
-  }, 200)
 }, [virtualizer])
 
 
@@ -732,15 +729,24 @@ useEffect(() => {
   if (n >= 1 && n <= toplamSayfa) {
     setMevcutSayfa(n)
     const index = sayfaListesi.findIndex(s => s.sayfaNo === n)
-    if (index !== -1) sayfayaKaydir(index)
+    if (index !== -1) {
+      // Smooth scroll ile git
+      virtualizer.scrollToIndex(index, { 
+        align: "start",
+        behavior: "smooth" 
+      })
+    }
     setPopup(null)
   }
 }
 
-function sureGit(sureId, ayetNo) {
+  function sureGit(sureId, ayetNo) {
   const sayfa = ayetNo
     ? ayetSayfasi(sureId, ayetNo, sayfaMap)
     : sureBaslangicSayfasi(sureId, sayfaMap)
+  
+  // Scroll'u KİLİTLE
+  setScrollKilitli(true)
   
   setMevcutSayfa(sayfa)
   setMenuAcik(false)
@@ -749,9 +755,11 @@ function sureGit(sureId, ayetNo) {
   setAyetArama({})
   setPopup(null)
   
-  // Hedef sayfa indeksini bul
   const hedefIndex = sayfaListesi.findIndex(s => s.sayfaNo === sayfa)
-  if (hedefIndex === -1) return
+  if (hedefIndex === -1) {
+    setScrollKilitli(false)
+    return
+  }
   
   // 3 aşamalı kontrol
   let denemeSayisi = 0
@@ -765,10 +773,11 @@ function sureGit(sureId, ayetNo) {
     const targetItem = items.find(item => item.index === hedefIndex)
     
     if (!targetItem) {
-      // Henüz render olmamış, bekle ve tekrar dene
       if (denemeSayisi < maxDeneme) {
         denemeSayisi++
         setTimeout(scrollKontrol, 200)
+      } else {
+        setScrollKilitli(false)
       }
       return
     }
@@ -777,9 +786,11 @@ function sureGit(sureId, ayetNo) {
     const mevcutPozisyon = el.scrollTop
     const fark = Math.abs(mevcutPozisyon - hedefPozisyon)
     
-    // Eğer doğru yerdeyse (20px tolerans)
+    // Doğru yerdeyse (20px tolerans)
     if (fark < 20) {
-      return // Tamam, işlem bitti
+      setScrollKilitli(false)
+      odaklanHedefe()
+      return
     }
     
     // Yanlış yerdeyse düzelt
@@ -789,14 +800,47 @@ function sureGit(sureId, ayetNo) {
     if (denemeSayisi < maxDeneme) {
       denemeSayisi++
       setTimeout(scrollKontrol, 150)
+    } else {
+      setScrollKilitli(false)
+      setTimeout(odaklanHedefe, 200)
     }
   }
   
-  // İlk denemeyi başlat
+  function odaklanHedefe() {
+    const el = scrollRef.current
+    if (!el) return
+    
+    if (ayetNo) {
+      const ayetEl = el.querySelector(`[data-sure="${sureId}"][data-ayet="${ayetNo}"]`)
+      if (ayetEl) {
+        const offset = (barKonum === "ust" ? barYuksekligi : 0) +
+          (player.durum !== "kapali" ? playerBarYuksekligi : 0) + 20
+        ayetEl.style.scrollMarginTop = `${offset}px`
+        ayetEl.scrollIntoView({ behavior: "smooth", block: "start" })
+        setTimeout(() => {
+          ayetEl.style.scrollMarginTop = "0"
+          setOdakAyet({ sureNo: sureId, ayetNo })
+          setTimeout(() => setOdakAyet(null), 2000)
+        }, 400)
+      }
+    } else {
+      const sureEl = el.querySelector(`[data-sure-baslik="${sureId}"]`)
+      if (sureEl) {
+        const offset = (barKonum === "ust" ? barYuksekligi : 0) +
+          (player.durum !== "kapali" ? playerBarYuksekligi : 0) + 8
+        sureEl.style.scrollMarginTop = `${offset}px`
+        sureEl.scrollIntoView({ behavior: "smooth", block: "start" })
+        setTimeout(() => {
+          sureEl.style.scrollMarginTop = "0"
+        }, 400)
+      }
+    }
+  }
+  
   setTimeout(() => {
     virtualizer.scrollToIndex(hedefIndex, { align: "start" })
     setTimeout(scrollKontrol, 100)
-  }, 300)
+  }, 100)
 }
 
 
@@ -882,6 +926,35 @@ function sureGit(sureId, ayetNo) {
   flexShrink: 0,
 })
 
+// panelStil fonksiyonuna benzer bir stil oluşturalım
+const menuStil = {
+  position: "fixed",
+  width: "280px",
+  flexShrink: 0,
+  background: theme.surface,
+  borderRight: `1px solid ${theme.border}`,
+  display: "flex",
+  flexDirection: "column",
+  zIndex: 80,
+  // Bar ve player bar'ın toplam yüksekliğini hesapla
+  top: barKonum === "ust" 
+    ? `${barYuksekligi + (player.durum !== "kapali" ? playerBarYuksekligi : 0)}px` 
+    : "0px",
+  bottom: barKonum === "alt" 
+    ? `${barYuksekligi + (player.durum !== "kapali" ? playerBarYuksekligi : 0)}px` 
+    : "0px",
+  ...(isMobile ? { left: 0 } : {}),
+}
+
+// Menü içeriği için padding hesapla (panelStil'deki gibi)
+const playerBarOffset = player.durum !== "kapali" 
+  ? (isMobile ? playerBarYuksekligi - 41 : playerBarYuksekligi) 
+  : 0
+
+const menuIcerikPadding = {
+  paddingTop: barKonum === "ust" ? `${playerBarOffset}px` : "0px",
+  paddingBottom: barKonum === "alt" ? `${playerBarOffset}px` : "0px",
+}
 
   // ════════════════════════════════════════════════════════════════
   // SAYFAYA GİT POPUP
@@ -1309,7 +1382,7 @@ function sureGit(sureId, ayetNo) {
             <span style={{ fontSize: `${Math.round((isMobile ? 9 : 11) * barUiOlcegi)}px`, }}>{sureBilgisiGoster ? "Açık" : "Kapalı"}</span>
           </button>
         </div>
-        <div style={{ position: "relative" }}>
+        <div style={{ position: "relative", zIndex: 300 }}>
           <KariSecici
             kariId={player.kariId}
             setKariId={player.setKariId}
@@ -1636,100 +1709,160 @@ function sureGit(sureId, ayetNo) {
       )}
       {/* Sure menüsü */}
       {menuAcik && (
-        <>
-          <div
-            onClick={() => setMenuAcik(false)}
-            style={{ 
-              position: "fixed", 
-              inset: 0, 
-              zIndex: 78,
-              background: "transparent",
-              pointerEvents: "none",
-            }}
-          />
-          <div 
-          className="sure-menusu"
+  <>
+    <div
+      onClick={() => setMenuAcik(false)}
+      style={{ 
+        position: "fixed", 
+        inset: 0, 
+        zIndex: 78,
+        background: "transparent",
+        pointerEvents: "none",
+      }}
+    />
+    <div 
+      className="sure-menusu"
+      style={menuStil}
+    >
+      <div style={{ 
+        padding: "12px 16px", 
+        borderBottom: `1px solid ${theme.border}`, 
+        display: "flex", 
+        alignItems: "center", 
+        gap: "8px" 
+      }}>
+        <Search size={Math.round((isMobile ? 12 : 16) * barUiOlcegi)} color={theme.accent} />
+        <input
+          type="text"
+          placeholder="Sûre ismi..."
+          value={menuArama}
+          onChange={e => setMenuArama(e.target.value)}
+          autoFocus
           style={{ 
-            position: "fixed", 
-            width: "280px", flexShrink: 0, 
-            background: theme.surface, 
-            borderRight: `1px solid ${theme.border}`,
-            display: "flex", flexDirection: "column", 
-            zIndex: 80,
-            top: barKonum === "ust" 
-              ? `${barYuksekligi + (player.durum !== "kapali" ? playerBarYuksekligi : 0)}px` 
-              : "0px",
-            bottom: barKonum === "alt" 
-              ? `${barYuksekligi + (player.durum !== "kapali" ? playerBarYuksekligi : -58)}px` 
-              : "0px",
-            ...(isMobile ? { left: 0 } : {}),
-          }}>
-            <div style={{ padding: "12px 16px", borderBottom: `1px solid ${theme.border}`, display: "flex", alignItems: "center", gap: "8px" }}>
-              <div style={{ 
-                padding: "10px 12px", 
-                borderBottom: `1px solid ${theme.border}`, 
-                display: "flex", 
-                alignItems: "center", 
-                gap: "8px",
-              }}>
-                <Search size={Math.round((isMobile ? 12 : 16) * barUiOlcegi)} color={theme.accent} />
-                <input
-                  type="text"
-                  placeholder="Sûre ismi..."
-                  value={menuArama}
-                  onChange={e => setMenuArama(e.target.value)}
-                  autoFocus
-                  style={{ flex: 1, background: "transparent", border: "none", outline: "none", fontSize: `${Math.round((isMobile ? 11 : 12) * barUiOlcegi)}px`, color: theme.text }}
-                />
-                {menuArama && (
-                  <button onClick={() => setMenuArama("")} style={{ color: theme.textSecondary, display: "flex", background: "none", border: "none", cursor: "pointer" }}>
-                    <X size={Math.round((isMobile ? 12 : 16) * barUiOlcegi)} />
-                  </button>
-                )}
-              </div>
-              <button onClick={() => setMenuAcik(false)} style={{ color: theme.textSecondary, display: "flex", background: "none", border: "none", cursor: "pointer" }}>
-                <X size={Math.round((isMobile ? 12 : 16) * barUiOlcegi)} />
-              </button>
-            </div>
-            <div style={{  
-              flex: 1,  
-              overflowY: "auto",  
-              paddingTop: barKonum === "ust"
-                ? `${barYuksekligi + (player.durum !== "kapali" ? playerBarYuksekligi : -58) - 92}px`
-                : "8px",
-              paddingBottom: barKonum === "alt"
-                ? `${barYuksekligi + (player.durum !== "kapali" ? playerBarYuksekligi : -55) - 123}px`
-                : "8px",
-            }}>
+            flex: 1, 
+            background: "transparent", 
+            border: "none", 
+            outline: "none", 
+            fontSize: `${Math.round((isMobile ? 11 : 12) * barUiOlcegi)}px`, 
+            color: theme.text 
+          }}
+        />
+        {menuArama && (
+          <button 
+            onClick={() => setMenuArama("")} 
+            style={{ 
+              color: theme.textSecondary, 
+              display: "flex", 
+              background: "none", 
+              border: "none", 
+              cursor: "pointer" 
+            }}
+          >
+            <X size={Math.round((isMobile ? 12 : 16) * barUiOlcegi)} />
+          </button>
+        )}
+        <button 
+          onClick={() => setMenuAcik(false)} 
+          style={{ 
+            color: theme.textSecondary, 
+            display: "flex", 
+            background: "none", 
+            border: "none", 
+            cursor: "pointer" 
+          }}
+        >
+          <X size={Math.round((isMobile ? 12 : 16) * barUiOlcegi)} />
+        </button>
+      </div>
+      
+      <div style={{  
+        flex: 1,  
+        overflowY: "auto",
+        ...menuIcerikPadding,
+      }}>
               {filtreliSureler.map(sure => (
                 <div key={sure.id}>
-                  <div style={{ display: "flex", alignItems: "center", borderBottom: `1px solid ${theme.border}` }}>
+                  <div style={{ 
+                    display: "flex", 
+                    alignItems: "center", 
+                    borderBottom: `1px solid ${theme.border}` 
+                  }}>
                     <button
                       onClick={() => setAcikSure(acikSure === sure.id ? null : sure.id)}
-                      style={{ padding: "10px 8px", color: theme.accent, display: "flex", alignItems: "center", flexShrink: 0, background: "none", border: "none", cursor: "pointer" }}
+                      style={{ 
+                        padding: "10px 8px", 
+                        color: theme.accent, 
+                        display: "flex", 
+                        alignItems: "center", 
+                        flexShrink: 0, 
+                        background: "none", 
+                        border: "none", 
+                        cursor: "pointer" 
+                      }}
                     >
-                      {acikSure === sure.id ? <ChevronDown size={Math.round((isMobile ? 12 : 16) * barUiOlcegi)} /> : <ChevronRight size={Math.round((isMobile ? 12 : 16) * barUiOlcegi)}size={Math.round((isMobile ? 12 : 16) * barUiOlcegi)} />}
+                      {acikSure === sure.id 
+                        ? <ChevronDown size={Math.round((isMobile ? 12 : 16) * barUiOlcegi)} /> 
+                        : <ChevronRight size={Math.round((isMobile ? 12 : 16) * barUiOlcegi)} />
+                      }
                     </button>
                     <button
                       onClick={() => sureGit(sure.id)}
-                      style={{ flex: 1, display: "flex", alignItems: "center", gap: "8px", padding: "10px 8px 10px 0", textAlign: "left", background: "none", border: "none", cursor: "pointer", color: theme.text }}
+                      style={{ 
+                        flex: 1, 
+                        display: "flex", 
+                        alignItems: "center", 
+                        gap: "8px", 
+                        padding: "10px 8px 10px 0", 
+                        textAlign: "left", 
+                        background: "none", 
+                        border: "none", 
+                        cursor: "pointer", 
+                        color: theme.text 
+                      }}
                     >
-                      <span style={{ fontSize: `${Math.round((isMobile ? 11 : 12) * barUiOlcegi)}px`, color: theme.accent, minWidth: "20px" }}>{sure.id}.</span>
-                      <span style={{ fontSize: `${Math.round((isMobile ? 11 : 12) * barUiOlcegi)}px` }}>{sure.isim}</span>
-                      <span style={{ fontSize: `${Math.round((isMobile ? 11 : 12) * barUiOlcegi)}px`, color: theme.textSecondary, marginLeft: "auto", paddingRight: "8px" }}>{sure.ayetSayisi}</span>
+                      <span style={{ 
+                        fontSize: `${Math.round((isMobile ? 11 : 12) * barUiOlcegi)}px`, 
+                        color: theme.accent, 
+                        minWidth: "20px" 
+                      }}>
+                        {sure.id}.
+                      </span>
+                      <span style={{ fontSize: `${Math.round((isMobile ? 11 : 12) * barUiOlcegi)}px` }}>
+                        {sure.isim}
+                      </span>
+                      <span style={{ 
+                        fontSize: `${Math.round((isMobile ? 11 : 12) * barUiOlcegi)}px`, 
+                        color: theme.textSecondary, 
+                        marginLeft: "auto", 
+                        paddingRight: "8px" 
+                      }}>
+                        {sure.ayetSayisi}
+                      </span>
                     </button>
                   </div>
                   {acikSure === sure.id && (
-                    <div style={{ background: `${theme.accent}08`, borderBottom: `1px solid ${theme.border}` }}>
-                      <div style={{ padding: "8px 12px", borderBottom: `1px solid ${theme.border}` }}>
+                    <div style={{ 
+                      background: `${theme.accent}08`, 
+                      borderBottom: `1px solid ${theme.border}` 
+                    }}>
+                      <div style={{ 
+                        padding: "8px 12px", 
+                        borderBottom: `1px solid ${theme.border}` 
+                      }}>
                         <div style={{
-                          display: "flex", alignItems: "center", gap: "6px",
-                          background: theme.background, border: `1px solid ${theme.accent}30`,
-                          borderRadius: "16px", padding: "4px 10px",
+                          display: "flex", 
+                          alignItems: "center", 
+                          gap: "6px",
+                          background: theme.background, 
+                          border: `1px solid ${theme.accent}30`,
+                          borderRadius: "16px", 
+                          padding: "4px 10px",
                         }}>
                           <Search size={Math.round((isMobile ? 12 : 16) * barUiOlcegi)} color={theme.accent} />
                           <input
-                            type="number" min="1" max={sure.ayetSayisi}
+                            type="number" 
+                            min="1" 
+                            max={sure.ayetSayisi}
                             placeholder={`1 - ${sure.ayetSayisi}`}
                             value={ayetArama[sure.id] || ""}
                             onChange={e => setAyetArama(prev => ({ ...prev, [sure.id]: e.target.value }))}
@@ -1739,27 +1872,56 @@ function sureGit(sureId, ayetNo) {
                                 if (no >= 1 && no <= sure.ayetSayisi) sureGit(sure.id, no)
                               }
                             }}
-                            style={{ flex: 1, background: "transparent", border: "none", outline: "none", fontSize: `${Math.round((isMobile ? 11 : 12) * barUiOlcegi)}px`, color: theme.text, width: "60px" }}
+                            style={{ 
+                              flex: 1, 
+                              background: "transparent", 
+                              border: "none", 
+                              outline: "none", 
+                              fontSize: `${Math.round((isMobile ? 11 : 12) * barUiOlcegi)}px`, 
+                              color: theme.text, 
+                              width: "60px" 
+                            }}
                           />
                           {ayetArama[sure.id] && (
                             <button
-                              onClick={() => { const no = parseInt(ayetArama[sure.id]); if (no >= 1 && no <= sure.ayetSayisi) sureGit(sure.id, no) }}
-                              style={{ fontSize: `${Math.round((isMobile ? 11 : 12) * barUiOlcegi)}px`, color: theme.accent, background: "none", border: "none", cursor: "pointer" }}
+                              onClick={() => { 
+                                const no = parseInt(ayetArama[sure.id]); 
+                                if (no >= 1 && no <= sure.ayetSayisi) sureGit(sure.id, no) 
+                              }}
+                              style={{ 
+                                fontSize: `${Math.round((isMobile ? 11 : 12) * barUiOlcegi)}px`, 
+                                color: theme.accent, 
+                                background: "none", 
+                                border: "none", 
+                                cursor: "pointer" 
+                              }}
                             >
                               Git
                             </button>
                           )}
                         </div>
                       </div>
-                      <div style={{ display: "flex", flexWrap: "wrap", gap: "4px", padding: "8px 12px", maxHeight: "200px", overflowY: "auto" }}>
+                      <div style={{ 
+                        display: "flex", 
+                        flexWrap: "wrap", 
+                        gap: "4px", 
+                        padding: "8px 12px", 
+                        maxHeight: "200px", 
+                        overflowY: "auto" 
+                      }}>
                         {Array.from({ length: sure.ayetSayisi }, (_, i) => i + 1).map(no => (
                           <button
                             key={no}
                             onClick={() => sureGit(sure.id, no)}
                             style={{
-                              width: "32px", height: "28px", fontSize: `${Math.round((isMobile ? 11 : 12) * barUiOlcegi)}px`,
-                              color: theme.text, background: theme.background,
-                              border: `1px solid ${theme.border}`, borderRadius: "4px", cursor: "pointer",
+                              width: "32px", 
+                              height: "28px", 
+                              fontSize: `${Math.round((isMobile ? 11 : 12) * barUiOlcegi)}px`,
+                              color: theme.text, 
+                              background: theme.background,
+                              border: `1px solid ${theme.border}`, 
+                              borderRadius: "4px", 
+                              cursor: "pointer",
                             }}
                             onMouseEnter={e => { e.currentTarget.style.background = `${theme.accent}20` }}
                             onMouseLeave={e => { e.currentTarget.style.background = theme.background }}
@@ -1776,6 +1938,7 @@ function sureGit(sureId, ayetNo) {
           </div>
         </>
       )}
+      
 
       {/* Ana içerik alanı */}
       <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, overflow: "hidden", position: "relative" }}>

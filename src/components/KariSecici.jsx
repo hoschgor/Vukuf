@@ -8,17 +8,19 @@ export default function KariSecici({ kariId, setKariId, theme, barUiOlcegi = 1, 
   const aktifKari = KARILAR.find(k => k.id === kariId) || KARILAR[0]
 
   function secKari(id) {
-    setKariId(id)   // useAudioPlayer içinde localStorage'a da kaydedilir
+    setKariId(id)
     setAcik(false)
   }
 
   return (
-    <div>
+    <div style={{ position: "relative" }}>
       <div style={{
-        fontSize: `${Math.round(11 * barUiOlcegi)}px`, color: theme.textSecondary,
-        marginBottom: "8px", letterSpacing: "1px",
+        fontSize: `${Math.round(11 * barUiOlcegi)}px`, 
+        color: theme.textSecondary,
+        marginBottom: "8px", 
+        letterSpacing: "1px",
       }}>
-        KARİ
+        KÂRÎ
       </div>
 
       {/* Seçili kari butonu */}
@@ -26,11 +28,16 @@ export default function KariSecici({ kariId, setKariId, theme, barUiOlcegi = 1, 
         onClick={() => setAcik(!acik)}
         style={{
           width: "100%",
-          display: "flex", alignItems: "center", justifyContent: "space-between",
-          padding: "8px 12px", borderRadius: "8px",
+          display: "flex", 
+          alignItems: "center", 
+          justifyContent: "space-between",
+          padding: "8px 12px", 
+          borderRadius: "8px",
           border: `1px solid ${acik ? theme.accent : theme.border}`,
           background: acik ? `${theme.accent}10` : theme.background,
-          color: theme.text, fontSize: `${Math.round(13 * barUiOlcegi)}px`, cursor: "pointer",
+          color: theme.text, 
+          fontSize: `${Math.round(13 * barUiOlcegi)}px`, 
+          cursor: "pointer",
           transition: "all 0.15s",
         }}
       >
@@ -48,36 +55,40 @@ export default function KariSecici({ kariId, setKariId, theme, barUiOlcegi = 1, 
         />
       </button>
 
-      {/* Dropdown */}
+      {/* Dropdown - yukarı doğru açılır */}
       {acik && (
-        <>
-          {/* Backdrop */}
-          <div
-            onClick={() => setAcik(false)}
-            style={{ position: "fixed", inset: 0, zIndex: 195 }}
-          />
+        <div style={{
+          position: "absolute",
+          bottom: "calc(100% + 4px)",
+          left: 0, 
+          right: 0,
+          background: theme.surface,
+          border: `1px solid ${theme.border}`,
+          borderRadius: "10px",
+          overflow: "hidden",
+          zIndex: 10,
+          boxShadow: "0 -4px 20px rgba(0,0,0,0.12)",
+          maxHeight: "200px",
+          display: "flex",
+          flexDirection: "column",
+        }}>
+          {/* Başlık - sabit kalır */}
           <div style={{
-            position: "absolute",
-            // Ayarlar panelinin konumuna göre açılır
-            [barKonum === "alt" ? "bottom" : "top"]: "calc(100% + 4px)",
-            left: 0, right: 0,
-            background: theme.surface,
-            border: `1px solid ${theme.border}`,
-            borderRadius: "10px",
-            overflow: "hidden",
-            zIndex: 196,
-            boxShadow: "0 4px 20px rgba(0,0,0,0.12)",
+            padding: "8px 12px",
+            fontSize: `${Math.round(10 * barUiOlcegi)}px`, 
+            color: theme.textSecondary,
+            letterSpacing: "1px",
+            borderBottom: `1px solid ${theme.border}`,
+            flexShrink: 0,
           }}>
-            {/* Başlık */}
-            <div style={{
-              padding: "8px 12px",
-              fontSize: `${Math.round(10 * barUiOlcegi)}px`, color: theme.textSecondary,
-              letterSpacing: "1px",
-              borderBottom: `1px solid ${theme.border}`,
-            }}>
-              KARİ SEÇ
-            </div>
+            KÂRÎ SEÇ
+          </div>
 
+          {/* Liste - kaydırılabilir */}
+          <div style={{
+            overflowY: "auto",
+            flex: 1,
+          }}>
             {KARILAR.map((kari, i) => {
               const secili = kariId === kari.id
               return (
@@ -86,7 +97,8 @@ export default function KariSecici({ kariId, setKariId, theme, barUiOlcegi = 1, 
                   onClick={() => secKari(kari.id)}
                   style={{
                     width: "100%",
-                    display: "flex", alignItems: "center",
+                    display: "flex", 
+                    alignItems: "center",
                     justifyContent: "space-between",
                     padding: "10px 12px",
                     border: "none",
@@ -95,9 +107,16 @@ export default function KariSecici({ kariId, setKariId, theme, barUiOlcegi = 1, 
                       : "none",
                     background: secili ? `${theme.accent}12` : "transparent",
                     color: secili ? theme.accent : theme.text,
-                    fontSize: `${Math.round(13 * barUiOlcegi)}px`, cursor: "pointer",
+                    fontSize: `${Math.round(13 * barUiOlcegi)}px`, 
+                    cursor: "pointer",
                     textAlign: "left",
                     transition: "background 0.1s",
+                  }}
+                  onMouseEnter={e => {
+                    if (!secili) e.currentTarget.style.background = `${theme.accent}08`
+                  }}
+                  onMouseLeave={e => {
+                    if (!secili) e.currentTarget.style.background = "transparent"
                   }}
                 >
                   <span>{kari.label}</span>
@@ -106,7 +125,7 @@ export default function KariSecici({ kariId, setKariId, theme, barUiOlcegi = 1, 
               )
             })}
           </div>
-        </>
+        </div>
       )}
     </div>
   )

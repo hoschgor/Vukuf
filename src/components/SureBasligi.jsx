@@ -18,6 +18,7 @@ export default function SureBasligi({ sure, theme, onTikla, player }) {
   return (
     <div
       onClick={onTikla}
+      data-sure-baslik={sure.id}
       style={{ 
         cursor: "pointer", userSelect: "none", margin: "32px 0 8px", 
         direction: "ltr", position: "relative"  // ← ekle

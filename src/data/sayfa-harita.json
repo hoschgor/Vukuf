@@ -2917,7 +2917,7 @@
   {
     "sayfa": 584,
     "sure": 79,
-    "ayet": 16
+    "ayet": 15
   },
   {
     "sayfa": 585,
@@ -2926,96 +2926,101 @@
   },
   {
     "sayfa": 586,
-    "sure": 81,
-    "ayet": 1
+    "sure": 80,
+    "ayet": 34
   },
   {
     "sayfa": 587,
-    "sure": 82,
-    "ayet": 1
+    "sure": 81,
+    "ayet": 21
   },
   {
     "sayfa": 588,
     "sure": 83,
-    "ayet": 7
+    "ayet": 1
   },
   {
     "sayfa": 589,
     "sure": 83,
-    "ayet": 35
+    "ayet": 27
   },
   {
     "sayfa": 590,
-    "sure": 85,
-    "ayet": 1
+    "sure": 84,
+    "ayet": 14
   },
   {
     "sayfa": 591,
-    "sure": 86,
-    "ayet": 1
+    "sure": 85,
+    "ayet": 12
   },
   {
     "sayfa": 592,
     "sure": 87,
-    "ayet": 16
+    "ayet": 1
   },
   {
     "sayfa": 593,
-    "sure": 89,
-    "ayet": 1
+    "sure": 88,
+    "ayet": 12
   },
   {
     "sayfa": 594,
     "sure": 89,
-    "ayet": 24
+    "ayet": 15
   },
   {
     "sayfa": 595,
-    "sure": 91,
-    "ayet": 1
+    "sure": 90,
+    "ayet": 8
   },
   {
     "sayfa": 596,
     "sure": 92,
-    "ayet": 15
-  },
-  {
-    "sayfa": 597,
-    "sure": 95,
     "ayet": 1
   },
   {
+    "sayfa": 597,
+    "sure": 93,
+    "ayet": 4
+  },
+  {
     "sayfa": 598,
+    "sure": 95,
+    "ayet": 6
+  },
+  {
+    "sayfa": 599,
     "sure": 97,
     "ayet": 1
   },
   {
-    "sayfa": 599,
-    "sure": 98,
-    "ayet": 8
-  },
-  {
     "sayfa": 600,
-    "sure": 100,
-    "ayet": 10
+    "sure": 99,
+    "ayet": 1
   },
   {
     "sayfa": 601,
-    "sure": 103,
+    "sure": 101,
     "ayet": 1
   },
   {
     "sayfa": 602,
-    "sure": 106,
+    "sure": 103,
     "ayet": 1
   },
   {
     "sayfa": 603,
-    "sure": 109,
+    "sure": 106,
     "ayet": 1
   },
   {
     "sayfa": 604,
+    "sure": 109,
+    "ayet": 1
+  },
+  {
+    "sayfa": 605,
     "sure": 112,
     "ayet": 1
   }

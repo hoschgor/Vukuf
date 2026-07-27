@@ -28,9 +28,9 @@ import {
 
 // ── Arapça font listesi
 const ARAPCA_FONTLAR = [
-  { id: "kfgqpc",    label: "KFGQPC Uthmanic (Önerilen)", style: "'KFGQPC Uthmanic', serif",  google: null },
+  { id: "scheherazade", label: "Scheherazade New (Önerilen)", style: "'Scheherazade New', serif", google: null },
+  { id: "kfgqpc",    label: "KFGQPC Uthmanic ", style: "'KFGQPC Uthmanic', serif",  google: null },
   { id: "noto-naskh", label: "Noto Naskh Arabic", style: "'Noto Naskh Arabic', serif", google: null },
-  { id: "scheherazade", label: "Scheherazade New", style: "'Scheherazade New', serif", google: null },
   { id: "lateef", label: "Lateef", style: "'Lateef', serif", google: null },
 ]
 
@@ -949,7 +949,7 @@ const menuStil = {
 // Menü içeriği için padding hesapla (panelStil'deki gibi)
 const playerBarOffset = player.durum !== "kapali" 
   ? (isMobile ? playerBarYuksekligi - 41 : playerBarYuksekligi) 
-  : 0
+  : -30
 
 const menuIcerikPadding = {
   paddingTop: barKonum === "ust" ? `${playerBarOffset}px` : "0px",

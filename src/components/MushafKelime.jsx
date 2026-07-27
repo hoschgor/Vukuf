@@ -1,21 +1,35 @@
 import { useState } from "react"
 import { useMediaQuery } from "../data/hooks/useMediaQuery"
 
-const VAKIF_RENKLERI = {
-  'م': '#e74c3c',
-  'ط': '#e67e22',
-  'ج': '#f39c12',
-  'ص': '#2ecc71',
-  'ق': '#3498db',
-  '∴': '#9b59b6',
+const VAKIF_CPS = new Set([0x615, 0x617, 0x06D8, 0x06D9, 0x06DA, 0x06DB, 0x06DC, 0x08D6, 0x08D1])
+
+const VAKIF_RENK = {
+  0x615:  '#e67e22',  // ؕ  ط lazım
+  0x617:  '#e74c3c',  // ؗ  م
+  0x06D8: '#3498db',  // ۘ  ق
+  0x06D9: '#f39c12',  // ۙ  ج
+  0x06DA: '#2ecc71',  // ۚ  ص
+  0x06DB: '#9b59b6',  // ۛ  مع muanaka
+  0x06DC: '#1abc9c',  // ۜ  س
+  0x08D6: '#95a5a6',  // ࣖ  rub el hizb
+  0x08D1: '#3498db',  // ࣑  قلى
 }
-// Component DIŞINA, VAKIF_RENKLERI'nin yanına ekleyin:
+
+function vakifMi(seg) {
+  return [...seg].some(c => VAKIF_CPS.has(c.codePointAt(0)))
+}
+
+function vakifRengiAl(vakifStr) {
+  const cp = [...vakifStr][0]?.codePointAt(0)
+  return VAKIF_RENK[cp] || '#e67e22'
+}
 function lafzatullahMi(arabic) {
   const temiz = arabic
     .replace(/[\u0671\u0622\u0623\u0625]/g, '\u0627')
-    .replace(/[\u064B-\u065F\u06D6-\u06ED]/g, '')
+    .replace(/[\u064B-\u065F\u0670\u06D6-\u06ED]/g, '')
     .trim()
-  return temiz === '\u0627\u0644\u0644\u0647'
+  // الله tam kelime veya لله (لِلّٰهِ gibi) içeriyor mu
+  return temiz === '\u0627\u0644\u0644\u0647' || temiz.includes('\u0644\u0644\u0647')
 }
 
 export default function MushafKelime({
@@ -48,7 +62,7 @@ export default function MushafKelime({
         marginTop: hasUpperIndicator ? `${yaziBoyutu * 0.35}px` : "0",
         paddingLeft: isMobile ? `${2 + harfAraligi * 3}px` : "3px",
         paddingRight: isMobile ? `${2 + harfAraligi * 3}px` : "3px",
-        paddingBottom: "2px", // Alt padding ekle
+        paddingBottom: "2px",
         borderRadius: "3px",
         background: kayitKonumModu
           ? "transparent"
@@ -58,10 +72,8 @@ export default function MushafKelime({
         boxShadow: kayitKonumModu ? "none" : aktif ? `inset 0 -2px 0 ${theme.accent}` : "none",
         transition: "background 0.15s",
         whiteSpace: "nowrap",
-        // ÖNEMLİ: verticalAlign: "middle" ile hizala
         verticalAlign: "middle",
         userSelect: "none",
-        // ÖNEMLİ: lineHeight'i miras al
         lineHeight: lineHeight,
         WebkitTapHighlightColor: kayitKonumModu ? "transparent" : undefined,
       }}
@@ -71,7 +83,6 @@ export default function MushafKelime({
         <span
           style={{
             position: "absolute",
-            // ÖNEMLİ: Top değerini negatif yaparak kelimenin üzerine çık
             top: `-${yaziBoyutu * 0.09 }px`,
             left: isMobile ? "10px" : "3px",
             transform: "translateX(-10%)",
@@ -93,7 +104,6 @@ export default function MushafKelime({
         <span
           style={{
             position: "absolute",
-            // ÖNEMLİ: Vakıf varsa üstüne, yoksa kelimenin üstüne
             top: kelime.vakif ? `-${yaziBoyutu * 0.1}px` : `-${yaziBoyutu * 0.05}px`,
             right: kelime.vakif ? "auto" : "0",
             left: kelime.vakif ? "auto" : "40%",
@@ -140,16 +150,25 @@ export default function MushafKelime({
           }
           const segmenter = new Intl.Segmenter('ar', { granularity: 'grapheme' })
           const segmentler = [...segmenter.segment(kelime.arabic)].map(s => s.segment)
-          return segmentler.map((seg, i) => (
-            <span
-              key={i}
-              style={{
-                marginLeft: (!isMobile && i !== segmentler.length - 1) ? `${harfAraligi}px` : '0px',
-              }}
-            >
-              {seg}
-            </span>
-          ))
+          return segmentler.flatMap((seg, i) => {
+            const chars = [...seg]
+            const normal = chars.filter(c => !VAKIF_CPS.has(c.codePointAt(0))).join('')
+            const vakif = chars.filter(c => VAKIF_CPS.has(c.codePointAt(0))).join('')
+            const marginStyle = (!isMobile && i !== segmentler.length - 1) ? `${harfAraligi}px` : '0px'
+            
+            const spans = []
+            if (normal) spans.push(
+              <span key={`${i}-n`} style={{ marginLeft: marginStyle }}>{normal}</span>
+            )
+            if (vakif) spans.push(
+              <span key={`${i}-v`} style={{
+                fontFamily: "'Scheherazade New', 'Noto Naskh Arabic', serif",
+                color: vakifRengiAl(vakif),
+                fontSize: `${yaziBoyutu * 0.75}px`,
+              }}>{vakif}</span>
+            )
+            return spans
+          })
         })()}
       </span>
     </span>

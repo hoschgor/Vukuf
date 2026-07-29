@@ -14,6 +14,7 @@ import KitapAyraci from "../components/KitapAyraci"
 import KayitPaneli from "../components/KayitPaneli"
 import KariSecici from "../components/KariSecici"
 import KelimePopup from "../components/KelimePopup"
+import kelimeMapping from "../data/kelime-mapping.json"
 import AyetPopup from "../components/AyetPopup"
 import { useMushaf, sureBaslangicSayfasi, ayetSayfasi } from "../data/hooks/useMushaf"
 import useAudioPlayer from "../data/hooks/useAudioPlayer"
@@ -28,8 +29,8 @@ import {
 
 // ── Arapça font listesi
 const ARAPCA_FONTLAR = [
-  { id: "scheherazade", label: "Scheherazade New (Önerilen)", style: "'Scheherazade New', serif", google: null },
-  { id: "kfgqpc",    label: "KFGQPC Uthmanic ", style: "'KFGQPC Uthmanic', serif",  google: null },
+  { id: "kfgqpc",    label: "KFGQPC Uthmanic (Önerilen)", style: "'KFGQPC Uthmanic', serif",  google: null },
+  { id: "scheherazade", label: "Scheherazade New", style: "'Scheherazade New', serif", google: null },
   { id: "noto-naskh", label: "Noto Naskh Arabic", style: "'Noto Naskh Arabic', serif", google: null },
   { id: "lateef", label: "Lateef", style: "'Lateef', serif", google: null },
 ]
@@ -53,7 +54,7 @@ const HAZIR_RENKLER = [
 
 // ── Yardımcı fonksiyonlar
 function normalize(k) {
-  k = k.replace(/[\u0610-\u061A\u064B-\u065F\u0640\u0670\u06D6-\u06DC\u06DF-\u06E4\u06E7\u06E8\u06EA-\u06ED\u06E1]/g, "")
+  k = k.replace(/[\u0610-\u061A\u064B-\u065F\u0640\u0670\u06D6-\u06DC\u06DF-\u06E4\u06E7\u06E8\u06EA-\u06ED\u06E1\u08D1\u08D6]/g, "")
   k = k.replace(/[\u0671\u0622\u0623\u0625]/g, "\u0627")
   k = k.replace(/^\u0627\u0644/, "\u0644")
   return k.trim()
@@ -850,7 +851,8 @@ useEffect(() => {
 
   const kelimeTikla = useCallback((kelime, sure, ayet, e) => {
     const lugatSonuc = lugat(kelime.arabic)
-    const position = kelime.id ? parseInt(kelime.id.split(":")[2]) : 0
+    const mappedId = kelimeMapping[kelime.id] || kelime.id
+    const position = mappedId ? parseInt(mappedId.split(":")[2]) : 0
     setPopup({
       tip: "kelime",
       kelime: {

@@ -1,5 +1,12 @@
 import { useState, useRef } from "react"
 import { Play, Pause, X } from "lucide-react"
+import kelimeMapping from "../data/kelime-mapping.json"
+
+function mappedPosition(kelimeId) {
+  const mapped = kelimeMapping[kelimeId]
+  if (!mapped) return null
+  return parseInt(mapped.split(':')[2])
+}
 
 const WBW_BASE = "https://audio.qurancdn.com/wbw"
 

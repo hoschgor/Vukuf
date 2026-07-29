@@ -1,18 +1,51 @@
 import { useState } from "react"
 import { useMediaQuery } from "../data/hooks/useMediaQuery"
 
-const VAKIF_CPS = new Set([0x615, 0x617, 0x06D8, 0x06D9, 0x06DA, 0x06DB, 0x06DC, 0x08D6, 0x08D1])
+const VAKIF_CPS = new Set([0x615, 0x617, 0x06D8, 0x06D9, 0x08D6, 0x08D7, 0x08DE])
+const OZEL_CPS = new Set([0x08D1, 0x08D2, 0x08D9, 0x06DC])
+const CIM_CPS = new Set([0x06DA])
 
+const CIM_RENK = '#f39c12'
 const VAKIF_RENK = {
-  0x615:  '#e67e22',  // ؕ  ط lazım
-  0x617:  '#e74c3c',  // ؗ  م
-  0x06D8: '#3498db',  // ۘ  ق
-  0x06D9: '#f39c12',  // ۙ  ج
-  0x06DA: '#2ecc71',  // ۚ  ص
-  0x06DB: '#9b59b6',  // ۛ  مع muanaka
-  0x06DC: '#1abc9c',  // ۜ  س
-  0x08D6: '#95a5a6',  // ࣖ  rub el hizb
-  0x08D1: '#3498db',  // ࣑  قلى
+  0x615:  '#e67e22',
+  0x617:  '#e74c3c',
+  0x06D8: '#3498db',
+  0x06D9: '#f39c12',
+  0x06DA: '#2ecc71',
+  0x06DB: '#9b59b6',
+  0x06DC: '#1abc9c',
+  0x08D6: '#95a5a6',
+  0x08D7: '#3498db',
+  0x08DE: '#3498db',
+}
+const VAKIF_RENKLERI = {
+  'ط': '#e67e22',
+  'م': '#e74c3c',
+  'ج': '#f39c12',
+  'ص': '#2ecc71',
+  'مع': '#9b59b6',
+  'ق': '#3498db',
+  'س': '#1abc9c',
+  'لا': '#e67e22',
+}
+const OZEL_SEMBOL = {
+  0x08D1: 'قصر',
+  0x08D2: 'مد',
+  0x08D9: 'ن',
+  0x06DC: 'سكته',
+}
+const OZEL_RENK = {
+  0x08D1: '#c0392b',
+  0x08D2: '#c0392b',
+  0x08D9: '#c0392b',
+  0x06DC: '#8e44ad',
+}
+
+function besmeleMi(kelimeId) {
+  const [sure, ayet, kelime] = kelimeId.split(':').map(Number)
+  if (sure === 1 && ayet === 1) return true
+  if (sure === 27 && ayet === 30 && kelime >= 5 && kelime <= 8) return true
+  return false
 }
 
 function vakifMi(seg) {
@@ -23,13 +56,40 @@ function vakifRengiAl(vakifStr) {
   const cp = [...vakifStr][0]?.codePointAt(0)
   return VAKIF_RENK[cp] || '#e67e22'
 }
+
 function lafzatullahMi(arabic) {
   const temiz = arabic
     .replace(/[\u0671\u0622\u0623\u0625]/g, '\u0627')
     .replace(/[\u064B-\u065F\u0670\u06D6-\u06ED]/g, '')
     .trim()
-  // الله tam kelime veya لله (لِلّٰهِ gibi) içeriyor mu
   return temiz === '\u0627\u0644\u0644\u0647' || temiz.includes('\u0644\u0644\u0647')
+}
+
+// Şedde+esre düzeltme fonksiyonu
+function seddeEsreDuzelt(metin, font) {
+  if (font.toLowerCase().includes('kfgqpc')) return { metin, hasSeddeEsre: false }
+  
+  // Şedde+esre'yi tespit et ve esreyi kaldır (manuel ekleyeceğiz)
+  let duzeltilmis = metin
+  let hasSeddeEsre = false
+  
+  // Karakterleri tek tek kontrol et
+  let sonuc = ''
+  for (let i = 0; i < metin.length; i++) {
+    const char = metin[i]
+    const nextChar = metin[i+1] || ''
+    
+    if (char === '\u0651' && nextChar === '\u0650') {
+      // Şedde+esre bulundu, esreyi atla
+      sonuc += '\u0651' // sadece şeddeyi ekle
+      i++ // esreyi atla
+      hasSeddeEsre = true
+    } else {
+      sonuc += char
+    }
+  }
+  
+  return { metin: sonuc, hasSeddeEsre }
 }
 
 export default function MushafKelime({
@@ -45,9 +105,15 @@ export default function MushafKelime({
 }) {
   const [hover, setHover] = useState(false)
   const isMobile = useMediaQuery("(max-width: 768px)")
-  const vakifRengi = kelime.vakif ? (VAKIF_RENKLERI[kelime.vakif] || theme.accent) : null
   const lafizkontrol = lafzatullahMi(kelime.arabic)
+  const besmelekontrol = besmeleMi(kelime.id)
   const hasUpperIndicator = kelime.vakif || kelime.secde
+  const vakifRengi = kelime.vakif ? vakifRengiAl(kelime.vakif) : null
+  
+  const isKfgqpc = arapcaFont.toLowerCase().includes('kfgqpc')
+  
+  // Şedde+esre düzeltmesi
+  const { metin: duzeltilmisMetin, hasSeddeEsre } = seddeEsreDuzelt(kelime.arabic, arapcaFont)
 
   return (
     <span
@@ -83,7 +149,7 @@ export default function MushafKelime({
         <span
           style={{
             position: "absolute",
-            top: `-${yaziBoyutu * 0.09 }px`,
+            top: `-${yaziBoyutu * 0.09}px`,
             left: isMobile ? "10px" : "3px",
             transform: "translateX(-10%)",
             fontSize: `${yaziBoyutu * 0.48}px`,
@@ -99,7 +165,7 @@ export default function MushafKelime({
         </span>
       )}
 
-      {/* Secde işareti - vakıf varsa yanına, yoksa üste */}
+      {/* Secde işareti */}
       {kelime.secde && (
         <span
           style={{
@@ -137,38 +203,99 @@ export default function MushafKelime({
           fontFamily: arapcaFont,
           fontSize: `${yaziBoyutu}px`,
           lineHeight: lineHeight,
-          color: lafizkontrol ? (theme.lugatHighlight || theme.accent) : theme.text,
+          color: (lafizkontrol || besmelekontrol) ? (theme.lugatHighlight || theme.accent) : theme.text,
           display: "inline",
           opacity: aktif ? 1 : 0.95,
           verticalAlign: "middle",
+          position: "relative",
         }}
       >
         {(() => {
-          // Kufi fontu ise harf bölme yapma
           if (arapcaFont.toLowerCase().includes('kufi') || arapcaFont.toLowerCase().includes('kûfi')) {
-            return <span style={{ letterSpacing: 0 }}>{kelime.arabic}</span>
+            return <span style={{ letterSpacing: 0 }}>{duzeltilmisMetin}</span>
           }
-          const segmenter = new Intl.Segmenter('ar', { granularity: 'grapheme' })
-          const segmentler = [...segmenter.segment(kelime.arabic)].map(s => s.segment)
-          return segmentler.flatMap((seg, i) => {
-            const chars = [...seg]
-            const normal = chars.filter(c => !VAKIF_CPS.has(c.codePointAt(0))).join('')
-            const vakif = chars.filter(c => VAKIF_CPS.has(c.codePointAt(0))).join('')
-            const marginStyle = (!isMobile && i !== segmentler.length - 1) ? `${harfAraligi}px` : '0px'
-            
-            const spans = []
-            if (normal) spans.push(
-              <span key={`${i}-n`} style={{ marginLeft: marginStyle }}>{normal}</span>
-            )
-            if (vakif) spans.push(
-              <span key={`${i}-v`} style={{
-                fontFamily: "'Scheherazade New', 'Noto Naskh Arabic', serif",
-                color: vakifRengiAl(vakif),
-                fontSize: `${yaziBoyutu * 0.75}px`,
-              }}>{vakif}</span>
-            )
-            return spans
+
+          const TUM_OZEL_CPS = new Set([...VAKIF_CPS, ...OZEL_CPS, ...CIM_CPS])
+          const hasOzel = [...duzeltilmisMetin].some(c => TUM_OZEL_CPS.has(c.codePointAt(0)))
+
+          if (!hasOzel && !hasSeddeEsre) {
+            return <span>{duzeltilmisMetin}</span>
+          }
+          
+          const chars = [...duzeltilmisMetin]
+          const spans = []
+          let normalBuf = ''
+          let atla = false
+          let seddeEsreEklendi = false
+
+          chars.forEach((c, i) => {
+            if (atla) { atla = false; return }
+            const cp = c.codePointAt(0)
+
+            if (cp === 0x0651 && hasSeddeEsre && !seddeEsreEklendi) {
+              // Şedde + esre manuel ekleme
+              if (normalBuf) { spans.push(<span key={`n-${i}`}>{normalBuf}</span>); normalBuf = '' }
+              spans.push(
+                <span key={`sh-${i}`} style={{ position: 'relative', display: 'inline' }}>
+                  {c}
+                  <span style={{
+                    position: 'absolute',
+                    bottom: arapcaFont.toLowerCase().includes('scheherazade')
+                      ? '-0.15em'
+                      : '-0.4em',
+                    left: '10px',
+                    transform: 'translateX(-50%)',
+                    fontSize: `${yaziBoyutu}px`,
+                    color: theme.text,
+                  }}>ِ</span>
+                </span>
+              )
+              seddeEsreEklendi = true
+            } else if (cp === 0x06DA) {
+              if (normalBuf) { spans.push(<span key={`n-${i}`}>{normalBuf}</span>); normalBuf = '' }
+              const nextCp = chars[i+1]?.codePointAt(0)
+              if (nextCp === 0x06DB) {
+                spans.push(<span key={i} style={{ position: 'absolute', top: `-${yaziBoyutu * 0.25}px`, color: '#9b59b6' }}>{c}{chars[i+1]}</span>)
+                atla = true
+              } else {
+                spans.push(<span key={i} style={{ position: 'absolute', top: `-${yaziBoyutu * 0.25}px`, color: '#2ecc71' }}>{c}</span>)
+              }
+            } else if (cp === 0x06DB) {
+              if (normalBuf) { spans.push(<span key={`n-${i}`}>{normalBuf}</span>); normalBuf = '' }
+              spans.push(<span key={i} style={{ position: 'absolute', top: `-${yaziBoyutu * 0.25}px`, color: '#9b59b6' }}>{c}</span>)
+            } else if (VAKIF_CPS.has(cp)) {
+              if (normalBuf) { spans.push(<span key={`n-${i}`}>{normalBuf}</span>); normalBuf = '' }
+              const vakifFontFamily = arapcaFont.toLowerCase().includes('kfgqpc')
+                ? "'Scheherazade New', serif"
+                : arapcaFont
+              spans.push(<span key={i} style={{ 
+                position: 'absolute', 
+                top: `-${yaziBoyutu * 0.25}px`, 
+                left: 'auto',
+                transform: 'translateX(-50%)',
+                color: vakifRengiAl(c), 
+                fontFamily: vakifFontFamily,
+                whiteSpace: 'nowrap',
+              }}>{c}</span>)
+            } else if (CIM_CPS.has(cp)) {
+              if (normalBuf) { spans.push(<span key={`n-${i}`}>{normalBuf}</span>); normalBuf = '' }
+              spans.push(<span key={i} style={{left:"auto", color: CIM_RENK }}>{c}</span>)
+            } else if (OZEL_CPS.has(cp)) {
+              if (normalBuf) { spans.push(<span key={`n-${i}`}>{normalBuf}</span>); normalBuf = '' }
+              spans.push(<span key={i} style={{ position: 'absolute', bottom: `-${yaziBoyutu * 0.25}px`, right: 0, color: OZEL_RENK[cp] || '#c0392b', fontSize: `${yaziBoyutu * 0.45}px`, fontFamily: "'Scheherazade New', serif" }}>{OZEL_SEMBOL[cp] || c}</span>)
+            } else {
+              normalBuf += c
+            }
           })
+          if (normalBuf) spans.push(<span key="n-last">{normalBuf}</span>)
+
+          
+
+          return (
+            <span style={{ position: 'relative', display: 'inline-block' }}>
+              {spans}
+            </span>
+          )
         })()}
       </span>
     </span>

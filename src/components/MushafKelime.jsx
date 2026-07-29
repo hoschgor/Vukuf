@@ -240,11 +240,9 @@ export default function MushafKelime({
                   {c}
                   <span style={{
                     position: 'absolute',
-                    bottom: arapcaFont.toLowerCase().includes('scheherazade')
-                      ? '-0.15em'
-                      : '-0.4em',
-                    left: '10px',
-                    transform: 'translateX(-50%)',
+                    bottom: arapcaFont.toLowerCase().includes('scheherazade') ? '-0.15em' : '-0.4em',
+                    left: '0em',
+                    transform: 'none',
                     fontSize: `${yaziBoyutu}px`,
                     color: theme.text,
                   }}>ِ</span>

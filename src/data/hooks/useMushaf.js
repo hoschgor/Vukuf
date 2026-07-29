@@ -2,46 +2,22 @@
  * buildSayfaElemanlari
  * ────────────────────
  * Konum: src/data/hooks/useMushaf.js
- *
- * kuran-mushaf.json ve sayfa-harita.json verilerini alır,
- * her sayfa için MushafSayfa'nın beklediği eleman listesini üretir.
- *
- * Dönüş:
- *   Map<sayfaNo, eleman[]>
- *
- * Eleman tipleri:
- *   { tip: "sure-baslik", sure }
- *   { tip: "besmele", sure }
- *   { tip: "kelime", sure, ayet, kelime }
- *   { tip: "ayet-sonu", sure, ayet }
  */
 
 import { useMemo } from "react"
 
-// Besmele gösterilmeyecek sureler
 const BESMELE_YOK = new Set([1, 9])
 
-/**
- * Hook versiyonu — bileşen içinde kullanılır
- *
- * Kullanım:
- *   const { sayfaMap, sureler, toplamSayfa } = useMushaf(mushafData, sayfaHarita)
- */
 export function useMushaf(mushafData, sayfaHarita) {
   return useMemo(() => {
     if (!mushafData?.length || !sayfaHarita?.length) {
-      return { sayfaMap: new Map(), sureler: [], toplamSayfa: 0 }
+      return { sayfaMap: new Map(), sureler: [], toplamSayfa: 0, sureSayfaLookup: new Map(), ayetSayfaLookup: new Map() }
     }
     return buildMushaf(mushafData, sayfaHarita)
   }, [mushafData, sayfaHarita])
 }
 
-/**
- * Saf fonksiyon versiyonu
- */
 export function buildMushaf(mushafData, sayfaHarita) {
-  // Her ayet için sayfa numarasını bul
-  // sayfa-harita: [{ sayfa, sure, ayet }, ...]
   const ayetSayfaMap = new Map()
 
   const haritaSirali = [...sayfaHarita].sort((a, b) =>
@@ -59,12 +35,9 @@ export function buildMushaf(mushafData, sayfaHarita) {
     })
   })
 
-  // Sayfa bazlı eleman listesi oluştur
   const sayfaMap = new Map()
 
   mushafData.forEach(sure => {
-    let oncekiSayfa = null
-
     sure.ayetler.forEach(ayet => {
       const sayfaNo = ayetSayfaMap.get(`${sure.id}:${ayet.no}`)
 
@@ -73,31 +46,24 @@ export function buildMushaf(mushafData, sayfaHarita) {
       }
       const elemanlar = sayfaMap.get(sayfaNo)
 
-      // Sure başlığı ve besmele — sadece ilk ayette
       if (ayet.no === 1) {
         elemanlar.push({ tip: "sure-baslik", sure })
-
         if (!BESMELE_YOK.has(sure.id)) {
           elemanlar.push({ tip: "besmele", sure })
         }
       }
 
-      // Kelimeleri ekle — veri Python'da temizlendiği için direkt kullan
       ayet.kelimeler.forEach(kelime => {
         if (!kelime.arabic.trim()) return
         elemanlar.push({ tip: "kelime", sure, ayet, kelime })
       })
 
-      // Ayet sonu işareti ﴿١﴾
       elemanlar.push({ tip: "ayet-sonu", sure, ayet })
-
-      oncekiSayfa = sayfaNo
     })
   })
 
   const toplamSayfa = Math.max(...sayfaMap.keys())
 
-  // Sure listesi (navigasyon için)
   const sureler = mushafData.map(s => ({
     id: s.id,
     isim: s.isim,
@@ -107,33 +73,27 @@ export function buildMushaf(mushafData, sayfaHarita) {
     ayetSayisi: s.ayetSayisi,
   }))
 
-  return { sayfaMap, sureler, toplamSayfa }
+  const sureSayfaLookup = new Map()
+  const ayetSayfaLookup = new Map()
+
+  for (const [sayfaNo, elemanlar] of sayfaMap) {
+    for (const el of elemanlar) {
+      if (el.tip === 'sure-baslik' && !sureSayfaLookup.has(el.sure.id)) {
+        sureSayfaLookup.set(el.sure.id, sayfaNo)
+      }
+      if (el.tip === 'ayet-sonu') {
+        ayetSayfaLookup.set(`${el.sure.id}:${el.ayet.no}`, sayfaNo)
+      }
+    }
+  }
+
+  return { sayfaMap, sureler, toplamSayfa, sureSayfaLookup, ayetSayfaLookup }
 }
 
-/**
- * Bir surenin hangi sayfada başladığını bul
- */
-export function sureBaslangicSayfasi(sureId, sayfaMap) {
-  for (const [sayfaNo, elemanlar] of sayfaMap) {
-    const var_ = elemanlar.some(
-      el => el.tip === "sure-baslik" && el.sure.id === sureId
-    )
-    if (var_) return sayfaNo
-  }
-  return 1
+export function sureBaslangicSayfasi(sureId, sureSayfaLookup) {
+  return sureSayfaLookup.get(sureId) || 1
 }
 
-/**
- * Bir ayetin hangi sayfada olduğunu bul
- */
-export function ayetSayfasi(sureId, ayetNo, sayfaMap) {
-  for (const [sayfaNo, elemanlar] of sayfaMap) {
-    const var_ = elemanlar.some(
-      el => el.tip === "ayet-sonu" &&
-            el.sure.id === sureId &&
-            el.ayet.no === ayetNo
-    )
-    if (var_) return sayfaNo
-  }
-  return 1
+export function ayetSayfasi(sureId, ayetNo, ayetSayfaLookup) {
+  return ayetSayfaLookup.get(`${sureId}:${ayetNo}`) || 1
 }

@@ -499,7 +499,7 @@ const cokSatir = wrapAktif && barYuksekligi > tekSatirYuksekligi * 1.0
   // ════════════════════════════════════════════════════════════════
   // VERİ HAZIRLAMA
   // ════════════════════════════════════════════════════════════════
-  const { sayfaMap, sureler, toplamSayfa } = useMushaf(mushafData, sayfaHaritaJson)
+  const { sayfaMap, sureler, toplamSayfa, sureSayfaLookup, ayetSayfaLookup } = useMushaf(mushafData, sayfaHaritaJson)
 
   const mevcutSureBilgisi = useMemo(() => {
     if (!sayfaMap?.size) return null
@@ -743,8 +743,8 @@ useEffect(() => {
 
   function sureGit(sureId, ayetNo) {
   const sayfa = ayetNo
-    ? ayetSayfasi(sureId, ayetNo, sayfaMap)
-    : sureBaslangicSayfasi(sureId, sayfaMap)
+    ? ayetSayfasi(sureId, ayetNo, ayetSayfaLookup)
+    : sureBaslangicSayfasi(sureId, sureSayfaLookup)
   
   // Scroll'u KİLİTLE
   setScrollKilitli(true)
@@ -1986,7 +1986,7 @@ const menuIcerikPadding = {
               odakla()
             } else {
               // Farklı sayfada, önce sayfaya git
-              const sayfa = ayetSayfasi(sureNo, ayetNo, sayfaMap)
+              const sayfa = ayetSayfasi(sureNo, ayetNo, ayetSayfaLookup)
               if (!sayfa) return
               const index = sayfaListesi.findIndex(s => s.sayfaNo === sayfa)
               if (index === -1) return

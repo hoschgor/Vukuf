@@ -241,7 +241,7 @@ export default function MushafKelime({
                   <span style={{
                     position: 'absolute',
                     bottom: arapcaFont.toLowerCase().includes('scheherazade') ? '-0.15em' : '-0.4em',
-                    left: '0em',
+                    left: '0.35em',
                     transform: 'none',
                     fontSize: `${yaziBoyutu}px`,
                     color: theme.text,

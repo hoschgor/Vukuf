@@ -4,6 +4,7 @@ import KitapAyraci from "./KitapAyraci"
 import SecdeKenar from "./SecdeKenar"
 import SureBasligi from "./SureBasligi"
 import Besmele from "./Besmele"
+import SureSonu from "./SureSonu"
 import { useMediaQuery } from "../data/hooks/useMediaQuery"
 import { useRef, useEffect } from "react"
 
@@ -61,7 +62,7 @@ export default function MushafSayfa({
   }
 
   elemanlar.forEach((el) => {
-    if (el.tip === "sure-baslik" || el.tip === "besmele") {
+    if (el.tip === "sure-baslik" || el.tip === "besmele" || el.tip === "sure-sonu") {
       inlineGrupKapat()
       gruplar.push({ tip: "block", eleman: el })
     } else {
@@ -187,6 +188,24 @@ export default function MushafSayfa({
           )
         }
 
+        // BLOCK: sure-sonu
+        if (grup.tip === "block" && grup.eleman.tip === "sure-sonu") {
+          return (
+            <div key={`sure-sonu-${grup.eleman.sure.id}-${gi}`} style={{
+              width: "100%",
+              marginTop: fontSize * 0.15,
+              marginBottom: fontSize * 0.15,
+              clear: "both",
+            }}>
+              <SureSonu
+                theme={theme}
+                sure={grup.eleman.sure}
+                player={player}
+                yaziBoyutu={fontSize}
+              />
+            </div>
+          )
+        }
         // INLINE: tüm kelimeler ve ayet sonları tek akışta
         if (grup.tip === "inline") {
           return (
@@ -200,7 +219,9 @@ export default function MushafSayfa({
                 fontFamily: arapcaFont,
                 color: theme.text,
                 paddingTop: `${fontSize * 0.15}px`, // Azaltıldı
-                paddingBottom: `${fontSize * 0.1}px`, // Azaltıldı
+                paddingBottom: arapcaFont.toLowerCase().includes('me_quran') 
+                  ? `${fontSize * 0.1}px`
+                  : `${fontSize * 0.1}px`,
                 marginBottom: fontSize * (isMobile ? 0.15 : 0.2), // ÇOK AZALTILDI (20'den 0.15'e)
                 wordSpacing: isMobile ? "2px" : "3px",
                 whiteSpace: "normal",

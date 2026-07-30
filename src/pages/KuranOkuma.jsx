@@ -29,14 +29,10 @@ import {
 
 // ── Arapça font listesi
 const ARAPCA_FONTLAR = [
-  { id: "kfgqpc",    label: "KFGQPC Uthmanic (Önerilen)", style: "'KFGQPC Uthmanic', serif",  google: null },
-  { id: "me-quran", label: "Me Quran", style: "'me_quran', serif", google: null },
-  { id: "Indopak", label: "Qfc4", style: "Indopak", google: null },
-  { id: "scheherazade", label: "Scheherazade New", style: "'Scheherazade New', serif", google: null },
-  { id: "noto-naskh", label: "Noto Naskh Arabic", style: "'Noto Naskh Arabic', serif", google: null },
-  { id: "lateef", label: "Lateef", style: "'Lateef', serif", google: null },
-  { id: "kacst", label: "KacstBook", style: "'KacstBook', serif", google: null },
-  { id: "paktype", label: "PakType Naskh", style: "'PakType Naskh', serif", google: null },
+  { id: "kfgqpc",            label: "KFGQPC Uthmanic (Önerilen)", style: "'KFGQPC Uthmanic', serif",    google: null },
+  { id: "me-quran",          label: "Me Quran",                   style: "'me_quran', serif",            google: null },
+  { id: "Indopak",           label: "Indopak",                    style: "'Indopak', serif",             google: null },
+  { id: "IndopakNastaleeq",  label: "Indopak Nastaleeq",          style: "'IndopakNastaleeq', serif",    google: null },
 ]
 
 // ── Özel tema sabitleri
@@ -189,7 +185,7 @@ export default function KuranOkuma({ kitap }) {
 
   // ── Arapça font
   const [arapcaFontId, setArapcaFontId] = useState(() =>
-    localStorage.getItem("vukuf-kuran-arapca-font") || "scheherazade"
+    localStorage.getItem("vukuf-kuran-arapca-font") || "kfgqpc"
   )
   const aktifArapcaFont = ARAPCA_FONTLAR.find(f => f.id === arapcaFontId) || ARAPCA_FONTLAR[0]
 
@@ -560,7 +556,7 @@ const cokSatir = wrapAktif && barYuksekligi > tekSatirYuksekligi * 1.0
       let mevcutInlineElemanlar = []
       
       elemanlar.forEach((el) => {
-        if (el.tip === "sure-baslik" || el.tip === "besmele") {
+        if (el.tip === "sure-baslik" || el.tip === "besmele" || el.tip === "sure-sonu") {
           if (mevcutInlineElemanlar.length > 0) {
             const kelimeSayisi = mevcutInlineElemanlar.filter(e => e.tip === "kelime").length
             const fontBoyutu = mobile ? yaziBoyutu : yaziBoyutu + 2
@@ -577,6 +573,9 @@ const cokSatir = wrapAktif && barYuksekligi > tekSatirYuksekligi * 1.0
             toplamYukseklik += mobile ? 55 : 75
             toplamYukseklik += mobile ? 6 : 8
           } else if (el.tip === "besmele") {
+            toplamYukseklik += mobile ? 35 : 50
+            toplamYukseklik += mobile ? 4 : 6
+          } else if (el.tip === "sure-sonu") {
             toplamYukseklik += mobile ? 35 : 50
             toplamYukseklik += mobile ? 4 : 6
           }
@@ -1947,7 +1946,7 @@ const menuIcerikPadding = {
       
 
       {/* Ana içerik alanı */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, overflow: "hidden", position: "relative" }}>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, overflowX: "hidden", overflowY: "visible", position: "relative" }}>
         {barKonum === "ust" && Bar}
 
 

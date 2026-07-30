@@ -45,23 +45,30 @@ export function buildMushaf(mushafData, sayfaHarita) {
         sayfaMap.set(sayfaNo, [])
       }
       const elemanlar = sayfaMap.get(sayfaNo)
-
+      
       if (ayet.no === 1) {
         elemanlar.push({ tip: "sure-baslik", sure })
         if (!BESMELE_YOK.has(sure.id)) {
           elemanlar.push({ tip: "besmele", sure })
         }
       }
-
+     
       ayet.kelimeler.forEach(kelime => {
         if (!kelime.arabic.trim()) return
         elemanlar.push({ tip: "kelime", sure, ayet, kelime })
       })
 
       elemanlar.push({ tip: "ayet-sonu", sure, ayet })
+
+      // Sure son ayeti ise sure-sonu ekle
+      if (ayet.no === sure.ayetler[sure.ayetler.length - 1].no) {
+        elemanlar.push({ tip: "sure-sonu", sure })
+      }
+      
     })
   })
-
+  
+  
   const toplamSayfa = Math.max(...sayfaMap.keys())
 
   const sureler = mushafData.map(s => ({

@@ -777,17 +777,17 @@ export default function SureBasligi({ sure, theme, onTikla, player }) {
 
         {/* Arapça sure ismi */}
         <text
-          x={w/2}
-          y={h/2 + 11}
+          x={w / 2}
+          y={h / 2 + 27}
           textAnchor="middle"
-          fontFamily="'Scheherazade New', 'Traditional Arabic', 'Noto Naskh Arabic', serif"
-          fontSize="24"
-          fontWeight="700"
+          fontFamily="'surah-name-v2-icon', serif"
+          fontSize="60"
+          fontWeight="500"
           fill={ac}
           fillOpacity="0.85"
           direction="rtl"
         >
-          {sure.isimArapca || sure.isim}
+          {String.fromCodePoint(0xE000 + sure.id)}
         </text>
 
                 {/* ========================================================= */}

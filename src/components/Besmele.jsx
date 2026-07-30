@@ -78,7 +78,7 @@ export default function Besmele({ theme, sureId, sureNo, ayetSayisi, player }) {
 
   const ac = theme.accent
   const w = 500
-  const h = 52
+  const h = 70
 
   // Sadece bu sure için Besmele çalınıyorsa true olacak
   const caliniyor =
@@ -101,7 +101,7 @@ export default function Besmele({ theme, sureId, sureNo, ayetSayisi, player }) {
       }}>
         <svg
           width="100%"
-          viewBox="0 0 500 52"
+          viewBox="0 0 500 70"
           preserveAspectRatio="xMidYMid meet"
           style={{
             maxWidth: isMobile ? "100%" : "100%",
@@ -167,16 +167,16 @@ export default function Besmele({ theme, sureId, sureNo, ayetSayisi, player }) {
           })}
 
           <text
-            x={w / 2} y={h / 2 + 7}
+            x={w / 2} y={h / 2 + 13}
             textAnchor="middle"
-            fontFamily="'Scheherazade New', 'Traditional Arabic', 'Noto Naskh Arabic', serif"
-            fontSize={isMobile ? "16" : "18"}
+            fontFamily="Symbols1"
+            fontSize={isMobile ? "55" : "55"}
             fontWeight="500"
             fill={ac} fillOpacity={caliniyor ? "0.95" : "0.7"}
             direction="rtl"
             style={{ transition: "fill-opacity 0.3s" }}
           >
-            بِسۡمِ ٱللَّهِ ٱلرَّحۡمَٰنِ ٱلرَّحِيمِ
+           {String.fromCodePoint(0xF021)}
           </text>
 
           {/* Çalarken beliren alt çizgi — gradyanla uçları eriyen çizgi,

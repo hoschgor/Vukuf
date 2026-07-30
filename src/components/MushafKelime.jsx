@@ -84,7 +84,10 @@ export default function MushafKelime({
   const besmelekontrol = besmeleMi(kelime.id)
   const hasUpperIndicator = kelime.vakif || kelime.secde
   const vakifRengi = kelime.vakif ? vakifRengiAl(kelime.vakif) : null
+  const efektifLineHeight = arapcaFont.toLowerCase().includes('me_quran') || arapcaFont.toLowerCase().includes('mequran')
   
+  ? Math.max(lineHeight, 5.2)
+  : lineHeight
   
 
   return (
@@ -206,32 +209,51 @@ export default function MushafKelime({
             const cp = c.codePointAt(0)
 
             if (cp === 0x06DA) {
-              if (normalBuf) { spans.push(<span key={`n-${i}`}>{normalBuf}</span>); normalBuf = '' }
-              const nextCp = chars[i+1]?.codePointAt(0)
-              if (nextCp === 0x06DB) {
-                spans.push(<span key={i} style={{ position: 'absolute', top: `-${yaziBoyutu * 0.25}px`, color: '#9b59b6' }}>{c}{chars[i+1]}</span>)
-                atla = true
-              } else {
-                spans.push(<span key={i} style={{ position: 'absolute', top: `-${yaziBoyutu * 0.25}px`, color: '#2ecc71' }}>{c}</span>)
-              }
-            } else if (cp === 0x06DB) {
+            if (normalBuf) { spans.push(<span key={`n-${i}`}>{normalBuf}</span>); normalBuf = '' }
+            const nextCp = chars[i+1]?.codePointAt(0)
+            const f = arapcaFont.toLowerCase()
+            const cimTop = f.includes('nastaleeq')
+              ? `-${yaziBoyutu * 0.4}px`
+              : f.includes('indopak')
+                ? `-${yaziBoyutu * 0.8}px`
+                : f.includes('me_quran')
+                  ? `${yaziBoyutu * 0.3}px`
+                  : f.includes('kfgqpc')
+                    ? `-${yaziBoyutu * 0}px`
+                    : `-${yaziBoyutu * 0}px`
+            if (nextCp === 0x06DB) {
+              spans.push(<span key={i} style={{ position: 'absolute', top: cimTop, color: '#9b59b6' }}>{c}{chars[i+1]}</span>)
+              atla = true
+            } else {
+              spans.push(<span key={i} style={{ position: 'absolute', top: cimTop, color: '#2ecc71' }}>{c}</span>)
+            }
+          } else if (cp === 0x06DB) {
               if (normalBuf) { spans.push(<span key={`n-${i}`}>{normalBuf}</span>); normalBuf = '' }
               spans.push(<span key={i} style={{ position: 'absolute', top: `-${yaziBoyutu * 0.25}px`, color: '#9b59b6' }}>{c}</span>)
             } else if (VAKIF_CPS.has(cp)) {
               if (normalBuf) { spans.push(<span key={`n-${i}`}>{normalBuf}</span>); normalBuf = '' }
               const vakifFontFamily = isKfgqpc ? "'Scheherazade New', serif" : arapcaFont
-              spans.push(<span key={i} style={{
-                position: 'absolute',
-                top: `-${yaziBoyutu * 0.25}px`,
-                left: 'auto',
-                transform: 'translateX(-50%)',
-                color: vakifRengiAl(c),
+              const f = arapcaFont.toLowerCase()
+              const vakifTop = f.includes('me_quran')
+                ? (cp === 0x0615 ? `-${yaziBoyutu * 0.2}px` : `${yaziBoyutu * 0.2}px`)  // me_quran: t vakfı normal, diğerleri aşağı
+                : f.includes('nastaleeq')
+                  ? `-${yaziBoyutu * 0.25}px`  // nastaleeq: normal top
+                  : f.includes('indopak')
+                    ? `-${yaziBoyutu * 1}px`  // indopak: yukarı
+                    : `-${yaziBoyutu * 0}px`  // kfgqpc: normal
+
+              const vakifLeft = f.includes('nastaleeq') ? '10px' : 'auto'
+              const vakifTransform = f.includes('nastaleeq') ? 'none' : 'translateX(-50%)'
+
+              spans.push(<span key={i} style={{ 
+                position: 'absolute', 
+                top: vakifTop,
+                left: vakifLeft,
+                transform: vakifTransform,
+                color: vakifRengiAl(c), 
                 fontFamily: vakifFontFamily,
                 whiteSpace: 'nowrap',
               }}>{c}</span>)
-            } else if (CIM_CPS.has(cp)) {
-              if (normalBuf) { spans.push(<span key={`n-${i}`}>{normalBuf}</span>); normalBuf = '' }
-              spans.push(<span key={i} style={{ left: 'auto', color: CIM_RENK }}>{c}</span>)
             } else if (OZEL_CPS.has(cp)) {
               if (normalBuf) { spans.push(<span key={`n-${i}`}>{normalBuf}</span>); normalBuf = '' }
               spans.push(<span key={i} style={{

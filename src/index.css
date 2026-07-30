@@ -154,24 +154,75 @@
     src: url('https://fonts.quran.ws/assets/fonts/hafs-nastaleeq.otf') format('opentype');
     font-display: swap;
 }
-
-.quran {
-    font-family: 'HafsNastaleeq', serif;
-    direction: rtl;
-    font-size: 2rem;
-    line-height: 2.3;
-}
 @font-face {
     font-family: 'Indopak';
     src: url('https://fonts.quran.ws/assets/fonts/digital-khatt-indopak.otf') format('opentype');
     font-display: swap;
 }
-
-.quran {
-    font-family: 'Indopak', serif;
-    direction: rtl;
-    font-size: 2rem;
-    line-height: 2.3;
+@font-face {
+    font-family: 'surah-name-v2-icon';
+    src: url('https://fonts.quran.ws/assets/fonts/surah-name-v2.ttf') format('truetype');
+    font-display: swap;
+}
+@font-face {
+    font-family: 'surah-name-v1-icon';
+    src: url('https://fonts.quran.ws/assets/fonts/surah-name-v1.ttf') format('truetype');
+    font-display: swap;
+}
+@font-face {
+    font-family: 'IndopakNastaleeq';
+    src: url('https://fonts.quran.ws/assets/fonts/indopak-nastaleeq.ttf') format('truetype');
+    font-display: swap;
+}
+@font-face {
+    font-family: 'UthmanicBazzi';
+    src: url('https://fonts.quran.ws/assets/fonts/uthmanic-bazzi-v20.ttf') format('truetype');
+    font-display: swap;
+}
+@font-face {
+    font-family: 'DigitalKhattIndoPak';
+    src: url('https://fonts.quran.ws/assets/fonts/digital-khatt-indopak.otf') format('opentype');
+    font-display: swap;
+}
+@font-face {
+  font-family: "DigitalKhattV1";
+  src:
+  url("https://quranfonts.com/fonts/Digital Khatt V1 Font/DigitalKhattQuranicV1.otf") format("opentype");
+  font-display: swap;
+}
+@font-face {
+  font-family: "DigitalKhattV2";
+  src:
+  url("https://quranfonts.com/fonts/Digital Khatt V2 Font/DigitalKhattV2.otf") format("opentype");
+  font-display: swap;
+}
+@font-face {
+  font-family: "MeQuran";
+  src:
+  url("https://quranfonts.com/fonts/Me Quran Font/me_quran_volt_newmet.ttf") format("truetype");
+  font-display: swap;
+}
+@font-face {
+  font-family: "DigitalKhattIndopak";
+  src:
+  url("https://quranfonts.com/fonts/Digital Khatt Indopak font/DigitalKhattIndoPak.otf") format("opentype");
+  font-display: swap;
+}
+@font-face {
+  font-family: "QPCV4Tajweed";
+  src:
+  url("https://quranfonts.com/fonts/QPC V4 Tajweed Font/p1.ttf") format("truetype");
+  font-display: swap;
+}
+@font-face {
+  font-family: "Symbols1";
+  src: url('/fonts/Symbols1_Ver02.woff2') format('woff2');
+  font-display: swap;
+}
+@font-face {
+  font-family: 'digitalkhaat-v2';
+  src: url('https://static-cdn.tarteel.ai/qul/fonts/dk/DigitalKhattV2.otf') format('opentype');
+  font-display: swap;
 }
 
 .okuma-icerik {

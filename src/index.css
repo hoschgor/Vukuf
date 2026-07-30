@@ -122,6 +122,57 @@
   src: url('/fonts/ArefRuqaa-Regular.ttf') format('truetype');
   font-weight: normal;
 }
+@font-face {
+  font-family: 'KacstBook';
+  src: url('/fonts/KacstBook KacstBook.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'me_quran';
+  src: url('/fonts/me_quran Regular.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'PakType Naskh';
+  src: url('/fonts/PakType Naskh Basic Regular.ttf') format('truetype');
+}
+@font-face {
+    font-family: 'UthmanicHafs';
+    src: url('https://fonts.quran.ws/assets/fonts/uthmanic-hafs-v22.woff2') format('woff2');
+    font-display: swap;
+}
+
+.quran {
+    font-family: 'UthmanicHafs', serif;
+    direction: rtl;
+    font-size: 2rem;
+    line-height: 2.3;
+}
+
+@font-face {
+    font-family: 'HafsNastaleeq';
+    src: url('https://fonts.quran.ws/assets/fonts/hafs-nastaleeq.otf') format('opentype');
+    font-display: swap;
+}
+
+.quran {
+    font-family: 'HafsNastaleeq', serif;
+    direction: rtl;
+    font-size: 2rem;
+    line-height: 2.3;
+}
+@font-face {
+    font-family: 'Indopak';
+    src: url('https://fonts.quran.ws/assets/fonts/digital-khatt-indopak.otf') format('opentype');
+    font-display: swap;
+}
+
+.quran {
+    font-family: 'Indopak', serif;
+    direction: rtl;
+    font-size: 2rem;
+    line-height: 2.3;
+}
 
 .okuma-icerik {
   -webkit-user-select: none;

@@ -65,32 +65,7 @@ function lafzatullahMi(arabic) {
   return temiz === '\u0627\u0644\u0644\u0647' || temiz.includes('\u0644\u0644\u0647')
 }
 
-// Şedde+esre düzeltme fonksiyonu
-function seddeEsreDuzelt(metin, font) {
-  if (font.toLowerCase().includes('kfgqpc')) return { metin, hasSeddeEsre: false }
-  
-  // Şedde+esre'yi tespit et ve esreyi kaldır (manuel ekleyeceğiz)
-  let duzeltilmis = metin
-  let hasSeddeEsre = false
-  
-  // Karakterleri tek tek kontrol et
-  let sonuc = ''
-  for (let i = 0; i < metin.length; i++) {
-    const char = metin[i]
-    const nextChar = metin[i+1] || ''
-    
-    if (char === '\u0651' && nextChar === '\u0650') {
-      // Şedde+esre bulundu, esreyi atla
-      sonuc += '\u0651' // sadece şeddeyi ekle
-      i++ // esreyi atla
-      hasSeddeEsre = true
-    } else {
-      sonuc += char
-    }
-  }
-  
-  return { metin: sonuc, hasSeddeEsre }
-}
+
 
 export default function MushafKelime({
   kelime,
@@ -110,10 +85,7 @@ export default function MushafKelime({
   const hasUpperIndicator = kelime.vakif || kelime.secde
   const vakifRengi = kelime.vakif ? vakifRengiAl(kelime.vakif) : null
   
-  const isKfgqpc = arapcaFont.toLowerCase().includes('kfgqpc')
   
-  // Şedde+esre düzeltmesi
-  const { metin: duzeltilmisMetin, hasSeddeEsre } = seddeEsreDuzelt(kelime.arabic, arapcaFont)
 
   return (
     <span
@@ -211,49 +183,29 @@ export default function MushafKelime({
         }}
       >
         {(() => {
+          const isKfgqpc = arapcaFont.toLowerCase().includes('kfgqpc')
+
           if (arapcaFont.toLowerCase().includes('kufi') || arapcaFont.toLowerCase().includes('kûfi')) {
-            return <span style={{ letterSpacing: 0 }}>{duzeltilmisMetin}</span>
+            return <span style={{ letterSpacing: 0 }}>{kelime.arabic}</span>
           }
 
           const TUM_OZEL_CPS = new Set([...VAKIF_CPS, ...OZEL_CPS, ...CIM_CPS])
-          const hasOzel = [...duzeltilmisMetin].some(c => TUM_OZEL_CPS.has(c.codePointAt(0)))
+          const hasOzel = [...kelime.arabic].some(c => TUM_OZEL_CPS.has(c.codePointAt(0)))
 
-          if (!hasOzel && !hasSeddeEsre) {
-            return <span>{duzeltilmisMetin}</span>
+          if (!hasOzel) {
+            return <span>{kelime.arabic}</span>
           }
-          
-          const chars = [...duzeltilmisMetin]
+
+          const chars = [...kelime.arabic]
           const spans = []
           let normalBuf = ''
           let atla = false
-          let seddeEsreEklendi = false
 
           chars.forEach((c, i) => {
             if (atla) { atla = false; return }
             const cp = c.codePointAt(0)
 
-            if (cp === 0x0651 && hasSeddeEsre && !seddeEsreEklendi) {
-              // Şedde + esre manuel ekleme
-              if (normalBuf) { spans.push(<span key={`n-${i}`}>{normalBuf}</span>); normalBuf = '' }
-              spans.push(
-                <span key={`sh-${i}`} style={{ position: 'relative', display: 'inline' }}>
-                  {c}
-                  <span style={{
-                    position: 'absolute',
-                    bottom: arapcaFont.toLowerCase().includes('scheherazade')
-                      ? (isMobile ? '-0.05em' : '+0.2em')
-                      : (isMobile ? '-0.55em' : '-0.2em'),
-                    left: arapcaFont.toLowerCase().includes('scheherazade')
-                      ? (isMobile ? '-0.1em' : '+0.15em')
-                      : (isMobile ? '+0.15em' : '+0.28em'),
-                    transform: 'none',
-                    fontSize: `${yaziBoyutu}px`,
-                    color: theme.text,
-                  }}>ِ</span>
-                </span>
-              )
-              seddeEsreEklendi = true
-            } else if (cp === 0x06DA) {
+            if (cp === 0x06DA) {
               if (normalBuf) { spans.push(<span key={`n-${i}`}>{normalBuf}</span>); normalBuf = '' }
               const nextCp = chars[i+1]?.codePointAt(0)
               if (nextCp === 0x06DB) {
@@ -267,31 +219,35 @@ export default function MushafKelime({
               spans.push(<span key={i} style={{ position: 'absolute', top: `-${yaziBoyutu * 0.25}px`, color: '#9b59b6' }}>{c}</span>)
             } else if (VAKIF_CPS.has(cp)) {
               if (normalBuf) { spans.push(<span key={`n-${i}`}>{normalBuf}</span>); normalBuf = '' }
-              const vakifFontFamily = arapcaFont.toLowerCase().includes('kfgqpc')
-                ? "'Scheherazade New', serif"
-                : arapcaFont
-              spans.push(<span key={i} style={{ 
-                position: 'absolute', 
-                top: `-${yaziBoyutu * 0.25}px`, 
+              const vakifFontFamily = isKfgqpc ? "'Scheherazade New', serif" : arapcaFont
+              spans.push(<span key={i} style={{
+                position: 'absolute',
+                top: `-${yaziBoyutu * 0.25}px`,
                 left: 'auto',
                 transform: 'translateX(-50%)',
-                color: vakifRengiAl(c), 
+                color: vakifRengiAl(c),
                 fontFamily: vakifFontFamily,
                 whiteSpace: 'nowrap',
               }}>{c}</span>)
             } else if (CIM_CPS.has(cp)) {
               if (normalBuf) { spans.push(<span key={`n-${i}`}>{normalBuf}</span>); normalBuf = '' }
-              spans.push(<span key={i} style={{left:"auto", color: CIM_RENK }}>{c}</span>)
+              spans.push(<span key={i} style={{ left: 'auto', color: CIM_RENK }}>{c}</span>)
             } else if (OZEL_CPS.has(cp)) {
               if (normalBuf) { spans.push(<span key={`n-${i}`}>{normalBuf}</span>); normalBuf = '' }
-              spans.push(<span key={i} style={{ position: 'absolute', bottom: `-${yaziBoyutu * 0.25}px`, right: 0, color: OZEL_RENK[cp] || '#c0392b', fontSize: `${yaziBoyutu * 0.45}px`, fontFamily: "'Scheherazade New', serif" }}>{OZEL_SEMBOL[cp] || c}</span>)
+              spans.push(<span key={i} style={{
+                position: 'absolute',
+                bottom: `-${yaziBoyutu * 0.25}px`,
+                right: 0,
+                color: OZEL_RENK[cp] || '#c0392b',
+                fontSize: `${yaziBoyutu * 0.45}px`,
+                fontFamily: "'Scheherazade New', serif",
+              }}>{OZEL_SEMBOL[cp] || c}</span>)
             } else {
               normalBuf += c
             }
           })
-          if (normalBuf) spans.push(<span key="n-last">{normalBuf}</span>)
 
-          
+          if (normalBuf) spans.push(<span key="n-last">{normalBuf}</span>)
 
           return (
             <span style={{ position: 'relative', display: 'inline-block' }}>

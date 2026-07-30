@@ -30,9 +30,13 @@ import {
 // ── Arapça font listesi
 const ARAPCA_FONTLAR = [
   { id: "kfgqpc",    label: "KFGQPC Uthmanic (Önerilen)", style: "'KFGQPC Uthmanic', serif",  google: null },
+  { id: "me-quran", label: "Me Quran", style: "'me_quran', serif", google: null },
+  { id: "Indopak", label: "Qfc4", style: "Indopak", google: null },
   { id: "scheherazade", label: "Scheherazade New", style: "'Scheherazade New', serif", google: null },
   { id: "noto-naskh", label: "Noto Naskh Arabic", style: "'Noto Naskh Arabic', serif", google: null },
   { id: "lateef", label: "Lateef", style: "'Lateef', serif", google: null },
+  { id: "kacst", label: "KacstBook", style: "'KacstBook', serif", google: null },
+  { id: "paktype", label: "PakType Naskh", style: "'PakType Naskh', serif", google: null },
 ]
 
 // ── Özel tema sabitleri

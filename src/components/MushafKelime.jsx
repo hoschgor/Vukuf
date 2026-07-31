@@ -233,7 +233,12 @@ export default function MushafKelime({
               spans.push(<span key={i} style={{ position: 'absolute', top: `-${yaziBoyutu * 0.25}px`, color: '#9b59b6' }}>{c}</span>)
             } else if (VAKIF_CPS.has(cp)) {
               if (normalBuf) { spans.push(<span key={`n-${i}`}>{normalBuf}</span>); normalBuf = '' }
-              const vakifFontFamily = isKfgqpc ? "'Scheherazade New', serif" : arapcaFont
+              const fallbackGerekli = arapcaFont.toLowerCase().includes('kfgqpc')
+                || arapcaFont.toLowerCase().includes('me_quran')
+                || arapcaFont.toLowerCase().includes('mequran')
+                || arapcaFont.toLowerCase().includes('nastaleeq')
+
+              const vakifFontFamily = fallbackGerekli ? "'Scheherazade New', serif" : arapcaFont
               const f = arapcaFont.toLowerCase()
               const vakifTop = f.includes('me_quran')
                 ? (cp === 0x0615 ? `-${yaziBoyutu * 0.2}px` : `${yaziBoyutu * 0.2}px`)  // me_quran: t vakfı normal, diğerleri aşağı

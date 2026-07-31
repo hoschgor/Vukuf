@@ -157,7 +157,9 @@ export default function KuranOkuma({ kitap }) {
   const [sureBilgisiGoster, setSureBilgisiGoster] = useState(() =>
   localStorage.getItem("vukuf-sure-bilgisi") !== "false"
 )
-
+const maxWidth = useMemo(() => 
+  `${Math.round((isMobile ? 480 : 720) * (yaziBoyutu / 20))}px`
+, [isMobile, yaziBoyutu])
 
   // ── Scrollbar
   const [scrollbarGorunur, setScrollbarGorunur] = useState(false)
@@ -564,7 +566,7 @@ const cokSatir = wrapAktif && barYuksekligi > tekSatirYuksekligi * 1.0
             const satirYuksekligi = fontBoyutu * lineHeight
             const satirBasiKelime = mobile ? 12 : 16
             const kelimeSatirSayisi = Math.max(1, Math.ceil(kelimeSayisi / satirBasiKelime))
-            const inlineYukseklik = kelimeSatirSayisi * satirYuksekligi + 20
+            const inlineYukseklik = kelimeSatirSayisi * satirYuksekligi * 1.3 + 20
             toplamYukseklik += inlineYukseklik
             mevcutInlineElemanlar = []
           }
@@ -607,8 +609,12 @@ const cokSatir = wrapAktif && barYuksekligi > tekSatirYuksekligi * 1.0
     estimateSize: (index) => {
       return sayfaYukseklikleri[index] || (isMobile ? 500 : 700)
     },
-    overscan: isMobile ? 4:3,
+    overscan: isMobile ? 4 : 3,
+    // ...diğer opsiyonlar
   })
+
+  // Sayfa navigasyonu sırasında otomatik scroll düzeltmesini kapat
+  virtualizer.shouldAdjustScrollPositionOnItemSizeChange = () => false
 
 // ════════════════════════════════════════════════════════════════
 // KAYIT BÖLÜMÜ
@@ -687,7 +693,7 @@ const kayitSayfaGit = useCallback((sayfa, scrollY) => {
       || 500
     const barOfset = isMobile ? 20 : 13
     el.scrollTop = sayfaBaslangic + (scrollY || 0) * sayfaYukseklik - barOfset
-  }, 150)
+  }, isMobile ? 400 : 150)
 }, [sayfaListesi, virtualizer, sayfaYukseklikleri, isMobile])
 
 // Sayfa numarası güncelleme
@@ -728,123 +734,78 @@ useEffect(() => {
     setPopup(null)
   }
 
-  function sayfayaGit(no) {
+function sayfayaGit(no) {
   const n = parseInt(no)
-  if (n >= 1 && n <= toplamSayfa) {
-    setMevcutSayfa(n)
-    const index = sayfaListesi.findIndex(s => s.sayfaNo === n)
-    if (index !== -1) {
-      // Smooth scroll ile git
-      virtualizer.scrollToIndex(index, { 
-        align: "start",
-        behavior: "smooth" 
-      })
-    }
-    setPopup(null)
-  }
+  if (n < 1 || n > toplamSayfa) return
+
+  setMevcutSayfa(n)
+  setPopup(null)
+
+  const index = sayfaListesi.findIndex(s => s.sayfaNo === n)
+  if (index === -1) return
+
+  virtualizer.scrollToIndex(index, { align: "start" })
+
+  // Virtualizer render ettikten sonra pozisyonu düzelt
+  setTimeout(() => {
+    const el = scrollRef.current
+    if (!el) return
+    const targetItem = virtualizer.getVirtualItems().find(v => v.index === index)
+    if (targetItem) el.scrollTop = targetItem.start
+  }, isMobile ? 400 : 150)
 }
 
-  function sureGit(sureId, ayetNo) {
+
+function sureGit(sureId, ayetNo) {
   const sayfa = ayetNo
     ? ayetSayfasi(sureId, ayetNo, ayetSayfaLookup)
     : sureBaslangicSayfasi(sureId, sureSayfaLookup)
-  
-  // Scroll'u KİLİTLE
+
+  const hedefIndex = sayfaListesi.findIndex(s => s.sayfaNo === sayfa)
+  if (hedefIndex === -1) return
+
   setScrollKilitli(true)
-  
   setMevcutSayfa(sayfa)
   setMenuAcik(false)
   setMenuArama("")
   setAcikSure(null)
   setAyetArama({})
   setPopup(null)
-  
-  const hedefIndex = sayfaListesi.findIndex(s => s.sayfaNo === sayfa)
-  if (hedefIndex === -1) {
-    setScrollKilitli(false)
-    return
-  }
-  
-  // 3 aşamalı kontrol
-  let denemeSayisi = 0
-  const maxDeneme = 3
-  
-  function scrollKontrol() {
+
+  virtualizer.scrollToIndex(hedefIndex, { align: "start" })
+  setScrollKilitli(false)
+
+  function odaklanHedefe(deneme = 0) {
     const el = scrollRef.current
     if (!el) return
-    
-    const items = virtualizer.getVirtualItems()
-    const targetItem = items.find(item => item.index === hedefIndex)
-    
-    if (!targetItem) {
-      if (denemeSayisi < maxDeneme) {
-        denemeSayisi++
-        setTimeout(scrollKontrol, 200)
-      } else {
-        setScrollKilitli(false)
+
+    const selector = ayetNo
+      ? `[data-sure="${sureId}"][data-ayet="${ayetNo}"]`
+      : `[data-sure-baslik="${sureId}"]`
+    const hedefEl = el.querySelector(selector)
+
+    if (!hedefEl) {
+      if (deneme < 2) {
+        setTimeout(() => odaklanHedefe(deneme + 1), 200)
       }
       return
     }
-    
-    const hedefPozisyon = targetItem.start
-    const mevcutPozisyon = el.scrollTop
-    const fark = Math.abs(mevcutPozisyon - hedefPozisyon)
-    
-    // Doğru yerdeyse (20px tolerans)
-    if (fark < 20) {
-      setScrollKilitli(false)
-      odaklanHedefe()
-      return
-    }
-    
-    // Yanlış yerdeyse düzelt
-    el.scrollTop = hedefPozisyon
-    
-    // Tekrar kontrol et
-    if (denemeSayisi < maxDeneme) {
-      denemeSayisi++
-      setTimeout(scrollKontrol, 150)
-    } else {
-      setScrollKilitli(false)
-      setTimeout(odaklanHedefe, 200)
-    }
-  }
-  
-  function odaklanHedefe() {
-    const el = scrollRef.current
-    if (!el) return
-    
+
+    const offset = (barKonum === "ust" ? barYuksekligi : 0)
+      + (player.durum !== "kapali" ? playerBarYuksekligi : 0)
+      + (ayetNo ? 20 : 8)
+
+    hedefEl.style.scrollMarginTop = `${offset}px`
+hedefEl.scrollIntoView({ behavior: "smooth", block: "start" })
+setTimeout(() => { hedefEl.style.scrollMarginTop = "0" }, 400)
+
     if (ayetNo) {
-      const ayetEl = el.querySelector(`[data-sure="${sureId}"][data-ayet="${ayetNo}"]`)
-      if (ayetEl) {
-        const offset = (barKonum === "ust" ? barYuksekligi : 0) +
-          (player.durum !== "kapali" ? playerBarYuksekligi : 0) + 20
-        ayetEl.style.scrollMarginTop = `${offset}px`
-        ayetEl.scrollIntoView({ behavior: "smooth", block: "start" })
-        setTimeout(() => {
-          ayetEl.style.scrollMarginTop = "0"
-          setOdakAyet({ sureNo: sureId, ayetNo })
-          setTimeout(() => setOdakAyet(null), 2000)
-        }, 400)
-      }
-    } else {
-      const sureEl = el.querySelector(`[data-sure-baslik="${sureId}"]`)
-      if (sureEl) {
-        const offset = (barKonum === "ust" ? barYuksekligi : 0) +
-          (player.durum !== "kapali" ? playerBarYuksekligi : 0) + 8
-        sureEl.style.scrollMarginTop = `${offset}px`
-        sureEl.scrollIntoView({ behavior: "smooth", block: "start" })
-        setTimeout(() => {
-          sureEl.style.scrollMarginTop = "0"
-        }, 400)
-      }
+      setOdakAyet({ sureNo: sureId, ayetNo })
+      setTimeout(() => setOdakAyet(null), 2000)
     }
   }
-  
-  setTimeout(() => {
-    virtualizer.scrollToIndex(hedefIndex, { align: "start" })
-    setTimeout(scrollKontrol, 100)
-  }, 100)
+
+  setTimeout(() => odaklanHedefe(0), isMobile ? 300 : 150)
 }
 
 
@@ -2113,7 +2074,7 @@ const menuIcerikPadding = {
               height: `${virtualizer.getTotalSize()}px`,
               position: "relative",
               maxWidth: `${Math.round((isMobile ? 480 : 720) * (yaziBoyutu / 20))}px`,
-              width: "100%",
+              width: "maxWidth",
               margin: "0 auto",
               padding: isMobile ? "4px 12px" : "6px 24px",
               boxSizing: "border-box",

@@ -2,9 +2,9 @@ import { useState } from "react"
 import { useMediaQuery } from "../data/hooks/useMediaQuery"
 
 const VAKIF_CPS = new Set([0x615, 0x617, 0x06D8, 0x06D9, 0x08D6, 0x08D7, 0x08DE])
-const OZEL_CPS = new Set([0x08D1, 0x08D2, 0x08D9, 0x06DC])
+const OZEL_CPS = new Set([0x08D1, 0x08D2, 0x08D9, 0x06DC, 0x08D5])
 const CIM_CPS = new Set([0x06DA])
-
+const TUM_OZEL_CPS = new Set([...VAKIF_CPS, ...OZEL_CPS, ...CIM_CPS])
 const CIM_RENK = '#f39c12'
 const VAKIF_RENK = {
   0x615:  '#e67e22',
@@ -17,6 +17,7 @@ const VAKIF_RENK = {
   0x08D6: '#95a5a6',
   0x08D7: '#3498db',
   0x08DE: '#3498db',
+  0x08D5: '#c0392b',
 }
 const VAKIF_RENKLERI = {
   'ط': '#e67e22',
@@ -33,6 +34,7 @@ const OZEL_SEMBOL = {
   0x08D2: 'مد',
   0x08D9: 'ن',
   0x06DC: 'سكته',
+  0x08D5: 'ص',
 }
 const OZEL_RENK = {
   0x08D1: '#c0392b',
@@ -192,7 +194,6 @@ export default function MushafKelime({
             return <span style={{ letterSpacing: 0 }}>{kelime.arabic}</span>
           }
 
-          const TUM_OZEL_CPS = new Set([...VAKIF_CPS, ...OZEL_CPS, ...CIM_CPS])
           const hasOzel = [...kelime.arabic].some(c => TUM_OZEL_CPS.has(c.codePointAt(0)))
 
           if (!hasOzel) {

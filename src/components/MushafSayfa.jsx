@@ -223,7 +223,7 @@ export default function MushafSayfa({
                   ? `${fontSize * 0.1}px`
                   : `${fontSize * 0.1}px`,
                 marginBottom: fontSize * (isMobile ? 0.15 : 0.2), // ÇOK AZALTILDI (20'den 0.15'e)
-                wordSpacing: isMobile ? "2px" : "3px",
+                wordSpacing: "normal",
                 whiteSpace: "normal",
                 overflowWrap: "break-word",
                 display: "block",

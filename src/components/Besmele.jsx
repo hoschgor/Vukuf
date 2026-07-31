@@ -187,13 +187,13 @@ export default function Besmele({ theme, sureId, sureNo, ayetSayisi, player }) {
           }}>
             <rect
               x={w / 2 - (caliniyor ? 110 : 0)}
-              y={h / 2 + 13.3}
+              y={h / 2 + 25.3}  // ← 13.3 → 33.3
               width={caliniyor ? 220 : 0}
-              height="1.2"
+              height="1.7"
               fill="url(#altCizgiGrad)"
               style={{ transition: "width 0.5s ease, x 0.5s ease" }}
             />
-            <g transform={`translate(${w / 2}, ${h / 2 + 13.9})`}>
+            <g transform={`translate(${w / 2}, ${h / 2 + 25.9})`}>  {/* ← 13.9 → 33.9 */}
               <rect
                 x="-2.5" y="-2.5" width="5" height="5"
                 fill={ac} fillOpacity="0.85"

@@ -29,59 +29,7 @@
    KUR'AN-ı KERİM ÖZEL FONTLARI
    ============================================ */
 
-/* 1. KFGQPC Uthmanic - Resmi Medine Mushafı */
-@font-face {
-  font-family: 'KFGQPC Uthmanic';
-  src: url('/fonts/KFGQPC-Uthmanic-Script-HAFS-Regular.otf') format('opentype');
-  font-weight: normal;
-  font-style: normal;
-  font-display: swap;
-}
-
-/* 2. Osman Taha - Mushaf Hattı (Modern) */
-@font-face {
-  font-family: 'Osman Taha';
-  src: url('/fonts/Osman-Taha-Regular.otf') format('opentype');
-  font-weight: normal;
-  font-style: normal;
-  font-display: swap;
-}
-
-/* 3. Şeyh Hamdullah - Klasik Osmanlı Hattı */
-@font-face {
-  font-family: 'Shaikh Hamdullah';
-  src: url('/fonts/Shaikh-Hamdullah-Regular.otf') format('opentype');
-  font-weight: normal;
-  font-style: normal;
-  font-display: swap;
-}
-
-/* 4. Islamic Font */
-@font-face {
-  font-family: 'Islamic Font';
-  src: url('/fonts/Islamic-Font.otf') format('opentype');
-  font-weight: normal;
-  font-style: normal;
-  font-display: swap;
-}
-
-/* 5. Hasenat */
-@font-face {
-  font-family: 'Hasenat';
-  src: url('/fonts/Hasenat.otf') format('opentype');
-  font-weight: normal;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'ArabicCustom';
-  src: url('/fonts/arabic.otf') format('opentype');
-  font-weight: normal;
-  font-style: normal;
-}
-
-/* KFGQPC Uthmanic Script - Resmi Mushaf Fontu */
+/* KFGQPC Uthmanic - Resmi Medine Mushafı */
 @font-face {
   font-family: 'KFGQPC Uthmanic';
   src: url('/fonts/KFGQPC Uthmanic Script HAFS Regular.otf') format('opentype');
@@ -89,141 +37,48 @@
   font-style: normal;
   font-display: swap;
 }
-
-@font-face {
-  font-family: 'Noto Naskh Arabic';
-  src: url('/fonts/NotoNaskhArabic-Regular.ttf') format('truetype');
-  font-weight: normal;
-}
-@font-face {
-  font-family: 'Noto Naskh Arabic';
-  src: url('/fonts/NotoNaskhArabic-Bold.ttf') format('truetype');
-  font-weight: bold;
-}
-
+/*  Vakıf Fontları */
 @font-face {
   font-family: 'Scheherazade New';
   src: url('/fonts/ScheherazadeNew-Regular.ttf') format('truetype');
   font-weight: normal;
 }
+/*  Vakıf Fontları */
 @font-face {
   font-family: 'Scheherazade New';
   src: url('/fonts/ScheherazadeNew-Bold.ttf') format('truetype');
   font-weight: bold;
 }
-
-@font-face {
-  font-family: 'Lateef';
-  src: url('/fonts/Lateef-Regular.ttf') format('truetype');
-  font-weight: normal;
-}
-@font-face {
-  font-family: 'Aref Ruqaa';
-  src: url('/fonts/ArefRuqaa-Regular.ttf') format('truetype');
-  font-weight: normal;
-}
-@font-face {
-  font-family: 'KacstBook';
-  src: url('/fonts/KacstBook KacstBook.ttf') format('truetype');
-}
-
+/*  Kalın ve güzel bir font (görüntüleme hatası giderilmek için düzenleme yapıldı) */
 @font-face {
   font-family: 'me_quran';
-  src: url('/fonts/me_quran Regular.ttf') format('truetype');
+  src: url('/fonts/me_quran-fixed.ttf') format('truetype');
 }
-
-@font-face {
-  font-family: 'PakType Naskh';
-  src: url('/fonts/PakType Naskh Basic Regular.ttf') format('truetype');
-}
-@font-face {
-    font-family: 'UthmanicHafs';
-    src: url('https://fonts.quran.ws/assets/fonts/uthmanic-hafs-v22.woff2') format('woff2');
-    font-display: swap;
-}
-
-.quran {
-    font-family: 'UthmanicHafs', serif;
-    direction: rtl;
-    font-size: 2rem;
-    line-height: 2.3;
-}
-
-@font-face {
-    font-family: 'HafsNastaleeq';
-    src: url('https://fonts.quran.ws/assets/fonts/hafs-nastaleeq.otf') format('opentype');
-    font-display: swap;
-}
+/*  Alternatif */
 @font-face {
     font-family: 'Indopak';
     src: url('https://fonts.quran.ws/assets/fonts/digital-khatt-indopak.otf') format('opentype');
     font-display: swap;
 }
+/*  Sure Başlık Fontu */
 @font-face {
     font-family: 'surah-name-v2-icon';
     src: url('https://fonts.quran.ws/assets/fonts/surah-name-v2.ttf') format('truetype');
     font-display: swap;
 }
-@font-face {
-    font-family: 'surah-name-v1-icon';
-    src: url('https://fonts.quran.ws/assets/fonts/surah-name-v1.ttf') format('truetype');
-    font-display: swap;
-}
+/*  2. Alternatif */
 @font-face {
     font-family: 'IndopakNastaleeq';
     src: url('https://fonts.quran.ws/assets/fonts/indopak-nastaleeq.ttf') format('truetype');
     font-display: swap;
 }
-@font-face {
-    font-family: 'UthmanicBazzi';
-    src: url('https://fonts.quran.ws/assets/fonts/uthmanic-bazzi-v20.ttf') format('truetype');
-    font-display: swap;
-}
-@font-face {
-    font-family: 'DigitalKhattIndoPak';
-    src: url('https://fonts.quran.ws/assets/fonts/digital-khatt-indopak.otf') format('opentype');
-    font-display: swap;
-}
-@font-face {
-  font-family: "DigitalKhattV1";
-  src:
-  url("https://quranfonts.com/fonts/Digital Khatt V1 Font/DigitalKhattQuranicV1.otf") format("opentype");
-  font-display: swap;
-}
-@font-face {
-  font-family: "DigitalKhattV2";
-  src:
-  url("https://quranfonts.com/fonts/Digital Khatt V2 Font/DigitalKhattV2.otf") format("opentype");
-  font-display: swap;
-}
-@font-face {
-  font-family: "MeQuran";
-  src:
-  url("https://quranfonts.com/fonts/Me Quran Font/me_quran_volt_newmet.ttf") format("truetype");
-  font-display: swap;
-}
-@font-face {
-  font-family: "DigitalKhattIndopak";
-  src:
-  url("https://quranfonts.com/fonts/Digital Khatt Indopak font/DigitalKhattIndoPak.otf") format("opentype");
-  font-display: swap;
-}
-@font-face {
-  font-family: "QPCV4Tajweed";
-  src:
-  url("https://quranfonts.com/fonts/QPC V4 Tajweed Font/p1.ttf") format("truetype");
-  font-display: swap;
-}
+/*  Besmele - Ayet sonu fontları */
 @font-face {
   font-family: "Symbols1";
   src: url('/fonts/Symbols1_Ver02.woff2') format('woff2');
   font-display: swap;
 }
-@font-face {
-  font-family: 'digitalkhaat-v2';
-  src: url('https://static-cdn.tarteel.ai/qul/fonts/dk/DigitalKhattV2.otf') format('opentype');
-  font-display: swap;
-}
+
 
 .okuma-icerik {
   -webkit-user-select: none;

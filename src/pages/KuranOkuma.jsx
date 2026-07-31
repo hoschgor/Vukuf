@@ -791,45 +791,79 @@ function sureGit(sureId, ayetNo) {
   setScrollKilitli(false)
 
   function odaklanHedefe(deneme = 0) {
-    const el = scrollRef.current
-    if (!el) return
+  const el = scrollRef.current
+  if (!el) return
 
-    const selector = ayetNo
-      ? `[data-sure="${sureId}"][data-ayet="${ayetNo}"]`
-      : `[data-sure-baslik="${sureId}"]`
-    const hedefEl = el.querySelector(selector)
+  const selector = ayetNo
+    ? `[data-sure="${sureId}"][data-ayet="${ayetNo}"]`
+    : `[data-sure-baslik="${sureId}"]`
+  const hedefEl = el.querySelector(selector)
 
-    if (!hedefEl) {
-      if (deneme < 2) {
-        setTimeout(() => odaklanHedefe(deneme + 1), 200)
-      }
-      return
+  if (!hedefEl) {
+    if (deneme < 2) setTimeout(() => odaklanHedefe(deneme + 1), 200)
+    return
+  }
+
+  const offset = (barKonum === "ust" ? barYuksekligi : 0)
+    + (player.durum !== "kapali" ? playerBarYuksekligi : 0)
+    + (ayetNo ? 20 : 8)
+
+  const hedefTop = () =>
+    hedefEl.getBoundingClientRect().top
+    - el.getBoundingClientRect().top
+    + el.scrollTop
+    - offset
+
+  // 1) Anında hedefe zıpla — smooth yok
+  el.scrollTop = hedefTop()
+
+  // 2) Ölçümler oturana kadar sessizce düzelt, sonra tek fren, sonra DUR
+  let bitti = false
+  let sabit = 0
+  let adim = 0
+
+  const bitir = (fark) => {
+    if (bitti) return
+    bitti = true
+    if (Math.abs(fark) > 3) {
+      el.scrollTo({ top: el.scrollTop + fark, behavior: "smooth" })
+    }
+    // bundan sonra bir daha scroll YOK
+  }
+
+  const otur = () => {
+    if (bitti || ++adim > 30) return bitir(0)   // ~yarım saniye emniyet limiti
+    const fark = hedefTop() - el.scrollTop
+
+    if (Math.abs(fark) <= 2) {
+      // hizadayız — 3 frame üst üste sabitse bitmiştir, animasyona gerek bile yok
+      if (++sabit >= 3) return bitir(0)
+      return requestAnimationFrame(otur)
     }
 
-    const offset = (barKonum === "ust" ? barYuksekligi : 0)
-      + (player.durum !== "kapali" ? playerBarYuksekligi : 0)
-      + (ayetNo ? 20 : 8)
-
-    hedefEl.style.scrollMarginTop = `${offset}px`
-    hedefEl.scrollIntoView({ behavior: "smooth", block: "start" })
-    setTimeout(() => { hedefEl.style.scrollMarginTop = "0" }, 400)
-
-    if (ayetNo) {
-      setOdakAyet({ sureNo: sureId, ayetNo })
-      setTimeout(() => setOdakAyet(null), 2000)
+    sabit = 0
+    if (Math.abs(fark) > 80) {
+      el.scrollTop = hedefTop()                 // hâlâ uzak: anında düzelt, göze batmaz
+      requestAnimationFrame(otur)
     } else {
-  odakSureNonce.current += 1
-  setOdakSure({ id: sureId, nonce: odakSureNonce.current })
+      bitir(fark)                               // yakın: tek kısa smooth = fren
+    }
+  }
+  requestAnimationFrame(otur)
 
-  if (odakSureTimeoutRef.current) {
-    clearTimeout(odakSureTimeoutRef.current)
+  if (ayetNo) {
+    setOdakAyet({ sureNo: sureId, ayetNo })
+    setTimeout(() => setOdakAyet(null), 2000)
+  } else {
+    odakSureNonce.current += 1
+    setOdakSure({ id: sureId, nonce: odakSureNonce.current })
+    if (odakSureTimeoutRef.current) clearTimeout(odakSureTimeoutRef.current)
+    odakSureTimeoutRef.current = setTimeout(() => {
+      setOdakSure(null)
+      odakSureTimeoutRef.current = null
+    }, 4200)
   }
-  odakSureTimeoutRef.current = setTimeout(() => {
-    setOdakSure(null)
-    odakSureTimeoutRef.current = null
-  }, 4200)
 }
-  }
 
   setTimeout(() => odaklanHedefe(0), isMobile ? 300 : 150)
 }

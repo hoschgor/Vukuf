@@ -1,7 +1,7 @@
 import { Play, Pause } from "lucide-react"
 import MushafPlayButton from "./MushafPlayButton"
 
-export default function SureBasligi({ sure, theme, onTikla, player }) {
+export default function SureBasligi({ sure, theme, onTikla, player, vurgulu = false, nonce }) {
   const ac = theme.accent
   const w = 580
   const h = 110
@@ -265,8 +265,11 @@ export default function SureBasligi({ sure, theme, onTikla, player }) {
 
         {/* SOL BÜYÜK ROZET */}
 
-        <g transform="translate(30,55)">
-
+        <g
+          transform={`translate(${w-30},55)`}
+          className={vurgulu ? "rozet-vurgu-ters" : ""}
+          style={{ transformOrigin: `${w-30}px 55px` }}
+        >
           {/* 32 inci halkası */}
           {[...Array(32)].map((_,i)=>(
             <circle
@@ -358,9 +361,11 @@ export default function SureBasligi({ sure, theme, onTikla, player }) {
         </g>
 
         {/* SAĞ BÜYÜK ROZET */}
-
-        <g transform={`translate(${w-30},55)`}>
-
+        <g
+          transform="translate(30,55)"
+          className={vurgulu ? "rozet-vurgu" : ""}
+          style={{ transformOrigin: "30px 55px" }}
+        >
           {[...Array(32)].map((_,i)=>(
             <circle
               key={`r-pearl-${i}`}

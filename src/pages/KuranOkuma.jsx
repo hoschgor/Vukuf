@@ -14,7 +14,6 @@ import KitapAyraci from "../components/KitapAyraci"
 import KayitPaneli from "../components/KayitPaneli"
 import KariSecici from "../components/KariSecici"
 import KelimePopup from "../components/KelimePopup"
-import kelimeMapping from "../data/kelime-mapping.json"
 import AyetPopup from "../components/AyetPopup"
 import { useMushaf, sureBaslangicSayfasi, ayetSayfasi } from "../data/hooks/useMushaf"
 import useAudioPlayer from "../data/hooks/useAudioPlayer"
@@ -98,6 +97,12 @@ export default function KuranOkuma({ kitap }) {
   const isMobile  = useMediaQuery("(max-width: 768px)")
   const scrollRef = useRef(null)
   const [odakAyet, setOdakAyet] = useState(null)
+  const [odakSure, setOdakSure] = useState(null)
+  const odakSureNonce = useRef(0)
+  const odakSureTimeoutRef = useRef(null)
+  const [odakAyrac, setOdakAyrac] = useState(null)
+  const odakAyracNonce = useRef(0)
+  const odakAyracTimeoutRef = useRef(null)
   const barZamanRef  = useRef(null)
   const sureSayacRef = useRef(null)
   const scrollHiziRef = useRef({ sonScrollTop: 0, sonZaman: Date.now(), scrollSayisi: 0 })
@@ -679,7 +684,7 @@ const sayfayaKaydir = useCallback((index, align = "start") => {
 
 const sayfaGercekYukseklikleriRef = useRef({})
 // Kayıtlı sayfaya gitme fonksiyonu
-const kayitSayfaGit = useCallback((sayfa, scrollY) => {
+const kayitSayfaGit = useCallback((sayfa, scrollY, kayitId) => {
   const index = sayfaListesi.findIndex(s => s.sayfaNo === sayfa)
   if (index === -1) return
   virtualizer.scrollToIndex(index, { align: "start" })
@@ -693,6 +698,11 @@ const kayitSayfaGit = useCallback((sayfa, scrollY) => {
       || 500
     const barOfset = isMobile ? 20 : 13
     el.scrollTop = sayfaBaslangic + (scrollY || 0) * sayfaYukseklik - barOfset
+
+    if (kayitId) {
+      setOdakAyrac(kayitId)
+      setTimeout(() => setOdakAyrac(null), 4200)
+    }
   }, isMobile ? 400 : 150)
 }, [sayfaListesi, virtualizer, sayfaYukseklikleri, isMobile])
 
@@ -796,13 +806,24 @@ function sureGit(sureId, ayetNo) {
       + (ayetNo ? 20 : 8)
 
     hedefEl.style.scrollMarginTop = `${offset}px`
-hedefEl.scrollIntoView({ behavior: "smooth", block: "start" })
-setTimeout(() => { hedefEl.style.scrollMarginTop = "0" }, 400)
+    hedefEl.scrollIntoView({ behavior: "smooth", block: "start" })
+    setTimeout(() => { hedefEl.style.scrollMarginTop = "0" }, 400)
 
     if (ayetNo) {
       setOdakAyet({ sureNo: sureId, ayetNo })
       setTimeout(() => setOdakAyet(null), 2000)
-    }
+    } else {
+  odakSureNonce.current += 1
+  setOdakSure({ id: sureId, nonce: odakSureNonce.current })
+
+  if (odakSureTimeoutRef.current) {
+    clearTimeout(odakSureTimeoutRef.current)
+  }
+  odakSureTimeoutRef.current = setTimeout(() => {
+    setOdakSure(null)
+    odakSureTimeoutRef.current = null
+  }, 4200)
+}
   }
 
   setTimeout(() => odaklanHedefe(0), isMobile ? 300 : 150)
@@ -815,8 +836,7 @@ setTimeout(() => { hedefEl.style.scrollMarginTop = "0" }, 400)
 
   const kelimeTikla = useCallback((kelime, sure, ayet, e) => {
     const lugatSonuc = lugat(kelime.arabic)
-    const mappedId = kelimeMapping[kelime.id] || kelime.id
-    const position = mappedId ? parseInt(mappedId.split(":")[2]) : 0
+    const position = kelime.id ? parseInt(kelime.id.split(":")[2]) : 0
     setPopup({
       tip: "kelime",
       kelime: {
@@ -2110,6 +2130,8 @@ const menuIcerikPadding = {
                     harfAraligi={harfAraligi}
                     player={player}
                     odakAyet={odakAyet}
+                    odakSure={odakSure}
+                    odakAyrac={odakAyrac}
                     aktifAyet={player.aktifAyet}
                     onKelimeTikla={kelimeTikla}
                     onAyetTikla={ayetTikla}

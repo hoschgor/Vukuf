@@ -2,7 +2,7 @@ import { useState } from "react"
 import { useMediaQuery } from "../data/hooks/useMediaQuery"
 
 const VAKIF_CPS = new Set([0x615, 0x617, 0x06D8, 0x06D9, 0x08D6, 0x08D7, 0x08DE])
-const OZEL_CPS = new Set([0x08D1, 0x08D2, 0x08D9, 0x06DC, 0x08D5])
+const OZEL_CPS = new Set([0x08D1, 0x08D2, 0x08D9, 0x06DC, 0x08D5, 0x06EB])
 const CIM_CPS = new Set([0x06DA])
 const TUM_OZEL_CPS = new Set([...VAKIF_CPS, ...OZEL_CPS, ...CIM_CPS])
 const CIM_RENK = '#f39c12'
@@ -35,12 +35,14 @@ const OZEL_SEMBOL = {
   0x08D9: 'ن',
   0x06DC: 'سكته',
   0x08D5: 'ص',
+  0x06EB: 'اشمام',  // işmam
 }
 const OZEL_RENK = {
   0x08D1: '#c0392b',
   0x08D2: '#c0392b',
   0x08D9: '#c0392b',
   0x06DC: '#8e44ad',
+  0x06EB: '#16a085',
 }
 
 function besmeleMi(kelimeId) {

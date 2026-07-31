@@ -78,8 +78,23 @@
   src: url('/fonts/Symbols1_Ver02.woff2') format('woff2');
   font-display: swap;
 }
+@keyframes rozet-donme {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
 
+@keyframes rozet-donme-ters {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(-360deg); }
+}
 
+.rozet-vurgu {
+  animation: rozet-donme 2s ease-in-out 2;
+}
+
+.rozet-vurgu-ters {
+  animation: rozet-donme-ters 2s ease-in-out 2;
+}
 .okuma-icerik {
   -webkit-user-select: none;
   -moz-user-select: none;

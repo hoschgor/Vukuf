@@ -238,7 +238,7 @@ export default function KayitPaneli({
                       <Trash2 size={11} />
                     </button>
                     <button
-                      onClick={() => { onSayfaGit(k.sayfa, k.scrollY); onKapat() }}
+                      onClick={() => { onSayfaGit(k.sayfa, k.scrollY, k.id); onKapat() }}
                       title="Sayfaya git"
                       style={{ ...s.ikonButon(false), color: theme.accent, borderColor: `${theme.accent}40`, background: `${theme.accent}10` }}
                     >

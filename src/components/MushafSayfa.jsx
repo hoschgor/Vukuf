@@ -32,6 +32,8 @@ export default function MushafSayfa({
   onYukseklikOlcum,
   kayitKonumModu = false,
   odakAyet = null,
+  odakSure = null,
+  odakAyrac = null,
 }) {
   
   const isMobile = useMediaQuery("(max-width: 768px)")
@@ -103,6 +105,7 @@ export default function MushafSayfa({
             kayit={kayit}
             theme={theme}
             onTikla={() => onKayitTikla?.(kayit)}
+            vurgulu={odakAyrac?.id === kayit.id}
           />
         </div>
       ))}
@@ -162,6 +165,7 @@ export default function MushafSayfa({
                 yaziBoyutu={fontSize}
                 onTikla={(e) => onSureTikla?.(grup.eleman.sure, e)}
                 player={player}
+                vurgulu={odakSure?.id === grup.eleman.sure.id}
               />
             </div>
           )

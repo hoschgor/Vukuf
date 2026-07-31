@@ -101,7 +101,6 @@ export default function KuranOkuma({ kitap }) {
   const odakSureNonce = useRef(0)
   const odakSureTimeoutRef = useRef(null)
   const [odakAyrac, setOdakAyrac] = useState(null)
-  const odakAyracNonce = useRef(0)
   const odakAyracTimeoutRef = useRef(null)
   const barZamanRef  = useRef(null)
   const sureSayacRef = useRef(null)
@@ -700,8 +699,14 @@ const kayitSayfaGit = useCallback((sayfa, scrollY, kayitId) => {
     el.scrollTop = sayfaBaslangic + (scrollY || 0) * sayfaYukseklik - barOfset
 
     if (kayitId) {
+      if (odakAyracTimeoutRef.current) {
+        clearTimeout(odakAyracTimeoutRef.current)
+      }
       setOdakAyrac(kayitId)
-      setTimeout(() => setOdakAyrac(null), 4200)
+      odakAyracTimeoutRef.current = setTimeout(() => {
+        setOdakAyrac(null)
+        odakAyracTimeoutRef.current = null
+      }, 4200)
     }
   }, isMobile ? 400 : 150)
 }, [sayfaListesi, virtualizer, sayfaYukseklikleri, isMobile])

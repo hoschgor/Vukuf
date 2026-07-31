@@ -95,6 +95,9 @@
 .rozet-vurgu-ters {
   animation: rozet-donme-ters 2s ease-in-out 2;
 }
+.ayrac-vurgu {
+  animation: rozet-donme 2s ease-in-out 2;
+}
 .okuma-icerik {
   -webkit-user-select: none;
   -moz-user-select: none;

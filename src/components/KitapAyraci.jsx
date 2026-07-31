@@ -1,4 +1,4 @@
-export default function KitapAyraci({ kayit, theme, onTikla, vurgulu = false, nonce }) {
+export default function KitapAyraci({ kayit, theme, onTikla, vurgulu = false }) {
   if (!kayit) return null
 
   const ac = theme?.accent || "#d4af37"
@@ -155,18 +155,10 @@ export default function KitapAyraci({ kayit, theme, onTikla, vurgulu = false, no
 
         {/* Motif - PlayButton tarzı */}
         <g transform="translate(40 16)">
-          {vurgulu && (
-            <animateTransform
-              key={nonce}
-              attributeName="transform"
-              type="rotate"
-              from="0 0 0"
-              to="-360 0 0"
-              dur="2s"
-              repeatCount="2"
-              additive="sum"
-            />
-          )}
+          <g
+            className={vurgulu ? "ayrac-vurgu" : ""}
+            style={{ transformOrigin: "0px 0px" }}
+          >
           {/* En dıştaki küçük noktalar */}
           {[...Array(24)].map((_, i) => {
             const a = i * 15 * Math.PI / 180
@@ -201,7 +193,7 @@ export default function KitapAyraci({ kayit, theme, onTikla, vurgulu = false, no
               />
             )
           })}
-
+         </g>
           {/* İçteki küçük elipsler */}
           {[...Array(16)].map((_, i) => {
             const a = i * 22.5 + 11.25

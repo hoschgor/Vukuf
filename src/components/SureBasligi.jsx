@@ -265,11 +265,11 @@ export default function SureBasligi({ sure, theme, onTikla, player, vurgulu = fa
 
         {/* SOL BÜYÜK ROZET */}
 
-        <g
-          transform={`translate(${w-30},55)`}
-          className={vurgulu ? "rozet-vurgu-ters" : ""}
-          style={{ transformOrigin: `${w-30}px 55px` }}
-        >
+        <g transform="translate(30,55)">
+          <g
+            className={vurgulu ? "rozet-vurgu" : ""}
+            style={{ transformOrigin: "0px 0px" }}
+          >
           {/* 32 inci halkası */}
           {[...Array(32)].map((_,i)=>(
             <circle
@@ -319,7 +319,7 @@ export default function SureBasligi({ sure, theme, onTikla, player, vurgulu = fa
               />
             )
           })}
-
+          </g>
           {/* 8 kollu iç yıldız */}
           {[0,45,90,135,180,225,270,315].map((d,i)=>(
             <g key={`l-star-${i}`} transform={`rotate(${d})`}>
@@ -361,11 +361,11 @@ export default function SureBasligi({ sure, theme, onTikla, player, vurgulu = fa
         </g>
 
         {/* SAĞ BÜYÜK ROZET */}
-        <g
-          transform="translate(30,55)"
-          className={vurgulu ? "rozet-vurgu" : ""}
-          style={{ transformOrigin: "30px 55px" }}
-        >
+        <g transform={`translate(${w-30},55)`}>
+          <g
+            className={vurgulu ? "rozet-vurgu-ters" : ""}
+            style={{ transformOrigin: "0px 0px" }}
+          >
           {[...Array(32)].map((_,i)=>(
             <circle
               key={`r-pearl-${i}`}
@@ -412,7 +412,7 @@ export default function SureBasligi({ sure, theme, onTikla, player, vurgulu = fa
               />
             )
           })}
-
+          </g>
           {[0,45,90,135,180,225,270,315].map((d,i)=>(
             <g key={`r-star-${i}`} transform={`rotate(${d})`}>
               <line

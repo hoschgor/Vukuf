@@ -105,7 +105,7 @@ export default function MushafSayfa({
             kayit={kayit}
             theme={theme}
             onTikla={() => onKayitTikla?.(kayit)}
-            vurgulu={odakAyrac?.id === kayit.id}
+            vurgulu={odakAyrac === kayit.id}
           />
         </div>
       ))}

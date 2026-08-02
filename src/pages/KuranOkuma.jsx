@@ -204,6 +204,8 @@ const maxWidth = useMemo(() =>
   const [menuAcik, setMenuAcik]   = useState(false)
   const [menuArama, setMenuArama] = useState("")
   const [acikSure, setAcikSure]   = useState(null)
+  const [anaBaslik, setAnaBaslik] = useState("sure")
+  const [acikCuz, setAcikCuz]     = useState(null)
   const [ayetArama, setAyetArama] = useState({})
 
   // ── Otomatik kaydırma
@@ -549,6 +551,31 @@ const cokSatir = wrapAktif && barYuksekligi > tekSatirYuksekligi * 1.0
   }
 }, [yukleniyor, sayfaListesi.length, scrollKilitli])
 
+  const cuzListesi = useMemo(() => {
+  const map = new Map()
+  for (const sure of mushafData) {
+    for (const ayet of sure.ayetler) {          // dizinin adı farklıysa uyarla
+      const mevcut = map.get(ayet.cuz)
+      if (mevcut === undefined || ayet.sayfa < mevcut) map.set(ayet.cuz, ayet.sayfa)
+    }
+  }
+  return [...map.entries()]
+    .sort((a, b) => a[0] - b[0])
+    .map(([no, baslangic]) => ({ no, baslangic }))
+}, [mushafData])
+
+const hizbSayfalari = (cuzNo) => {
+  const i = cuzListesi.findIndex(c => c.no === cuzNo)
+  if (i === -1) return []
+  const bas = cuzListesi[i].baslangic
+  const son = (cuzListesi[i + 1]?.baslangic ?? toplamSayfa + 1) - 1
+  const uzunluk = son - bas + 1
+  return [0, 1, 2, 3].map(k => ({
+    hizb: k + 1,
+    sayfa: bas + Math.round((uzunluk * k) / 4),
+  }))
+}
+
   // ── SAYFA YÜKSEKLİKLERİ ──
   const sayfaYukseklikleri = useMemo(() => {
     if (!sayfaListesi.length) return []
@@ -754,6 +781,7 @@ function sayfayaGit(no) {
   if (n < 1 || n > toplamSayfa) return
 
   setMevcutSayfa(n)
+  setAyetArama({})
   setPopup(null)
 
   const index = sayfaListesi.findIndex(s => s.sayfaNo === n)
@@ -786,6 +814,7 @@ function sureGit(sureId, ayetNo) {
   setAcikSure(null)
   setAyetArama({})
   setPopup(null)
+  setAcikCuz(null)
 
   virtualizer.scrollToIndex(hedefIndex, { align: "start" })
   setScrollKilitli(false)
@@ -1805,7 +1834,148 @@ const menuIcerikPadding = {
         overflowY: "auto",
         ...menuIcerikPadding,
       }}>
-              {filtreliSureler.map(sure => (
+       {/* ── ANA BAŞLIKLAR — arama yokken ── */}
+      {!menuArama && (
+        <>
+          {/* Cüz başlığı */}
+          <button
+            onClick={() => setAnaBaslik(anaBaslik === "cuz" ? null : "cuz")}
+            style={{
+              width: "100%",
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              padding: "12px 8px",
+              background: "none",
+              border: "none",
+              borderBottom: `1px solid ${theme.border}`,
+              cursor: "pointer",
+              color: theme.accent,
+              fontWeight: 600,
+              fontSize: `${Math.round((isMobile ? 12 : 13) * barUiOlcegi)}px`,
+            }}
+          >
+            {anaBaslik === "cuz"
+              ? <ChevronDown size={Math.round((isMobile ? 12 : 16) * barUiOlcegi)} />
+              : <ChevronRight size={Math.round((isMobile ? 12 : 16) * barUiOlcegi)} />}
+            Cüz
+          </button>
+
+          {anaBaslik === "cuz" && cuzListesi.map(cuz => (
+            <div key={cuz.no}>
+              <div style={{
+                display: "flex",
+                alignItems: "center",
+                borderBottom: `1px solid ${theme.border}`,
+                background: `${theme.accent}08`,
+              }}>
+                <button
+                  onClick={() => setAcikCuz(acikCuz === cuz.no ? null : cuz.no)}
+                  style={{
+                    padding: "10px 8px 10px 16px",
+                    color: theme.accent,
+                    display: "flex",
+                    alignItems: "center",
+                    flexShrink: 0,
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                  }}
+                >
+                  {acikCuz === cuz.no
+                    ? <ChevronDown size={Math.round((isMobile ? 12 : 16) * barUiOlcegi)} />
+                    : <ChevronRight size={Math.round((isMobile ? 12 : 16) * barUiOlcegi)} />}
+                </button>
+                <button
+                  onClick={() => sayfayaGit(cuz.baslangic)}
+                  style={{
+                    flex: 1,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    padding: "10px 8px 10px 0",
+                    textAlign: "left",
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    color: theme.text,
+                  }}
+                >
+                  <span style={{ fontSize: `${Math.round((isMobile ? 11 : 12) * barUiOlcegi)}px` }}>
+                    {cuz.no}. Cüz
+                  </span>
+                  <span style={{
+                    fontSize: `${Math.round((isMobile ? 8 : 9) * barUiOlcegi)}px`,
+                    color: theme.textSecondary,
+                    marginLeft: "auto",
+                    paddingRight: "8px",
+                  }}>
+                    Sayfa {cuz.baslangic}
+                  </span>
+                </button>
+              </div>
+
+              {acikCuz === cuz.no && (
+                <div style={{
+                  display: "flex",
+                  gap: "6px",
+                  padding: "8px 12px 8px 24px",
+                  background: `${theme.accent}08`,
+                  borderBottom: `1px solid ${theme.border}`,
+                }}>
+                  {hizbSayfalari(cuz.no).map(h => (
+                    <button
+                      key={h.hizb}
+                      onClick={() => sayfayaGit(h.sayfa)}
+                      style={{
+                        flex: 1,
+                        height: "28px",
+                        fontSize: `${Math.round((isMobile ? 8 : 10) * barUiOlcegi)}px`,
+                        color: theme.text,
+                        background: theme.background,
+                        border: `1px solid ${theme.border}`,
+                        borderRadius: "4px",
+                        cursor: "pointer",
+                      }}
+                      onMouseEnter={e => { e.currentTarget.style.background = `${theme.accent}20` }}
+                      onMouseLeave={e => { e.currentTarget.style.background = theme.background }}
+                    >
+                      Hizb {h.hizb}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+
+          {/* Sure başlığı */}
+          <button
+            onClick={() => setAnaBaslik(anaBaslik === "sure" ? null : "sure")}
+            style={{
+              width: "100%",
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              padding: "12px 8px",
+              background: "none",
+              border: "none",
+              borderBottom: `1px solid ${theme.border}`,
+              cursor: "pointer",
+              color: theme.accent,
+              fontWeight: 600,
+              fontSize: `${Math.round((isMobile ? 12 : 13) * barUiOlcegi)}px`,
+            }}
+          >
+            {anaBaslik === "sure"
+              ? <ChevronDown size={Math.round((isMobile ? 12 : 16) * barUiOlcegi)} />
+              : <ChevronRight size={Math.round((isMobile ? 12 : 16) * barUiOlcegi)} />}
+            Sûre
+          </button>
+        </>
+      )}
+
+              {/* ── SURE LİSTESİ — mevcut bloğun AYNISI, sadece koşul değişti ── */}
+              {(menuArama || anaBaslik === "sure") && filtreliSureler.map(sure => (
                 <div key={sure.id}>
                   <div style={{ 
                     display: "flex", 

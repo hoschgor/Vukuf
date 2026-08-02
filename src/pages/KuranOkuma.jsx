@@ -161,6 +161,9 @@ export default function KuranOkuma({ kitap }) {
   const [sureBilgisiGoster, setSureBilgisiGoster] = useState(() =>
   localStorage.getItem("vukuf-sure-bilgisi") !== "false"
 )
+  const [cuzBilgisiGoster, setCuzBilgisiGoster] = useState(() =>
+  localStorage.getItem("vukuf-cuz-bilgisi") !== "false"
+)
 const maxWidth = useMemo(() => 
   `${Math.round((isMobile ? 480 : 720) * (yaziBoyutu / 20))}px`
 , [isMobile, yaziBoyutu])
@@ -230,7 +233,7 @@ const maxWidth = useMemo(() =>
   useEffect(() => { localStorage.setItem("vukuf-satir-araligi",     String(satirAraligi))   }, [satirAraligi])
   useEffect(() => { localStorage.setItem("vukuf-harf-araligi",      String(harfAraligi))    }, [harfAraligi])
   useEffect(() => { localStorage.setItem("vukuf-sure-bilgisi", String(sureBilgisiGoster)) }, [sureBilgisiGoster])
-
+  useEffect(() => { localStorage.setItem("vukuf-cuz-bilgisi",  String(cuzBilgisiGoster))  }, [cuzBilgisiGoster])
   useEffect(() => {
     sureSayacRef.current = setInterval(() => {
       setBugunSure(prev => {
@@ -517,6 +520,8 @@ const cokSatir = wrapAktif && barYuksekligi > tekSatirYuksekligi * 1.0
     const kelime = elemanlar.find(el => el.tip === "kelime")
     return kelime?.sure || null
   }, [sayfaMap, mevcutSayfa])
+
+  
   
   const filtreliSureler = useMemo(() => {
     if (!menuArama) return sureler
@@ -526,6 +531,7 @@ const cokSatir = wrapAktif && barYuksekligi > tekSatirYuksekligi * 1.0
     )
   }, [sureler, menuArama])
 
+  
   // ── SAYFA LİSTESİ ──
   const sayfaListesi = useMemo(() => {
     if (!sayfaMap || sayfaMap.size === 0) return []
@@ -563,6 +569,29 @@ const cokSatir = wrapAktif && barYuksekligi > tekSatirYuksekligi * 1.0
     .sort((a, b) => a[0] - b[0])
     .map(([no, baslangic]) => ({ no, baslangic }))
 }, [mushafData])
+const mevcutCuzHizb = useMemo(() => {
+  if (!cuzListesi.length) return null
+
+  // Mevcut sayfayı kapsayan cüz: başlangıcı <= mevcutSayfa olan son cüz
+  let cuz = cuzListesi[0]
+  for (const c of cuzListesi) {
+    if (c.baslangic <= mevcutSayfa) cuz = c
+    else break
+  }
+
+  // Cüz içindeki hizb: aynı mantık, çeyrek noktalarına göre
+  const i = cuzListesi.findIndex(c => c.no === cuz.no)
+  const bas = cuz.baslangic
+  const son = (cuzListesi[i + 1]?.baslangic ?? toplamSayfa + 1) - 1
+  const uzunluk = son - bas + 1
+
+  let hizb = 1
+  for (let k = 1; k < 4; k++) {
+    if (bas + Math.round((uzunluk * k) / 4) <= mevcutSayfa) hizb = k + 1
+  }
+
+  return { cuz: cuz.no, hizb }
+}, [cuzListesi, mevcutSayfa, toplamSayfa])
 
 const hizbSayfalari = (cuzNo) => {
   const i = cuzListesi.findIndex(c => c.no === cuzNo)
@@ -1395,7 +1424,7 @@ const menuIcerikPadding = {
               />
             </div>           
           )}
-        </div>     
+        </div>
         <div>
           <div style={{ fontSize: `${Math.round((isMobile ? 11 : 12) * barUiOlcegi)}px`, color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px" }}>OKUMA SÜRESİ</div>
           <button onClick={() => setSureGoster(!sureGoster)} style={{
@@ -1434,6 +1463,19 @@ const menuIcerikPadding = {
           }}>
             <span>Sûre bilgisi</span>
             <span style={{ fontSize: `${Math.round((isMobile ? 9 : 11) * barUiOlcegi)}px`, }}>{sureBilgisiGoster ? "Açık" : "Kapalı"}</span>
+          </button>
+        </div>
+        <div>
+          <div style={{ fontSize: `${Math.round((isMobile ? 9 : 12) * barUiOlcegi)}px`, color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px" }}>CÜZ / HİZB BİLGİSİ</div>
+          <button onClick={() => setCuzBilgisiGoster(!cuzBilgisiGoster)} style={{
+            width: "100%", padding: "8px 12px", borderRadius: "8px", fontSize: `${Math.round((isMobile ? 11 : 12) * barUiOlcegi)}px`,
+            background: cuzBilgisiGoster ? `${theme.accent}15` : theme.background,
+            color: cuzBilgisiGoster ? theme.accent : theme.textSecondary,
+            border: `1px solid ${cuzBilgisiGoster ? theme.accent : theme.border}`,
+            cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between",
+          }}>
+            <span>Cüz / Hizb bilgisi</span>
+            <span style={{ fontSize: `${Math.round((isMobile ? 9 : 11) * barUiOlcegi)}px` }}>{cuzBilgisiGoster ? "Açık" : "Kapalı"}</span>
           </button>
         </div>
         <div style={{ position: "relative", zIndex: 300 }}>
@@ -1627,7 +1669,22 @@ const menuIcerikPadding = {
           {mevcutSureBilgisi.isim}
         </span>
       )}
-      
+      {cuzBilgisiGoster && mevcutCuzHizb && (
+      <span style={{
+                fontSize: `${Math.round((isMobile ? 9 : 12) * barUiOlcegi)}px`,
+                color: theme.textSecondary,
+                padding: "5px 4px",
+                display: "flex",
+                alignItems: "center",
+                gap: "2px",
+                whiteSpace: "nowrap",
+      }}>
+      <BookOpen size={Math.round((isMobile ? 12 : 16) * barUiOlcegi)} />
+      {isMobile
+        ? `${mevcutCuzHizb.cuz}C·${mevcutCuzHizb.hizb}H`
+        : `${mevcutCuzHizb.cuz}. Cüz · ${mevcutCuzHizb.hizb}. Hizb`}
+      </span>
+      )}
       <button onClick={() => setSadeMode(!sadeMode)} style={{ ...barButonStil(sadeMode), padding: isMobile ? "3px" : "4px" }}>
         <Circle size={Math.round((isMobile ? 12 : 16) * barUiOlcegi)} />
       </button>

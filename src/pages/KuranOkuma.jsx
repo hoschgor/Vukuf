@@ -1324,7 +1324,7 @@ const menuIcerikPadding = {
               <div style={{ fontSize: "10px", color: theme.textSecondary }}>{t.aciklama}</div>
             </div>
             {currentTheme === t.id && t.id !== "custom" && <span style={{ fontSize: "10px", color: theme.accent }}>✓</span>}
-            {t.id === "custom" && <Pencil size={Math.round((isMobile ? 12 : 16) * barUiOlcegi)} color={theme.textSecondary} />}
+            {t.id === "custom" && <Pencil size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} color={theme.textSecondary} />}
           </button>
         ))}
       </div>
@@ -1349,7 +1349,7 @@ const menuIcerikPadding = {
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "20px" }}>
           <h2 style={{ fontSize: `${Math.round((isMobile ? 11 : 12) * barUiOlcegi)}px`, color: theme.text }}>Özel Tema</h2>
           <button onClick={() => setOzelTemaPanelAcik(false)} style={{ color: theme.textSecondary, background: "none", border: "none", cursor: "pointer" }}>
-            <X size={Math.round((isMobile ? 12 : 16) * barUiOlcegi)} />
+            <X size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />
           </button>
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
@@ -1452,7 +1452,7 @@ const menuIcerikPadding = {
                 display: "flex", alignItems: "center", justifyContent: "center", gap: "4px",
                 border: "none", cursor: "pointer",
               }}>
-                {k === "ust" ? <ChevronsUp size={Math.round((isMobile ? 12 : 16) * barUiOlcegi)} /> : <ChevronsDown size={Math.round((isMobile ? 12 : 16) * barUiOlcegi)} />}
+                {k === "ust" ? <ChevronsUp size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} /> : <ChevronsDown size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />}
                 {k === "ust" ? "Üst" : "Alt"}
               </button>
             ))}
@@ -1512,8 +1512,8 @@ const menuIcerikPadding = {
         >
           <span>Görüntüleme</span>
           {gorunumAcik
-            ? <ChevronDown size={Math.round((isMobile ? 12 : 16) * barUiOlcegi)} />
-            : <ChevronRight size={Math.round((isMobile ? 12 : 16) * barUiOlcegi)} />}
+            ? <ChevronDown size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />
+            : <ChevronRight size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />}
         </button>
 
         {/* İçerik — sadece açıkken */}
@@ -1588,7 +1588,7 @@ const menuIcerikPadding = {
       display: "flex",
       alignItems: "center",
       flexWrap: wrapAktif ? "wrap" : "nowrap",
-      gap: `${Math.round((isMobile ? 14 : 12) * barUiOlcegi)}px`,
+      gap: `${Math.round((isMobile ? 12 : 12) * barUiOlcegi)}px`,
       flex: (gorunurOgeSayisi < 4) ? "0 0 auto" : 1,
       justifyContent: (wrapAktif || gorunurOgeSayisi < 4) ? "center" : "flex-start",
       paddingLeft: (!wrapAktif && isMobile && gorunurOgeSayisi >= 4) ? `${Math.round(26 * barUiOlcegi)}px` : 0,
@@ -1597,12 +1597,12 @@ const menuIcerikPadding = {
       minWidth: 0,
     }}>
       <button onClick={() => navigate(-1)} style={{ ...barButonStil(), flexShrink: 0 }}>
-        <ArrowLeft size={Math.round((isMobile ? 12 : 16) * barUiOlcegi)} /> {!isMobile && ""}
+        <ArrowLeft size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} /> {!isMobile && ""}
       </button>
       
             {sureMenuGoster && (
         <button onClick={() => setMenuAcik(!menuAcik)} style={{ ...barButonStil(menuAcik), flexShrink: 0 }}>
-          <Menu size={Math.round((isMobile ? 12 : 16) * barUiOlcegi)} />
+          <Menu size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />
         </button>
       )}
 
@@ -1618,7 +1618,7 @@ const menuIcerikPadding = {
           }}
         >
           <Bookmark color={theme.accent}
-            size={Math.round((isMobile ? 12 : 16) * barUiOlcegi)}
+            size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)}
             fill={kayitlar.some(k => k.sayfa === mevcutSayfa) ? "currentColor" : "none"}
           />
         </button>
@@ -1636,7 +1636,7 @@ const menuIcerikPadding = {
             color: theme.accent,
           }}
         >
-          <BookOpen size={Math.round((isMobile ? 12 : 17) * barUiOlcegi)} />
+          <BookOpen size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />
           {mevcutSayfa}
         </button>
       )}
@@ -1645,7 +1645,7 @@ const menuIcerikPadding = {
   <>
     {yaziTipiGoster && (
       <button onClick={() => togglePanel(setAaAcik, !aaAcik)} style={barButonStil(aaAcik)}>
-        <Feather size={Math.round((isMobile ? 12 : 16) * barUiOlcegi)} />
+        <Feather size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />
       </button>
     )}
 
@@ -1657,8 +1657,8 @@ const menuIcerikPadding = {
           title="Otomatik kaydırma"
         >
           {otomatikKaydirma
-            ? <Pause size={Math.round((isMobile ? 12 : 16) * barUiOlcegi)} />
-            : <Play size={Math.round((isMobile ? 12 : 16) * barUiOlcegi)} />}
+            ? <Pause size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)}  />
+            : <Play size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)}  />}
         </button>
 
         {otomatikKaydirma && (
@@ -1674,10 +1674,10 @@ const menuIcerikPadding = {
               onClick={() => setKaydirmaHizi(Math.max(1, kaydirmaHizi - 1))}
               style={{ ...barButonStil(), padding: "2px" }}
             >
-              <Minus size={Math.round((isMobile ? 12 : 16) * barUiOlcegi)} />
+              <Minus size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />
             </button>
             <span style={{
-              fontSize: `${Math.round((isMobile ? 10 : 12) * barUiOlcegi)}px`,
+              fontSize: `${Math.round((isMobile ? 18 : 21) * barUiOlcegi)}px`,
               color: theme.textSecondary,
               minWidth: "16px",
               textAlign: "center",
@@ -1688,7 +1688,7 @@ const menuIcerikPadding = {
               onClick={() => setKaydirmaHizi(Math.min(20, kaydirmaHizi + 1))}
               style={{ ...barButonStil(), padding: "2px" }}
             >
-              <Plus size={Math.round((isMobile ? 12 : 16) * barUiOlcegi)} />
+              <Plus size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />
             </button>
           </div>
         )}
@@ -1703,7 +1703,7 @@ const menuIcerikPadding = {
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
-      gap: `${Math.round((isMobile ? 4 : 3) * barUiOlcegi)}px`,
+      gap: `${Math.round((isMobile ? 12 : 24) * barUiOlcegi)}px`,
       flexShrink: 0,
       flexWrap: wrapAktif ? "wrap" : "nowrap",
       width: wrapAktif ? "100%" : "auto",
@@ -1719,7 +1719,7 @@ const menuIcerikPadding = {
           alignItems: "center", 
           gap: "2px",
         }}>
-          <Clock size={Math.round((isMobile ? 12 : 16) * barUiOlcegi)} /> 
+          <Clock size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} /> 
           {isMobile ? dakikaFormatla(bugunSure) : `Bugün ${dakikaFormatla(bugunSure)}`}
         </span>
       )}
@@ -1732,7 +1732,7 @@ const menuIcerikPadding = {
           alignItems: "center",
           gap: "2px",
         }}>
-          <Layers size={Math.round((isMobile ? 12 : 16) * barUiOlcegi)} />
+          <Layers size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />
           {mevcutSureBilgisi.isim}
         </span>
       )}
@@ -1746,7 +1746,7 @@ const menuIcerikPadding = {
                 gap: "2px",
                 whiteSpace: "nowrap",
       }}>
-      <BookOpen size={Math.round((isMobile ? 12 : 16) * barUiOlcegi)} />
+      <BookOpen size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />
       {isMobile
         ? `${mevcutCuzHizb.cuz}C·${mevcutCuzHizb.hizb}H`
         : `${mevcutCuzHizb.cuz}. Cüz · ${mevcutCuzHizb.hizb}. Hizb`}
@@ -1754,18 +1754,18 @@ const menuIcerikPadding = {
       )}
       {sadeModGoster && (
         <button onClick={() => setSadeMode(!sadeMode)} style={{ ...barButonStil(sadeMode), padding: isMobile ? "3px" : "4px" }}>
-          <Circle size={Math.round((isMobile ? 12 : 16) * barUiOlcegi)} />
+          <Circle size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />
         </button>
       )}
 
       {temaGoster && (
         <button onClick={() => togglePanel(setTemaAcik, !temaAcik)} style={{ ...barButonStil(temaAcik), padding: isMobile ? "3px" : "4px" }}>
-          <Palette size={Math.round((isMobile ? 12 : 16) * barUiOlcegi)} />
+          <Palette size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />
         </button>
       )}
 
       <button onClick={() => togglePanel(setAyarlarAcik, !ayarlarAcik)} style={{ ...barButonStil(ayarlarAcik), padding: isMobile ? "3px" : "4px" }}>
-        <Settings size={Math.round((isMobile ? 12 : 16) * barUiOlcegi)} />
+        <Settings size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />
       </button>
     </div>
   </div>
@@ -1912,7 +1912,7 @@ const menuIcerikPadding = {
         alignItems: "center", 
         gap: "8px" 
       }}>
-        <Search size={Math.round((isMobile ? 12 : 16) * barUiOlcegi)} color={theme.accent} />
+        <Search size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} color={theme.accent} />
         <input
           type="text"
           placeholder="Sûre ismi..."
@@ -1939,7 +1939,7 @@ const menuIcerikPadding = {
               cursor: "pointer" 
             }}
           >
-            <X size={Math.round((isMobile ? 12 : 16) * barUiOlcegi)} />
+            <X size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />
           </button>
         )}
         <button 
@@ -1952,7 +1952,7 @@ const menuIcerikPadding = {
             cursor: "pointer" 
           }}
         >
-          <X size={Math.round((isMobile ? 12 : 16) * barUiOlcegi)} />
+          <X size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />
         </button>
       </div>
       
@@ -1983,8 +1983,8 @@ const menuIcerikPadding = {
             }}
           >
             {anaBaslik === "cuz"
-              ? <ChevronDown size={Math.round((isMobile ? 12 : 16) * barUiOlcegi)} />
-              : <ChevronRight size={Math.round((isMobile ? 12 : 16) * barUiOlcegi)} />}
+              ? <ChevronDown size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />
+              : <ChevronRight size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />}
             Cüz
           </button>
 
@@ -2010,8 +2010,8 @@ const menuIcerikPadding = {
                   }}
                 >
                   {acikCuz === cuz.no
-                    ? <ChevronDown size={Math.round((isMobile ? 12 : 16) * barUiOlcegi)} />
-                    : <ChevronRight size={Math.round((isMobile ? 12 : 16) * barUiOlcegi)} />}
+                    ? <ChevronDown size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />
+                    : <ChevronRight size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />}
                 </button>
                 <button
                   onClick={() => sayfayaGit(cuz.baslangic)}
@@ -2094,8 +2094,8 @@ const menuIcerikPadding = {
             }}
           >
             {anaBaslik === "sure"
-              ? <ChevronDown size={Math.round((isMobile ? 12 : 16) * barUiOlcegi)} />
-              : <ChevronRight size={Math.round((isMobile ? 12 : 16) * barUiOlcegi)} />}
+              ? <ChevronDown size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />
+              : <ChevronRight size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />}
             Sûre
           </button>
         </>
@@ -2123,8 +2123,8 @@ const menuIcerikPadding = {
                       }}
                     >
                       {acikSure === sure.id 
-                        ? <ChevronDown size={Math.round((isMobile ? 12 : 16) * barUiOlcegi)} /> 
-                        : <ChevronRight size={Math.round((isMobile ? 12 : 16) * barUiOlcegi)} />
+                        ? <ChevronDown size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} /> 
+                        : <ChevronRight size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />
                       }
                     </button>
                     <button
@@ -2180,7 +2180,7 @@ const menuIcerikPadding = {
                           borderRadius: "16px", 
                           padding: "4px 10px",
                         }}>
-                          <Search size={Math.round((isMobile ? 12 : 16) * barUiOlcegi)} color={theme.accent} />
+                          <Search size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} color={theme.accent} />
                           <input
                             type="number" 
                             min="1" 

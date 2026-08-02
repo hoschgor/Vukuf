@@ -157,7 +157,7 @@ export default function KitapAyraci({ kayit, theme, onTikla, vurgulu = false }) 
         <g transform="translate(40 16)">
           <g
             className={vurgulu ? "ayrac-vurgu" : ""}
-            style={{ transformOrigin: "0px 0px" }}
+            style={{ transformOrigin: "0px 0px", opacity: 0.8 }}
           >
           {/* En dıştaki küçük noktalar */}
           {[...Array(24)].map((_, i) => {

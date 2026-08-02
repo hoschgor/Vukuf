@@ -18,12 +18,12 @@ export default function AyetNo({ no, sure, theme, onClick }) {
         marginRight: "4px",
         cursor: "pointer",
         border: `0.5px solid ${ac}30`,
-        transition: "all 0.15s ease",
+        transition: "transform 0.15s ease, background-color 0.15s ease",
         letterSpacing: "0.5px",
       }}
       onMouseEnter={(e) => {
-        e.currentTarget.style.backgroundColor = `${ac}20`
-        e.currentTarget.style.transform = "scale(1.02)"
+        if (window.matchMedia("(hover: hover)").matches)
+          e.currentTarget.style.transform = "scale(1.02)"
       }}
       onMouseLeave={(e) => {
         e.currentTarget.style.backgroundColor = `${ac}10`

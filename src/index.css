@@ -82,12 +82,27 @@
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
+@keyframes rozet-donme {
+  0%   { transform: rotate(0deg)   scale(1); }
+  15%  { transform: rotate(54deg)  scale(1.18); }
+  85%  { transform: rotate(306deg) scale(1.18); }
+  100% { transform: rotate(360deg) scale(1); }
+}
 
 @keyframes rozet-donme-ters {
   from { transform: rotate(0deg); }
   to { transform: rotate(-360deg); }
 }
+@keyframes ayrac-vurgu-anim {
+  0%   { transform: rotate(0deg)   scale(1);    opacity: .8; }
+  20%  { transform: rotate(72deg)  scale(1.22); opacity: 1; }
+  80%  { transform: rotate(288deg) scale(1.22); opacity: 1; }
+  100% { transform: rotate(360deg) scale(1);    opacity: .8; }
+}
 
+.ayrac-vurgu {
+  animation: ayrac-vurgu-anim 2s ease-in-out 2;
+}
 .rozet-vurgu {
   animation: rozet-donme 2s ease-in-out 2;
 }
@@ -98,6 +113,11 @@
 .ayrac-vurgu {
   animation: rozet-donme 2s ease-in-out 2;
 }
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
 .okuma-icerik {
   -webkit-user-select: none;
   -moz-user-select: none;

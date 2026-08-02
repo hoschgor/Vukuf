@@ -125,7 +125,7 @@ export default function KuranOkuma({ kitap }) {
   const scrollHiziRef = useRef({ sonScrollTop: 0, sonZaman: Date.now(), scrollSayisi: 0 })
   const scrollOranRef = useRef(0)
   const [kayitPaneliAcik, setKayitPaneliAcik] = useState(false)
-  const playerBarYuksekligi = isMobile ? 41 : 40
+
   // ── Ses sistemi
   const player = useAudioPlayer()
 
@@ -659,7 +659,9 @@ const hizbSayfalari = (cuzNo) => {
     sayfa: bas + Math.round((uzunluk * k) / 4),
   }))
 }
-
+  const playerBarYuksekligi = isMobile
+  ? 41 + Math.max(0, Math.round((1 - barUiOlcegi) * 1))
+  : 40 + Math.max(0, Math.round((1 - barUiOlcegi) * 8))
   // ── SAYFA YÜKSEKLİKLERİ ──
   const sayfaYukseklikleri = useMemo(() => {
     if (!sayfaListesi.length) return []
@@ -1595,7 +1597,7 @@ const menuIcerikPadding = {
       minWidth: 0,
     }}>
       <button onClick={() => navigate(-1)} style={{ ...barButonStil(), flexShrink: 0 }}>
-        <ArrowLeft size={Math.round((isMobile ? 12 : 16) * barUiOlcegi)} /> {!isMobile && "Geri"}
+        <ArrowLeft size={Math.round((isMobile ? 12 : 16) * barUiOlcegi)} /> {!isMobile && ""}
       </button>
       
             {sureMenuGoster && (
@@ -2272,6 +2274,8 @@ const menuIcerikPadding = {
           barKonum={barKonum}
           barGorunur={barGorunur}
           barYuksekligi={barYuksekligi}
+          playerBarYuksekligi={playerBarYuksekligi}
+          barUiOlcegi={barUiOlcegi}
           onOdaklan={() => {
             if (!player.aktifAyet) return
             const { sureNo, ayetNo } = player.aktifAyet

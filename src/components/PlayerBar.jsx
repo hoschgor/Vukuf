@@ -2,13 +2,16 @@ import { Play, Pause, Square, SkipBack, SkipForward, Glasses } from "lucide-reac
 import { KARILAR } from "../data/hooks/useAudioPlayer"
 import { useMediaQuery } from "../data/hooks/useMediaQuery"
 
+
 export default function PlayerBar({ 
   player, 
   sureler = [], 
   theme, 
   barKonum = "alt", 
+  barUiOlcegi,
   barGorunur = true, 
   barYuksekligi = 0,
+  playerBarYuksekligi,
   onOdaklan
 }) {
   const { durum, aktifAyet, kariId, duraklat, devamEt, durdur, oncekiAyet, sonrakiAyet } = player
@@ -20,7 +23,7 @@ export default function PlayerBar({
   const aktifKari = KARILAR.find(k => k.id === kariId)
 
   const mainBarHeight = barYuksekligi || (isMobile ? 44 : 33)
-  const playerBarHeight = isMobile ? 46 : 41
+  const playerBarHeight = playerBarYuksekligi
 
   const getBottomPosition = () => {
     if (barKonum === "alt") {
@@ -75,7 +78,8 @@ export default function PlayerBar({
       right: 0,
       bottom: getBottomPosition(),
       top: getTopPosition(),
-      height: `${playerBarHeight}px`,
+      minHeight: `${playerBarHeight}px`,
+      height: "auto",
       background: theme.surface,
       borderTop: barKonum === "alt" ? `1px solid ${theme.accent}25` : "none",
       borderBottom: barKonum === "ust" ? `1px solid ${theme.accent}25` : "none",
@@ -99,12 +103,12 @@ export default function PlayerBar({
       <div style={{ 
         flex: "0 1 auto",
         minWidth: 0,
-        maxWidth: isMobile ? "45%" : "50%",
+        maxWidth: isMobile ? "75%" : "100%",
         overflow: "hidden",
         paddingLeft: isMobile ? "5%" : "1%",
       }}>
         <div style={{
-          fontSize: isMobile ? "11px" : "13px", 
+          fontSize: `${Math.round((isMobile ? 12 : 11) * barUiOlcegi)}px`,
           fontWeight: "500", 
           color: theme.text,
           overflow: "hidden", 
@@ -119,7 +123,7 @@ export default function PlayerBar({
             : "Besmele"}
         </div>
         <div style={{
-          fontSize: isMobile ? "9px" : "11px", 
+          fontSize: `${Math.round((isMobile ? 10 : 11) * barUiOlcegi)}px`,
           color: theme.textSecondary,
           overflow: "hidden", 
           textOverflow: "ellipsis", 

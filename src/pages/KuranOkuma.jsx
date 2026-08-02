@@ -2083,12 +2083,12 @@ const menuIcerikPadding = {
                         {sure.isim}
                       </span>
                       <span style={{ 
-                        fontSize: `${Math.round((isMobile ? 11 : 12) * barUiOlcegi)}px`, 
+                        fontSize: `${Math.round((isMobile ? 7 : 9) * barUiOlcegi)}px`, 
                         color: theme.textSecondary, 
                         marginLeft: "auto", 
                         paddingRight: "8px" 
                       }}>
-                        {sure.ayetSayisi}
+                        {sure.ayetSayisi} Âyet
                       </span>
                     </button>
                   </div>

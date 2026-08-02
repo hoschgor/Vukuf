@@ -20,7 +20,7 @@ export default function KariSecici({ kariId, setKariId, theme, barUiOlcegi = 1, 
         marginBottom: "8px", 
         letterSpacing: "1px",
       }}>
-        KÂRÎ
+        Kârî (Okuyucu)
       </div>
 
       {/* Seçili kari butonu */}
@@ -74,14 +74,14 @@ export default function KariSecici({ kariId, setKariId, theme, barUiOlcegi = 1, 
         }}>
           {/* Başlık - sabit kalır */}
           <div style={{
-            padding: "8px 12px",
+            padding: "8px 8px",
             fontSize: `${Math.round(10 * barUiOlcegi)}px`, 
             color: theme.textSecondary,
             letterSpacing: "1px",
             borderBottom: `1px solid ${theme.border}`,
             flexShrink: 0,
           }}>
-            KÂRÎ SEÇ
+            Kârî (Okuyucu)
           </div>
 
           {/* Liste - kaydırılabilir */}

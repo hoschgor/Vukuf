@@ -22,7 +22,7 @@ import {
   ArrowLeft, Search, X, ChevronRight, ChevronDown, Menu,
   Play, Pause, Plus, Minus, Type, Palette,
   Settings, Circle, Clock, ChevronsUp, ChevronsDown,
-  Pencil, ChevronLeft, Bookmark, BookOpen,
+  Pencil, ChevronLeft, Bookmark, BookOpen, Feather,
   Layers,
 } from "lucide-react"
 
@@ -84,6 +84,24 @@ function lugat(kelimeHam) {
   const temiz = normalize(kelimeHam)
   return arapcaLugat[temiz] || null
 }
+function AyarToggle({ etiket, aktif, onToggle, theme, isMobile, barUiOlcegi }) {
+  return (
+    <button onClick={onToggle} style={{
+      width: "100%", padding: "8px 12px", borderRadius: "8px",
+      fontSize: `${Math.round((isMobile ? 11 : 12) * barUiOlcegi)}px`,
+      background: aktif ? `${theme.accent}15` : theme.background,
+      color: aktif ? theme.accent : theme.textSecondary,
+      border: `1px solid ${aktif ? theme.accent : theme.border}`,
+      cursor: "pointer", display: "flex", alignItems: "center",
+      justifyContent: "space-between", marginBottom: "6px",
+    }}>
+      <span>{etiket}</span>
+      <span style={{ fontSize: `${Math.round((isMobile ? 9 : 11) * barUiOlcegi)}px` }}>
+        {aktif ? "Açık" : "Kapalı"}
+      </span>
+    </button>
+  )
+}
 
 // ════════════════════════════════════════════════════════════════
 // ANA BİLEŞEN
@@ -126,7 +144,6 @@ export default function KuranOkuma({ kitap }) {
   
   const [sayfaGirdi, setSayfaGirdi] = useState("")
   const [sayfaGirdiAcik, setSayfaGirdiAcik] = useState(false)
-
   const [kayitKonumModu, setKayitKonumModu] = useState(false)
   
 
@@ -154,16 +171,24 @@ export default function KuranOkuma({ kitap }) {
   const [sadeMode, setSadeMode]           = useState(() => localStorage.getItem("vukuf-sade-mod") === "true")
   const [otomatikGizleme, setOtomatikGizleme] = useState(() => localStorage.getItem("vukuf-otomatik-gizleme") !== "false")
   const [gizlemeSuresi, setGizlemeSuresi] = useState(() => parseInt(localStorage.getItem("vukuf-gizleme-suresi") || "5"))
-  const [sureGoster, setSureGoster]       = useState(true)
+  const [sureGoster, setSureGoster] = useState(() =>
+    localStorage.getItem("vukuf-okuma-zamani") !== "false"
+  )
   const touchBaslangicRef = useRef({ x: 0, y: 0 })
   const touchHareketRef = useRef(false)
   const [barKilitli, setBarKilitli] = useState(false)
-  const [sureBilgisiGoster, setSureBilgisiGoster] = useState(() =>
-  localStorage.getItem("vukuf-sure-bilgisi") !== "false"
-)
-  const [cuzBilgisiGoster, setCuzBilgisiGoster] = useState(() =>
-  localStorage.getItem("vukuf-cuz-bilgisi") !== "false"
-)
+  const [sureBilgisiGoster, setSureBilgisiGoster] = useState(() => localStorage.getItem("vukuf-sure-bilgisi") !== "false")
+  const [cuzBilgisiGoster, setCuzBilgisiGoster] = useState(() => localStorage.getItem("vukuf-cuz-bilgisi") !== "false")
+  const [sureMenuGoster, setSureMenuGoster]   = useState(() => localStorage.getItem("vukuf-btn-sure")   !== "false")
+  const [kayitGoster, setKayitGoster]         = useState(() => localStorage.getItem("vukuf-btn-kayit")  !== "false")
+  const [sayfaGitGoster, setSayfaGitGoster]   = useState(() => localStorage.getItem("vukuf-btn-sayfa")  !== "false")
+  const [sadeModGoster, setSadeModGoster]     = useState(() => localStorage.getItem("vukuf-btn-sade")   !== "false")
+  const [temaGoster, setTemaGoster]           = useState(() => localStorage.getItem("vukuf-btn-tema")   !== "false")
+  const [yaziTipiGoster, setYaziTipiGoster] = useState(() => localStorage.getItem("vukuf-btn-yazitipi") !== "false")
+  const [otoOynatGoster, setOtoOynatGoster] = useState(() => localStorage.getItem("vukuf-btn-otooynat") !== "false")
+  const [gorunumAcik, setGorunumAcik] = useState(false)
+  
+
 const maxWidth = useMemo(() => 
   `${Math.round((isMobile ? 480 : 720) * (yaziBoyutu / 20))}px`
 , [isMobile, yaziBoyutu])
@@ -232,8 +257,20 @@ const maxWidth = useMemo(() =>
   useEffect(() => { localStorage.setItem("vukuf-son-sayfa",         String(mevcutSayfa))    }, [mevcutSayfa])
   useEffect(() => { localStorage.setItem("vukuf-satir-araligi",     String(satirAraligi))   }, [satirAraligi])
   useEffect(() => { localStorage.setItem("vukuf-harf-araligi",      String(harfAraligi))    }, [harfAraligi])
-  useEffect(() => { localStorage.setItem("vukuf-sure-bilgisi", String(sureBilgisiGoster)) }, [sureBilgisiGoster])
-  useEffect(() => { localStorage.setItem("vukuf-cuz-bilgisi",  String(cuzBilgisiGoster))  }, [cuzBilgisiGoster])
+  useEffect(() => {
+    localStorage.setItem("vukuf-okuma-zamani", String(sureGoster))
+    localStorage.setItem("vukuf-sure-bilgisi", String(sureBilgisiGoster))
+    localStorage.setItem("vukuf-cuz-bilgisi",  String(cuzBilgisiGoster))
+    localStorage.setItem("vukuf-btn-sure",     String(sureMenuGoster))
+    localStorage.setItem("vukuf-btn-kayit",    String(kayitGoster))
+    localStorage.setItem("vukuf-btn-sayfa",    String(sayfaGitGoster))
+    localStorage.setItem("vukuf-btn-sade",     String(sadeModGoster))
+    localStorage.setItem("vukuf-btn-tema",     String(temaGoster))
+    localStorage.setItem("vukuf-btn-yazitipi", String(yaziTipiGoster))
+    localStorage.setItem("vukuf-btn-otooynat", String(otoOynatGoster))
+  }, [sureGoster, sureBilgisiGoster, cuzBilgisiGoster, sureMenuGoster, kayitGoster, sayfaGitGoster, sadeModGoster, temaGoster, yaziTipiGoster, otoOynatGoster])
+
+
   useEffect(() => {
     sureSayacRef.current = setInterval(() => {
       setBugunSure(prev => {
@@ -341,7 +378,24 @@ const [barUiOlcegi, setBarUiOlcegi] = useState(() =>
 useEffect(() => {
   localStorage.setItem("vukuf-bar-ui-olcegi", String(barUiOlcegi))
 }, [barUiOlcegi])
-const wrapAktif = isMobile && barUiOlcegi > 0.9
+
+const gorunurOgeSayisi = useMemo(() => {
+  let n = 2 // Geri + Ayarlar
+  if (sureMenuGoster) n++
+  if (kayitGoster) n++
+  if (sayfaGitGoster) n++
+  if (!sadeMode && yaziTipiGoster) n++
+  if (!sadeMode && otoOynatGoster) n++
+  if (sadeModGoster) n++
+  if (temaGoster) n++
+  if (!sadeMode && sureGoster) n++
+  if (sureBilgisiGoster) n++      // mevcutSureBilgisi bağımlılığı kaldırıldı
+  if (cuzBilgisiGoster) n++       // mevcutCuzHizb bağımlılığı kaldırıldı
+  return n
+}, [sureMenuGoster, kayitGoster, sayfaGitGoster, yaziTipiGoster, otoOynatGoster,
+    sadeModGoster, temaGoster, sureGoster, sureBilgisiGoster, cuzBilgisiGoster,
+    sadeMode])
+const wrapAktif = isMobile && barUiOlcegi > 0.9 && gorunurOgeSayisi >= 5
 const tekSatirYuksekligi = isMobile ? 44 : 36
 const cokSatir = wrapAktif && barYuksekligi > tekSatirYuksekligi * 1.0
 
@@ -560,7 +614,7 @@ const cokSatir = wrapAktif && barYuksekligi > tekSatirYuksekligi * 1.0
   const cuzListesi = useMemo(() => {
   const map = new Map()
   for (const sure of mushafData) {
-    for (const ayet of sure.ayetler) {          // dizinin adı farklıysa uyarla
+    for (const ayet of sure.ayetler) {
       const mevcut = map.get(ayet.cuz)
       if (mevcut === undefined || ayet.sayfa < mevcut) map.set(ayet.cuz, ayet.sayfa)
     }
@@ -569,17 +623,17 @@ const cokSatir = wrapAktif && barYuksekligi > tekSatirYuksekligi * 1.0
     .sort((a, b) => a[0] - b[0])
     .map(([no, baslangic]) => ({ no, baslangic }))
 }, [mushafData])
+
 const mevcutCuzHizb = useMemo(() => {
   if (!cuzListesi.length) return null
 
-  // Mevcut sayfayı kapsayan cüz: başlangıcı <= mevcutSayfa olan son cüz
   let cuz = cuzListesi[0]
   for (const c of cuzListesi) {
     if (c.baslangic <= mevcutSayfa) cuz = c
     else break
   }
 
-  // Cüz içindeki hizb: aynı mantık, çeyrek noktalarına göre
+
   const i = cuzListesi.findIndex(c => c.no === cuz.no)
   const bas = cuz.baslangic
   const son = (cuzListesi[i + 1]?.baslangic ?? toplamSayfa + 1) - 1
@@ -592,6 +646,7 @@ const mevcutCuzHizb = useMemo(() => {
 
   return { cuz: cuz.no, hizb }
 }, [cuzListesi, mevcutSayfa, toplamSayfa])
+
 
 const hizbSayfalari = (cuzNo) => {
   const i = cuzListesi.findIndex(c => c.no === cuzNo)
@@ -990,8 +1045,8 @@ function sureGit(sureId, ayetNo) {
       : { left: "50%", transform: "translateX(-50%)" }),
     background: theme.surface,
     border: `1px solid ${theme.border}`,
-    borderRadius: "12px",
-    padding: "16px",
+    borderRadius: "24px",
+    padding: "12px",
     zIndex: 200,
     boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
   })
@@ -1009,7 +1064,7 @@ function sureGit(sureId, ayetNo) {
   flexShrink: 0,
 })
 
-// panelStil fonksiyonuna benzer bir stil oluşturalım
+
 const menuStil = {
   position: "fixed",
   width: "280px",
@@ -1385,7 +1440,7 @@ const menuIcerikPadding = {
         overflowY: "auto",
       }}>
         <div>
-          <div style={{ fontSize: `${Math.round((isMobile ? 11 : 12) * barUiOlcegi)}px`, color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px" }}>BAR KONUMU</div>
+          <div style={{ fontSize: `${Math.round((isMobile ? 11 : 12) * barUiOlcegi)}px`, color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px" }}>Bar Konumu</div>
           <div style={{ display: "flex", gap: "6px" }}>
             {["ust", "alt"].map(k => (
               <button key={k} onClick={() => setBarKonum(k)} style={{
@@ -1402,7 +1457,23 @@ const menuIcerikPadding = {
           </div>
         </div>
         <div>
-          <div style={{ fontSize: `${Math.round((isMobile ? 11 : 12) * barUiOlcegi)}px`, color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px" }}>OTOMATİK GİZLEME</div>
+          <div>
+            </div>
+          <div style={{ fontSize: `${Math.round((isMobile ? 11 : 12) * barUiOlcegi)}px`, color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px" }}>Arayüz Boyutu</div>
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: `${Math.round((isMobile ? 11 : 12) * barUiOlcegi)}px`, color: theme.textSecondary, marginBottom: "6px" }}>
+            <span>Küçük</span>
+            <span style={{ color: theme.accent, fontWeight: "bold" }}>{barUiOlcegi.toFixed(1)}x</span>
+            <span>Büyük</span>
+          </div>
+          <input
+            type="range" min="0.8" max="1.6" step="0.1"
+            value={barUiOlcegi}
+            onChange={e => setBarUiOlcegi(parseFloat(e.target.value))}
+            style={{ width: "100%", accentColor: theme.accent }}
+          />
+        <div>
+        </div>
+          <div style={{ fontSize: `${Math.round((isMobile ? 11 : 12) * barUiOlcegi)}px`, color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px" }}>Otomatik Gizleme</div>
           <button onClick={() => setOtomatikGizleme(!otomatikGizleme)} style={{
             width: "100%", padding: "8px 12px", borderRadius: "8px", fontSize: `${Math.round((isMobile ? 11 : 12) * barUiOlcegi)}px`,
             background: otomatikGizleme ? `${theme.accent}15` : theme.background,
@@ -1426,58 +1497,42 @@ const menuIcerikPadding = {
           )}
         </div>
         <div>
-          <div style={{ fontSize: `${Math.round((isMobile ? 11 : 12) * barUiOlcegi)}px`, color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px" }}>OKUMA SÜRESİ</div>
-          <button onClick={() => setSureGoster(!sureGoster)} style={{
-            width: "100%", padding: "8px 12px", borderRadius: "8px", fontSize: `${Math.round((isMobile ? 11 : 12) * barUiOlcegi)}px`,
-            background: sureGoster ? `${theme.accent}15` : theme.background,
-            color: sureGoster ? theme.accent : theme.textSecondary,
-            border: `1px solid ${sureGoster ? theme.accent : theme.border}`,
-            cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between",
-          }}>
-            <span>Süre gösterimi</span>
-            <span style={{ fontSize: `${Math.round((isMobile ? 11 : 12) * barUiOlcegi)}px` }}>{sureGoster ? "Açık" : "Kapalı"}</span>
-          </button>
-        </div>
-        <div>
-            </div>
-          <div style={{ fontSize: `${Math.round((isMobile ? 11 : 12) * barUiOlcegi)}px`, color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px" }}>ARAYÜZ BOYUTU</div>
-          <div style={{ display: "flex", justifyContent: "space-between", fontSize: `${Math.round((isMobile ? 11 : 12) * barUiOlcegi)}px`, color: theme.textSecondary, marginBottom: "6px" }}>
-            <span>Küçük</span>
-            <span style={{ color: theme.accent, fontWeight: "bold" }}>{barUiOlcegi.toFixed(1)}x</span>
-            <span>Büyük</span>
+        {/* Açılır başlık */}
+        <button
+          onClick={() => setGorunumAcik(v => !v)}
+          style={{
+            width: "100%", padding: "4px 0", background: "none", border: "none",
+            cursor: "pointer", display: "flex", alignItems: "center",
+            justifyContent: "space-between",
+            fontSize: `${Math.round((isMobile ? 11 : 12) * barUiOlcegi)}px`,
+            color: theme.textSecondary, letterSpacing: "1px",
+          }}
+        >
+          <span>Görüntüleme</span>
+          {gorunumAcik
+            ? <ChevronDown size={Math.round((isMobile ? 12 : 16) * barUiOlcegi)} />
+            : <ChevronRight size={Math.round((isMobile ? 12 : 16) * barUiOlcegi)} />}
+        </button>
+
+        {/* İçerik — sadece açıkken */}
+        {gorunumAcik && (
+          <div style={{ marginTop: "10px" }}>
+            <div style={{ fontSize: `${Math.round((isMobile ? 9 : 10) * barUiOlcegi)}px`, color: theme.textSecondary, opacity: .7, marginBottom: "6px", paddingLeft: "2px" }}>Bilgi</div>
+            <AyarToggle etiket="Okuma zamanı"       aktif={sureGoster}        onToggle={() => setSureGoster(v => !v)}        {...{theme, isMobile, barUiOlcegi}} />
+            <AyarToggle etiket="Sûre bilgisi"       aktif={sureBilgisiGoster} onToggle={() => setSureBilgisiGoster(v => !v)} {...{theme, isMobile, barUiOlcegi}} />
+            <AyarToggle etiket="Cüz / Hizb bilgisi" aktif={cuzBilgisiGoster}  onToggle={() => setCuzBilgisiGoster(v => !v)}  {...{theme, isMobile, barUiOlcegi}} />
+
+            <div style={{ fontSize: `${Math.round((isMobile ? 9 : 10) * barUiOlcegi)}px`, color: theme.textSecondary, opacity: .7, margin: "10px 0 6px", paddingLeft: "2px" }}>Menü Butonları</div>
+            <AyarToggle etiket="Sûre Menüsü"   aktif={sureMenuGoster} onToggle={() => setSureMenuGoster(v => !v)} {...{theme, isMobile, barUiOlcegi}} />
+            <AyarToggle etiket="Kayıt Menüsü"  aktif={kayitGoster}    onToggle={() => setKayitGoster(v => !v)}    {...{theme, isMobile, barUiOlcegi}} />
+            <AyarToggle etiket="Sayfaya Gitme" aktif={sayfaGitGoster} onToggle={() => setSayfaGitGoster(v => !v)} {...{theme, isMobile, barUiOlcegi}} />
+            <AyarToggle etiket="Yazı Tipi"         aktif={yaziTipiGoster} onToggle={() => setYaziTipiGoster(v => !v)} {...{theme, isMobile, barUiOlcegi}} />
+            <AyarToggle etiket="Otomatik Oynatma"  aktif={otoOynatGoster} onToggle={() => setOtoOynatGoster(v => !v)} {...{theme, isMobile, barUiOlcegi}} />
+            <AyarToggle etiket="Sade Mod"      aktif={sadeModGoster}  onToggle={() => setSadeModGoster(v => !v)}  {...{theme, isMobile, barUiOlcegi}} />
+            <AyarToggle etiket="Tema Paneli"   aktif={temaGoster}     onToggle={() => setTemaGoster(v => !v)}     {...{theme, isMobile, barUiOlcegi}} />
           </div>
-          <input
-            type="range" min="0.8" max="1.6" step="0.1"
-            value={barUiOlcegi}
-            onChange={e => setBarUiOlcegi(parseFloat(e.target.value))}
-            style={{ width: "100%", accentColor: theme.accent }}
-          />
-        <div>
-          <div style={{ fontSize: `${Math.round((isMobile ? 9 : 12) * barUiOlcegi)}px`, color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px" }}>SÛRE BİLGİSİ</div>
-          <button onClick={() => setSureBilgisiGoster(!sureBilgisiGoster)} style={{
-            width: "100%", padding: "8px 12px", borderRadius: "8px", fontSize: `${Math.round((isMobile ? 11 : 12) * barUiOlcegi)}px`,
-            background: sureBilgisiGoster ? `${theme.accent}15` : theme.background,
-            color: sureBilgisiGoster ? theme.accent : theme.textSecondary,
-            border: `1px solid ${sureBilgisiGoster ? theme.accent : theme.border}`,
-            cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between",
-          }}>
-            <span>Sûre bilgisi</span>
-            <span style={{ fontSize: `${Math.round((isMobile ? 9 : 11) * barUiOlcegi)}px`, }}>{sureBilgisiGoster ? "Açık" : "Kapalı"}</span>
-          </button>
-        </div>
-        <div>
-          <div style={{ fontSize: `${Math.round((isMobile ? 9 : 12) * barUiOlcegi)}px`, color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px" }}>CÜZ / HİZB BİLGİSİ</div>
-          <button onClick={() => setCuzBilgisiGoster(!cuzBilgisiGoster)} style={{
-            width: "100%", padding: "8px 12px", borderRadius: "8px", fontSize: `${Math.round((isMobile ? 11 : 12) * barUiOlcegi)}px`,
-            background: cuzBilgisiGoster ? `${theme.accent}15` : theme.background,
-            color: cuzBilgisiGoster ? theme.accent : theme.textSecondary,
-            border: `1px solid ${cuzBilgisiGoster ? theme.accent : theme.border}`,
-            cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between",
-          }}>
-            <span>Cüz / Hizb bilgisi</span>
-            <span style={{ fontSize: `${Math.round((isMobile ? 9 : 11) * barUiOlcegi)}px` }}>{cuzBilgisiGoster ? "Açık" : "Kapalı"}</span>
-          </button>
-        </div>
+        )}
+      </div>
         <div style={{ position: "relative", zIndex: 300 }}>
           <KariSecici
             kariId={player.kariId}
@@ -1508,6 +1563,8 @@ const menuIcerikPadding = {
       padding: isMobile 
         ? `1px ${Math.round(8 * barUiOlcegi)}px`
         : `0px ${Math.round(8 * barUiOlcegi)}px`,
+      minHeight: isMobile ? "44px" : "11px",
+      boxSizing: "content-box",
       display: "flex", 
       alignItems: "center",
       alignContent: "center",
@@ -1521,115 +1578,123 @@ const menuIcerikPadding = {
       pointerEvents: barGorunur ? "auto" : "none",
       transform: barGorunur ? "translateY(0)" : 
                  barKonum === "alt" ? "translateY(100%)" : "translateY(-100%)",
-      justifyContent: wrapAktif ? "center" : "space-between",
+      justifyContent: (wrapAktif || gorunurOgeSayisi < 4) ? "center" : "space-between",
     }}
   >
     {/* Sol grup */}
     <div style={{
       display: "flex",
       alignItems: "center",
-      justifyContent: wrapAktif ? "center" : "flex-start",
       flexWrap: wrapAktif ? "wrap" : "nowrap",
-      gap: `${Math.round((isMobile ? 2 : 4) * barUiOlcegi)}px`,
-      flex: 1,
-      maxWidth: wrapAktif ? "60%" : "none",
+      gap: `${Math.round((isMobile ? 14 : 12) * barUiOlcegi)}px`,
+      flex: (gorunurOgeSayisi < 4) ? "0 0 auto" : 1,
+      justifyContent: (wrapAktif || gorunurOgeSayisi < 4) ? "center" : "flex-start",
+      paddingLeft: (!wrapAktif && isMobile && gorunurOgeSayisi >= 4) ? `${Math.round(26 * barUiOlcegi)}px` : 0,
+      maxWidth: wrapAktif ? "none" : "none",
       overflow: wrapAktif ? "visible" : "hidden",
       minWidth: 0,
-      paddingLeft: (!wrapAktif && isMobile) ? "40px" : 0,
     }}>
       <button onClick={() => navigate(-1)} style={{ ...barButonStil(), flexShrink: 0 }}>
         <ArrowLeft size={Math.round((isMobile ? 12 : 16) * barUiOlcegi)} /> {!isMobile && "Geri"}
       </button>
       
-      <button onClick={() => setMenuAcik(!menuAcik)} style={{ ...barButonStil(menuAcik), flexShrink: 0 }}>
-        <Menu size={Math.round((isMobile ? 12 : 16) * barUiOlcegi)} />
-      </button>
+            {sureMenuGoster && (
+        <button onClick={() => setMenuAcik(!menuAcik)} style={{ ...barButonStil(menuAcik), flexShrink: 0 }}>
+          <Menu size={Math.round((isMobile ? 12 : 16) * barUiOlcegi)} />
+        </button>
+      )}
 
-      <button
-        onClick={() => {
-          if (kayitlar.length > 0) {
-            setKayitPaneliAcik(!kayitPaneliAcik)
-          } else {
-            setKayitKonumModu(true)
-            setKayitPaneliAcik(false)
-          }
-        }}
-      >
-        <Bookmark color={theme.accent}
-          size={Math.round((isMobile ? 12 : 16) * barUiOlcegi)}
-          fill={kayitlar.some(k => k.sayfa === mevcutSayfa) ? "currentColor" : "none"}
-        />
-      </button>
+      {kayitGoster && (
+        <button
+          onClick={() => {
+            if (kayitlar.length > 0) {
+              setKayitPaneliAcik(!kayitPaneliAcik)
+            } else {
+              setKayitKonumModu(true)
+              setKayitPaneliAcik(false)
+            }
+          }}
+        >
+          <Bookmark color={theme.accent}
+            size={Math.round((isMobile ? 12 : 16) * barUiOlcegi)}
+            fill={kayitlar.some(k => k.sayfa === mevcutSayfa) ? "currentColor" : "none"}
+          />
+        </button>
+      )}
       
-      <button
-        onClick={() => setSayfaGitAcik(!sayfaGitAcik)}
-        style={{
-          ...barButonStil(),
-          fontSize: `${Math.round((isMobile ? 12 : 18) * barUiOlcegi)}px`,
-          minWidth: isMobile ? "40px" : "48px",
-          justifyContent: "center",
-          fontWeight: "500",
-          color: theme.accent,
-        }}
-      >
-        <BookOpen size={Math.round((isMobile ? 12 : 16) * barUiOlcegi)} />
-        {mevcutSayfa}
-      </button>
+      {sayfaGitGoster && (
+        <button
+          onClick={() => setSayfaGitAcik(!sayfaGitAcik)}
+          style={{
+            ...barButonStil(),
+            fontSize: `${Math.round((isMobile ? 11 : 14) * barUiOlcegi)}px`,
+            minWidth: isMobile ? "40px" : "48px",
+            justifyContent: "center",
+            fontWeight: "500",
+            color: theme.accent,
+          }}
+        >
+          <BookOpen size={Math.round((isMobile ? 12 : 17) * barUiOlcegi)} />
+          {mevcutSayfa}
+        </button>
+      )}
       
       {!sadeMode && (
-        <>
-          <button onClick={() => togglePanel(setAaAcik, !aaAcik)} style={barButonStil(aaAcik)}>
-            <span style={{ 
-              fontSize: `${Math.round((isMobile ? 12 : 20) * barUiOlcegi)}px`,
-              fontWeight: "600",
-              fontFamily: "'Amiri', serif",
-              position: "relative",
-              top: isMobile ? "-1px" : "-3.2px",
-            }}>ن</span>
-          </button>
+  <>
+    {yaziTipiGoster && (
+      <button onClick={() => togglePanel(setAaAcik, !aaAcik)} style={barButonStil(aaAcik)}>
+        <Feather size={Math.round((isMobile ? 12 : 16) * barUiOlcegi)} />
+      </button>
+    )}
 
-          <button 
-            onClick={() => setOtomatikKaydirma(!otomatikKaydirma)} 
-            style={barButonStil(otomatikKaydirma)}
-            title="Otomatik kaydırma"
-          >
-            {otomatikKaydirma ? <Pause size={Math.round((isMobile ? 12 : 16) * barUiOlcegi)} /> : <Play size={Math.round((isMobile ? 12 : 16) * barUiOlcegi)} />}
-          </button>
+    {otoOynatGoster && (
+      <>
+        <button
+          onClick={() => setOtomatikKaydirma(!otomatikKaydirma)}
+          style={barButonStil(otomatikKaydirma)}
+          title="Otomatik kaydırma"
+        >
+          {otomatikKaydirma
+            ? <Pause size={Math.round((isMobile ? 12 : 16) * barUiOlcegi)} />
+            : <Play size={Math.round((isMobile ? 12 : 16) * barUiOlcegi)} />}
+        </button>
 
-          {otomatikKaydirma && (
-            <div style={{ 
-              display: "flex", 
-              alignItems: "center", 
-              gap: "2px",
-              background: `${theme.accent}10`,
-              borderRadius: "6px",
-              padding: "2px 6px",
+        {otomatikKaydirma && (
+          <div style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "2px",
+            background: `${theme.accent}10`,
+            borderRadius: "6px",
+            padding: "2px 6px",
+          }}>
+            <button
+              onClick={() => setKaydirmaHizi(Math.max(1, kaydirmaHizi - 1))}
+              style={{ ...barButonStil(), padding: "2px" }}
+            >
+              <Minus size={Math.round((isMobile ? 12 : 16) * barUiOlcegi)} />
+            </button>
+            <span style={{
+              fontSize: `${Math.round((isMobile ? 10 : 12) * barUiOlcegi)}px`,
+              color: theme.textSecondary,
+              minWidth: "16px",
+              textAlign: "center",
             }}>
-              <button 
-                onClick={() => setKaydirmaHizi(Math.max(1, kaydirmaHizi - 1))} 
-                style={{ ...barButonStil(), padding: "2px" }}
-              >
-                <Minus size={Math.round((isMobile ? 12 : 16) * barUiOlcegi)} />
-              </button>
-              <span style={{ 
-                fontSize: `${Math.round((isMobile ? 10 : 12) * barUiOlcegi)}px`,
-                color: theme.textSecondary,
-                minWidth: "16px",
-                textAlign: "center",
-              }}>
-                {kaydirmaHizi}
-              </span>
-              <button 
-                onClick={() => setKaydirmaHizi(Math.min(20, kaydirmaHizi + 1))} 
-                style={{ ...barButonStil(), padding: "2px" }}
-              >
-                <Plus size={Math.round((isMobile ? 12 : 16) * barUiOlcegi)} />
-              </button>
-            </div>
-          )}
-        </>
-      )}
-    </div>
+              {kaydirmaHizi}
+            </span>
+            <button
+              onClick={() => setKaydirmaHizi(Math.min(20, kaydirmaHizi + 1))}
+              style={{ ...barButonStil(), padding: "2px" }}
+            >
+              <Plus size={Math.round((isMobile ? 12 : 16) * barUiOlcegi)} />
+            </button>
+          </div>
+        )}
+      </>
+    )}
+  </>
+)}
+</div>
 
     {/* Sağ grup */}
     <div style={{
@@ -1640,8 +1705,8 @@ const menuIcerikPadding = {
       flexShrink: 0,
       flexWrap: wrapAktif ? "wrap" : "nowrap",
       width: wrapAktif ? "100%" : "auto",
-      marginLeft: wrapAktif ? 0 : "auto",
-      paddingRight: (!wrapAktif && isMobile) ? "40px" : 0,
+      marginLeft: (wrapAktif || gorunurOgeSayisi < 4) ? 0 : "auto",
+      paddingRight: (!wrapAktif && isMobile) ? `${Math.round(26 * barUiOlcegi)}px` : 0,
     }}>
       {sureGoster && !sadeMode && (
         <span style={{ 
@@ -1685,21 +1750,24 @@ const menuIcerikPadding = {
         : `${mevcutCuzHizb.cuz}. Cüz · ${mevcutCuzHizb.hizb}. Hizb`}
       </span>
       )}
-      <button onClick={() => setSadeMode(!sadeMode)} style={{ ...barButonStil(sadeMode), padding: isMobile ? "3px" : "4px" }}>
-        <Circle size={Math.round((isMobile ? 12 : 16) * barUiOlcegi)} />
-      </button>
-      
-      <button onClick={() => togglePanel(setTemaAcik, !temaAcik)} style={{ ...barButonStil(temaAcik), padding: isMobile ? "3px" : "4px" }}>
-        <Palette size={Math.round((isMobile ? 12 : 16) * barUiOlcegi)} />
-      </button>
-      
+      {sadeModGoster && (
+        <button onClick={() => setSadeMode(!sadeMode)} style={{ ...barButonStil(sadeMode), padding: isMobile ? "3px" : "4px" }}>
+          <Circle size={Math.round((isMobile ? 12 : 16) * barUiOlcegi)} />
+        </button>
+      )}
+
+      {temaGoster && (
+        <button onClick={() => togglePanel(setTemaAcik, !temaAcik)} style={{ ...barButonStil(temaAcik), padding: isMobile ? "3px" : "4px" }}>
+          <Palette size={Math.round((isMobile ? 12 : 16) * barUiOlcegi)} />
+        </button>
+      )}
+
       <button onClick={() => togglePanel(setAyarlarAcik, !ayarlarAcik)} style={{ ...barButonStil(ayarlarAcik), padding: isMobile ? "3px" : "4px" }}>
         <Settings size={Math.round((isMobile ? 12 : 16) * barUiOlcegi)} />
       </button>
     </div>
   </div>
 )
-
   // ════════════════════════════════════════════════════════════════
   // ANA RENDER
   // ════════════════════════════════════════════════════════════════
@@ -2031,7 +2099,7 @@ const menuIcerikPadding = {
         </>
       )}
 
-              {/* ── SURE LİSTESİ — mevcut bloğun AYNISI, sadece koşul değişti ── */}
+              {/* ── Sûre Listesi */}
               {(menuArama || anaBaslik === "sure") && filtreliSureler.map(sure => (
                 <div key={sure.id}>
                   <div style={{ 

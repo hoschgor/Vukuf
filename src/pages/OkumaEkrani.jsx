@@ -4,6 +4,7 @@ import { useParams, useNavigate } from "react-router-dom"
 import { useApp } from "../AppContext"
 import { kitaplar } from "../data/kitaplar"
 import lugatVerisi from "../data/lugat.json"
+import kavramlarVerisi from "../data/kavramlar.json"
 import {
   ArrowLeft, BookOpen, Eye, EyeOff, Play, Pause,
   Plus, Minus, AlignJustify, ChevronsUp, ChevronsDown,
@@ -40,10 +41,10 @@ const FONT_GRUPLARI = {
   arapca: {
     label: "Arapça",
     fontlar: [
-      { id: "amiri",        label: "Amiri",            style: "'Amiri', serif",                  google: "Amiri:ital,wght@0,400;0,700;1,400" },
-      { id: "scheherazade", label: "Scheherazade New", style: "'Scheherazade New', serif",        google: "Scheherazade+New:wght@400;700" },
-      { id: "noto-arabic",  label: "Noto Sans Arabic", style: "'Noto Sans Arabic', sans-serif",   google: "Noto+Sans+Arabic:wght@400;600" },
-      { id: "reem-kufi",    label: "Reem Kufi",        style: "'Reem Kufi', sans-serif",          google: "Reem+Kufi:wght@400;600" },
+      { id: "kfgqpc",            label: "KFGQPC Uthmanic (Önerilen)", style: "'KFGQPC Uthmanic', serif",    google: null },
+      { id: "me-quran",          label: "Me Quran",                   style: "'me_quran', serif",            google: null },
+      { id: "Indopak",           label: "Indopak",                    style: "'Indopak', serif",             google: null },
+      { id: "IndopakNastaleeq",  label: "Indopak Nastaleeq",          style: "'IndopakNastaleeq', serif",    google: null },
     ],
   },
 }
@@ -82,7 +83,10 @@ function kelimeAra(kelime) {
   const temiz = kelime.toLowerCase().replace(/[.,!?;:'"()\[\]]/g, "").trim()
   return lugatVerisi[temiz] || null
 }
-
+function kavramAra(kelime) {
+  const temiz = kelime.toLowerCase().replace(/[.,!?;:'"()\[\]]/g, "").trim()
+  return kavramlarVerisi[temiz] || null
+}
 function bugunAnahtar() {
   const d = new Date()
   return `vukuf_sure_${d.getFullYear()}_${d.getMonth()}_${d.getDate()}`
@@ -138,10 +142,12 @@ function fontBul(fontId) {
 // ════════════════════════════════════════════════════════════════
 // METİN PARCASI
 // ════════════════════════════════════════════════════════════════
+const ARAP_RE = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/
+const LATIN_RE = /[A-Za-zÇĞİıÖŞÜçğöşü]/
 
 function MetinParcasi({
   metin, sayfaNo, lugatAktif, onKelimeTikla,
-  theme, fontSize, hizalama, fontStyle,
+  theme, fontSize, hizalama, metinFont, arapcaFont,
   vurguModu, vurguRengi, sayfaVurgulari, onVurguEkle,
 }) {
   const [secimBaslangic, setSecimBaslangic] = useState(null)
@@ -154,13 +160,9 @@ function MetinParcasi({
       let icinde = false
       if (b.satir === bi.satir) {
         icinde = satirIdx === b.satir && kelimeIdx >= b.kelime && kelimeIdx <= bi.kelime
-      } else if (satirIdx === b.satir) {
-        icinde = kelimeIdx >= b.kelime
-      } else if (satirIdx === bi.satir) {
-        icinde = kelimeIdx <= bi.kelime
-      } else {
-        icinde = satirIdx > b.satir && satirIdx < bi.satir
-      }
+      } else if (satirIdx === b.satir) { icinde = kelimeIdx >= b.kelime }
+      else if (satirIdx === bi.satir) { icinde = kelimeIdx <= bi.kelime }
+      else { icinde = satirIdx > b.satir && satirIdx < bi.satir }
       if (icinde) return v
     }
     return null
@@ -171,36 +173,44 @@ function MetinParcasi({
     e.preventDefault()
     setSecimBaslangic({ satir: satirIdx, kelime: kelimeIdx })
   }
-
   function kelimeMouseUp(satirIdx, kelimeIdx) {
     if (!vurguModu || !secimBaslangic) return
-    let b  = secimBaslangic
+    let b = secimBaslangic
     let bi = { satir: satirIdx, kelime: kelimeIdx }
-    if (bi.satir < b.satir || (bi.satir === b.satir && bi.kelime < b.kelime)) {
-      [b, bi] = [bi, b]
-    }
+    if (bi.satir < b.satir || (bi.satir === b.satir && bi.kelime < b.kelime)) { [b, bi] = [bi, b] }
     onVurguEkle(sayfaNo, b, bi, vurguRengi)
     setSecimBaslangic(null)
   }
 
   return (
-    <div style={{ fontSize: `${fontSize}px`, fontFamily: fontStyle }}>
+    <div style={{ fontSize: `${fontSize}px`, fontFamily: metinFont }}>
       {satirlar.map((satir, si) => {
         if (!satir.trim()) return <br key={si} />
-
         const hasiye = satir.startsWith("§")
         const gosterilecek = hasiye ? satir.slice(1) : satir
 
         if (hasiye) {
+          const arapHasiye = ARAP_RE.test(gosterilecek) && !LATIN_RE.test(gosterilecek)
           return (
             <div key={si} style={{
-              borderTop: `1px solid ${theme.border}`,
-              marginTop: "16px", paddingTop: "8px",
-              fontSize: `${fontSize - 2}px`,
-              color: theme.textSecondary, fontStyle: "italic", lineHeight: "1.7",
+              borderTop: `1px solid ${theme.border}`, marginTop: "16px", paddingTop: "8px",
+              fontSize: `${fontSize - 2}px`, color: theme.textSecondary, fontStyle: "italic", lineHeight: "1.7",
+              ...(arapHasiye && arapcaFont ? { fontFamily: arapcaFont, direction: "rtl", textAlign: "right" } : {}),
             }}>
               {gosterilecek}
             </div>
+          )
+        }
+
+        // Tamamen Arapça satır: sağdan sola + Arapça font, kelime bölme yok
+        if (arapcaFont && ARAP_RE.test(satir) && !LATIN_RE.test(satir)) {
+          return (
+            <p key={si} style={{
+              marginBottom: "12px", lineHeight: "2", direction: "rtl", textAlign: "center",
+              fontFamily: arapcaFont, fontSize: `${fontSize + 6}px`,
+            }}>
+              {gosterilecek}
+            </p>
           )
         }
 
@@ -214,27 +224,29 @@ function MetinParcasi({
           }}>
             {kelimeler.map((kelime, ki) => {
               if (!kelime.trim()) return " "
-              const anlam    = kelimeAra(kelime)
-              const lugatliMi = anlam && lugatAktif
+              const arapKelime = ARAP_RE.test(kelime)
+              const anlam    = arapKelime ? null : kelimeAra(kelime)
+              const kavram   = arapKelime ? null : kavramAra(kelime)
+              const lugatliMi = (anlam || kavram) && lugatAktif
               const vurgulu  = vurgulananMi(si, ki)
-
               return (
                 <span key={ki}>
                   <span
                     className={lugatliMi ? "lugat-kelime" : ""}
                     onMouseDown={e => kelimeMouseDown(si, ki, e)}
                     onMouseUp={() => kelimeMouseUp(si, ki)}
-                    onClick={e => { if (!vurguModu && lugatliMi) onKelimeTikla(kelime, anlam, e) }}
+                    onClick={e => { if (!vurguModu && lugatliMi) onKelimeTikla(kelime, anlam, kavram, e) }}
                     onMouseEnter={e => { if (lugatliMi && !vurguModu) e.currentTarget.style.opacity = "0.75" }}
                     onMouseLeave={e => { e.currentTarget.style.opacity = "1" }}
                     style={{
-                      background:   vurgulu ? vurgulu.renk : "transparent",
+                      background: vurgulu ? vurgulu.renk : "transparent",
                       borderRadius: vurgulu ? "2px" : "0",
-                      color:        lugatliMi ? theme.lugatHighlight : "inherit",
+                      color: lugatliMi ? theme.lugatHighlight : "inherit",
                       borderBottom: lugatliMi && !vurgulu ? `1px dotted ${theme.lugatHighlight}` : "none",
-                      cursor:       vurguModu ? "text" : (lugatliMi ? "pointer" : "default"),
-                      padding:      vurgulu ? "0 1px" : "0",
-                      userSelect:   "text",
+                      cursor: vurguModu ? "text" : (lugatliMi ? "pointer" : "default"),
+                      padding: vurgulu ? "0 1px" : "0",
+                      userSelect: "text",
+                      ...(arapKelime && arapcaFont ? { fontFamily: arapcaFont, unicodeBidi: "isolate" } : {}),
                     }}
                   >
                     {kelime}
@@ -249,7 +261,26 @@ function MetinParcasi({
     </div>
   )
 }
-
+// Sadece görünürken içerik render eden pencereleme sarmalayıcısı
+function LazySayfa({ minHeight, children }) {
+  const ref = useRef(null)
+  const [gorunur, setGorunur] = useState(false)
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const io = new IntersectionObserver(
+      ([e]) => setGorunur(e.isIntersecting),
+      { rootMargin: "1200px 0px" }
+    )
+    io.observe(el)
+    return () => io.disconnect()
+  }, [])
+  return (
+    <div ref={ref} style={{ minHeight: gorunur ? undefined : `${minHeight}px` }}>
+      {gorunur ? children : null}
+    </div>
+  )
+}
 // ════════════════════════════════════════════════════════════════
 // FONT SEÇİCİ
 // ════════════════════════════════════════════════════════════════
@@ -353,6 +384,8 @@ const [fontSecimler, setFontSecimler] = useState(() => {
 })
 const aktifFontId = fontSecimler.turkce || fontSecimler.osmanlica || fontSecimler.arapca || "georgia"
 const aktifFont   = fontBul(aktifFontId)
+const metinFont  = fontBul(fontSecimler.turkce || fontSecimler.osmanlica || "georgia").style
+const arapcaFont = fontSecimler.arapca ? fontBul(fontSecimler.arapca).style : null
 
 // ── Scroll
 const scrollRef    = useRef(null)
@@ -390,6 +423,7 @@ const herhangiPanelAcik = ayarlarAcik || sayfaGitAcik || aaAcik || kayitAcik || 
 
 // ── Lügat popup
 const [popup, setPopup] = useState(null)
+const [popupKavramAcik, setPopupKavramAcik] = useState(false)
 
 // ── Notlar & Vurgular
 const [notlar, setNotlar]     = useState(() => okumaVerisiYukle(id).notlar)
@@ -642,10 +676,11 @@ function fontSecimDegistir(grupId, fontId) {
   setFontSecimler(prev => ({ ...prev, [grupId]: fontId }))
 }
 
-function kelimeTikla(kelime, anlam, e) {
+function kelimeTikla(kelime, anlam, kavram, e) {
   const x = Math.min(e.clientX, window.innerWidth - 300)
   const y = e.clientY + 12 + 200 > window.innerHeight ? e.clientY - 180 : e.clientY + 12
-  setPopup({ kelime, anlam, x, y })
+  setPopupKavramAcik(false)
+  setPopup({ kelime, anlam, kavram, x, y })
 }
 
 // Toplam sayılar
@@ -1379,10 +1414,36 @@ return (
           position: "fixed", left: popup.x, top: popup.y,
           background: theme.surface, border: `1px solid ${theme.border}`,
           borderRadius: "12px", padding: "14px 18px", zIndex: 300,
-          maxWidth: "280px", boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
+          maxWidth: "300px", maxHeight: "55vh", overflowY: "auto",
+          boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
         }}>
           <div style={{ color: theme.accent, fontWeight: "bold", fontSize: "16px", marginBottom: "6px" }}>{popup.kelime}</div>
-          <div style={{ color: theme.textSecondary, fontSize: "14px", lineHeight: "1.5" }}>{popup.anlam}</div>
+          {popup.anlam && (
+            <div style={{ color: theme.textSecondary, fontSize: "14px", lineHeight: "1.5" }}>{popup.anlam}</div>
+          )}
+          {popup.kavram && (
+            <div style={{ marginTop: popup.anlam ? "10px" : "0", borderTop: popup.anlam ? `1px solid ${theme.border}` : "none", paddingTop: popup.anlam ? "10px" : "0" }}>
+              <button onClick={() => setPopupKavramAcik(v => !v)} style={{
+                display: "flex", alignItems: "center", gap: "6px",
+                background: `${theme.accent}18`, color: theme.accent,
+                border: `1px solid ${theme.accent}40`, borderRadius: "20px",
+                padding: "4px 12px", fontSize: "11px", fontWeight: 500, cursor: "pointer",
+              }}>
+                <BookOpen size={11} /> Kavram {popupKavramAcik ? "▾" : "▸"}
+              </button>
+              {popupKavramAcik && popup.kavram.map((kv, i) => (
+                <div key={i} style={{ marginTop: "10px" }}>
+                  <div style={{ fontSize: "13px", fontWeight: 600, color: theme.text, marginBottom: "4px" }}>{kv.terim}</div>
+                  <div style={{ fontSize: "12.5px", color: theme.text, lineHeight: "1.7", whiteSpace: "pre-wrap" }}>{kv.aciklama}</div>
+                  {kv.kaynaklar?.length > 0 && (
+                    <div style={{ marginTop: "8px", fontSize: "11px", color: theme.textSecondary, lineHeight: "1.6" }}>
+                      {kv.kaynaklar.map((k, j) => <div key={j}>{k}</div>)}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </>
     )}
@@ -1436,20 +1497,23 @@ return (
                   background: "#ef4444", boxShadow: "0 0 4px rgba(239,68,68,0.6)",
                 }} />
               )}
-              <MetinParcasi
-                metin={sayfa.metin}
-                sayfaNo={sayfa.sayfa}
-                lugatAktif={lugatActive}
-                onKelimeTikla={kelimeTikla}
-                theme={theme}
-                fontSize={yaziBoyutu}
-                hizalama={hizalama}
-                fontStyle={aktifFont.style}
-                vurguModu={vurguModu}
-                vurguRengi={vurguRengi}
-                sayfaVurgulari={vurgular[sayfa.sayfa] || []}
-                onVurguEkle={vurguEkle}
-              />
+              <LazySayfa minHeight={Math.max(300, Math.round(sayfa.metin.length * 0.5))}>
+                <MetinParcasi
+                  metin={sayfa.metin}
+                  sayfaNo={sayfa.sayfa}
+                  lugatAktif={lugatActive}
+                  onKelimeTikla={kelimeTikla}
+                  theme={theme}
+                  fontSize={yaziBoyutu}
+                  hizalama={hizalama}
+                  metinFont={metinFont}
+                  arapcaFont={arapcaFont}
+                  vurguModu={vurguModu}
+                  vurguRengi={vurguRengi}
+                  sayfaVurgulari={vurgular[sayfa.sayfa] || []}
+                  onVurguEkle={vurguEkle}
+                />
+              </LazySayfa>
               {notlar[sayfa.sayfa]?.length > 0 && (
                 <div
                   onClick={() => { setMevcutSayfa(sayfa.sayfa); togglePanel(setKayitAcik, true); setKayitSekme("notlar") }}

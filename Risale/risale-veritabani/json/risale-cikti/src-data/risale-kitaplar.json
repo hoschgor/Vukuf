@@ -1,0 +1,107 @@
+[
+ {
+  "id": "sozler",
+  "baslik": "Sözler",
+  "yazar": "Bediüzzaman Said Nursi",
+  "dosya": "sozler-metin.json",
+  "sayfaSayisi": 1050
+ },
+ {
+  "id": "mektubat",
+  "baslik": "Mektubat",
+  "yazar": "Bediüzzaman Said Nursi",
+  "dosya": "mektubat-metin.json",
+  "sayfaSayisi": 689
+ },
+ {
+  "id": "lemalar",
+  "baslik": "Lem'alar",
+  "yazar": "Bediüzzaman Said Nursi",
+  "dosya": "lemalar-metin.json",
+  "sayfaSayisi": 708
+ },
+ {
+  "id": "sualar",
+  "baslik": "Şuâlar",
+  "yazar": "Bediüzzaman Said Nursi",
+  "dosya": "sualar-metin.json",
+  "sayfaSayisi": 939
+ },
+ {
+  "id": "mesnevi-i-nuriye",
+  "baslik": "Mesnevî-i Nuriye",
+  "yazar": "Bediüzzaman Said Nursi",
+  "dosya": "mesnevi-i-nuriye-metin.json",
+  "sayfaSayisi": 335
+ },
+ {
+  "id": "isaratul-icaz",
+  "baslik": "İşârâtü’l-İ’câz",
+  "yazar": "Bediüzzaman Said Nursi",
+  "dosya": "isaratul-icaz-metin.json",
+  "sayfaSayisi": 389
+ },
+ {
+  "id": "asa-yi-musa",
+  "baslik": "Asâ-yı Mûsâ",
+  "yazar": "Bediüzzaman Said Nursi",
+  "dosya": "asa-yi-musa-metin.json",
+  "sayfaSayisi": 328
+ },
+ {
+  "id": "barla-lahikasi",
+  "baslik": "Barla Lâhikası",
+  "yazar": "Bediüzzaman Said Nursi",
+  "dosya": "barla-lahikasi-metin.json",
+  "sayfaSayisi": 496
+ },
+ {
+  "id": "kastamonu-lahikasi",
+  "baslik": "Kastamonu Lâhikası",
+  "yazar": "Bediüzzaman Said Nursi",
+  "dosya": "kastamonu-lahikasi-metin.json",
+  "sayfaSayisi": 312
+ },
+ {
+  "id": "emirdag-lahikasi",
+  "baslik": "Emirdağ Lâhikası",
+  "yazar": "Bediüzzaman Said Nursi",
+  "dosya": "emirdag-lahikasi-metin.json",
+  "sayfaSayisi": 617
+ },
+ {
+  "id": "iman-ve-kufur-muvazeneleri",
+  "baslik": "İman ve Küfür Muvazeneleri",
+  "yazar": "Bediüzzaman Said Nursi",
+  "dosya": "iman-ve-kufur-muvazeneleri-metin.json",
+  "sayfaSayisi": 238
+ },
+ {
+  "id": "sikke-i-tasdik-i-gaybi",
+  "baslik": "Sikke-i Tasdîk-ı Gaybî",
+  "yazar": "Bediüzzaman Said Nursi",
+  "dosya": "sikke-i-tasdik-i-gaybi-metin.json",
+  "sayfaSayisi": 351
+ },
+ {
+  "id": "muhakemat",
+  "baslik": "Muhâkemat",
+  "yazar": "Bediüzzaman Said Nursi",
+  "dosya": "muhakemat-metin.json",
+  "sayfaSayisi": 171
+ },
+ {
+  "id": "tarihce-i-hayat",
+  "baslik": "Tarihçe-i Hayat",
+  "yazar": "Bediüzzaman Said Nursi",
+  "dosya": "tarihce-i-hayat-metin.json",
+  "sayfaSayisi": 903
+ },
+ {
+  "id": "ilk-donem-eserleri",
+  "baslik": "İlk Dönem Eserleri",
+  "yazar": "Bediüzzaman Said Nursi",
+  "dosya": "ilk-donem-eserleri-metin.json",
+  "sayfaSayisi": 595
+ }
+]

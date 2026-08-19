@@ -1,0 +1,1092 @@
+[
+  {
+    "ID": 1,
+    "BOOKID": 1,
+    "CONTEXTTITLE": "Birinci Söz",
+    "AUTHDATESTART": 1926,
+    "AUTHDATEEND": null,
+    "AUTHLOCATION": "Barla",
+    "SOURCE": null,
+    "INFO": null
+  },
+  {
+    "ID": 2,
+    "BOOKID": 1,
+    "CONTEXTTITLE": "On Dördüncü Lem’anın İkinci Makamı",
+    "AUTHDATESTART": 1934,
+    "AUTHDATEEND": null,
+    "AUTHLOCATION": "Barla",
+    "SOURCE": null,
+    "INFO": "Tahmini yazılış tarihi"
+  },
+  {
+    "ID": 3,
+    "BOOKID": 1,
+    "CONTEXTTITLE": "İkinci Söz",
+    "AUTHDATESTART": 1926,
+    "AUTHDATEEND": null,
+    "AUTHLOCATION": "Barla",
+    "SOURCE": null,
+    "INFO": null
+  },
+  {
+    "ID": 4,
+    "BOOKID": 1,
+    "CONTEXTTITLE": "Üçüncü Söz",
+    "AUTHDATESTART": 1926,
+    "AUTHDATEEND": null,
+    "AUTHLOCATION": "Barla",
+    "SOURCE": null,
+    "INFO": null
+  },
+  {
+    "ID": 5,
+    "BOOKID": 1,
+    "CONTEXTTITLE": "Dördüncü Söz",
+    "AUTHDATESTART": 1926,
+    "AUTHDATEEND": null,
+    "AUTHLOCATION": "Barla",
+    "SOURCE": null,
+    "INFO": null
+  },
+  {
+    "ID": 6,
+    "BOOKID": 1,
+    "CONTEXTTITLE": "Beşinci Söz",
+    "AUTHDATESTART": 1926,
+    "AUTHDATEEND": null,
+    "AUTHLOCATION": "Barla",
+    "SOURCE": null,
+    "INFO": null
+  },
+  {
+    "ID": 7,
+    "BOOKID": 1,
+    "CONTEXTTITLE": "Altıncı Söz",
+    "AUTHDATESTART": 1926,
+    "AUTHDATEEND": null,
+    "AUTHLOCATION": "Barla",
+    "SOURCE": null,
+    "INFO": null
+  },
+  {
+    "ID": 8,
+    "BOOKID": 1,
+    "CONTEXTTITLE": "Yedinci Söz",
+    "AUTHDATESTART": 1926,
+    "AUTHDATEEND": null,
+    "AUTHLOCATION": "Barla",
+    "SOURCE": null,
+    "INFO": null
+  },
+  {
+    "ID": 9,
+    "BOOKID": 1,
+    "CONTEXTTITLE": "Sekizinci Söz",
+    "AUTHDATESTART": 1926,
+    "AUTHDATEEND": null,
+    "AUTHLOCATION": "Barla",
+    "SOURCE": null,
+    "INFO": null
+  },
+  {
+    "ID": 10,
+    "BOOKID": 1,
+    "CONTEXTTITLE": "Dokuzuncu Söz",
+    "AUTHDATESTART": 1926,
+    "AUTHDATEEND": null,
+    "AUTHLOCATION": "Barla",
+    "SOURCE": null,
+    "INFO": null
+  },
+  {
+    "ID": 11,
+    "BOOKID": 1,
+    "CONTEXTTITLE": "Onuncu Söz",
+    "AUTHDATESTART": 1928,
+    "AUTHDATEEND": null,
+    "AUTHLOCATION": "Barla",
+    "SOURCE": null,
+    "INFO": "Hicri 1342"
+  },
+  {
+    "ID": 12,
+    "BOOKID": 1,
+    "CONTEXTTITLE": "Onuncu Sözün İkinci Zeyli",
+    "AUTHDATESTART": 1935,
+    "AUTHDATEEND": 1936,
+    "AUTHLOCATION": "Eskişehir Hapsi",
+    "SOURCE": null,
+    "INFO": null
+  },
+  {
+    "ID": 13,
+    "BOOKID": 1,
+    "CONTEXTTITLE": "Onuncu Sözün Üçüncü Zeyli",
+    "AUTHDATESTART": 1936,
+    "AUTHDATEEND": null,
+    "AUTHLOCATION": "Eskişehir Hapsi",
+    "SOURCE": null,
+    "INFO": null
+  },
+  {
+    "ID": 14,
+    "BOOKID": 1,
+    "CONTEXTTITLE": "Onuncu Sözün Dördüncü Zeyli",
+    "AUTHDATESTART": 1927,
+    "AUTHDATEEND": null,
+    "AUTHLOCATION": "Barla",
+    "SOURCE": null,
+    "INFO": null
+  },
+  {
+    "ID": 15,
+    "BOOKID": 1,
+    "CONTEXTTITLE": "Onuncu Sözün Beşinci Zeyli",
+    "AUTHDATESTART": 1934,
+    "AUTHDATEEND": null,
+    "AUTHLOCATION": "Barla",
+    "SOURCE": null,
+    "INFO": null
+  },
+  {
+    "ID": 16,
+    "BOOKID": 1,
+    "CONTEXTTITLE": "On Dördüncü Sözün Zeyli",
+    "AUTHDATESTART": 1933,
+    "AUTHDATEEND": null,
+    "AUTHLOCATION": "Barla",
+    "SOURCE": null,
+    "INFO": null
+  },
+  {
+    "ID": 17,
+    "BOOKID": 1,
+    "CONTEXTTITLE": "On Sekizinci Söz",
+    "AUTHDATESTART": 1927,
+    "AUTHDATEEND": null,
+    "AUTHLOCATION": "Barla",
+    "SOURCE": null,
+    "INFO": null
+  },
+  {
+    "ID": 18,
+    "BOOKID": 1,
+    "CONTEXTTITLE": "Yirminci Sözün Birinci Makamı",
+    "AUTHDATESTART": 1930,
+    "AUTHDATEEND": null,
+    "AUTHLOCATION": "Barla",
+    "SOURCE": null,
+    "INFO": null
+  },
+  {
+    "ID": 19,
+    "BOOKID": 1,
+    "CONTEXTTITLE": "Yirminci Sözün İkinci Makamı",
+    "AUTHDATESTART": 1926,
+    "AUTHDATEEND": null,
+    "AUTHLOCATION": "Barla",
+    "SOURCE": null,
+    "INFO": null
+  },
+  {
+    "ID": 20,
+    "BOOKID": 1,
+    "CONTEXTTITLE": "Yirmi Birinci Söz",
+    "AUTHDATESTART": 1926,
+    "AUTHDATEEND": null,
+    "AUTHLOCATION": "Barla",
+    "SOURCE": null,
+    "INFO": null
+  },
+  {
+    "ID": 21,
+    "BOOKID": 1,
+    "CONTEXTTITLE": "Yirmi İkinci Söz",
+    "AUTHDATESTART": 1926,
+    "AUTHDATEEND": null,
+    "AUTHLOCATION": "Barla",
+    "SOURCE": null,
+    "INFO": null
+  },
+  {
+    "ID": 22,
+    "BOOKID": 1,
+    "CONTEXTTITLE": "Yirmi Üçüncü Söz",
+    "AUTHDATESTART": 1929,
+    "AUTHDATEEND": null,
+    "AUTHLOCATION": "Barla",
+    "SOURCE": null,
+    "INFO": null
+  },
+  {
+    "ID": 23,
+    "BOOKID": 1,
+    "CONTEXTTITLE": "Yirmi Beşinci Söz",
+    "AUTHDATESTART": 1927,
+    "AUTHDATEEND": null,
+    "AUTHLOCATION": "Barla",
+    "SOURCE": null,
+    "INFO": null
+  },
+  {
+    "ID": 24,
+    "BOOKID": 1,
+    "CONTEXTTITLE": "Yirmi Beşinci Sözün Birinci Zeyli",
+    "AUTHDATESTART": 1938,
+    "AUTHDATEEND": null,
+    "AUTHLOCATION": "Kastamonu",
+    "SOURCE": null,
+    "INFO": null
+  },
+  {
+    "ID": 25,
+    "BOOKID": 1,
+    "CONTEXTTITLE": "Yirmi Beşinci Sözün İkinci Zeyli",
+    "AUTHDATESTART": 1943,
+    "AUTHDATEEND": 1944,
+    "AUTHLOCATION": "Denizli Hapsi",
+    "SOURCE": null,
+    "INFO": null
+  },
+  {
+    "ID": 26,
+    "BOOKID": 1,
+    "CONTEXTTITLE": "Yirmi Yedinci Söz ve Zeyli",
+    "AUTHDATESTART": 1929,
+    "AUTHDATEEND": null,
+    "AUTHLOCATION": "Barla",
+    "SOURCE": null,
+    "INFO": null
+  },
+  {
+    "ID": 27,
+    "BOOKID": 1,
+    "CONTEXTTITLE": "Yirmi Sekizinci Söz",
+    "AUTHDATESTART": 1928,
+    "AUTHDATEEND": null,
+    "AUTHLOCATION": "Barla",
+    "SOURCE": null,
+    "INFO": "Tahmini yazılış tarihi"
+  },
+  {
+    "ID": 28,
+    "BOOKID": 1,
+    "CONTEXTTITLE": "Yirmi Dokuzuncu Söz",
+    "AUTHDATESTART": 1928,
+    "AUTHDATEEND": 1930,
+    "AUTHLOCATION": "Barla",
+    "SOURCE": null,
+    "INFO": null
+  },
+  {
+    "ID": 29,
+    "BOOKID": 1,
+    "CONTEXTTITLE": "Otuzuncu Söz",
+    "AUTHDATESTART": 1928,
+    "AUTHDATEEND": 1930,
+    "AUTHLOCATION": "Barla",
+    "SOURCE": null,
+    "INFO": null
+  },
+  {
+    "ID": 30,
+    "BOOKID": 1,
+    "CONTEXTTITLE": "Otuz Birinci Söz",
+    "AUTHDATESTART": 1928,
+    "AUTHDATEEND": 1930,
+    "AUTHLOCATION": "Barla",
+    "SOURCE": null,
+    "INFO": null
+  },
+  {
+    "ID": 31,
+    "BOOKID": 1,
+    "CONTEXTTITLE": "Otuz İkinci Söz",
+    "AUTHDATESTART": 1928,
+    "AUTHDATEEND": 1930,
+    "AUTHLOCATION": "Barla",
+    "SOURCE": null,
+    "INFO": null
+  },
+  {
+    "ID": 32,
+    "BOOKID": 1,
+    "CONTEXTTITLE": "Otuz Üçüncü Söz",
+    "AUTHDATESTART": 1928,
+    "AUTHDATEEND": 1930,
+    "AUTHLOCATION": "Barla",
+    "SOURCE": null,
+    "INFO": null
+  },
+  {
+    "ID": 33,
+    "BOOKID": 2,
+    "CONTEXTTITLE": "Birinci Mektup",
+    "AUTHDATESTART": 1929,
+    "AUTHDATEEND": null,
+    "AUTHLOCATION": null,
+    "SOURCE": "Osmanlıca Lem’alar",
+    "INFO": null
+  },
+  {
+    "ID": 34,
+    "BOOKID": 2,
+    "CONTEXTTITLE": "İkinci Mektup",
+    "AUTHDATESTART": 1930,
+    "AUTHDATEEND": null,
+    "AUTHLOCATION": null,
+    "SOURCE": "Son Şahitler, s. 754",
+    "INFO": null
+  },
+  {
+    "ID": 35,
+    "BOOKID": 2,
+    "CONTEXTTITLE": "Üçüncü Mektup",
+    "AUTHDATESTART": 1930,
+    "AUTHDATEEND": null,
+    "AUTHLOCATION": null,
+    "SOURCE": "Aynı eser, s. 67",
+    "INFO": null
+  },
+  {
+    "ID": 36,
+    "BOOKID": 2,
+    "CONTEXTTITLE": "Çam Dağı'nda yaz ayları,  ",
+    "AUTHDATESTART": 1930,
+    "AUTHDATEEND": null,
+    "AUTHLOCATION": null,
+    "SOURCE": "Aynı eser, s. 67",
+    "INFO": null
+  },
+  {
+    "ID": 37,
+    "BOOKID": 2,
+    "CONTEXTTITLE": "Dördüncü, Beşinci ve Altıncı Mektuplar",
+    "AUTHDATESTART": 1930,
+    "AUTHDATEEND": 1931,
+    "AUTHLOCATION": null,
+    "SOURCE": "Tahminen",
+    "INFO": null
+  },
+  {
+    "ID": 38,
+    "BOOKID": 2,
+    "CONTEXTTITLE": "Dokuzuncu Mektup",
+    "AUTHDATESTART": 1930,
+    "AUTHDATEEND": null,
+    "AUTHLOCATION": null,
+    "SOURCE": "Son Şahitler, s. 47",
+    "INFO": null
+  },
+  {
+    "ID": 39,
+    "BOOKID": 2,
+    "CONTEXTTITLE": "On Üçüncü Mektup",
+    "AUTHDATESTART": 1929,
+    "AUTHDATEEND": null,
+    "AUTHLOCATION": null,
+    "SOURCE": "Mektubat, s. 48",
+    "INFO": null
+  },
+  {
+    "ID": 40,
+    "BOOKID": 2,
+    "CONTEXTTITLE": "On Altıncı Mektup",
+    "AUTHDATESTART": 1930,
+    "AUTHDATEEND": 1931,
+    "AUTHLOCATION": null,
+    "SOURCE": "Mektubat, s. 47",
+    "INFO": null
+  },
+  {
+    "ID": 41,
+    "BOOKID": 2,
+    "CONTEXTTITLE": "On Altıncı Mektubun Zeyli",
+    "AUTHDATESTART": 1931,
+    "AUTHDATEEND": null,
+    "AUTHLOCATION": null,
+    "SOURCE": "Osmanlıca Lem’alar, s. 96",
+    "INFO": null
+  },
+  {
+    "ID": 42,
+    "BOOKID": 2,
+    "CONTEXTTITLE": "On Yedinci Mektup",
+    "AUTHDATESTART": 1930,
+    "AUTHDATEEND": null,
+    "AUTHLOCATION": null,
+    "SOURCE": "Son Şahitler-3, s. 43",
+    "INFO": null
+  },
+  {
+    "ID": 43,
+    "BOOKID": 2,
+    "CONTEXTTITLE": "On Dokuzuncu Mektup",
+    "AUTHDATESTART": 1929,
+    "AUTHDATEEND": null,
+    "AUTHLOCATION": null,
+    "SOURCE": "Osmanlıca Sikke-i Tasdik-i Gaybî, s. 70",
+    "INFO": null
+  },
+  {
+    "ID": 44,
+    "BOOKID": 2,
+    "CONTEXTTITLE": "Yirminci Mektup",
+    "AUTHDATESTART": 1928,
+    "AUTHDATEEND": null,
+    "AUTHLOCATION": null,
+    "SOURCE": "Aynı eser, s. 78",
+    "INFO": null
+  },
+  {
+    "ID": 45,
+    "BOOKID": 2,
+    "CONTEXTTITLE": "Yirmi Üçüncü Mektup",
+    "AUTHDATESTART": 1933,
+    "AUTHDATEEND": null,
+    "AUTHLOCATION": null,
+    "SOURCE": "Son Şahitler-1, s. 42",
+    "INFO": null
+  },
+  {
+    "ID": 46,
+    "BOOKID": 2,
+    "CONTEXTTITLE": "Yirmi Dördüncü Mektup",
+    "AUTHDATESTART": 1928,
+    "AUTHDATEEND": null,
+    "AUTHLOCATION": null,
+    "SOURCE": "Osmanlıca Sikke-i Tasdik-i Gaybî, s. 78",
+    "INFO": null
+  },
+  {
+    "ID": 47,
+    "BOOKID": 2,
+    "CONTEXTTITLE": "Yirmi Altıncı Mektup",
+    "AUTHDATESTART": 1932,
+    "AUTHDATEEND": null,
+    "AUTHLOCATION": null,
+    "SOURCE": "Aynı mektubun  ifadesi",
+    "INFO": null
+  },
+  {
+    "ID": 48,
+    "BOOKID": 2,
+    "CONTEXTTITLE": "Yirmi Altıncı Mektubun İkinci Kısmı",
+    "AUTHDATESTART": 1931,
+    "AUTHDATEEND": null,
+    "AUTHLOCATION": null,
+    "SOURCE": "Aynı mektubun ifadesi",
+    "INFO": null
+  },
+  {
+    "ID": 49,
+    "BOOKID": 2,
+    "CONTEXTTITLE": "Yirmi Yedinci Mektup (Lâhikaların tamamı)",
+    "AUTHDATESTART": 1929,
+    "AUTHDATEEND": 1960,
+    "AUTHLOCATION": null,
+    "SOURCE": "Lâhikalar",
+    "INFO": null
+  },
+  {
+    "ID": 50,
+    "BOOKID": 2,
+    "CONTEXTTITLE": "Yirmi Sekizinci Mektup Birinci Parçası",
+    "AUTHDATESTART": 1931,
+    "AUTHDATEEND": null,
+    "AUTHLOCATION": null,
+    "SOURCE": null,
+    "INFO": "Tahminen"
+  },
+  {
+    "ID": 51,
+    "BOOKID": 2,
+    "CONTEXTTITLE": "Yirmi Sekizinci Mektup İkinci Parçası",
+    "AUTHDATESTART": 1933,
+    "AUTHDATEEND": null,
+    "AUTHLOCATION": null,
+    "SOURCE": "Aynı mektubun ifadesi",
+    "INFO": null
+  },
+  {
+    "ID": 52,
+    "BOOKID": 2,
+    "CONTEXTTITLE": "Yirmi Dokuzuncu Mektup Birinci Kısım",
+    "AUTHDATESTART": 1934,
+    "AUTHDATEEND": null,
+    "AUTHLOCATION": null,
+    "SOURCE": "Son Şahitler, s. 42",
+    "INFO": null
+  },
+  {
+    "ID": 53,
+    "BOOKID": 2,
+    "CONTEXTTITLE": "Otuzuncu Mektup, İşarat-ül İ’cazdır",
+    "AUTHDATESTART": 1916,
+    "AUTHDATEEND": null,
+    "AUTHLOCATION": null,
+    "SOURCE": "Baskı tarihi",
+    "INFO": null
+  },
+  {
+    "ID": 54,
+    "BOOKID": 2,
+    "CONTEXTTITLE": "Otuz İkinci Mektup, Matbu ve Manzum Lemeat",
+    "AUTHDATESTART": 1921,
+    "AUTHDATEEND": null,
+    "AUTHLOCATION": null,
+    "SOURCE": "Baskı tarihi",
+    "INFO": null
+  },
+  {
+    "ID": 55,
+    "BOOKID": 2,
+    "CONTEXTTITLE": "Otuz Üçüncü  Mektup, Pencereler Risalesi",
+    "AUTHDATESTART": 1929,
+    "AUTHDATEEND": null,
+    "AUTHLOCATION": null,
+    "SOURCE": null,
+    "INFO": "Tahminen"
+  },
+  {
+    "ID": 56,
+    "BOOKID": 3,
+    "CONTEXTTITLE": "Birinci, İkinci, Üçüncü ve Dördüncü Lem’alar",
+    "AUTHDATESTART": 1932,
+    "AUTHDATEEND": null,
+    "AUTHLOCATION": null,
+    "SOURCE": null,
+    "INFO": "Tahminen"
+  },
+  {
+    "ID": 57,
+    "BOOKID": 3,
+    "CONTEXTTITLE": "Beşinci ve Altıncı Lem’alar",
+    "AUTHDATESTART": null,
+    "AUTHDATEEND": null,
+    "AUTHLOCATION": null,
+    "SOURCE": null,
+    "INFO": "Te’lif edilmediler"
+  },
+  {
+    "ID": 58,
+    "BOOKID": 3,
+    "CONTEXTTITLE": "Yedinci Lem’a",
+    "AUTHDATESTART": 1932,
+    "AUTHDATEEND": null,
+    "AUTHLOCATION": null,
+    "SOURCE": "Osmanlıca Lem’alar,  s. 79",
+    "INFO": null
+  },
+  {
+    "ID": 59,
+    "BOOKID": 3,
+    "CONTEXTTITLE": "Sekizinci Lem’a",
+    "AUTHDATESTART": 1933,
+    "AUTHDATEEND": null,
+    "AUTHLOCATION": null,
+    "SOURCE": "Osmanlıca Lem’alar,  s. 79",
+    "INFO": null
+  },
+  {
+    "ID": 60,
+    "BOOKID": 3,
+    "CONTEXTTITLE": "Dokuzuncu Lem’a",
+    "AUTHDATESTART": 1932,
+    "AUTHDATEEND": null,
+    "AUTHLOCATION": null,
+    "SOURCE": "Osmanlıca Lem’alar,  s. 79",
+    "INFO": null
+  },
+  {
+    "ID": 61,
+    "BOOKID": 3,
+    "CONTEXTTITLE": "Onuncu Lem’a (Şefkat Tokatları)",
+    "AUTHDATESTART": 1934,
+    "AUTHDATEEND": null,
+    "AUTHLOCATION": null,
+    "SOURCE": "Tahminen",
+    "INFO": null
+  },
+  {
+    "ID": 62,
+    "BOOKID": 3,
+    "CONTEXTTITLE": "On Birinci Lem’a",
+    "AUTHDATESTART": 1933,
+    "AUTHDATEEND": null,
+    "AUTHLOCATION": null,
+    "SOURCE": "Tahminen",
+    "INFO": null
+  },
+  {
+    "ID": 63,
+    "BOOKID": 3,
+    "CONTEXTTITLE": "On İkinci Lem’a",
+    "AUTHDATESTART": 1934,
+    "AUTHDATEEND": null,
+    "AUTHLOCATION": null,
+    "SOURCE": "Barla Lâhikası ",
+    "INFO": null
+  },
+  {
+    "ID": 64,
+    "BOOKID": 3,
+    "CONTEXTTITLE": "On Üçüncü Lem’a (Hikmetü’l-İstiaze)",
+    "AUTHDATESTART": null,
+    "AUTHDATEEND": null,
+    "AUTHLOCATION": null,
+    "SOURCE": null,
+    "INFO": "Tesbit edilemedi"
+  },
+  {
+    "ID": 65,
+    "BOOKID": 3,
+    "CONTEXTTITLE": "On Dördüncü  Lem’a",
+    "AUTHDATESTART": 1934,
+    "AUTHDATEEND": null,
+    "AUTHLOCATION": null,
+    "SOURCE": "Tahminen",
+    "INFO": null
+  },
+  {
+    "ID": 66,
+    "BOOKID": 3,
+    "CONTEXTTITLE": "On Beşinci Lem’a",
+    "AUTHDATESTART": null,
+    "AUTHDATEEND": null,
+    "AUTHLOCATION": null,
+    "SOURCE": null,
+    "INFO": "[Sözler, Mektubat ve Lem’aların (On Beşinci Lem’aya kadar) fihristidir]"
+  },
+  {
+    "ID": 67,
+    "BOOKID": 3,
+    "CONTEXTTITLE": "On Altıncı Lem’a",
+    "AUTHDATESTART": 1934,
+    "AUTHDATEEND": null,
+    "AUTHLOCATION": null,
+    "SOURCE": "Tahminen",
+    "INFO": null
+  },
+  {
+    "ID": 68,
+    "BOOKID": 3,
+    "CONTEXTTITLE": "On Yedinci Lem’a",
+    "AUTHDATESTART": 1933,
+    "AUTHDATEEND": null,
+    "AUTHLOCATION": null,
+    "SOURCE": "Osmanlıca Lemalar, s. 346",
+    "INFO": null
+  },
+  {
+    "ID": 69,
+    "BOOKID": 3,
+    "CONTEXTTITLE": "On Sekizinci Lem’a",
+    "AUTHDATESTART": 1934,
+    "AUTHDATEEND": null,
+    "AUTHLOCATION": null,
+    "SOURCE": "Osmanlıca Lemalar, s. 79",
+    "INFO": "Kasım"
+  },
+  {
+    "ID": 70,
+    "BOOKID": 3,
+    "CONTEXTTITLE": "On Dokuzuncu Lem’a",
+    "AUTHDATESTART": 1934,
+    "AUTHDATEEND": null,
+    "AUTHLOCATION": null,
+    "SOURCE": "Ramazandan sonra Isparta’da",
+    "INFO": null
+  },
+  {
+    "ID": 71,
+    "BOOKID": 3,
+    "CONTEXTTITLE": "Yirmi ve Yirmi Birinci Lem’alar",
+    "AUTHDATESTART": 1934,
+    "AUTHDATEEND": null,
+    "AUTHLOCATION": "Isparta",
+    "SOURCE": null,
+    "INFO": null
+  },
+  {
+    "ID": 72,
+    "BOOKID": 3,
+    "CONTEXTTITLE": "Yirmi İkinci Lem’a",
+    "AUTHDATESTART": 1934,
+    "AUTHDATEEND": null,
+    "AUTHLOCATION": "Isparta",
+    "SOURCE": null,
+    "INFO": null
+  },
+  {
+    "ID": 73,
+    "BOOKID": 3,
+    "CONTEXTTITLE": "Yirmi Üçüncü Lem’a",
+    "AUTHDATESTART": null,
+    "AUTHDATEEND": null,
+    "AUTHLOCATION": null,
+    "SOURCE": null,
+    "INFO": "Tespit edilemedi"
+  },
+  {
+    "ID": 74,
+    "BOOKID": 3,
+    "CONTEXTTITLE": "Yirmi Dördüncü Lem’a",
+    "AUTHDATESTART": 1934,
+    "AUTHDATEEND": null,
+    "AUTHLOCATION": "Isparta",
+    "SOURCE": null,
+    "INFO": null
+  },
+  {
+    "ID": 75,
+    "BOOKID": 3,
+    "CONTEXTTITLE": "Yirmi Beşinci Lem’a",
+    "AUTHDATESTART": 1934,
+    "AUTHDATEEND": null,
+    "AUTHLOCATION": "Isparta",
+    "SOURCE": null,
+    "INFO": null
+  },
+  {
+    "ID": 76,
+    "BOOKID": 3,
+    "CONTEXTTITLE": "Yirmi Altıncı Lem’a",
+    "AUTHDATESTART": 1934,
+    "AUTHDATEEND": null,
+    "AUTHLOCATION": "Isparta (Ekser ricaları)",
+    "SOURCE": null,
+    "INFO": null
+  },
+  {
+    "ID": 77,
+    "BOOKID": 3,
+    "CONTEXTTITLE": "Yirmi Yedinci Lem’a",
+    "AUTHDATESTART": 1935,
+    "AUTHDATEEND": 1936,
+    "AUTHLOCATION": null,
+    "SOURCE": "Eskişehir Müdafaanamesi",
+    "INFO": null
+  },
+  {
+    "ID": 78,
+    "BOOKID": 3,
+    "CONTEXTTITLE": "Yirmi Sekizinci Lem’a",
+    "AUTHDATESTART": 1935,
+    "AUTHDATEEND": null,
+    "AUTHLOCATION": "Eskişehir Hapsinde",
+    "SOURCE": null,
+    "INFO": null
+  },
+  {
+    "ID": 79,
+    "BOOKID": 3,
+    "CONTEXTTITLE": "Yirmi Dokuzuncu Lem’a",
+    "AUTHDATESTART": 1935,
+    "AUTHDATEEND": null,
+    "AUTHLOCATION": "Eskişehir Hapsinde",
+    "SOURCE": null,
+    "INFO": null
+  },
+  {
+    "ID": 80,
+    "BOOKID": 3,
+    "CONTEXTTITLE": "Otuzuncu Lem’a",
+    "AUTHDATESTART": 1935,
+    "AUTHDATEEND": 1936,
+    "AUTHLOCATION": "Eskişehir Hapsinde",
+    "SOURCE": null,
+    "INFO": null
+  },
+  {
+    "ID": 81,
+    "BOOKID": 3,
+    "CONTEXTTITLE": "Otuz Birinci Lem’a (Şualar)",
+    "AUTHDATESTART": null,
+    "AUTHDATEEND": null,
+    "AUTHLOCATION": "Eskişehir Hapsinde",
+    "SOURCE": null,
+    "INFO": null
+  },
+  {
+    "ID": 82,
+    "BOOKID": 3,
+    "CONTEXTTITLE": "Otuz İkinci Lem’a",
+    "AUTHDATESTART": null,
+    "AUTHDATEEND": null,
+    "AUTHLOCATION": null,
+    "SOURCE": null,
+    "INFO": "Bir cihette matbu Lemeat eseridir"
+  },
+  {
+    "ID": 83,
+    "BOOKID": 3,
+    "CONTEXTTITLE": "Otuz Üçüncü Lem’a",
+    "AUTHDATESTART": 1921,
+    "AUTHDATEEND": 1923,
+    "AUTHLOCATION": null,
+    "SOURCE": "Mesnevî-i Arabî",
+    "INFO": null
+  },
+  {
+    "ID": 84,
+    "BOOKID": 4,
+    "CONTEXTTITLE": "Birinci Şuâ",
+    "AUTHDATESTART": 1936,
+    "AUTHDATEEND": null,
+    "AUTHLOCATION": null,
+    "SOURCE": "Başındaki tarih ",
+    "INFO": "(1938 tebyiz tarihi)"
+  },
+  {
+    "ID": 85,
+    "BOOKID": 4,
+    "CONTEXTTITLE": "İkinci Şuâ",
+    "AUTHDATESTART": 1936,
+    "AUTHDATEEND": null,
+    "AUTHLOCATION": "Eskişehir hapsi",
+    "SOURCE": null,
+    "INFO": null
+  },
+  {
+    "ID": 86,
+    "BOOKID": 4,
+    "CONTEXTTITLE": "Üçüncü Şuâ",
+    "AUTHDATESTART": 1937,
+    "AUTHDATEEND": null,
+    "AUTHLOCATION": null,
+    "SOURCE": "Osmanlıca Kastamonu Lâhikası-2, s. 47",
+    "INFO": null
+  },
+  {
+    "ID": 87,
+    "BOOKID": 4,
+    "CONTEXTTITLE": "Dördüncü Şuâ",
+    "AUTHDATESTART": 1938,
+    "AUTHDATEEND": null,
+    "AUTHLOCATION": null,
+    "SOURCE": null,
+    "INFO": "Tahminen"
+  },
+  {
+    "ID": 88,
+    "BOOKID": 4,
+    "CONTEXTTITLE": "Beşinci Şuâ",
+    "AUTHDATESTART": 1938,
+    "AUTHDATEEND": null,
+    "AUTHLOCATION": null,
+    "SOURCE": "Osmanlıca Kastamonu Lâhikası, s. 35",
+    "INFO": " (Tebyiz tarihi)"
+  },
+  {
+    "ID": 89,
+    "BOOKID": 4,
+    "CONTEXTTITLE": "Altıncı Şuâ",
+    "AUTHDATESTART": null,
+    "AUTHDATEEND": null,
+    "AUTHLOCATION": null,
+    "SOURCE": null,
+    "INFO": "Tesbit edilemedi"
+  },
+  {
+    "ID": 90,
+    "BOOKID": 4,
+    "CONTEXTTITLE": "Yedinci Şuâ",
+    "AUTHDATESTART": 1938,
+    "AUTHDATEEND": null,
+    "AUTHLOCATION": null,
+    "SOURCE": "Osmanlıca Sikke-i Tasdik-i Gaybî, s. 90",
+    "INFO": null
+  },
+  {
+    "ID": 91,
+    "BOOKID": 4,
+    "CONTEXTTITLE": "Sekizinci Şuâ",
+    "AUTHDATESTART": 1942,
+    "AUTHDATEEND": null,
+    "AUTHLOCATION": null,
+    "SOURCE": "Osmanlıca Sikke-i Tasdik-i Gaybî, s. 90",
+    "INFO": null
+  },
+  {
+    "ID": 92,
+    "BOOKID": 4,
+    "CONTEXTTITLE": "Dokuzuncu Şuâ",
+    "AUTHDATESTART": null,
+    "AUTHDATEEND": null,
+    "AUTHLOCATION": null,
+    "SOURCE": null,
+    "INFO": "Tesbit edilemedi"
+  },
+  {
+    "ID": 93,
+    "BOOKID": 4,
+    "CONTEXTTITLE": "Onuncu Şuâ ",
+    "AUTHDATESTART": 1940,
+    "AUTHDATEEND": null,
+    "AUTHLOCATION": null,
+    "SOURCE": null,
+    "INFO": "Tahminen"
+  },
+  {
+    "ID": 94,
+    "BOOKID": 4,
+    "CONTEXTTITLE": "On Birinci Şuâ",
+    "AUTHDATESTART": 1943,
+    "AUTHDATEEND": 1944,
+    "AUTHLOCATION": "Denizli hapsi",
+    "SOURCE": null,
+    "INFO": null
+  },
+  {
+    "ID": 95,
+    "BOOKID": 4,
+    "CONTEXTTITLE": "On İkinci Şuâ",
+    "AUTHDATESTART": 1944,
+    "AUTHDATEEND": null,
+    "AUTHLOCATION": "Denizli hapsi",
+    "SOURCE": null,
+    "INFO": null
+  },
+  {
+    "ID": 96,
+    "BOOKID": 4,
+    "CONTEXTTITLE": "On Üçüncü Şuâ",
+    "AUTHDATESTART": 1943,
+    "AUTHDATEEND": 1944,
+    "AUTHLOCATION": null,
+    "SOURCE": "Denizli hapsi mektupları",
+    "INFO": null
+  },
+  {
+    "ID": 97,
+    "BOOKID": 4,
+    "CONTEXTTITLE": "On Dördüncü Şuâ",
+    "AUTHDATESTART": 1948,
+    "AUTHDATEEND": 1949,
+    "AUTHLOCATION": null,
+    "SOURCE": "Afyon mahkemesi müdafaanamesi ve hapis mektupları",
+    "INFO": null
+  },
+  {
+    "ID": 98,
+    "BOOKID": 4,
+    "CONTEXTTITLE": "On Beşinci Şuâ",
+    "AUTHDATESTART": 1949,
+    "AUTHDATEEND": null,
+    "AUTHLOCATION": "Afyon hapsi",
+    "SOURCE": null,
+    "INFO": null
+  },
+  {
+    "ID": 99,
+    "BOOKID": 7,
+    "CONTEXTTITLE": "Asâ-yı Mûsâ’dan Birinci Kısım (On Birinci Şuâ) ",
+    "AUTHDATESTART": 1943,
+    "AUTHDATEEND": 1944,
+    "AUTHLOCATION": "Denizli hapsi",
+    "SOURCE": null,
+    "INFO": null
+  },
+  {
+    "ID": 100,
+    "BOOKID": 7,
+    "CONTEXTTITLE": "Birinci Hüccet-i İmâniye (Yedinci Şuâdan)",
+    "AUTHDATESTART": 1938,
+    "AUTHDATEEND": null,
+    "AUTHLOCATION": null,
+    "SOURCE": "Osmanlıca Sikke-i Tasdik-i Gaybî, s. 90",
+    "INFO": null
+  },
+  {
+    "ID": 101,
+    "BOOKID": 7,
+    "CONTEXTTITLE": "İkinci Hüccet-i İmâniye (Otuz İkinci Sözden)",
+    "AUTHDATESTART": 1928,
+    "AUTHDATEEND": 1930,
+    "AUTHLOCATION": "Barla",
+    "SOURCE": null,
+    "INFO": null
+  },
+  {
+    "ID": 102,
+    "BOOKID": 7,
+    "CONTEXTTITLE": "Üçüncü Hüccet-i İmâniye (Yirmi Üçüncü Lem’a)",
+    "AUTHDATESTART": null,
+    "AUTHDATEEND": null,
+    "AUTHLOCATION": null,
+    "SOURCE": "Tespit edilemedi",
+    "INFO": null
+  },
+  {
+    "ID": 103,
+    "BOOKID": 7,
+    "CONTEXTTITLE": "Dördüncü-Beşinci Hüccet-i İmâniyeler (Otuzuncu Lem’adan)",
+    "AUTHDATESTART": 1935,
+    "AUTHDATEEND": 1936,
+    "AUTHLOCATION": "Eskişehir Hapsinde",
+    "SOURCE": null,
+    "INFO": null
+  },
+  {
+    "ID": 104,
+    "BOOKID": 7,
+    "CONTEXTTITLE": "Altıncı Hüccet-i İmâniye (Onuncu Sözden)",
+    "AUTHDATESTART": 1928,
+    "AUTHDATEEND": null,
+    "AUTHLOCATION": "Barla",
+    "SOURCE": null,
+    "INFO": "Hicri 1342"
+  },
+  {
+    "ID": 105,
+    "BOOKID": 7,
+    "CONTEXTTITLE": "Yedinci Hüccet-i İmâniye (Otuz Üçüncü Sözden)",
+    "AUTHDATESTART": 1928,
+    "AUTHDATEEND": 1930,
+    "AUTHLOCATION": "Barla",
+    "SOURCE": null,
+    "INFO": null
+  },
+  {
+    "ID": 106,
+    "BOOKID": 7,
+    "CONTEXTTITLE": "Sekizinci Hüccet-i İmâniye (Üçüncü Şuâ)",
+    "AUTHDATESTART": 1937,
+    "AUTHDATEEND": null,
+    "AUTHLOCATION": null,
+    "SOURCE": "Osmanlıca Kastamonu Lâhikası-2, s. 47",
+    "INFO": null
+  },
+  {
+    "ID": 107,
+    "BOOKID": 7,
+    "CONTEXTTITLE": "Dokuzuncu Hüccet-i İmâniye (Dokuzuncu Şuâ)",
+    "AUTHDATESTART": null,
+    "AUTHDATEEND": null,
+    "AUTHLOCATION": null,
+    "SOURCE": null,
+    "INFO": "Tesbit edilemedi"
+  },
+  {
+    "ID": 108,
+    "BOOKID": 7,
+    "CONTEXTTITLE": "Onuncu Hüccet-i İmâniye (Yirminci Mektuptan)",
+    "AUTHDATESTART": 1928,
+    "AUTHDATEEND": null,
+    "AUTHLOCATION": null,
+    "SOURCE": "Osmanlıca Sikke-i Tasdik-i Gaybî, s. 78",
+    "INFO": null
+  },
+  {
+    "ID": 109,
+    "BOOKID": 7,
+    "CONTEXTTITLE": "On Birinci Hüccet-i İmâniye (Yirmi İkinci Sözden)",
+    "AUTHDATESTART": 1926,
+    "AUTHDATEEND": null,
+    "AUTHLOCATION": "Barla",
+    "SOURCE": null,
+    "INFO": null
+  }
+]

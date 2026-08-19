@@ -4,13 +4,14 @@ import { useParams, useNavigate } from "react-router-dom"
 import { useApp } from "../AppContext"
 import { kitaplar } from "../data/kitaplar"
 import lugatVerisi from "../data/lugat.json"
+import risaleLugat from "../data/risale-lugat.json"
 import kavramlarVerisi from "../data/kavramlar.json"
 import {
   ArrowLeft, BookOpen, Eye, EyeOff, Play, Pause,
   Plus, Minus, AlignJustify, ChevronsUp, ChevronsDown,
   Bookmark, X, Type, StickyNote, Palette,
   Search, Highlighter, ChevronDown, Clock, Settings,
-  ChevronUp, Edit2, Pencil, Circle,
+  ChevronUp, Edit2, Pencil, Circle, Feather,
 } from "lucide-react"
 import { useMediaQuery } from '../data/hooks/useMediaQuery'
 
@@ -22,6 +23,8 @@ const FONT_GRUPLARI = {
   turkce: {
     label: "Türkçe",
     fontlar: [
+      { id: "bookerly",     label: "Bookerly (Önerilen)",         style: "'Bookerly', 'Bookerly Display', serif" },
+      { id: "souvenir",     label: "Souvenir",         style: "'Souvenir', 'Souvenir Medium', serif" },
       { id: "georgia",      label: "Georgia",          style: "Georgia, serif" },
       { id: "lora",         label: "Lora",             style: "'Lora', serif",             google: "Lora:ital,wght@0,400;0,600;1,400" },
       { id: "source-serif", label: "Source Serif 4",   style: "'Source Serif 4', serif",   google: "Source+Serif+4:ital,wght@0,400;0,600;1,400" },
@@ -81,7 +84,7 @@ const VURGU_RENKLERI = [
 
 function kelimeAra(kelime) {
   const temiz = kelime.toLowerCase().replace(/[.,!?;:'"()\[\]]/g, "").trim()
-  return lugatVerisi[temiz] || null
+  return lugatVerisi[temiz] || risaleLugat[temiz] || null
 }
 function kavramAra(kelime) {
   const temiz = kelime.toLowerCase().replace(/[.,!?;:'"()\[\]]/g, "").trim()
@@ -230,30 +233,29 @@ function MetinParcasi({
               const lugatliMi = (anlam || kavram) && lugatAktif
               const vurgulu  = vurgulananMi(si, ki)
               return (
-                <span key={ki}>
-                  <span
-                    className={lugatliMi ? "lugat-kelime" : ""}
-                    onMouseDown={e => kelimeMouseDown(si, ki, e)}
-                    onMouseUp={() => kelimeMouseUp(si, ki)}
-                    onClick={e => { if (!vurguModu && lugatliMi) onKelimeTikla(kelime, anlam, kavram, e) }}
-                    onMouseEnter={e => { if (lugatliMi && !vurguModu) e.currentTarget.style.opacity = "0.75" }}
-                    onMouseLeave={e => { e.currentTarget.style.opacity = "1" }}
-                    style={{
-                      background: vurgulu ? vurgulu.renk : "transparent",
-                      borderRadius: vurgulu ? "2px" : "0",
-                      color: lugatliMi ? theme.lugatHighlight : "inherit",
-                      borderBottom: lugatliMi && !vurgulu ? `1px dotted ${theme.lugatHighlight}` : "none",
-                      cursor: vurguModu ? "text" : (lugatliMi ? "pointer" : "default"),
-                      padding: vurgulu ? "0 1px" : "0",
-                      userSelect: "text",
-                      ...(arapKelime && arapcaFont ? { fontFamily: arapcaFont, unicodeBidi: "isolate" } : {}),
-                    }}
-                  >
-                    {kelime}
-                  </span>
-                  {" "}
+              <span key={ki}>
+                <span
+                  className={lugatliMi ? "lugat-kelime" : ""}
+                  onMouseDown={e => kelimeMouseDown(si, ki, e)}
+                  onMouseUp={() => kelimeMouseUp(si, ki)}
+                  onClick={e => { if (!vurguModu && lugatliMi) onKelimeTikla(kelime, anlam, kavram, e) }}
+                  onMouseEnter={e => { if (lugatliMi && !vurguModu) e.currentTarget.style.opacity = "0.75" }}
+                  onMouseLeave={e => { e.currentTarget.style.opacity = "1" }}
+                  style={{
+                    background: vurgulu ? vurgulu.renk : "transparent",
+                    borderRadius: vurgulu ? "2px" : "0",
+                    color: lugatliMi ? theme.lugatHighlight : "inherit",
+                    borderBottom: lugatliMi && !vurgulu ? `1px dotted ${theme.lugatHighlight}` : "none",
+                    cursor: vurguModu ? "text" : (lugatliMi ? "pointer" : "default"),
+                    padding: vurgulu ? "0 1px" : "0",
+                    userSelect: "text",
+                    ...(arapKelime && arapcaFont ? { fontFamily: arapcaFont, unicodeBidi: "isolate" } : {}),
+                  }}
+                >
+                  {kelime}{ki < kelimeler.length - 1 ? " " : ""}
                 </span>
-              )
+              </span>
+            )
             })}
           </p>
         )
@@ -735,12 +737,12 @@ const AaPanel = aaAcik && (
       <div style={{ marginBottom: "14px" }}>
         <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px" }}>YAZI BOYUTU</div>
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          <button onClick={() => setYaziBoyutu(Math.max(12, yaziBoyutu - 1))} style={barButonStil()}><Minus size={14} /></button>
+          <button onClick={() => setYaziBoyutu(Math.max(15, yaziBoyutu - 5))} style={barButonStil()}><Minus size={14} /></button>
           <div style={{ flex: 1, textAlign: "center" }}>
             <span style={{ fontSize: `${Math.min(yaziBoyutu, 22)}px`, color: theme.text, fontFamily: aktifFont.style }}>Aa</span>
             <span style={{ fontSize: "11px", color: theme.textSecondary, marginLeft: "6px" }}>{yaziBoyutu}px</span>
           </div>
-          <button onClick={() => setYaziBoyutu(Math.min(28, yaziBoyutu + 1))} style={barButonStil()}><Plus size={14} /></button>
+          <button onClick={() => setYaziBoyutu(Math.min(100, yaziBoyutu + 5))} style={barButonStil()}><Plus size={14} /></button>
         </div>
       </div>
 
@@ -1307,7 +1309,7 @@ const Bar = (
         </button>
 
         <button onClick={() => togglePanel(setAaAcik, !aaAcik)} style={barButonStil(aaAcik)}>
-          <Type size={15} /> Aa
+          <Feather size={15} />
         </button>
 
         {/* Vurgulama modu */}
@@ -1461,7 +1463,7 @@ return (
         padding: `${barKonum === "ust" ? "80px" : "24px"} 0 ${barKonum === "alt" ? "80px" : "24px"}`,
       }}
     >
-      <div style={{ maxWidth: "680px", margin: "0 auto", padding: "0 24px" }}>
+      <div style={{ maxWidth: `${Math.round((isMobile ? 480 : 720) * (yaziBoyutu / 16))}px`, margin: "0 auto", padding: "0 24px" }}>
 
         {/* Vurgulama modu bandı */}
         {vurguModu && (

@@ -1,0 +1,737 @@
+[
+ {
+  "seviye": 1,
+  "baslik": "Asâ-yı Mûsâ",
+  "aciklama": "",
+  "sayfa": 5,
+  "oran": 0.0
+ },
+ {
+  "seviye": 1,
+  "baslik": "Asâ-yı Mûsâ'dan Birinci Kısım (On Birinci Şuâ)",
+  "aciklama": "Denizli Hapsinin bir nevî müdafaası hükmündeki meyvesi olup, aynı zamanda iman, ibadet ve tevhide dair önemli meseleleri açıklar ve ispat eder",
+  "sayfa": 6,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Meyve Risalesi",
+  "aciklama": "On Bir Meseledir",
+  "sayfa": 6,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Birincisi",
+  "aciklama": "Her gün 24 saatin bir saatini ahirete sarfetmeye vesile olan namaz ibadetinin önemi vurgulanıyor.",
+  "sayfa": 7,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "İkinci Meselenin Hülâsası",
+  "aciklama": "Ölümün karşısında takınılacak tavır.",
+  "sayfa": 9,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Üçüncü Mesele",
+  "aciklama": "Eskişehir hapishanesinin penceresinden lise talebelerinin hâline ağlaması.",
+  "sayfa": 13,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Dördüncü Mesele",
+  "aciklama": "Dünya savaşından daha önemli olan hakikat.",
+  "sayfa": 17,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Beşinci Mesele",
+  "aciklama": "Gençliğin değerini bilip ona göre davranmak.",
+  "sayfa": 19,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Altıncı Mesele",
+  "aciklama": "İlimlerin diliyle Allah'ı tanıma",
+  "sayfa": 20,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Yedinci Mesele",
+  "aciklama": "Bize âhireti anlat diyen mahpuslara bir izah.",
+  "sayfa": 25,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Sekizinci Meselenin bir Hülâsası",
+  "aciklama": "Âhiret inancının ferdî ve toplumsal hayata faydaları.",
+  "sayfa": 42,
+  "oran": 0.0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Birincisi",
+  "aciklama": "İnsanın mahiyeti ebediyetle fıtraten alâkadardır.",
+  "sayfa": 42,
+  "oran": 0.4
+ },
+ {
+  "seviye": 3,
+  "baslik": "İkinci meyvesi ve hayat-ı şahsiyeye bakan bir faydası",
+  "aciklama": "Âhirete imanla ölüm bir cennet kapısına dönüşür.",
+  "sayfa": 43,
+  "oran": 0.0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Hayat-ı şahsiyeye ait üçüncü bir faydası",
+  "aciklama": "",
+  "sayfa": 43,
+  "oran": 0.0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Dördüncü bir faydası ki, insanın hayat-ı içtimaiyesine bakıyor",
+  "aciklama": "",
+  "sayfa": 44,
+  "oran": 0.0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Birinci Nükte",
+  "aciklama": "Cehennemin varlığı hakkında bir değerlendirme",
+  "sayfa": 50,
+  "oran": 0.5
+ },
+ {
+  "seviye": 3,
+  "baslik": "İkinci Nükte",
+  "aciklama": "Cehennemin varlığının ve şiddetli azabının, rahmete ve adalete zıddiyeti yoktur",
+  "sayfa": 51,
+  "oran": 0.4
+ },
+ {
+  "seviye": 2,
+  "baslik": "Dokuzuncu Mesele",
+  "aciklama": "Cüz'î bir iman hakikatini inkâr etmek küfrü gerektirir. Çünkü iman bir bütündür.",
+  "sayfa": 59,
+  "oran": 0.0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Birinci Nokta",
+  "aciklama": "Cenâb-ı Hakkın varlık delilleri aynı zamanda âhirete işaret ve delildir",
+  "sayfa": 60,
+  "oran": 0.0
+ },
+ {
+  "seviye": 3,
+  "baslik": "İkinci Nokta",
+  "aciklama": "Bütün peygamberler ve Kur'ân'ın en esaslı unsuru Allah'a ve haşre imandır",
+  "sayfa": 65,
+  "oran": 0.0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Üçüncü Nokta",
+  "aciklama": "elhamdü lillâh'ın mânâsını ifade eden bir cümle",
+  "sayfa": 66,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Onuncu Mesele",
+  "aciklama": "Emirdağ Çiçeği: Kur'ân'daki tekrarlara ilgili edilen itirazlara cevap",
+  "sayfa": 67,
+  "oran": 0.0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Bu onuncu meseleye bir hatime olarak İki Haşiye",
+  "aciklama": "",
+  "sayfa": 80,
+  "oran": 0.0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Birincisi",
+  "aciklama": "Kur'ânın hakikî tercümesi mümkün değil.",
+  "sayfa": 80,
+  "oran": 0.0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Hâtimeden ikinci haşiye",
+  "aciklama": "Muhammed'in (a.s.m.) getirdiği nur, kâinatın, yokluk, vazifesizlik, anlamsızlık perdesini kaldırır.",
+  "sayfa": 80,
+  "oran": 0.0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Hüsrev'in Üstadına yazdığı mektup",
+  "aciklama": "",
+  "sayfa": 83,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "On Birinci Mesele",
+  "aciklama": "Meleklere iman rüknünün pek çok meyvelerinden küçücük bir meyvesine işaret.",
+  "sayfa": 85,
+  "oran": 0.0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Hâtime",
+  "aciklama": "Felâk suresinin bir yönüyle izahı.",
+  "sayfa": 96,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Bir ihtar",
+  "aciklama": "Her bir âyetin çok mânâları vardır.",
+  "sayfa": 98,
+  "oran": 0.0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Bu sureye ait bir nükte-i i'câziyenin haşiyesidir",
+  "aciklama": "",
+  "sayfa": 99,
+  "oran": 0.0
+ },
+ {
+  "seviye": 3,
+  "baslik": "On Birinci Meselenin haşiyesinin bir lâhikasıdır.",
+  "aciklama": "",
+  "sayfa": 100,
+  "oran": 0.0
+ },
+ {
+  "seviye": 1,
+  "baslik": "Asâ-yı Mûsâ'dan İkinci Kısım Hüccetü'l-Bâliğa Risalesi",
+  "aciklama": "",
+  "sayfa": 109,
+  "oran": 0.0
+ },
+ {
+  "seviye": 1,
+  "baslik": "Birinci Hüccet-i İmâniye (Âyetü'l-Kübradan)",
+  "aciklama": "",
+  "sayfa": 110,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Birinci Makamın Birinci Basamağında",
+  "aciklama": "Semâvâtın Allah'ın varlığına delâleti",
+  "sayfa": 110,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "İkinci Mertebesinde",
+  "aciklama": "Atmosfer ve içindekilerinin Allah'ın varlığına delâleti",
+  "sayfa": 112,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Üçüncü Mertebesinde",
+  "aciklama": "Yerküresi ve içindekilerinin Allah'ın varlığına delâleti",
+  "sayfa": 116,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Dördüncü Mertebesinde",
+  "aciklama": "Deniz ve nehirlerin Allah'ın varlığına delâleti",
+  "sayfa": 118,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Beşinci Mertebesinde",
+  "aciklama": "Dağların ve ovaların Allah'ın varlığına delâleti",
+  "sayfa": 119,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Altıncı Mertebesinde",
+  "aciklama": "Ağaçların ve bitkilerin Allah'ın varlığına delâleti",
+  "sayfa": 121,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Yedinci Mertebesinde",
+  "aciklama": "Hayvanların ve kuşların Allah'ın varlığına delâleti. Üç hakikati var",
+  "sayfa": 122,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Sekizinci Mertebesinde",
+  "aciklama": "Peygamberlerin Allah'ın varlığına delâleti",
+  "sayfa": 124,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Dokuzuncu Mertebesinde",
+  "aciklama": "Âlimlerin Allah'ın varlığına delâleti",
+  "sayfa": 126,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Onuncu Mertebesinde",
+  "aciklama": "Kudsî mürşidlerin Allah'ın varlığına delâleti",
+  "sayfa": 127,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "On Birinci Mertebesinde",
+  "aciklama": "Meleklerin ve ruhî varlıkların Allah'ın varlığına delâleti",
+  "sayfa": 128,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "On Üçüncü Mertebesinde",
+  "aciklama": "Nurlu akılların ve selim nurâni kalplerin Allah'ın varlığına delâleti",
+  "sayfa": 130,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "On Dördüncü ve On Beşinci Mertebesi",
+  "aciklama": "Vahiy hakikati gelecek şu beş hakikati netice veriyor:",
+  "sayfa": 131,
+  "oran": 0.0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Cenab-ı Hakkın beşerin akıl seviyesine göre hitap etmesi.",
+  "aciklama": "",
+  "sayfa": 133,
+  "oran": 0.0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Cenab-ı Hakkın, yüce kelâmıyla Kendi Zâtını tarif etmesi.",
+  "aciklama": "",
+  "sayfa": 133,
+  "oran": 0.0
+ },
+ {
+  "seviye": 3,
+  "baslik": "İnsanların dualarına cevap vermesi Onun yaratıcılığının şe'nidir.",
+  "aciklama": "",
+  "sayfa": 133,
+  "oran": 0.0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Kelâm sıfatı, ilim ve hayat sıfatının ayrılmaz bir gereğidir.",
+  "aciklama": "",
+  "sayfa": 133,
+  "oran": 0.0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Yüce kelamıyla insanları uyarması ulûhiyetinin gereğidir.",
+  "aciklama": "",
+  "sayfa": 133,
+  "oran": 0.0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Ve ilham ile vahyin arasındaki fark.",
+  "aciklama": "",
+  "sayfa": 134,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Birinci Makamın On Altıncı Mertebesinde",
+  "aciklama": "Fahr-i Âlem olan Muhammed'in (a.s.m.) Allah'ın varlığına delâleti",
+  "sayfa": 137,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "On Yedinci Mertebesinde",
+  "aciklama": "Kur'ân'ın vech-i i'câzı ve Allah kelâmı olduğunun delilleri.",
+  "sayfa": 145,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "On Sekizinci Mertebesinde",
+  "aciklama": "Kâinatın Allah'ın varlığına delâleti",
+  "sayfa": 153,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "On Dokuzuncu Mertebesinde",
+  "aciklama": "Allah'ın isim ve sıfatlarının Kendi varlığına delâleti.",
+  "sayfa": 159,
+  "oran": 0.0
+ },
+ {
+  "seviye": 1,
+  "baslik": "İkinci Hüccet-i İmâniye ( Otuz ikinci Sözden)",
+  "aciklama": "Cenâb-ı Hakkın Vahdâniyetinin ispatı. Vahdet ve Ehâdiyet-i İlâhiyeye dâir gelen şüphe ve itirazlara cevap. Ehl-î dalâlet ve ehl-i hidayetin dünya hayatına bakış açıları.",
+  "sayfa": 166,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Birinci Mevkıf",
+  "aciklama": "Cenâb-ı Hakkın Vahdâniyetinin ispatı.",
+  "sayfa": 166,
+  "oran": 0.0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Birinci Mevkıfın küçük bir zeyli",
+  "aciklama": "\"Üstlerindeki göğe bakmazlar mı, onu nasıl bina edip süsledik...\" (Kaf Sûresi, 50:6) âyetinin tefsiri",
+  "sayfa": 178,
+  "oran": 0.0
+ },
+ {
+  "seviye": 1,
+  "baslik": "Üçüncü Hüccet-i İmâniye (Yirmi Üçüncü Lem'a)",
+  "aciklama": "Her şeyin Allah tarafından yaratıldığını, ikna edici delillerle anlatan Tabiat Risâlesidir",
+  "sayfa": 182,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Mukaddime",
+  "aciklama": "İnsanların ağzından şuursuzca çıkan ve dinsizliği ima eden kelimelerden söz eder.",
+  "sayfa": 183,
+  "oran": 0.6667
+ },
+ {
+  "seviye": 2,
+  "baslik": "Birinci Mesele",
+  "aciklama": "Sebeplerin tesiriyle varlıkların yaratılmasının imkansızlığının üç halle îzâhı yapılmaktadır.",
+  "sayfa": 184,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "İkinci Mesele",
+  "aciklama": "Varlıkların kendi kendine oluşmasının üç muhalle îzâhı yapılmaktadır.",
+  "sayfa": 187,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Üçüncü Mesele",
+  "aciklama": "Tabiatın gereği olarak varlıkların oluştuğu iddiası üç muhalle anlatılır.",
+  "sayfa": 189,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Hatime",
+  "aciklama": "Tabiatçılık fikrinden kurtulup imana gelen kişinin sorularını içerir.",
+  "sayfa": 201,
+  "oran": 0.0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Birinci Sual",
+  "aciklama": "Cenâb-ı Hakkın bizim ibadetimize ne ihtiyacı var?",
+  "sayfa": 201,
+  "oran": 0.0
+ },
+ {
+  "seviye": 3,
+  "baslik": "İkinci Sual",
+  "aciklama": "Her varlığın tüm halleriyle Cenâb-ı Hakkın kontrol ve tedbiri altında kolayca idaresinin sırrı nedir?",
+  "sayfa": 203,
+  "oran": 0.0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Üçüncü Sual",
+  "aciklama": "\"Hiçten bir şey yaratılmıyor ve yok edilmiyor\" diyenlerin iddialarına cevap veriliyor.",
+  "sayfa": 205,
+  "oran": 0.0
+ },
+ {
+  "seviye": 1,
+  "baslik": "Dördüncü Hüccet-i İmâniye (Otuzuncu Lem'anın İkinci Nüktesi)",
+  "aciklama": "Adl isminin cilvesini gösterir",
+  "sayfa": 208,
+  "oran": 0.0
+ },
+ {
+  "seviye": 1,
+  "baslik": "Beşinci Hüccet-i İmâniye (Otuzuncu Lem'anın Üçüncü Nüktesi)",
+  "aciklama": "Birinci Noktası: Hakîm isminin en büyük tecellisini ele alır",
+  "sayfa": 213,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Üçüncü Nüktenin İkinci Noktası",
+  "aciklama": "İki meseledir.",
+  "sayfa": 214,
+  "oran": 0.0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Birinci Meselesi",
+  "aciklama": "Sonsuz kemâl ve cemâl sahibi kendini görmek ve göstermek ister.",
+  "sayfa": 214,
+  "oran": 0.0
+ },
+ {
+  "seviye": 3,
+  "baslik": "İkinci Noktanın İkinci Meselesi",
+  "aciklama": "Kâinat sanatkârının mülkünde şirke yer yoktur",
+  "sayfa": 214,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Üçüncü Nokta",
+  "aciklama": "İnsanı kâinatın merkezi yapmıştır. Bütün ilimler ona hizmetkârdır",
+  "sayfa": 216,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Dördüncü Nokta",
+  "aciklama": "Bu sarayı binler hikmetlerle yapan usta, boş ve abes iş yapmaz.",
+  "sayfa": 219,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Beşinci Nokta",
+  "aciklama": "İki meseledir.",
+  "sayfa": 220,
+  "oran": 0.0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Birinci Mesele",
+  "aciklama": "Sâni-i Hakîm, israf, abes ve faydasız yaratmaz.",
+  "sayfa": 220,
+  "oran": 0.0
+ },
+ {
+  "seviye": 3,
+  "baslik": "İkinci Mesele",
+  "aciklama": "Sâni-i Hakîm, Resul-i Ekremin (a.s.m.) Risâletine delâlet ediyor",
+  "sayfa": 221,
+  "oran": 0.0
+ },
+ {
+  "seviye": 1,
+  "baslik": "Altıncı Hüccet-i İmâniye (Onuncu Sözün Dokuzuncu Hakikati)",
+  "aciklama": "Canlılar dünyasında, özellikle kış ve bahar mevsimlerinde görünen \"öldürme\" ve \"diriltme\" fiillerinin ve Muhyî ve Mümît isimlerinin âhirete işareti",
+  "sayfa": 224,
+  "oran": 0.0
+ },
+ {
+  "seviye": 1,
+  "baslik": "Yedinci Hüccet-i İmâniye (Otuz Üçüncü Mektubun On Yedinci Penceresi)",
+  "aciklama": "",
+  "sayfa": 229,
+  "oran": 0.0
+ },
+ {
+  "seviye": 1,
+  "baslik": "Sekizinci Hüccet-i İmâniye (Münâcât)",
+  "aciklama": "\"Göklerin ve yerin yaratılmasında, gecenin ve gündüzün değişmesinde, insanlara faydalı şeylerle denizde akıp giden gemilerde, Allah'ın gökten su indirip onunla yeryüzünü ölümünden sonra diriltmesinde, her türlü canlıyı yeryüzüne yaymasında, rüzgârları sevk etmesinde ve gökle yer arasında Allah'ın emrine boyun eğmiş bulutlarda, aklını kullanan bir topluluk için Allah'ın varlık ve birliğine, kudret ve rahmetine işaret eden nice deliller vardır.\" (Bakara Sûresi, 2:164.) âyetinin münâcât tarzında bir nevî geniş tefsiridir",
+  "sayfa": 232,
+  "oran": 0.0
+ },
+ {
+  "seviye": 1,
+  "baslik": "Dokuzuncu Hüccet-i İmâniye (Dokuzuncu Şuâ)",
+  "aciklama": "Öldükten sonra dirilmeye ve âhirete îman, insanın hem şahsî, hem de cemiyet hayatının huzuru için ne kadar gereklidir? Bu hususu, öldükten sonra dirilmenin delilleriyle beraber açıklayan ve ispat eden önemli bir tefsirdir",
+  "sayfa": 256,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Mukaddime",
+  "aciklama": "",
+  "sayfa": 258,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Birinci Nokta",
+  "aciklama": "Âhiret inancı, toplumsal ve ferdî hayatin saadetinin esasıdır.",
+  "sayfa": 258,
+  "oran": 0.0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Birincisi",
+  "aciklama": "İnsanlığın yarısını teşkil eden çocuklar için âhiret inancının faydası",
+  "sayfa": 258,
+  "oran": 0.0
+ },
+ {
+  "seviye": 3,
+  "baslik": "İkinci Delil",
+  "aciklama": "İhtiyarlar için âhiret inancının dünyevî faydalarını izah eder.",
+  "sayfa": 258,
+  "oran": 0.0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Üçüncü Delil",
+  "aciklama": "Gençler için faydasını izah eder",
+  "sayfa": 259,
+  "oran": 0.0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Dördüncü Delil",
+  "aciklama": "Aile hayatı için faydasını izah eder.",
+  "sayfa": 259,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "İkinci Nokta",
+  "aciklama": "Haşre imanın, diğer iman hakikatlerini ispatı ele alınıyor",
+  "sayfa": 260,
+  "oran": 0.0
+ },
+ {
+  "seviye": 1,
+  "baslik": "Onuncu Hüccet-i İmâniye (Yirminci Mektuptan)",
+  "aciklama": "Allah'a iman ile tevhid mertebeleri hakkında müjdeli ve şifalı tesellilerin beyanı ile \"Allah'tan başka ilâh yoktur\" hükmünü ispat eder. Bir makam ve mukaddimeden oluşuyor",
+  "sayfa": 273,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Birinci Makam",
+  "aciklama": "Kelime-i Tevhid'deki müjdeleri açıklar.",
+  "sayfa": 275,
+  "oran": 0.0
+ },
+ {
+  "seviye": 1,
+  "baslik": "On Birinci Hüccet-i İmâniye (Yirmi İkinci Sözden)",
+  "aciklama": "Evrende Allah'ı tanıtan san'at eserleri; bunlardaki birlik tecellîlerini ve san'at inceliklerini çözmenin ve tahkikî bir imanı kazanmanın yolları.",
+  "sayfa": 283,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Birinci Makam",
+  "aciklama": "Dünyada olup biten sıradan olayların ardındaki olağanüstülüklere dikkati çeken bir temsil.",
+  "sayfa": 283,
+  "oran": 0.0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Birinci Burhan",
+  "aciklama": "Ağaçların yaratılış ve yaşayışındaki olağanüstülük ve birlik tecellîsi.",
+  "sayfa": 284,
+  "oran": 0.0
+ },
+ {
+  "seviye": 3,
+  "baslik": "İkinci Burhan",
+  "aciklama": "Tohumlardaki ve canlıların yaratılışındaki olağanüstülük ve birlik tecellîsi",
+  "sayfa": 285,
+  "oran": 0.0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Üçüncü Burhan",
+  "aciklama": "İnsan ve hayvanların yaratılış ve yaşayışındaki olağanüstülük ve birlik tecellîsi.",
+  "sayfa": 285,
+  "oran": 0.0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Dördüncü Burhan",
+  "aciklama": "Ağaçların çevre ile ilişkilerindeki olağanüstülük ve birlik tecellîsi",
+  "sayfa": 286,
+  "oran": 0.0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Beşinci Burhan",
+  "aciklama": "Ağacın sonucu olan meyve ile evrenin sonucu olan insanın, üzerlerindeki san'atla bir San'atkâra işareti",
+  "sayfa": 286,
+  "oran": 0.0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Altıncı Burhan",
+  "aciklama": "Bahar ve yaz mevsimindeki değişikliklerde görünen olağanüstülük ve birlik ve kudret tecellîsi",
+  "sayfa": 287,
+  "oran": 0.0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Yedinci Burhan",
+  "aciklama": "Varlıklar arasındaki yardımlaşma ve dayanışmada görünen olağanüstülük ve birlik tecellîsi",
+  "sayfa": 288,
+  "oran": 0.0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Sekizinci Burhan",
+  "aciklama": "Bütün varlıkların yaratılış ve işleyişinde rol alan hava, su, ışık, toprak gibi unsurların yerine getirdiği görevlerdeki olağanüstülük ve birlik tecellîsi",
+  "sayfa": 289,
+  "oran": 0.0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Dokuzuncu Burhan",
+  "aciklama": "Bütün eserlerin sahibi ve san'atkârı olarak birtek zatı tanımanın kolaylığı",
+  "sayfa": 291,
+  "oran": 0.0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Onuncu Burhan",
+  "aciklama": "Varlıkların gelip geçmesinde, onları değiştirenin değişmezliğini gösteren işaretler",
+  "sayfa": 292,
+  "oran": 0.0
+ },
+ {
+  "seviye": 3,
+  "baslik": "On Birinci Burhan",
+  "aciklama": "Hz. Muhammed'in (a.s.m.) getirdiği haberlerin, evrendeki varlıklar tarafından doğrulanması",
+  "sayfa": 293,
+  "oran": 0.0
+ },
+ {
+  "seviye": 3,
+  "baslik": "On İkinci Burhan",
+  "aciklama": "Kâinat Yaratıcısı hakkında Kur'ân'ın verdiği haberler",
+  "sayfa": 295,
+  "oran": 0.0
+ }
+]

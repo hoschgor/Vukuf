@@ -1,0 +1,527 @@
+[
+ {
+  "seviye": 1,
+  "baslik": "İman ve Küfür Muvazeneleri",
+  "aciklama": "",
+  "sayfa": 1,
+  "oran": 0.0
+ },
+ {
+  "seviye": 1,
+  "baslik": "Mühim Bir Suale Cevap",
+  "aciklama": "",
+  "sayfa": 2,
+  "oran": 0.0
+ },
+ {
+  "seviye": 1,
+  "baslik": "Birinci Söz",
+  "aciklama": "Besmelenin anlam ve önemi. Çeşitli varlıkların dilinde besmele. Allah'ın adını anmak ve Onun adıyla hareket etmek neler kazandırır?",
+  "sayfa": 9,
+  "oran": 0.0
+ },
+ {
+  "seviye": 1,
+  "baslik": "İkinci Söz",
+  "aciklama": "İnananların ve inkâr edenlerin bakış açıları arasında bir karşılaştırma. Cennet hayatını insan bu dünyada yaşamaya başlayabilir mi?",
+  "sayfa": 12,
+  "oran": 0.0
+ },
+ {
+  "seviye": 1,
+  "baslik": "Üçüncü Söz",
+  "aciklama": "Allah'a kulluk görevlerini yerine getiren ve getirmeyenler arasında bir karşılaştırma. Tevekkülün tanımı ve kazandırdıkları.",
+  "sayfa": 15,
+  "oran": 0.0
+ },
+ {
+  "seviye": 1,
+  "baslik": "Dördüncü Söz",
+  "aciklama": "Namaz kılan ve kılmayanların kazanç ve kayıpları arasında bir karşılaştırma. Bir saatlik ibadetle günün yirmi dört saatini ibadet haline getirmenin yolu.",
+  "sayfa": 18,
+  "oran": 0.0
+ },
+ {
+  "seviye": 1,
+  "baslik": "Beşinci Söz",
+  "aciklama": "Dünya işleri namaza engel olabilir mi? Rızk için çalışmak ne zaman ibadet olur, ne zaman ibadete engel teşkil eder?",
+  "sayfa": 20,
+  "oran": 0.0
+ },
+ {
+  "seviye": 1,
+  "baslik": "Altıncı Söz",
+  "aciklama": "\"Allah, inananlardan, mallarını ve canlarını, Cennet karşılığında satın almıştır\" mealindeki âyetin bir açıklaması. Yetenek ve organlarımızın Allah için nasıl kullanılabileceğine dair pratik örnekler.",
+  "sayfa": 23,
+  "oran": 0.0
+ },
+ {
+  "seviye": 1,
+  "baslik": "Yedinci Söz",
+  "aciklama": "Namaz kılmaya ve büyük günahlardan kaçınmaya dair. Sabır, tevekkül, şükür, kanaat nedir? Allah'tan korkmak nasıl olur?",
+  "sayfa": 28,
+  "oran": 0.0
+ },
+ {
+  "seviye": 1,
+  "baslik": "Sekizinci Söz",
+  "aciklama": "\"Fenalığı kendinden, iyiliği Allah'tan bil\" mealindeki âyetin bir açıklaması. İnananların ve inanmayanların dünya hayatındaki kazanç ve kayıplarına dair bir karşılaştırma.",
+  "sayfa": 33,
+  "oran": 0.0
+ },
+ {
+  "seviye": 1,
+  "baslik": "On İkinci Söz",
+  "aciklama": "Kur'ân ile din dışı felsefe arasında bir karşılaştırma ve Kur'ân'ın bütün kelâmlar üzerindeki yeri.",
+  "sayfa": 41,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "İkinci Esas",
+  "aciklama": "Kur'ân ve felsefenin, bireylerin hayatı üzerindeki etkileri.",
+  "sayfa": 41,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Üçüncü Esas",
+  "aciklama": "Kur'ân ve felsefenin toplum hayatı üzerindeki etkileri.",
+  "sayfa": 42,
+  "oran": 0.0
+ },
+ {
+  "seviye": 1,
+  "baslik": "On Üçüncü Sözün İkinci Makamı",
+  "aciklama": "Kabir, gençlik, tutuklulular ve kan dâvâsı ile ilgili bazı parçalar.",
+  "sayfa": 43,
+  "oran": 0.0
+ },
+ {
+  "seviye": 1,
+  "baslik": "On Yedinci Söz",
+  "aciklama": "Dünyadaki ölüm ve ayrılıklar, her şeyi kuşatan bir rahmetle nasıl açıklanabilir?",
+  "sayfa": 60,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Kalbe Farisî olarak tahattur eden bir münacat",
+  "aciklama": "Dünyanın faniliğine dair bir nazım: önce gafletle bakış ve yakınma, sonra tevekkülle sükûna eriş.",
+  "sayfa": 64,
+  "oran": 0.0
+ },
+ {
+  "seviye": 1,
+  "baslik": "Yirmi Üçüncü Söz",
+  "aciklama": "İnsan ve iman ilişkileri; insanın kuvvetli ve zayıf yönleri ve tekâmül yolları.",
+  "sayfa": 77,
+  "oran": 0.0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Birinci Mebhas",
+  "aciklama": "İmanın güzellikleri ve insana kazandırdıkları.",
+  "sayfa": 77,
+  "oran": 0.4444
+ },
+ {
+  "seviye": 3,
+  "baslik": "Birinci Nokta",
+  "aciklama": "İnsanın, Yaratıcısına mensup olmakla kazandığı değer. İnsanın yaratılışında, iman ışığında okunan mânâlar.",
+  "sayfa": 77,
+  "oran": 0.0
+ },
+ {
+  "seviye": 3,
+  "baslik": "İkinci Nokta",
+  "aciklama": "İman ışığı altında geçmiş ve geleceğe bakış.",
+  "sayfa": 79,
+  "oran": 0.0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Üçüncü Nokta",
+  "aciklama": "İman ve tevekkülün verdiği kuvvet. Tevekkülün tanımı.",
+  "sayfa": 81,
+  "oran": 0.0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Dördüncü Nokta",
+  "aciklama": "İnsanın yaratılışındaki tekâmül amacı; âcizlik ve güçsüzlüğünden aldığı kuvvet.",
+  "sayfa": 82,
+  "oran": 0.0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Beşinci Nokta",
+  "aciklama": "Duanın gücü, anlamı, çeşitleri, cevaplandırılması ve kabulü.",
+  "sayfa": 84,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "İkinci Mebhas",
+  "aciklama": "İnsanın sonsuz yükseliş ve sonsuz alçalış sırları. \"Ahsen-i takvim,\" \"âlâ-yı illiyyîn,\" \"esfel-i sâfilîn\" kavramlarının açıklanması.",
+  "sayfa": 88,
+  "oran": 0.0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Birinci Nükte",
+  "aciklama": "İnsanın evrensel ihtiyaçları; iyilik ve kötülük yönündeki yeteneği; Allah'a kul olmakla kazandığı güç. \"Allah onların kötülüklerini iyiliklere çevirir\" meâlindeki âyetin bir açıklaması.",
+  "sayfa": 88,
+  "oran": 0.0
+ },
+ {
+  "seviye": 3,
+  "baslik": "İkinci Nükte",
+  "aciklama": "İnsanın dünyaya ve âhirete bakan yönleri; duygu ve yeteneklerinin ayrı ayrı kulluk görevleri.",
+  "sayfa": 91,
+  "oran": 0.0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Üçüncü Nükte",
+  "aciklama": "İnsan duygu ve yeteneklerini sadece dünya hayatına yöneltmekle ne kazanır, ne kaybeder? Dünya hayatından alınan lezzetlerin bir kulluk görevine dönüştürülmesi.",
+  "sayfa": 93,
+  "oran": 0.0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Dördüncü Nükte",
+  "aciklama": "İnsanın âcizliğiyle kazandığı güç; bütün varlıkların insana hizmetkâr olmasındaki sır.",
+  "sayfa": 98,
+  "oran": 0.0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Beşinci Nükte",
+  "aciklama": "İnsanı, yaratılmışların en üst mertebesine çıkaran tefekkür ve kulluk görevlerinin iki yönü.",
+  "sayfa": 100,
+  "oran": 0.0
+ },
+ {
+  "seviye": 1,
+  "baslik": "Yirmi Dördüncü Söz Beşinci Dal",
+  "aciklama": "",
+  "sayfa": 105,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Birinci Meyve",
+  "aciklama": "Sevginin varlık âlemindeki yeri; sevgi ve korkunun yöneltilmesi gereken hedefler. Allah korkusu nedir, nasıl olur?",
+  "sayfa": 105,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "İkinci Meyve",
+  "aciklama": "İbadetin sebebi; niyetin önemi; bütün varlıkların ibadetini kendi ibadeti olarak Allah'a sunmanın yolu.",
+  "sayfa": 108,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Üçüncü Meyve",
+  "aciklama": "Sünnetin önemi ve Sünnete uymanın sonuçları.",
+  "sayfa": 111,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Dördüncü Meyve",
+  "aciklama": "Dinden uzaklaşma konusunda Müslümanlar ile ecnebîler arasındaki fark.",
+  "sayfa": 112,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Beşinci Meyve",
+  "aciklama": "İnsanın çokluk ve birlik âlemlerine bakan yönleri.",
+  "sayfa": 113,
+  "oran": 0.0
+ },
+ {
+  "seviye": 1,
+  "baslik": "Yirmi Beşinci Söz İkinci Cilve",
+  "aciklama": "Kur'ân'ın her çağda süregelen gençliği; hakikatlerinin ve kanunlarının eskimeyişi; Kur'ân medeniyeti ile beşer medeniyeti arasında bir karşılaştırma.",
+  "sayfa": 114,
+  "oran": 0.0
+ },
+ {
+  "seviye": 1,
+  "baslik": "Meyve Risalesi: Onuncu Meseleye Bir Hatime Olarak İki Haşiye",
+  "aciklama": "",
+  "sayfa": 121,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Birincisi",
+  "aciklama": "Kur'ânın hakikî tercümesi mümkün değil.",
+  "sayfa": 121,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "İkinci Haşiye",
+  "aciklama": "Hz. Muhammed'in (a.s.m.) getirdiği nur, kâinatın, yokluk, vazifesizlik, anlamsızlık perdesini kaldırır.",
+  "sayfa": 121,
+  "oran": 0.0
+ },
+ {
+  "seviye": 1,
+  "baslik": "Yirmi Altıncı Söz Üçüncü Mebhasın sonu",
+  "aciklama": "Hürriyet ve kader.",
+  "sayfa": 124,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Dördüncü Mebhas",
+  "aciklama": "Sıkıntı ve musibetlerin hayırlı yönleri ve İlâhî rahmetle uyumluluğu.",
+  "sayfa": 125,
+  "oran": 0.0
+ },
+ {
+  "seviye": 1,
+  "baslik": "Otuzuncu Söz Birinci Maksat",
+  "aciklama": "Ene'nin (benlik) mahiyeti",
+  "sayfa": 129,
+  "oran": 0.0
+ },
+ {
+  "seviye": 1,
+  "baslik": "Otuz İkinci Söz İkinci Noktanın İkinci Mebhası",
+  "aciklama": "",
+  "sayfa": 147,
+  "oran": 0.0
+ },
+ {
+  "seviye": 1,
+  "baslik": "Birinci Lem'a",
+  "aciklama": "Hz. Yunus'un (a.s.) kıssası anlatılarak, her insanın dünya ve âhiret hayatı için nefsiyle karşı karşıya kaldığı mücâdeleyi açıklar.",
+  "sayfa": 158,
+  "oran": 0.7143
+ },
+ {
+  "seviye": 1,
+  "baslik": "On Yedinci Lem'a Beşinci Nota",
+  "aciklama": "Avrupa ikidir diyerek yapılan uzun bir tahlil.",
+  "sayfa": 162,
+  "oran": 0.0
+ },
+ {
+  "seviye": 1,
+  "baslik": "Yirmi Dördüncü Lem'a",
+  "aciklama": "Tesettür (örtünme) Hakkındadır. Tesettür Risâlesi olup, Kur'ân'ın tesettürü emreden hükümlerini açıklayan bir tefsirdir. Tesettürün insan yaratılışına da son derece uygun olduğunu, kadın fıtratının tesettürü gerektirdiğini, hem âile, hem cemiyet saadetinin bozulmasında tesettürsüzlüğün ne kadar büyük rol oynadığını açıklar.",
+  "sayfa": 171,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Birinci Hikmet",
+  "aciklama": "Tesettürün kadınlar için doğuştan gelen bir özellik olduğu ispat e-dilir",
+  "sayfa": 171,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "İkinci Hikmet",
+  "aciklama": "Kadın-erkek arasındaki alâkanın ebedî olduğu ispat edilir.",
+  "sayfa": 173,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Üçüncü Hikmet",
+  "aciklama": "Aile mutluluğu kadın-erkek arasındaki samimî saygı ve sevgi ile devâm eder.",
+  "sayfa": 174,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Dördüncü Hikmet",
+  "aciklama": "Açık saçıklık neslin çoğalması hikmetine terstir.",
+  "sayfa": 174,
+  "oran": 0.0
+ },
+ {
+  "seviye": 1,
+  "baslik": "Birinci Mektubun Dördüncü Suali",
+  "aciklama": "Mecazi aşktan hakiki aşka geçişin yolunu gösterir.",
+  "sayfa": 177,
+  "oran": 0.0
+ },
+ {
+  "seviye": 1,
+  "baslik": "Dokuzuncu Mektubun Üçüncü Kısmı",
+  "aciklama": "",
+  "sayfa": 180,
+  "oran": 0.0
+ },
+ {
+  "seviye": 1,
+  "baslik": "Yirmi Dokuzuncu Mektup Beşinci Risale olan Beşinci Kısım",
+  "aciklama": "\"Allah göklerin ve yerin nurudur.\" (Nur Sûresi, 24:35.) âyetine dair.",
+  "sayfa": 184,
+  "oran": 0.0
+ },
+ {
+  "seviye": 1,
+  "baslik": "Gençlik Rehberinden: Bir Zaman Eskişehir Hapishanesinin Penceresinde Oturmuştum",
+  "aciklama": "",
+  "sayfa": 189,
+  "oran": 0.0
+ },
+ {
+  "seviye": 1,
+  "baslik": "Birden İhtar Edilen Bir Mes'ele-i Mühimme",
+  "aciklama": "",
+  "sayfa": 192,
+  "oran": 0.0
+ },
+ {
+  "seviye": 1,
+  "baslik": "Meyve Risalesi İkinci Mes'elenin Hülâsası",
+  "aciklama": "Ölümün karşısında takınılacak tavır",
+  "sayfa": 194,
+  "oran": 0.0
+ },
+ {
+  "seviye": 1,
+  "baslik": "Meyve Risalesi Üçüncü Mes'ele",
+  "aciklama": "Eskişehir hapishanesinin penceresinden lise talebelerinin hâline ağlaması",
+  "sayfa": 198,
+  "oran": 0.0
+ },
+ {
+  "seviye": 1,
+  "baslik": "Meyve Risalesi Dördüncü Mes'ele",
+  "aciklama": "Dünya savaşından daha önemli olan hakikat.",
+  "sayfa": 202,
+  "oran": 0.0
+ },
+ {
+  "seviye": 1,
+  "baslik": "Meyve Risalesi Sekizinci Mes'elenin bir Hülâsası",
+  "aciklama": "Ahiret inancının ferdî ve toplumsal hayata faydaları.",
+  "sayfa": 204,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Birincisi",
+  "aciklama": "İnsanın mahiyeti ebediyetle fıtraten alakadardır",
+  "sayfa": 204,
+  "oran": 0.4
+ },
+ {
+  "seviye": 2,
+  "baslik": "İkinci meyvesi ve hayat-ı şahsiyeye bakan bir faydası",
+  "aciklama": "Âhirete imanla ölüm bir cennet kapısına dönüşür",
+  "sayfa": 205,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Hayat-ı şahsiyeye ait üçüncü bir faydası",
+  "aciklama": "",
+  "sayfa": 205,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Dördüncü bir faydası ki, insanın hayat-ı içtimaiyesine bakıyor",
+  "aciklama": "",
+  "sayfa": 206,
+  "oran": 0.0
+ },
+ {
+  "seviye": 1,
+  "baslik": "El-Hüccetü'z-Zehra'nın İkinci Makamı",
+  "aciklama": "Nur âyetinin penceresinden ehl-i dalalet ile eh-i hidayetin muvazenesi.",
+  "sayfa": 211,
+  "oran": 0.0
+ },
+ {
+  "seviye": 1,
+  "baslik": "Yirmi Dokuzuncu Lem'a İkinci Bab",
+  "aciklama": "Elhamdü lillah hakkındadır.",
+  "sayfa": 217,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Birinci Nokta",
+  "aciklama": "Altı cihetten iman gözlüğüyle nasıl bakılacağını anlatır.",
+  "sayfa": 217,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "İkinci Nokta",
+  "aciklama": "Altı noktayı aydınlatan iman nimetine de şükür lâzımdır.",
+  "sayfa": 220,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Üçüncü Nokta",
+  "aciklama": "İmanın yardım noktası ile dayanak noktası olduğunu açıklar.",
+  "sayfa": 220,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Dördüncü Nokta",
+  "aciklama": "İnsan ruhunu sıkan ayrılık acısıdır. İman o acıları giderir.",
+  "sayfa": 221,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Beşinci Nokta",
+  "aciklama": "İnsan imansızken düşman gördüğü şeyleri iman nuruyla kardeş görür.",
+  "sayfa": 221,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Altıncı Nokta",
+  "aciklama": "İman nuru dünya ve ahireti ayrı ayrı iki sofra görür.",
+  "sayfa": 222,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Yedinci Nokta",
+  "aciklama": "İman nuru ile Allah'ın varlığına iman bütün nimetlerin üstünde bir nimettir.",
+  "sayfa": 223,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Sekizinci Nokta",
+  "aciklama": "Kâinat kitabı Allah'a sayısız hamd delilleriyle doludur.",
+  "sayfa": 225,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Dokuzuncu Nokta",
+  "aciklama": "Ezelden ebede her şeyden, her şeye olan hamd Allah'a mahsustur.",
+  "sayfa": 225,
+  "oran": 0.0
+ },
+ {
+  "seviye": 1,
+  "baslik": "Lemeattan",
+  "aciklama": "",
+  "sayfa": 226,
+  "oran": 0.0
+ }
+]

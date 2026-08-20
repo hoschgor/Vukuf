@@ -145,6 +145,27 @@ def build_book_titles(books):
     return titles
 
 
+def build_contents(contents):
+    """contents.json -> { BOOKID: [ {seviye, baslik, aciklama, pageno}, ... ] } (belge sırasında)"""
+    out = defaultdict(list)
+    for r in (contents or []):
+        bid = r.get("BOOKID")
+        baslik = clean_ws(r.get("TITLE", ""))
+        if not baslik:
+            continue
+        aciklama = clean_ws(r.get("DESCRIPTION", ""))
+        if aciklama in ("0", "-"):
+            aciklama = ""
+        out[bid].append({
+            "seviye": r.get("TITLELEVEL", 1),
+            "baslik": baslik,
+            "aciklama": aciklama,
+            "pageno": r.get("PAGENO"),
+            "id": r.get("ID"),
+        })
+    return out
+
+
 def build_kavramlar(glossary):
     """glossary.json -> { reader_norm(TERM): [ {terim, aciklama, kaynaklar} ] }"""
     out = OrderedDict()
@@ -210,7 +231,8 @@ def run(paths, out_dir, eski_lugat):
     metin_dir = os.path.join(out_dir, "public")          # -> public/ köküne kopyalanacak
     data_dir = os.path.join(out_dir, "src-data")         # -> src/data/'e kopyalanacak
     odt_dir = os.path.join(out_dir, "odt")
-    for dd in (metin_dir, data_dir, odt_dir):
+    bolum_dir = os.path.join(out_dir, "bolumler")        # -> public/bolumler/'e kopyalanacak
+    for dd in (metin_dir, data_dir, odt_dir, bolum_dir):
         os.makedirs(dd, exist_ok=True)
     stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
 
@@ -233,6 +255,10 @@ def run(paths, out_dir, eski_lugat):
         print(f"  {len(fm)} dipnot")
     titles = (build_book_titles(load_json(paths["books"]))
               if paths.get("books") and os.path.exists(paths["books"]) else {})
+    contents = (build_contents(load_json(paths["contents"]))
+                if paths.get("contents") and os.path.exists(paths["contents"]) else {})
+    if contents:
+        print(f"  {sum(len(v) for v in contents.values())} başlık (contents)")
     kavramlar = (build_kavramlar(load_json(paths["glossary"]))
                  if paths.get("glossary") and os.path.exists(paths["glossary"])
                  else OrderedDict())
@@ -275,6 +301,12 @@ def run(paths, out_dir, eski_lugat):
         seq = 0
         dipnot_say = 0
 
+        # Bu kitabın başlıkları (contents), sayfaya göre grupla
+        cont_by_page = defaultdict(list)
+        for c in contents.get(bid, []):
+            cont_by_page[c["pageno"]].append(c)
+        icindekiler_out = []
+
         for pg in pg_list:
             txt = pg.get("PAGETEXT", "") or ""
             b16 = txt.encode("utf-16-le")
@@ -300,13 +332,39 @@ def run(paths, out_dir, eski_lugat):
                 metin += f"\n§[{fno}] {ftext}"
                 dipnot_say += 1
             seq += 1
-            metin_sayfalar.append({"sayfa": seq, "metin": metin})
+
+            # Başlıklar: contents TITLE'ını sayfa metnindeki satırla eşleştir
+            basliklar = []
+            satirlar = txt.split("\n")
+            for c in cont_by_page.get(pno, []):
+                hedef = clean_ws(c["baslik"])
+                idx = None
+                for li, ln in enumerate(satirlar):
+                    if clean_ws(ln) == hedef:
+                        idx = li
+                        break
+                oran = round(idx / max(1, len(satirlar)), 4) if idx is not None else 0.0
+                if idx is not None:
+                    basliklar.append({"satir": idx, "seviye": c["seviye"],
+                                      "aciklama": c["aciklama"]})
+                icindekiler_out.append({"seviye": c["seviye"], "baslik": c["baslik"],
+                                        "aciklama": c["aciklama"], "sayfa": seq, "oran": oran})
+
+            pg_obj = {"sayfa": seq, "metin": metin}
+            if basliklar:
+                pg_obj["basliklar"] = basliklar
+            metin_sayfalar.append(pg_obj)
 
             # ODT paragrafları (dipnotları gerçek dipnot yaparak)
             odt_paras.extend(_odt_sayfa(txt, fns))
 
         with open(os.path.join(metin_dir, dosya), "w", encoding="utf-8") as f:
             json.dump(metin_sayfalar, f, ensure_ascii=False)
+
+        # İçindekiler dosyası (bolumler/)
+        if icindekiler_out:
+            with open(os.path.join(bolum_dir, f"{slug}-icindekiler.json"), "w", encoding="utf-8") as f:
+                json.dump(icindekiler_out, f, ensure_ascii=False, indent=1)
 
         write_document(odt_dir, slug, baslik, yazar, odt_paras)
         manifest.append({"id": book_id, "baslik": baslik, "yazar": yazar,
@@ -435,7 +493,7 @@ def main():
 
     d = args.json_dir
     paths = {k: os.path.join(d, f"{k}.json") for k in
-             ("bookpages", "meanings", "books", "footnote", "styles", "glossary")}
+             ("bookpages", "meanings", "books", "footnote", "styles", "glossary", "contents")}
 
     if args.inspect or not args.calistir:
         inspect(paths)

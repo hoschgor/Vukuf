@@ -89,9 +89,25 @@ const BAR_OGELERI = [
   { key: "arama", label: "Arama",             sadeVarsayilan: true },
   { key: "oto",   label: "Otomatik Kaydırma", sadeVarsayilan: true },
   { key: "sure",  label: "Okuma Süresi",      sadeVarsayilan: true },
+  { key: "kisim", label: "Kısım Bilgisi",     sadeVarsayilan: true },
   { key: "sade",  label: "Sade Mod",          sadeVarsayilan: false },
   { key: "tema",  label: "Tema",              sadeVarsayilan: false },
 ]
+
+// İçindekiler düz listesini seviyelere göre ağaca çevir
+function icindekilerAgaci(list) {
+  const kok = []
+  const stack = []
+  ;(list || []).forEach((item, idx) => {
+    const node = { ...item, idx, cocuklar: [] }
+    const sv = item.seviye || 1
+    while (stack.length && stack[stack.length - 1].seviye >= sv) stack.pop()
+    if (stack.length) stack[stack.length - 1].node.cocuklar.push(node)
+    else kok.push(node)
+    stack.push({ node, seviye: sv })
+  })
+  return kok
+}
 
 function AyarToggle({ etiket, aktif, onToggle, theme, acikLabel = "Açık", kapaliLabel = "Kapalı" }) {
   return (
@@ -151,8 +167,10 @@ function sureyiKaydet(saniye) {
 }
 
 function dakikaFormatla(saniye) {
-  const dakika = Math.floor(saniye / 60)
-  return `${dakika} dk.`
+  const saat = Math.floor(saniye / 3600)
+  const dakika = Math.floor((saniye % 3600) / 60)
+  if (saat === 0 && dakika === 0) return "1 dk'dan az"
+  return `${saat > 0 ? saat + " sa " : ""}${dakika > 0 ? dakika + " dk" : ""}`.trim()
 }
 
 function fontYukle(fontId) {
@@ -183,9 +201,16 @@ function MetinParcasi({
   theme, fontSize, hizalama, metinFont, arapcaFont,
   vurguModu, vurguRengi, sayfaVurgulari, onVurguEkle,
   dipnotlar, satirAraligi = 1.9, harfAraligi = 0, kelimeAraligi = 0, onDipnotTikla,
+  basliklar, baslikFont, ortala = false,
 }) {
   const [secimBaslangic, setSecimBaslangic] = useState(null)
   const satirlar = metin.split("\n")
+
+  const basliklarMap = useMemo(() => {
+    const m = {}
+    for (const b of (basliklar || [])) m[b.satir] = b
+    return m
+  }, [basliklar])
 
   // Dipnot haritası: önce prop (dipnotlar), yoksa § satırlarından çıkar
   const dipnotMap = useMemo(() => {
@@ -253,6 +278,28 @@ function MetinParcasi({
         if (satir.startsWith("§")) return null
         const gosterilecek = satir
 
+        // Ana/alt başlık (contents.json'dan) — ortalı, LivaNur, hover açıklama
+        const bh = basliklarMap[si]
+        if (bh) {
+          return (
+            <div key={si} style={{
+              textAlign: "center", margin: (bh.seviye <= 1) ? "34px 0 18px" : "24px 0 12px",
+              fontFamily: baslikFont || "inherit",
+              fontSize: `${fontSize + ((bh.seviye <= 1) ? 54 : 54)}px`,
+              fontWeight: 700, color: theme.accent, lineHeight: 1.35,
+            }}>
+              {gosterilecek}
+              {bh.aciklama && (
+                <sup onClick={!vurguModu ? (e) => { e.stopPropagation(); onDipnotTikla(bh.aciklama, e, "AÇIKLAMA") } : undefined}
+                  title="Açıklama"
+                  style={{ fontSize: "0.32em", color: theme.textSecondary, cursor: !vurguModu ? "pointer" : "default", marginLeft: "0.15em", verticalAlign: "super", fontFamily: "inherit" }}>
+                  <Feather size={18} style={{ verticalAlign: "middle" }} />
+                </sup>
+              )}
+            </div>
+          )
+        }
+
         // Tamamen Arapça satır: sağdan sola + lügat rengi; işarete/satıra tıklayınca dipnot popup
         if (ARAP_RE.test(satir) && !LATIN_RE.test(satir)) {
           const dpMetin = arapBlokDipnot[si] || null
@@ -274,7 +321,7 @@ function MetinParcasi({
           <p key={si} style={{
             marginBottom: "10px", lineHeight: satirAraligi,
             letterSpacing: `${harfAraligi}px`,
-            textAlign: hizalama || "justify",
+            textAlign: ortala ? "center" : (hizalama || "justify"),
             wordSpacing: `${kelimeAraligi}px`,
             cursor: vurguModu ? "text" : "default",
           }}>
@@ -312,7 +359,7 @@ function MetinParcasi({
                     cursor: vurguModu ? "text" : (lugatliMi ? "pointer" : "default"),
                     padding: vurgulu ? "0 1px" : "0",
                     userSelect: "text",
-                    ...(arapKelime && arapcaFont ? { fontFamily: arapcaFont, unicodeBidi: "isolate" } : {}),
+                    ...(arapKelime && arapcaFont ? { fontFamily: arapcaFont } : {}),
                   }}
                 >
                   {kelime}{ki < kelimeler.length - 1 ? " " : ""}
@@ -500,6 +547,7 @@ const aktifFontId = fontSecimler.turkce || fontSecimler.osmanlica || fontSecimle
 const aktifFont   = fontBul(aktifFontId)
 const metinFont  = fontBul(fontSecimler.turkce || fontSecimler.osmanlica || "bookerly").style
 const arapcaFont = fontSecimler.arapca ? fontBul(fontSecimler.arapca).style : null
+const baslikFont = /Nurs[iî]/.test(kitap?.yazar || "") ? "LivaNur, serif" : metinFont
 
 // ── Scroll
 const scrollRef    = useRef(null)
@@ -545,6 +593,7 @@ const [aramaAcik, setAramaAcik]         = useState(false)
 const [menuAcik, setMenuAcik]           = useState(false)
 const [gorunumAcik, setGorunumAcik]     = useState(false)
 const [sadeIcerikAcik, setSadeIcerikAcik] = useState(false)
+const [menuAcikDugum, setMenuAcikDugum] = useState(() => new Set())
 
 // ── Component'li işaretler (konum-bazlı kayıtlar)
 const [kayitlar, setKayitlar] = useState(() => {
@@ -647,11 +696,31 @@ useEffect(() => {
 useEffect(() => {
   if (!kitap?.dosya) { setIcindekiler(null); return }
   const dosya = kitap.dosya.replace(/-metin\.json$/, "-icindekiler.json")
-  fetch(`/${dosya}`)
+  fetch(`/bolumler/${dosya}`)
     .then(r => r.ok ? r.json() : null)
     .then(data => setIcindekiler(Array.isArray(data) ? data : null))
     .catch(() => setIcindekiler(null))
 }, [kitap])
+
+// Mobilde istem dışı zoom'u sıfırla
+useEffect(() => {
+  if (!isMobile) return
+  const viewport = window.visualViewport
+  if (!viewport) return
+  const zoomSifirla = () => {
+    if (viewport.scale > 1) {
+      const meta = document.querySelector('meta[name="viewport"]')
+      if (meta) {
+        meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no'
+        setTimeout(() => {
+          meta.content = 'width=device-width, initial-scale=1.0, user-scalable=yes'
+        }, 50)
+      }
+    }
+  }
+  viewport.addEventListener('resize', zoomSifirla)
+  return () => viewport.removeEventListener('resize', zoomSifirla)
+}, [isMobile])
 
 // ════════════════════════════════════════════════════
 // Scroll takibi
@@ -959,12 +1028,12 @@ function kelimeTikla(kelime, anlam, kavram, e) {
   setPopup({ kelime, anlam, kavram, x, y })
 }
 
-function dipnotTikla(metin, e) {
+function dipnotTikla(metin, e, etiket = "DİPNOT") {
   const gx = e?.clientX ?? window.innerWidth / 2
   const gy = e?.clientY ?? window.innerHeight / 2
   const x = Math.max(10, Math.min(gx - 150, window.innerWidth - 310))
   const y = gy + 12 + 260 > window.innerHeight ? Math.max(10, gy - 260) : gy + 12
-  setDipnotPopup({ metin, x, y })
+  setDipnotPopup({ metin, x, y, etiket })
 }
 
 // Toplam sayılar
@@ -998,6 +1067,20 @@ const barButonStil = (aktif = false) => ({
 const gorunurMu = (key) => (ogeGorunur[key] !== false) && !(sadeMode && ogeSade[key])
 // Bar ikon boyutu — arayüz ölçeğiyle orantılı
 const bIkon = (n) => Math.round(n * barUiOlcegi)
+
+// Mevcut sayfadaki kısım yolu (ana/alt başlık zinciri) — hook değil, düz hesap
+const mevcutKisimYolu = (() => {
+  if (!icindekiler || !icindekiler.length) return []
+  const path = []
+  for (const b of icindekiler) {
+    if (b.sayfa > mevcutSayfa) break
+    const sv = b.seviye || 1
+    path[sv] = b
+    path.length = sv + 1
+  }
+  return path.filter(Boolean)
+})()
+const mevcutKisim = mevcutKisimYolu.length ? mevcutKisimYolu[mevcutKisimYolu.length - 1] : null
 
 const panelStil = (konum = "center") => ({
   position: "fixed",
@@ -1705,39 +1788,61 @@ const SayfaGitPopup = sayfaGitAcik && (
 // İÇİNDEKİLER MENÜSÜ (iskele — contents.json bağlanacak)
 // ════════════════════════════════════════════════════════════════
 
+const menuDugumRender = (node) => {
+  const mo = barUiOlcegi
+  const acik = menuAcikDugum.has(node.idx)
+  const cocukVar = node.cocuklar && node.cocuklar.length > 0
+  return (
+    <div key={node.idx}>
+      <div style={{ display: "flex", alignItems: "stretch", borderBottom: `1px solid ${theme.border}` }}>
+        {cocukVar ? (
+          <button onClick={() => setMenuAcikDugum(s => { const n = new Set(s); n.has(node.idx) ? n.delete(node.idx) : n.add(node.idx); return n })}
+            style={{ padding: `0 ${Math.round(6 * mo)}px`, background: "transparent", border: "none", cursor: "pointer", color: theme.textSecondary, display: "flex", alignItems: "center", flexShrink: 0 }}>
+            {acik ? <ChevronDown size={Math.round(15 * mo)} /> : <ChevronRight size={Math.round(15 * mo)} />}
+          </button>
+        ) : (
+          <span style={{ width: `${Math.round(20 * mo)}px`, flexShrink: 0 }} />
+        )}
+        <button onClick={() => { if (node.sayfa) odakGit(node.sayfa, node.oran || 0); setMenuAcik(false) }}
+          title={node.aciklama || ""}
+          style={{
+            flex: 1, textAlign: "left", background: "transparent", border: "none", cursor: "pointer",
+            padding: `${Math.round(8 * mo)}px ${Math.round(10 * mo)}px ${Math.round(8 * mo)}px 0`,
+            color: theme.text, fontSize: `${Math.round(((node.seviye || 1) === 1 ? 14 : 13) * mo)}px`,
+            fontWeight: (node.seviye || 1) === 1 ? 600 : 400,
+            fontFamily: (node.seviye || 1) === 1 ? "'Souvenir', 'Souvenir Medium', serif" : "inherit",
+          }}>
+          {node.baslik}
+        </button>
+      </div>
+      {cocukVar && acik && (
+        <div style={{ paddingLeft: `${Math.round(14 * mo)}px` }}>
+          {node.cocuklar.map(menuDugumRender)}
+        </div>
+      )}
+    </div>
+  )
+}
+
 const MenuPanel = menuAcik && (
   <>
     <div onClick={() => setMenuAcik(false)} style={{ position: "fixed", inset: 0, zIndex: 149 }} />
     <div className="okuma-panel" style={{
-      position: "fixed", top: 0, bottom: 0, left: 0, width: "300px", maxWidth: "85vw",
+      position: "fixed", top: 0, bottom: 0, left: 0, width: `${Math.round(300 * barUiOlcegi)}px`, maxWidth: "85vw",
       background: theme.surface, borderRight: `1px solid ${theme.border}`,
       zIndex: 150, display: "flex", flexDirection: "column",
       boxShadow: "4px 0 24px rgba(0,0,0,0.15)",
     }}>
       <div style={{ padding: "14px 16px", borderBottom: `1px solid ${theme.border}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <span style={{ fontSize: "15px", fontWeight: 600, color: theme.accent }}>İçindekiler</span>
-        <button onClick={() => setMenuAcik(false)} style={{ background: "none", border: "none", cursor: "pointer", color: theme.textSecondary }}><X size={16} /></button>
+        <span style={{ fontSize: `${Math.round(15 * barUiOlcegi)}px`, fontWeight: 600, color: theme.accent }}>İçindekiler</span>
+        <button onClick={() => setMenuAcik(false)} style={{ background: "none", border: "none", cursor: "pointer", color: theme.textSecondary }}><X size={Math.round(16 * barUiOlcegi)} /></button>
       </div>
-      <div style={{ flex: 1, overflowY: "auto", padding: "8px 0" }}>
+      <div style={{ flex: 1, overflowY: "auto", padding: "4px 0" }}>
         {(icindekiler && icindekiler.length > 0) ? (
-          icindekiler.map((b, i) => (
-            <button key={i} onClick={() => { if (b.sayfa) odakGit(b.sayfa, 0); setMenuAcik(false) }}
-              title={b.aciklama || ""}
-              style={{
-                display: "block", width: "100%", textAlign: "left",
-                padding: `7px 12px 7px ${12 + ((b.seviye || 1) - 1) * 14}px`,
-                background: "transparent", border: "none",
-                borderBottom: `1px solid ${theme.border}`, cursor: "pointer",
-                color: theme.text, fontSize: (b.seviye || 1) === 1 ? "14px" : "13px",
-                fontWeight: (b.seviye || 1) === 1 ? 600 : 400,
-                fontFamily: (b.seviye || 1) === 1 && /Nurs[iî]/.test(kitap.yazar || "") ? "LivaNur, serif" : "inherit",
-              }}>
-              {b.baslik}
-            </button>
-          ))
+          icindekilerAgaci(icindekiler).map(menuDugumRender)
         ) : (
           <div style={{ padding: "24px 16px", textAlign: "center", color: theme.textSecondary, fontSize: "13px", lineHeight: "1.7", opacity: 0.8 }}>
-            İçindekiler verisi henüz eklenmedi.<br />(contents.json'dan üretilecek)
+            İçindekiler verisi henüz eklenmedi.
           </div>
         )}
       </div>
@@ -1845,9 +1950,16 @@ const Bar = (
       display: "flex", gap: "8px", alignItems: "center",
       ...(isMobile ? { justifyContent: "center", flex: 1 } : { marginLeft: "auto" }),
     }}>
+      {gorunurMu("kisim") && mevcutKisim && (
+        <span onClick={(e) => { const yol = mevcutKisimYolu.map(b => b.baslik).join(" / "); dipnotTikla(mevcutKisim.aciklama || yol, e, yol) }}
+          title={mevcutKisimYolu.map(b => b.baslik).join(" / ")}
+          style={{ fontSize: `${Math.round(11 * barUiOlcegi)}px`, color: theme.textSecondary, padding: "4px 6px", maxWidth: isMobile ? "150px" : "260px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", cursor: "pointer" }}>
+          {mevcutKisimYolu.map(b => b.baslik).join(" / ")}
+        </span>
+      )}
       {gorunurMu("sure") && (
         <span style={{ fontSize: `${Math.round(11 * barUiOlcegi)}px`, color: theme.textSecondary, padding: "4px 6px", display: "flex", alignItems: "center", gap: "3px" }}>
-          <Clock size={bIkon(11)} /> Bugün {dakikaFormatla(bugunSure)}
+          <Clock size={bIkon(11)} /> {dakikaFormatla(bugunSure)}
         </span>
       )}
       {gorunurMu("sade") && (
@@ -1899,7 +2011,7 @@ return (
           boxShadow: "0 8px 24px rgba(0,0,0,0.18)",
         }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
-            <span style={{ fontSize: "11px", color: theme.accent, letterSpacing: "1px" }}>DİPNOT</span>
+            <span style={{ fontSize: "11px", color: theme.accent, letterSpacing: "1px" }}>{dipnotPopup.etiket || "DİPNOT"}</span>
             <button onClick={() => setDipnotPopup(null)} style={{ background: "none", border: "none", cursor: "pointer", color: theme.textSecondary, padding: "2px" }}><X size={14} /></button>
           </div>
           <div style={{ color: theme.text, fontSize: `${Math.round(15 * bilgiOlcegi)}px`, lineHeight: "1.7", whiteSpace: "pre-wrap" }}>
@@ -2000,7 +2112,7 @@ return (
 
         {/* Kitap başlığı */}
         <div style={{ textAlign: "center", marginBottom: "48px", paddingTop: "24px" }}>
-          <h1 style={{ fontSize: "48px", color: theme.accent, marginBottom: "8px", fontFamily: /Nurs[iî]/.test(kitap.yazar || "") ? "LivaNur, serif" : "PlayfairDisplay, serif" }}>
+          <h1 style={{ fontSize: "88px", color: theme.accent, marginBottom: "8px", lineHeight: 1.1, fontFamily: /Nurs[iî]/.test(kitap.yazar || "") ? "LivaNur, serif" : "PlayfairDisplay, serif" }}>
             {kitap.baslik}
           </h1>
           <p style={{ color: theme.textSecondary, fontSize: "14px" }}>{kitap.yazar}</p>
@@ -2045,6 +2157,9 @@ return (
                   harfAraligi={harfAraligi}
                   kelimeAraligi={kelimeAraligi}
                   onDipnotTikla={dipnotTikla}
+                  basliklar={sayfa.basliklar}
+                  baslikFont={baslikFont}
+                  ortala={sayfa.sayfa === 1}
                 />
               </LazySayfa>
               {notlar[sayfa.sayfa]?.length > 0 && (

@@ -1,0 +1,324 @@
+[
+ {
+  "seviye": 1,
+  "baslik": "Sikke-i Tasdîk-ı Gaybî",
+  "aciklama": "",
+  "sayfa": 1,
+  "oran": 0.0
+ },
+ {
+  "seviye": 1,
+  "baslik": "Risale-i Nur'dan Parlak Fıkralar ve Bir Kısım Güzel Mektuplar",
+  "aciklama": "",
+  "sayfa": 2,
+  "oran": 0.0
+ },
+ {
+  "seviye": 1,
+  "baslik": "Yirmi Yedinci Mektubun Lâhikasından Alınmış Mühim Parçalar",
+  "aciklama": "",
+  "sayfa": 29,
+  "oran": 0.0
+ },
+ {
+  "seviye": 1,
+  "baslik": "Küçük Hüsrev Feyzi'nin bir istihracıdır",
+  "aciklama": "",
+  "sayfa": 64,
+  "oran": 0.0
+ },
+ {
+  "seviye": 1,
+  "baslik": "Birinci Şuâ",
+  "aciklama": "Kur'ân-ı Kerîm otuz üç âyetiyle Risale-i Nur'a manen ve cifren işaret ediyor. Bu Şua'da o âyetlerden yirmi dokuzunun mânâları verilerek, Risale-i Nur'un asrımızda Kur'ân'ın mânevî bir mûcizesi ve harika bir tefsiri olduğu açıklanıyor",
+  "sayfa": 79,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Birinci Sual",
+  "aciklama": "Okunan Kur'ân ve duaların sevapları sayısız insanlara bağışlanıyor. Bu sevaplar o insanlara nasıl ulaşıyor ve sevabın aynısı onların her birisine veriliyor mu?",
+  "sayfa": 79,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "İkinci Sual",
+  "aciklama": "Kur'ân Risale-i Nur hakkında ne diyor?",
+  "sayfa": 79,
+  "oran": 0.0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Birincisi (Risale-i Nur'a işaret eden birinci âyet):",
+  "aciklama": "Nur Sûresi, 24:35.",
+  "sayfa": 81,
+  "oran": 0.0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Resaili'n-Nur'a İşaret Eden İkinci Âyet",
+  "aciklama": "Hud Sûresi, 11:112.",
+  "sayfa": 87,
+  "oran": 0.0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Üçüncü Âyet-i Meşhure",
+  "aciklama": "Ankebut Sûresi, 29:69.",
+  "sayfa": 88,
+  "oran": 0.0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Dördüncü Âyet-i Meşhure",
+  "aciklama": "Hicr Sûresi, 15:87.",
+  "sayfa": 89,
+  "oran": 0.0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Beşinci Âyet",
+  "aciklama": "En'âm Sûresi, 6:122.",
+  "sayfa": 89,
+  "oran": 0.0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Altıncı Âyet",
+  "aciklama": "Hadîd Sûresi, 57:28.",
+  "sayfa": 94,
+  "oran": 0.0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Yedinci Âyet",
+  "aciklama": "Yûnus Sûresi, 10:82.",
+  "sayfa": 95,
+  "oran": 0.0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Sekizinci Âyet",
+  "aciklama": "En'am Sûresi, 6:61.",
+  "sayfa": 95,
+  "oran": 0.0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Dokuzuncu Âyet",
+  "aciklama": "Bakara Sûresi, 2:256; Lokman Sûresi, 31:22.",
+  "sayfa": 96,
+  "oran": 0.0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Onuncu Âyet",
+  "aciklama": "Bakara Sûresi, 2:269.",
+  "sayfa": 96,
+  "oran": 0.0
+ },
+ {
+  "seviye": 3,
+  "baslik": "On Birinci Âyet",
+  "aciklama": "Bakara Sûresi, 2:129.",
+  "sayfa": 96,
+  "oran": 0.0
+ },
+ {
+  "seviye": 3,
+  "baslik": "On İkinci Âyet",
+  "aciklama": "Bakara Sûresi, 2:151.",
+  "sayfa": 96,
+  "oran": 0.0
+ },
+ {
+  "seviye": 3,
+  "baslik": "On Üçüncü Âyet",
+  "aciklama": "Âl-i İmran Sûresi, 3:7.",
+  "sayfa": 97,
+  "oran": 0.0
+ },
+ {
+  "seviye": 3,
+  "baslik": "On Dördüncü Âyet",
+  "aciklama": "Nisa Sûresi, 4:162.",
+  "sayfa": 97,
+  "oran": 0.0
+ },
+ {
+  "seviye": 3,
+  "baslik": "On Beşinci Âyet",
+  "aciklama": "Nisa Sûresi, 4:174.",
+  "sayfa": 99,
+  "oran": 0.0
+ },
+ {
+  "seviye": 3,
+  "baslik": "On Altıncı Âyet",
+  "aciklama": "Fussilet Sûresi, 41:44.",
+  "sayfa": 100,
+  "oran": 0.0
+ },
+ {
+  "seviye": 3,
+  "baslik": "On Yedinci Âyet",
+  "aciklama": "Tevbe Sûresi, 9:129.",
+  "sayfa": 101,
+  "oran": 0.0
+ },
+ {
+  "seviye": 3,
+  "baslik": "On Sekizinci Âyet",
+  "aciklama": "Mâide Sûresi, 5:56.",
+  "sayfa": 102,
+  "oran": 0.0
+ },
+ {
+  "seviye": 3,
+  "baslik": "On Dokuzuncu Âyet",
+  "aciklama": "Tahrim Sûresi, 66:8.",
+  "sayfa": 102,
+  "oran": 0.0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Yirminci Âyet",
+  "aciklama": "İsra Sûresi, 17:82.",
+  "sayfa": 103,
+  "oran": 0.0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Yirmi Birinci Âyet veya Âyetler",
+  "aciklama": "Nahl Sûresi, 16:121. En'âm Sûresi, 6:161",
+  "sayfa": 103,
+  "oran": 0.0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Yirmi İkinci Âyet ve Âyetler",
+  "aciklama": "Yûnus, Yusuf, Ra'd, Hicr, Şuarâ, Kasas ve Lokman sûrelerinin başlarındaki âyetler.",
+  "sayfa": 106,
+  "oran": 0.0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Yirmi Üçüncü Âyet",
+  "aciklama": "Kalem Sûresi, 68:32.",
+  "sayfa": 108,
+  "oran": 0.0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Yirmi Dördüncü Âyet veya Âyetler",
+  "aciklama": "Zümer Sûresi, 39:1.",
+  "sayfa": 108,
+  "oran": 0.0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Yirmi Beşinci Âyet",
+  "aciklama": "Fussilet Sûresi, 41:1-2.",
+  "sayfa": 113,
+  "oran": 0.0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Yirmi Altıncı Âyet",
+  "aciklama": "Hûd Sûresi, 11:105. Hûd Sûresi, 11:108.",
+  "sayfa": 115,
+  "oran": 0.0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Yirmi Yedinci Âyet",
+  "aciklama": "Saf Sûresi, 61:8.",
+  "sayfa": 117,
+  "oran": 0.0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Yirmi Sekizinci Âyet",
+  "aciklama": "Tevbe Sûresi, 9:32.",
+  "sayfa": 118,
+  "oran": 0.0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Yirmi Dokuzuncu Âyet",
+  "aciklama": "İbrahim Sûresi, 14:1.",
+  "sayfa": 120,
+  "oran": 0.0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Yirmi Dokuzuncu âyetin sehvine dair tafsilât",
+  "aciklama": "",
+  "sayfa": 123,
+  "oran": 0.0
+ },
+ {
+  "seviye": 1,
+  "baslik": "Sekizinci Şuâ",
+  "aciklama": "Hz.Ali'nin (r.a.) Risâle-i Nur'a dair kerâmetkârâne müjdelerinden üçüncüsünü açıklayan bir risaledir. Bu arada, Bediüzzaman, Risâle-i Nur'un kıymet ve önemini gösteren hakikatleri açıklamasının sebep ve hikmetlerini de burada belirtmektedir.",
+  "sayfa": 127,
+  "oran": 0.0
+ },
+ {
+  "seviye": 1,
+  "baslik": "Yirmi Sekizinci Lem'anın Birinci Meselesi",
+  "aciklama": "Risale-i Nurdan haber veren İkinci Keramet-i Aleviye Risalesidir.",
+  "sayfa": 158,
+  "oran": 0.1
+ },
+ {
+  "seviye": 1,
+  "baslik": "On Sekizinci Lem'a",
+  "aciklama": "Gizli kalmış mühim bir Peygamber (a.s.m.) mu'cizesini açıklayan ve evliyânın kerametlerinin hak olduğuna kesin bir delil teşkil eden Hz. Ali'nin (r.a.) gaybî bir kerametini açıklayan Birinci Keramet-i Aleviye Risâlesi isminde bir lem'adır.",
+  "sayfa": 177,
+  "oran": 0.0
+ },
+ {
+  "seviye": 1,
+  "baslik": "Sekizinci Lem'a",
+  "aciklama": "Hûd Sûresi 105. ve 112. âyetlerinin tefsiri mâhiyetinde olan bu risâle, Gavs-ı Âzam Abdülkadir Geylanî'nin kerâmet-i gaybiyesiyle Kur'ân'ın esrârına âit olan Risale-i Nur'un makbuliyetini gösterir ve bu zamanın Kur'ân hizmetkârlarına işaretle beraber onların mânevî güçlerini ve şevklerini artıran, sıkıntılarını gideren lem'adır.",
+  "sayfa": 190,
+  "oran": 0.0
+ },
+ {
+  "seviye": 1,
+  "baslik": "Risale-i Nur'dan Parlak Fıkralar ve Bir Kısım Güzel Mektuplar",
+  "aciklama": "",
+  "sayfa": 223,
+  "oran": 0.0
+ },
+ {
+  "seviye": 1,
+  "baslik": "Hüve Nüktesi",
+  "aciklama": "Hava zerrelerindeki İlâhî ilim, irade ve kudret tecellîsini anlatır.",
+  "sayfa": 328,
+  "oran": 0.0
+ },
+ {
+  "seviye": 1,
+  "baslik": "Yirmi Dokuzuncu Mektubun Beşinci Risale olan Beşinci Kısmı",
+  "aciklama": "\"Allah göklerin ve yerin nurudur.\" (Nur Sûresi, 24:35.) âyetine dair.",
+  "sayfa": 332,
+  "oran": 0.0
+ },
+ {
+  "seviye": 1,
+  "baslik": "Na'büdü Nüktesi",
+  "aciklama": "",
+  "sayfa": 337,
+  "oran": 0.0
+ },
+ {
+  "seviye": 1,
+  "baslik": "\"Risale-i Nur nedir ve hakikatler muvacehesinde Risale-i Nur ve tercümanı ne mahiyettedirler?\" diye bir takriznâmedir.",
+  "aciklama": "",
+  "sayfa": 341,
+  "oran": 0.0
+ }
+]

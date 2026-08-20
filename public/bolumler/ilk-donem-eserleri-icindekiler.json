@@ -1,0 +1,870 @@
+[
+ {
+  "seviye": 2,
+  "baslik": "Birinci ders",
+  "aciklama": "",
+  "sayfa": 4,
+  "oran": 0.3333
+ },
+ {
+  "seviye": 2,
+  "baslik": "İkinci ders",
+  "aciklama": "",
+  "sayfa": 8,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Üçüncü ders",
+  "aciklama": "",
+  "sayfa": 14,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Üçüncü dersin zeyli",
+  "aciklama": "",
+  "sayfa": 20,
+  "oran": 0.4
+ },
+ {
+  "seviye": 2,
+  "baslik": "Dördüncü ders",
+  "aciklama": "",
+  "sayfa": 21,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Beşinci ders",
+  "aciklama": "",
+  "sayfa": 24,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Altıncı ders",
+  "aciklama": "",
+  "sayfa": 27,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Yedinci ders",
+  "aciklama": "",
+  "sayfa": 30,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Sekizinci ders",
+  "aciklama": "",
+  "sayfa": 33,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Dokuzuncu ders",
+  "aciklama": "",
+  "sayfa": 35,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Onuncu ders",
+  "aciklama": "",
+  "sayfa": 44,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "On birinci ders",
+  "aciklama": "",
+  "sayfa": 56,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "On ikinci ders",
+  "aciklama": "",
+  "sayfa": 66,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "On üçüncü ders",
+  "aciklama": "",
+  "sayfa": 68,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "On dördüncü ders",
+  "aciklama": "",
+  "sayfa": 72,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Maraz-ı Vesveseye Müptelâ Olanlara Bir Ders",
+  "aciklama": "",
+  "sayfa": 104,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "On üçüncü lem'anın on ikinci işaretinden",
+  "aciklama": "",
+  "sayfa": 109,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "On üçüncü lem'anın on üçüncü işaretinin üçüncü noktasından",
+  "aciklama": "",
+  "sayfa": 111,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Bir nur talebesinin Üstad hazretlerinin dâr-ı bekaya irtihallerinden evvel Risale-i Nur ve Üstad hakkındaki bir takrizi",
+  "aciklama": "",
+  "sayfa": 112,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Ankara Üniversitesinde okunan bir konferans",
+  "aciklama": "",
+  "sayfa": 120,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Ecnebî Filozofların Kur'ân'ı Tasdiklerine Dair Şehadetleri",
+  "aciklama": "",
+  "sayfa": 135,
+  "oran": 0.0
+ },
+ {
+  "seviye": 1,
+  "baslik": "2. Nokta Risalesi",
+  "aciklama": "",
+  "sayfa": 150,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Birinci Burhan",
+  "aciklama": "",
+  "sayfa": 154,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "İkinci Burhan",
+  "aciklama": "",
+  "sayfa": 155,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Üçüncü Burhan",
+  "aciklama": "",
+  "sayfa": 161,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Dördüncü Burhan",
+  "aciklama": "",
+  "sayfa": 166,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Tenvir",
+  "aciklama": "",
+  "sayfa": 171,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "İfade",
+  "aciklama": "",
+  "sayfa": 172,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Melâike Tasdiki, İmanın Bir Rünküdür",
+  "aciklama": "",
+  "sayfa": 174,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Birinci Nükte",
+  "aciklama": "",
+  "sayfa": 174,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "İkinci Nükte",
+  "aciklama": "",
+  "sayfa": 175,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Üçüncü Nükte",
+  "aciklama": "",
+  "sayfa": 178,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Dördüncü Nükte",
+  "aciklama": "",
+  "sayfa": 179,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Haşir",
+  "aciklama": "",
+  "sayfa": 181,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Birinci Makam",
+  "aciklama": "",
+  "sayfa": 181,
+  "oran": 0.75
+ },
+ {
+  "seviye": 2,
+  "baslik": "Birinci Kıyasın Hülâsası",
+  "aciklama": "",
+  "sayfa": 186,
+  "oran": 0.25
+ },
+ {
+  "seviye": 2,
+  "baslik": "İkinci Kıyasın Hülâsası",
+  "aciklama": "",
+  "sayfa": 188,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "İkinci Makam",
+  "aciklama": "",
+  "sayfa": 189,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Üçüncü Makam",
+  "aciklama": "",
+  "sayfa": 195,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Dördüncü Makam",
+  "aciklama": "",
+  "sayfa": 200,
+  "oran": 0.0
+ },
+ {
+  "seviye": 1,
+  "baslik": "3. Şuaat (Marifetü'n-Nebi)",
+  "aciklama": "",
+  "sayfa": 204,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Birinci Şuâ",
+  "aciklama": "",
+  "sayfa": 211,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "İkinci Şuâ",
+  "aciklama": "",
+  "sayfa": 213,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Üçüncü Şuâ",
+  "aciklama": "",
+  "sayfa": 217,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Dördüncü Şuâ",
+  "aciklama": "",
+  "sayfa": 219,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Beşinci Şuâ",
+  "aciklama": "",
+  "sayfa": 224,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Şeriatın Ferde, Neve, Medeniyete Karşı Birkaç Nüktesi",
+  "aciklama": "",
+  "sayfa": 229,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Altıncı Şuâ",
+  "aciklama": "",
+  "sayfa": 232,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Tevhidin Tenviri",
+  "aciklama": "",
+  "sayfa": 250,
+  "oran": 0.0
+ },
+ {
+  "seviye": 1,
+  "baslik": "4. Rumuz",
+  "aciklama": "",
+  "sayfa": 252,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Birinci Sual",
+  "aciklama": "Kur'ân'ın i'câzını icaz ile beyan et",
+  "sayfa": 254,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "İkinci Sual",
+  "aciklama": "Burhanlarda meydana gelen şüpheler imana zarar vermez mi?",
+  "sayfa": 256,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Yüksekten bakmak isteyen dessas bir papaza cevap",
+  "aciklama": "",
+  "sayfa": 261,
+  "oran": 0.0714
+ },
+ {
+  "seviye": 2,
+  "baslik": "Mücahid bir hayvan mersiyesi",
+  "aciklama": "",
+  "sayfa": 262,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Mühim bir nokta",
+  "aciklama": "",
+  "sayfa": 262,
+  "oran": 0.7895
+ },
+ {
+  "seviye": 1,
+  "baslik": "5. İşârât",
+  "aciklama": "",
+  "sayfa": 264,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Kur'ân'ın veciz olan İ'câzı",
+  "aciklama": "",
+  "sayfa": 266,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Misleyn telâkki edilen zıddeyn",
+  "aciklama": "",
+  "sayfa": 272,
+  "oran": 0.3
+ },
+ {
+  "seviye": 2,
+  "baslik": "Nefisperestlerin nazar-ı dikkatine",
+  "aciklama": "",
+  "sayfa": 273,
+  "oran": 0.4167
+ },
+ {
+  "seviye": 2,
+  "baslik": "Lezzetperestlerin nazar-ı dikkatine",
+  "aciklama": "",
+  "sayfa": 273,
+  "oran": 0.75
+ },
+ {
+  "seviye": 2,
+  "baslik": "Evlenmeli",
+  "aciklama": "",
+  "sayfa": 274,
+  "oran": 0.25
+ },
+ {
+  "seviye": 2,
+  "baslik": "Zulmet-i münevvere",
+  "aciklama": "",
+  "sayfa": 276,
+  "oran": 0.0
+ },
+ {
+  "seviye": 1,
+  "baslik": "6. Sünuhat",
+  "aciklama": "",
+  "sayfa": 278,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Kur'ân sâlihatı mutlak bırakıyor",
+  "aciklama": "",
+  "sayfa": 284,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Kur'ân'ın hâkimiyet-i mutlakası",
+  "aciklama": "",
+  "sayfa": 302,
+  "oran": 0.25
+ },
+ {
+  "seviye": 2,
+  "baslik": "Rüyada bir hitabe",
+  "aciklama": "",
+  "sayfa": 310,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Rüyanın zeyli",
+  "aciklama": "",
+  "sayfa": 320,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Birkaç vecizeler",
+  "aciklama": "",
+  "sayfa": 322,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Bundan yedi sene evvel bir risaleme yazdığım zeyl (Devaü'l-Ye's)",
+  "aciklama": "",
+  "sayfa": 323,
+  "oran": 0.0
+ },
+ {
+  "seviye": 1,
+  "baslik": "7. Tuluât",
+  "aciklama": "",
+  "sayfa": 330,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "İslâm âlimleri arasındaki ihtilaflar",
+  "aciklama": "",
+  "sayfa": 332,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Nasraniyet, İslâmiyetin inkişafına bundan sonra mâni olmayacak mıdır?",
+  "aciklama": "",
+  "sayfa": 333,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Cerbeze nedir?",
+  "aciklama": "",
+  "sayfa": 334,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Zamandan şikayet Allah'ın san'atına itiraz olmaz mı?",
+  "aciklama": "",
+  "sayfa": 336,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Zulmün şedit bir nev'i",
+  "aciklama": "",
+  "sayfa": 340,
+  "oran": 0.5
+ },
+ {
+  "seviye": 2,
+  "baslik": "Müstehak bir ceza",
+  "aciklama": "",
+  "sayfa": 341,
+  "oran": 0.5
+ },
+ {
+  "seviye": 2,
+  "baslik": "Hadsî bir hakikat",
+  "aciklama": "",
+  "sayfa": 345,
+  "oran": 0.0
+ },
+ {
+  "seviye": 1,
+  "baslik": "8. Hutuvat-ı Sitte",
+  "aciklama": "",
+  "sayfa": 348,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Takdim",
+  "aciklama": "",
+  "sayfa": 350,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Birinci Hatve",
+  "aciklama": "",
+  "sayfa": 355,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "İkinci Hatve",
+  "aciklama": "",
+  "sayfa": 355,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Üçüncü Hatve",
+  "aciklama": "",
+  "sayfa": 356,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Dördüncü Hatve",
+  "aciklama": "",
+  "sayfa": 356,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Beşinci Hatve",
+  "aciklama": "",
+  "sayfa": 357,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Altıncı Hatve",
+  "aciklama": "",
+  "sayfa": 357,
+  "oran": 0.0
+ },
+ {
+  "seviye": 1,
+  "baslik": "9. Divan-ı Harb-i Örfi",
+  "aciklama": "",
+  "sayfa": 360,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "İfade-i Nâşir",
+  "aciklama": "",
+  "sayfa": 362,
+  "oran": 0.3333
+ },
+ {
+  "seviye": 2,
+  "baslik": "İki Mekteb-i Musibetin Şehadetnamesi",
+  "aciklama": "",
+  "sayfa": 365,
+  "oran": 0.1111
+ },
+ {
+  "seviye": 2,
+  "baslik": "Mukaddime",
+  "aciklama": "",
+  "sayfa": 365,
+  "oran": 0.3333
+ },
+ {
+  "seviye": 2,
+  "baslik": "Hâtime",
+  "aciklama": "",
+  "sayfa": 390,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Yaşasın Şeriat-ı Ahmedî (a.s.m.)",
+  "aciklama": "",
+  "sayfa": 394,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Hakikat",
+  "aciklama": "",
+  "sayfa": 396,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Sadâ-yı Hakikat",
+  "aciklama": "",
+  "sayfa": 397,
+  "oran": 0.4444
+ },
+ {
+  "seviye": 2,
+  "baslik": "Yaşasın Kur'ân-ı Kerîmin Kanûn-u Esasîleri",
+  "aciklama": "",
+  "sayfa": 399,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Hürriyete Hitap",
+  "aciklama": "",
+  "sayfa": 402,
+  "oran": 0.0
+ },
+ {
+  "seviye": 1,
+  "baslik": "10. Münâzarat",
+  "aciklama": "",
+  "sayfa": 414,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "İfade-i Meram ve Uzunca Bir Mazeret",
+  "aciklama": "",
+  "sayfa": 418,
+  "oran": 0.125
+ },
+ {
+  "seviye": 2,
+  "baslik": "Sualler ve cevaplar",
+  "aciklama": "",
+  "sayfa": 423,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Zindan-ı atâlete düştüğümüzün sebebi nedir?",
+  "aciklama": "",
+  "sayfa": 496,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Münâzarat'la ilgili bir mektup",
+  "aciklama": "",
+  "sayfa": 499,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Hulûsi Beyin Fıkraları",
+  "aciklama": "",
+  "sayfa": 503,
+  "oran": 0.0
+ },
+ {
+  "seviye": 1,
+  "baslik": "11. Hutbe-i Şamiye",
+  "aciklama": "",
+  "sayfa": 506,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Arabî Hutbe-i Şâmiye'nin Mukaddemesi",
+  "aciklama": "",
+  "sayfa": 508,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Arabî Hutbe-i Şâmiye eserinin tercümesi",
+  "aciklama": "",
+  "sayfa": 516,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Birinci Kelime",
+  "aciklama": "",
+  "sayfa": 517,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "İkinci Kelime",
+  "aciklama": "",
+  "sayfa": 531,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Üçüncü Kelime",
+  "aciklama": "",
+  "sayfa": 532,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Dördüncü Kelime",
+  "aciklama": "",
+  "sayfa": 535,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Beşinci Kelime",
+  "aciklama": "",
+  "sayfa": 536,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Altıncı Kelime",
+  "aciklama": "",
+  "sayfa": 540,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Arabî Hutbe-i Şâmiye'nin zeylinin kısa bir tercümesi",
+  "aciklama": "",
+  "sayfa": 543,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Hutbe-i Şâmiye'nin Zeylinin Zeyli",
+  "aciklama": "",
+  "sayfa": 552,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Yaşasın Şeriat-ı Garrâ",
+  "aciklama": "",
+  "sayfa": 552,
+  "oran": 0.3333
+ },
+ {
+  "seviye": 2,
+  "baslik": "Yaşasın Şeriat-ı Ahmedî (a.s.m.)",
+  "aciklama": "",
+  "sayfa": 553,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Hakikat",
+  "aciklama": "",
+  "sayfa": 554,
+  "oran": 0.6667
+ },
+ {
+  "seviye": 2,
+  "baslik": "Sadâ-yı Hakikat",
+  "aciklama": "",
+  "sayfa": 554,
+  "oran": 0.8667
+ },
+ {
+  "seviye": 2,
+  "baslik": "Reddü'l-Evham",
+  "aciklama": "",
+  "sayfa": 555,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Hutbe-i Şâmiye'nin birinci zeylinin zeylinden son parçadır",
+  "aciklama": "",
+  "sayfa": 561,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Kahraman askerlerimize",
+  "aciklama": "",
+  "sayfa": 561,
+  "oran": 0.2857
+ },
+ {
+  "seviye": 2,
+  "baslik": "Asakire hitap",
+  "aciklama": "",
+  "sayfa": 562,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Cemiyetlere ihtar-ı mühim",
+  "aciklama": "",
+  "sayfa": 563,
+  "oran": 0.5
+ },
+ {
+  "seviye": 2,
+  "baslik": "Hakikat Çekirdekleri",
+  "aciklama": "",
+  "sayfa": 564,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Hutbe-i Şâmiye'nin ikinci zeylinin ikinci kısmı",
+  "aciklama": "",
+  "sayfa": 579,
+  "oran": 0.0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Sûre-i İhlâs'ın bir remzi",
+  "aciklama": "",
+  "sayfa": 579,
+  "oran": 0.0909
+ }
+]

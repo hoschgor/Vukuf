@@ -7,6 +7,7 @@ export const themes = {
     textSecondary: "#6b4c3b",
     accent: "#8b5e3c",
     lugatHighlight: "#c0392b",
+    arabicHighlight: "#0000fa",
     border: "#d4b896",
   },
   dark: {
@@ -17,6 +18,7 @@ export const themes = {
     textSecondary: "#a0a0b0",
     accent: "#7f8fcf",
     lugatHighlight: "#e8a87c",
+    arabicHighlight: "#fac400",
     border: "#2d2d4e",
   },
   light: {
@@ -27,6 +29,7 @@ export const themes = {
     textSecondary: "#555555",
     accent: "#2c7a4b",
     lugatHighlight: "#c0392b",
+    arabicHighlight: "#1b8850",
     border: "#dddddd",
   },
   night: {
@@ -37,6 +40,7 @@ export const themes = {
     textSecondary: "#888888",
     accent: "#5a8a6a",
     lugatHighlight: "#37cf6a",
+    arabicHighlight: "#00fac8",
     border: "#2a2a2a",
   },
   coffee: {
@@ -47,6 +51,7 @@ export const themes = {
     textSecondary: "#99785d",
     accent: "#9e714f",
     lugatHighlight: "#e67e22",
+    arabicHighlight: "#f0ad60",
     border: "#302010",
   },
   highcontrast:{
@@ -57,6 +62,7 @@ export const themes = {
     textSecondary: "#eeb311",
     accent: "#eeb311",
     lugatHighlight: "#4eace2",
+    arabicHighlight: "#fff700",
     border: "#363636",
   }
 }
@@ -70,5 +76,6 @@ export const defaultCustomTheme = {
   textSecondary: "#6b4c3b",
   accent: "#8b5e3c",
   lugatHighlight: "#c0392b",
+  arabicHighlight: "#0000fa",
   border: "#d4b896",
 }

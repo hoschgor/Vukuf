@@ -604,7 +604,7 @@ const baslikFont = /Nurs[iî]/.test(kitap?.yazar || "") ? "LivaNur, serif" : met
 const [arapcaRenk, setArapcaRenk] = useState(() => localStorage.getItem("vukuf-arapca-renk") || "")
 const [lugatRenkOzel, setLugatRenkOzel] = useState(() => localStorage.getItem("vukuf-lugat-renk") || "")
 const lugatRenk = lugatRenkOzel || theme.lugatHighlight   // Latin lügat kelimeleri rengi
-const arapRenk  = arapcaRenk || theme.lugatHighlight      // Arapça-yazı rengi (ayrı)
+const arapRenk  = arapcaRenk || theme.arabicHighlight      // Arapça-yazı rengi (ayrı)
 
 // ── Scroll
 const scrollRef    = useRef(null)
@@ -1620,12 +1620,12 @@ const TemaPanel = temaAcik && (
       <div style={{ borderTop: `1px solid ${theme.border}`, marginTop: "10px", paddingTop: "10px" }}>
         <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px" }}>ARAPÇA / OSMANLICA RENGİ</div>
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <input type="color" value={arapcaRenk || theme.lugatHighlight}
+          <input type="color" value={arapcaRenk || theme.arabicHighlight}
             onChange={e => setArapcaRenk(e.target.value)}
             style={{ width: "40px", height: "28px", border: `1px solid ${theme.border}`, borderRadius: "6px", background: theme.background, cursor: "pointer", padding: "2px" }} />
-          <span style={{ flex: 1, fontSize: "12px", color: arapcaRenk || theme.lugatHighlight }}>بِسْمِ اللّٰه · Bismillâh</span>
+          <span style={{ flex: 1, fontSize: "12px", color: arapcaRenk || theme.arabicHighlight }}>بِسْمِ اللّٰه · Bismillâh</span>
           {arapcaRenk && (
-            <button onClick={() => setArapcaRenk("")} title="Temaya sıfırla" style={{ fontSize: "11px", color: theme.textSecondary, background: "none", border: "none", cursor: "pointer" }}>sıfırla</button>
+            <button onClick={() => setArapcaRenk("")} title="Temaya sıfırla" style={{ fontSize: "11px", color: theme.textSecondary, background: "none", border: "none", cursor: "pointer" }}>Sıfırla</button>
           )}
         </div>
       </div>
@@ -1639,7 +1639,7 @@ const TemaPanel = temaAcik && (
             style={{ width: "40px", height: "28px", border: `1px solid ${theme.border}`, borderRadius: "6px", background: theme.background, cursor: "pointer", padding: "2px" }} />
           <span style={{ flex: 1, fontSize: "12px", color: lugatRenkOzel || theme.lugatHighlight }}>nasihat · hakikat</span>
           {lugatRenkOzel && (
-            <button onClick={() => setLugatRenkOzel("")} title="Temaya sıfırla" style={{ fontSize: "11px", color: theme.textSecondary, background: "none", border: "none", cursor: "pointer" }}>sıfırla</button>
+            <button onClick={() => setLugatRenkOzel("")} title="Temaya sıfırla" style={{ fontSize: "11px", color: theme.textSecondary, background: "none", border: "none", cursor: "pointer" }}>Sıfırla</button>
           )}
         </div>
       </div>

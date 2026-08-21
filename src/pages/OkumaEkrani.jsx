@@ -604,7 +604,7 @@ const baslikFont = /Nurs[iî]/.test(kitap?.yazar || "") ? "LivaNur, serif" : met
 const [arapcaRenk, setArapcaRenk] = useState(() => localStorage.getItem("vukuf-arapca-renk") || "")
 const [lugatRenkOzel, setLugatRenkOzel] = useState(() => localStorage.getItem("vukuf-lugat-renk") || "")
 const lugatRenk = lugatRenkOzel || theme.lugatHighlight   // Latin lügat kelimeleri rengi
-const arapRenk  = arapcaRenk || theme.arabicHighlight      // Arapça-yazı rengi (ayrı)
+const arapRenk  = arapcaRenk || theme.arabicHighlight     // Arapça-yazı rengi (ayrı)
 
 // ── Scroll
 const scrollRef    = useRef(null)
@@ -976,6 +976,8 @@ function togglePanel(setter, deger) {
 
 // Fren efektli kaydırma çekirdeği: hedefTop() her karede yeniden ölçülür
 // (lazy mount yüksekliği değiştirir). Yerleşince onSettle() çağrılır.
+// Anında zıpla + lazy-mount ölçümleri oturana kadar sessizce düzelt, sonra tek
+// kısa smooth = fren. Yerleşince onSettle() bir kez çağrılır.
 function frenKaydir(hedefTop, onSettle) {
   const el = scrollRef.current
   if (!el) return
@@ -999,12 +1001,12 @@ function frenKaydir(hedefTop, onSettle) {
   requestAnimationFrame(otur)
 }
 
-function sayfayaGit(sayfaNo, oran = 0) {
+function sayfayaGit(sayfaNo, oran = 0, ekstra = 0) {
   setSayfaGitAcik(false)
   setSayfaGitInput("")
   const el = scrollRef.current
   if (!el) return
-  const ofset = barKonum === "ust" ? 80 : 12
+  const ofset = (barKonum === "ust" ? 80 : 12) + ekstra
   const hedefTop = () => {
     const ref = sayfaRefs.current[sayfaNo]
     if (!ref) return el.scrollTop
@@ -1167,7 +1169,7 @@ function kayitTumSil() {
 // Bir konuma git + odak (focus) efekti
 // Genel odak git. opt.cizgi === false -> çizgi yerine yalnız ayraç döner (kayıt git).
 function odakGit(sayfaNo, oran = 0, opt = {}) {
-  sayfayaGit(sayfaNo, oran)
+  sayfayaGit(sayfaNo, oran, opt.ekstra || 0)
   odakAyarla(sayfaNo, oran, opt.cizgi !== false)
 }
 
@@ -1440,7 +1442,7 @@ const KayitPanel = kayitAcik && (
                 <div key={k.id} style={{ display: "flex", alignItems: "center", gap: "8px", padding: "8px 10px", borderRadius: "8px", background: `${theme.accent}0A`, border: `1px solid ${theme.border}`, marginBottom: "6px" }}>
                   <Bookmark size={13} fill={theme.accent} color={theme.accent} />
                   <span style={{ flex: 1, fontSize: "13px", color: theme.text }}>{k.baslik}</span>
-                  <button onClick={() => { odakGit(k.sayfa, k.oran || 0, { cizgi: false }); setKayitAcik(false) }} title="İşarete git" style={{ fontSize: "11px", color: theme.accent, background: "none", border: "none", cursor: "pointer" }}><ChevronRight size={13} /></button>
+                  <button onClick={() => { odakGit(k.sayfa, k.oran || 0, { cizgi: false, ekstra: barKonum === "ust" ? (isMobile ? 30 : -8) : 20 }); setKayitAcik(false) }} title="İşarete git" style={{ fontSize: "11px", color: theme.accent, background: "none", border: "none", cursor: "pointer" }}><ChevronRight size={13} /></button>
                   <button onClick={() => kayitSil(k.id)} style={{ color: theme.textSecondary, background: "none", border: "none", cursor: "pointer" }}><X size={12} /></button>
                 </div>
               ))
@@ -2366,7 +2368,7 @@ return (
 
         {/* Kitap başlığı */}
         <div style={{ textAlign: "center", marginBottom: "48px", paddingTop: "24px" }}>
-          <h1 style={{ fontSize: "178px", color: theme.accent, marginBottom: "8px", lineHeight: 1.1, fontFamily: /Nurs[iî]/.test(kitap.yazar || "") ? "LivaNur, serif" : "PlayfairDisplay, serif" }}>
+          <h1 style={{ fontSize: "98px", color: theme.accent, marginBottom: "8px", lineHeight: 1.1, fontFamily: /Nurs[iî]/.test(kitap.yazar || "") ? "LivaNur, serif" : "PlayfairDisplay, serif" }}>
             {kitap.baslik}
           </h1>
           <p style={{ color: theme.textSecondary, fontSize: "44px" }}>{kitap.yazar}</p>
@@ -2381,7 +2383,7 @@ return (
                   top: `${odakKonum.oran * 100}%`, height: "3px",
                   background: theme.accent, borderRadius: "2px",
                   boxShadow: `0 0 10px 2px ${theme.accent}`,
-                  zIndex: 6, animation: "odakYanip 2.4s ease-out",
+                  zIndex: 6, opacity: 0, animation: "odakYanip 2.4s ease-out forwards",
                 }} />
               )}
               {kayitlar.filter(k => k.sayfa === sayfa.sayfa).map(k => (

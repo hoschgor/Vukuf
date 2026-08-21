@@ -6,6 +6,7 @@ import { kitaplar } from "../data/kitaplar"
 import lugatVerisi from "../data/lugat.json"
 import risaleLugat from "../data/risale-lugat.json"
 import kavramlarVerisi from "../data/kavramlar.json"
+import KitapAyraci from "../components/KitapAyraci"
 import {
   ArrowLeft, BookOpen, Eye, EyeOff, Play, Pause,
   Plus, Minus, AlignJustify, ChevronsUp, ChevronsDown,
@@ -194,17 +195,19 @@ function fontBul(fontId) {
 // METİN PARCASI
 // ════════════════════════════════════════════════════════════════
 const ARAP_RE = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/
+const HASIYE_RE = /\u27E6H(\d+)\u27E7/g
 const LATIN_RE = /[A-Za-zÇĞİıÖŞÜçğöşü]/
 
 function MetinParcasi({
   metin, sayfaNo, lugatAktif, onKelimeTikla,
   theme, fontSize, hizalama, metinFont, arapcaFont,
-  vurguModu, vurguRengi, sayfaVurgulari, onVurguEkle,
+  vurguModu, vurguRengi, sayfaVurgulari, onVurguEkle, duzenleMod, onVurguKelimeSil,
   dipnotlar, satirAraligi = 1.9, harfAraligi = 0, kelimeAraligi = 0, onDipnotTikla,
-  basliklar, baslikFont, ortala = false,
+  basliklar, baslikFont, ortala = false, lugatRenk, arapRenk, hasiyeler,
 }) {
   const [secimBaslangic, setSecimBaslangic] = useState(null)
   const satirlar = metin.split("\n")
+  const hasiyeMap = hasiyeler || {}
 
   const basliklarMap = useMemo(() => {
     const m = {}
@@ -266,6 +269,13 @@ function MetinParcasi({
     let b = secimBaslangic
     let bi = { satir: satirIdx, kelime: kelimeIdx }
     if (bi.satir < b.satir || (bi.satir === b.satir && bi.kelime < b.kelime)) { [b, bi] = [bi, b] }
+    const tekTik = b.satir === bi.satir && b.kelime === bi.kelime
+    // Düzenleme modu: vurgulu tek kelimeye dokununca o kelimeyi çıkar (blok bölünür)
+    if (duzenleMod && tekTik && vurgulananMi(satirIdx, kelimeIdx)) {
+      onVurguKelimeSil?.(sayfaNo, satirIdx, kelimeIdx)
+      setSecimBaslangic(null)
+      return
+    }
     onVurguEkle(sayfaNo, b, bi, vurguRengi)
     setSecimBaslangic(null)
   }
@@ -282,13 +292,13 @@ function MetinParcasi({
         const bh = basliklarMap[si]
         if (bh) {
           return (
-            <div key={si} style={{
+            <div key={si} id={`baslik-${sayfaNo}-${si}`} style={{
               textAlign: "center", margin: (bh.seviye <= 1) ? "34px 0 18px" : "24px 0 12px",
               fontFamily: baslikFont || "inherit",
               fontSize: `${fontSize + ((bh.seviye <= 1) ? 54 : 54)}px`,
               fontWeight: 700, color: theme.accent, lineHeight: 1.35,
             }}>
-              {gosterilecek}
+              {gosterilecek.replace(/⟦H\d+⟧/g, "")}
               {bh.aciklama && (
                 <sup onClick={!vurguModu ? (e) => { e.stopPropagation(); onDipnotTikla(bh.aciklama, e, "AÇIKLAMA") } : undefined}
                   title="Açıklama"
@@ -309,9 +319,9 @@ function MetinParcasi({
               style={{
                 marginBottom: "12px", lineHeight: "2", direction: "rtl", textAlign: "center",
                 fontFamily: arapcaFont || undefined, fontSize: `${fontSize + 6}px`,
-                color: theme.lugatHighlight, cursor: dpMetin && !vurguModu ? "pointer" : undefined,
+                color: arapRenk, cursor: dpMetin && !vurguModu ? "pointer" : undefined,
               }}>
-              {renderMarkerli(gosterilecek, dipnotMap, onDipnotTikla, theme)}
+              {renderMarkerli(gosterilecek, dipnotMap, onDipnotTikla, theme, hasiyeMap)}
             </p>
           )
         }
@@ -327,34 +337,50 @@ function MetinParcasi({
           }}>
             {kelimeler.map((kelime, ki) => {
               if (!kelime.trim()) return " "
+              // Haşiye işaretlerini (⟦Hn⟧) ayıkla — kelimenin sonuna gömülüdür
+              const hasNosRaw = []
+              const temiz = kelime.replace(/⟦H(\d+)⟧/g, (_, n) => { hasNosRaw.push(n); return "" })
+              const hasNos = [...new Set(hasNosRaw)]   // aynı haşiye tek işaret
+              const hasHasiye = hasNos.length > 0
+              const bosluk = ki < kelimeler.length - 1 ? " " : ""
+              const hasiyeEk = hasHasiye ? hasNos.map((n, hi) => (
+                hasiyeMap[n]
+                  ? <HasiyeSup key={"h" + hi} metin={hasiyeMap[n]} onDipnotTikla={onDipnotTikla} theme={theme} vurguModu={vurguModu} />
+                  : null
+              )) : null
               // Dipnot işareti [n] -> hover
-              const dm = kelime.match(/^\[(\d+)\]$/)
+              const dm = temiz.match(/^\[(\d+)\]$/)
               if (dm && dipnotMap[dm[1]]) {
                 return (
                   <span key={ki}>
                     <DipnotSup no={dm[1]} metin={dipnotMap[dm[1]]} onDipnotTikla={onDipnotTikla} theme={theme} />
-                    {ki < kelimeler.length - 1 ? " " : ""}
+                    {hasiyeEk}{bosluk}
                   </span>
                 )
               }
-              const arapKelime = ARAP_RE.test(kelime)
-              const anlam    = arapKelime ? null : kelimeAra(kelime)
-              const kavram   = arapKelime ? null : kavramAra(kelime)
+              if (!temiz) {   // yalnız haşiye işaretinden ibaret jeton
+                return <span key={ki}>{hasiyeEk}{bosluk}</span>
+              }
+              const arapKelime = ARAP_RE.test(temiz)
+              // Haşiyeli kelimeyi lügat sayma (H + kuş tüyü ile karışmasın)
+              const anlam    = (arapKelime || hasHasiye) ? null : kelimeAra(temiz)
+              const kavram   = (arapKelime || hasHasiye) ? null : kavramAra(temiz)
               const lugatliMi = (anlam || kavram) && lugatAktif
               const vurgulu  = vurgulananMi(si, ki)
               return (
               <span key={ki}>
                 <span
                   className={lugatliMi ? "lugat-kelime" : ""}
+                  data-vurgu={vurgulu ? vurgulu.id : undefined}
                   onMouseDown={e => kelimeMouseDown(si, ki, e)}
                   onMouseUp={() => kelimeMouseUp(si, ki)}
-                  onClick={e => { if (!vurguModu && lugatliMi) onKelimeTikla(kelime, anlam, kavram, e) }}
+                  onClick={e => { if (!vurguModu && lugatliMi) onKelimeTikla(temiz, anlam, kavram, e) }}
                   onMouseEnter={e => { if (lugatliMi && !vurguModu) e.currentTarget.style.opacity = "0.75" }}
                   onMouseLeave={e => { e.currentTarget.style.opacity = "1" }}
                   style={{
                     background: vurgulu ? vurgulu.renk : "transparent",
                     borderRadius: vurgulu ? "2px" : "0",
-                    color: (lugatliMi || arapKelime) ? theme.lugatHighlight : "inherit",
+                    color: arapKelime ? arapRenk : (lugatliMi ? lugatRenk : "inherit"),
                     borderBottom: "none",
                     cursor: vurguModu ? "text" : (lugatliMi ? "pointer" : "default"),
                     padding: vurgulu ? "0 1px" : "0",
@@ -362,8 +388,10 @@ function MetinParcasi({
                     ...(arapKelime && arapcaFont ? { fontFamily: arapcaFont } : {}),
                   }}
                 >
-                  {kelime}{ki < kelimeler.length - 1 ? " " : ""}
+                  {/* Boşluğu vurgulanan kelimenin içine al ki ardışık vurgular birleşsin */}
+                  {temiz}{hasHasiye ? "" : bosluk}
                 </span>
+                {hasiyeEk}{hasHasiye ? bosluk : ""}
               </span>
             )
             })}
@@ -383,13 +411,37 @@ function DipnotSup({ no, metin, onDipnotTikla, theme }) {
   )
 }
 
-// Bir satırdaki [n] dipnot işaretlerini tıklanır işaretlere çeviren yardımcı
-function renderMarkerli(text, dipnotMap, onDipnotTikla, theme) {
-  const parcalar = text.split(/(\[\s*\d+\s*\])/g)
+// Haşiye işareti — kelimenin üstünde küçük "H" + kuş tüyü
+function HasiyeSup({ metin, onDipnotTikla, theme, vurguModu }) {
+  return (
+    <sup
+      onClick={!vurguModu ? (e) => { e.stopPropagation(); onDipnotTikla(metin, e, "HAŞİYE") } : undefined}
+      title="Haşiye"
+      style={{
+        color: theme.accent, cursor: !vurguModu ? "pointer" : "default",
+        userSelect: "none", marginLeft: "0.06em", verticalAlign: "super",
+        whiteSpace: "nowrap", fontWeight: 700,
+      }}
+    >
+      <span style={{ fontSize: "0.62em" }}>H</span>
+      <Feather size={10} style={{ verticalAlign: "middle", marginLeft: "0.5px" }} />
+    </sup>
+  )
+}
+
+// Bir satırdaki [n] dipnot ve ⟦Hn⟧ haşiye işaretlerini tıklanır işaretlere çevirir
+function renderMarkerli(text, dipnotMap, onDipnotTikla, theme, hasiyeMap = {}) {
+  const parcalar = text.split(/(\[\s*\d+\s*\]|⟦H\d+⟧)/g)
   return parcalar.map((p, i) => {
     const m = p.match(/^\[\s*(\d+)\s*\]$/)
     if (m && dipnotMap[m[1]]) {
       return <DipnotSup key={i} no={m[1]} metin={dipnotMap[m[1]]} onDipnotTikla={onDipnotTikla} theme={theme} />
+    }
+    const h = p.match(/^⟦H(\d+)⟧$/)
+    if (h) {
+      return hasiyeMap[h[1]]
+        ? <HasiyeSup key={i} metin={hasiyeMap[h[1]]} onDipnotTikla={onDipnotTikla} theme={theme} />
+        : null
     }
     return <span key={i}>{p}</span>
   })
@@ -426,9 +478,10 @@ function LazySayfa({ minHeight, children }) {
   useEffect(() => {
     const el = ref.current
     if (!el) return
+    // Bir kez görününce mount et ve gözlemi bırak (bir daha sökme → Arapça zıplaması olmaz)
     const io = new IntersectionObserver(
-      ([e]) => setGorunur(e.isIntersecting),
-      { rootMargin: "1200px 0px" }
+      ([e]) => { if (e.isIntersecting) { setGorunur(true); io.disconnect() } },
+      { rootMargin: "1400px 0px" }
     )
     io.observe(el)
     return () => io.disconnect()
@@ -548,11 +601,17 @@ const aktifFont   = fontBul(aktifFontId)
 const metinFont  = fontBul(fontSecimler.turkce || fontSecimler.osmanlica || "bookerly").style
 const arapcaFont = fontSecimler.arapca ? fontBul(fontSecimler.arapca).style : null
 const baslikFont = /Nurs[iî]/.test(kitap?.yazar || "") ? "LivaNur, serif" : metinFont
+const [arapcaRenk, setArapcaRenk] = useState(() => localStorage.getItem("vukuf-arapca-renk") || "")
+const [lugatRenkOzel, setLugatRenkOzel] = useState(() => localStorage.getItem("vukuf-lugat-renk") || "")
+const lugatRenk = lugatRenkOzel || theme.lugatHighlight   // Latin lügat kelimeleri rengi
+const arapRenk  = arapcaRenk || theme.lugatHighlight      // Arapça-yazı rengi (ayrı)
 
 // ── Scroll
 const scrollRef    = useRef(null)
 const sayfaRefs    = useRef({})
 const sonScrollRef = useRef(0)
+const sonKonumRef  = useRef(null)   // { sayfa, oran } — son okuma konumu
+const konumYuklendiRef = useRef(false)
 const [mevcutSayfa, setMevcutSayfa] = useState(1)
 
 // ── Otomatik kaydırma
@@ -594,6 +653,11 @@ const [menuAcik, setMenuAcik]           = useState(false)
 const [gorunumAcik, setGorunumAcik]     = useState(false)
 const [sadeIcerikAcik, setSadeIcerikAcik] = useState(false)
 const [menuAcikDugum, setMenuAcikDugum] = useState(() => new Set())
+const [duzenleNot, setDuzenleNot] = useState(null)   // { sayfaNo, notId }
+const [duzenleNotMetni, setDuzenleNotMetni] = useState("")
+const [duzenleVurgu, setDuzenleVurgu] = useState(null)   // { sayfaNo, vurguId }
+const [duzenleVurguMetni, setDuzenleVurguMetni] = useState("")
+const [vurguDuzenle, setVurguDuzenle] = useState(false)  // vurgu düzenleme modu (kelime ekle/çıkar)
 
 // ── Component'li işaretler (konum-bazlı kayıtlar)
 const [kayitlar, setKayitlar] = useState(() => {
@@ -739,12 +803,51 @@ useEffect(() => {
       if (r.top <= merkez && r.bottom >= merkez) { bulunan = Number(no); break }
       if (r.top <= merkez) bulunan = Number(no)
     }
-    if (bulunan != null) setMevcutSayfa(bulunan)
+    if (bulunan != null) {
+      setMevcutSayfa(bulunan)
+      const ref = sayfaRefs.current[bulunan]
+      if (ref) {
+        const r = ref.getBoundingClientRect()
+        const oran = Math.max(0, Math.min(1, (merkez - r.top) / Math.max(1, r.height)))
+        sonKonumRef.current = { sayfa: bulunan, oran }
+      }
+    }
   }
   el.addEventListener("scroll", onScroll, { passive: true })
   onScroll()
   return () => el.removeEventListener("scroll", onScroll)
 }, [yukleniyor, kitapMetni])
+
+// ── Son okuma konumu: çıkışta kaydet, açılışta geri dön (sistemi yormadan)
+const konumKaydet = useCallback(() => {
+  const k = sonKonumRef.current
+  if (!k || !id) return
+  try { localStorage.setItem(`vukuf_son_konum_${id}`, JSON.stringify(k)) } catch {}
+}, [id])
+
+// Kaydetme: yalnız sekme gizlenince / sayfa kapanınca / bileşen sökülünce (scroll'da değil)
+useEffect(() => {
+  const gizlenince = () => { if (document.visibilityState === "hidden") konumKaydet() }
+  window.addEventListener("pagehide", konumKaydet)
+  document.addEventListener("visibilitychange", gizlenince)
+  return () => {
+    konumKaydet()
+    window.removeEventListener("pagehide", konumKaydet)
+    document.removeEventListener("visibilitychange", gizlenince)
+  }
+}, [konumKaydet])
+
+// Açılışta son konuma dön (yalnız bir kez, kitap yüklendikten sonra)
+useEffect(() => {
+  if (yukleniyor || !kitapMetni.length || konumYuklendiRef.current) return
+  konumYuklendiRef.current = true
+  let kayitli = null
+  try { kayitli = JSON.parse(localStorage.getItem(`vukuf_son_konum_${id}`) || "null") } catch {}
+  if (kayitli && kayitli.sayfa > 1 || (kayitli && kayitli.oran > 0.02)) {
+    const hedef = Math.min(Math.max(1, kayitli.sayfa || 1), kitapMetni.length)
+    setTimeout(() => sayfayaGit(hedef, kayitli.oran || 0), 120)
+  }
+}, [yukleniyor, kitapMetni, id])
 
 // ════════════════════════════════════════════════════
 // Otomatik kaydırma
@@ -809,6 +912,8 @@ useEffect(() => { localStorage.setItem("vukuf-gizleme-suresi", gizlemeSuresi) },
 useEffect(() => { localStorage.setItem("vukuf-sade-mode", sadeMode) }, [sadeMode])
 useEffect(() => { localStorage.setItem("vukuf-bar-ui-olcegi", String(barUiOlcegi)) }, [barUiOlcegi])
 useEffect(() => { localStorage.setItem("vukuf-bilgi-olcegi", String(bilgiOlcegi)) }, [bilgiOlcegi])
+useEffect(() => { localStorage.setItem("vukuf-arapca-renk", arapcaRenk || "") }, [arapcaRenk])
+useEffect(() => { localStorage.setItem("vukuf-lugat-renk", lugatRenkOzel || "") }, [lugatRenkOzel])
 useEffect(() => { localStorage.setItem("vukuf-bar-gorunur", JSON.stringify(ogeGorunur)) }, [ogeGorunur])
 useEffect(() => { localStorage.setItem("vukuf-bar-sade", JSON.stringify(ogeSade)) }, [ogeSade])
 
@@ -869,31 +974,19 @@ function togglePanel(setter, deger) {
 // Yardımcı işlemler
 // ════════════════════════════════════════════════════
 
-function sayfayaGit(sayfaNo, oran = 0) {
-  setSayfaGitAcik(false)
-  setSayfaGitInput("")
+// Fren efektli kaydırma çekirdeği: hedefTop() her karede yeniden ölçülür
+// (lazy mount yüksekliği değiştirir). Yerleşince onSettle() çağrılır.
+function frenKaydir(hedefTop, onSettle) {
   const el = scrollRef.current
   if (!el) return
-  const ofset = barKonum === "ust" ? 80 : 12
-
-  // Hedef scrollTop'u her seferinde yeniden ölç (LazySayfa mount olurken yükseklik değişir)
-  const hedefTop = () => {
-    const ref = sayfaRefs.current[sayfaNo]
-    if (!ref) return el.scrollTop
-    const r = ref.getBoundingClientRect()
-    const base = r.top - el.getBoundingClientRect().top + el.scrollTop
-    return base + oran * (ref.offsetHeight || 0) - ofset
-  }
-
   el.scrollTop = hedefTop()      // 1) anında zıpla
-  setMevcutSayfa(sayfaNo)
-
-  // 2) ölçümler oturana kadar sessizce düzelt, sonra tek kısa smooth = fren
   let bitti = false, sabit = 0, adim = 0
+  const tamamla = () => { if (onSettle) requestAnimationFrame(() => requestAnimationFrame(onSettle)) }
   const bitir = (fark) => {
     if (bitti) return
     bitti = true
-    if (Math.abs(fark) > 3) el.scrollTo({ top: el.scrollTop + fark, behavior: "smooth" })
+    if (Math.abs(fark) > 3) { el.scrollTo({ top: el.scrollTop + fark, behavior: "smooth" }); setTimeout(tamamla, 280) }
+    else tamamla()
   }
   const otur = () => {
     if (bitti || ++adim > 40) return bitir(0)
@@ -904,6 +997,64 @@ function sayfayaGit(sayfaNo, oran = 0) {
     else bitir(fark)
   }
   requestAnimationFrame(otur)
+}
+
+function sayfayaGit(sayfaNo, oran = 0) {
+  setSayfaGitAcik(false)
+  setSayfaGitInput("")
+  const el = scrollRef.current
+  if (!el) return
+  const ofset = barKonum === "ust" ? 80 : 12
+  const hedefTop = () => {
+    const ref = sayfaRefs.current[sayfaNo]
+    if (!ref) return el.scrollTop
+    const r = ref.getBoundingClientRect()
+    const base = r.top - el.getBoundingClientRect().top + el.scrollTop
+    return base + oran * (ref.offsetHeight || 0) - ofset
+  }
+  setMevcutSayfa(sayfaNo)
+  frenKaydir(hedefTop)
+}
+
+// Bir DOM elemanına tam git (başlık/vurgu). cizgi=false ise odak çizgisi çizilmez.
+// Tek fren döngüsü kullanır -> fazladan scroll olmaz; eleman gerçek konumundan hizalanır.
+function elemanaGit(sayfaNo, selectorFn, fallbackOran = 0, cizgi = true) {
+  const el = scrollRef.current
+  if (!el) return
+  setMevcutSayfa(sayfaNo)
+  const ofset = barKonum === "ust" ? 90 : 24
+
+  // Önce sayfaya yaklaş ki lazy mount tetiklensin (henüz fren yok)
+  const ref0 = sayfaRefs.current[sayfaNo]
+  if (ref0) {
+    const r = ref0.getBoundingClientRect()
+    el.scrollTop = r.top - el.getBoundingClientRect().top + el.scrollTop + fallbackOran * (ref0.offsetHeight || 0) - ofset
+  }
+
+  let adim = 0
+  const dene = () => {
+    const hedef = selectorFn()
+    if (!hedef) {
+      if (adim++ < 25) { setTimeout(dene, 90); return }
+      return sayfayaGit(sayfaNo, fallbackOran)   // eleman bulunamadı -> yaklaşık oran
+    }
+    const hedefTop = () => hedef.getBoundingClientRect().top - el.getBoundingClientRect().top + el.scrollTop - ofset
+    frenKaydir(hedefTop, () => {
+      const pref = sayfaRefs.current[sayfaNo]
+      if (pref) {
+        const o = (hedef.getBoundingClientRect().top - pref.getBoundingClientRect().top) / Math.max(1, pref.offsetHeight)
+        odakAyarla(sayfaNo, Math.max(0, Math.min(1, o)), cizgi)
+      }
+    })
+  }
+  setTimeout(dene, 60)
+}
+
+// Odak işaretini (çizgi/ayraç) ayarla
+function odakAyarla(sayfaNo, oran, cizgi = true) {
+  if (odakZamanRef.current) clearTimeout(odakZamanRef.current)
+  setOdakKonum({ sayfa: sayfaNo, oran, cizgi, nonce: Date.now() })
+  odakZamanRef.current = setTimeout(() => setOdakKonum(null), 2600)
 }
 
 function isaretToggle(sayfaNo) {
@@ -923,6 +1074,11 @@ function notSil(sayfaNo, notId) {
   setNotlar(yeni); notlariKaydet(id, yeni)
 }
 
+function notGuncelle(sayfaNo, notId, yeniMetin) {
+  const yeni = { ...notlar, [sayfaNo]: (notlar[sayfaNo] || []).map(n => n.id === notId ? { ...n, metin: yeniMetin } : n) }
+  setNotlar(yeni); notlariKaydet(id, yeni)
+}
+
 // Aynı renkli, bitişik/örtüşen vurguları tek parçaya birleştir
 function mergeVurgular(list) {
   const lin = (p) => p.satir * 100000 + p.kelime
@@ -932,16 +1088,45 @@ function mergeVurgular(list) {
     const last = out[out.length - 1]
     if (last && v.renk === last.renk && v.s <= last.e + 1) {
       if (v.e > last.e) { last.e = v.e; last.bitis = v.bitis }
+      if (!last.isim && v.isim) last.isim = v.isim
     } else {
       out.push({ ...v })
     }
   }
-  return out.map(v => ({ id: v.id, renk: v.renk, baslangic: v.baslangic, bitis: v.bitis }))
+  return out.map(v => ({ id: v.id, renk: v.renk, baslangic: v.baslangic, bitis: v.bitis, isim: v.isim || "" }))
 }
 
 function vurguEkle(sayfaNo, baslangic, bitis, renk) {
-  const birlesik = mergeVurgular([...(vurgular[sayfaNo] || []), { id: Date.now(), baslangic, bitis, renk }])
+  const birlesik = mergeVurgular([...(vurgular[sayfaNo] || []), { id: Date.now(), baslangic, bitis, renk, isim: "" }])
   const yeni = { ...vurgular, [sayfaNo]: birlesik }
+  setVurgular(yeni); vurguKaydet(id, yeni)
+}
+
+function vurguGuncelle(sayfaNo, vurguId, isim) {
+  const yeni = { ...vurgular, [sayfaNo]: (vurgular[sayfaNo] || []).map(v => v.id === vurguId ? { ...v, isim } : v) }
+  setVurgular(yeni); vurguKaydet(id, yeni)
+}
+
+// Tek kelimeyi vurgudan çıkar (gerekiyorsa bloğu böl)
+function vurguKelimeSil(sayfaNo, satir, kelime) {
+  const lin = (s, k) => s * 100000 + k
+  const konum = (pos) => ({ satir: Math.floor(pos / 100000), kelime: pos % 100000 })
+  const p = lin(satir, kelime)
+  const liste = vurgular[sayfaNo] || []
+  const hedef = liste.find(v => {
+    const s = lin(v.baslangic.satir, v.baslangic.kelime)
+    const e = lin(v.bitis.satir, v.bitis.kelime)
+    return p >= s && p <= e
+  })
+  if (!hedef) return
+  const s = lin(hedef.baslangic.satir, hedef.baslangic.kelime)
+  const e = lin(hedef.bitis.satir, hedef.bitis.kelime)
+  const parcalar = []
+  if (p > s) parcalar.push({ id: `${Date.now()}a`, renk: hedef.renk, isim: hedef.isim || "", baslangic: hedef.baslangic, bitis: konum(p - 1) })
+  if (p < e) parcalar.push({ id: `${Date.now()}b`, renk: hedef.renk, isim: "", baslangic: konum(p + 1), bitis: hedef.bitis })
+  const kalan = liste.filter(v => v.id !== hedef.id).concat(parcalar)
+  const yeni = { ...vurgular, [sayfaNo]: kalan }
+  if (!yeni[sayfaNo].length) delete yeni[sayfaNo]
   setVurgular(yeni); vurguKaydet(id, yeni)
 }
 
@@ -980,19 +1165,29 @@ function kayitTumSil() {
 }
 
 // Bir konuma git + odak (focus) efekti
-function odakGit(sayfaNo, oran = 0) {
+// Genel odak git. opt.cizgi === false -> çizgi yerine yalnız ayraç döner (kayıt git).
+function odakGit(sayfaNo, oran = 0, opt = {}) {
   sayfayaGit(sayfaNo, oran)
-  if (odakZamanRef.current) clearTimeout(odakZamanRef.current)
-  setOdakKonum({ sayfa: sayfaNo, oran, nonce: Date.now() })
-  odakZamanRef.current = setTimeout(() => setOdakKonum(null), 2600)
+  odakAyarla(sayfaNo, oran, opt.cizgi !== false)
 }
 
-// Vurguya git — satır indeksinden yaklaşık oran hesapla
+// Başlığa tam git — başlık DOM elemanına (#baslik-sayfa-satir) hizala
+function basligaGit(sayfa, satir, oran = 0) {
+  setMenuAcik(false)
+  if (satir == null) { odakGit(sayfa, oran); return }
+  elemanaGit(sayfa, () => document.getElementById(`baslik-${sayfa}-${satir}`), oran, true)
+}
+
+// Vurguya git — vurgulanan ilk kelimenin DOM konumuna ([data-vurgu]) tam hizala
 function vurguGit(sayfaNo, v) {
   const sf = kitapMetni.find(s => s.sayfa === sayfaNo)
   const satirSayisi = sf ? Math.max(1, sf.metin.split("\n").length) : 1
   const oran = Math.max(0, Math.min(0.95, (v?.baslangic?.satir || 0) / satirSayisi))
-  odakGit(sayfaNo, oran)
+  if (v?.id != null) {
+    elemanaGit(sayfaNo, () => document.querySelector(`[data-vurgu="${v.id}"]`), oran, true)
+  } else {
+    odakGit(sayfaNo, oran)
+  }
 }
 
 // Ekrandan konum seçilince işaret oluştur
@@ -1245,7 +1440,7 @@ const KayitPanel = kayitAcik && (
                 <div key={k.id} style={{ display: "flex", alignItems: "center", gap: "8px", padding: "8px 10px", borderRadius: "8px", background: `${theme.accent}0A`, border: `1px solid ${theme.border}`, marginBottom: "6px" }}>
                   <Bookmark size={13} fill={theme.accent} color={theme.accent} />
                   <span style={{ flex: 1, fontSize: "13px", color: theme.text }}>{k.baslik}</span>
-                  <button onClick={() => { odakGit(k.sayfa, k.oran); setKayitAcik(false) }} style={{ fontSize: "11px", color: theme.accent, background: "none", border: "none", cursor: "pointer" }}><ChevronRight size={13} /></button>
+                  <button onClick={() => { odakGit(k.sayfa, k.oran || 0, { cizgi: false }); setKayitAcik(false) }} title="İşarete git" style={{ fontSize: "11px", color: theme.accent, background: "none", border: "none", cursor: "pointer" }}><ChevronRight size={13} /></button>
                   <button onClick={() => kayitSil(k.id)} style={{ color: theme.textSecondary, background: "none", border: "none", cursor: "pointer" }}><X size={12} /></button>
                 </div>
               ))
@@ -1288,9 +1483,22 @@ const KayitPanel = kayitAcik && (
                     <div style={{ flex: 1, height: "1px", background: theme.border }} />
                   </div>
                   {sayfaNotlari.map(not => (
-                    <div key={not.id} style={{ display: "flex", gap: "8px", padding: "7px 10px", borderRadius: "8px", background: `${theme.accent}08`, border: `1px solid ${theme.border}`, marginBottom: "4px" }}>
-                      <div style={{ flex: 1, fontSize: "12px", color: theme.text, lineHeight: "1.5" }}>{not.metin}</div>
-                      <button onClick={() => notSil(Number(sayfaNo), not.id)} style={{ color: theme.textSecondary, background: "none", border: "none", cursor: "pointer", padding: "0", flexShrink: 0 }}><X size={12} /></button>
+                    <div key={not.id} style={{ display: "flex", gap: "8px", padding: "7px 10px", borderRadius: "8px", background: `${theme.accent}08`, border: `1px solid ${theme.border}`, marginBottom: "4px", alignItems: "center" }}>
+                      {duzenleNot && duzenleNot.notId === not.id ? (
+                        <>
+                          <input value={duzenleNotMetni} autoFocus
+                            onChange={e => setDuzenleNotMetni(e.target.value)}
+                            onKeyDown={e => { if (e.key === "Enter") { notGuncelle(Number(sayfaNo), not.id, duzenleNotMetni.trim()); setDuzenleNot(null) } }}
+                            style={{ flex: 1, padding: "5px 8px", borderRadius: "6px", border: `1px solid ${theme.border}`, background: theme.background, color: theme.text, fontSize: "12px", outline: "none" }} />
+                          <button onClick={() => { notGuncelle(Number(sayfaNo), not.id, duzenleNotMetni.trim()); setDuzenleNot(null) }} style={{ color: theme.accent, background: "none", border: "none", cursor: "pointer", flexShrink: 0, fontSize: "11px" }}>Kaydet</button>
+                        </>
+                      ) : (
+                        <>
+                          <div style={{ flex: 1, fontSize: "12px", color: theme.text, lineHeight: "1.5" }}>{not.metin}</div>
+                          <button onClick={() => { setDuzenleNot({ sayfaNo: Number(sayfaNo), notId: not.id }); setDuzenleNotMetni(not.metin) }} title="Düzenle" style={{ color: theme.textSecondary, background: "none", border: "none", cursor: "pointer", padding: "0", flexShrink: 0 }}><Pencil size={12} /></button>
+                          <button onClick={() => notSil(Number(sayfaNo), not.id)} style={{ color: theme.textSecondary, background: "none", border: "none", cursor: "pointer", padding: "0", flexShrink: 0 }}><X size={12} /></button>
+                        </>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -1316,11 +1524,26 @@ const KayitPanel = kayitAcik && (
                 {sayfaVurgulari.map(v => (
                   <div key={v.id} style={{ display: "flex", alignItems: "center", gap: "8px", padding: "6px 10px", borderRadius: "8px", background: `${theme.accent}08`, border: `1px solid ${theme.border}`, marginBottom: "4px" }}>
                     <div style={{ width: "12px", height: "12px", borderRadius: "2px", background: v.renk, flexShrink: 0 }} />
-                    <span style={{ flex: 1, fontSize: "12px", color: theme.textSecondary }}>
-                      {v.baslangic.satir}:{v.baslangic.kelime} – {v.bitis.satir}:{v.bitis.kelime}
-                    </span>
-                    <button onClick={() => { vurguGit(Number(sayfaNo), v); setKayitAcik(false) }} style={{ fontSize: "11px", color: theme.accent, background: "none", border: "none", cursor: "pointer" }}><ChevronRight size={13} /></button>
-                    <button onClick={() => vurguSil(Number(sayfaNo), v.id)} style={{ color: theme.textSecondary, background: "none", border: "none", cursor: "pointer" }}><X size={12} /></button>
+                    {duzenleVurgu && duzenleVurgu.vurguId === v.id ? (
+                      <>
+                        <input value={duzenleVurguMetni} autoFocus
+                          onChange={e => setDuzenleVurguMetni(e.target.value)}
+                          onKeyDown={e => { if (e.key === "Enter") { vurguGuncelle(Number(sayfaNo), v.id, duzenleVurguMetni.trim()); setDuzenleVurgu(null) } }}
+                          placeholder="Vurgu adı..."
+                          style={{ flex: 1, padding: "4px 8px", borderRadius: "6px", border: `1px solid ${theme.border}`, background: theme.background, color: theme.text, fontSize: "12px", outline: "none" }} />
+                        <button onClick={() => { vurguGuncelle(Number(sayfaNo), v.id, duzenleVurguMetni.trim()); setDuzenleVurgu(null) }} style={{ fontSize: "11px", color: theme.accent, background: "none", border: "none", cursor: "pointer" }}>Kaydet</button>
+                      </>
+                    ) : (
+                      <>
+                        <span style={{ flex: 1, fontSize: "12px", color: v.isim ? theme.text : theme.textSecondary }}>
+                          {v.isim || `${v.baslangic.satir}:${v.baslangic.kelime} – ${v.bitis.satir}:${v.bitis.kelime}`}
+                        </span>
+                        <button onClick={() => { setDuzenleVurgu({ sayfaNo: Number(sayfaNo), vurguId: v.id }); setDuzenleVurguMetni(v.isim || "") }} title="İsim ver" style={{ color: theme.textSecondary, background: "none", border: "none", cursor: "pointer" }}><Pencil size={12} /></button>
+                        <button onClick={() => { setVurguModu(true); setVurguDuzenle(true); vurguGit(Number(sayfaNo), v); setKayitAcik(false) }} title="Düzenle (kelime ekle/çıkar)" style={{ color: theme.textSecondary, background: "none", border: "none", cursor: "pointer" }}><Settings size={13} /></button>
+                        <button onClick={() => { vurguGit(Number(sayfaNo), v); setKayitAcik(false) }} style={{ fontSize: "11px", color: theme.accent, background: "none", border: "none", cursor: "pointer" }}><ChevronRight size={13} /></button>
+                        <button onClick={() => vurguSil(Number(sayfaNo), v.id)} style={{ color: theme.textSecondary, background: "none", border: "none", cursor: "pointer" }}><X size={12} /></button>
+                      </>
+                    )}
                   </div>
                 ))}
               </div>
@@ -1392,6 +1615,34 @@ const TemaPanel = temaAcik && (
           )}
         </button>
       ))}
+
+      {/* Arapça / Osmanlıca metin rengi */}
+      <div style={{ borderTop: `1px solid ${theme.border}`, marginTop: "10px", paddingTop: "10px" }}>
+        <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px" }}>ARAPÇA / OSMANLICA RENGİ</div>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <input type="color" value={arapcaRenk || theme.lugatHighlight}
+            onChange={e => setArapcaRenk(e.target.value)}
+            style={{ width: "40px", height: "28px", border: `1px solid ${theme.border}`, borderRadius: "6px", background: theme.background, cursor: "pointer", padding: "2px" }} />
+          <span style={{ flex: 1, fontSize: "12px", color: arapcaRenk || theme.lugatHighlight }}>بِسْمِ اللّٰه · Bismillâh</span>
+          {arapcaRenk && (
+            <button onClick={() => setArapcaRenk("")} title="Temaya sıfırla" style={{ fontSize: "11px", color: theme.textSecondary, background: "none", border: "none", cursor: "pointer" }}>sıfırla</button>
+          )}
+        </div>
+      </div>
+
+      {/* Lügat (Latin) kelime rengi */}
+      <div style={{ marginTop: "10px" }}>
+        <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px" }}>LÜGAT RENGİ</div>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <input type="color" value={lugatRenkOzel || theme.lugatHighlight}
+            onChange={e => setLugatRenkOzel(e.target.value)}
+            style={{ width: "40px", height: "28px", border: `1px solid ${theme.border}`, borderRadius: "6px", background: theme.background, cursor: "pointer", padding: "2px" }} />
+          <span style={{ flex: 1, fontSize: "12px", color: lugatRenkOzel || theme.lugatHighlight }}>nasihat · hakikat</span>
+          {lugatRenkOzel && (
+            <button onClick={() => setLugatRenkOzel("")} title="Temaya sıfırla" style={{ fontSize: "11px", color: theme.textSecondary, background: "none", border: "none", cursor: "pointer" }}>sıfırla</button>
+          )}
+        </div>
+      </div>
     </div>
   </>
 )
@@ -1803,7 +2054,7 @@ const menuDugumRender = (node) => {
         ) : (
           <span style={{ width: `${Math.round(20 * mo)}px`, flexShrink: 0 }} />
         )}
-        <button onClick={() => { if (node.sayfa) odakGit(node.sayfa, node.oran || 0); setMenuAcik(false) }}
+        <button onClick={() => { if (node.sayfa) basligaGit(node.sayfa, node.satir, node.oran || 0); setMenuAcik(false) }}
           title={node.aciklama || ""}
           style={{
             flex: 1, textAlign: "left", background: "transparent", border: "none", cursor: "pointer",
@@ -1900,7 +2151,7 @@ const Bar = (
     )}
 
     {gorunurMu("vurgu") && (
-      <button onClick={() => setVurguModu(!vurguModu)} style={barButonStil(vurguModu)} title="Vurgulama modu">
+      <button onClick={() => { const y = !vurguModu; setVurguModu(y); if (!y) setVurguDuzenle(false) }} style={barButonStil(vurguModu)} title="Vurgulama modu">
         <Highlighter size={bIkon(15)} />
         {vurguModu && (
           <div style={{ display: "flex", gap: "3px", marginLeft: "4px" }} onClick={e => e.stopPropagation()}>
@@ -2103,8 +2354,11 @@ return (
             display: "flex", alignItems: "center", gap: "8px",
           }}>
             <Highlighter size={13} />
-            Vurgulama modu açık — metinden seçim yap
-            <button onClick={() => setVurguModu(false)} style={{ marginLeft: "auto", background: "none", border: "none", cursor: "pointer", color: "#333" }}>
+            {vurguDuzenle ? "Düzenleme modu — kelimeye dokun: çıkar · seçerek ekle" : "Vurgu modu — seçerek ekle"}
+            <button onClick={() => setVurguDuzenle(v => !v)} title={vurguDuzenle ? "Ekleme moduna geç" : "Düzenleme moduna geç"} style={{ marginLeft: "auto", background: vurguDuzenle ? "#00000022" : "transparent", borderRadius: "6px", border: "none", cursor: "pointer", color: "#333", padding: "2px 4px", display: "flex" }}>
+              <Settings size={13} />
+            </button>
+            <button onClick={() => { setVurguModu(false); setVurguDuzenle(false) }} style={{ background: "none", border: "none", cursor: "pointer", color: "#333" }}>
               <X size={13} />
             </button>
           </div>
@@ -2121,7 +2375,7 @@ return (
         {/* Sayfalar */}
           {kitapMetni.map((sayfa, index) => (
             <div key={sayfa.sayfa} ref={el => { if (el) sayfaRefs.current[sayfa.sayfa] = el }} style={{ position: "relative" }}>
-              {odakKonum && odakKonum.sayfa === sayfa.sayfa && (
+              {odakKonum && odakKonum.sayfa === sayfa.sayfa && odakKonum.cizgi !== false && (
                 <div key={odakKonum.nonce} style={{
                   position: "absolute", left: "-10px", right: "-10px",
                   top: `${odakKonum.oran * 100}%`, height: "3px",
@@ -2130,13 +2384,18 @@ return (
                   zIndex: 6, animation: "odakYanip 2.4s ease-out",
                 }} />
               )}
-              {kitapIsaretleri.includes(sayfa.sayfa) && (
-                <div style={{
-                  position: "absolute", top: "6px", right: "-8px",
-                  width: "8px", height: "8px", borderRadius: "50%",
-                  background: "#ef4444", boxShadow: "0 0 4px rgba(239,68,68,0.6)",
-                }} />
-              )}
+              {kayitlar.filter(k => k.sayfa === sayfa.sayfa).map(k => (
+                <div key={k.id} style={{ position: "absolute", top: `${(k.oran || 0) * 100}%`, right: "6px", zIndex: 30 }}>
+                  <div style={{ position: "relative" }}>
+                    <KitapAyraci
+                      kayit={k}
+                      theme={theme}
+                      vurgulu={odakKonum?.sayfa === sayfa.sayfa && odakKonum?.cizgi === false && Math.abs((k.oran || 0) - (odakKonum.oran || 0)) < 0.03}
+                      onTikla={() => togglePanel(setKayitAcik, true)}
+                    />
+                  </div>
+                </div>
+              ))}
               <LazySayfa minHeight={Math.max(300, Math.round(sayfa.metin.length * 0.5))}>
                 <MetinParcasi
                   metin={sayfa.metin}
@@ -2152,6 +2411,8 @@ return (
                   vurguRengi={vurguRengi}
                   sayfaVurgulari={vurgular[sayfa.sayfa] || []}
                   onVurguEkle={vurguEkle}
+                  duzenleMod={vurguDuzenle}
+                  onVurguKelimeSil={vurguKelimeSil}
                   dipnotlar={sayfa.dipnotlar}
                   satirAraligi={satirAraligi}
                   harfAraligi={harfAraligi}
@@ -2160,6 +2421,9 @@ return (
                   basliklar={sayfa.basliklar}
                   baslikFont={baslikFont}
                   ortala={sayfa.sayfa === 1}
+                  lugatRenk={lugatRenk}
+                  arapRenk={arapRenk}
+                  hasiyeler={sayfa.hasiyeler}
                 />
               </LazySayfa>
               {notlar[sayfa.sayfa]?.length > 0 && (

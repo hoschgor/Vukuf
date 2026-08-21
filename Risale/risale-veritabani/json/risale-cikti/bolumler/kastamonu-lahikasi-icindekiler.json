@@ -4,1210 +4,1383 @@
   "baslik": "Kastamonu Lâhikası",
   "aciklama": "",
   "sayfa": 1,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "1. Mektup",
   "aciklama": "Sohbete zaman ve mekân mâni değil",
   "sayfa": 2,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "2. Mektup",
   "aciklama": "Zaman, cemaat zamanıdır",
   "sayfa": 4,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "3. Mektup",
   "aciklama": "Üstadın bazı talebelerine nasihatleri ve onlar hakkındaki kanaatleri",
   "sayfa": 6,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "4. Mektup",
   "aciklama": "Risaleler birbirine tercih edilmez",
   "sayfa": 8,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "5. Mektup",
   "aciklama": "Risale-i Nur'un diğer kitaplardan farkı",
   "sayfa": 10,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "6. Mektup",
   "aciklama": "Birden hatıra gelen dört nokta: Zelzele, hizmetteki sıkıntının azlığı, tekrarlar ve 29. Lem'anın tercümesi",
   "sayfa": 11,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "7. Mektup",
   "aciklama": "Musibetler nasıl karşılanmalı?",
   "sayfa": 13,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "8. Mektup",
   "aciklama": "Üç gurbete ve hastalık",
   "sayfa": 14,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "9. Mektup",
   "aciklama": "Teveccühü, Kur'ân ve Risale-i Nur adına kabul etme",
   "sayfa": 14,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "10. Mektup",
   "aciklama": "Talebelerin Nur'a ait ikramı gösteren mektubu",
   "sayfa": 15,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "11. Mektup",
   "aciklama": "İkinci Cihan Savaşı ve beşere gelen tokatlar",
   "sayfa": 16,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "12. Mektup",
   "aciklama": "Risale-i Nur mânevî yaraları tedavi eder",
   "sayfa": 17,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "13. Mektup",
   "aciklama": "Nur talebeleri imanla kabre girecek",
   "sayfa": 18,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "14. Mektup",
   "aciklama": "Risalelerin yazılması: Bayram hediyesi",
   "sayfa": 21,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "15. Mektup",
   "aciklama": "Üstadın ölüme telaşsız bakması",
   "sayfa": 22,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "16. Mektup",
   "aciklama": "Hizmetteki İlâhî ikramlar",
   "sayfa": 22,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "17. Mektup",
   "aciklama": "Nur'un kerametlerinden misâller",
   "sayfa": 24,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "18. Mektup",
   "aciklama": "Risale-i Nur talebesi kime denir?",
   "sayfa": 26,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "19. Mektup",
   "aciklama": "Ehl-i İslâmın, ehl-i dalâlete bilmeden taraftar çıkması",
   "sayfa": 27,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "20. Mektup",
   "aciklama": "Talebelerin Nur'a sahip çıkması",
   "sayfa": 29,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "21. Mektup",
   "aciklama": "Kıyametten haber veren hadis",
   "sayfa": 30,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "22. Mektup",
   "aciklama": "İbrahim Sûresi ve Risale-i Nur",
   "sayfa": 32,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "23. Mektup",
   "aciklama": "Risale-i Nur'da iman ve tevhid konularına yapılan tahşidatın önemi",
   "sayfa": 32,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "24. Mektup",
   "aciklama": "İkinci Vatan: Barla",
   "sayfa": 35,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "25. Mektup",
   "aciklama": "Üç mesele: Talebelerin sadakati, ehl-i dünyanın evhamı ve bir tevafuk",
   "sayfa": 35,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "26. Mektup",
   "aciklama": "Tekrarlar ve inayet-i İlâhiye",
   "sayfa": 36,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "27. Mektup",
   "aciklama": "Zaman, imanı kurtarmak zamanı",
   "sayfa": 38,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "28. Mektup",
   "aciklama": "Bazı talebelerin meziyetleri",
   "sayfa": 40,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "29. Mektup",
   "aciklama": "Risale-i Nur tabiat tağutunu yok eder",
   "sayfa": 42,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "30. Mektup",
   "aciklama": "Siyaset dairesi aklı, kalbi dağıtır; mâneviyatı bozar",
   "sayfa": 42,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "31. Mektup",
   "aciklama": "İmanla kabre girileceğine bir misâl",
   "sayfa": 44,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "32. Mektup",
   "aciklama": "Hizmete gelen mükâfat ve şefkat tokatları",
   "sayfa": 49,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "33. Mektup",
   "aciklama": "Risale-i Nur'un korunduğunu gösteren hâdiseler",
   "sayfa": 51,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "34. Mektup",
   "aciklama": "İmam-ı Ali'nin Âyetü'l-Kübrâ'ya önem vermesinin sebebi",
   "sayfa": 53,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "35. Mektup",
   "aciklama": "Talebelerin vazifesi: Şerh, izah, tekmil, tahşiye, neşir ve tâlim",
   "sayfa": 55,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "36. Mektup",
   "aciklama": "Risale-i Nur'a hizmetin dünyevî faydaları",
   "sayfa": 58,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "37. Mektup",
   "aciklama": "Salâhaddin Çelebi'nin bir kazadan kerametkârane kurtulması",
   "sayfa": 62,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "38. Mektup",
   "aciklama": "Tevafuk-u cifrîde küçük bir hatâ",
   "sayfa": 65,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "39. Mektup",
   "aciklama": "Tevafukların önemine dair bir ihtar",
   "sayfa": 66,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "40. Mektup",
   "aciklama": "Tevafuklar teşvik edicidir",
   "sayfa": 68,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "41. Mektup",
   "aciklama": "Hâfız Ali'nin Risale-i Nur'a âyetten çıkardığı bir istihraç",
   "sayfa": 71,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "42. Mektup",
   "aciklama": "Bir adam, nasıl binler adam kadar günah işleyebilir?",
   "sayfa": 74,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "43. Mektup",
   "aciklama": "Nur ve Gül Fabrikaları",
   "sayfa": 75,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "44. Mektup",
   "aciklama": "Her asırda en büyük makam Kur'ân'ındır",
   "sayfa": 76,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "45. Mektup",
   "aciklama": "Sahabelerin mânevî şahsiyetinin bir cilvesi",
   "sayfa": 77,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "46. Mektup",
   "aciklama": "Şefkatin yanlış yerde kullanılması",
   "sayfa": 79,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "47. Mektup",
   "aciklama": "Eski Said'in eserleri faydalı; fakat bir parça mahremdir",
   "sayfa": 80,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "48. Mektup",
   "aciklama": "Risale-i Nur başka eserlere ihtiyaç bırakmaz",
   "sayfa": 81,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "49. Mektup",
   "aciklama": "Gelecek olan Nurun, dar ve geniş dairelerdeki iltibası",
   "sayfa": 83,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "50. Mektup",
   "aciklama": "Deccal ve Hazret-i İsâ (a.s) ile ilgili hadislerin gerçek tevilleri",
   "sayfa": 85,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "51. Mektup",
   "aciklama": "Risale-i Nur'a işaret eden âyetler",
   "sayfa": 88,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "52. Mektup",
   "aciklama": "Isparta kahramanlarına benzemenin şartı",
   "sayfa": 90,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "53. Mektup",
   "aciklama": "Risaleleri yazı ile çoğaltanlara dua",
   "sayfa": 91,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "54. Mektup",
   "aciklama": "Hizmet haberlerinden duyulan memnuniyet",
   "sayfa": 92,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "55. Mektup",
   "aciklama": "Sırr-ı ?????? ???????????'nın işaret ettiği gerçek mânâ",
   "sayfa": 94,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "56. Mektup",
   "aciklama": "Bir ihtar",
   "sayfa": 95,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "57. Mektup",
   "aciklama": "Talebelerin medihlerine cevap",
   "sayfa": 95,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "58. Mektup",
   "aciklama": "Hayalî Ziyaeddin, gerçek Ziyaeddin",
   "sayfa": 96,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "59. Mektup",
   "aciklama": "Üç mühim mesele: İman, hayat, şeriat",
   "sayfa": 98,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "60. Mektup",
   "aciklama": "Ramazan'da her gün bir hâtim",
   "sayfa": 100,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "61. Mektup",
   "aciklama": "Başa gelen sıkıntıların hikmetleri",
   "sayfa": 102,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "62. Mektup",
   "aciklama": "İştirâk-i a'mâl-i uhreviye sırrı",
   "sayfa": 103,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "63. Mektup",
   "aciklama": "Üstadı sürurla ağlatan hanım talebelerin hizmeti",
   "sayfa": 104,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "64. Mektup",
   "aciklama": "Günahlara kalkan: İştirak-i a'mâl-i uhreviye düsturu",
   "sayfa": 105,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "65. Mektup",
   "aciklama": "Küllî ibadete sahip olabilmek",
   "sayfa": 107,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "66. Mektup",
   "aciklama": "Dualarla gelen şifâ",
   "sayfa": 108,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "67. Mektup",
   "aciklama": "Üstadın yerine çalışan talebeler",
   "sayfa": 108,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "68. Mektup",
   "aciklama": "Sav Köyü bir Medrese-i Nuriyedir",
   "sayfa": 110,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "69. Mektup",
   "aciklama": "İkinci Hüsrev olan Birinci Tahir",
   "sayfa": 113,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "70. Mektup",
   "aciklama": "Namaz tesbihatının önemi. / Dünya hayatını bilerek âhirete tercih etme",
   "sayfa": 114,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "71. Mektup",
   "aciklama": "Ehl-i iman için kâinat nurlu, ehl-i dalâlet için karanlıklıdır",
   "sayfa": 117,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "72. Mektup",
   "aciklama": "Musibetlere şifâ kaynağı: İnşirah Sûresi",
   "sayfa": 119,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "73. Mektup",
   "aciklama": "Hüsrev Altınbaşak ve tevafuklu Kur'ân",
   "sayfa": 120,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "74. Mektup",
   "aciklama": "Dinîn dünyaya basamak yapılması",
   "sayfa": 122,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "75. Mektup",
   "aciklama": "Haşre dair kısımların Onuncu Sözün âhirinde toplanması",
   "sayfa": 123,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "76. Mektup",
   "aciklama": "Gayrî Müslimlerin Cehennemden kurtuluş yolu",
   "sayfa": 124,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "77. Mektup",
   "aciklama": "İman hakikatleri gaybî sırlardan daha ehemmiyetlidir",
   "sayfa": 125,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "78. Mektup",
   "aciklama": "Risale-i Nur'u yazarak çoğaltmanın ehemmiyeti",
   "sayfa": 126,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "79. Mektup",
   "aciklama": "Rüya-yı sadıka kader-i İlâhinin her şeyi ihata ettiğine delildir",
   "sayfa": 128,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "80. Mektup",
   "aciklama": "Mâsum çocukların ve ümmî ihtiyarların Nurları yazmalarının verdiği sevinç",
   "sayfa": 130,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "81. Mektup",
   "aciklama": "Hakakik-i imaniyeye Risale-i Nur'la hizmet, en birinci vazifedir",
   "sayfa": 131,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "82. Mektup",
   "aciklama": "Risale-i Nur'a ekmek kadar ihtiyaç var",
   "sayfa": 133,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "83. Mektup",
   "aciklama": "Mâsumların ve ümmî ihtiyarların yazdıkları risalelerin fütuhatı",
   "sayfa": 136,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "84. Mektup",
   "aciklama": "Risale-i Nur, kazandırdığı tahkikî imana bedel hâlis bir sadakat, sarsılmaz bir sebat ister",
   "sayfa": 136,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "85. Mektup",
   "aciklama": "Binbaşı Muhyiddin'in gördüğü rüyânın tabiri",
   "sayfa": 140,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "86. Mektup",
   "aciklama": "Taarruza karşı demir gibi sebat",
   "sayfa": 141,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "87. Mektup",
   "aciklama": "Talebelerin senakâr mektuplarına cevap",
   "sayfa": 142,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "88. Mektup",
   "aciklama": "Üstadın talebelerini teşvik eden mektubu",
   "sayfa": 144,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "89. Mektup",
   "aciklama": "Risale-i Nur'un yayıldıkça dikkatleri üzerine çekmesine karşı ihtiyat tavsiyesi",
   "sayfa": 145,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "90. Mektup",
   "aciklama": "Risale-i Nur belâların def ve ref'ine vesiledir",
   "sayfa": 147,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "91. Mektup",
   "aciklama": "Harama bakmak unutkanlık verir. / Âhiret sevabını dünyada istememeli",
   "sayfa": 149,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "92. Mektup",
   "aciklama": "İman hizmeti hiçbir şeye alet edilemez",
   "sayfa": 153,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "93. Mektup",
   "aciklama": "Risale-i Nur hizmeti Sünnet-i Seniyeye medardır",
   "sayfa": 156,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "94. Mektup",
   "aciklama": "Ta'likat ve Kızıl İ'caz'ın önemi ve Risale-i Nur'la irtibatı",
   "sayfa": 158,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "95. Mektup",
   "aciklama": "Açlık musibetinin sebebi şükürsüzlük",
   "sayfa": 159,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "96. Mektup",
   "aciklama": "Risale-i Nur telifi ihtiyara tabi değildir",
   "sayfa": 161,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "97. Mektup",
   "aciklama": "Zaman, cemaat zamanıdır",
   "sayfa": 162,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "98. Mektup",
   "aciklama": "Nur dairesi sarsılmaz bir sadakat ve metanet ister",
   "sayfa": 163,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "99. Mektup",
   "aciklama": "Tâhir'de bir Lütfi, bir Hâfız Ali, bir genç Said, bir Hüsrev gizli",
   "sayfa": 164,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "100. Mektup",
   "aciklama": "Risale-i Nur'un emniyete faydası",
   "sayfa": 164,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "101. Mektup",
   "aciklama": "Risale-i Nur'un mânevî galebesi",
   "sayfa": 166,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "102. Mektup",
   "aciklama": "Talebelerin memurlukla Nurlardan uzaklaştırılması",
   "sayfa": 167,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "103. Mektup",
   "aciklama": "Takva ve amel-i salihin tarifi ve önemi",
   "sayfa": 168,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "104. Mektup",
   "aciklama": "Tarafgirlik duygusu zulme ortak yapar",
   "sayfa": 170,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "105. Mektup",
   "aciklama": "Zındıkların tesanüdü bozma çabaları",
   "sayfa": 173,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "106. Mektup",
   "aciklama": "Yirmi Beşinci Sözün sonuna Lemeât Risalesinin eklenmesi",
   "sayfa": 174,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "107. Mektup",
   "aciklama": "Risale-i Nur'un fütuhatının devam etmesi",
   "sayfa": 175,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "108. Mektup",
   "aciklama": "Geçim sıkıntısı âhiret işlerini ikinci dereceye bırakır",
   "sayfa": 176,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "109. Mektup",
   "aciklama": "Hakikî gençlik Nur talebelerinin gençliğidir",
   "sayfa": 177,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "110. Mektup",
   "aciklama": "Birkaç bîçare gençlere verilen bir tenbih, bir ders, bir ihtarnâmedir",
   "sayfa": 178,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "111. Mektup",
   "aciklama": "Risale-i Nur hakkında verilen bir itiraza verilen cevap",
   "sayfa": 181,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "Lemeât",
   "aciklama": "Nazma benzer şekilde kaleme alınmış, Risâle-i Nur Külliyatı'nın çekirdeği hükmünde olan bir risale.",
   "sayfa": 186,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "112. Mektup",
   "aciklama": "Kadir gecesini ihlâs, tesanüd ve iştirâk-i a'mâl-i uhrevî düsturu ile kazanmak",
   "sayfa": 206,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "113. Mektup",
   "aciklama": "Virdü'l-âzam-ı Kur'ânînin basılması",
   "sayfa": 207,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "114. Mektup",
   "aciklama": "\"Said başka eserleri beğenmiyor\" iddiasına cevap",
   "sayfa": 207,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "115. Mektup",
   "aciklama": "Riyaya sevk eden sebepler",
   "sayfa": 209,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "116. Mektup",
   "aciklama": "Küçük Hüsrev Feyzi'nin bir istihracıdır.",
   "sayfa": 212,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "117. Mektup",
   "aciklama": "Zamanın müceddidi, bir şahs-ı mânevî olabilir",
   "sayfa": 216,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "118. Mektup",
   "aciklama": "Risale-i Nur ve talebeleri hakkında gıybet",
   "sayfa": 218,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "119. Mektup",
   "aciklama": "Açlığı kanaat, iktisat ve riyazetle karşılamak",
   "sayfa": 220,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "120. Mektup",
   "aciklama": "Risale-i Nur ve talebelerinin şahs-ı mânevîsi \"Ferid\" makamına mazhar",
   "sayfa": 224,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "121. Mektup",
   "aciklama": "Fütur vermek ve geçim sıkıntısı çekmek hizmetten alıkoyar",
   "sayfa": 227,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "122. Mektup",
   "aciklama": "Beş erkân-ı İslâmiye ve vücub-u zekât rüknü",
   "sayfa": 229,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "123. Mektup",
   "aciklama": "İslâmköylü hocaların Risale-i Nur'la alâkası",
   "sayfa": 230,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "124. Mektup",
   "aciklama": "Maişet peşinde koşmak yerine hizmette ciddî çalışmak",
   "sayfa": 232,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "125. Mektup",
   "aciklama": "Salâhaddin Çelebi'nin bazı tavsiyeleri",
   "sayfa": 233,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "126. Mektup",
   "aciklama": "Mânevî hasâretlerden kurtulmanın çaresi: İman ve amel-i salih",
   "sayfa": 235,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "127. Mektup",
   "aciklama": "Mânevî tahribata karşı büyük bir cemaat 200 sene mücadele edecek",
   "sayfa": 237,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "128. Mektup",
   "aciklama": "Isparta, mânevî Medresetü'z-Zehrâ'dır",
   "sayfa": 238,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "129. Mektup",
   "aciklama": "Zalimlerin boğuşmalarına bakmak, zulme ortak eder",
   "sayfa": 239,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "130. Mektup",
   "aciklama": "Risale-i Nur'un bir vazifesi Kur'ân harflerini korumaktır",
   "sayfa": 242,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "131. Mektup",
   "aciklama": "Bu âlem haşri zımnî ve perdeli gösteriyor",
   "sayfa": 243,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "132. Mektup",
   "aciklama": "Şerlerden hayır çıktığının izahı",
   "sayfa": 245,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "133. Mektup",
   "aciklama": "Sikke-i Tasdik-i Gaybî, Nur'un hak olduğuna işaret eden mahrem bir risaledir",
   "sayfa": 246,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "134. Mektup",
   "aciklama": "Dört mektuba cevap",
   "sayfa": 247,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "135. Mektup",
   "aciklama": "Risale-i Nur aklı inkardan kurtarıp tesellî verir",
   "sayfa": 248,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "136. Mektup",
   "aciklama": "Risale-i Nur dostlara tiryak, düşmanlara saika olur",
   "sayfa": 251,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "137. Mektup",
   "aciklama": "Hizmette mazhar olunan suhulet ve tevafuklar",
   "sayfa": 252,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "138. Mektup",
   "aciklama": "Şerlere hikmet ve rahmet gözüyle bakmak",
   "sayfa": 254,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "139. Mektup",
   "aciklama": "Kelimeler yanında fiillerde de tevafuklar var",
   "sayfa": 256,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "140. Mektup",
   "aciklama": "\"Elmas kalemli kardeşlerim matbaaya ihtiyaç bırakmıyor\"",
   "sayfa": 257,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "141. Mektup",
   "aciklama": "Geçim sıkıntısı, tesanüdünüzü bozmasın",
   "sayfa": 258,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "142. Mektup",
   "aciklama": "Fil Sûresinin asrımıza bakan yönü",
   "sayfa": 260,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "143. Mektup",
   "aciklama": "Hizbü'l-Ekber-i Nurî'nin yazılması ve yaşanan bir tevafuk",
   "sayfa": 263,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "144. Mektup",
   "aciklama": "Medreseden çıkan Risale-i Nur'u, medrese hocalarının tanımaması",
   "sayfa": 264,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "145. Mektup",
   "aciklama": "İman hakikatlerini hiçbir şeye feda etmeyen Ispartalı talebeler",
   "sayfa": 266,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "146. Mektup",
   "aciklama": "Tam fedakâr talebe dünya ile alâkasını kesmeli",
   "sayfa": 267,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "147. Mektup",
   "aciklama": "Risale-i Nur esmâ-i hüsnânın tecellî ettiği kâinatı delil gösteriyor",
   "sayfa": 268,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "148. Mektup",
   "aciklama": "Mecazî nefs-i emmâre nedir?",
   "sayfa": 269,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "149. Mektup",
   "aciklama": "Her şeyi tesanüde feda etmek",
   "sayfa": 271,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "150. Mektup",
   "aciklama": "Geçim sıkıntısına daha fazla hizmetle mukabele etmek",
   "sayfa": 272,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "151. Mektup",
   "aciklama": "Hüsrev'in yazdığı İ'cazlı Kur'ân",
   "sayfa": 273,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "152. Mektup",
   "aciklama": "İhtilâfı, meşveret-i şer'iye ile halletmek",
   "sayfa": 274,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "153. Mektup",
   "aciklama": "Marangoz Ahmed'in manzumesi",
   "sayfa": 275,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "154. Mektup",
   "aciklama": "Risale-i Nur hizmeti rahmete vesiledir",
   "sayfa": 276,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "155. Mektup",
   "aciklama": "Risale-i Nur neden siyasete âlet edilemez?",
   "sayfa": 278,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "156. Mektup",
   "aciklama": "Nur talebelerinin tesanüdünü tebrik",
   "sayfa": 280,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "157. Mektup",
   "aciklama": "Sebatkâr talebelerin sadakat ve uhuvveti",
   "sayfa": 282,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "158. Mektup",
   "aciklama": "Mehmet Zühtü Efendinin vefatı ve Hulûsi Efendinin birincilik makamını koruması",
   "sayfa": 283,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "159. Mektup",
   "aciklama": "Risale-i Nur'un kerametleri",
   "sayfa": 285,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "160. Mektup",
   "aciklama": "Sırr-ı ihlâsa dayanan Nur mesleği dünyaya bakmaz",
   "sayfa": 286,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "161. Mektup",
   "aciklama": "Ehl-i bid'a ile zihnen de meşgul olmamak",
   "sayfa": 289,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "162. Mektup",
   "aciklama": "Bu zamanda çocuk sahibi olmanın mesuliyeti ile inayet mevzuları",
   "sayfa": 293,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "163. Mektup",
   "aciklama": "Nur talebeleri talebe-i ulûmdur",
   "sayfa": 297,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "164. Mektup",
   "aciklama": "Üstad attan düşmesinin hayırlı neticelerini anlatıyor",
   "sayfa": 299,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "165. Mektup",
   "aciklama": "Musibetin ondan bire inmesi ve bazı Nur talebelerinin sorularına verilen cevaplar",
   "sayfa": 300,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "166. Mektup",
   "aciklama": "Bir musibetin Sekîne'deki dersi açıklamaya vesile olması",
   "sayfa": 304,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "167. Mektup",
   "aciklama": "Adapazarı depreminin mânevî sebebi ve Nurların musibetlere kalkan olması",
   "sayfa": 305,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "168. Mektup",
   "aciklama": "Risale-i Nur'un dünyaya âlet edilmesi ihlâsı kırar",
   "sayfa": 306,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "169. Mektup",
   "aciklama": "Beşer zulmeder, kader-i İlâhî adalet eder",
   "sayfa": 308,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "170. Mektup",
   "aciklama": "Bir kapı kapansa, daha mühim kapılar açılır",
   "sayfa": 309,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "171. Mektup",
   "aciklama": "Üç kerametli risale: Mu'cizat-ı Ahmediye, Yirmi Dokuzuncu Söz ve İşârâtü'l-İ'câz",
   "sayfa": 311,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  }
 ]

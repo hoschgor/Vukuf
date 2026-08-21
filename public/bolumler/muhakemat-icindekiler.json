@@ -4,426 +4,487 @@
   "baslik": "Muhâkemat",
   "aciklama": "",
   "sayfa": 6,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "Mukaddeme",
   "aciklama": "",
   "sayfa": 7,
-  "oran": 0.5
+  "oran": 0.5,
+  "satir": 2
  },
  {
   "seviye": 1,
   "baslik": "Birinci Makale (Unsuru'l-Hakikat)",
   "aciklama": "",
   "sayfa": 8,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 2,
   "baslik": "Birinci Mukaddeme",
   "aciklama": "Kur'ân'ın esas maksatları sayılmakta ve bu maksatlardan ayrı olan ay, güneş, yıldızlar gibi kâinatla alâkalı bahislerin, Kur'ân'da ne gibi gayelerle zikredildiği anlatılmaktadır.",
   "sayfa": 9,
-  "oran": 0.2
+  "oran": 0.2,
+  "satir": 1
  },
  {
   "seviye": 2,
   "baslik": "İkinci Mukaddeme:",
   "aciklama": "İnsanların maddî bilgilerinde telâhuk-u efkâr ve tedricî tecrübeler sayesinde bir meylü't-terakki olduğu izah edilmekte; ayrıca maddî ilimlerle mânevî ilimler arasındaki fark ortaya konmaktadır.",
   "sayfa": 13,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 2,
   "baslik": "Üçüncü Mukaddeme",
   "aciklama": "İsrailiyat ve Yunan felsefesinin bir kısmının, bazı İslâmî ilimlerin içine nasıl girdiği ve din süsüyle görünerek fikirleri nasıl ihtilale verdiği gayet mânidar bir şekilde tahlil edilmiştir.",
   "sayfa": 15,
-  "oran": 0.25
+  "oran": 0.25,
+  "satir": 1
  },
  {
   "seviye": 2,
   "baslik": "Dördüncü Mukaddeme",
   "aciklama": "Şöhretin insanın malı olmayan şeyi insana nasıl mal ettiği; bu yüzden de ne gibi hurâfât kapıları açıldığı etraflıca izah edilmektedir.",
   "sayfa": 21,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": 0
  },
  {
   "seviye": 2,
   "baslik": "Beşinci Mukaddeme",
   "aciklama": "Mecaz ve teşbihlerin zamanla hakikate inkılap edip hurâfâta nasıl kapı açtığı ve bunun sebepleri beyan edilmektedir.",
   "sayfa": 23,
-  "oran": 0.1667
+  "oran": 0.1667,
+  "satir": 1
  },
  {
   "seviye": 2,
   "baslik": "Altıncı Mukaddeme",
   "aciklama": "Tefsirde zikredilen her bir meselenin ve malûmatın tefsirden olması lâzım gelmediği; bir tefsir kitabında tefsir veya âyetin asıl mânâsından başka, sair fenlere ait bazı meselelerin de olabileceği, o fenlere ait malûmatın yanlış olmasının, âyetin veya tefsirin yanlışlığına delil sayılamayacağı izah edilmektedir.",
   "sayfa": 25,
-  "oran": 0.6667
+  "oran": 0.6667,
+  "satir": 4
  },
  {
   "seviye": 2,
   "baslik": "Yedinci Mukaddeme",
   "aciklama": "İnsanların muzır seciyelerinden olan tezayüd, mücazefe ve mübalağa meyilleri ve bu meyillerin ne gibi zararlara sebep olduğu beyan edilmektedir.",
   "sayfa": 29,
-  "oran": 0.4
+  "oran": 0.4,
+  "satir": 2
  },
  {
   "seviye": 2,
   "baslik": "Sekizinci Mukaddeme",
   "aciklama": "Müellifin ifadesiyle \"Her kemâli mahveden ye'si öldürmek ve her saadetin mâyesi olan ümidi canlandırmak\" için yazılmıştır. Mazinin insanları ile hâl ve istikbalin insanlarının mukayesesi yapılmaktadır.",
   "sayfa": 33,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": 0
  },
  {
   "seviye": 2,
   "baslik": "Dokuzuncu Mukaddeme",
   "aciklama": "Hilkat-ı âlemde maksud-u bizzat ve galib-i mutlak yalnız hüsün, hayır, hak ve kemâl olduğu; şer ve kubh ve batılın ise tebeiyye ve mağlube oldukları, hakka galip gelseler bile muvakkat olduğu anlatılmaktadır.",
   "sayfa": 38,
-  "oran": 0.4286
+  "oran": 0.4286,
+  "satir": 3
  },
  {
   "seviye": 2,
   "baslik": "Onuncu Mukaddeme",
   "aciklama": "Mütekellimin, söylediği sözünde muaheze edilip edilemeyeceği noktaların neler olduğu anlatılmaktadır.",
   "sayfa": 43,
-  "oran": 0.5714
+  "oran": 0.5714,
+  "satir": 4
  },
  {
   "seviye": 2,
   "baslik": "On Birinci Mukaddeme",
   "aciklama": "Tek bir kelâmda ve sözde birden fazla hükümler olabileceği misallerle anlatılmaktadır.",
   "sayfa": 46,
-  "oran": 0.4
+  "oran": 0.4,
+  "satir": 2
  },
  {
   "seviye": 2,
   "baslik": "On İkinci Mukaddeme",
   "aciklama": "Zahirperestleri aldatan noktalarla mübalağalı netice veren sebepler üzerinde durulmuş; ayrıca mübalağa meylinin ne gibi gariplikleri netice verdiği izah edilmiştir.",
   "sayfa": 48,
-  "oran": 0.2
+  "oran": 0.2,
+  "satir": 1
  },
  {
   "seviye": 2,
   "baslik": "Birinci Mesele",
   "aciklama": "Küre-i arzın yuvarlak olduğunu ispata dairdir. Bu meselede sükutî icma olduğu bildirilmekte ve bazı muhakkikînin eser ve sözlerine havaleler yapılmaktadır.",
   "sayfa": 55,
-  "oran": 0.5
+  "oran": 0.5,
+  "satir": 2
  },
  {
   "seviye": 2,
   "baslik": "İkinci Mesele",
   "aciklama": "\"Arz, öküz ile balık üzerindedir\" şeklinde rivayet edilen hadisin tahkiki yapılmakta ve tazammun ettiği mânâlar mânidar bir şekilde anlatılmaktadır.",
   "sayfa": 58,
-  "oran": 0.5714
+  "oran": 0.5714,
+  "satir": 4
  },
  {
   "seviye": 2,
   "baslik": "Üçüncü Mesele",
   "aciklama": "Kaf Dağı hakkındadır. Bu güne kadar bu hususta ileri sürülen görüşlerin tenkit ve tahkiki yapılmaktadır.",
   "sayfa": 62,
-  "oran": 0.2
+  "oran": 0.2,
+  "satir": 1
  },
  {
   "seviye": 2,
   "baslik": "Dördüncü Mesele",
   "aciklama": "Zülkarneyn ve Seddi, Ye'cüc–Mecüc ve Seddin harabiyeti hususları üzerinde durulmaktadır.",
   "sayfa": 65,
-  "oran": 0.3333
+  "oran": 0.3333,
+  "satir": 2
  },
  {
   "seviye": 2,
   "baslik": "Beşinci Mesele",
   "aciklama": "Cehennemin yerinin nerede olduğuna dairdir.",
   "sayfa": 70,
-  "oran": 0.5
+  "oran": 0.5,
+  "satir": 3
  },
  {
   "seviye": 2,
   "baslik": "Altıncı Mesele",
   "aciklama": "Kur'ân'ın irşad mesleğinin ne gibi hususiyetler taşıdığı, ehl-i tefsire bu bakımdan düşen vazifelerin neler olduğu beyan edilmektedir.",
   "sayfa": 72,
-  "oran": 0.25
+  "oran": 0.25,
+  "satir": 1
  },
  {
   "seviye": 2,
   "baslik": "Yedinci Mesele",
   "aciklama": "Sadece âyeti kerimelerin zahirine bakarak menfî şekilde hüküm veren inkârcıların iddialarının doğru olmadığına dair izahlar vardır..",
   "sayfa": 74,
-  "oran": 0.5
+  "oran": 0.5,
+  "satir": 2
  },
  {
   "seviye": 2,
   "baslik": "Sekizinci Mesele",
   "aciklama": "Ehl-i zahiri, ulûm-u âdiyede bile tereddüde sevkeden hususlar anlatılmaktadır.",
   "sayfa": 75,
-  "oran": 0.4444
+  "oran": 0.4444,
+  "satir": 4
  },
  {
   "seviye": 1,
   "baslik": "Unsuru'l-Belâgat",
   "aciklama": "",
   "sayfa": 85,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 2,
   "baslik": "İkinci Makale",
   "aciklama": "Belâgatın ruhuna taalluk eden on iki meseledir.",
   "sayfa": 86,
-  "oran": 0.2857
+  "oran": 0.2857,
+  "satir": 2
  },
  {
   "seviye": 2,
   "baslik": "Birinci Mesele",
   "aciklama": "Arap olmayanların, Arapçanın belâgatıyla meşgul olmaya başlamalarıyla zevk-i belâgatı, fikrin mecra-yı tabiîsi olan nazm-ı maânîden nazm-ı lâfza nasıl çevirdikleri anlatılıyor.",
   "sayfa": 86,
-  "oran": 0.5714
+  "oran": 0.5714,
+  "satir": 4
  },
  {
   "seviye": 3,
   "baslik": "Tenbih",
   "aciklama": "Lâfız, üslûp, teşbih, hayal ve kafiye gibi unsurların kelâm içinde ne kadar yer alması lâzım geldiği anlatılıyor.",
   "sayfa": 88,
-  "oran": 0.25
+  "oran": 0.25,
+  "satir": 1
  },
  {
   "seviye": 2,
   "baslik": "İkinci Mesele",
   "aciklama": "Kelâmın canlılık ve hareket kazanmasının nasıl mümkün olacağı anlatılıyor.",
   "sayfa": 89,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": 0
  },
  {
   "seviye": 2,
   "baslik": "Üçüncü Mesele",
   "aciklama": "Bir mânâyı herkesin kendi sanat ve mesleğine uygun üslûplarla ifade etmesinin sırrı izah ediliyor.",
   "sayfa": 90,
-  "oran": 0.5
+  "oran": 0.5,
+  "satir": 4
  },
  {
   "seviye": 2,
   "baslik": "Dördüncü Mesele",
   "aciklama": "Bir kelâmı meydana getiren harf ve kelimelerin, o kelâmın umumî maksadına müteveccih olup yardım etmesi için nasıl tanzim edilmesi gerektiği anlatılıyor.",
   "sayfa": 92,
-  "oran": 0.625
+  "oran": 0.625,
+  "satir": 5
  },
  {
   "seviye": 2,
   "baslik": "Beşinci Mesele",
   "aciklama": "Kelâmın müstetbeatındaki telmihlerin ve üslûbundaki işaretlerin insanın duygularını nasıl ihtizaza getirip coşturduğu anlatılıyor.",
   "sayfa": 94,
-  "oran": 0.375
+  "oran": 0.375,
+  "satir": 3
  },
  {
   "seviye": 2,
   "baslik": "Altıncı Mesele",
   "aciklama": "Bu meselede, bir memurun hükûmet işinde kendi kabiliyetine göre bir vazife alması gibi kelâmın meyvedar olması için kelâm içinde mânâların nasıl tanzim edilmesi gerektiği anlatılıyor.",
   "sayfa": 96,
-  "oran": 0.75
+  "oran": 0.75,
+  "satir": 9
  },
  {
   "seviye": 2,
   "baslik": "Yedinci Mesele",
   "aciklama": "Bu meselede, Beyan'ın felsefesinin ne olduğu ve bunun belâgata olan büyük tesiri anlatılıyor.",
   "sayfa": 101,
-  "oran": 0.1429
+  "oran": 0.1429,
+  "satir": 1
  },
  {
   "seviye": 2,
   "baslik": "Sekizinci Mesele",
   "aciklama": "Bu meselede, Beyan ilmindeki mânâların tesiriyle bir tek kelimenin nasıl müteaddid mânâlar ifade ettiği anlatılıyor.",
   "sayfa": 102,
-  "oran": 0.2857
+  "oran": 0.2857,
+  "satir": 2
  },
  {
   "seviye": 2,
   "baslik": "Dokuzuncu Mesele",
   "aciklama": "Bu meselede, kelâmı en yüksek derece-i belâgata çıkaran dört husus gayet ilmî ve yüksek bir ifade ile izah ediliyor.",
   "sayfa": 103,
-  "oran": 0.4286
+  "oran": 0.4286,
+  "satir": 3
  },
  {
   "seviye": 2,
   "baslik": "Onuncu Mesele",
   "aciklama": "Bu meselede, bir kelâmın selîs ve akıcı olması için hangi hususiyetlere sahip olması lâzım geldiği anlatılıyor.",
   "sayfa": 106,
-  "oran": 0.375
+  "oran": 0.375,
+  "satir": 3
  },
  {
   "seviye": 2,
   "baslik": "On Birinci Mesele",
   "aciklama": "Bu meselede, kelâmın dörtbaşı mâmur ve hiçbir itiraza mahal kalmayacak şekilde selâmetli ve sıhhatli olması için dikkat edilmesi icab eden hususlar anlatılıyor.",
   "sayfa": 107,
-  "oran": 0.4
+  "oran": 0.4,
+  "satir": 2
  },
  {
   "seviye": 2,
   "baslik": "On İkinci Mesele",
   "aciklama": "Kelâmın tam kıvamında ve mutedil olması için, kelâmın kayıtlarına nasıl bir nizam vermek icap ettiği anlatılıyor. Sonra, üslûpların çeşitleri, hususiyetleri ve kullanılacağı yerler izah ediliyor. Bir Hatime ve İşaret'le belâgatın çok mühim iki noktasına işaret ediliyor. Tenbih'te de bir şeyin âlimi olmakla, sanatkârı olmak arasındaki ince fark anlatılıyor.",
   "sayfa": 108,
-  "oran": 0.1429
+  "oran": 0.1429,
+  "satir": 1
  },
  {
   "seviye": 1,
   "baslik": "Unsuru'l Akîde (Üçüncü Makale)",
   "aciklama": "",
   "sayfa": 113,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 2,
   "baslik": "İşaret",
   "aciklama": "Kelime-i şehadetin iki kelâmının birbirinin doğruluğuna nasıl şehadet ettiği anlatılıyor.",
   "sayfa": 114,
-  "oran": 0.6
+  "oran": 0.6,
+  "satir": 3
  },
  {
   "seviye": 2,
   "baslik": "Mukaddeme",
   "aciklama": "Kur'ân'ın esas maksadı dörttür: Sâni-i vâhidin ispatı, nübüvvet, haşr-i cismânî ve adalet",
   "sayfa": 115,
-  "oran": 0.2857
+  "oran": 0.2857,
+  "satir": 2
  },
  {
   "seviye": 2,
   "baslik": "Birinci Maksat",
   "aciklama": "Cenâb-ı Hakkın vücud ve vahdetini ispat eden delillerin kâ­inattaki zer­relerden kat kat fazla olduğu halde neden herkesin aklıyla göremediği hususu izah e­di­liyor.",
   "sayfa": 116,
-  "oran": 0.75
+  "oran": 0.75,
+  "satir": 6
  },
  {
   "seviye": 3,
   "baslik": "İşaret",
   "aciklama": "Nokta-i istinat ve nokta-i istimdadın Sâniin vücud ve vahdetini ispat vecihleri be­yan ediliyor.",
   "sayfa": 117,
-  "oran": 0.6667
+  "oran": 0.6667,
+  "satir": 6
  },
  {
   "seviye": 3,
   "baslik": "Tenbih",
   "aciklama": "Mârifetullaha ulaşmanın yolları sayılıyor. Bilhassa mirac-ı Kur'ânî yolu üze­rin­de durulup bunun iki nevi olan delil-i inayet ve delil-i ihtira' anlatılıyor.",
   "sayfa": 118,
-  "oran": 0.5
+  "oran": 0.5,
+  "satir": 4
  },
  {
   "seviye": 3,
   "baslik": "Vehim ve Tenbih",
   "aciklama": "Tabiat, kavanin ve kuvanın mahiyetleri anlatılıyor.",
   "sayfa": 125,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 3,
   "baslik": "Vehim ve Tenbih",
   "aciklama": "Burada, tabîiyyûnun, Mu'tezile'nin, felsefecilerin ve Mecûsîler'in Ce­nâb-ı Hak hakkında İslâm akaidine muhalif olan batıl itikatlara niçin saptıkları bil­di­ri­li­yor",
   "sayfa": 127,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 3,
   "baslik": "İşaret",
   "aciklama": "Delil-i ihtira' hakkında akla gelebilecek bazı vehimleri izale edici i­zahlar ya­pı­lı­yor ve cevaplar veriliyor.",
   "sayfa": 128,
-  "oran": 0.2
+  "oran": 0.2,
+  "satir": 1
  },
  {
   "seviye": 3,
   "baslik": "İşaret",
   "aciklama": "Mutasavvıfın mesleğiyle maddiyunun mesleğinin mukayesesi ya­pılıyor.",
   "sayfa": 130,
-  "oran": 0.7143
+  "oran": 0.7143,
+  "satir": 5
  },
  {
   "seviye": 2,
   "baslik": "İkinci Maksat",
   "aciklama": "",
   "sayfa": 135,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 3,
   "baslik": "Mukaddeme",
   "aciklama": "Kelime-i şahadetin iki rüknünden biri olan Hazret-i Muhammed'in (a.s.m) Cenâb-ı Hakkın vücud ve vahdetine delil oluşu anlatılıyor. Bunun için evvelâ Re­sûl-i Ekremin (a.s.m.) doğruluğu, nübüvvet-i mut­la­ka­nın zarureti ispat ediliyor.",
   "sayfa": 135,
-  "oran": 0.5
+  "oran": 0.5,
+  "satir": 3
  },
  {
   "seviye": 3,
   "baslik": "İşaret",
   "aciklama": "Burada, burhanın suğrası olan nübüvvet-i mutlakanın insanlık için neden za­rurî olduğu izah ve isbat ediliyor.",
   "sayfa": 137,
-  "oran": 0.375
+  "oran": 0.375,
+  "satir": 3
  },
  {
   "seviye": 3,
   "baslik": "İşaret ve İrşad",
   "aciklama": "Burada da, burhanın kübrası olan nübüvvet-i Muhammed'in (s.a.v.) sıd­kının isbatı yapılıyor.",
   "sayfa": 143,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 2,
   "baslik": "Mukaddeme",
   "aciklama": "Resûl-i Ekremin (s.a.v.) doğruluğuna ve Peygamber oluşuna delil o­lan bazı hususların beş \"meslek\" halinde ispat olunacağı beyan edilmektedir.",
   "sayfa": 145,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": 0
  },
  {
   "seviye": 3,
   "baslik": "Birinci Meslek",
   "aciklama": "Resûl-i Ekremin (a.s.m.) güzel ahlâk ve seciyelerinin Onun nü­büv­ve­tine nasıl delil olduğu izah ediliyor.",
   "sayfa": 146,
-  "oran": 0.25
+  "oran": 0.25,
+  "satir": 2
  },
  {
   "seviye": 3,
   "baslik": "İkinci Meslek",
   "aciklama": "Mazinin, yani Asr-ı Saadetten evvelki zamanın Resûl-i Ek­re­min (a.s.m.) sıdk-ı nübüvvetine nasıl delil olduğu anlatılmaktadır.",
   "sayfa": 149,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": 0
  },
  {
   "seviye": 3,
   "baslik": "Üçüncü Meslek",
   "aciklama": "Hâlin, yani Asr-ı Saadetteki icraatının nübüvvetinin hak­ka­niyetine na­­sıl delil olduğu anlatılmaktadır.",
   "sayfa": 150,
-  "oran": 0.75
+  "oran": 0.75,
+  "satir": 6
  },
  {
   "seviye": 3,
   "baslik": "Dördüncü Meslek",
   "aciklama": "Burada da, istikbalin Resûl-i Ekremin (a.s.m.) doğruluk ve hak­lılığına nasıl delil olduğu izah edilmektedir.",
   "sayfa": 154,
-  "oran": 0.1667
+  "oran": 0.1667,
+  "satir": 1
  },
  {
   "seviye": 3,
   "baslik": "Hâtime",
   "aciklama": "İslâm düşmanlarının Kur'ân-ı Kerim hakkında yaydıkları üç itiraza fevkalâde muk­nî cevaplar verilmektedir.",
   "sayfa": 159,
-  "oran": 0.125
+  "oran": 0.125,
+  "satir": 1
  },
  {
   "seviye": 3,
   "baslik": "Beşinci Meslek",
   "aciklama": "Resûlullahın (a.s.m.) mu'cizeleri hakkında mühim bir ölçü zik­re­di­lerek bu ölçü dahilinde altı nevi mu'cize sıralanmaktadır.",
   "sayfa": 164,
-  "oran": 0.6667
+  "oran": 0.6667,
+  "satir": 4
  },
  {
   "seviye": 3,
   "baslik": "Tenbih",
   "aciklama": "Şakk-ı Kamer mu'cizesine yöneltilen bir itiraza cevap verilmektedir.",
   "sayfa": 166,
-  "oran": 0.125
+  "oran": 0.125,
+  "satir": 1
  },
  {
   "seviye": 2,
   "baslik": "Üçüncü Maksat",
   "aciklama": "Kur'ân'ın dört maksadından haşr-i cismaniye dairdir.",
   "sayfa": 168,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": 0
  }
 ]

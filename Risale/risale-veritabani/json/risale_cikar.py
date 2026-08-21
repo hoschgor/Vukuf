@@ -20,7 +20,12 @@ Kullanım:
     python3 risale_cikar.py --calistir --eski-lugat ~/Projeler/vukuf/src/data/arapca-lugat.json
 
 Girdi (aynı klasörde değilse --json-dir): bookpages.json, meanings.json (zorunlu);
-       books.json, footnote.json, glossary.json, styles.json (varsa).
+       books.json, footnote.json, glossary.json, contents.json, hasiyefts.json,
+       styles.json (varsa).
+
+Haşiye: hasiyefts.json'daki HASIYE metinleri, bookpages.HASIYEATTRIBUTES konumlarına
+        göre metne ⟦H{no}⟧ işareti olarak gömülür; okuyucu bunu kelimenin üstünde
+        küçük "H" + kuş tüyü olarak gösterir (tıklayınca haşiye popup'ı).
 """
 
 import argparse
@@ -95,14 +100,47 @@ def ascii_slug(name, fallback):
     return s or fallback
 
 
+_YARDIMCI = {"eden", "edici", "olan", "olarak", "olmak", "yapan", "veren",
+             "gibi", "için", "ile", "ve", "bir", "çok", "şey", "halde", "hâlde"}
+
+
+def _kokler(term):
+    """Bir anlamın anlamlı kelime köklerini (ilk 5 harf) küme olarak döndür."""
+    out = set()
+    for w in re.split(r"[\s'’\-]+", term.lower()):
+        w = re.sub(r"[^0-9a-zçğıöşü]", "", w)
+        if len(w) < 3 or w in _YARDIMCI:
+            continue
+        out.add(w[:5])
+    return out
+
+
 def format_senses(lst):
-    """['kul','köle'] -> '1.kul. 2.köle.'  (tek anlam ise düz metin) — lugat.json biçimi."""
-    lst = [s for s in lst if s]
-    if not lst:
-        return ""
-    if len(lst) == 1:
-        return lst[0]
-    return " ".join(f"{i}.{s}." for i, s in enumerate(lst, 1))
+    """Anlamları sadeleştir: virgülle ayır, tam tekrarı at, kelime-kökü paylaşan
+    (örtüşen) anlamları tek bırak, ilk 5 farklı anlamı virgülle birleştir.
+    ör. 'konuşmacı, hitap eden, konuşan, hutbe okuyan, nutuk çeken konuşmacı'
+        -> 'konuşmacı, hitap eden, hutbe okuyan'"""
+    terms, gorulen = [], set()
+    for s in lst:
+        for t in (s or "").split(","):
+            t = t.strip().strip(".")
+            if not t:
+                continue
+            k = t.lower()
+            if k in gorulen:
+                continue
+            gorulen.add(k)
+            terms.append(t)
+    tutulan, tutulan_kok = [], []
+    for t in terms:
+        kk = _kokler(t)
+        if kk and any(kk & pk for pk in tutulan_kok):
+            continue
+        tutulan.append(t)
+        tutulan_kok.append(kk)
+        if len(tutulan) >= 5:
+            break
+    return ", ".join(tutulan)
 
 
 def tidy(s):
@@ -132,6 +170,104 @@ def build_footnote_map(footnotes):
         fm[(r.get("BOOKID"), r.get("PAGENO"), r.get("FOOTNOTENO"))] = clean_ws(
             r.get("FOOTNOTE", ""))
     return fm
+
+
+def build_hasiye_map(hasiyeler):
+    hm = {}
+    for r in (hasiyeler or []):
+        hm[(r.get("BOOKID"), r.get("PAGENO"), r.get("HASIYENO"))] = clean_ws(
+            r.get("HASIYE", ""))
+    return hm
+
+
+# Metinde geçen bağımsız "Haşiye" sözcüğü (öznitelik konumu olmayan haşiyeler için)
+_HAS_TOKEN_RE = re.compile(r"\(?(?:HÂŞİYE|HAŞİYE|Hâşiye|Haşiye|hâşiye|haşiye)\)?")
+_HARF_RE = re.compile(r"[0-9A-Za-zÇĞİıÖŞÜçğöşüÂâÎîÛûÔô]")
+# Kelime içi karakter (kelime sonuna 'snap' için): harf/rakam + bağlayıcılar
+_KELIME_RE = re.compile(r"[0-9A-Za-zÇĞİıÖŞÜçğöşüÂâÎîÛûÔô\-'’]")
+_SALT_SAYI_RE = re.compile(r"\s*\d+\s*")
+
+
+_HAS_ICINDE_RE = re.compile(r"[Hh][aâ]şiye", re.IGNORECASE)
+
+
+def yerlestir_hasiye_isaretleri(txt, best):
+    """best: {hno: (off, end)} — HASIYEATTRIBUTES aralığı ' Haşiye ' / ' Haşiye N '
+    gibi metindeki haşiye sözcüğünü işaret ediyor. Bu aralığı KALDIRIR ve
+    ⟦H{hno}⟧ işaretini bir ÖNCEKİ kelimenin sonuna koyar (tek boşluk bırakarak).
+    Anchor beklenmedik biçimde 'Haşiye' içermiyorsa içeriği SİLMEZ; güvenli olsun
+    diye kelimenin sonuna işaret ekler."""
+    n = len(txt)
+    kaldir = [False] * n
+    ekle_at = defaultdict(str)
+    for hno, (off, end) in best.items():
+        off = max(0, min(off, n))
+        end = max(off, min(end, n))
+        anchor = txt[off:end]
+        if anchor and _HAS_ICINDE_RE.search(anchor):
+            a = off
+            while a > 0 and txt[a - 1] == " ":      # baştaki boşlukları da temizle
+                a -= 1
+            for i in range(a, end):
+                kaldir[i] = True
+            # sonraki karakter harf/rakamsa araya tek boşluk koy
+            sonra = txt[end] if end < n else ""
+            sep = "" if (sonra == "" or sonra == "\n" or sonra.isspace()) else " "
+            ekle_at[a] += f"⟦H{hno}⟧" + sep
+        else:
+            pos = end
+            while pos < n and _KELIME_RE.match(txt[pos]):
+                pos += 1
+            ekle_at[pos] += f"⟦H{hno}⟧"
+    out = []
+    for i in range(n + 1):
+        if ekle_at.get(i):
+            out.append(ekle_at[i])
+        if i < n and not kaldir[i]:
+            out.append(txt[i])
+    return "".join(out)
+
+
+def gom_standalone_hasiye(txt, pool, baslik_satirlari):
+    """Metindeki bağımsız 'Haşiye' sözcüklerini kaldırıp bir önceki kelimenin
+    üstüne ⟦H{hno}⟧ işareti koyar. Kurallar:
+      - Kelimeye bitişik/iç içe geçmişse (hemen önce/sonra harf-rakam) DOKUNMAZ.
+      - Satır başındaysa (önünde kelime yoksa) DOKUNMAZ.
+      - Başlık satırlarına (baslik_satirlari) DOKUNMAZ.
+    pool: sırayla eşlenecek hno listesi (önce ek almamışlar).
+    (yeni_metin, yerlestirilen_hno_listesi) döndürür."""
+    if not pool:
+        return txt, []
+    yerlesen = []
+    pi = 0
+
+    def temiz(l):
+        return clean_ws(re.sub(r"⟦H\d+⟧", "", l))
+
+    out_lines = []
+    for line in txt.split("\n"):
+        if pi >= len(pool) or temiz(line) in baslik_satirlari:
+            out_lines.append(line)
+            continue
+        parcalar, pos = [], 0
+        for m in _HAS_TOKEN_RE.finditer(line):
+            if pi >= len(pool):
+                break
+            a, b = m.start(), m.end()
+            onceki = line[a - 1] if a > 0 else ""
+            sonraki = line[b] if b < len(line) else ""
+            if (onceki and _HARF_RE.match(onceki)) or (sonraki and _HARF_RE.match(sonraki)):
+                continue                      # bitişik / iç içe -> dokunma
+            sol = line[pos:a].rstrip(" ")
+            if not sol:
+                continue                      # önünde kelime yok -> dokunma
+            hno = pool[pi]; pi += 1
+            yerlesen.append(hno)
+            parcalar.append(sol + f"⟦H{hno}⟧")
+            pos = b
+        parcalar.append(line[pos:])
+        out_lines.append("".join(parcalar))
+    return "\n".join(out_lines), yerlesen
 
 
 def build_book_titles(books):
@@ -222,6 +358,38 @@ def inspect(paths):
             shown += 1
             if shown >= 3:
                 break
+
+    # Haşiye hizası: HASIYEATTRIBUTES neyi işaretliyor? (anchor + not)
+    hf = paths.get("hasiyefts")
+    if bp and hf and os.path.exists(bp) and os.path.exists(hf):
+        hm = build_hasiye_map(load_json(hf))
+        pages = load_json(bp)
+        hkey = None
+        for pg in pages:
+            for k in pg.keys():
+                if "HASIY" in k.upper() and "ATTR" in k.upper():
+                    hkey = k
+                    break
+            if hkey:
+                break
+        print("\n" + "=" * 70 + f"\nHAŞİYE HİZASI (alan: {hkey})\n" + "=" * 70)
+        shown = 0
+        for pg in pages:
+            attrs = parse_attr(pg.get(hkey, "")) if hkey else []
+            if not attrs:
+                continue
+            b16 = (pg.get("PAGETEXT", "") or "").encode("utf-16-le")
+            bid, pno = pg.get("BOOKID"), pg.get("PAGENO")
+            print(f"\n--- BOOKID {bid}  PAGENO {pno}  ({len(attrs)} işaret) ---")
+            for (no, off, ln) in attrs[:8]:
+                anchor = slice_u16(b16, off, ln)
+                cev = slice_u16(b16, max(0, off - 12), ln + 24)
+                note = (hm.get((bid, pno, no), "??") or "")[:60]
+                print(f"   no={no} off={off} len={ln}  anchor='{anchor}'"
+                      f"  bağlam='…{cev}…'  not='{note}'")
+            shown += 1
+            if shown >= 4:
+                break
     print("\nHizalar doğruysa:  python3 risale_cikar.py --calistir")
 
 
@@ -253,6 +421,29 @@ def run(paths, out_dir, eski_lugat):
           if paths.get("footnote") and os.path.exists(paths["footnote"]) else {})
     if fm:
         print(f"  {len(fm)} dipnot")
+    hm = (build_hasiye_map(load_json(paths["hasiyefts"]))
+          if paths.get("hasiyefts") and os.path.exists(paths["hasiyefts"]) else {})
+    # Sayfalardaki haşiye-konum alanının adını otomatik bul (HASIYEATTRIBUTES vb.)
+    hasiye_attr_key = None
+    if hm:
+        for pg in pages:
+            for k in pg.keys():
+                ku = k.upper()
+                if "HASIY" in ku and "ATTR" in ku:
+                    hasiye_attr_key = k
+                    break
+            if hasiye_attr_key:
+                break
+        print(f"  {len(hm)} haşiye  (konum alanı: {hasiye_attr_key or 'BULUNAMADI!'})")
+        if not hasiye_attr_key:
+            print("  ! Sayfalarda haşiye konum alanı yok -> yalnız metindeki "
+                  "'Haşiye' sözcüklerinden işaretlenecek.")
+    # Sayfaya göre haşiye notları: (BOOKID, PAGENO) -> [(HASIYENO, metin)] sıralı
+    hm_page = defaultdict(list)
+    for (b, p, hno), text in hm.items():
+        hm_page[(b, p)].append((hno, text))
+    for kk in hm_page:
+        hm_page[kk].sort(key=lambda x: (x[0] is None, x[0]))
     titles = (build_book_titles(load_json(paths["books"]))
               if paths.get("books") and os.path.exists(paths["books"]) else {})
     contents = (build_contents(load_json(paths["contents"]))
@@ -300,6 +491,7 @@ def run(paths, out_dir, eski_lugat):
         odt_paras = []
         seq = 0
         dipnot_say = 0
+        hasiye_say = 0
 
         # Bu kitabın başlıkları (contents), sayfaya göre grupla
         cont_by_page = defaultdict(list)
@@ -326,11 +518,43 @@ def run(paths, out_dir, eski_lugat):
                 if ftext:
                     fns.append((fno, off, ln, ftext))
 
+            # Haşiyeler: her hno için TEK işaret. Öznitelik konumu birden çok
+            # aralık verebiliyor -> en sondaki aralığı tut (kelime sonuna snap).
+            best = {}   # hno -> (off, end)
+            if hasiye_attr_key:
+                for (hno, off, ln) in parse_attr(pg.get(hasiye_attr_key, "")):
+                    if not hm.get((bid, pno, hno)):
+                        continue
+                    end = off + ln
+                    if hno not in best or end > best[hno][1]:
+                        best[hno] = (off, end)
+            txt_marked = yerlestir_hasiye_isaretleri(txt, best) if best else txt
+            placed = set(best.keys())
+
+            # Ek almamış haşiyeler: metindeki bağımsız "Haşiye" sözcüklerini,
+            # bir önceki kelimenin üstüne işaret olarak taşı (başlıklara dokunma).
+            page_notes = hm_page.get((bid, pno), [])            # [(hno, text)]
+            pool = [h for (h, _) in page_notes if h not in placed]   # tekrar YOK
+            baslik_satirlari = {clean_ws(c["baslik"])
+                                for c in cont_by_page.get(pno, [])}
+            txt_marked, eklenen = gom_standalone_hasiye(
+                txt_marked, pool, baslik_satirlari)
+
+            # Ana başlıklardan önce beliren tek başına "ba" satırlarını boşalt
+            # (satır sayısı korunur -> başlık satır indeksleri bozulmaz).
+            txt_marked = "\n".join(
+                "" if clean_ws(l).lower() == "ba" else l
+                for l in txt_marked.split("\n"))
+
             # metin.json sayfası: metin + § dipnot satırları
-            metin = txt
+            metin = txt_marked
             for (fno, off, ln, ftext) in sorted(fns):
                 metin += f"\n§[{fno}] {ftext}"
                 dipnot_say += 1
+            note_map = dict(page_notes)
+            ref_hnos = placed | set(eklenen)
+            hasiyeler = {str(h): note_map.get(h, "") for h in ref_hnos}
+            hasiye_say += len(placed) + len(eklenen)
             seq += 1
 
             # Başlıklar: contents TITLE'ını sayfa metnindeki satırla eşleştir
@@ -348,11 +572,14 @@ def run(paths, out_dir, eski_lugat):
                     basliklar.append({"satir": idx, "seviye": c["seviye"],
                                       "aciklama": c["aciklama"]})
                 icindekiler_out.append({"seviye": c["seviye"], "baslik": c["baslik"],
-                                        "aciklama": c["aciklama"], "sayfa": seq, "oran": oran})
+                                        "aciklama": c["aciklama"], "sayfa": seq,
+                                        "oran": oran, "satir": idx})
 
             pg_obj = {"sayfa": seq, "metin": metin}
             if basliklar:
                 pg_obj["basliklar"] = basliklar
+            if hasiyeler:
+                pg_obj["hasiyeler"] = hasiyeler
             metin_sayfalar.append(pg_obj)
 
             # ODT paragrafları (dipnotları gerçek dipnot yaparak)
@@ -370,7 +597,7 @@ def run(paths, out_dir, eski_lugat):
         manifest.append({"id": book_id, "baslik": baslik, "yazar": yazar,
                          "dosya": dosya, "sayfaSayisi": len(metin_sayfalar)})
         print(f"Kitap {bid}: '{baslik}' -> {dosya}  "
-              f"({len(metin_sayfalar)} sayfa, {dipnot_say} dipnot)")
+              f"({len(metin_sayfalar)} sayfa, {dipnot_say} dipnot, {hasiye_say} haşiye)")
 
     # Lügat (lugat.json şeması)
     flat = OrderedDict((k, format_senses(v)) for k, v in lugat.items())
@@ -493,7 +720,8 @@ def main():
 
     d = args.json_dir
     paths = {k: os.path.join(d, f"{k}.json") for k in
-             ("bookpages", "meanings", "books", "footnote", "styles", "glossary", "contents")}
+             ("bookpages", "meanings", "books", "footnote", "styles",
+              "glossary", "contents", "hasiyefts")}
 
     if args.inspect or not args.calistir:
         inspect(paths)

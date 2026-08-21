@@ -4,272 +4,311 @@
   "baslik": "Tarihçe-i Hayat",
   "aciklama": "",
   "sayfa": 1,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "Önsöz",
   "aciklama": "",
   "sayfa": 2,
-  "oran": 0.2
+  "oran": 0.2,
+  "satir": 2
  },
  {
   "seviye": 1,
   "baslik": "Giriş",
   "aciklama": "",
   "sayfa": 21,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": 0
  },
  {
   "seviye": 1,
   "baslik": "1. Bediüzzaman'ın İlk Hayatı",
   "aciklama": "",
   "sayfa": 32,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 2,
   "baslik": "İlk hayatına kısa bir bakış",
   "aciklama": "",
   "sayfa": 38,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 2,
   "baslik": "Şarktaki aşâirle muhavere",
   "aciklama": "",
   "sayfa": 90,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 2,
   "baslik": "Gönüllü alay kumandanlığı",
   "aciklama": "",
   "sayfa": 123,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 2,
   "baslik": "İfade-i Meram",
   "aciklama": "",
   "sayfa": 125,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": 0
  },
  {
   "seviye": 1,
   "baslik": "2. Barla Hayatı",
   "aciklama": "",
   "sayfa": 174,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 2,
   "baslik": "Risale-i Nur'un zuhuru",
   "aciklama": "",
   "sayfa": 176,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": 0
  },
  {
   "seviye": 2,
   "baslik": "Risale-i Nur'un telifi-neşri",
   "aciklama": "",
   "sayfa": 186,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "3. Eskişehir Hayatı",
   "aciklama": "",
   "sayfa": 254,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 2,
   "baslik": "Eskişehir Müdafaası",
   "aciklama": "",
   "sayfa": 258,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 2,
   "baslik": "Bir suç olarak sorulan mesele",
   "aciklama": "",
   "sayfa": 278,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 2,
   "baslik": "Son müdafaata sonradan ilhak edilmiş bir mukaddeme",
   "aciklama": "",
   "sayfa": 284,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "4. Kastamonu Hayatı",
   "aciklama": "",
   "sayfa": 328,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "5. Denizli Hayatı",
   "aciklama": "",
   "sayfa": 476,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 2,
   "baslik": "Denizli mahkeme müdafaası",
   "aciklama": "",
   "sayfa": 479,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "6. Emirdağı Hayatı",
   "aciklama": "",
   "sayfa": 550,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 2,
   "baslik": "Emirdağı'na sürülmesi",
   "aciklama": "",
   "sayfa": 557,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 2,
   "baslik": "Emirdağı'nda zehirlenmesi",
   "aciklama": "",
   "sayfa": 560,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 2,
   "baslik": "Gelenlerle ne konuşurdu?",
   "aciklama": "",
   "sayfa": 561,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "7. Afyon Hayatı",
   "aciklama": "",
   "sayfa": 658,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 2,
   "baslik": "Afyon Mahkemesi",
   "aciklama": "",
   "sayfa": 661,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 1,
   "baslik": "8. Isparta Hayatı",
   "aciklama": "",
   "sayfa": 748,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 2,
   "baslik": "Tahliller (Eşref Edip)",
   "aciklama": "",
   "sayfa": 766,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 2,
   "baslik": "Said Nur ve Talebeleri",
   "aciklama": "",
   "sayfa": 771,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 2,
   "baslik": "Bediüzzaman'ı zehirlediler",
   "aciklama": "",
   "sayfa": 773,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": 0
  },
  {
   "seviye": 2,
   "baslik": "Bediüzzaman Said Nur",
   "aciklama": "",
   "sayfa": 775,
-  "oran": 0.5556
+  "oran": 0.5556,
+  "satir": 5
  },
  {
   "seviye": 2,
   "baslik": "Bediüzzaman kimdir?",
   "aciklama": "",
   "sayfa": 778,
-  "oran": 0.25
+  "oran": 0.25,
+  "satir": 3
  },
  {
   "seviye": 2,
   "baslik": "Demokratlar'a tavsiye",
   "aciklama": "",
   "sayfa": 781,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 2,
   "baslik": "Emirdağı'na dönüşü",
   "aciklama": "",
   "sayfa": 790,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 2,
   "baslik": "İstanbul Mahkemesi",
   "aciklama": "",
   "sayfa": 791,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 2,
   "baslik": "Üstadın Müdafaası",
   "aciklama": "",
   "sayfa": 796,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 2,
   "baslik": "Bediüzzaman ve Risale-i Nur (Risale-i Nur Nedir, Nasıl Bir Tefsirdir)",
   "aciklama": "",
   "sayfa": 825,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 2,
   "baslik": "Konuşan Yalnız Hakikattir",
   "aciklama": "",
   "sayfa": 830,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 2,
   "baslik": "Nur talebelerine Üstad Bediüzzaman'ın son dersi",
   "aciklama": "",
   "sayfa": 857,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 2,
   "baslik": "Reis-i Cumhura ve Başvekile",
   "aciklama": "",
   "sayfa": 865,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 2,
   "baslik": "Risale-i Nur (dış ülkeler)",
   "aciklama": "",
   "sayfa": 871,
-  "oran": 0.0
+  "oran": 0.0,
+  "satir": null
  }
 ]

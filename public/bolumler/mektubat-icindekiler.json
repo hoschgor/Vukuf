@@ -4,8 +4,8 @@
   "baslik": "Mektubat",
   "aciklama": "",
   "sayfa": 1,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.3333,
+  "satir": 1
  },
  {
   "seviye": 1,
@@ -245,7 +245,7 @@
   "aciklama": "Ehl-i dünyanın şüpheli sorularına karşı verilen cevaptır. Bu cevapta onun Kur'ân hizmetine ait bir keramet olarak hiçbir şekilde inkâr edilemeyen İlâhî inâyeti açıklar.",
   "sayfa": 79,
   "oran": 0.0,
-  "satir": null
+  "satir": 0
  },
  {
   "seviye": 2,
@@ -300,8 +300,8 @@
   "baslik": "Üçüncü Mesele",
   "aciklama": "Kâinattaki hayret verici faaliyet ve değişmelerin hikmetini açıklar.",
   "sayfa": 103,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.1667,
+  "satir": 2
  },
  {
   "seviye": 1,
@@ -380,16 +380,16 @@
   "baslik": "Dokuzuncu İşaret",
   "aciklama": "Ağaçlarla ilgili Peygamber mu'cizeleridir. Ağaçların insanlar gibi Peygamber Efendimizin emirlerini dinlemeleri ve yerlerinden çıkıp onun yanına gelmeleri, ona olan sevgi ve bağlılıklarını dile getirmeleri gibi mu'cizeleri anlatıyor.",
   "sayfa": 160,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.5714,
+  "satir": 4
  },
  {
   "seviye": 2,
   "baslik": "Onuncu İşaret",
   "aciklama": "Kuru bir direğin inlemesiyle ilgili mu'cizeyi anlatıyor.",
   "sayfa": 166,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.4,
+  "satir": 2
  },
  {
   "seviye": 2,
@@ -412,16 +412,16 @@
   "baslik": "On Üçüncü İşaret",
   "aciklama": "Peygamber Efendimizin (a.s.m.) hastaları ve yaralıları iyileştirmesiyle ilgili mu'cizeleri anlatıyor.",
   "sayfa": 179,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.2857,
+  "satir": 2
  },
  {
   "seviye": 2,
   "baslik": "On Dördüncü İşaret",
   "aciklama": "Peygamberimizin Efendimizin (a.s.m.) dualarıyla ortaya çıkan mu'cizelerden bahseder.",
   "sayfa": 186,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.3333,
+  "satir": 2
  },
  {
   "seviye": 2,
@@ -796,16 +796,16 @@
   "baslik": "Üçüncü Mesele",
   "aciklama": "Milliyetçilik fikrini olumsuz bir şekilde İslâma sokmaya çalışanlara verilen bir cevaptır.",
   "sayfa": 428,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.375,
+  "satir": 3
  },
  {
   "seviye": 3,
   "baslik": "Dördüncü Mesele",
   "aciklama": "Toplumsal hayatı canlandıran müspet milliyetçilikten bahseder.",
   "sayfa": 430,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.2,
+  "satir": 1
  },
  {
   "seviye": 3,
@@ -860,16 +860,16 @@
   "baslik": "Üçüncü Mesele",
   "aciklama": "\"Şüphesiz Biz insanoğlunu şerefli kılmışızdır\" (İsrâ Sûresi: 70.) âyetinin \"Şüphesiz o çok zalim ve çok cahildir\" (Ahzâb Sûresi: 72.) âyetiyle uyumu nedir?",
   "sayfa": 440,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.5556,
+  "satir": 5
  },
  {
   "seviye": 3,
   "baslik": "Dördüncü Mesele",
   "aciklama": "\"Lâilâhe illallah ile imânınızı tazeleyiniz\" hadîs-i şerifinin hikmeti nedir? İman nasıl yenilenir?",
   "sayfa": 441,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.6,
+  "satir": 3
  },
  {
   "seviye": 3,
@@ -908,8 +908,8 @@
   "baslik": "Dokuzuncu Mesele",
   "aciklama": "\"Ehl-i Sünnetin dışında velâyet yolu olabilir mi?\"",
   "sayfa": 453,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.5714,
+  "satir": 4
  },
  {
   "seviye": 3,
@@ -917,7 +917,7 @@
   "aciklama": "Bediüzzaman'ı ziyaret etmek isteyenlere ait bir düstur.",
   "sayfa": 456,
   "oran": 0.0,
-  "satir": null
+  "satir": 0
  },
  {
   "seviye": 1,
@@ -1036,8 +1036,8 @@
   "baslik": "Dördüncü Nükte",
   "aciklama": "Kıyamet Günü ve Haşir meydanına dair.",
   "sayfa": 523,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.1429,
+  "satir": 1
  },
  {
   "seviye": 3,
@@ -1108,16 +1108,16 @@
   "baslik": "Üçüncü Nükte",
   "aciklama": "Kur'ân-ı Kerimde sûrelerin başlarında bulunan harflerin (hurûfü'l-mukattaa) hikmetine dair.",
   "sayfa": 532,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.2,
+  "satir": 1
  },
  {
   "seviye": 3,
   "baslik": "Dördüncü Nükte",
   "aciklama": "Kur'ân-ı Kerimin manevî i'câzındaki üslubun neden tercüme olunamayacağını açıklar",
   "sayfa": 532,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.6,
+  "satir": 3
  },
  {
   "seviye": 3,
@@ -1156,8 +1156,8 @@
   "baslik": "Dokuzuncu Nükte",
   "aciklama": "Şeriat meseleleri iki kısma ayrılır: Bir kısmı Allah emrettiği için yapılır, diğer kısmı da aklîdir",
   "sayfa": 542,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.1111,
+  "satir": 1
  },
  {
   "seviye": 2,
@@ -1181,7 +1181,7 @@
   "aciklama": "",
   "sayfa": 555,
   "oran": 0.0,
-  "satir": null
+  "satir": 0
  },
  {
   "seviye": 2,

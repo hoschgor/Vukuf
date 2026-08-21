@@ -4,8 +4,8 @@
   "baslik": "Şuâlar",
   "aciklama": "",
   "sayfa": 1,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.3333,
+  "satir": 1
  },
  {
   "seviye": 1,
@@ -44,8 +44,8 @@
   "baslik": "Üçüncü Meyve",
   "aciklama": "Şuurlu varlıklara, özellikle insana bakar. Vahdet sırrıyla insan, kâinattaki bütün varlıkların en mükemmeli ve Alemleri Yaratan'ın muhatabı ve dostu olabilir",
   "sayfa": 16,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.4,
+  "satir": 2
  },
  {
   "seviye": 2,
@@ -124,8 +124,8 @@
   "baslik": "Üçüncü Alâmet ve Hüccet",
   "aciklama": "\"Mülk Onundur ve ezelden ebede her türlü hamd ve övgü, şükür ve minnet Ona mahsustur.\" ifadesi ile işaret edilen tevhid delilleridir",
   "sayfa": 36,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.5,
+  "satir": 2
  },
  {
   "seviye": 2,
@@ -252,32 +252,32 @@
   "baslik": "Birinci Mesele",
   "aciklama": "Hayatın mahiyeti ve hakikati",
   "sayfa": 87,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.3,
+  "satir": 3
  },
  {
   "seviye": 3,
   "baslik": "İkinci Mesele",
   "aciklama": "Hayatın gerçek hukuku",
   "sayfa": 87,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.5,
+  "satir": 5
  },
  {
   "seviye": 3,
   "baslik": "Üçüncü Mesele",
   "aciklama": "Hayatın fıtrî vazifeleri",
   "sayfa": 88,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.5,
+  "satir": 4
  },
  {
   "seviye": 3,
   "baslik": "Dördüncü Mesele",
   "aciklama": "Hayatın gerçek zevki ve saadeti",
   "sayfa": 89,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.6667,
+  "satir": 4
  },
  {
   "seviye": 2,
@@ -500,48 +500,48 @@
   "baslik": "Birincisi",
   "aciklama": "Kibriya ve azamet hakikatidir.",
   "sayfa": 188,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.3333,
+  "satir": 2
  },
  {
   "seviye": 3,
   "baslik": "İkinci Hakikat",
   "aciklama": "Kâinatta tasarrufları görünen Rabbanî fiillerin nihayetsiz bir şekilde ortaya çıkmalarıdır.",
   "sayfa": 189,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.75,
+  "satir": 6
  },
  {
   "seviye": 3,
   "baslik": "Üçüncü Hakikat",
   "aciklama": "Mevcudatın çok hızlı ve çoklukla yaratılmasına rağmen, son derece sanatlı ve intizamlı oluşu",
   "sayfa": 192,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.6667,
+  "satir": 4
  },
  {
   "seviye": 3,
   "baslik": "Birinci Sır",
   "aciklama": "Bir şey zâtî ise, zıttı ona arız olamaz.",
   "sayfa": 194,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.25,
+  "satir": 2
  },
  {
   "seviye": 3,
   "baslik": "İkinci Sır",
   "aciklama": "Nuraniyet, şeffafiyet sırrıyla az çok birdir.",
   "sayfa": 195,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.1667,
+  "satir": 1
  },
  {
   "seviye": 3,
   "baslik": "Dördüncü Hakikat",
   "aciklama": "Kâinatı Rububiyet cihetiyle inkısam kabul etmez bir kül olduğunun izahı.",
   "sayfa": 197,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.7778,
+  "satir": 7
  },
  {
   "seviye": 2,
@@ -820,8 +820,8 @@
   "baslik": "Üçüncü Nokta",
   "aciklama": "Elhamdülillâh'ın mânâsını ifade eden bir cümle",
   "sayfa": 297,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.1667,
+  "satir": 1
  },
  {
   "seviye": 2,
@@ -852,8 +852,8 @@
   "baslik": "Birincisi",
   "aciklama": "Kur'ânın hakikî tercümesi mümkün değil",
   "sayfa": 311,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.1667,
+  "satir": 1
  },
  {
   "seviye": 3,
@@ -868,8 +868,8 @@
   "baslik": "Hüsrev'in Üstadına yazdığı mektup",
   "aciklama": "",
   "sayfa": 314,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.2,
+  "satir": 1
  },
  {
   "seviye": 2,
@@ -909,7 +909,7 @@
   "aciklama": "",
   "sayfa": 331,
   "oran": 0.0,
-  "satir": null
+  "satir": 0
  },
  {
   "seviye": 1,
@@ -941,7 +941,7 @@
   "aciklama": "Risale-i Nurdaki şefkat bizi siyasetten menetmiş.",
   "sayfa": 367,
   "oran": 0.0,
-  "satir": null
+  "satir": 0
  },
  {
   "seviye": 1,
@@ -1045,7 +1045,7 @@
   "aciklama": "",
   "sayfa": 486,
   "oran": 0.0,
-  "satir": null
+  "satir": 0
  },
  {
   "seviye": 2,
@@ -1061,7 +1061,7 @@
   "aciklama": "",
   "sayfa": 495,
   "oran": 0.0,
-  "satir": null
+  "satir": 0
  },
  {
   "seviye": 2,
@@ -1069,15 +1069,15 @@
   "aciklama": "",
   "sayfa": 497,
   "oran": 0.0,
-  "satir": null
+  "satir": 0
  },
  {
   "seviye": 2,
   "baslik": "Hatalar ve cevapları",
   "aciklama": "",
   "sayfa": 497,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.2667,
+  "satir": 4
  },
  {
   "seviye": 2,
@@ -1508,32 +1508,32 @@
   "baslik": "İkinci şehadet",
   "aciklama": "İmanın altı rüknü Muhammed (a.s.m.) risaletine şehadet eder.",
   "sayfa": 745,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.2222,
+  "satir": 2
  },
  {
   "seviye": 3,
   "baslik": "Üçüncü küllî şehadet",
   "aciklama": "Yani o zat güneş gibi kendi zatına delildir.",
   "sayfa": 745,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.5556,
+  "satir": 5
  },
  {
   "seviye": 3,
   "baslik": "Dördüncü şehadet",
   "aciklama": "Kur'an sayısız delilleriyle onun risaletine şehadet eder.",
   "sayfa": 746,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.5,
+  "satir": 2
  },
  {
   "seviye": 3,
   "baslik": "Beşinci, altıncı, yedinci, sekizinci küllî şehadetler",
   "aciklama": "Bin bir esmayı içine alan Cevşenü'l-Kebir'deki hakikatler onun risaletine şehadet eder.",
   "sayfa": 747,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.4,
+  "satir": 2
  },
  {
   "seviye": 3,
@@ -1644,24 +1644,24 @@
   "baslik": "Beşinci ve altıncı delil",
   "aciklama": "Her şeyin şekilleri kaza ve kaderin düsturlarıyla biçilmiş dikilmiştir.",
   "sayfa": 775,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.5,
+  "satir": 3
  },
  {
   "seviye": 3,
   "baslik": "Yedinci, sekizinci delil",
   "aciklama": "Muayyen eceller ve rızıklar.",
   "sayfa": 776,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.4,
+  "satir": 2
  },
  {
   "seviye": 3,
   "baslik": "Dokuzuncu, onuncu delil",
   "aciklama": "Fennî sanatlar, süslü ihtimamlar",
   "sayfa": 777,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.5,
+  "satir": 2
  },
  {
   "seviye": 3,
@@ -1684,8 +1684,8 @@
   "baslik": "Kudrete dair Arabî fıkrası",
   "aciklama": "Dokuz basamaklar hâlinde ele alınıyor.",
   "sayfa": 782,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.6,
+  "satir": 3
  },
  {
   "seviye": 0,
@@ -1788,8 +1788,8 @@
   "baslik": "Dokuzuncu Âyet",
   "aciklama": "Bakara Sûresi, 2:256; Lokman Sûresi, 31:22",
   "sayfa": 833,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.1429,
+  "satir": 1
  },
  {
   "seviye": 3,
@@ -1820,16 +1820,16 @@
   "baslik": "On Üçüncü Âyet",
   "aciklama": "Âl-i İmran Sûresi, 3:7.",
   "sayfa": 834,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.5,
+  "satir": 4
  },
  {
   "seviye": 3,
   "baslik": "On Dördüncü Âyet",
   "aciklama": "Nisa Sûresi, 4:162.",
   "sayfa": 834,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.75,
+  "satir": 6
  },
  {
   "seviye": 3,
@@ -1868,8 +1868,8 @@
   "baslik": "On Dokuzuncu Âyet",
   "aciklama": "Tahrim Sûresi, 66:8.",
   "sayfa": 839,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.5,
+  "satir": 3
  },
  {
   "seviye": 3,

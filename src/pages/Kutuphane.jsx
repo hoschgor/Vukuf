@@ -73,8 +73,8 @@ function SortableKitap({ kitap, duzenlemeMode, theme, alimId }) {
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "80px" }}>
           <div
             style={{
-              width: "60px",
-              height: "88px",
+              width: "80px",
+              height: "128px",
               background: kitap.gorsel ? `url(${kitap.gorsel}) center/cover no-repeat` : kitapSirtiRengi(kitap.id),
               borderRadius: "2px 6px 6px 2px",
               boxShadow: `inset -3px 0 6px rgba(0,0,0,0.3), inset 3px 0 4px rgba(255,255,255,0.1), 2px 2px 6px rgba(0,0,0,0.3)`,
@@ -555,7 +555,7 @@ function SortableKategori({ kategori,
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "80px" }}>
                   <div
                     style={{
-                      width: "60px", height: "88px",
+                      width: "80px", height: "128px",
                       background: kategori.kuran.gorsel
                         ? `url(${kategori.kuran.gorsel}) center/cover no-repeat`
                         : kitapSirtiRengi(kategori.kuran.id),

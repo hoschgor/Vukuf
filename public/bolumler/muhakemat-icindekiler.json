@@ -37,7 +37,7 @@
   "aciklama": "İnsanların maddî bilgilerinde telâhuk-u efkâr ve tedricî tecrübeler sayesinde bir meylü't-terakki olduğu izah edilmekte; ayrıca maddî ilimlerle mânevî ilimler arasındaki fark ortaya konmaktadır.",
   "sayfa": 13,
   "oran": 0.0,
-  "satir": null
+  "satir": 0
  },
  {
   "seviye": 2,
@@ -356,8 +356,8 @@
   "baslik": "Vehim ve Tenbih",
   "aciklama": "Tabiat, kavanin ve kuvanın mahiyetleri anlatılıyor.",
   "sayfa": 125,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.1429,
+  "satir": 1
  },
  {
   "seviye": 3,
@@ -365,7 +365,7 @@
   "aciklama": "Burada, tabîiyyûnun, Mu'tezile'nin, felsefecilerin ve Mecûsîler'in Ce­nâb-ı Hak hakkında İslâm akaidine muhalif olan batıl itikatlara niçin saptıkları bil­di­ri­li­yor",
   "sayfa": 127,
   "oran": 0.0,
-  "satir": null
+  "satir": 0
  },
  {
   "seviye": 3,

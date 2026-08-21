@@ -4,8 +4,8 @@
   "baslik": "Sözler",
   "aciklama": "",
   "sayfa": 1,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.3333,
+  "satir": 1
  },
  {
   "seviye": 1,
@@ -156,16 +156,16 @@
   "baslik": "Üçüncü Nükte",
   "aciklama": "Bütün ibadetlerin özeti olarak namaz",
   "sayfa": 47,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.1111,
+  "satir": 1
  },
  {
   "seviye": 2,
   "baslik": "Dördüncü Nükte",
   "aciklama": "İnsanın, dünyanın ve kâinatın ömründe, beş namaz vaktinin karşılıkları ve bu vakitler arasındaki ilişkiler",
   "sayfa": 47,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.3333,
+  "satir": 3
  },
  {
   "seviye": 2,
@@ -204,16 +204,16 @@
   "baslik": "Üçüncü Suret",
   "aciklama": "Varlıklarda görünen hikmet ve düzenin adalete, adaletin ise \"Mahkeme-i Kübrâ\"ya işareti.",
   "sayfa": 59,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.75,
+  "satir": 9
  },
  {
   "seviye": 2,
   "baslik": "Dördüncü Suret",
   "aciklama": "Dünyada sergilenen eserlerin ortaya koyduğu cömertlik ve güzelliğin, daha geniş ve devamlı bir sergiye işareti.",
   "sayfa": 60,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.3,
+  "satir": 3
  },
  {
   "seviye": 2,
@@ -253,15 +253,15 @@
   "aciklama": "Temsildeki Padişahla teması bulunan bazı önemli kişilerin, Sekizinci Surette geçen vaadleri doğrulayan haberleri.",
   "sayfa": 65,
   "oran": 0.0,
-  "satir": null
+  "satir": 0
  },
  {
   "seviye": 2,
   "baslik": "Onuncu Suret",
   "aciklama": "Temsildeki ülkede herşeyin sürekli olarak yıkılıp yerine yenisinin yapılmakta oluşunun, bâki bir âleme işareti.",
   "sayfa": 65,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.7143,
+  "satir": 5
  },
  {
   "seviye": 2,
@@ -309,15 +309,15 @@
   "aciklama": "Temsilde yüksek rütbeli subaylar olarak işaret edilen insanların önemi ve âhiretin varlığına işareti.",
   "sayfa": 75,
   "oran": 0.0,
-  "satir": null
+  "satir": 0
  },
  {
   "seviye": 2,
   "baslik": "Dördüncü İşaret",
   "aciklama": "Temsildeki padişahın şu geçici memleketi çok özenle icad etmesi, ama bunun yerine daimi bir memleket icad etmemesinin o padişahın şanına yakışmayacağının izahı.",
   "sayfa": 75,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.375,
+  "satir": 3
  },
  {
   "seviye": 2,
@@ -524,8 +524,8 @@
   "baslik": "Üçüncü Mesele",
   "aciklama": "Cesetlerin yeniden diriltilmesiyle ilgili örneği baharda birden sayısız çiçek ve bitkilerin açılıp gelişmesiyle ispatlanır.",
   "sayfa": 143,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.3333,
+  "satir": 2
  },
  {
   "seviye": 3,
@@ -588,16 +588,16 @@
   "baslik": "Üçüncü Esas",
   "aciklama": "Kur'ân ve felsefenin toplum hayatı üzerindeki etkileri.",
   "sayfa": 170,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.2,
+  "satir": 2
  },
  {
   "seviye": 2,
   "baslik": "Dördüncü Esas",
   "aciklama": "Vahiy ve ilhamın tanım ve karşılaştırması. \"Ağaçlar kalem, denizler mürekkep olsa, Rabbinin kelimelerini yazmakla bitiremezdi\" meâlindeki âyetin bir açıklaması",
   "sayfa": 170,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.8,
+  "satir": 8
  },
  {
   "seviye": 1,
@@ -684,16 +684,16 @@
   "baslik": "Üçüncü Basamak",
   "aciklama": "İnsanın önemi ve yeryüzünün gökler kadar değer kazanmasının nedeni.",
   "sayfa": 225,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.3333,
+  "satir": 2
  },
  {
   "seviye": 2,
   "baslik": "Dördüncü Basamak",
   "aciklama": "Melekler ve şeytanlar arasındaki çarpışmalar.",
   "sayfa": 227,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.4,
+  "satir": 2
  },
  {
   "seviye": 2,
@@ -765,23 +765,23 @@
   "aciklama": "Herşey Ondan sonsuz derecede uzak iken, Allah'ın herşeye sonsuz derecede yakın olması.",
   "sayfa": 252,
   "oran": 0.0,
-  "satir": null
+  "satir": 0
  },
  {
   "seviye": 2,
   "baslik": "Dördüncü Şua",
   "aciklama": "Namazda ve hacda Allah'ın huzuruna çıkmak.",
   "sayfa": 254,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.4,
+  "satir": 2
  },
  {
   "seviye": 2,
   "baslik": "Küçük Bir Zeyl",
   "aciklama": "Tabiat kanunlarının işleyişinde İlâhî iradenin tecellîsi. Yağmur ve rızık.",
   "sayfa": 256,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.5,
+  "satir": 2
  },
  {
   "seviye": 1,
@@ -837,7 +837,7 @@
   "aciklama": "Farsça bir tefekkürname ve açıklaması.",
   "sayfa": 280,
   "oran": 0.0,
-  "satir": null
+  "satir": 0
  },
  {
   "seviye": 3,
@@ -877,7 +877,7 @@
   "aciklama": "Kâinattaki san'at eserlerinin seyircisi olarak insan; ve insanlık içinde Hz. Muhammed'in (a.s.m.) yeri",
   "sayfa": 291,
   "oran": 0.0,
-  "satir": null
+  "satir": 0
  },
  {
   "seviye": 2,
@@ -916,16 +916,16 @@
   "baslik": "Üçüncü Reşha",
   "aciklama": "Bütün varlıklara hitap eden ve kâinatın yaratılış sırrını açıklayan bir hatip olarak Hz. Muhammed (a.s.m.).",
   "sayfa": 295,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.7143,
+  "satir": 5
  },
  {
   "seviye": 2,
   "baslik": "Dördüncü Reşha",
   "aciklama": "Onun yaydığı ışıkla evrenin aldığı yeni şekil.",
   "sayfa": 296,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.1429,
+  "satir": 1
  },
  {
   "seviye": 2,
@@ -964,16 +964,16 @@
   "baslik": "Dokuzuncu Reşha",
   "aciklama": "Onun görev başındaki cesareti.",
   "sayfa": 298,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.3333,
+  "satir": 3
  },
  {
   "seviye": 2,
   "baslik": "Onuncu Reşha",
   "aciklama": "Kıyamet ve âhiret gibi, gelecekteki çok önemli olaylara dair verdiği haberler.",
   "sayfa": 298,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.7778,
+  "satir": 7
  },
  {
   "seviye": 2,
@@ -997,15 +997,15 @@
   "aciklama": "Onun, ebedî bir mutluluk ve Cennet için ettiği duaların kabulündeki kesinlik.",
   "sayfa": 301,
   "oran": 0.0,
-  "satir": null
+  "satir": 0
  },
  {
   "seviye": 2,
   "baslik": "On Dördüncü Reşha",
   "aciklama": "Kur'ân'ın tanımı; Kur'ân'daki tekrarların hikmeti; Kur'ân ile felsefenin varlıklara bakışındaki fark.",
   "sayfa": 303,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.0833,
+  "satir": 1
  },
  {
   "seviye": 1,
@@ -1045,7 +1045,7 @@
   "aciklama": "Taşlar hakkındaki âyetin verdiği dersler.",
   "sayfa": 311,
   "oran": 0.0,
-  "satir": null
+  "satir": 0
  },
  {
   "seviye": 2,
@@ -1116,16 +1116,16 @@
   "baslik": "Üçüncü İkaz",
   "aciklama": "Sabır nereye ve nasıl harcanmalı? Üç çeşit sabır.",
   "sayfa": 338,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.6667,
+  "satir": 6
  },
  {
   "seviye": 3,
   "baslik": "Dördüncü İkaz",
   "aciklama": "Kulluk görevlerine verilen ücretle dünyaya ait işlerin ücreti arasında bir karşılaştırma.",
   "sayfa": 339,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.5714,
+  "satir": 4
  },
  {
   "seviye": 3,
@@ -1220,16 +1220,16 @@
   "baslik": "Üçüncü Burhan",
   "aciklama": "İnsan ve hayvanların yaratılış ve yaşayışındaki olağanüstülük ve birlik tecellîsi.",
   "sayfa": 352,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.6667,
+  "satir": 6
  },
  {
   "seviye": 3,
   "baslik": "Dördüncü Burhan",
   "aciklama": "Ağaçların çevre ile ilişkilerindeki olağanüstülük ve birlik tecellîsi.",
   "sayfa": 353,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.25,
+  "satir": 2
  },
  {
   "seviye": 3,
@@ -1268,16 +1268,16 @@
   "baslik": "Dokuzuncu Burhan",
   "aciklama": "Bütün eserlerin sahibi ve san'atkârı olarak birtek zatı tanımanın kolaylığı.",
   "sayfa": 358,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.3333,
+  "satir": 2
  },
  {
   "seviye": 3,
   "baslik": "Onuncu Burhan",
   "aciklama": "Varlıkların gelip geçmesinde, onları değiştirenin değişmezliğini gösteren işaretler.",
   "sayfa": 359,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.4,
+  "satir": 2
  },
  {
   "seviye": 3,
@@ -1324,16 +1324,16 @@
   "baslik": "Üçüncü Lem'a",
   "aciklama": "Canlılar üzerinde Allah'ın varlık ve birliğine işaret eden damgalar.",
   "sayfa": 368,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.3333,
+  "satir": 3
  },
  {
   "seviye": 3,
   "baslik": "Dördüncü Lem'a",
   "aciklama": "\"Hayat verme\" fiili üzerinde, Allah'ın varlık ve birliğini gösteren damgalar. Herbir zerrede Allah'ın varlık ve birliğine açılan üç pencere. Zerrelerdeki \"ehadiyet\" ve \"samediyet\" damgaları.",
   "sayfa": 369,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.5714,
+  "satir": 4
  },
  {
   "seviye": 3,
@@ -1372,16 +1372,16 @@
   "baslik": "Dokuzuncu Lem'a",
   "aciklama": "Türlerin yaratılışındaki benzerlik ve kolaylığın, Allah'ın varlık ve birliğine işareti.",
   "sayfa": 382,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.2,
+  "satir": 1
  },
  {
   "seviye": 3,
   "baslik": "Onuncu Lem'a",
   "aciklama": "Ölüm üzerindeki birlik ve devamlılık damgası. Eserden fiile, fiilden isim, sıfat ve zâta geçiş.",
   "sayfa": 383,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.3333,
+  "satir": 2
  },
  {
   "seviye": 3,
@@ -1444,16 +1444,16 @@
   "baslik": "Üçüncü Nokta",
   "aciklama": "İman ve tevekkülün verdiği kuvvet. Tevekkülün tanımı.",
   "sayfa": 396,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.2,
+  "satir": 1
  },
  {
   "seviye": 3,
   "baslik": "Dördüncü Nokta",
   "aciklama": "İnsanın yaratılışındaki tekâmül amacı; âcizlik ve güçsüzlüğünden aldığı kuvvet.",
   "sayfa": 397,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.625,
+  "satir": 5
  },
  {
   "seviye": 3,
@@ -1492,16 +1492,16 @@
   "baslik": "Üçüncü Nükte",
   "aciklama": "İnsan duygu ve yeteneklerini sadece dünya hayatına yöneltmekle ne kazanır, ne kaybeder? Dünya hayatından alınan lezzetlerin bir kulluk görevine dönüştürülmesi.",
   "sayfa": 408,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.8,
+  "satir": 8
  },
  {
   "seviye": 3,
   "baslik": "Dördüncü Nükte",
   "aciklama": "İnsanın âcizliğiyle kazandığı güç; bütün varlıkların insana hizmetkâr olmasındaki sır.",
   "sayfa": 413,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.4286,
+  "satir": 3
  },
  {
   "seviye": 3,
@@ -1540,8 +1540,8 @@
   "baslik": "Üçüncü Dal",
   "aciklama": "Kıyamet alâmetleri gibi bazı konularda yanlış anlaşılan hadislerin doğru bir şekilde anlaşılabilmesini sağlayan On İki Asıl.",
   "sayfa": 431,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.5714,
+  "satir": 4
  },
  {
   "seviye": 3,
@@ -1644,8 +1644,8 @@
   "baslik": "Dördüncü Dal",
   "aciklama": "Bütün varlıkların Allah'a secde ettiğine dair âyetin açıklaması. Varlıkların kendilerine özgü ibadetleri.",
   "sayfa": 445,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.5,
+  "satir": 2
  },
  {
   "seviye": 2,
@@ -1876,8 +1876,8 @@
   "baslik": "Üçüncü Şua",
   "aciklama": "Kur'ân'ın gaybdan verdiği haberler; her zaman gençliğini koruması ve herkese birden hitap etmesi.",
   "sayfa": 517,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.5556,
+  "satir": 5
  },
  {
   "seviye": 4,
@@ -2204,16 +2204,16 @@
   "baslik": "Üçüncü Mebhas",
   "aciklama": "Varlık âleminde kader; Kitab-ı Mübîn ve İmam-ı Mübîn; bedihî kader ve nazarî kader; hürriyet ve kader.",
   "sayfa": 606,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.3333,
+  "satir": 2
  },
  {
   "seviye": 2,
   "baslik": "Dördüncü Mebhas",
   "aciklama": "Sıkıntı ve musibetlerin hayırlı yönleri ve İlâhî rahmetle uyumluluğu.",
   "sayfa": 611,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.1667,
+  "satir": 1
  },
  {
   "seviye": 2,
@@ -2252,16 +2252,16 @@
   "baslik": "Üçüncü Hatve",
   "aciklama": "Kusuru kendinde görüp, eriştiği iyilikleri, kudret ve zenginliği Allah'tan bilmek.",
   "sayfa": 618,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.25,
+  "satir": 2
  },
  {
   "seviye": 3,
   "baslik": "Dördüncü Hatve",
   "aciklama": "Benliği unutup, kendi varlığını, Allah'ın tecellîsine bir ayna olarak bilmek.",
   "sayfa": 618,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.625,
+  "satir": 5
  },
  {
   "seviye": 3,
@@ -2300,16 +2300,16 @@
   "baslik": "Üçüncüsü",
   "aciklama": "İçtihad yeteneğini geliştiren koşullar açısından, Peygamberimizin zamanı ile günümüz arasında bir karşılaştırma.",
   "sayfa": 622,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.2,
+  "satir": 1
  },
  {
   "seviye": 2,
   "baslik": "Dördüncüsü",
   "aciklama": "İçtihadda hakim olması gereken bakış açısı: dünya mı, âhiret mi?",
   "sayfa": 623,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.5,
+  "satir": 2
  },
  {
   "seviye": 2,
@@ -2388,8 +2388,8 @@
   "baslik": "Üçüncü sebep",
   "aciklama": "Nübüvvet ile velâyet, evliya makamı ile Sahabenin makamı arasındaki fark.",
   "sayfa": 636,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.5,
+  "satir": 2
  },
  {
   "seviye": 4,
@@ -2485,7 +2485,7 @@
   "aciklama": "Melekler hakkında.",
   "sayfa": 656,
   "oran": 0.0,
-  "satir": null
+  "satir": 0
  },
  {
   "seviye": 3,
@@ -2508,16 +2508,16 @@
   "baslik": "Üçüncü esas",
   "aciklama": "Kur'ân'ın, Peygamberimizin ve daha önceki peygamberlerin, meleklerin varlığı hakkındaki ittifakı.",
   "sayfa": 664,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.25,
+  "satir": 1
  },
  {
   "seviye": 3,
   "baslik": "Dördüncü esas",
   "aciklama": "Varlıkların zikir ve tesbihleriyle ilgili olarak meleklerin görevleri. \"Kırk bin başından herbirinin kırk bin ağzında kırk bin tesbihat yapan melek\" ile ilgili açıklama.",
   "sayfa": 665,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.6667,
+  "satir": 4
  },
  {
   "seviye": 2,
@@ -2525,7 +2525,7 @@
   "aciklama": "Kıyamet ve âhiret hakkında.",
   "sayfa": 670,
   "oran": 0.0,
-  "satir": null
+  "satir": 0
  },
  {
   "seviye": 3,
@@ -2676,8 +2676,8 @@
   "baslik": "Üçüncü esas",
   "aciklama": "Kıyamet ve âhireti vaad eden Kâinat Yaratıcısının kudret sıfatıyla ilgili üç özelliğin ve \"Sizin yaratılışınız da, diriltilişiniz de tek bir kişinin yaratılıp diriltilmesi gibidir\" (Lokman Sûresi, 31:28) meâlindeki âyetin açıklaması.",
   "sayfa": 685,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.2,
+  "satir": 1
  },
  {
   "seviye": 4,
@@ -2709,7 +2709,7 @@
   "aciklama": "Kâinatın ölüm ve dirilişinin sebep ve delilleri.",
   "sayfa": 691,
   "oran": 0.0,
-  "satir": null
+  "satir": 0
  },
  {
   "seviye": 4,
@@ -2796,16 +2796,16 @@
   "baslik": "Üçüncü Esas",
   "aciklama": "Mi'racın hikmeti.",
   "sayfa": 753,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.1667,
+  "satir": 1
  },
  {
   "seviye": 2,
   "baslik": "Dördüncü Esas",
   "aciklama": "Mi'racın faydaları",
   "sayfa": 766,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.3333,
+  "satir": 2
  },
  {
   "seviye": 2,
@@ -2837,7 +2837,7 @@
   "aciklama": "\"Üstlerindeki göğe bakmazlar mı, onu nasıl bina edip süsledik...\" (Kaf Sûresi, 50:6) âyetinin tefsiri.",
   "sayfa": 793,
   "oran": 0.0,
-  "satir": null
+  "satir": 0
  },
  {
   "seviye": 2,
@@ -2868,8 +2868,8 @@
   "baslik": "Üçüncü Maksat",
   "aciklama": "Ahsenü'l Hâlikîn ve Erhâmü'r-Rahimîn gibi ayetlerin açıklanması ve İlahî kemal hakkındaki bir soruya cevap.",
   "sayfa": 813,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.1667,
+  "satir": 1
  },
  {
   "seviye": 2,

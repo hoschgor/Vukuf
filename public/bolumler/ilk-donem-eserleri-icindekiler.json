@@ -157,7 +157,7 @@
   "aciklama": "",
   "sayfa": 120,
   "oran": 0.0,
-  "satir": null
+  "satir": 0
  },
  {
   "seviye": 2,
@@ -820,8 +820,8 @@
   "baslik": "Arabî Hutbe-i Şâmiye'nin Mukaddemesi",
   "aciklama": "",
   "sayfa": 508,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.1429,
+  "satir": 1
  },
  {
   "seviye": 2,
@@ -957,7 +957,7 @@
   "aciklama": "",
   "sayfa": 562,
   "oran": 0.0,
-  "satir": null
+  "satir": 0
  },
  {
   "seviye": 2,

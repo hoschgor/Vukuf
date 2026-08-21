@@ -1,5 +1,5 @@
 import KuranOkuma from "./KuranOkuma"
-import { useState, useEffect, useRef, useCallback, useMemo } from "react"
+import { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import { useApp } from "../AppContext"
 import { kitaplar } from "../data/kitaplar"
@@ -196,11 +196,13 @@ function fontBul(fontId) {
 // ════════════════════════════════════════════════════════════════
 const ARAP_RE = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/
 const HASIYE_RE = /\u27E6H(\d+)\u27E7/g
+// Ba\u015Fl\u0131k metni normalizasyonu (DOM aramas\u0131 i\u00E7in): k\u00FC\u00E7\u00FCk harf + bo\u015Fluk sadele\u015Ftir + sondaki noktalama
+const bnormR = (s) => (s || "").toLowerCase().replace(/\s+/g, " ").trim().replace(/[:.\-\u2013\u2014\u2022*\u00B7\s]+$/, "")
 const LATIN_RE = /[A-Za-zÇĞİıÖŞÜçğöşü]/
 
 function MetinParcasi({
   metin, sayfaNo, lugatAktif, onKelimeTikla,
-  theme, fontSize, hizalama, metinFont, arapcaFont,
+  theme, fontSize, hizalama, metinFont, arapcaFont, arapBoyut = 6,
   vurguModu, vurguRengi, sayfaVurgulari, onVurguEkle, duzenleMod, onVurguKelimeSil,
   dipnotlar, satirAraligi = 1.9, harfAraligi = 0, kelimeAraligi = 0, onDipnotTikla,
   basliklar, baslikFont, ortala = false, lugatRenk, arapRenk, hasiyeler,
@@ -292,7 +294,7 @@ function MetinParcasi({
         const bh = basliklarMap[si]
         if (bh) {
           return (
-            <div key={si} id={`baslik-${sayfaNo}-${si}`} style={{
+            <div key={si} id={`baslik-${sayfaNo}-${si}`} data-satir={`${sayfaNo}-${si}`} style={{
               textAlign: "center", margin: (bh.seviye <= 1) ? "34px 0 18px" : "24px 0 12px",
               fontFamily: baslikFont || "inherit",
               fontSize: `${fontSize + ((bh.seviye <= 1) ? 84 : 84)}px`,
@@ -314,11 +316,11 @@ function MetinParcasi({
         if (ARAP_RE.test(satir) && !LATIN_RE.test(satir)) {
           const dpMetin = arapBlokDipnot[si] || null
           return (
-            <p key={si}
+            <p key={si} data-satir={`${sayfaNo}-${si}`}
               onClick={dpMetin && !vurguModu ? (e) => onDipnotTikla(dpMetin, e) : undefined}
               style={{
                 marginBottom: "12px", lineHeight: "2", direction: "rtl", textAlign: "center",
-                fontFamily: arapcaFont || undefined, fontSize: `${fontSize + 6}px`,
+                fontFamily: arapcaFont || undefined, fontSize: `${fontSize + arapBoyut}px`,
                 color: arapRenk, cursor: dpMetin && !vurguModu ? "pointer" : undefined,
               }}>
               {renderMarkerli(gosterilecek, dipnotMap, onDipnotTikla, theme, hasiyeMap)}
@@ -328,10 +330,10 @@ function MetinParcasi({
 
         const kelimeler = gosterilecek.replace(/\[\s*(\d+)\s*\]/g, "[$1]").split(" ")
         return (
-          <p key={si} style={{
+          <p key={si} data-satir={`${sayfaNo}-${si}`} style={{
             marginBottom: "10px", lineHeight: satirAraligi,
             letterSpacing: `${harfAraligi}px`,
-            textAlign: ortala ? "center" : (hizalama || "justify"),
+            textAlign: ortala ? "center" : (hizalama || "left"),
             wordSpacing: `${kelimeAraligi}px`,
             cursor: vurguModu ? "text" : "default",
           }}>
@@ -385,7 +387,7 @@ function MetinParcasi({
                     cursor: vurguModu ? "text" : (lugatliMi ? "pointer" : "default"),
                     padding: vurgulu ? "0 1px" : "0",
                     userSelect: "text",
-                    ...(arapKelime && arapcaFont ? { fontFamily: arapcaFont } : {}),
+                    ...(arapKelime ? { fontSize: `${fontSize + arapBoyut}px`, ...(arapcaFont ? { fontFamily: arapcaFont } : {}) } : {}),
                   }}
                 >
                   {/* Boşluğu vurgulanan kelimenin içine al ki ardışık vurgular birleşsin */}
@@ -472,20 +474,35 @@ function OnayliSil({ label, onConfirm, theme }) {
 }
 
 // Sadece görünürken içerik render eden pencereleme sarmalayıcısı
-function LazySayfa({ minHeight, children }) {
+function LazySayfa({ minHeight, children, scrollRef }) {
   const ref = useRef(null)
   const [gorunur, setGorunur] = useState(false)
+  const phRef = useRef(minHeight)   // yer-tutucu (placeholder) yüksekliği
   useEffect(() => {
     const el = ref.current
     if (!el) return
     // Bir kez görününce mount et ve gözlemi bırak (bir daha sökme → Arapça zıplaması olmaz)
     const io = new IntersectionObserver(
-      ([e]) => { if (e.isIntersecting) { setGorunur(true); io.disconnect() } },
+      ([e]) => { if (e.isIntersecting) { phRef.current = el.offsetHeight; setGorunur(true); io.disconnect() } },
       { rootMargin: "1400px 0px" }
     )
     io.observe(el)
     return () => io.disconnect()
   }, [])
+  // İçerik yerleşince: blok viewport'un ÜSTÜNDEyse yükseklik farkını scrollTop'a ekle.
+  // Yukarı kaydırırken üstteki sayfa mount olup büyüyünce oluşan zıplamayı önler.
+  useLayoutEffect(() => {
+    if (!gorunur) return
+    const el = ref.current, sc = scrollRef?.current
+    if (!el || !sc) return
+    const delta = el.offsetHeight - phRef.current
+    if (!delta) return
+    const scTop = sc.getBoundingClientRect().top
+    // Büyüme aşağı doğru; blok TOP'u değişmez. Yer-tutucunun ALT'ı (top + placeholder)
+    // görünüm üstünün üzerindeyse blok tamamen yukarıdaydı → farkı telafi et.
+    const yerTutucuAlt = el.getBoundingClientRect().top + phRef.current
+    if (yerTutucuAlt <= scTop + 4) sc.scrollTop += delta
+  }, [gorunur, scrollRef])
   return (
     <div ref={ref} style={{ minHeight: gorunur ? undefined : `${minHeight}px` }}>
       {gorunur ? children : null}
@@ -591,7 +608,8 @@ const [yaziBoyutu, setYaziBoyutu] = useState(() => parseInt(localStorage.getItem
 const [satirAraligi, setSatirAraligi] = useState(() => parseFloat(localStorage.getItem("vukuf-satir-araligi") || "1.9"))
 const [harfAraligi, setHarfAraligi]   = useState(() => parseFloat(localStorage.getItem("vukuf-harf-araligi") || "0"))
 const [kelimeAraligi, setKelimeAraligi] = useState(() => parseFloat(localStorage.getItem("vukuf-kelime-araligi") || "0"))
-const [hizalama, setHizalama] = useState(() => localStorage.getItem("vukuf-hizalama") || "justify")
+const [hizalama, setHizalama] = useState(() => localStorage.getItem("vukuf-hizalama") || "left")
+const [arapBoyutu, setArapBoyutu] = useState(() => parseInt(localStorage.getItem("vukuf-arap-boyutu") || "6"))
 const [fontSecimler, setFontSecimler] = useState(() => {
   const kayitli = localStorage.getItem("vukuf-fontlar")
   return kayitli ? JSON.parse(kayitli) : { turkce: "bookerly", osmanlica: null, arapca: "kfgqpc" }
@@ -905,6 +923,7 @@ useEffect(() => { localStorage.setItem("vukuf-satir-araligi", satirAraligi) }, [
 useEffect(() => { localStorage.setItem("vukuf-harf-araligi", harfAraligi) }, [harfAraligi])
 useEffect(() => { localStorage.setItem("vukuf-kelime-araligi", kelimeAraligi) }, [kelimeAraligi])
 useEffect(() => { localStorage.setItem("vukuf-hizalama", hizalama) }, [hizalama])
+useEffect(() => { localStorage.setItem("vukuf-arap-boyutu", String(arapBoyutu)) }, [arapBoyutu])
 useEffect(() => { localStorage.setItem("vukuf-fontlar", JSON.stringify(fontSecimler)) }, [fontSecimler])
 useEffect(() => { localStorage.setItem("vukuf-bar-konum", barKonum) }, [barKonum])
 useEffect(() => { localStorage.setItem("vukuf-otomatik-gizleme", otomatikGizleme) }, [otomatikGizleme])
@@ -1173,11 +1192,31 @@ function odakGit(sayfaNo, oran = 0, opt = {}) {
   odakAyarla(sayfaNo, oran, opt.cizgi !== false)
 }
 
-// Başlığa tam git — başlık DOM elemanına (#baslik-sayfa-satir) hizala
-function basligaGit(sayfa, satir, oran = 0) {
+// İçindekiler'den git: ana başlıklar #baslik öğesiyle; alt başlıklar (normal metin)
+// başlık METNİ, o sayfanın satırlarında ([data-satir]) aranarak tam DOM konumuna.
+function basligaGit(sayfa, satir, oran = 0, baslikMetni = "") {
   setMenuAcik(false)
-  if (satir == null) { odakGit(sayfa, oran); return }
-  elemanaGit(sayfa, () => document.getElementById(`baslik-${sayfa}-${satir}`), oran, true)
+  elemanaGit(sayfa, () => {
+    if (satir != null) {
+      const el = document.getElementById(`baslik-${sayfa}-${satir}`)
+      if (el) return el
+    }
+    if (baslikMetni) {
+      const hedef = bnormR(baslikMetni)
+      if (hedef) {
+        const satirlar = document.querySelectorAll(`[data-satir^="${sayfa}-"]`)
+        let kismi = null
+        for (const s of satirlar) {
+          const t = bnormR(s.textContent || "")
+          if (!t) continue
+          if (t === hedef) return s
+          if (!kismi && (t.startsWith(hedef) || (hedef.length >= 6 && t.includes(hedef)))) kismi = s
+        }
+        if (kismi) return kismi
+      }
+    }
+    return null
+  }, oran, true)
 }
 
 // Vurguya git — vurgulanan ilk kelimenin DOM konumuna ([data-vurgu]) tam hizala
@@ -1321,6 +1360,27 @@ const AaPanel = aaAcik && (
           color: theme.text, textAlign: "center",
         }}>
           Bismillâh her hayrın başıdır.
+        </div>
+      </div>
+
+      {/* ARAPÇA YAZI BOYUTU */}
+      <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px" }}>ARAPÇA YAZI BOYUTU</div>
+      <div style={{ marginBottom: "16px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", color: theme.textSecondary, marginBottom: "6px" }}>
+          <span>Küçük</span>
+          <span style={{ color: theme.accent, fontWeight: "bold" }}>{yaziBoyutu + arapBoyutu}px</span>
+          <span>Büyük</span>
+        </div>
+        <input type="range" min="-6" max="40" step="1" value={arapBoyutu}
+          onChange={e => setArapBoyutu(parseInt(e.target.value))}
+          style={{ width: "100%", accentColor: theme.accent }} />
+        <div style={{
+          marginTop: "10px", padding: "12px", borderRadius: "8px",
+          background: theme.background, border: `1px solid ${theme.border}`,
+          fontFamily: arapcaFont || undefined, fontSize: `${yaziBoyutu + arapBoyutu}px`,
+          direction: "rtl", textAlign: "center", color: arapRenk,
+        }}>
+          بِسْمِ اللّٰهِ الرَّحْمٰنِ الرَّحِيمِ
         </div>
       </div>
 
@@ -1984,7 +2044,8 @@ const AramaPanel = aramaAcik && (
                 onClick={() => {
                   const sf = kitapMetni.find(s => s.sayfa === es.sayfaNo)
                   const ls = sf ? Math.max(1, sf.metin.split("\n").length) : 1
-                  odakGit(es.sayfaNo, Math.max(0, Math.min(0.95, (es.satirIdx || 0) / ls)))
+                  const oran = Math.max(0, Math.min(0.95, (es.satirIdx || 0) / ls))
+                  elemanaGit(es.sayfaNo, () => document.querySelector(`[data-satir="${es.sayfaNo}-${es.satirIdx}"]`), oran, true)
                   setAramaAcik(false)
                 }}
                 style={{
@@ -2056,7 +2117,7 @@ const menuDugumRender = (node) => {
         ) : (
           <span style={{ width: `${Math.round(20 * mo)}px`, flexShrink: 0 }} />
         )}
-        <button onClick={() => { if (node.sayfa) basligaGit(node.sayfa, node.satir, node.oran || 0); setMenuAcik(false) }}
+        <button onClick={() => { if (node.sayfa) basligaGit(node.sayfa, node.satir, node.oran || 0, node.baslik); setMenuAcik(false) }}
           title={node.aciklama || ""}
           style={{
             flex: 1, textAlign: "left", background: "transparent", border: "none", cursor: "pointer",
@@ -2116,7 +2177,7 @@ const Bar = (
     borderBottom: barKonum === "ust" ? `1px solid ${theme.border}` : "none",
     padding: isMobile ? "8px 12px" : "3px 10px",
     display: "flex", alignItems: "center", gap: `${Math.round(4 * barUiOlcegi)}px`,
-    justifyContent: isMobile ? "center" : "flex-start",
+    justifyContent: "center",
     zIndex: 90, flexWrap: "wrap", rowGap: "4px",
     transition: "opacity 0.3s ease",
     opacity: barGorunur ? 1 : 0,
@@ -2201,7 +2262,7 @@ const Bar = (
 
     <div style={{
       display: "flex", gap: "8px", alignItems: "center",
-      ...(isMobile ? { justifyContent: "center", flex: 1 } : { marginLeft: "auto" }),
+      ...(isMobile ? {} : { marginLeft: "auto" }),
     }}>
       {gorunurMu("kisim") && mevcutKisim && (
         <span onClick={(e) => { const yol = mevcutKisimYolu.map(b => b.baslik).join(" / "); dipnotTikla(mevcutKisim.aciklama || yol, e, yol) }}
@@ -2325,7 +2386,7 @@ return (
       onTouchStart={dokunusBasladi}
       onTouchEnd={dokunusBitti}
       style={{
-        flex: 1, overflowY: "auto", userSelect: "none",
+        flex: 1, overflowY: "auto", userSelect: "none", overflowAnchor: "none",
         padding: `${barKonum === "ust" ? "80px" : "24px"} 0 ${barKonum === "alt" ? "80px" : "24px"}`,
       }}
     >
@@ -2398,7 +2459,7 @@ return (
                   </div>
                 </div>
               ))}
-              <LazySayfa minHeight={Math.max(300, Math.round(sayfa.metin.length * 0.5))}>
+              <LazySayfa minHeight={Math.max(300, Math.round(sayfa.metin.length * 0.5))} scrollRef={scrollRef}>
                 <MetinParcasi
                   metin={sayfa.metin}
                   sayfaNo={sayfa.sayfa}
@@ -2409,6 +2470,7 @@ return (
                   hizalama={hizalama}
                   metinFont={metinFont}
                   arapcaFont={arapcaFont}
+                  arapBoyut={arapBoyutu}
                   vurguModu={vurguModu}
                   vurguRengi={vurguRengi}
                   sayfaVurgulari={vurgular[sayfa.sayfa] || []}

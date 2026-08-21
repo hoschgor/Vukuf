@@ -4,8 +4,8 @@
   "baslik": "Tarihçe-i Hayat",
   "aciklama": "",
   "sayfa": 1,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.5,
+  "satir": 1
  },
  {
   "seviye": 1,
@@ -213,7 +213,7 @@
   "aciklama": "",
   "sayfa": 771,
   "oran": 0.0,
-  "satir": null
+  "satir": 0
  },
  {
   "seviye": 2,
@@ -261,7 +261,7 @@
   "aciklama": "",
   "sayfa": 791,
   "oran": 0.0,
-  "satir": null
+  "satir": 0
  },
  {
   "seviye": 2,
@@ -269,7 +269,7 @@
   "aciklama": "",
   "sayfa": 796,
   "oran": 0.0,
-  "satir": null
+  "satir": 0
  },
  {
   "seviye": 2,
@@ -285,7 +285,7 @@
   "aciklama": "",
   "sayfa": 830,
   "oran": 0.0,
-  "satir": null
+  "satir": 0
  },
  {
   "seviye": 2,
@@ -300,8 +300,8 @@
   "baslik": "Reis-i Cumhura ve Başvekile",
   "aciklama": "",
   "sayfa": 865,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.4444,
+  "satir": 4
  },
  {
   "seviye": 2,

@@ -29,7 +29,7 @@
   "aciklama": "",
   "sayfa": 64,
   "oran": 0.0,
-  "satir": null
+  "satir": 0
  },
  {
   "seviye": 1,
@@ -124,8 +124,8 @@
   "baslik": "Dokuzuncu Âyet",
   "aciklama": "Bakara Sûresi, 2:256; Lokman Sûresi, 31:22.",
   "sayfa": 96,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.1429,
+  "satir": 1
  },
  {
   "seviye": 3,
@@ -156,16 +156,16 @@
   "baslik": "On Üçüncü Âyet",
   "aciklama": "Âl-i İmran Sûresi, 3:7.",
   "sayfa": 97,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.5,
+  "satir": 4
  },
  {
   "seviye": 3,
   "baslik": "On Dördüncü Âyet",
   "aciklama": "Nisa Sûresi, 4:162.",
   "sayfa": 97,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.75,
+  "satir": 6
  },
  {
   "seviye": 3,
@@ -204,8 +204,8 @@
   "baslik": "On Dokuzuncu Âyet",
   "aciklama": "Tahrim Sûresi, 66:8.",
   "sayfa": 102,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.5,
+  "satir": 3
  },
  {
   "seviye": 3,
@@ -293,7 +293,7 @@
   "aciklama": "",
   "sayfa": 123,
   "oran": 0.0,
-  "satir": null
+  "satir": 0
  },
  {
   "seviye": 1,

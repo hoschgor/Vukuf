@@ -4,8 +4,8 @@
   "baslik": "İşârâtü'l-İ'câz",
   "aciklama": "",
   "sayfa": 1,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.25,
+  "satir": 1
  },
  {
   "seviye": 1,
@@ -252,8 +252,8 @@
   "baslik": "Temsilin yerleri ve tesiri",
   "aciklama": "",
   "sayfa": 371,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.2222,
+  "satir": 2
  },
  {
   "seviye": 2,

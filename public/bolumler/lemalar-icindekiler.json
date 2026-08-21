@@ -44,8 +44,8 @@
   "baslik": "Üçüncü Nükte",
   "aciklama": "Musibetin kısa zamanı nasıl uzun zamana dönüştürdüğü îzâh edilir",
   "sayfa": 9,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.25,
+  "satir": 2
  },
  {
   "seviye": 2,
@@ -53,7 +53,7 @@
   "aciklama": "Sabır kuvveti dağıtılmazsa her musibete yetebilir.",
   "sayfa": 10,
   "oran": 0.0,
-  "satir": null
+  "satir": 0
  },
  {
   "seviye": 2,
@@ -124,8 +124,8 @@
   "baslik": "Üçüncü Nükte",
   "aciklama": "Fâni, kısa, faydasız ömrü, baki, uzun faydalı yapmanın çaresi anlatılır.",
   "sayfa": 18,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.1429,
+  "satir": 1
  },
  {
   "seviye": 1,
@@ -156,16 +156,16 @@
   "baslik": "Üçüncü Nükte",
   "aciklama": "Peygamber Efendimiz Âl-i Beytin İslâm'a yapacağı büyük hizmete karşılık bizden onlara sevgi göstermemizi istiyor",
   "sayfa": 25,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.125,
+  "satir": 1
  },
  {
   "seviye": 2,
   "baslik": "Dördüncü Nükte",
   "aciklama": "Şialarla, Ehl-i Sünnet arasındaki anlaşmazlığı kaldıracak bir îzâh",
   "sayfa": 27,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.1667,
+  "satir": 1
  },
  {
   "seviye": 2,
@@ -220,16 +220,16 @@
   "baslik": "Üçüncüsü",
   "aciklama": "Hz. Peygamber (a.s.m.) ve Ashabının Kâbe'yi emniyet içinde tavaf edeceklerini belirtir.",
   "sayfa": 37,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.1667,
+  "satir": 1
  },
  {
   "seviye": 2,
   "baslik": "Dördüncüsü",
   "aciklama": "İslâm'ın bütün dinlere galebe çalacağı anlatılır.",
   "sayfa": 37,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.5,
+  "satir": 3
  },
  {
   "seviye": 2,
@@ -341,7 +341,7 @@
   "aciklama": "",
   "sayfa": 60,
   "oran": 0.0,
-  "satir": null
+  "satir": 0
  },
  {
   "seviye": 2,
@@ -380,16 +380,16 @@
   "baslik": "Üçüncüsü",
   "aciklama": "Hulûsi Beyin tokadını anlatır.",
   "sayfa": 67,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.4444,
+  "satir": 4
  },
  {
   "seviye": 2,
   "baslik": "Dördüncüsü",
   "aciklama": "Muhacir Hafız Ahmed'in tokadını anlatır.",
   "sayfa": 67,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.7778,
+  "satir": 7
  },
  {
   "seviye": 2,
@@ -428,16 +428,16 @@
   "baslik": "Dokuzuncusu",
   "aciklama": "Büyük Hafız Zühtü'dür.",
   "sayfa": 71,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.3333,
+  "satir": 2
  },
  {
   "seviye": 2,
   "baslik": "Onuncusu",
   "aciklama": "Hafız Ahmet'tir.",
   "sayfa": 71,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.6667,
+  "satir": 4
  },
  {
   "seviye": 2,
@@ -460,16 +460,16 @@
   "baslik": "On Üçüncüsü",
   "aciklama": "Hafız Halid'dir.",
   "sayfa": 72,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.625,
+  "satir": 5
  },
  {
   "seviye": 2,
   "baslik": "On Dördüncüsü",
   "aciklama": "Üç Mustafa'nın ayrı ayrı tokatlarıdır.",
   "sayfa": 73,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.2,
+  "satir": 2
  },
  {
   "seviye": 1,
@@ -500,16 +500,16 @@
   "baslik": "Üçüncü Nükte",
   "aciklama": "Üstad Bediüzzaman bizzat kendini misal alarak Sünnetin kendi hayatındaki etkisini anlatır.",
   "sayfa": 78,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.1667,
+  "satir": 1
  },
  {
   "seviye": 2,
   "baslik": "Dördüncü Nükte",
   "aciklama": "Üç mühim cenazenin başında Üstadın tefekkürü",
   "sayfa": 78,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.6667,
+  "satir": 4
  },
  {
   "seviye": 2,
@@ -548,16 +548,16 @@
   "baslik": "Dokuzuncu Nükte",
   "aciklama": "Sünnete tümüyle uymak olmasa da niyet, kast ile taraftar olunması gerekir.",
   "sayfa": 86,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.5,
+  "satir": 3
  },
  {
   "seviye": 2,
   "baslik": "Onuncu Nükte",
   "aciklama": "Allah'a muhabbetin, Habibullaha tabi olmak suretiyle olacağını îzâh eder.",
   "sayfa": 87,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.7143,
+  "satir": 5
  },
  {
   "seviye": 3,
@@ -692,16 +692,16 @@
   "baslik": "Üçüncü İşaret",
   "aciklama": "Kur'ân'da ehl-i dalâletten aşırı şikâyet edilmesinin hikmeti anlatılır.",
   "sayfa": 109,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.6,
+  "satir": 3
  },
  {
   "seviye": 2,
   "baslik": "Dördüncü İşaret",
   "aciklama": "Şer tahrip, hayır tamirdir.",
   "sayfa": 111,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.2,
+  "satir": 1
  },
  {
   "seviye": 2,
@@ -740,16 +740,16 @@
   "baslik": "Dokuzuncu İşaret",
   "aciklama": "Ehl-i imanın, ehl-i dalâlete mağlup düşmelerinin hikmeti nedir?",
   "sayfa": 122,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.2,
+  "satir": 1
  },
  {
   "seviye": 2,
   "baslik": "Onuncu İşaret",
   "aciklama": "İblisin en mühim desisesi kendini inkâr ettirme hilesidir. Buna karşı ne yapılması gerekir.",
   "sayfa": 125,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.2,
+  "satir": 1
  },
  {
   "seviye": 2,
@@ -804,8 +804,8 @@
   "baslik": "On Üçüncü İşaret",
   "aciklama": "Üç noktadır.",
   "sayfa": 133,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.3333,
+  "satir": 2
  },
  {
   "seviye": 3,
@@ -1077,15 +1077,15 @@
   "aciklama": "His yanılması ile çevrenin bir nebze sabit olmasını, fâni nefsin devâmı ile karıştırıyor.",
   "sayfa": 177,
   "oran": 0.0,
-  "satir": null
+  "satir": 0
  },
  {
   "seviye": 2,
   "baslik": "Dördüncü Nota",
   "aciklama": "Allah önemli şeyleri ayniyle tekrar yaratıyor",
   "sayfa": 177,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.5714,
+  "satir": 4
  },
  {
   "seviye": 2,
@@ -1124,16 +1124,16 @@
   "baslik": "Dokuzuncu Nota",
   "aciklama": "Peygamberliğin, insanlıktaki kemalâtın esası olduğunun îzâhı",
   "sayfa": 195,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.6,
+  "satir": 3
  },
  {
   "seviye": 2,
   "baslik": "Onuncu Nota",
   "aciklama": "Marifetullahın (Allah'ı tanımanın) üç türlü şahitleri olduğunun îzâhı.",
   "sayfa": 197,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.5,
+  "satir": 2
  },
  {
   "seviye": 2,
@@ -1157,7 +1157,7 @@
   "aciklama": "Birbirine karıştırılan beş meseledir.",
   "sayfa": 202,
   "oran": 0.0,
-  "satir": null
+  "satir": 0
  },
  {
   "seviye": 3,
@@ -1204,8 +1204,8 @@
   "baslik": "On Dördüncü Nota",
   "aciklama": "Tevhide dair dört remizdir.",
   "sayfa": 208,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.5,
+  "satir": 3
  },
  {
   "seviye": 3,
@@ -1292,16 +1292,16 @@
   "baslik": "Üçüncü Nükte",
   "aciklama": "Dil bir kapıcıdır, sadece maddî cesede değil, ruha da bakar.",
   "sayfa": 215,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.7143,
+  "satir": 5
  },
  {
   "seviye": 2,
   "baslik": "Dördüncü Nükte",
   "aciklama": "İktisat eden geçim derdi çekmez.",
   "sayfa": 217,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.1667,
+  "satir": 1
  },
  {
   "seviye": 2,
@@ -1372,8 +1372,8 @@
   "baslik": "Dördüncü Sebep",
   "aciklama": "İhlâs muhafaza edilemediğinden ehl-i hak ihtilaf ediyor.",
   "sayfa": 233,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.5,
+  "satir": 2
  },
  {
   "seviye": 3,
@@ -1428,16 +1428,16 @@
   "baslik": "Üçüncü Düsturunuz",
   "aciklama": "Tüm kuvveti hakta ve ihlâsta bilmektir.",
   "sayfa": 245,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.3333,
+  "satir": 2
  },
  {
   "seviye": 2,
   "baslik": "Dördüncü Düsturunuz",
   "aciklama": "Kardeşlerin meziyetleriyle iftihar etmektir.",
   "sayfa": 246,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.5714,
+  "satir": 4
  },
  {
   "seviye": 3,
@@ -1492,8 +1492,8 @@
   "baslik": "Üçüncü İşaret",
   "aciklama": "Mugalatalı bir suale cevaptır.",
   "sayfa": 260,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.5,
+  "satir": 3
  },
  {
   "seviye": 2,
@@ -1644,8 +1644,8 @@
   "baslik": "Üçüncü Nükte",
   "aciklama": "Meşrû daire dışındaki zevklerin zahmeti ve elemi daha çoktur.",
   "sayfa": 303,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.5,
+  "satir": 3
  },
  {
   "seviye": 1,
@@ -1676,16 +1676,16 @@
   "baslik": "Üçüncü Devâ",
   "aciklama": "İnsan bu dünyaya keyif sürmek, lezzet almak için gelmediğinin ispatıdır",
   "sayfa": 306,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.7143,
+  "satir": 5
  },
  {
   "seviye": 2,
   "baslik": "Dördüncü Devâ",
   "aciklama": "İnsanın vücud ve âzâları kendi malı değil, onların mâliki onlarda dilediği gibi tasarruf eder.",
   "sayfa": 307,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.4286,
+  "satir": 3
  },
  {
   "seviye": 2,
@@ -1732,16 +1732,16 @@
   "baslik": "Dokuzuncu Devâ",
   "aciklama": "Hasta olma korkusu ölüme sebebiyet vermesinden kaynaklanır",
   "sayfa": 311,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.3333,
+  "satir": 2
  },
  {
   "seviye": 2,
   "baslik": "Onuncu Devâ:",
   "aciklama": "Merak hastalığı ağırlaştırır.",
   "sayfa": 312,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.4286,
+  "satir": 3
  },
  {
   "seviye": 2,
@@ -1764,16 +1764,16 @@
   "baslik": "On Üçüncü Devâ",
   "aciklama": "Hastalık bir define, bir hediye-i İlâhiyedir.",
   "sayfa": 314,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.5,
+  "satir": 3
  },
  {
   "seviye": 2,
   "baslik": "On Dördüncü Devâ",
   "aciklama": "Göz hastası olanlara bir müjde verir.",
   "sayfa": 315,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.5714,
+  "satir": 4
  },
  {
   "seviye": 2,
@@ -1812,8 +1812,8 @@
   "baslik": "On Dokuzuncu Devâ",
   "aciklama": "Hastalık Esma-i Hüsnânın ortaya çıkmasına sebep olur.",
   "sayfa": 320,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.6,
+  "satir": 3
  },
  {
   "seviye": 2,
@@ -2596,16 +2596,16 @@
   "baslik": "Üçüncü Nokta",
   "aciklama": "İnsanı kâinatın merkezi yapmıştır. Bütün ilimler ona hizmetkârdır.",
   "sayfa": 544,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.5,
+  "satir": 2
  },
  {
   "seviye": 3,
   "baslik": "Dördüncü Nokta",
   "aciklama": "Bu sarayı binler hikmetlerle yapan usta, boş ve abes iş yapmaz.",
   "sayfa": 547,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.5,
+  "satir": 2
  },
  {
   "seviye": 3,
@@ -2660,16 +2660,16 @@
   "baslik": "Üçüncü İşaret",
   "aciklama": "Kâinat sayısız Samedanî mektuplardır.",
   "sayfa": 555,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.25,
+  "satir": 2
  },
  {
   "seviye": 3,
   "baslik": "Dördüncü İşaret",
   "aciklama": "Ferd isminin açık oluşu üç noktada ele alınır.",
   "sayfa": 555,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.75,
+  "satir": 6
  },
  {
   "seviye": 3,
@@ -2796,8 +2796,8 @@
   "baslik": "Üçüncü Şua",
   "aciklama": "Hâllakıyet ve faaliyet içindeki kayyûmiyet sırrını açıklar.",
   "sayfa": 598,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.2222,
+  "satir": 2
  },
  {
   "seviye": 3,
@@ -2805,7 +2805,7 @@
   "aciklama": "Kâinattaki hayret verici faaliyetin hikmetinin üçüncü şubesini anlatır.",
   "sayfa": 601,
   "oran": 0.0,
-  "satir": null
+  "satir": 0
  },
  {
   "seviye": 3,

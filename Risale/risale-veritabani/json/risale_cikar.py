@@ -77,6 +77,15 @@ def clean_ws(s):
     return re.sub(r"\s+", " ", (s or "").strip())
 
 
+# Başlık eşleştirme normalizasyonu: küçük harf + sondaki noktalamayı at
+# ("DÖRDÜNCÜ SIR", "Dördüncü Sır:", "Dördüncü Sır" hepsi eşleşsin)
+_BASLIK_SON_RE = re.compile(r"[\s:.\-–—•*·]+$")
+
+
+def bnorm_baslik(s):
+    return _BASLIK_SON_RE.sub("", clean_ws(s).lower())
+
+
 # Okuyucunun kelimeAra/kavramAra normalizasyonunun BİREBİR aynısı:
 #   kelime.toLowerCase().replace(/[.,!?;:'"()\[\]]/g, "").trim()
 _PUNCT_RE = re.compile(r"[.,!?;:'\"()\[\]]")
@@ -557,7 +566,10 @@ def run(paths, out_dir, eski_lugat):
             hasiye_say += len(placed) + len(eklenen)
             seq += 1
 
-            # Başlıklar: contents TITLE'ını sayfa metnindeki satırla eşleştir
+            # Başlıklar: contents TITLE'ını sayfa metnindeki satırla eşleştir.
+            # SADECE gerçek başlık satırları basliklar'a girer (büyük font render).
+            # Alt başlıkların çoğu tam eşleşmez -> normal metin kalır (kasıtlı);
+            # okuyucu içindekilerden onlara başlık METNİYLE (DOM araması) gidiyor.
             basliklar = []
             satirlar = txt.split("\n")
             for c in cont_by_page.get(pno, []):

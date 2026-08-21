@@ -1852,8 +1852,8 @@
   "baslik": "Yirmi Altıncı Mektubun İkinci Mebhasının Âhiridir",
   "aciklama": "",
   "sayfa": 342,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.5,
+  "satir": 4
  },
  {
   "seviye": 2,
@@ -1900,16 +1900,16 @@
   "baslik": "Üçüncü Mesele",
   "aciklama": "",
   "sayfa": 346,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.6667,
+  "satir": 4
  },
  {
   "seviye": 3,
   "baslik": "Dördüncü Mesele",
   "aciklama": "",
   "sayfa": 347,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.125,
+  "satir": 1
  },
  {
   "seviye": 3,
@@ -2572,16 +2572,16 @@
   "baslik": "Üçüncüsü",
   "aciklama": "Hulûsi Beyin tokadını anlatır.",
   "sayfa": 488,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.4444,
+  "satir": 4
  },
  {
   "seviye": 2,
   "baslik": "Dördüncüsü",
   "aciklama": "Muhacir Hafız Ahmed'in tokadını anlatır.",
   "sayfa": 488,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.7778,
+  "satir": 7
  },
  {
   "seviye": 2,
@@ -2620,16 +2620,16 @@
   "baslik": "Dokuzuncusu",
   "aciklama": "Büyük Hafız Zühtü'dür.",
   "sayfa": 492,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.3333,
+  "satir": 2
  },
  {
   "seviye": 2,
   "baslik": "Onuncusu",
   "aciklama": "Hafız Ahmet'tir.",
   "sayfa": 492,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.6667,
+  "satir": 4
  },
  {
   "seviye": 2,
@@ -2652,15 +2652,15 @@
   "baslik": "On Üçüncüsü",
   "aciklama": "Hafız Halid'dir.",
   "sayfa": 493,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.625,
+  "satir": 5
  },
  {
   "seviye": 2,
   "baslik": "On Dördüncüsü",
   "aciklama": "Üç Mustafa'nın ayrı ayrı tokatlarıdır.",
   "sayfa": 494,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.2,
+  "satir": 2
  }
 ]

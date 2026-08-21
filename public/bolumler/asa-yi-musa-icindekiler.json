@@ -85,7 +85,7 @@
   "aciklama": "Âhiret inancının ferdî ve toplumsal hayata faydaları.",
   "sayfa": 42,
   "oran": 0.0,
-  "satir": null
+  "satir": 0
  },
  {
   "seviye": 3,
@@ -164,8 +164,8 @@
   "baslik": "Üçüncü Nokta",
   "aciklama": "elhamdü lillâh'ın mânâsını ifade eden bir cümle",
   "sayfa": 66,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.1667,
+  "satir": 1
  },
  {
   "seviye": 2,
@@ -188,8 +188,8 @@
   "baslik": "Birincisi",
   "aciklama": "Kur'ânın hakikî tercümesi mümkün değil.",
   "sayfa": 80,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.1667,
+  "satir": 1
  },
  {
   "seviye": 3,
@@ -204,8 +204,8 @@
   "baslik": "Hüsrev'in Üstadına yazdığı mektup",
   "aciklama": "",
   "sayfa": 83,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.2,
+  "satir": 1
  },
  {
   "seviye": 2,
@@ -245,7 +245,7 @@
   "aciklama": "",
   "sayfa": 100,
   "oran": 0.0,
-  "satir": null
+  "satir": 0
  },
  {
   "seviye": 1,
@@ -460,8 +460,8 @@
   "baslik": "Birinci Mevkıf",
   "aciklama": "Cenâb-ı Hakkın Vahdâniyetinin ispatı.",
   "sayfa": 166,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.2857,
+  "satir": 2
  },
  {
   "seviye": 3,
@@ -588,16 +588,16 @@
   "baslik": "Üçüncü Nokta",
   "aciklama": "İnsanı kâinatın merkezi yapmıştır. Bütün ilimler ona hizmetkârdır",
   "sayfa": 216,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.5,
+  "satir": 2
  },
  {
   "seviye": 2,
   "baslik": "Dördüncü Nokta",
   "aciklama": "Bu sarayı binler hikmetlerle yapan usta, boş ve abes iş yapmaz.",
   "sayfa": 219,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.5,
+  "satir": 2
  },
  {
   "seviye": 2,
@@ -764,16 +764,16 @@
   "baslik": "Üçüncü Burhan",
   "aciklama": "İnsan ve hayvanların yaratılış ve yaşayışındaki olağanüstülük ve birlik tecellîsi.",
   "sayfa": 285,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.6667,
+  "satir": 6
  },
  {
   "seviye": 3,
   "baslik": "Dördüncü Burhan",
   "aciklama": "Ağaçların çevre ile ilişkilerindeki olağanüstülük ve birlik tecellîsi",
   "sayfa": 286,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.25,
+  "satir": 2
  },
  {
   "seviye": 3,
@@ -812,16 +812,16 @@
   "baslik": "Dokuzuncu Burhan",
   "aciklama": "Bütün eserlerin sahibi ve san'atkârı olarak birtek zatı tanımanın kolaylığı",
   "sayfa": 291,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.3333,
+  "satir": 2
  },
  {
   "seviye": 3,
   "baslik": "Onuncu Burhan",
   "aciklama": "Varlıkların gelip geçmesinde, onları değiştirenin değişmezliğini gösteren işaretler",
   "sayfa": 292,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.4,
+  "satir": 2
  },
  {
   "seviye": 3,

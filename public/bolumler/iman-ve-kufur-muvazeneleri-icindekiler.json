@@ -4,8 +4,8 @@
   "baslik": "İman ve Küfür Muvazeneleri",
   "aciklama": "",
   "sayfa": 1,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.3333,
+  "satir": 1
  },
  {
   "seviye": 1,
@@ -100,8 +100,8 @@
   "baslik": "Üçüncü Esas",
   "aciklama": "Kur'ân ve felsefenin toplum hayatı üzerindeki etkileri.",
   "sayfa": 42,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.25,
+  "satir": 2
  },
  {
   "seviye": 1,
@@ -164,16 +164,16 @@
   "baslik": "Üçüncü Nokta",
   "aciklama": "İman ve tevekkülün verdiği kuvvet. Tevekkülün tanımı.",
   "sayfa": 81,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.2,
+  "satir": 1
  },
  {
   "seviye": 3,
   "baslik": "Dördüncü Nokta",
   "aciklama": "İnsanın yaratılışındaki tekâmül amacı; âcizlik ve güçsüzlüğünden aldığı kuvvet.",
   "sayfa": 82,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.625,
+  "satir": 5
  },
  {
   "seviye": 3,
@@ -212,16 +212,16 @@
   "baslik": "Üçüncü Nükte",
   "aciklama": "İnsan duygu ve yeteneklerini sadece dünya hayatına yöneltmekle ne kazanır, ne kaybeder? Dünya hayatından alınan lezzetlerin bir kulluk görevine dönüştürülmesi.",
   "sayfa": 93,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.8,
+  "satir": 8
  },
  {
   "seviye": 3,
   "baslik": "Dördüncü Nükte",
   "aciklama": "İnsanın âcizliğiyle kazandığı güç; bütün varlıkların insana hizmetkâr olmasındaki sır.",
   "sayfa": 98,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.4286,
+  "satir": 3
  },
  {
   "seviye": 3,
@@ -324,8 +324,8 @@
   "baslik": "Dördüncü Mebhas",
   "aciklama": "Sıkıntı ve musibetlerin hayırlı yönleri ve İlâhî rahmetle uyumluluğu.",
   "sayfa": 125,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.2,
+  "satir": 1
  },
  {
   "seviye": 1,
@@ -524,56 +524,56 @@
   "baslik": "Birinci Nokta",
   "aciklama": "Altı cihetten iman gözlüğüyle nasıl bakılacağını anlatır.",
   "sayfa": 217,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.4167,
+  "satir": 5
  },
  {
   "seviye": 2,
   "baslik": "İkinci Nokta",
   "aciklama": "Altı noktayı aydınlatan iman nimetine de şükür lâzımdır.",
   "sayfa": 220,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.1111,
+  "satir": 1
  },
  {
   "seviye": 2,
   "baslik": "Üçüncü Nokta",
   "aciklama": "İmanın yardım noktası ile dayanak noktası olduğunu açıklar.",
   "sayfa": 220,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.6667,
+  "satir": 6
  },
  {
   "seviye": 2,
   "baslik": "Dördüncü Nokta",
   "aciklama": "İnsan ruhunu sıkan ayrılık acısıdır. İman o acıları giderir.",
   "sayfa": 221,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.2222,
+  "satir": 2
  },
  {
   "seviye": 2,
   "baslik": "Beşinci Nokta",
   "aciklama": "İnsan imansızken düşman gördüğü şeyleri iman nuruyla kardeş görür.",
   "sayfa": 221,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.7778,
+  "satir": 7
  },
  {
   "seviye": 2,
   "baslik": "Altıncı Nokta",
   "aciklama": "İman nuru dünya ve ahireti ayrı ayrı iki sofra görür.",
   "sayfa": 222,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.5,
+  "satir": 3
  },
  {
   "seviye": 2,
   "baslik": "Yedinci Nokta",
   "aciklama": "İman nuru ile Allah'ın varlığına iman bütün nimetlerin üstünde bir nimettir.",
   "sayfa": 223,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.2,
+  "satir": 1
  },
  {
   "seviye": 2,
@@ -581,15 +581,15 @@
   "aciklama": "Kâinat kitabı Allah'a sayısız hamd delilleriyle doludur.",
   "sayfa": 225,
   "oran": 0.0,
-  "satir": null
+  "satir": 0
  },
  {
   "seviye": 2,
   "baslik": "Dokuzuncu Nokta",
   "aciklama": "Ezelden ebede her şeyden, her şeye olan hamd Allah'a mahsustur.",
   "sayfa": 225,
-  "oran": 0.0,
-  "satir": null
+  "oran": 0.6,
+  "satir": 3
  },
  {
   "seviye": 1,

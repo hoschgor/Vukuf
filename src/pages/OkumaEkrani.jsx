@@ -1,5 +1,5 @@
 import KuranOkuma from "./KuranOkuma"
-import { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo } from "react"
+import { useState, useEffect, useRef, useCallback, useMemo } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import { useApp } from "../AppContext"
 import { kitaplar } from "../data/kitaplar"
@@ -474,35 +474,22 @@ function OnayliSil({ label, onConfirm, theme }) {
 }
 
 // Sadece görünürken içerik render eden pencereleme sarmalayıcısı
-function LazySayfa({ minHeight, children, scrollRef }) {
+function LazySayfa({ minHeight, children }) {
   const ref = useRef(null)
   const [gorunur, setGorunur] = useState(false)
-  const phRef = useRef(minHeight)   // yer-tutucu (placeholder) yüksekliği
   useEffect(() => {
     const el = ref.current
     if (!el) return
     // Bir kez görününce mount et ve gözlemi bırak (bir daha sökme → Arapça zıplaması olmaz)
     const io = new IntersectionObserver(
-      ([e]) => { if (e.isIntersecting) { phRef.current = el.offsetHeight; setGorunur(true); io.disconnect() } },
-      { rootMargin: "1400px 0px" }
+      ([e]) => { if (e.isIntersecting) { setGorunur(true); io.disconnect() } },
+      { rootMargin: "2200px 0px" }
     )
     io.observe(el)
     return () => io.disconnect()
   }, [])
-  // İçerik yerleşince: blok viewport'un ÜSTÜNDEyse yükseklik farkını scrollTop'a ekle.
-  // Yukarı kaydırırken üstteki sayfa mount olup büyüyünce oluşan zıplamayı önler.
-  useLayoutEffect(() => {
-    if (!gorunur) return
-    const el = ref.current, sc = scrollRef?.current
-    if (!el || !sc) return
-    const delta = el.offsetHeight - phRef.current
-    if (!delta) return
-    const scTop = sc.getBoundingClientRect().top
-    // Büyüme aşağı doğru; blok TOP'u değişmez. Yer-tutucunun ALT'ı (top + placeholder)
-    // görünüm üstünün üzerindeyse blok tamamen yukarıdaydı → farkı telafi et.
-    const yerTutucuAlt = el.getBoundingClientRect().top + phRef.current
-    if (yerTutucuAlt <= scTop + 4) sc.scrollTop += delta
-  }, [gorunur, scrollRef])
+  // İçerik geldiğinde yer-tutucu yüksekliği yakın olduğu için sıçrama minimal;
+  // kalanı tarayıcının kendi scroll-anchoring'i (overflow-anchor: auto) düzeltir.
   return (
     <div ref={ref} style={{ minHeight: gorunur ? undefined : `${minHeight}px` }}>
       {gorunur ? children : null}
@@ -803,6 +790,38 @@ useEffect(() => {
   viewport.addEventListener('resize', zoomSifirla)
   return () => viewport.removeEventListener('resize', zoomSifirla)
 }, [isMobile])
+
+// ════════════════════════════════════════════════════
+// Sayfa yükseklik tahmini (LazySayfa yer-tutucusu gerçek yüksekliğe yakın olsun
+// ki mount olunca sıçrama minimal kalsın). Yapı bir kez ölçülür, boyut canlı.
+// ════════════════════════════════════════════════════
+const sayfaYapisi = useMemo(() => {
+  const kpl = isMobile ? 40 : 68   // satır başına ~ karakter (font-bağımsız yaklaşık)
+  return kitapMetni.map(sf => {
+    let latinWrap = 0, arapWrap = 0, nPara = 0, nBos = 0
+    for (const s of (sf.metin || "").split("\n")) {
+      if (s.startsWith("§")) continue
+      if (!s.trim()) { nBos++; continue }
+      const wrap = Math.max(1, Math.ceil(s.length / kpl))
+      if (ARAP_RE.test(s) && !LATIN_RE.test(s)) arapWrap += wrap
+      else latinWrap += wrap
+      nPara++
+    }
+    return { latinWrap, arapWrap, nPara, nBos, nBaslik: (sf.basliklar || []).length }
+  })
+}, [kitapMetni, isMobile])
+
+const tahminYuk = (i) => {
+  const t = sayfaYapisi[i]
+  if (!t) return 400
+  const lh = yaziBoyutu * satirAraligi
+  const arapLh = (yaziBoyutu + arapBoyutu) * 2
+  return Math.max(300, Math.round(
+    t.latinWrap * lh + t.arapWrap * arapLh +
+    t.nPara * 10 + t.nBos * (yaziBoyutu * 0.8) +
+    t.nBaslik * ((yaziBoyutu + 84) * 1.35 + 52)
+  ))
+}
 
 // ════════════════════════════════════════════════════
 // Scroll takibi
@@ -1207,7 +1226,7 @@ function basligaGit(sayfa, satir, oran = 0, baslikMetni = "") {
         const satirlar = document.querySelectorAll(`[data-satir^="${sayfa}-"]`)
         let kismi = null
         for (const s of satirlar) {
-          const t = bnormR(s.textContent || "")
+          const t = bnormR((s.textContent || "").replace(/\[\d+\]/g, ""))
           if (!t) continue
           if (t === hedef) return s
           if (!kismi && (t.startsWith(hedef) || (hedef.length >= 6 && t.includes(hedef)))) kismi = s
@@ -2386,7 +2405,7 @@ return (
       onTouchStart={dokunusBasladi}
       onTouchEnd={dokunusBitti}
       style={{
-        flex: 1, overflowY: "auto", userSelect: "none", overflowAnchor: "none",
+        flex: 1, overflowY: "auto", userSelect: "none",
         padding: `${barKonum === "ust" ? "80px" : "24px"} 0 ${barKonum === "alt" ? "80px" : "24px"}`,
       }}
     >
@@ -2459,7 +2478,7 @@ return (
                   </div>
                 </div>
               ))}
-              <LazySayfa minHeight={Math.max(300, Math.round(sayfa.metin.length * 0.5))} scrollRef={scrollRef}>
+              <LazySayfa minHeight={tahminYuk(index)}>
                 <MetinParcasi
                   metin={sayfa.metin}
                   sayfaNo={sayfa.sayfa}

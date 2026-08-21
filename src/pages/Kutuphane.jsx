@@ -38,6 +38,7 @@ function kitapSirtiRengi(id) {
 function SortableKitap({ kitap, duzenlemeMode, theme, alimId }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: kitap.id })
   const style = { transform: CSS.Transform.toString(transform), transition }
+  
 
   return (
     <div ref={setNodeRef} style={{ ...style, position: "relative" }}>
@@ -68,12 +69,13 @@ function SortableKitap({ kitap, duzenlemeMode, theme, alimId }) {
         onClick={e => duzenlemeMode && e.preventDefault()}
         style={{ textDecoration: "none" }}
       >
+        
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "80px" }}>
           <div
             style={{
               width: "60px",
               height: "88px",
-              background: kitapSirtiRengi(kitap.id),
+              background: kitap.gorsel ? `url(${kitap.gorsel}) center/cover no-repeat` : kitapSirtiRengi(kitap.id),
               borderRadius: "2px 6px 6px 2px",
               boxShadow: `inset -3px 0 6px rgba(0,0,0,0.3), inset 3px 0 4px rgba(255,255,255,0.1), 2px 2px 6px rgba(0,0,0,0.3)`,
               display: "flex",
@@ -89,19 +91,23 @@ function SortableKitap({ kitap, duzenlemeMode, theme, alimId }) {
             onMouseEnter={(e) => !duzenlemeMode && (e.currentTarget.style.transform = "translateY(-6px)")}
             onMouseLeave={(e) => !duzenlemeMode && (e.currentTarget.style.transform = "translateY(0)")}
           >
-            <div style={{ position: "absolute", left: "6px", top: 0, bottom: 0, width: "2px", background: "rgba(0,0,0,0.2)" }} />
-            <span style={{
-              fontSize: "8px",
-              color: "rgba(255,255,255,0.85)",
-              textAlign: "center",
-              lineHeight: "1.3",
-              fontFamily: kitapFontGetir(alimId) || "PlayfairDisplay, serif",
-              writingMode: "vertical-rl",
-              textOrientation: "mixed",
-              transform: "rotate(180deg)",
-            }}>
-              {kitap.baslik.length > 20 ? kitap.baslik.slice(0, 20) + "…" : kitap.baslik}
-            </span>
+            {!kitap.gorsel && (
+              <>
+                <div style={{ position: "absolute", left: "6px", top: 0, bottom: 0, width: "2px", background: "rgba(0,0,0,0.2)" }} />
+                <span style={{
+                  fontSize: "8px",
+                  color: "rgba(255,255,255,0.85)",
+                  textAlign: "center",
+                  lineHeight: "1.3",
+                  fontFamily: kitapFontGetir(alimId) || "PlayfairDisplay, serif",
+                  writingMode: "vertical-rl",
+                  textOrientation: "mixed",
+                  transform: "rotate(180deg)",
+                }}>
+                  {kitap.baslik.length > 20 ? kitap.baslik.slice(0, 20) + "…" : kitap.baslik}
+                </span>
+              </>
+            )}
           </div>
           <div style={{
             fontSize: "10px",
@@ -249,7 +255,8 @@ function SortableAlimRafi({ alim, duzenlemeMode, theme, sensors, kitapSiralama, 
 
           {/* Mercek SADECE âlim bölümü AÇIKken göster */}
           {acik && (
-            <button
+            <span
+            
               onClick={handleKitapAramaClick}
               style={{
                 cursor: "grab", 
@@ -268,7 +275,8 @@ function SortableAlimRafi({ alim, duzenlemeMode, theme, sensors, kitapSiralama, 
               }}
             >
               <Search size={13} />
-            </button>
+              
+            </span>
           )}
         </div>
       </button>

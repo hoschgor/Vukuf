@@ -23,7 +23,7 @@ import {
   Play, Pause, Plus, Minus, Type, Palette,
   Settings, Circle, Clock, ChevronsUp, ChevronsDown,
   Pencil, ChevronLeft, Bookmark, BookOpen, Feather,
-  Layers, Check,
+  Layers, Check, Shuffle,
 } from "lucide-react"
 
 // ── Arapça font listesi
@@ -121,7 +121,7 @@ export default function KuranOkuma({ kitap }) {
   const [odakAyrac, setOdakAyrac] = useState(null)
   const odakAyracTimeoutRef = useRef(null)
   const kuranHedefRef = useRef(false)   // Arama'dan gelen sure hedefi işlendi mi
-  const [aramayaDon, setAramayaDon] = useState(false)   // Arama'dan gelindiyse "Aramaya dön"
+  const [donusTip, setDonusTip] = useState("")   // "arama" | "tefeul"
   const barZamanRef  = useRef(null)
   const sureSayacRef = useRef(null)
   const scrollHiziRef = useRef({ sonScrollTop: 0, sonZaman: Date.now(), scrollSayisi: 0 })
@@ -629,12 +629,13 @@ useEffect(() => {
   }
 }, [sayfaListesi.length])
 
-// Arama'dan gelindi mi? (bir kez oku, bayrağı temizle)
+// Arama/Tefeül'den mi gelindi? (bir kez oku, bayrağı temizle)
 useEffect(() => {
   try {
-    if (localStorage.getItem("vukuf-aramaya-don") === "1") {
-      setAramayaDon(true)
-      localStorage.removeItem("vukuf-aramaya-don")
+    const d = localStorage.getItem("vukuf-donus")
+    if (d === "arama" || d === "tefeul") {
+      setDonusTip(d)
+      localStorage.removeItem("vukuf-donus")
     }
   } catch {}
 }, [])
@@ -2554,7 +2555,7 @@ const menuIcerikPadding = {
 
         {barKonum === "alt" && Bar}
 
-        {aramayaDon && (
+        {donusTip && (
           <div style={{
             position: "fixed", right: "14px", zIndex: 120,
             [barKonum === "alt" ? "bottom" : "top"]: "58px",
@@ -2562,10 +2563,10 @@ const menuIcerikPadding = {
             background: theme.accent, color: "#fff", borderRadius: "22px",
             padding: "8px 8px 8px 14px", boxShadow: "0 4px 16px rgba(0,0,0,0.25)",
           }}>
-            <button onClick={() => { try { localStorage.setItem("vukuf-arama-devam", "1") } catch {}; navigate("/arama") }} style={{ display: "flex", alignItems: "center", gap: "6px", background: "none", border: "none", color: "#fff", cursor: "pointer", fontSize: "13px", fontFamily: "inherit" }}>
-              <Search size={15} /> Aramaya dön
+            <button onClick={() => { try { localStorage.setItem(`vukuf-${donusTip}-devam`, "1") } catch {}; navigate(donusTip === "tefeul" ? "/okuma-tefeul" : "/arama") }} style={{ display: "flex", alignItems: "center", gap: "6px", background: "none", border: "none", color: "#fff", cursor: "pointer", fontSize: "13px", fontFamily: "inherit" }}>
+              {donusTip === "tefeul" ? <Shuffle size={15} /> : <Search size={15} />} {donusTip === "tefeul" ? "Tefeüle dön" : "Aramaya dön"}
             </button>
-            <button onClick={() => setAramayaDon(false)} title="Kapat" style={{ display: "flex", background: "rgba(255,255,255,0.25)", border: "none", color: "#fff", cursor: "pointer", borderRadius: "50%", padding: "3px" }}>
+            <button onClick={() => setDonusTip("")} title="Kapat" style={{ display: "flex", background: "rgba(255,255,255,0.25)", border: "none", color: "#fff", cursor: "pointer", borderRadius: "50%", padding: "3px" }}>
               <X size={13} />
             </button>
           </div>

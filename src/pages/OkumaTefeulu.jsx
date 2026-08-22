@@ -1,14 +1,9 @@
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
-import { Shuffle, ChevronRight, BookOpen, Loader, Sparkles } from "lucide-react"
+import { Shuffle, Loader, Sparkles } from "lucide-react"
 import { useApp } from "../AppContext"
-import { kitaplar, kategoriler } from "../data/kitaplar"
 import { useMediaQuery } from "../data/hooks/useMediaQuery"
-
-// Bir alimin tüm kitapları (altKategoriler varsa düzleştir)
-const alimKitaplari = (alim) =>
-  (alim?.altKategoriler ? alim.altKategoriler.flatMap(a => a.kitaplar || []) : (alim?.kitaplar || []))
-    .filter(b => b && b.dosya)
+import KapsamSecici from "../components/KapsamSecici"
 
 // Sure başına ayet sayıları (Hafs), 1..114 — rastgele ayet için
 const AYET_SAYILARI = [
@@ -38,35 +33,34 @@ export default function OkumaTefeulu() {
   const navigate = useNavigate()
   const isMobile = useMediaQuery("(max-width: 768px)")
 
-  const [secKisim, setSecKisim] = useState("")   // "" = tümü, "kuran" = Kur'an, aksi = kategori id
-  const [secAlim, setSecAlim] = useState("")
-  const [secKitap, setSecKitap] = useState("")
+  // "Tefeüle dön" ile gelindiyse son kapsamı geri yükle; menüden girişte temiz
+  const ilk = useMemo(() => {
+    try {
+      if (localStorage.getItem("vukuf-tefeul-devam") === "1") {
+        return JSON.parse(localStorage.getItem("vukuf-tefeul-durum") || "null")
+      }
+    } catch {}
+    return null
+  }, [])
+
+  const [scope, setScope] = useState({ kuran: false, kapsam: [], etiket: "Tüm kitaplar", secimler: {} })
   const [yukleniyor, setYukleniyor] = useState(false)
   const [hata, setHata] = useState("")
 
-  const kitapListesi = useMemo(() => kitaplar.filter(k => k && k.dosya && k.id !== "kuran"), [])
-  const kisimlar = useMemo(
-    () => kategoriler.filter(k => k.id !== "orijinal-eserler" && (k.alimler || []).some(a => alimKitaplari(a).length)),
-    []
-  )
-  const kuranMi = secKisim === "kuran"
-  const kisimObj = kisimlar.find(k => k.id === secKisim) || null
-  const alimSecenek = useMemo(() => (kisimObj ? (kisimObj.alimler || []).filter(a => alimKitaplari(a).length) : []), [secKisim])
-  const alimObj = alimSecenek.find(a => a.id === secAlim) || null
-  const kitapSecenek = useMemo(() => (alimObj ? alimKitaplari(alimObj) : []), [secKisim, secAlim])
-
-  const kapsam = useMemo(() => {
-    if (kuranMi) return []
-    if (secKitap) { const b = kitapSecenek.find(x => x.id === secKitap); return b ? [b] : [] }
-    if (alimObj) return alimKitaplari(alimObj)
-    if (kisimObj) return (kisimObj.alimler || []).flatMap(alimKitaplari)
-    return kitapListesi
-  }, [secKisim, secAlim, secKitap, kitapListesi])
+  useEffect(() => {
+    try { localStorage.removeItem("vukuf-tefeul-devam"); localStorage.removeItem("vukuf-donus") } catch {}
+  }, [])
 
   async function tefeulEt() {
     setHata("")
+    // Dönüş bilgisi: okuma ekranında "Tefeüle dön" göster + kapsamı hatırla
+    try {
+      localStorage.setItem("vukuf-donus", "tefeul")
+      localStorage.setItem("vukuf-tefeul-durum", JSON.stringify({ secimler: scope.secimler }))
+    } catch {}
+
     // Kur'an: rastgele sure (başlık) ya da ayet
-    if (kuranMi) {
+    if (scope.kuran) {
       const sureNo = 1 + rnd(114)
       const payload = (Math.random() < 0.5)
         ? { sureNo }
@@ -76,11 +70,11 @@ export default function OkumaTefeulu() {
       return
     }
 
-    const havuz = kapsam
+    const havuz = scope.kapsam || []
     if (!havuz.length) { setHata("Bu kapsamda kitap yok."); return }
 
     setYukleniyor(true)
-    const karisik = [...havuz].sort(() => Math.random() - 0.5)   // kitapları karıştır
+    const karisik = [...havuz].sort(() => Math.random() - 0.5)
     for (const kitap of karisik) {
       const d = await kitapYukle(kitap.dosya)
       if (!d || !d.length) continue
@@ -94,13 +88,12 @@ export default function OkumaTefeulu() {
         }
         if (!adaylar.length) continue
         const si = adaylar[rnd(adaylar.length)]
-        // İlk cümle / başlık (işaret için)
         const ham = satirlar[si].replace(/⟦H\d+⟧/g, "").replace(/\[\d+\]/g, "").trim()
         const m = ham.match(/^[\s\S]*?[.!?:]/)
-        const ilk = (m ? m[0] : ham).slice(0, 90).trim()
+        const ilkCumle = (m ? m[0] : ham).slice(0, 90).trim()
         try {
           localStorage.setItem("vukuf-arama-hedef", JSON.stringify({
-            kitapId: kitap.id, aranan: ilk, sayfaNo: sayfa.sayfa, satirIdx: si,
+            kitapId: kitap.id, aranan: ilkCumle, sayfaNo: sayfa.sayfa, satirIdx: si,
           }))
         } catch {}
         setYukleniyor(false)
@@ -112,73 +105,31 @@ export default function OkumaTefeulu() {
     setHata("Uygun bir bölüm bulunamadı, tekrar dene.")
   }
 
-  const kapsamEtiket = kuranMi
-    ? "Kur'ân-ı Kerîm"
-    : [kisimObj?.baslik, alimObj?.isim, kitapSecenek.find(x => x.id === secKitap)?.baslik].filter(Boolean).join(" · ") || "Tüm kitaplar"
-
-  const selStil = (disabled) => ({
-    flex: 1, padding: "9px 11px", borderRadius: "8px", border: `1px solid ${theme.border}`,
-    background: theme.background, color: theme.text, fontSize: "14px", fontFamily: "inherit",
-    cursor: disabled ? "not-allowed" : "pointer",
-  })
-
   return (
-    <div style={{ maxWidth: "620px", margin: "0 auto", padding: isMobile ? "22px 16px 60px" : "44px 24px 80px" }}>
+    <div style={{ maxWidth: "560px", margin: "0 auto", padding: isMobile ? "22px 16px 60px" : "44px 24px 80px" }}>
       <div style={{ textAlign: "center", marginBottom: "26px" }}>
         <Sparkles size={30} color={theme.accent} style={{ marginBottom: "6px" }} />
         <h1 style={{ fontSize: isMobile ? "26px" : "34px", color: theme.accent, fontFamily: "PlayfairDisplay, serif" }}>
           Okuma Tefeülü
         </h1>
         <p style={{ fontSize: "13px", color: theme.textSecondary, marginTop: "6px" }}>
-          Bir kapsam seç, rastgele bir bölüm karşına çıksın.
+          Rastgele bir bölüm okumak için kapsam seçiniz.
         </p>
       </div>
 
-      {/* Kapsam seçimi */}
-      <div style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "16px", borderRadius: "14px", background: theme.surface, border: `1px solid ${theme.border}` }}>
-        {/* Kısım (Kur'an dahil) */}
-        <label style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          <span style={{ fontSize: "12px", color: theme.textSecondary, minWidth: "46px" }}>Kısım</span>
-          <select value={secKisim} onChange={e => { setSecKisim(e.target.value); setSecAlim(""); setSecKitap(""); setHata("") }} style={selStil(false)}>
-            <option value="">Tüm kitaplar</option>
-            {kisimlar.map(k => <option key={k.id} value={k.id}>{k.baslik}</option>)}
-            <option value="kuran">Kur'ân-ı Kerîm</option>
-          </select>
-        </label>
-
-        {/* Alim + Kitap (Kur'an değilse) */}
-        {!kuranMi && (
-          <>
-            <label style={{ display: "flex", alignItems: "center", gap: "10px", opacity: secKisim ? 1 : 0.5 }}>
-              <span style={{ fontSize: "12px", color: theme.textSecondary, minWidth: "46px" }}>Alim</span>
-              <select value={secAlim} disabled={!secKisim} onChange={e => { setSecAlim(e.target.value); setSecKitap("") }} style={selStil(!secKisim)}>
-                <option value="">Tüm alimler</option>
-                {alimSecenek.map(a => <option key={a.id} value={a.id}>{a.isim}</option>)}
-              </select>
-            </label>
-            <label style={{ display: "flex", alignItems: "center", gap: "10px", opacity: secAlim ? 1 : 0.5 }}>
-              <span style={{ fontSize: "12px", color: theme.textSecondary, minWidth: "46px" }}>Kitap</span>
-              <select value={secKitap} disabled={!secAlim} onChange={e => setSecKitap(e.target.value)} style={selStil(!secAlim)}>
-                <option value="">Tüm kitaplar</option>
-                {kitapSecenek.map(b => <option key={b.id} value={b.id}>{b.baslik}</option>)}
-              </select>
-            </label>
-          </>
-        )}
-
-        {kuranMi && (
-          <div style={{ fontSize: "12px", color: theme.textSecondary, padding: "2px 2px" }}>
+      <div style={{ padding: "16px", borderRadius: "14px", background: theme.surface, border: `1px solid ${theme.border}` }}>
+        <KapsamSecici theme={theme} kuranSecenek baslangic={ilk?.secimler} onChange={setScope} />
+        {scope.kuran && (
+          <div style={{ fontSize: "12px", color: theme.textSecondary, marginTop: "12px" }}>
             Rastgele bir sûre ya da âyet karşına çıkacak.
           </div>
         )}
       </div>
 
-      {/* Kapsam etiketi */}
       <div style={{ textAlign: "center", fontSize: "12px", color: theme.textSecondary, margin: "16px 0 4px" }}>
-        Kapsam: <span style={{ color: theme.accent }}>{kapsamEtiket}</span>
+        Kapsam: <span style={{ color: theme.accent }}>{scope.etiket}</span>
       </div>
 
-      {/* Tefeül Et */}
       <button onClick={tefeulEt} disabled={yukleniyor}
         style={{
           width: "100%", marginTop: "10px", padding: "15px", borderRadius: "14px",
@@ -188,7 +139,7 @@ export default function OkumaTefeulu() {
           boxShadow: `0 4px 16px ${theme.accent}44`, opacity: yukleniyor ? 0.7 : 1,
         }}>
         {yukleniyor ? <Loader size={19} className="tef-spin" /> : <Shuffle size={19} />}
-        {yukleniyor ? "Açılıyor…" : "Tefeül Et"}
+        {yukleniyor ? "Açılıyor…" : "Tefeül"}
       </button>
 
       {hata && <div style={{ textAlign: "center", fontSize: "13px", color: "#c0392b", marginTop: "12px" }}>{hata}</div>}

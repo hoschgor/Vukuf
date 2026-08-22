@@ -2,13 +2,8 @@ import { useState, useEffect, useRef, useMemo } from "react"
 import { useNavigate } from "react-router-dom"
 import { Search, X, BookOpen, ChevronRight, Loader, SlidersHorizontal } from "lucide-react"
 import { useApp } from "../AppContext"
-import { kitaplar, kategoriler } from "../data/kitaplar"
 import { useMediaQuery } from "../data/hooks/useMediaQuery"
-
-// Bir alimin tüm kitapları (altKategoriler varsa düzleştir)
-const alimKitaplari = (alim) =>
-  (alim?.altKategoriler ? alim.altKategoriler.flatMap(a => a.kitaplar || []) : (alim?.kitaplar || []))
-    .filter(b => b && b.dosya)
+import KapsamSecici from "../components/KapsamSecici"
 
 // ════════════════════════════════════════════════════════════════
 // Kur'an sure adları (Türkçe) — arama sadece isim üzerinden; gidiş no ile
@@ -56,69 +51,37 @@ export default function Arama() {
   const navigate = useNavigate()
   const isMobile = useMediaQuery("(max-width: 768px)")
 
-  const [sorgu, setSorgu] = useState("")
+  // "Aramaya dön" ile gelindiyse son durumu al (menüden girişte temiz)
+  const ilk = useMemo(() => {
+    try {
+      if (localStorage.getItem("vukuf-arama-devam") === "1") {
+        return JSON.parse(localStorage.getItem("vukuf-arama-durum") || "null")
+      }
+    } catch {}
+    return null
+  }, [])
+
+  const [sorgu, setSorgu] = useState(ilk?.sorgu || "")
   const [yukleniyor, setYukleniyor] = useState(false)
   const [kitapSonuc, setKitapSonuc] = useState([])
   const [sureSonuc, setSureSonuc] = useState([])
   const aramaIdRef = useRef(0)
 
-  // Özel (kapsamlı) arama: Kısım → Alim → Kitap
-  const [filtreAcik, setFiltreAcik] = useState(false)
-  const [secKisim, setSecKisim] = useState("")
-  const [secAlim, setSecAlim] = useState("")
-  const [secKitap, setSecKitap] = useState("")
+  // Özel (kapsamlı) arama — KapsamSecici bileşeni yönetir, scope buraya gelir
+  const [filtreAcik, setFiltreAcik] = useState(!!(ilk?.secimler && Object.values(ilk.secimler).some(Boolean)))
+  const [sifirla, setSifirla] = useState(0)   // KapsamSecici'yi sıfırlamak için key
+  const [scope, setScope] = useState({ kuran: false, kapsam: [], etiket: "Tüm kitaplar", filtreAktif: false, secimler: {} })
+  const filtreAktif = scope.filtreAktif
+  const kapsam = scope.kapsam
 
-  // Aranabilir kitaplar (düz katalog; kuran hariç, dosyası olanlar)
-  const kitapListesi = useMemo(
-    () => kitaplar.filter(k => k && k.dosya && k.id !== "kuran"),
-    []
-  )
-
-  // Kısımlar (Kur'an kategorisi hariç — o sure adlarıyla ayrı aranıyor)
-  const kisimlar = useMemo(
-    () => kategoriler.filter(k => k.id !== "orijinal-eserler" && (k.alimler || []).some(a => alimKitaplari(a).length)),
-    []
-  )
-  const kisimObj = kisimlar.find(k => k.id === secKisim) || null
-  const alimSecenek = useMemo(
-    () => (kisimObj ? (kisimObj.alimler || []).filter(a => alimKitaplari(a).length) : []),
-    [secKisim]
-  )
-  const alimObj = alimSecenek.find(a => a.id === secAlim) || null
-  const kitapSecenek = useMemo(() => (alimObj ? alimKitaplari(alimObj) : []), [secKisim, secAlim])
-
-  const filtreAktif = !!(secKisim || secAlim || secKitap)
-
-  // Aranacak kitap kümesi (kapsam)
-  const kapsam = useMemo(() => {
-    if (secKitap) { const b = kitapSecenek.find(x => x.id === secKitap); return b ? [b] : [] }
-    if (alimObj) return alimKitaplari(alimObj)
-    if (kisimObj) return (kisimObj.alimler || []).flatMap(alimKitaplari)
-    return kitapListesi
-  }, [secKisim, secAlim, secKitap, kitapListesi])
-
-  // Açılışta: YALNIZ "Aramaya dön" ile gelindiyse durumu geri yükle.
-  // Menüden normal girişte temiz başla (eski arama açılmasın).
+  // Açılışta dönüş bayraklarını temizle (durum zaten ilk'te okundu)
   useEffect(() => {
-    let devam = false
-    try { devam = localStorage.getItem("vukuf-arama-devam") === "1" } catch {}
-    if (devam) {
-      try {
-        const d = JSON.parse(localStorage.getItem("vukuf-arama-durum") || "null")
-        if (d) {
-          if (d.secKisim) { setSecKisim(d.secKisim); setFiltreAcik(true) }
-          if (d.secAlim) setSecAlim(d.secAlim)
-          if (d.secKitap) setSecKitap(d.secKitap)
-          if (d.sorgu) setSorgu(d.sorgu)
-        }
-      } catch {}
-    }
-    try { localStorage.removeItem("vukuf-arama-devam"); localStorage.removeItem("vukuf-aramaya-don") } catch {}
+    try { localStorage.removeItem("vukuf-arama-devam"); localStorage.removeItem("vukuf-donus") } catch {}
   }, [])
 
   // Bir sonuca giderken o anki arama durumunu anlık kaydet (dönünce devam etsin)
   function durumKaydet() {
-    try { localStorage.setItem("vukuf-arama-durum", JSON.stringify({ sorgu, secKisim, secAlim, secKitap })) } catch {}
+    try { localStorage.setItem("vukuf-arama-durum", JSON.stringify({ sorgu, secimler: scope.secimler })) } catch {}
   }
 
   useEffect(() => {
@@ -172,7 +135,7 @@ export default function Arama() {
       localStorage.setItem("vukuf-arama-hedef", JSON.stringify({
         kitapId: r.kitapId, aranan: sorgu.trim(), sayfaNo: r.sayfaNo, satirIdx: r.satirIdx,
       }))
-      localStorage.setItem("vukuf-aramaya-don", "1")   // okuma ekranında "Aramaya dön" göster
+      localStorage.setItem("vukuf-donus", "arama")   // okuma ekranında "Aramaya dön" göster
     } catch {}
     durumKaydet()
     navigate(`/kitap/${r.kitapId}`)
@@ -182,7 +145,7 @@ export default function Arama() {
   function sureyeGit(s) {
     try {
       localStorage.setItem("vukuf-kuran-hedef", JSON.stringify({ sureNo: s.no }))
-      localStorage.setItem("vukuf-aramaya-don", "1")
+      localStorage.setItem("vukuf-donus", "arama")
     } catch {}
     durumKaydet()
     navigate("/kuran")
@@ -198,7 +161,7 @@ export default function Arama() {
         Arama
       </h1>
       <p style={{ fontSize: "13px", color: theme.textSecondary, marginBottom: "20px" }}>
-        Kitaplarda her şeyi, Kur'an'da sure adlarını ara.
+        Kitaplarda her şeyi, Kur'an'da sure adlarını arayabilirsiniz.
       </p>
 
       {/* Arama kutusu */}
@@ -239,10 +202,8 @@ export default function Arama() {
         </button>
         {filtreAktif && (
           <>
-            <span style={{ fontSize: "12px", color: theme.textSecondary }}>
-              {[kisimObj?.baslik, alimObj?.isim, kitapSecenek.find(x => x.id === secKitap)?.baslik].filter(Boolean).join(" · ")}
-            </span>
-            <button onClick={() => { setSecKisim(""); setSecAlim(""); setSecKitap("") }}
+            <span style={{ fontSize: "12px", color: theme.textSecondary }}>{scope.etiket}</span>
+            <button onClick={() => setSifirla(x => x + 1)}
               style={{ display: "flex", alignItems: "center", gap: "3px", fontSize: "12px", color: theme.accent, background: "none", border: "none", cursor: "pointer" }}>
               <X size={13} /> temizle
             </button>
@@ -250,33 +211,14 @@ export default function Arama() {
         )}
       </div>
 
-      {/* Filtre çekmecesi: Kısım → Alim → Kitap */}
+      {/* Filtre çekmecesi: Kısım → Alim → (Eserler) → Kitap */}
       <div style={{
-        overflow: "hidden", transition: "max-height 0.3s ease, opacity 0.25s ease, margin 0.25s ease",
-        maxHeight: filtreAcik ? "260px" : "0px", opacity: filtreAcik ? 1 : 0, marginTop: filtreAcik ? "10px" : "0px",
+        overflow: "visible", transition: "max-height 0.3s ease, opacity 0.25s ease, margin 0.25s ease",
+        maxHeight: filtreAcik ? "600px" : "0px", opacity: filtreAcik ? 1 : 0, marginTop: filtreAcik ? "10px" : "0px",
+        ...(filtreAcik ? {} : { overflow: "hidden" }),
       }}>
-        <div style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "14px", borderRadius: "12px", background: theme.surface, border: `1px solid ${theme.border}` }}>
-          {[
-            { label: "Kısım", value: secKisim, secenekler: kisimlar.map(k => ({ id: k.id, ad: k.baslik })),
-              onChange: v => { setSecKisim(v); setSecAlim(""); setSecKitap("") }, hepsi: "Tüm kısımlar" },
-            { label: "Alim", value: secAlim, secenekler: alimSecenek.map(a => ({ id: a.id, ad: a.isim })), disabled: !secKisim,
-              onChange: v => { setSecAlim(v); setSecKitap("") }, hepsi: "Tüm alimler" },
-            { label: "Kitap", value: secKitap, secenekler: kitapSecenek.map(b => ({ id: b.id, ad: b.baslik })), disabled: !secAlim,
-              onChange: v => setSecKitap(v), hepsi: "Tüm kitaplar" },
-          ].map(alan => (
-            <label key={alan.label} style={{ display: "flex", alignItems: "center", gap: "10px", opacity: alan.disabled ? 0.5 : 1 }}>
-              <span style={{ fontSize: "12px", color: theme.textSecondary, minWidth: "44px" }}>{alan.label}</span>
-              <select value={alan.value} disabled={alan.disabled} onChange={e => alan.onChange(e.target.value)}
-                style={{
-                  flex: 1, padding: "8px 10px", borderRadius: "8px", border: `1px solid ${theme.border}`,
-                  background: theme.background, color: theme.text, fontSize: "14px", fontFamily: "inherit",
-                  cursor: alan.disabled ? "not-allowed" : "pointer",
-                }}>
-                <option value="">{alan.hepsi}</option>
-                {alan.secenekler.map(o => <option key={o.id} value={o.id}>{o.ad}</option>)}
-              </select>
-            </label>
-          ))}
+        <div style={{ padding: "14px", borderRadius: "12px", background: theme.surface, border: `1px solid ${theme.border}` }}>
+          <KapsamSecici key={sifirla} theme={theme} baslangic={sifirla === 0 ? ilk?.secimler : undefined} onChange={setScope} />
         </div>
       </div>
 

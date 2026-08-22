@@ -94,7 +94,7 @@ export default function Tefeul() {
         }}>
           <Shuffle size={20} color={theme.accent} />
           <h1 style={{ fontSize: "22px", color: theme.accent, letterSpacing: "2px" }}>
-            TEFEÜL
+            Kısa Tefeül Modu
           </h1>
 
           {/* Filtre ikonu */}

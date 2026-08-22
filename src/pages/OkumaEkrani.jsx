@@ -936,9 +936,28 @@ useEffect(() => {
   }
 }, [konumKaydet])
 
-// Açılışta son konuma dön (yalnız bir kez, kitap yüklendikten sonra)
+// Açılışta: önce Arama'dan gelen hedef (varsa) → o satıra git + vurgula;
+// yoksa son okuma konumuna dön. (yalnız bir kez, kitap yüklendikten sonra)
 useEffect(() => {
   if (yukleniyor || !kitapMetni.length || konumYuklendiRef.current) return
+
+  // 1) Arama hedefi (Arama.jsx'ten): kullanıcıya göstermeden o sonuca git
+  let aramaHedef = null
+  try { aramaHedef = JSON.parse(localStorage.getItem("vukuf-arama-hedef") || "null") } catch {}
+  if (aramaHedef && aramaHedef.kitapId === id) {
+    konumYuklendiRef.current = true
+    try { localStorage.removeItem("vukuf-arama-hedef") } catch {}
+    const sn = Math.min(Math.max(1, aramaHedef.sayfaNo || 1), kitapMetni.length)
+    maxSayfaGuncelle(sn)
+    setTimeout(() => {
+      elemanaGit(sn,
+        () => document.querySelector(`[data-satir="${sn}-${aramaHedef.satirIdx}"]`),
+        0, false, (el) => aramaVurgula(sn, el, aramaHedef.aranan))
+    }, 200)
+    return
+  }
+
+  // 2) Son okuma konumu
   konumYuklendiRef.current = true
   let kayitli = null
   try { kayitli = JSON.parse(localStorage.getItem(`vukuf_son_konum_${id}`) || "null") } catch {}

@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { Link, useLocation } from "react-router-dom"
-import { BookOpen, Search, Shuffle, Menu, X, Palette, Pencil, Info } from "lucide-react"
+import { BookOpen, Search, Shuffle, Menu, X, Palette, Pencil, Info, Type } from "lucide-react"
 import { useApp } from "../AppContext"
 import { useMediaQuery } from "../data/hooks/useMediaQuery"
 
@@ -35,8 +35,10 @@ export default function Navbar() {
   // Ana menü öğeleri (Hakkında hariç)
   const anaNavItems = [
     { path: "/", label: "Kitaplık", icon: BookOpen },
-    { path: "/lugat", label: "Lügat", icon: Search },
-    { path: "/tefeul", label: "Tefeül", icon: Shuffle },
+    { path: "/arama", label: "Arama", icon: Search },
+    { path: "/lugat", label: "Lügat", icon: Type },
+    { path: "/tefeul", label: "Söz Tefeülü", icon: Shuffle },
+    { path: "/tefeul", label: "Okuma Tefeülü", icon: Shuffle },
   ]
 
   // Alt menü öğesi (Hakkında)

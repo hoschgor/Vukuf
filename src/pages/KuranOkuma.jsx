@@ -120,6 +120,7 @@ export default function KuranOkuma({ kitap }) {
   const odakSureTimeoutRef = useRef(null)
   const [odakAyrac, setOdakAyrac] = useState(null)
   const odakAyracTimeoutRef = useRef(null)
+  const kuranHedefRef = useRef(false)   // Arama'dan gelen sure hedefi işlendi mi
   const barZamanRef  = useRef(null)
   const sureSayacRef = useRef(null)
   const scrollHiziRef = useRef({ sonScrollTop: 0, sonZaman: Date.now(), scrollSayisi: 0 })
@@ -614,6 +615,18 @@ const cokSatir = wrapAktif && barYuksekligi > tekSatirYuksekligi * 1.0
     sessionStorage.setItem("vukuf-ilk-yukleme", "true")
   }
 }, [yukleniyor, sayfaListesi.length, scrollKilitli])
+
+// Arama'dan gelen sure hedefi: Kuran açılınca o sureye git (bir kez)
+useEffect(() => {
+  if (kuranHedefRef.current || !sayfaListesi.length) return
+  let h = null
+  try { h = JSON.parse(localStorage.getItem("vukuf-kuran-hedef") || "null") } catch {}
+  if (h && h.sureNo) {
+    kuranHedefRef.current = true
+    try { localStorage.removeItem("vukuf-kuran-hedef") } catch {}
+    setTimeout(() => sureGit(h.sureNo), 350)
+  }
+}, [sayfaListesi.length])
 
   const cuzListesi = useMemo(() => {
   const map = new Map()

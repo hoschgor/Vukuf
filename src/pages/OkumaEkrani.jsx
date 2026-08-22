@@ -210,6 +210,30 @@ const ARAP_RE = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uF
 const HASIYE_RE = /\u27E6H(\d+)\u27E7/g
 // Ba\u015Fl\u0131k metni normalizasyonu (DOM aramas\u0131 i\u00E7in): k\u00FC\u00E7\u00FCk harf + bo\u015Fluk sadele\u015Ftir + sondaki noktalama
 const bnormR = (s) => (s || "").toLowerCase().replace(/\s+/g, " ").trim().replace(/[:.\-\u2013\u2014\u2022*\u00B7\s]+$/, "")
+
+// T\u00FCrk\u00E7e-duyarl\u0131, UZUNLU\u011EU KORUYAN k\u00FC\u00E7\u00FCk harf (\u0130\u2192i, I\u2192\u0131\u2192i): indexOf ofsetleri
+// orijinal metinle hizal\u0131 kals\u0131n diye normalize (NFD) de\u011Fil locale-lower kullan\u0131l\u0131r.
+const trLower = (s) => (s || "").toLocaleLowerCase("tr").replace(/\u0131/g, "i")
+
+// Bir k\u00F6k eleman\u0131n metninde aranan ifadeyi bulup Range d\u00F6nd\u00FCr\u00FCr (span'lar aras\u0131 da).
+function araliktaBul(kok, aranan) {
+  const hedef = trLower(aranan).trim()
+  if (!kok || !hedef) return null
+  const tam = trLower(kok.textContent || "")
+  const bas = tam.indexOf(hedef)
+  if (bas < 0) return null
+  const son = bas + hedef.length
+  const tw = document.createTreeWalker(kok, NodeFilter.SHOW_TEXT)
+  const r = document.createRange()
+  let node, sayac = 0, basAyar = false
+  while ((node = tw.nextNode())) {
+    const uz = node.textContent.length
+    if (!basAyar && sayac + uz > bas) { r.setStart(node, Math.max(0, bas - sayac)); basAyar = true }
+    if (basAyar && sayac + uz >= son) { r.setEnd(node, Math.min(uz, son - sayac)); return r }
+    sayac += uz
+  }
+  return basAyar ? r : null
+}
 const LATIN_RE = /[A-Za-zÇĞİıÖŞÜçğöşü]/
 
 function MetinParcasi({
@@ -702,6 +726,8 @@ const [kayitlar, setKayitlar] = useState(() => {
 const [kayitKonumModu, setKayitKonumModu] = useState(false)
 const [odakKonum, setOdakKonum] = useState(null)   // { sayfa, oran, nonce }
 const odakZamanRef = useRef(null)
+const [aramaVurgu, setAramaVurgu] = useState(null) // { sayfa, kutular:[{top,left,width,height}], nonce }
+const aramaZamanRef = useRef(null)
 
 // ── İçindekiler (contents.json'dan üretilecek <slug>-icindekiler.json)
 const [icindekiler, setIcindekiler] = useState(null)
@@ -1099,7 +1125,7 @@ function sayfayaGit(sayfaNo, oran = 0, ekstra = 0) {
 
 // Bir DOM elemanına tam git (başlık/vurgu). cizgi=false ise odak çizgisi çizilmez.
 // Tek fren döngüsü kullanır -> fazladan scroll olmaz; eleman gerçek konumundan hizalanır.
-function elemanaGit(sayfaNo, selectorFn, fallbackOran = 0, cizgi = true) {
+function elemanaGit(sayfaNo, selectorFn, fallbackOran = 0, cizgi = true, onLand = null) {
   const el = scrollRef.current
   if (!el) return
   setMevcutSayfa(sayfaNo)
@@ -1127,9 +1153,35 @@ function elemanaGit(sayfaNo, selectorFn, fallbackOran = 0, cizgi = true) {
         const o = (hedef.getBoundingClientRect().top - pref.getBoundingClientRect().top) / Math.max(1, pref.offsetHeight)
         odakAyarla(sayfaNo, Math.max(0, Math.min(1, o)), cizgi)
       }
+      if (onLand) onLand(hedef)
     })
   }
   setTimeout(dene, 60)
+}
+
+// Bulunan öğede aranan metni seçili gibi vurgula (kutular sayfaya göre konumlanır) +
+// kelime görünür değilse ona kaydır. Kısa süre sonra söner.
+function aramaVurgula(sayfaNo, el, aranan, altCizgi = true) {
+  const sc = scrollRef.current, pref = sayfaRefs.current[sayfaNo]
+  if (!el || !sc || !pref) return
+  let r = araliktaBul(el, aranan)
+  if (!r) { r = document.createRange(); r.selectNodeContents(el) }
+  const rects = Array.from(r.getClientRects())
+  if (!rects.length) return
+  const prefRect = pref.getBoundingClientRect()
+  const kutular = rects.map(rc => ({
+    top: rc.top - prefRect.top, left: rc.left - prefRect.left, width: rc.width, height: rc.height,
+  }))
+  // kelime görünüm dışında/çok yukarıdaysa ona doğru ince ayar kaydır
+  const ofset = barKonum === "ust" ? 110 : 60
+  const scRect = sc.getBoundingClientRect()
+  const rTop = rects[0].top - scRect.top
+  if (rTop < ofset || rTop > sc.clientHeight * 0.65) {
+    sc.scrollTo({ top: rects[0].top - scRect.top + sc.scrollTop - ofset, behavior: "smooth" })
+  }
+  if (aramaZamanRef.current) clearTimeout(aramaZamanRef.current)
+  setAramaVurgu({ sayfa: sayfaNo, kutular, altCizgi, nonce: Date.now() })
+  aramaZamanRef.current = setTimeout(() => setAramaVurgu(null), 3600)
 }
 
 // Odak işaretini (çizgi/ayraç) ayarla
@@ -1253,31 +1305,37 @@ function odakGit(sayfaNo, oran = 0, opt = {}) {
   odakAyarla(sayfaNo, oran, opt.cizgi !== false)
 }
 
-// İçindekiler'den git: ana başlıklar #baslik öğesiyle; alt başlıklar (normal metin)
-// başlık METNİ, o sayfanın satırlarında ([data-satir]) aranarak tam DOM konumuna.
-function basligaGit(sayfa, satir, oran = 0, baslikMetni = "") {
+// İçindekiler'den git. Ana başlık → #baslik + odak çizgisi. Alt başlık → başlığı
+// ham METİNDE (arama mantığıyla) bulup satır indeksini çıkar, [data-satir]'a git ve
+// kelime araması gibi (alt çizgisiz) işaretle.
+function basligaGit(sayfa, satir, oran = 0, baslikMetni = "", seviye = 1) {
   setMenuAcik(false)
-  elemanaGit(sayfa, () => {
-    if (satir != null) {
-      const el = document.getElementById(`baslik-${sayfa}-${satir}`)
-      if (el) return el
-    }
-    if (baslikMetni) {
-      const hedef = bnormR(baslikMetni)
-      if (hedef) {
-        const satirlar = document.querySelectorAll(`[data-satir^="${sayfa}-"]`)
-        let kismi = null
-        for (const s of satirlar) {
-          const t = bnormR((s.textContent || "").replace(/\[\d+\]/g, ""))
-          if (!t) continue
-          if (t === hedef) return s
-          if (!kismi && (t.startsWith(hedef) || (hedef.length >= 6 && t.includes(hedef)))) kismi = s
-        }
-        if (kismi) return kismi
+  const anaBaslik = (seviye || 1) <= 1
+
+  // Hedef satır indeksini belirle: extractor verdiyse onu; yoksa metinde başlığı ara
+  let hedefSatir = satir
+  if (hedefSatir == null && baslikMetni) {
+    const sf = kitapMetni.find(s => s.sayfa === sayfa)
+    if (sf) {
+      const norm = (s) => trLower(s || "").replace(/⟦H\d+⟧/g, "").replace(/\[\d+\]/g, "").replace(/\s+/g, " ").trim()
+      const hedef = norm(baslikMetni)
+      const satirlar = sf.metin.split("\n")
+      for (let i = 0; i < satirlar.length; i++) {
+        if (satirlar[i].startsWith("§")) continue
+        const ln = norm(satirlar[i])
+        if (!ln) continue
+        if (ln === hedef || ln.startsWith(hedef) || (hedef.length >= 6 && ln.includes(hedef))) { hedefSatir = i; break }
       }
     }
-    return null
-  }, oran, true)
+  }
+
+  const sel = () => (hedefSatir == null ? null :
+    (document.getElementById(`baslik-${sayfa}-${hedefSatir}`) ||
+     document.querySelector(`[data-satir="${sayfa}-${hedefSatir}"]`)))
+
+  elemanaGit(sayfa, sel, oran,
+    anaBaslik,                                            // ana başlık: odak çizgisi
+    anaBaslik ? null : (el) => aramaVurgula(sayfa, el, baslikMetni, false)) // alt başlık: vurgu (alt çizgisiz)
 }
 
 // Vurguya git — vurgulanan ilk kelimenin DOM konumuna ([data-vurgu]) tam hizala
@@ -2106,7 +2164,9 @@ const AramaPanel = aramaAcik && (
                   const sf = kitapMetni.find(s => s.sayfa === es.sayfaNo)
                   const ls = sf ? Math.max(1, sf.metin.split("\n").length) : 1
                   const oran = Math.max(0, Math.min(0.95, (es.satirIdx || 0) / ls))
-                  elemanaGit(es.sayfaNo, () => document.querySelector(`[data-satir="${es.sayfaNo}-${es.satirIdx}"]`), oran, true)
+                  const aranan = aramaMetni
+                  elemanaGit(es.sayfaNo, () => document.querySelector(`[data-satir="${es.sayfaNo}-${es.satirIdx}"]`), oran, false,
+                    (el) => aramaVurgula(es.sayfaNo, el, aranan))
                   setAramaAcik(false)
                 }}
                 style={{
@@ -2178,7 +2238,7 @@ const menuDugumRender = (node) => {
         ) : (
           <span style={{ width: `${Math.round(20 * mo)}px`, flexShrink: 0 }} />
         )}
-        <button onClick={() => { if (node.sayfa) basligaGit(node.sayfa, node.satir, node.oran || 0, node.baslik); setMenuAcik(false) }}
+        <button onClick={() => { if (node.sayfa) basligaGit(node.sayfa, node.satir, node.oran || 0, node.baslik, node.seviye); setMenuAcik(false) }}
           title={node.aciklama || ""}
           style={{
             flex: 1, textAlign: "left", background: "transparent", border: "none", cursor: "pointer",
@@ -2361,7 +2421,8 @@ const Bar = (
 return (
   <div style={{ height: "100vh", display: "flex", flexDirection: "column", background: theme.background }}>
 
-    <style>{`@keyframes odakYanip { 0%{opacity:0} 15%{opacity:1} 70%{opacity:1} 100%{opacity:0} }`}</style>
+    <style>{`@keyframes odakYanip { 0%{opacity:0} 15%{opacity:1} 70%{opacity:1} 100%{opacity:0} }
+@keyframes aramaVurguAnim { 0%{opacity:0} 12%{opacity:1} 75%{opacity:1} 100%{opacity:0} }`}</style>
 
     {barKonum === "ust" && Bar}
 
@@ -2510,6 +2571,15 @@ return (
                   zIndex: 6, opacity: 0, animation: "odakYanip 2.4s ease-out forwards",
                 }} />
               )}
+              {aramaVurgu && aramaVurgu.sayfa === sayfa.sayfa && aramaVurgu.kutular.map((kt, ki) => (
+                <div key={aramaVurgu.nonce + "-" + ki} style={{
+                  position: "absolute", top: `${kt.top - 1}px`, left: `${kt.left - 2}px`,
+                  width: `${kt.width + 4}px`, height: `${kt.height + 2}px`,
+                  background: `${theme.accent}44`, borderBottom: aramaVurgu.altCizgi ? `2px solid ${theme.accent}` : "none",
+                  borderRadius: "3px", zIndex: 5, pointerEvents: "none",
+                  animation: "aramaVurguAnim 3.4s ease-out forwards",
+                }} />
+              ))}
               {kayitlar.filter(k => k.sayfa === sayfa.sayfa).map(k => (
                 <div key={k.id} style={{ position: "absolute", top: `${(k.oran || 0) * 100}%`, right: "6px", zIndex: 30 }}>
                   <div style={{ position: "relative" }}>

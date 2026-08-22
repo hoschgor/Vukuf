@@ -33,13 +33,15 @@ export const kategoriler = [
           id:"kiyametveahiret",
           baslik: "Kıyâmet ve Âhiret",
           aciklama:"Ölüm anı, kabir hayatı, kıyamet sahneleri, cennet ve cehennem tasvirleri gibi ahiretin hallerini ele alır",
-          dosya:"kıyametveahiret-metin.json"  
+          dosya:"kıyametveahiret-metin.json" , 
+          gorsel: "/kitap-kapak/kiyametveahiret.jpg",
           },
           {
           id:"mukasefetulkulub",
           baslik: "Mükâşefetü'l Kulûb",
           aciklama:"İmam Gazâli'nin dilinden kalplerin keşfi",
-          dosya:"mukasefetulkulub-metin.json"  
+          dosya:"mukasefetulkulub-metin.json",
+          gorsel:"/kitap-kapak/mukasefetulkulub.png",
           },
         ],
       },
@@ -68,6 +70,7 @@ export const kategoriler = [
             baslik: "İlcâmü'l-Avâm",
             aciklama: "Kelâm ilminin tehlikesinden halkın muhâfazası.",
             dosya: "ilcam-metin.json",
+            gorsel:"/kitap-kapak/avam.png",
           },
         ],
       },

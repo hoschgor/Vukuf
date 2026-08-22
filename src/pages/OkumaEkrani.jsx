@@ -205,7 +205,7 @@ function MetinParcasi({
   theme, fontSize, hizalama, metinFont, arapcaFont, arapBoyut = 6,
   vurguModu, vurguRengi, sayfaVurgulari, onVurguEkle, duzenleMod, onVurguKelimeSil,
   dipnotlar, satirAraligi = 1.9, harfAraligi = 0, kelimeAraligi = 0, onDipnotTikla,
-  basliklar, baslikFont, ortala = false, lugatRenk, arapRenk, hasiyeler,
+  basliklar, baslikFont, ortala = false, lugatRenk, arapRenk, hasiyeler, hafif = false,
 }) {
   const [secimBaslangic, setSecimBaslangic] = useState(null)
   const satirlar = metin.split("\n")
@@ -329,14 +329,19 @@ function MetinParcasi({
         }
 
         const kelimeler = gosterilecek.replace(/\[\s*(\d+)\s*\]/g, "[$1]").split(" ")
+        const pStil = {
+          marginBottom: "10px", lineHeight: satirAraligi,
+          letterSpacing: `${harfAraligi}px`,
+          textAlign: ortala ? "center" : (hizalama || "left"),
+          wordSpacing: `${kelimeAraligi}px`,
+          cursor: vurguModu ? "text" : "default",
+        }
+        // Hafif mod: aynı <p> stiliyle düz metin → tam moda geçişte YÜKSEKLİK DEĞİŞMEZ
+        if (hafif) {
+          return <p key={si} data-satir={`${sayfaNo}-${si}`} style={pStil}>{gosterilecek.replace(/⟦H\d+⟧/g, "")}</p>
+        }
         return (
-          <p key={si} data-satir={`${sayfaNo}-${si}`} style={{
-            marginBottom: "10px", lineHeight: satirAraligi,
-            letterSpacing: `${harfAraligi}px`,
-            textAlign: ortala ? "center" : (hizalama || "left"),
-            wordSpacing: `${kelimeAraligi}px`,
-            cursor: vurguModu ? "text" : "default",
-          }}>
+          <p key={si} data-satir={`${sayfaNo}-${si}`} style={pStil}>
             {kelimeler.map((kelime, ki) => {
               if (!kelime.trim()) return " "
               // Haşiye işaretlerini (⟦Hn⟧) ayıkla — kelimenin sonuna gömülüdür
@@ -474,25 +479,27 @@ function OnayliSil({ label, onConfirm, theme }) {
 }
 
 // Sadece görünürken içerik render eden pencereleme sarmalayıcısı
-function LazySayfa({ minHeight, children }) {
+// Sayfa bloğu: görünürken TAM, ulaşılan en derin noktanın üstündeyse (hafifGoster)
+// HAFİF (aynı yükseklik) render eder; yalnız alttaki ulaşılmamış sayfalar tahmini
+// yer-tutucu olur. Böylece yukarı kaydırırken üstteki sayfalar hep gerçek
+// yükseklikte → hiç sıçrama olmaz (iOS'ta native anchoring olmasa bile).
+function SayfaBlok({ minHeight, margin = "2200px 0px", hafifGoster, render }) {
   const ref = useRef(null)
   const [gorunur, setGorunur] = useState(false)
   useEffect(() => {
     const el = ref.current
     if (!el) return
-    // Bir kez görününce mount et ve gözlemi bırak (bir daha sökme → Arapça zıplaması olmaz)
     const io = new IntersectionObserver(
       ([e]) => { if (e.isIntersecting) { setGorunur(true); io.disconnect() } },
-      { rootMargin: "2200px 0px" }
+      { rootMargin: margin }
     )
     io.observe(el)
     return () => io.disconnect()
   }, [])
-  // İçerik geldiğinde yer-tutucu yüksekliği yakın olduğu için sıçrama minimal;
-  // kalanı tarayıcının kendi scroll-anchoring'i (overflow-anchor: auto) düzeltir.
+  const mod = gorunur ? "tam" : (hafifGoster ? "hafif" : null)
   return (
-    <div ref={ref} style={{ minHeight: gorunur ? undefined : `${minHeight}px` }}>
-      {gorunur ? children : null}
+    <div ref={ref} style={{ minHeight: mod ? undefined : `${minHeight}px` }}>
+      {mod ? render(mod) : null}
     </div>
   )
 }
@@ -618,6 +625,9 @@ const sonScrollRef = useRef(0)
 const sonKonumRef  = useRef(null)   // { sayfa, oran } — son okuma konumu
 const konumYuklendiRef = useRef(false)
 const [mevcutSayfa, setMevcutSayfa] = useState(1)
+const [maxSayfa, setMaxSayfa] = useState(1)   // ulaşılan en derin sayfa (üstü hafif render edilir)
+const maxSayfaRef = useRef(1)
+const maxSayfaGuncelle = (n) => { if (n > maxSayfaRef.current) { maxSayfaRef.current = n; setMaxSayfa(n) } }
 
 // ── Otomatik kaydırma
 const otomatikRef = useRef(null)
@@ -796,11 +806,14 @@ useEffect(() => {
 // ki mount olunca sıçrama minimal kalsın). Yapı bir kez ölçülür, boyut canlı.
 // ════════════════════════════════════════════════════
 const sayfaYapisi = useMemo(() => {
-  const kpl = isMobile ? 40 : 68   // satır başına ~ karakter (font-bağımsız yaklaşık)
+  const kpl = isMobile ? 50 : 82   // satır başına ~ karakter (font-bağımsız yaklaşık)
   return kitapMetni.map(sf => {
     let latinWrap = 0, arapWrap = 0, nPara = 0, nBos = 0
-    for (const s of (sf.metin || "").split("\n")) {
-      if (s.startsWith("§")) continue
+    const baslikSet = new Set((sf.basliklar || []).map(b => b.satir))
+    const satirlar = (sf.metin || "").split("\n")
+    for (let i = 0; i < satirlar.length; i++) {
+      const s = satirlar[i]
+      if (s.startsWith("§") || baslikSet.has(i)) continue   // başlık ayrı sayılıyor
       if (!s.trim()) { nBos++; continue }
       const wrap = Math.max(1, Math.ceil(s.length / kpl))
       if (ARAP_RE.test(s) && !LATIN_RE.test(s)) arapWrap += wrap
@@ -811,16 +824,14 @@ const sayfaYapisi = useMemo(() => {
   })
 }, [kitapMetni, isMobile])
 
-const tahminYuk = (i) => {
+const tahminYukHam = (i) => {
   const t = sayfaYapisi[i]
   if (!t) return 400
   const lh = yaziBoyutu * satirAraligi
   const arapLh = (yaziBoyutu + arapBoyutu) * 2
-  return Math.max(300, Math.round(
-    t.latinWrap * lh + t.arapWrap * arapLh +
+  return t.latinWrap * lh + t.arapWrap * arapLh +
     t.nPara * 10 + t.nBos * (yaziBoyutu * 0.8) +
     t.nBaslik * ((yaziBoyutu + 84) * 1.35 + 52)
-  ))
 }
 
 // ════════════════════════════════════════════════════
@@ -842,6 +853,7 @@ useEffect(() => {
     }
     if (bulunan != null) {
       setMevcutSayfa(bulunan)
+      maxSayfaGuncelle(bulunan)
       const ref = sayfaRefs.current[bulunan]
       if (ref) {
         const r = ref.getBoundingClientRect()
@@ -882,7 +894,8 @@ useEffect(() => {
   try { kayitli = JSON.parse(localStorage.getItem(`vukuf_son_konum_${id}`) || "null") } catch {}
   if (kayitli && kayitli.sayfa > 1 || (kayitli && kayitli.oran > 0.02)) {
     const hedef = Math.min(Math.max(1, kayitli.sayfa || 1), kitapMetni.length)
-    setTimeout(() => sayfayaGit(hedef, kayitli.oran || 0), 120)
+    maxSayfaGuncelle(hedef)   // üstteki sayfalar hafif render → yukarı kaydırma sıçramaz
+    setTimeout(() => sayfayaGit(hedef, kayitli.oran || 0), 160)
   }
 }, [yukleniyor, kitapMetni, id])
 
@@ -1053,6 +1066,7 @@ function sayfayaGit(sayfaNo, oran = 0, ekstra = 0) {
     return base + oran * (ref.offsetHeight || 0) - ofset
   }
   setMevcutSayfa(sayfaNo)
+  maxSayfaGuncelle(sayfaNo)
   frenKaydir(hedefTop)
 }
 
@@ -1062,6 +1076,7 @@ function elemanaGit(sayfaNo, selectorFn, fallbackOran = 0, cizgi = true) {
   const el = scrollRef.current
   if (!el) return
   setMevcutSayfa(sayfaNo)
+  maxSayfaGuncelle(sayfaNo)
   const ofset = barKonum === "ust" ? 90 : 24
 
   // Önce sayfaya yaklaş ki lazy mount tetiklensin (henüz fren yok)
@@ -2455,7 +2470,9 @@ return (
         </div>
 
         {/* Sayfalar */}
-          {kitapMetni.map((sayfa, index) => (
+          {kitapMetni.map((sayfa, index) => {
+            const ham = tahminYukHam(index)
+            return (
             <div key={sayfa.sayfa} ref={el => { if (el) sayfaRefs.current[sayfa.sayfa] = el }} style={{ position: "relative" }}>
               {odakKonum && odakKonum.sayfa === sayfa.sayfa && odakKonum.cizgi !== false && (
                 <div key={odakKonum.nonce} style={{
@@ -2478,37 +2495,43 @@ return (
                   </div>
                 </div>
               ))}
-              <LazySayfa minHeight={tahminYuk(index)}>
-                <MetinParcasi
-                  metin={sayfa.metin}
-                  sayfaNo={sayfa.sayfa}
-                  lugatAktif={lugatActive}
-                  onKelimeTikla={kelimeTikla}
-                  theme={theme}
-                  fontSize={yaziBoyutu}
-                  hizalama={hizalama}
-                  metinFont={metinFont}
-                  arapcaFont={arapcaFont}
-                  arapBoyut={arapBoyutu}
-                  vurguModu={vurguModu}
-                  vurguRengi={vurguRengi}
-                  sayfaVurgulari={vurgular[sayfa.sayfa] || []}
-                  onVurguEkle={vurguEkle}
-                  duzenleMod={vurguDuzenle}
-                  onVurguKelimeSil={vurguKelimeSil}
-                  dipnotlar={sayfa.dipnotlar}
-                  satirAraligi={satirAraligi}
-                  harfAraligi={harfAraligi}
-                  kelimeAraligi={kelimeAraligi}
-                  onDipnotTikla={dipnotTikla}
-                  basliklar={sayfa.basliklar}
-                  baslikFont={baslikFont}
-                  ortala={sayfa.sayfa === 1}
-                  lugatRenk={lugatRenk}
-                  arapRenk={arapRenk}
-                  hasiyeler={sayfa.hasiyeler}
-                />
-              </LazySayfa>
+              <SayfaBlok
+                minHeight={Math.max(300, Math.round(ham))}
+                margin={isMobile ? "3000px 0px" : "2200px 0px"}
+                hafifGoster={sayfa.sayfa <= maxSayfa}
+                render={(mod) => (
+                  <MetinParcasi
+                    hafif={mod === "hafif"}
+                    metin={sayfa.metin}
+                    sayfaNo={sayfa.sayfa}
+                    lugatAktif={lugatActive}
+                    onKelimeTikla={kelimeTikla}
+                    theme={theme}
+                    fontSize={yaziBoyutu}
+                    hizalama={hizalama}
+                    metinFont={metinFont}
+                    arapcaFont={arapcaFont}
+                    arapBoyut={arapBoyutu}
+                    vurguModu={vurguModu}
+                    vurguRengi={vurguRengi}
+                    sayfaVurgulari={vurgular[sayfa.sayfa] || []}
+                    onVurguEkle={vurguEkle}
+                    duzenleMod={vurguDuzenle}
+                    onVurguKelimeSil={vurguKelimeSil}
+                    dipnotlar={sayfa.dipnotlar}
+                    satirAraligi={satirAraligi}
+                    harfAraligi={harfAraligi}
+                    kelimeAraligi={kelimeAraligi}
+                    onDipnotTikla={dipnotTikla}
+                    basliklar={sayfa.basliklar}
+                    baslikFont={baslikFont}
+                    ortala={sayfa.sayfa === 1}
+                    lugatRenk={lugatRenk}
+                    arapRenk={arapRenk}
+                    hasiyeler={sayfa.hasiyeler}
+                  />
+                )}
+              />
               {notlar[sayfa.sayfa]?.length > 0 && (
                 <div
                   onClick={() => { setMevcutSayfa(sayfa.sayfa); togglePanel(setKayitAcik, true); setKayitSekme("notlar") }}
@@ -2525,7 +2548,8 @@ return (
                 </div>
               )}
             </div>
-        ))}
+            )
+          })}
       </div>
     </div>
     {barKonum === "alt" && Bar}

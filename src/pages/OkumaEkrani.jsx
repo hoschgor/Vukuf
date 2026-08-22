@@ -176,15 +176,27 @@ function dakikaFormatla(saniye) {
 
 function fontYukle(fontId) {
   const font = TUM_FONTLAR.find(f => f.id === fontId)
-  if (!font?.google) return
-  const linkId = `font-${fontId}`
-  if (!document.getElementById(linkId)) {
-    const link = document.createElement("link")
-    link.id = linkId
-    link.rel = "stylesheet"
-    link.href = `https://fonts.googleapis.com/css2?family=${font.google}&display=swap`
-    document.head.appendChild(link)
+  if (!font) return
+  // Google fontuysa stylesheet linkini enjekte et
+  if (font.google) {
+    const linkId = `font-${fontId}`
+    if (!document.getElementById(linkId)) {
+      const link = document.createElement("link")
+      link.id = linkId
+      link.rel = "stylesheet"
+      link.href = `https://fonts.googleapis.com/css2?family=${font.google}&display=swap`
+      document.head.appendChild(link)
+    }
   }
+  // Yerel (@font-face) veya uzak fontu FİİLEN getir → yedek-font parlamasını önler,
+  // "yüklü değilse yükle" isteğini karşılar (FontFace API tembel yüklemeyi tetikler).
+  try {
+    if (document.fonts && document.fonts.load) {
+      const aile = (font.style.match(/'[^']+'|"[^"]+"|[^,]+/) || [font.style])[0].trim()
+      document.fonts.load(`16px ${aile}`)
+      document.fonts.load(`bold 16px ${aile}`)
+    }
+  } catch {}
 }
 
 function fontBul(fontId) {
@@ -604,9 +616,18 @@ const [harfAraligi, setHarfAraligi]   = useState(() => parseFloat(localStorage.g
 const [kelimeAraligi, setKelimeAraligi] = useState(() => parseFloat(localStorage.getItem("vukuf-kelime-araligi") || "0"))
 const [hizalama, setHizalama] = useState(() => localStorage.getItem("vukuf-hizalama") || "left")
 const [arapBoyutu, setArapBoyutu] = useState(() => parseInt(localStorage.getItem("vukuf-arap-boyutu") || "6"))
+// İlk oturum mu? (font tercihi henüz kaydedilmemişse)
+const ilkOturumRef = useRef(localStorage.getItem("vukuf-fontlar") == null)
 const [fontSecimler, setFontSecimler] = useState(() => {
-  const kayitli = localStorage.getItem("vukuf-fontlar")
-  return kayitli ? JSON.parse(kayitli) : { turkce: "bookerly", osmanlica: null, arapca: "kfgqpc" }
+  const VARSAYILAN = { turkce: "bookerly", osmanlica: null, arapca: "kfgqpc" }
+  try {
+    const k = JSON.parse(localStorage.getItem("vukuf-fontlar") || "null")
+    if (k && typeof k === "object") {
+      // Dönen kullanıcı: kayıtlı seçim; Türkçe/Arapça boşsa varsayılana tamamla
+      return { turkce: k.turkce || "bookerly", osmanlica: k.osmanlica ?? null, arapca: k.arapca || "kfgqpc" }
+    }
+  } catch {}
+  return VARSAYILAN   // ilk oturum → zorla varsayılan
 })
 const aktifFontId = fontSecimler.turkce || fontSecimler.osmanlica || fontSecimler.arapca || "bookerly"
 const aktifFont   = fontBul(aktifFontId)
@@ -920,6 +941,12 @@ useEffect(() => {
 // ════════════════════════════════════════════════════
 
 useEffect(() => {
+  // İlk oturum: varsayılan Türkçe+Arapça fontları zorla yükle ve kalıcı kaydet.
+  if (ilkOturumRef.current) {
+    fontYukle("bookerly"); fontYukle("kfgqpc")
+    try { localStorage.setItem("vukuf-fontlar", JSON.stringify({ turkce: "bookerly", osmanlica: null, arapca: "kfgqpc" })) } catch {}
+    ilkOturumRef.current = false
+  }
   Object.values(fontSecimler).forEach(fid => { if (fid) fontYukle(fid) })
 }, [fontSecimler])
 

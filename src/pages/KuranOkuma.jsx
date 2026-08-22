@@ -23,7 +23,7 @@ import {
   Play, Pause, Plus, Minus, Type, Palette,
   Settings, Circle, Clock, ChevronsUp, ChevronsDown,
   Pencil, ChevronLeft, Bookmark, BookOpen, Feather,
-  Layers,
+  Layers, Check,
 } from "lucide-react"
 
 // ── Arapça font listesi
@@ -205,6 +205,9 @@ const maxWidth = useMemo(() =>
   const [ozelTemaPanelAcik, setOzelTemaPanelAcik] = useState(false)
   const [sayfaGitAcik, setSayfaGitAcik] = useState(false)
   const [sayfaGitInput, setSayfaGitInput] = useState("")
+  // Bardaki sayfa göstergesi tipi: "tam" (202/604) | "sayfa" (202) | "ikon" (yalnız simge)
+  const [sayfaGosterim, setSayfaGosterim] = useState(() => localStorage.getItem("vukuf-kuran-sayfa-gosterim") || "sayfa")
+  const [sayfaGosterimAcik, setSayfaGosterimAcik] = useState(false)
 
   // ── Özel tema
   const [ozelRenkler, setOzelRenkler] = useState(() => {
@@ -255,6 +258,7 @@ const maxWidth = useMemo(() =>
   useEffect(() => { localStorage.setItem("vukuf-otomatik-gizleme",  String(otomatikGizleme))}, [otomatikGizleme])
   useEffect(() => { localStorage.setItem("vukuf-gizleme-suresi",    String(gizlemeSuresi))  }, [gizlemeSuresi])
   useEffect(() => { localStorage.setItem("vukuf-son-sayfa",         String(mevcutSayfa))    }, [mevcutSayfa])
+  useEffect(() => { localStorage.setItem("vukuf-kuran-sayfa-gosterim", sayfaGosterim)       }, [sayfaGosterim])
   useEffect(() => { localStorage.setItem("vukuf-satir-araligi",     String(satirAraligi))   }, [satirAraligi])
   useEffect(() => { localStorage.setItem("vukuf-harf-araligi",      String(harfAraligi))    }, [harfAraligi])
   useEffect(() => {
@@ -923,8 +927,16 @@ function sureGit(sureId, ayetNo) {
     + (player.durum !== "kapali" ? playerBarYuksekligi : 0)
     + (ayetNo ? 20 : 8)
 
+  // Kaydırma hedefi: mümkünse bir ÖNCEKİ ayeti üste hizala (seçili ayet bağlamla,
+  // en üst satıra yapışık değil gelsin). Efekt yine seçili ayette kalır.
+  let kaydirEl = hedefEl
+  if (ayetNo && ayetNo > 1) {
+    const oncekiEl = el.querySelector(`[data-sure="${sureId}"][data-ayet="${ayetNo - 1}"]`)
+    if (oncekiEl) kaydirEl = oncekiEl
+  }
+
   const hedefTop = () =>
-    hedefEl.getBoundingClientRect().top
+    kaydirEl.getBoundingClientRect().top
     - el.getBoundingClientRect().top
     + el.scrollTop
     - offset
@@ -1103,9 +1115,29 @@ const menuIcerikPadding = {
   <>
     <div onClick={() => setSayfaGitAcik(false)} style={{ position: "fixed", inset: 0, zIndex: 95 }} />
     <div style={{ ...panelStil("center"), width: "280px", zIndex: 96 }}>
-      <div style={{ fontSize: "12px", color: theme.textSecondary, marginBottom: "10px" }}>
-        SAYFAYA GİT (1 – {toplamSayfa})
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px" }}>
+        <div style={{ fontSize: "12px", color: theme.textSecondary }}>SAYFAYA GİT (1 – {toplamSayfa})</div>
+        <button onClick={() => setSayfaGosterimAcik(v => !v)} title="Bardaki görünüm tipi"
+          style={{ background: sayfaGosterimAcik ? `${theme.accent}20` : "none", border: "none", borderRadius: "6px", cursor: "pointer", color: theme.textSecondary, padding: "3px", display: "flex" }}>
+          <Settings size={14} />
+        </button>
       </div>
+      {sayfaGosterimAcik && (
+        <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginBottom: "12px", padding: "8px", borderRadius: "8px", background: theme.background, border: `1px solid ${theme.border}` }}>
+          <div style={{ fontSize: "10px", color: theme.textSecondary, letterSpacing: "1px", marginBottom: "2px" }}>BARDA GÖRÜNÜM</div>
+          {[{ id: "ikon", on: null }, { id: "sayfa", on: `${mevcutSayfa}` }, { id: "tam", on: `${mevcutSayfa} / ${toplamSayfa}` }].map(o => (
+            <button key={o.id} onClick={() => { setSayfaGosterim(o.id); setSayfaGosterimAcik(false) }}
+              style={{ display: "flex", alignItems: "center", gap: "6px", padding: "7px 10px", borderRadius: "8px",
+                border: `1px solid ${sayfaGosterim === o.id ? theme.accent : theme.border}`,
+                background: sayfaGosterim === o.id ? `${theme.accent}12` : "transparent",
+                color: theme.text, cursor: "pointer", fontSize: "13px" }}>
+              <BookOpen size={13} color={theme.accent} />
+              {o.on && <span>{o.on}</span>}
+              {sayfaGosterim === o.id && <Check size={13} style={{ marginLeft: "auto", color: theme.accent }} />}
+            </button>
+          ))}
+        </div>
+      )}
       <div style={{ display: "flex", gap: "8px", marginBottom: "12px" }}>
         <input
           type="number" min={1} max={toplamSayfa}
@@ -1637,7 +1669,7 @@ const menuIcerikPadding = {
           }}
         >
           <BookOpen size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />
-          {mevcutSayfa}
+          {sayfaGosterim === "ikon" ? null : (sayfaGosterim === "sayfa" ? mevcutSayfa : `${mevcutSayfa} / ${toplamSayfa}`)}
         </button>
       )}
       

@@ -12,7 +12,7 @@ import {
   Plus, Minus, AlignJustify, ChevronsUp, ChevronsDown,
   Bookmark, X, Type, StickyNote, Palette,
   Search, Highlighter, ChevronDown, Clock, Settings,
-  ChevronUp, ChevronRight, Edit2, Pencil, Circle, Feather, List,
+  ChevronUp, ChevronRight, Edit2, Pencil, Circle, Feather, List, Check,
 } from "lucide-react"
 import { useMediaQuery } from '../data/hooks/useMediaQuery'
 
@@ -704,6 +704,9 @@ const isMobile = useMediaQuery('(max-width: 768px)')
 const [ayarlarAcik, setAyarlarAcik]     = useState(false)
 const [sayfaGitAcik, setSayfaGitAcik]   = useState(false)
 const [sayfaGitInput, setSayfaGitInput] = useState("")
+// Bardaki sayfa göstergesi tipi: "tam" (202/1050) | "sayfa" (202) | "ikon" (yalnız simge)
+const [sayfaGosterim, setSayfaGosterim] = useState(() => localStorage.getItem("vukuf-sayfa-gosterim") || "tam")
+const [sayfaGosterimAcik, setSayfaGosterimAcik] = useState(false)
 const [aaAcik, setAaAcik]               = useState(false)
 const [kayitAcik, setKayitAcik]         = useState(false)
 const [kayitSekme, setKayitSekme]       = useState("isaretler")
@@ -1016,6 +1019,7 @@ useEffect(() => { localStorage.setItem("vukuf-gizleme-suresi", gizlemeSuresi) },
 useEffect(() => { localStorage.setItem("vukuf-sade-mode", sadeMode) }, [sadeMode])
 useEffect(() => { localStorage.setItem("vukuf-bar-ui-olcegi", String(barUiOlcegi)) }, [barUiOlcegi])
 useEffect(() => { localStorage.setItem("vukuf-bilgi-olcegi", String(bilgiOlcegi)) }, [bilgiOlcegi])
+useEffect(() => { localStorage.setItem("vukuf-sayfa-gosterim", sayfaGosterim) }, [sayfaGosterim])
 useEffect(() => { localStorage.setItem("vukuf-arapca-renk", arapcaRenk || "") }, [arapcaRenk])
 useEffect(() => { localStorage.setItem("vukuf-lugat-renk", lugatRenkOzel || "") }, [lugatRenkOzel])
 useEffect(() => { localStorage.setItem("vukuf-bar-gorunur", JSON.stringify(ogeGorunur)) }, [ogeGorunur])
@@ -2195,7 +2199,29 @@ const SayfaGitPopup = sayfaGitAcik && (
   <>
     <div onClick={() => setSayfaGitAcik(false)} style={{ position: "fixed", inset: 0, zIndex: 95 }} />
     <div className="okuma-panel" style={{ ...panelStil("center"), width: "280px" }}>
-      <div style={{ fontSize: "12px", color: theme.textSecondary, marginBottom: "10px" }}>SAYFAYA GİT (1 – {kitapMetni.length})</div>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px" }}>
+        <div style={{ fontSize: "12px", color: theme.textSecondary }}>SAYFAYA GİT (1 – {kitapMetni.length})</div>
+        <button onClick={() => setSayfaGosterimAcik(v => !v)} title="Bardaki görünüm tipi"
+          style={{ background: sayfaGosterimAcik ? `${theme.accent}20` : "none", border: "none", borderRadius: "6px", cursor: "pointer", color: theme.textSecondary, padding: "3px", display: "flex" }}>
+          <Settings size={14} />
+        </button>
+      </div>
+      {sayfaGosterimAcik && (
+        <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginBottom: "12px", padding: "8px", borderRadius: "8px", background: theme.background, border: `1px solid ${theme.border}` }}>
+          <div style={{ fontSize: "10px", color: theme.textSecondary, letterSpacing: "1px", marginBottom: "2px" }}>BARDA GÖRÜNÜM</div>
+          {[{ id: "ikon", on: null }, { id: "sayfa", on: `${mevcutSayfa}` }, { id: "tam", on: `${mevcutSayfa} / ${kitapMetni.length}` }].map(o => (
+            <button key={o.id} onClick={() => { setSayfaGosterim(o.id); setSayfaGosterimAcik(false) }}
+              style={{ display: "flex", alignItems: "center", gap: "6px", padding: "7px 10px", borderRadius: "8px",
+                border: `1px solid ${sayfaGosterim === o.id ? theme.accent : theme.border}`,
+                background: sayfaGosterim === o.id ? `${theme.accent}12` : "transparent",
+                color: theme.text, cursor: "pointer", fontSize: "13px" }}>
+              <BookOpen size={13} color={theme.accent} />
+              {o.on && <span>{o.on}</span>}
+              {sayfaGosterim === o.id && <Check size={13} style={{ marginLeft: "auto", color: theme.accent }} />}
+            </button>
+          ))}
+        </div>
+      )}
       <div style={{ display: "flex", gap: "8px", marginBottom: "12px" }}>
         <input
           type="number" min={1} max={kitapMetni.length}
@@ -2318,7 +2344,7 @@ const Bar = (
     {gorunurMu("sayfa") && (
       <button onClick={() => togglePanel(setSayfaGitAcik, !sayfaGitAcik)} style={{ ...barButonStil(sayfaGitAcik), background: `${theme.accent}15`, color: theme.text }}>
         <BookOpen size={bIkon(13)} color={theme.accent} />
-        {mevcutSayfa} / {kitapMetni.length}
+        {sayfaGosterim === "ikon" ? null : (sayfaGosterim === "sayfa" ? mevcutSayfa : `${mevcutSayfa} / ${kitapMetni.length}`)}
       </button>
     )}
 

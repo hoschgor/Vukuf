@@ -3,6 +3,7 @@ import Navbar from "./components/Navbar"
 import Kutuphane from "./pages/Kutuphane"
 import Lugat from "./pages/Lugat"
 import Tefeul from "./pages/SozTefeul"
+import OkumaTefeulu from "./pages/OkumaTefeulu"
 import OkumaEkrani from "./pages/OkumaEkrani"
 import Arama from "./pages/Arama"
 import Hakkinda from "./pages/Hakkinda"
@@ -22,6 +23,7 @@ export default function App() {
         <Route path="/arama" element={<Arama />} />
         <Route path="/kuran" element={<KuranOkuma />} />
         <Route path="/tefeul" element={<Tefeul />} />
+        <Route path="/okuma-tefeul" element={<OkumaTefeulu />} />
         <Route path="/kitap/:id" element={<OkumaEkrani />} />
         <Route path="/hakkinda" element={<Hakkinda />} />
       </Routes>

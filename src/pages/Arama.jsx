@@ -97,24 +97,29 @@ export default function Arama() {
     return kitapListesi
   }, [secKisim, secAlim, secKitap, kitapListesi])
 
-  // Açılışta son arama durumunu geri yükle (kaldığı yerden devam)
+  // Açılışta: YALNIZ "Aramaya dön" ile gelindiyse durumu geri yükle.
+  // Menüden normal girişte temiz başla (eski arama açılmasın).
   useEffect(() => {
-    try {
-      const d = JSON.parse(localStorage.getItem("vukuf-arama-durum") || "null")
-      if (d) {
-        if (d.secKisim) { setSecKisim(d.secKisim); setFiltreAcik(true) }
-        if (d.secAlim) setSecAlim(d.secAlim)
-        if (d.secKitap) setSecKitap(d.secKitap)
-        if (d.sorgu) setSorgu(d.sorgu)
-      }
-    } catch {}
-    try { localStorage.removeItem("vukuf-aramaya-don") } catch {}   // Aramaya dönüldü → bildirim kalksın
+    let devam = false
+    try { devam = localStorage.getItem("vukuf-arama-devam") === "1" } catch {}
+    if (devam) {
+      try {
+        const d = JSON.parse(localStorage.getItem("vukuf-arama-durum") || "null")
+        if (d) {
+          if (d.secKisim) { setSecKisim(d.secKisim); setFiltreAcik(true) }
+          if (d.secAlim) setSecAlim(d.secAlim)
+          if (d.secKitap) setSecKitap(d.secKitap)
+          if (d.sorgu) setSorgu(d.sorgu)
+        }
+      } catch {}
+    }
+    try { localStorage.removeItem("vukuf-arama-devam"); localStorage.removeItem("vukuf-aramaya-don") } catch {}
   }, [])
 
-  // Arama durumunu kalıcı tut (dönünce aynen devam etsin)
-  useEffect(() => {
+  // Bir sonuca giderken o anki arama durumunu anlık kaydet (dönünce devam etsin)
+  function durumKaydet() {
     try { localStorage.setItem("vukuf-arama-durum", JSON.stringify({ sorgu, secKisim, secAlim, secKitap })) } catch {}
-  }, [sorgu, secKisim, secAlim, secKitap])
+  }
 
   useEffect(() => {
     const q = sorgu.trim()
@@ -169,6 +174,7 @@ export default function Arama() {
       }))
       localStorage.setItem("vukuf-aramaya-don", "1")   // okuma ekranında "Aramaya dön" göster
     } catch {}
+    durumKaydet()
     navigate(`/kitap/${r.kitapId}`)
   }
 
@@ -178,6 +184,7 @@ export default function Arama() {
       localStorage.setItem("vukuf-kuran-hedef", JSON.stringify({ sureNo: s.no }))
       localStorage.setItem("vukuf-aramaya-don", "1")
     } catch {}
+    durumKaydet()
     navigate("/kuran")
   }
 

@@ -38,7 +38,7 @@ export default function Navbar() {
     { path: "/arama", label: "Arama", icon: Search },
     { path: "/lugat", label: "Lügat", icon: Type },
     { path: "/tefeul", label: "Söz Tefeülü", icon: Shuffle },
-    { path: "/tefeul", label: "Okuma Tefeülü", icon: Shuffle },
+    { path: "/okuma-tefeul", label: "Okuma Tefeülü", icon: Shuffle },
   ]
 
   // Alt menü öğesi (Hakkında)

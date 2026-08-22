@@ -625,7 +625,7 @@ useEffect(() => {
   if (h && h.sureNo) {
     kuranHedefRef.current = true
     try { localStorage.removeItem("vukuf-kuran-hedef") } catch {}
-    setTimeout(() => sureGit(h.sureNo), 350)
+    setTimeout(() => sureGit(h.sureNo, h.ayetNo || null), 350)   // ayetNo varsa ayete, yoksa sure başlığına
   }
 }, [sayfaListesi.length])
 
@@ -2562,7 +2562,7 @@ const menuIcerikPadding = {
             background: theme.accent, color: "#fff", borderRadius: "22px",
             padding: "8px 8px 8px 14px", boxShadow: "0 4px 16px rgba(0,0,0,0.25)",
           }}>
-            <button onClick={() => navigate("/arama")} style={{ display: "flex", alignItems: "center", gap: "6px", background: "none", border: "none", color: "#fff", cursor: "pointer", fontSize: "13px", fontFamily: "inherit" }}>
+            <button onClick={() => { try { localStorage.setItem("vukuf-arama-devam", "1") } catch {}; navigate("/arama") }} style={{ display: "flex", alignItems: "center", gap: "6px", background: "none", border: "none", color: "#fff", cursor: "pointer", fontSize: "13px", fontFamily: "inherit" }}>
               <Search size={15} /> Aramaya dön
             </button>
             <button onClick={() => setAramayaDon(false)} title="Kapat" style={{ display: "flex", background: "rgba(255,255,255,0.25)", border: "none", color: "#fff", cursor: "pointer", borderRadius: "50%", padding: "3px" }}>

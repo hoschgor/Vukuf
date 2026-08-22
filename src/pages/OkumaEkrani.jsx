@@ -669,6 +669,7 @@ const sayfaRefs    = useRef({})
 const sonScrollRef = useRef(0)
 const sonKonumRef  = useRef(null)   // { sayfa, oran } — son okuma konumu
 const konumYuklendiRef = useRef(false)
+const [aramayaDon, setAramayaDon] = useState(false)   // Arama'dan gelindiyse "Aramaya dön" göster
 const [mevcutSayfa, setMevcutSayfa] = useState(1)
 const [maxSayfa, setMaxSayfa] = useState(1)   // ulaşılan en derin sayfa (üstü hafif render edilir)
 const maxSayfaRef = useRef(1)
@@ -923,6 +924,16 @@ const konumKaydet = useCallback(() => {
   if (!k || !id) return
   try { localStorage.setItem(`vukuf_son_konum_${id}`, JSON.stringify(k)) } catch {}
 }, [id])
+
+// Arama'dan gelindi mi? (bir kez oku, bayrağı temizle → yalnız bu kitapta göster)
+useEffect(() => {
+  try {
+    if (localStorage.getItem("vukuf-aramaya-don") === "1") {
+      setAramayaDon(true)
+      localStorage.removeItem("vukuf-aramaya-don")
+    }
+  } catch {}
+}, [])
 
 // Kaydetme: yalnız sekme gizlenince / sayfa kapanınca / bileşen sökülünce (scroll'da değil)
 useEffect(() => {
@@ -2695,6 +2706,23 @@ return (
       </div>
     </div>
     {barKonum === "alt" && Bar}
+
+    {aramayaDon && (
+      <div style={{
+        position: "fixed", right: "14px", zIndex: 120,
+        [barKonum === "alt" ? "bottom" : "top"]: barKonum === "alt" ? "58px" : "58px",
+        display: "flex", alignItems: "center", gap: "6px",
+        background: theme.accent, color: "#fff", borderRadius: "22px",
+        padding: "8px 8px 8px 14px", boxShadow: "0 4px 16px rgba(0,0,0,0.25)",
+      }}>
+        <button onClick={() => navigate("/arama")} style={{ display: "flex", alignItems: "center", gap: "6px", background: "none", border: "none", color: "#fff", cursor: "pointer", fontSize: "13px", fontFamily: "inherit" }}>
+          <Search size={15} /> Aramaya dön
+        </button>
+        <button onClick={() => setAramayaDon(false)} title="Kapat" style={{ display: "flex", background: "rgba(255,255,255,0.25)", border: "none", color: "#fff", cursor: "pointer", borderRadius: "50%", padding: "3px" }}>
+          <X size={13} />
+        </button>
+      </div>
+    )}
   </div>
 )
 }

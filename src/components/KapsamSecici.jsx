@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from "react"
 import { ChevronDown, Check } from "lucide-react"
 import { kategoriler, kitaplar } from "../data/kitaplar"
+import { ozelRaflarOku, ozelKategoriler, kitapHavuzu } from "../data/okumaKayit"
 
 // Bir alimin tüm kitapları (altKategoriler varsa düzleştir)
 export const alimKitaplari = (alim) =>
@@ -69,7 +70,14 @@ export default function KapsamSecici({ theme, kuranSecenek = false, baslangic, o
   const [secKitap, setSecKitap] = useState(baslangic?.secKitap || "")
 
   const kisimlar = useMemo(
-    () => kategoriler.filter(k => k.id !== "orijinal-eserler" && (k.alimler || []).some(a => alimKitaplari(a).length)),
+    () => {
+      const yerlesik = kategoriler.filter(k => k.id !== "orijinal-eserler" && (k.alimler || []).some(a => alimKitaplari(a).length))
+      // Özel raflar (Arama'da da isimleriyle görünür) — Kur'an hariç kitap havuzu
+      const havuz = kitapHavuzu(kitaplar, null)
+      const ozel = ozelKategoriler(ozelRaflarOku(), havuz)
+        .filter(k => (k.alimler || []).some(a => alimKitaplari(a).length))
+      return [...yerlesik, ...ozel]
+    },
     []
   )
   const kuranMi = secKisim === "kuran"

@@ -2,6 +2,7 @@ import { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo, } f
 import { createPortal } from "react-dom"
 import { useNavigate } from "react-router-dom"
 import { useApp } from "../AppContext"
+import { okumaKaydet, KURAN_ID, normHarf } from "../data/okumaKayit"
 import { useVirtualizer } from "@tanstack/react-virtual"
 import arapcaLugat from "../data/arapca-lugat.json"
 import ayetMeal from "../data/ayet-meal.json"
@@ -114,6 +115,9 @@ export default function KuranOkuma({ kitap }) {
   const navigate  = useNavigate()
   const isMobile  = useMediaQuery("(max-width: 768px)")
   const scrollRef = useRef(null)
+
+  // Son/Sık Okunanlar rafları için okuma kaydı
+  useEffect(() => { okumaKaydet(KURAN_ID) }, [])
   const [odakAyet, setOdakAyet] = useState(null)
   const [odakSure, setOdakSure] = useState(null)
   const odakSureNonce = useRef(0)
@@ -585,9 +589,10 @@ const cokSatir = wrapAktif && barYuksekligi > tekSatirYuksekligi * 1.0
   
   const filtreliSureler = useMemo(() => {
     if (!menuArama) return sureler
+    const q = normHarf(menuArama)  // şapka/aksan + büyük-küçük duyarsız
     return sureler.filter(s =>
-      s.isim.toLowerCase().includes(menuArama.toLowerCase()) ||
-      String(s.id).includes(menuArama)
+      normHarf(s.isim).includes(q) ||
+      String(s.id).includes(menuArama.trim())
     )
   }, [sureler, menuArama])
 

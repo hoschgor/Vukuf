@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom"
 import { Search, X, BookOpen, ChevronRight, Loader, SlidersHorizontal } from "lucide-react"
 import { useApp } from "../AppContext"
 import { useMediaQuery } from "../data/hooks/useMediaQuery"
+import { normHarf } from "../data/okumaKayit"
 import KapsamSecici from "../components/KapsamSecici"
 
 // ════════════════════════════════════════════════════════════════
@@ -27,7 +28,9 @@ const SURELER = [
 ].map((ad, i) => ({ no: i + 1, ad }))
 
 // Türkçe-duyarlı küçük harf (İ→i, I→ı→i)
-const trLower = (s) => (s || "").toLocaleLowerCase("tr").replace(/ı/g, "i")
+// Arama eşleştirmesi: şapka/aksan + büyük-küçük duyarsız (â→a, ş→s, ...).
+// normHarf precomposed harflerde uzunluğu korur → önizleme dilimlemesi hizalı kalır.
+const trLower = normHarf
 
 // Kitap metinleri önbelleği (dosya -> sayfalar[])
 const metinCache = new Map()
@@ -161,7 +164,7 @@ export default function Arama() {
         Arama
       </h1>
       <p style={{ fontSize: "13px", color: theme.textSecondary, marginBottom: "20px" }}>
-        Kitaplarda her şeyi, Kur'an'da sure adlarını arayabilirsiniz.
+        Kitaplarda her şeyi, Kur'an'da sure adlarını ara.
       </p>
 
       {/* Arama kutusu */}

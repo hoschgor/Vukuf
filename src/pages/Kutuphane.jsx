@@ -53,6 +53,19 @@ const kitapYolu = (k) => (k && (k.kuran || k.id === "kuran")) ? "/kuran" : `/kit
 // kullanıcı bir rafı SONRADAN açınca çalışsın (yüklemede sayfa zıplamasın)
 let sayfaYuklendi = false
 
+// Kapak görsellerini bir kez ön belleğe al (coverflow'da tekrar tekrar
+// yüklenip animasyonu takmasın). Image nesneleri referansta tutulur → GC etmez.
+const _kapakCache = []
+let _kapakOnbellek = false
+function kapaklariOnbellekle(urls) {
+  if (_kapakOnbellek) return
+  _kapakOnbellek = true
+  urls.forEach(u => {
+    if (!u) return
+    try { const img = new Image(); img.decoding = "async"; img.src = u; _kapakCache.push(img) } catch {}
+  })
+}
+
 function SortableKitap({ kitap, duzenlemeMode, theme, alimId }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: kitap.id })
   const style = { transform: CSS.Transform.toString(transform), transition }
@@ -380,6 +393,8 @@ function DinamikRaf({ kitaplar: liste, rafId, theme, alimId, kitapSiralama }) {
                 transition: suruk ? "none" : "transform 0.34s cubic-bezier(.22,.61,.36,1), filter 0.34s, opacity 0.34s",
                 cursor: "pointer",
                 pointerEvents: abs > 1.7 ? "none" : "auto",
+                willChange: "transform, filter, opacity",
+                backfaceVisibility: "hidden",
               }}
             >
               <DinamikKapak kitap={kitap} alimId={alimId} coverW={coverW} coverH={coverH} />
@@ -1471,6 +1486,13 @@ export default function Kutuphane() {
     const t = setTimeout(() => { sayfaYuklendi = true }, 600)
     return () => { clearTimeout(t); sayfaYuklendi = false }
   }, [])
+
+  // Tüm kapak görsellerini bir kez ön belleğe al
+  useEffect(() => {
+    const urls = kitaplar.map(k => k.gorsel).filter(Boolean)
+    if (kuranKitap?.gorsel) urls.push(kuranKitap.gorsel)
+    kapaklariOnbellekle(urls)
+  }, [kuranKitap])
 
   // Dinamik mod düğmesi Navbar'da — event ile senkron
   useEffect(() => {

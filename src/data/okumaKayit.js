@@ -8,9 +8,12 @@
 // (â→a, î→i, û→u, ş→s, ç→c, ğ→g, ü→u, ö→o, ı/İ→i). Sadece ARAMA eşleştirmede kullan
 // (uzunluk korumaz; highlight offset hesaplarında KULLANMA).
 const _AKSAN = new RegExp("[\\u0300-\\u036f]", "g")
+// Kesme işareti / tırnak varyasyonları → düz ' (klavye ' ile metindeki ' eşleşsin)
+const _KESME = new RegExp("[\\u2018\\u2019\\u02BC\\u02B9\\u2032\\u00B4\\u0060]", "g")
 export const normHarf = (s) => (s || "")
   .toLocaleLowerCase("tr")
   .replace(/ı/g, "i").replace(/İ/g, "i")
+  .replace(_KESME, "'")
   .normalize("NFD").replace(_AKSAN, "")
 
 // UZUNLUK KORUYAN katlama (1 harf → 1 harf). Okuma ekranı highlight'ı gibi
@@ -22,6 +25,8 @@ const _FOLD = {
   "ô": "o", "ó": "o", "ò": "o", "ö": "o", "ō": "o", "õ": "o",
   "û": "u", "ú": "u", "ù": "u", "ü": "u", "ū": "u",
   "ş": "s", "ç": "c", "ğ": "g",
+  // Kesme işareti / tırnak varyasyonları → düz ' (uzunluk korunur, 1→1)
+  "’": "'", "‘": "'", "ʼ": "'", "ʹ": "'", "′": "'", "´": "'", "`": "'",
 }
 export const trFold = (s) => {
   let out = ""

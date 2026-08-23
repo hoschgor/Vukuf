@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { Link, useLocation } from "react-router-dom"
-import { BookOpen, Search, Shuffle, Menu, X, Palette, Pencil, Info, Type } from "lucide-react"
+import { BookOpen, Search, Shuffle, Menu, X, Palette, Pencil, Info, Type, Sparkles } from "lucide-react"
 import { useApp } from "../AppContext"
 import { useMediaQuery } from "../data/hooks/useMediaQuery"
 
@@ -28,6 +28,21 @@ export default function Navbar() {
   const location = useLocation()
   const [menuAcik, setMenuAcik] = useState(false)
   const [temaAcik, setTemaAcik] = useState(false)
+  const [dinamik, setDinamik] = useState(() => {
+    try { return localStorage.getItem("vukuf-dinamik-mod") === "1" } catch { return false }
+  })
+
+  // Dinamik mod düğmesi yalnızca Kitaplık sayfasında görünür
+  const dinamikGoster = location.pathname === "/"
+
+  function toggleDinamik() {
+    setDinamik(prev => {
+      const yeni = !prev
+      try { localStorage.setItem("vukuf-dinamik-mod", yeni ? "1" : "0") } catch {}
+      window.dispatchEvent(new CustomEvent("vukuf-dinamik", { detail: yeni }))
+      return yeni
+    })
+  }
   const [ozelPanelAcik, setOzelPanelAcik] = useState(false)
   const [ozelRenkler, setOzelRenkler] = useState(customTheme)
   const [aktifRenk, setAktifRenk] = useState(null)
@@ -98,6 +113,27 @@ export default function Navbar() {
         <Link to="/" style={{ color: theme.accent, fontSize: "20px", fontWeight: "bold", letterSpacing: "3px" }}>
           VUKUF
         </Link>
+
+        {/* Sağ grup: Dinamik + Tema */}
+        <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+        {/* Dinamik mod (yalnızca Kitaplık sayfasında) */}
+        {dinamikGoster && (
+          <button
+            onClick={toggleDinamik}
+            title="Dinamik görünüm"
+            aria-label="Dinamik görünüm"
+            style={{
+              color: dinamik ? theme.accent : theme.textSecondary,
+              padding: "6px",
+              borderRadius: "8px",
+              display: "flex",
+              alignItems: "center",
+              background: dinamik ? `${theme.accent}15` : "transparent",
+            }}
+          >
+            <Sparkles size={18} />
+          </button>
+        )}
 
         {/* Tema seçici */}
         <div style={{ position: "relative" }}>
@@ -175,6 +211,7 @@ export default function Navbar() {
               </div>
             </>
           )}
+        </div>
         </div>
       </nav>
 

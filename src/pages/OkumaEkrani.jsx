@@ -333,7 +333,7 @@ function MetinParcasi({
             <div key={si} id={`baslik-${sayfaNo}-${si}`} data-satir={`${sayfaNo}-${si}`} style={{
               textAlign: "center", margin: (bh.seviye <= 1) ? "34px 0 18px" : "24px 0 12px",
               fontFamily: baslikFont || "inherit",
-              fontSize: `${fontSize + ((bh.seviye <= 1) ? 84 : 84)}px`,
+              fontSize: `${fontSize + ((bh.seviye <= 1) ? 84 : 64)}px`,
               fontWeight: 700, color: theme.accent, lineHeight: 1.35,
             }}>
               {gosterilecek.replace(/⟦H\d+⟧/g, "")}
@@ -2608,7 +2608,7 @@ return (
 
         {/* Kitap başlığı */}
         <div style={{ textAlign: "center", marginBottom: "48px", paddingTop: "24px" }}>
-          <h1 style={{ fontSize: "98px", color: theme.accent, marginBottom: "8px", lineHeight: 1.1, fontFamily: /Nurs[iî]/.test(kitap.yazar || "") ? "LivaNur, serif" : "PlayfairDisplay, serif" }}>
+          <h1 style={{ fontSize: isMobile ? "98px" : "158px", color: theme.accent, marginBottom: "8px", lineHeight: 1.1, fontFamily: /Nurs[iî]/.test(kitap.yazar || "") ? "LivaNur, serif" : "PlayfairDisplay, serif" }}>
             {kitap.baslik}
           </h1>
           <p style={{ color: theme.textSecondary, fontSize: "44px" }}>{kitap.yazar}</p>

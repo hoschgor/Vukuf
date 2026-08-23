@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useMediaQuery } from "../data/hooks/useMediaQuery"
 import { useApp } from "../AppContext"
-import { Link } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 import { kategoriler, kitapFontGetir } from "../data/kitaplar"
 import {
   DndContext,
@@ -21,7 +21,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
-import { Pencil, Check, GripVertical, GripHorizontal, Search, X, BookOpen } from "lucide-react"
+import { Pencil, Check, GripVertical, GripHorizontal, Search, X, BookOpen, Sparkles, ChevronLeft, ChevronRight } from "lucide-react"
 
 const kitapRenkleri = [
   "#8B4513", "#A0522D", "#6B3A2A", "#7B3F00",
@@ -38,7 +38,7 @@ function kitapSirtiRengi(id) {
 function SortableKitap({ kitap, duzenlemeMode, theme, alimId }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: kitap.id })
   const style = { transform: CSS.Transform.toString(transform), transition }
-  
+
 
   return (
     <div ref={setNodeRef} style={{ ...style, position: "relative" }}>
@@ -46,8 +46,8 @@ function SortableKitap({ kitap, duzenlemeMode, theme, alimId }) {
         <div
           {...attributes}
           {...listeners}
-          style={{ 
-            cursor: "grab", 
+          style={{
+            cursor: "grab",
             touchAction: "none",
             position: "absolute",
             top: "2px",
@@ -69,7 +69,7 @@ function SortableKitap({ kitap, duzenlemeMode, theme, alimId }) {
         onClick={e => duzenlemeMode && e.preventDefault()}
         style={{ textDecoration: "none" }}
       >
-        
+
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "80px" }}>
           <div
             style={{
@@ -126,7 +126,280 @@ function SortableKitap({ kitap, duzenlemeMode, theme, alimId }) {
   )
 }
 
-function KitapRafi({ kitaplar, rafId, duzenlemeMode, theme, sensors, kitapSiralama, setKitapSiralama, alimId }) {
+// ─────────────────────────────────────────────────────────────
+// DİNAMİK RAF — coverflow: ortadaki kitap büyük & net, yanlar
+// küçülür + hafif bulanıklaşır. Sürükle/kaydır ile geçilir.
+// ─────────────────────────────────────────────────────────────
+function DinamikKapak({ kitap, alimId, coverW, coverH }) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", pointerEvents: "none" }}>
+      <div
+        style={{
+          width: `${coverW}px`,
+          height: `${coverH}px`,
+          background: kitap.gorsel ? `url(${kitap.gorsel}) center/cover no-repeat` : kitapSirtiRengi(kitap.id),
+          borderRadius: "3px 9px 9px 3px",
+          boxShadow: `inset -5px 0 10px rgba(0,0,0,0.3), inset 5px 0 6px rgba(255,255,255,0.12), 5px 10px 26px rgba(0,0,0,0.42)`,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "10px",
+          position: "relative",
+          overflow: "hidden",
+        }}
+      >
+        {!kitap.gorsel && (
+          <>
+            <div style={{ position: "absolute", left: "10px", top: 0, bottom: 0, width: "3px", background: "rgba(0,0,0,0.2)" }} />
+            <span style={{
+              fontSize: `${Math.round(coverW * 0.075)}px`,
+              color: "rgba(255,255,255,0.9)",
+              textAlign: "center",
+              lineHeight: "1.4",
+              fontFamily: kitapFontGetir(alimId) || "PlayfairDisplay, serif",
+              writingMode: "vertical-rl",
+              textOrientation: "mixed",
+              transform: "rotate(180deg)",
+            }}>
+              {kitap.baslik.length > 24 ? kitap.baslik.slice(0, 24) + "…" : kitap.baslik}
+            </span>
+          </>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function DinamikRaf({ kitaplar, rafId, theme, alimId, kitapSiralama }) {
+  const isMobile = useMediaQuery("(max-width: 768px)")
+  const navigate = useNavigate()
+  const sirali = kitapSiralama[rafId]
+    ? kitapSiralama[rafId].map(id => kitaplar.find(k => k.id === id)).filter(Boolean)
+    : kitaplar
+  const kitapSayisi = sirali.length
+
+  const [aktif, setAktif] = useState(0)
+  const [dx, setDx] = useState(0)
+  const [suruk, setSuruk] = useState(false)
+  const drag = useRef({ startX: 0, startY: 0, active: false, moved: false, axis: null })
+  const konteynerRef = useRef(null)
+
+  const coverW = isMobile ? 242 : 312
+  const coverH = Math.round(coverW * 1.5)
+  const aralik = isMobile ? 158 : 214
+  const konteynerH = coverH + 96
+
+  useEffect(() => { setAktif(0); setDx(0) }, [rafId, kitapSayisi])
+
+  // Raf açılınca ortadaki kitabı ekranın ortasına al
+  useEffect(() => {
+    if (!kitapSayisi) return
+    const t = setTimeout(() => {
+      try { konteynerRef.current?.scrollIntoView({ block: "center", behavior: "smooth" }) } catch {}
+    }, 90)
+    return () => clearTimeout(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const clamp = (v) => Math.max(0, Math.min(kitapSayisi - 1, v))
+
+  function bitir(finalD) {
+    const esik = aralik * 0.3
+    if (finalD <= -esik) setAktif(a => clamp(a + 1))
+    else if (finalD >= esik) setAktif(a => clamp(a - 1))
+    setDx(0); setSuruk(false)
+  }
+
+  // ── Fare (web) — window dinleyicileriyle güvenilir sürükleme
+  function onMouseDown(e) {
+    if (e.button !== 0) return
+    drag.current = { startX: e.clientX, startY: e.clientY, active: true, moved: false, axis: "x" }
+    setSuruk(true)
+    window.addEventListener("mousemove", onMouseMove)
+    window.addEventListener("mouseup", onMouseUp)
+  }
+  function onMouseMove(e) {
+    if (!drag.current.active) return
+    const d = e.clientX - drag.current.startX
+    if (Math.abs(d) > 4) drag.current.moved = true
+    setDx(d)
+  }
+  function onMouseUp(e) {
+    if (!drag.current.active) return
+    drag.current.active = false
+    window.removeEventListener("mousemove", onMouseMove)
+    window.removeEventListener("mouseup", onMouseUp)
+    bitir(e.clientX - drag.current.startX)
+  }
+
+  // ── Dokunma (mobil) — eksen kilidi: yatay baskınsa çapraz olsa da
+  //    dikey kaymayı engelle (preventDefault için passive:false gerekir)
+  useEffect(() => {
+    const el = konteynerRef.current
+    if (!el) return
+    function ts(e) {
+      const t = e.touches[0]
+      drag.current = { startX: t.clientX, startY: t.clientY, active: true, moved: false, axis: null }
+    }
+    function tm(e) {
+      if (!drag.current.active) return
+      const t = e.touches[0]
+      const dX = t.clientX - drag.current.startX
+      const dY = t.clientY - drag.current.startY
+      if (!drag.current.axis) {
+        if (Math.abs(dX) > 6 || Math.abs(dY) > 6) {
+          drag.current.axis = Math.abs(dX) >= Math.abs(dY) ? "x" : "y"
+          if (drag.current.axis === "x") setSuruk(true)
+        }
+      }
+      if (drag.current.axis === "x") {
+        if (e.cancelable) e.preventDefault()
+        if (Math.abs(dX) > 4) drag.current.moved = true
+        setDx(dX)
+      } else if (drag.current.axis === "y") {
+        if (drag.current.active) { drag.current.active = false; setDx(0); setSuruk(false) }
+      }
+    }
+    function te(e) {
+      if (!drag.current.active) return
+      drag.current.active = false
+      const t = e.changedTouches[0]
+      bitir(t.clientX - drag.current.startX)
+    }
+    el.addEventListener("touchstart", ts, { passive: true })
+    el.addEventListener("touchmove", tm, { passive: false })
+    el.addEventListener("touchend", te)
+    el.addEventListener("touchcancel", te)
+    return () => {
+      el.removeEventListener("touchstart", ts)
+      el.removeEventListener("touchmove", tm)
+      el.removeEventListener("touchend", te)
+      el.removeEventListener("touchcancel", te)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [kitapSayisi, aralik])
+
+  if (!kitapSayisi) {
+    return (
+      <div style={{ padding: "20px", color: theme.textSecondary, fontSize: "13px", fontStyle: "italic" }}>
+        Henüz eser eklenmemiş
+      </div>
+    )
+  }
+
+  const cur = Math.min(aktif, kitapSayisi - 1)
+  const merkez = sirali[cur]
+
+  function kapakTikla(i, merkezMi, e) {
+    if (drag.current.moved) { if (e) e.preventDefault(); return }
+    if (merkezMi) navigate(`/kitap/${sirali[i].id}`)
+    else setAktif(clamp(i))
+  }
+
+  return (
+    <div style={{ padding: "12px 8px 6px" }}>
+      <div
+        ref={konteynerRef}
+        onMouseDown={onMouseDown}
+        style={{
+          position: "relative",
+          height: `${konteynerH}px`,
+          overflow: "hidden",
+          touchAction: "pan-y",
+          cursor: suruk ? "grabbing" : "grab",
+          userSelect: "none",
+          WebkitUserSelect: "none",
+        }}
+      >
+        {sirali.map((kitap, i) => {
+          const offset = i - cur
+          const eff = offset + dx / aralik
+          const abs = Math.min(Math.abs(eff), 3)
+          if (abs >= 2.6) return null
+          const scale = Math.max(0.5, 1 - abs * 0.2)
+          const blur = abs < 0.4 ? 0 : Math.min(abs * 1.5, 3.4)
+          const opacity = Math.max(0.4, 1 - abs * 0.26)
+          const merkezMi = Math.abs(eff) < 0.4
+          return (
+            <div
+              key={kitap.id}
+              onClick={(e) => kapakTikla(i, merkezMi, e)}
+              style={{
+                position: "absolute",
+                top: "10px",
+                left: "50%",
+                width: `${coverW}px`,
+                marginLeft: `${-coverW / 2}px`,
+                transform: `translateX(${eff * aralik}px) scale(${scale})`,
+                transformOrigin: "center top",
+                filter: blur ? `blur(${blur}px)` : "none",
+                opacity,
+                zIndex: 100 - Math.round(abs * 10),
+                transition: suruk ? "none" : "transform 0.34s cubic-bezier(.22,.61,.36,1), filter 0.34s, opacity 0.34s",
+                cursor: "pointer",
+                pointerEvents: abs > 1.7 ? "none" : "auto",
+              }}
+            >
+              <DinamikKapak kitap={kitap} alimId={alimId} coverW={coverW} coverH={coverH} />
+            </div>
+          )
+        })}
+      </div>
+
+      {/* Ortadaki kitabın başlığı */}
+      <div style={{ textAlign: "center", marginTop: "8px", minHeight: "38px" }}>
+        <Link to={`/kitap/${merkez.id}`} style={{ textDecoration: "none" }}>
+          <div style={{
+            fontSize: isMobile ? "15px" : "17px",
+            fontFamily: kitapFontGetir(alimId) || "PlayfairDisplay, serif",
+            color: theme.text,
+            lineHeight: 1.3,
+            padding: "0 44px",
+          }}>
+            {merkez.baslik}
+          </div>
+        </Link>
+      </div>
+
+      {/* Gezinme: oklar + sayaç */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "16px", marginTop: "10px" }}>
+        <button
+          onClick={() => setAktif(a => clamp(a - 1))}
+          disabled={cur === 0}
+          style={{
+            display: "flex", alignItems: "center", justifyContent: "center",
+            width: "34px", height: "34px", borderRadius: "50%",
+            background: cur === 0 ? "transparent" : `${theme.accent}15`,
+            border: `1px solid ${cur === 0 ? theme.border : theme.accent}55`,
+            color: cur === 0 ? theme.border : theme.accent,
+            cursor: cur === 0 ? "default" : "pointer",
+          }}
+        >
+          <ChevronLeft size={19} />
+        </button>
+        <span style={{ fontSize: "12px", color: theme.textSecondary, minWidth: "48px", textAlign: "center" }}>
+          {cur + 1} / {kitapSayisi}
+        </span>
+        <button
+          onClick={() => setAktif(a => clamp(a + 1))}
+          disabled={cur === kitapSayisi - 1}
+          style={{
+            display: "flex", alignItems: "center", justifyContent: "center",
+            width: "34px", height: "34px", borderRadius: "50%",
+            background: cur === kitapSayisi - 1 ? "transparent" : `${theme.accent}15`,
+            border: `1px solid ${cur === kitapSayisi - 1 ? theme.border : theme.accent}55`,
+            color: cur === kitapSayisi - 1 ? theme.border : theme.accent,
+            cursor: cur === kitapSayisi - 1 ? "default" : "pointer",
+          }}
+        >
+          <ChevronRight size={19} />
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function KitapRafi({ kitaplar, rafId, duzenlemeMode, theme, sensors, kitapSiralama, setKitapSiralama, alimId, dinamikMod }) {
   if (kitaplar.length === 0) {
     return (
       <div style={{ padding: "20px", color: theme.textSecondary, fontSize: "13px", fontStyle: "italic" }}>
@@ -135,6 +408,18 @@ function KitapRafi({ kitaplar, rafId, duzenlemeMode, theme, sensors, kitapSirala
     )
   }
 
+  // Dinamik mod (düzenleme kapalıyken): coverflow görünümü
+  if (dinamikMod && !duzenlemeMode) {
+    return (
+      <DinamikRaf
+        kitaplar={kitaplar}
+        rafId={rafId}
+        theme={theme}
+        alimId={alimId}
+        kitapSiralama={kitapSiralama}
+      />
+    )
+  }
 
   const sirali = kitapSiralama[rafId]
     ? kitapSiralama[rafId].map(id => kitaplar.find(k => k.id === id)).filter(Boolean)
@@ -167,16 +452,16 @@ function KitapRafi({ kitaplar, rafId, duzenlemeMode, theme, sensors, kitapSirala
   )
 }
 
-function SortableAlimRafi({ alim, duzenlemeMode, theme, sensors, kitapSiralama, setKitapSiralama, kitapArama, setKitapArama }) {
+function SortableAlimRafi({ alim, duzenlemeMode, theme, sensors, kitapSiralama, setKitapSiralama, kitapArama, setKitapArama, dinamikMod }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: alim.id })
   const style = { transform: CSS.Transform.toString(transform), transition }
-  
+
   // ── Alim Rafı açık/kapalı durumu (localStorage'dan oku)
   const [acik, setAcik] = useState(() => {
     const kayitli = localStorage.getItem(`vukuf-alim-rafi-${alim.id}`)
     return kayitli ? JSON.parse(kayitli) : false
   })
-  
+
   const kitapAramaAcik = kitapArama[alim.id] !== undefined
 
   const tumKitaplar = alim.altKategoriler
@@ -192,7 +477,7 @@ function SortableAlimRafi({ alim, duzenlemeMode, theme, sensors, kitapSiralama, 
 
   const handleKitapAramaClick = (e) => {
     e.stopPropagation()
-    
+
     if (kitapAramaAcik) {
       const newState = { ...kitapArama }
       delete newState[alim.id]
@@ -238,9 +523,9 @@ function SortableAlimRafi({ alim, duzenlemeMode, theme, sensors, kitapSiralama, 
           )}
           <span>{alim.isim}</span>
         </div>
-        
+
         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-  
+
           {/* Eser sayısı — her zaman görünsün */}
           <span style={{
             fontSize: "11px",
@@ -256,10 +541,10 @@ function SortableAlimRafi({ alim, duzenlemeMode, theme, sensors, kitapSiralama, 
           {/* Mercek SADECE âlim bölümü AÇIKken göster */}
           {acik && (
             <span
-            
+
               onClick={handleKitapAramaClick}
               style={{
-                cursor: "grab", 
+                cursor: "grab",
                 touchAction: "none",
                 display: "flex",
                 alignItems: "center",
@@ -275,14 +560,14 @@ function SortableAlimRafi({ alim, duzenlemeMode, theme, sensors, kitapSiralama, 
               }}
             >
               <Search size={13} />
-              
+
             </span>
           )}
         </div>
       </button>
 
       {acik && (
-        <>
+        <div style={{ animation: dinamikMod ? "vukuf-raf-ac 0.38s cubic-bezier(.22,.61,.36,1)" : "none" }}>
           {kitapAramaAcik && (
             <div style={{ padding: "12px 16px", borderBottom: `1px solid ${theme.border}`, background: `${theme.accent}05` }}>
               <div style={{
@@ -334,7 +619,7 @@ function SortableAlimRafi({ alim, duzenlemeMode, theme, sensors, kitapSiralama, 
             <div>
               {alim.altKategoriler.map(alt => {
                 const filtrelenmisKitaplar = kitapAramaAcik && kitapArama[alim.id]
-                  ? alt.kitaplar.filter(kitap => 
+                  ? alt.kitaplar.filter(kitap =>
                       kitap.baslik.toLowerCase().includes(kitapArama[alim.id].toLowerCase())
                     )
                   : alt.kitaplar
@@ -346,15 +631,16 @@ function SortableAlimRafi({ alim, duzenlemeMode, theme, sensors, kitapSiralama, 
                     <div style={{ padding: "8px 16px", fontSize: "12px", color: theme.accent, fontWeight: "bold", letterSpacing: "1px", borderBottom: `1px solid ${theme.border}` }}>
                       {alt.baslik.toLocaleUpperCase('tr-TR')}
                     </div>
-                    <KitapRafi 
-                      kitaplar={filtrelenmisKitaplar} 
-                      rafId={alt.id} 
-                      duzenlemeMode={duzenlemeMode} 
-                      theme={theme} 
-                      sensors={sensors} 
-                      kitapSiralama={kitapSiralama} 
-                      setKitapSiralama={setKitapSiralama} 
+                    <KitapRafi
+                      kitaplar={filtrelenmisKitaplar}
+                      rafId={alt.id}
+                      duzenlemeMode={duzenlemeMode}
+                      theme={theme}
+                      sensors={sensors}
+                      kitapSiralama={kitapSiralama}
+                      setKitapSiralama={setKitapSiralama}
                       alimId={alim.id}
+                      dinamikMod={dinamikMod}
                     />
                     <div style={{ height: "8px", background: `linear-gradient(to bottom, ${theme.accent}40, ${theme.accent}20)`, borderTop: `2px solid ${theme.accent}60`, margin: "0 0 4px" }} />
                   </div>
@@ -363,54 +649,69 @@ function SortableAlimRafi({ alim, duzenlemeMode, theme, sensors, kitapSiralama, 
             </div>
           ) : (
             <>
-              <KitapRafi 
+              <KitapRafi
                 kitaplar={kitapAramaAcik && kitapArama[alim.id]
-                  ? alim.kitaplar.filter(kitap => 
+                  ? alim.kitaplar.filter(kitap =>
                       kitap.baslik.toLowerCase().includes(kitapArama[alim.id].toLowerCase())
                     )
                   : alim.kitaplar
-                } 
-                rafId={alim.id} 
-                duzenlemeMode={duzenlemeMode} 
-                theme={theme} 
-                sensors={sensors} 
-                kitapSiralama={kitapSiralama} 
-                setKitapSiralama={setKitapSiralama} 
+                }
+                rafId={alim.id}
+                duzenlemeMode={duzenlemeMode}
+                theme={theme}
+                sensors={sensors}
+                kitapSiralama={kitapSiralama}
+                setKitapSiralama={setKitapSiralama}
                 alimId={alim.id}
+                dinamikMod={dinamikMod}
               />
               <div style={{ height: "8px", background: `linear-gradient(to bottom, ${theme.accent}40, ${theme.accent}20)`, borderTop: `2px solid ${theme.accent}60`, margin: "4px 0 0" }} />
             </>
           )}
-        </>
+        </div>
       )}
     </div>
   )
 }
 
-function SortableKategori({ kategori, 
-  duzenlemeMode, 
-  theme, 
-  sensors, 
-  kitapSiralama, 
-  setKitapSiralama, 
-  acikKategori, 
-  setAcikKategori, 
-  alimSira, 
-  handleAlimDragEnd, 
-  kategoriArama, 
+function SortableKategori({ kategori,
+  duzenlemeMode,
+  theme,
+  sensors,
+  kitapSiralama,
+  setKitapSiralama,
+  acikKategori,
+  setAcikKategori,
+  alimSira,
+  handleAlimDragEnd,
+  kategoriArama,
   setKategoriArama,
   kitapArama,
-  setKitapArama }) {
+  setKitapArama,
+  dinamikMod }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: kategori.id })
   const style = { transform: CSS.Transform.toString(transform), transition }
-  
+  const isMobile = useMediaQuery("(max-width: 768px)")
+  const kuranRef = useRef(null)
+
   // Arama panelinin açık olup olmadığını kontrol et
   const aramaAcik = kategoriArama[kategori.id] !== undefined
+
+  // Kur'an rafı açıldığında (dinamik mod) kapağı ekran ortasına al
+  useEffect(() => {
+    if (dinamikMod && kategori.kuran && acikKategori === kategori.id) {
+      const t = setTimeout(() => {
+        try { kuranRef.current?.scrollIntoView({ block: "center", behavior: "smooth" }) } catch {}
+      }, 100)
+      return () => clearTimeout(t)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [acikKategori, dinamikMod])
 
   // Arama butonuna tıklama handler'ı
   const handleAramaClick = (e) => {
     e.stopPropagation()
-    
+
     if (aramaAcik) {
       // Arama açıksa: SADECE aramayı kapat, kategori açık kalsın
       const newState = { ...kategoriArama }
@@ -426,6 +727,9 @@ function SortableKategori({ kategori,
       setKategoriArama(prev => ({ ...prev, [kategori.id]: "" }))
     }
   }
+
+  const kuranW = dinamikMod ? (isMobile ? 242 : 312) : 80
+  const kuranH = dinamikMod ? Math.round(kuranW * 1.5) : 128
 
   return (
     <div ref={setNodeRef} style={{ ...style, marginBottom: "32px", background: theme.surface, borderRadius: "16px", overflow: "hidden", border: `1px solid ${theme.border}`, boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}>
@@ -462,7 +766,7 @@ function SortableKategori({ kategori,
             {kategori.baslik.toLocaleUpperCase('tr-TR')}
           </span>
         </div>
-        
+
         {/* Sağ taraf - alim sayısı ve arama butonu */}
         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
           {/* Arama butonu - SADECE KATEGORİ AÇIKKEN GÖSTER */}
@@ -496,7 +800,7 @@ function SortableKategori({ kategori,
         </div>
 
       {acikKategori === kategori.id && (
-        <>
+        <div style={{ animation: dinamikMod ? "vukuf-raf-ac 0.4s cubic-bezier(.22,.61,.36,1)" : "none" }}>
           {/* Arama paneli - sadece aramaAcik true ise göster */}
           {aramaAcik && (
             <div style={{ padding: "12px 16px", borderBottom: `1px solid ${theme.border}` }}>
@@ -551,41 +855,47 @@ function SortableKategori({ kategori,
           <div style={{ padding: "16px" }}>
             {/* Kur'an-ı Kerîm özel rafı */}
             {kategori.kuran && (
-              <Link to="/kuran" style={{ textDecoration: "none" }}>
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "80px" }}>
-                  <div
-                    style={{
-                      width: "80px", height: "128px",
-                      background: kategori.kuran.gorsel
-                        ? `url(${kategori.kuran.gorsel}) center/cover no-repeat`
-                        : kitapSirtiRengi(kategori.kuran.id),
-                      borderRadius: "2px 6px 6px 2px",
-                      boxShadow: `inset -3px 0 6px rgba(0,0,0,0.3), inset 3px 0 4px rgba(255,255,255,0.1), 2px 2px 6px rgba(0,0,0,0.3)`,
-                      cursor: "pointer",
-                      transition: "transform 0.2s",
-                    }}
-                    onMouseEnter={e => e.currentTarget.style.transform = "translateY(-6px)"}
-                    onMouseLeave={e => e.currentTarget.style.transform = "translateY(0)"}
-                  >
-                    {!kategori.kuran.gorsel && (
-                      <span style={{
-                        fontSize: "8px", color: "white", textAlign: "center",
-                        fontFamily: "PlayfairDisplay, serif", lineHeight: 1.3,
-                        wordBreak: "break-word",
-                      }}>
-                        {kategori.kuran.baslik}
-                      </span>
-                    )}
+              <div style={{ display: "flex", justifyContent: dinamikMod ? "center" : "flex-start", padding: dinamikMod ? "10px 0 6px" : 0 }}>
+                <Link to="/kuran" style={{ textDecoration: "none" }}>
+                  <div ref={kuranRef} style={{ display: "flex", flexDirection: "column", alignItems: "center", width: `${kuranW}px`, transition: "width 0.3s" }}>
+                    <div
+                      style={{
+                        width: `${kuranW}px`, height: `${kuranH}px`,
+                        background: kategori.kuran.gorsel
+                          ? `url(${kategori.kuran.gorsel}) center/cover no-repeat`
+                          : kitapSirtiRengi(kategori.kuran.id),
+                        borderRadius: dinamikMod ? "3px 9px 9px 3px" : "2px 6px 6px 2px",
+                        boxShadow: dinamikMod
+                          ? `inset -5px 0 10px rgba(0,0,0,0.3), inset 5px 0 6px rgba(255,255,255,0.12), 5px 10px 26px rgba(0,0,0,0.42)`
+                          : `inset -3px 0 6px rgba(0,0,0,0.3), inset 3px 0 4px rgba(255,255,255,0.1), 2px 2px 6px rgba(0,0,0,0.3)`,
+                        cursor: "pointer",
+                        transition: "transform 0.2s, width 0.3s, height 0.3s",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                      }}
+                      onMouseEnter={e => e.currentTarget.style.transform = "translateY(-6px)"}
+                      onMouseLeave={e => e.currentTarget.style.transform = "translateY(0)"}
+                    >
+                      {!kategori.kuran.gorsel && (
+                        <span style={{
+                          fontSize: dinamikMod ? "14px" : "8px", color: "white", textAlign: "center",
+                          fontFamily: "PlayfairDisplay, serif", lineHeight: 1.3,
+                          wordBreak: "break-word", padding: "6px",
+                        }}>
+                          {kategori.kuran.baslik}
+                        </span>
+                      )}
+                    </div>
+                    <span style={{
+                      fontSize: dinamikMod ? "16px" : "10px", color: theme.textSecondary,
+                      textAlign: "center", marginTop: "8px", maxWidth: `${kuranW}px`,
+                      overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                      fontFamily: dinamikMod ? "PlayfairDisplay, serif" : "inherit",
+                    }}>
+                      Kur'ân-ı Kerîm
+                    </span>
                   </div>
-                  <span style={{
-                    fontSize: "10px", color: theme.textSecondary,
-                    textAlign: "center", marginTop: "6px", width: "80px",
-                    overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                  }}>
-                    Kur'ân-ı Kerîm
-                  </span>
-                </div>
-              </Link>
+                </Link>
+              </div>
             )}
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={(e) => handleAlimDragEnd(e, kategori.id)}>
               <SortableContext
@@ -610,13 +920,14 @@ function SortableKategori({ kategori,
                       setKitapSiralama={setKitapSiralama}
                       kitapArama={kitapArama}
                       setKitapArama={setKitapArama}
+                      dinamikMod={dinamikMod}
                     />
                   ))
                 }
               </SortableContext>
             </DndContext>
           </div>
-        </>
+        </div>
       )}
     </div>
   )
@@ -629,6 +940,9 @@ export default function Kutuphane() {
   return kayitli ? JSON.parse(kayitli) : null
 })
   const [duzenlemeMode, setDuzenlemeMode] = useState(false)
+  const [dinamikMod, setDinamikMod] = useState(() => {
+    return localStorage.getItem("vukuf-dinamik-mod") === "1"
+  })
   const [genelArama, setGenelArama] = useState("")
   const [genelAramaAcik, setGenelAramaAcik] = useState(false)
   const [kategoriArama, setKategoriArama] = useState({})
@@ -649,6 +963,17 @@ export default function Kutuphane() {
   })
 
   const isMobile = useMediaQuery("(max-width: 768px)")
+
+  // Dinamik mod düğmesi Navbar'da (tema paletinin solunda) — event ile senkron
+  useEffect(() => {
+    const handler = (e) => {
+      const val = typeof e.detail === "boolean" ? e.detail : (localStorage.getItem("vukuf-dinamik-mod") === "1")
+      setDinamikMod(val)
+      if (val) setDuzenlemeMode(false)
+    }
+    window.addEventListener("vukuf-dinamik", handler)
+    return () => window.removeEventListener("vukuf-dinamik", handler)
+  }, [])
 
   useEffect(() => {
     if (!isMobile) return
@@ -718,15 +1043,21 @@ export default function Kutuphane() {
 
   return (
     // Ana container — her zaman seçimi engelle
-    <div style={{ 
-      maxWidth: "900px", 
-      margin: "0 auto", 
-      padding: "40px 24px", 
+    <div style={{
+      maxWidth: "900px",
+      margin: "0 auto",
+      padding: "40px 24px",
       userSelect: "none",
       WebkitUserSelect: "none",
     }}>
+      <style>{`
+        @keyframes vukuf-raf-ac {
+          from { opacity: 0; transform: scale(0.965) translateY(-6px); }
+          to   { opacity: 1; transform: scale(1) translateY(0); }
+        }
+      `}</style>
       <div style={{ marginBottom: "32px" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px", flexWrap: "wrap", gap: "10px" }}>
           <h1 style={{ fontSize: "28px", color: theme.text, letterSpacing: "1px", fontFamily: "PlayfairDisplay, serif" }}>
             Kitaplık
           </h1>
@@ -751,7 +1082,7 @@ export default function Kutuphane() {
               <Search size={15} />
               <span>{genelAramaAcik ? "" : ""}</span>
             </button>
-            
+
             {/* Düzenle Butonu */}
             <button
               onClick={() => setDuzenlemeMode(!duzenlemeMode)}
@@ -773,6 +1104,14 @@ export default function Kutuphane() {
             </button>
           </div>
         </div>
+
+        {/* Dinamik mod açıkken küçük ipucu */}
+        {dinamikMod && (
+          <div style={{ fontSize: "12px", color: theme.textSecondary, marginBottom: "14px", display: "flex", alignItems: "center", gap: "6px" }}>
+            <Sparkles size={13} color={theme.accent} />
+            Kapakları sağa-sola sürükleyerek kitaplar arasında gezinebilirsiniz.
+          </div>
+        )}
 
         {/* Genel arama paneli - sadece genelAramaAcik true ise göster */}
         {genelAramaAcik && (
@@ -970,6 +1309,7 @@ export default function Kutuphane() {
               handleAlimDragEnd={handleAlimDragEnd}
               kitapArama={kitapArama}
               setKitapArama={setKitapArama}
+              dinamikMod={dinamikMod}
             />
           ))}
         </SortableContext>

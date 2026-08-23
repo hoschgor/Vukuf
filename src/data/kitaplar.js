@@ -10,13 +10,15 @@ export const kategoriler = [
           id:"geylani-futuhulgayb",
           baslik: "Fütuh-ul Gayb",
           aciklama:"Abdülkâdir Geylânî'nin (1077-1166) sohbetlerinden derlenen ve manevi eğitim, nefis terbiyesi ile Allah'a yakınlaşma yollarını anlatan 78 altın öğütten oluşan tasavvuf klasiği",
-          dosya:"futuhulgayb-metin.json"  
+          dosya:"futuhulgayb-metin.json",
+          gorsel:"/kitap-kapak/futuhulgayb.png",  
         },
         {
           id:"sırrulesrar",
           baslik: "Sırru'l Esrâr",
           aciklama:"Abdülkâdir Geylânî'nin tasavvufun derin sırlarını, manevi makamları ve Allah'a giden yolda kalbin tasfiyesini anlatan önemli eseri",
-          dosya:"sırrulesrar-metin.json"  
+          dosya:"sırrulesrar-metin.json",
+          gorsel:"/kitap-kapak/sir.png", 
         },
       ] },
       {
@@ -28,13 +30,14 @@ export const kategoriler = [
             baslik: "El-Münkiz Mine'd Dalal",
             aciklama: "İmam Gazali'nin (1058-1111) kendi entelektüel ve manevi yolculuğunu anlattığı otobiyografik eseridir.",
             dosya: "munkiz-metin.json",
+            gorsel:"/kitap-kapak/munkiz.png",
           },
           {
           id:"kiyametveahiret",
           baslik: "Kıyâmet ve Âhiret",
           aciklama:"Ölüm anı, kabir hayatı, kıyamet sahneleri, cennet ve cehennem tasvirleri gibi ahiretin hallerini ele alır",
           dosya:"kıyametveahiret-metin.json" , 
-          gorsel: "/kitap-kapak/kiyametveahiret.jpg",
+          gorsel: "/kitap-kapak/kiyametveahiret.png",
           },
           {
           id:"mukasefetulkulub",

@@ -109,7 +109,7 @@ export default function OkumaTefeulu() {
     <div style={{ maxWidth: "560px", margin: "0 auto", padding: isMobile ? "22px 16px 60px" : "44px 24px 80px" }}>
       <div style={{ textAlign: "center", marginBottom: "26px" }}>
         <Sparkles size={30} color={theme.accent} style={{ marginBottom: "6px" }} />
-        <h1 style={{ fontSize: isMobile ? "26px" : "34px", color: theme.accent, fontFamily: "PlayfairDisplay, serif" }}>
+        <h1 style={{ fontSize: isMobile ? "26px" : "34px", color: theme.accent, fontFamily: "Souvenir, serif" }}>
           Okuma Tefeülü
         </h1>
         <p style={{ fontSize: "13px", color: theme.textSecondary, marginTop: "6px" }}>

@@ -1021,14 +1021,14 @@ useEffect(() => {
 
 useEffect(() => {
   if (!aramaMetni.trim() || !kitapMetni.length) { setAramaEslesmeler([]); return }
-  const aranan = aramaMetni.toLowerCase()
+  const aranan = trLower(aramaMetni)  // şapka/aksan + büyük-küçük duyarsız, uzunluk korur
   const eslesmeler = []
   for (const sayfa of kitapMetni) {
     const satirlar = sayfa.metin.split("\n")
     for (let si = 0; si < satirlar.length; si++) {
       const satir = satirlar[si]
       if (satir.startsWith("§")) continue
-      const idx = satir.toLowerCase().indexOf(aranan)
+      const idx = trLower(satir).indexOf(aranan)
       if (idx === -1) continue
       const bas = Math.max(0, idx - 30)
       const son = idx + aranan.length + 50

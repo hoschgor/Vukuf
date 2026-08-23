@@ -1107,12 +1107,19 @@ export default function Kutuphane() {
 
         {/* Dinamik mod açıkken küçük ipucu */}
         {dinamikMod && (
-          <div style={{ fontSize: "12px", color: theme.textSecondary, marginBottom: "14px", display: "flex", alignItems: "center", gap: "6px" }}>
+          <div style={{ 
+            fontSize: "12px", 
+            color: theme.textSecondary, 
+            marginBottom: "14px", 
+            display: "flex", 
+            alignItems: "center", 
+            gap: "6px",
+            animation: "fadeOut 5s forwards"
+          }}>
             <Sparkles size={13} color={theme.accent} />
             Kapakları sağa-sola sürükleyerek kitaplar arasında gezinebilirsiniz.
           </div>
         )}
-
         {/* Genel arama paneli - sadece genelAramaAcik true ise göster */}
         {genelAramaAcik && (
           <div style={{

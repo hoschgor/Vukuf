@@ -13,6 +13,22 @@ export const normHarf = (s) => (s || "")
   .replace(/ı/g, "i").replace(/İ/g, "i")
   .normalize("NFD").replace(_AKSAN, "")
 
+// UZUNLUK KORUYAN katlama (1 harf → 1 harf). Okuma ekranı highlight'ı gibi
+// offset hesabı gereken yerlerde normHarf yerine BUNU kullan.
+const _FOLD = {
+  "â": "a", "á": "a", "à": "a", "ä": "a", "ā": "a", "ã": "a", "å": "a",
+  "ê": "e", "é": "e", "è": "e", "ë": "e", "ē": "e",
+  "î": "i", "í": "i", "ì": "i", "ï": "i", "ī": "i", "ı": "i",
+  "ô": "o", "ó": "o", "ò": "o", "ö": "o", "ō": "o", "õ": "o",
+  "û": "u", "ú": "u", "ù": "u", "ü": "u", "ū": "u",
+  "ş": "s", "ç": "c", "ğ": "g",
+}
+export const trFold = (s) => {
+  let out = ""
+  for (const ch of (s || "").toLocaleLowerCase("tr")) out += _FOLD[ch] || ch
+  return out
+}
+
 export const OKUMA_KEY = "vukuf-okuma-istatistik"
 export const OZEL_KEY = "vukuf-ozel-raflar"
 export const GIZLI_KEY = "vukuf-gizli-raflar"

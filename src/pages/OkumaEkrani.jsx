@@ -3,7 +3,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import { useApp } from "../AppContext"
 import { kitaplar } from "../data/kitaplar"
-import { okumaKaydet } from "../data/okumaKayit"
+import { okumaKaydet, trFold } from "../data/okumaKayit"
 import lugatVerisi from "../data/lugat.json"
 import risaleLugat from "../data/risale-lugat.json"
 import kavramlarVerisi from "../data/kavramlar.json"
@@ -214,7 +214,8 @@ const bnormR = (s) => (s || "").toLowerCase().replace(/\s+/g, " ").trim().replac
 
 // T\u00FCrk\u00E7e-duyarl\u0131, UZUNLU\u011EU KORUYAN k\u00FC\u00E7\u00FCk harf (\u0130\u2192i, I\u2192\u0131\u2192i): indexOf ofsetleri
 // orijinal metinle hizal\u0131 kals\u0131n diye normalize (NFD) de\u011Fil locale-lower kullan\u0131l\u0131r.
-const trLower = (s) => (s || "").toLocaleLowerCase("tr").replace(/\u0131/g, "i")
+// Arama/e\u015fle\u015ftirme: \u015fapka/aksan + b\u00fcy\u00fck-k\u00fc\u00e7\u00fck duyars\u0131z, UZUNLUK KORUYAN (offset g\u00fcvenli)
+const trLower = trFold
 
 // Bir k\u00F6k eleman\u0131n metninde aranan ifadeyi bulup Range d\u00F6nd\u00FCr\u00FCr (span'lar aras\u0131 da).
 function araliktaBul(kok, aranan) {

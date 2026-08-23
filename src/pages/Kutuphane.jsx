@@ -521,7 +521,7 @@ function GozBtn({ gizli, onClick, theme }) {
   )
 }
 
-function SortableAlimRafi({ alim, duzenlemeMode, theme, sensors, kitapSiralama, setKitapSiralama, kitapArama, setKitapArama, dinamikMod }) {
+function SortableAlimRafi({ alim, duzenlemeMode, theme, sensors, kitapSiralama, setKitapSiralama, kitapArama, setKitapArama, dinamikMod, disArama }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: alim.id })
   const style = { transform: CSS.Transform.toString(transform), transition }
 
@@ -531,6 +531,11 @@ function SortableAlimRafi({ alim, duzenlemeMode, theme, sensors, kitapSiralama, 
   })
 
   const kitapAramaAcik = kitapArama[alim.id] !== undefined
+
+  // Kısım aramasından gelen terim (dis) varsa raf zorla açılır ve kitaplar süzülür
+  const dis = (disArama || "").trim()
+  const filtreTerim = dis || (kitapArama[alim.id] || "")
+  const gorunur = acik || dis !== ""
 
   const tumKitaplar = alim.altKategoriler
     ? alim.altKategoriler.flatMap(a => a.kitaplar)
@@ -572,7 +577,7 @@ function SortableAlimRafi({ alim, duzenlemeMode, theme, sensors, kitapSiralama, 
           fontSize: "14px",
           fontFamily: "PlayfairDisplay, serif",
           cursor: "pointer",
-          borderBottom: acik ? `1px solid ${theme.border}` : "none",
+          borderBottom: gorunur ? `1px solid ${theme.border}` : "none",
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
@@ -601,7 +606,7 @@ function SortableAlimRafi({ alim, duzenlemeMode, theme, sensors, kitapSiralama, 
             {tumKitaplar.length}
           </span>
 
-          {acik && (
+          {gorunur && (
             <span
               onClick={handleKitapAramaClick}
               style={{
@@ -625,7 +630,7 @@ function SortableAlimRafi({ alim, duzenlemeMode, theme, sensors, kitapSiralama, 
         </div>
       </button>
 
-      {acik && (
+      {gorunur && (
         <div style={{ animation: dinamikMod ? "vukuf-raf-ac 0.38s cubic-bezier(.22,.61,.36,1)" : "none" }}>
           {kitapAramaAcik && (
             <div style={{ padding: "12px 16px", borderBottom: `1px solid ${theme.border}`, background: `${theme.accent}05` }}>
@@ -658,11 +663,11 @@ function SortableAlimRafi({ alim, duzenlemeMode, theme, sensors, kitapSiralama, 
           {alim.altKategoriler ? (
             <div>
               {alim.altKategoriler.map(alt => {
-                const filtrelenmisKitaplar = kitapAramaAcik && kitapArama[alim.id]
-                  ? alt.kitaplar.filter(kitap => trLower(kitap.baslik).includes(trLower(kitapArama[alim.id])))
+                const filtrelenmisKitaplar = filtreTerim
+                  ? alt.kitaplar.filter(kitap => trLower(kitap.baslik).includes(trLower(filtreTerim)))
                   : alt.kitaplar
 
-                if (filtrelenmisKitaplar.length === 0 && kitapArama[alim.id]) return null
+                if (filtrelenmisKitaplar.length === 0 && filtreTerim) return null
 
                 return (
                   <div key={alt.id}>
@@ -688,8 +693,8 @@ function SortableAlimRafi({ alim, duzenlemeMode, theme, sensors, kitapSiralama, 
           ) : (
             <>
               <KitapRafi
-                kitaplar={kitapAramaAcik && kitapArama[alim.id]
-                  ? alim.kitaplar.filter(kitap => trLower(kitap.baslik).includes(trLower(kitapArama[alim.id])))
+                kitaplar={filtreTerim
+                  ? alim.kitaplar.filter(kitap => trLower(kitap.baslik).includes(trLower(filtreTerim)))
                   : alim.kitaplar
                 }
                 rafId={alim.id}
@@ -834,7 +839,7 @@ function SortableKategori({ kategori,
                 )}
               </div>
               <div style={{ fontSize: "11px", color: theme.textSecondary, marginTop: "6px", marginLeft: "8px" }}>
-                Âlim ismi giriniz...
+                Âlim veya kitap ismi giriniz...
               </div>
             </div>
           )}
@@ -891,8 +896,13 @@ function SortableKategori({ kategori,
                   .map(alimId => kategori.alimler.find(a => a.id === alimId))
                   .filter(Boolean)
                   .filter(alim => {
-                    const arama = kategoriArama[kategori.id] || ""
-                    return arama === "" ? true : trLower(alim.isim).includes(trLower(arama))
+                    const arama = (kategoriArama[kategori.id] || "").trim()
+                    if (arama === "") return true
+                    const q = trLower(arama)
+                    // Alim adı VEYA içindeki bir kitabın adı eşleşiyorsa göster (alt bölümlerde arama)
+                    if (trLower(alim.isim).includes(q)) return true
+                    const kitaplarA = alim.altKategoriler ? alim.altKategoriler.flatMap(a => a.kitaplar) : (alim.kitaplar || [])
+                    return kitaplarA.some(k => trLower(k.baslik).includes(q))
                   })
                   .map(alim => (
                     <SortableAlimRafi
@@ -906,6 +916,12 @@ function SortableKategori({ kategori,
                       kitapArama={kitapArama}
                       setKitapArama={setKitapArama}
                       dinamikMod={dinamikMod}
+                      disArama={(() => {
+                        const arama = (kategoriArama[kategori.id] || "").trim()
+                        if (!arama) return ""
+                        // Alim adının kendisi eşleşiyorsa tüm kitaplarını göster (kitap süzme yok)
+                        return trLower(alim.isim).includes(trLower(arama)) ? "" : arama
+                      })()}
                     />
                   ))
                 }
@@ -921,22 +937,38 @@ function SortableKategori({ kategori,
 // Özel rafın alt rafı — tıklayınca açılır (dinamikte varsayılan kapalı)
 function OzelAltRaf({ raf, alt, liste, theme, dinamikMod, duzenlemeMode, aramaAktif,
   altDuzen, setAltDuzen, onAltRename, onAltSil, onKitapEkleAc, onKitapCikar, silinebilir }) {
+  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: alt.id })
+  const sstyle = { transform: CSS.Transform.toString(transform), transition }
   const [acik, setAcik] = useState(() => {
     try { const v = localStorage.getItem(`vukuf-ozelalt-${alt.id}`); if (v != null) return JSON.parse(v) } catch {}
     return !dinamikMod
   })
-  const gorunur = aramaAktif || acik
+  const [aramaAcik, setAramaAcik] = useState(false)
+  const [arama, setArama] = useState("")
+  const gorunur = aramaAktif || acik || aramaAcik
   const toggle = () => { const y = !acik; setAcik(y); try { localStorage.setItem(`vukuf-ozelalt-${alt.id}`, JSON.stringify(y)) } catch {} }
   const duzenAd = altDuzen[alt.id]
   const altKaydet = () => { if (duzenAd != null && duzenAd.trim()) onAltRename(raf.id, alt.id, duzenAd.trim()); setAltDuzen(p => { const n = { ...p }; delete n[alt.id]; return n }) }
+  const q = aramaAcik && arama.trim() ? normHarf(arama) : ""
+  const gosterilen = q ? liste.filter(k => normHarf(k.baslik).includes(q)) : liste
 
   return (
-    <div>
+    <div ref={setNodeRef} style={sstyle}>
       <div
         onClick={duzenAd != null ? undefined : toggle}
         style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 16px", borderBottom: `1px solid ${theme.border}`, gap: "10px", cursor: duzenAd != null ? "default" : "pointer" }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0, flex: 1 }}>
+          {duzenlemeMode && (
+            <span
+              {...attributes}
+              {...listeners}
+              onClick={e => e.stopPropagation()}
+              style={{ cursor: "grab", touchAction: "none", color: theme.textSecondary, display: "flex", flexShrink: 0 }}
+            >
+              <GripVertical size={14} />
+            </span>
+          )}
           {duzenlemeMode && duzenAd != null ? (
             <input
               value={duzenAd}
@@ -972,12 +1004,32 @@ function OzelAltRaf({ raf, alt, liste, theme, dinamikMod, duzenlemeMode, aramaAk
               )}
             </>
           )}
+          {duzenAd == null && <RafArama theme={theme} acik={aramaAcik} setAcik={(v) => { setAramaAcik(v); if (!v) setArama("") }} deger={arama} setDeger={setArama} />}
           <span style={{ fontSize: "11px", color: theme.textSecondary }}>{liste.length} {gorunur ? "▲" : "▼"}</span>
         </div>
       </div>
-      {gorunur && (
+      {aramaAcik && (
+        <div style={{ padding: "10px 16px", borderBottom: `1px solid ${theme.border}` }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px", background: theme.background, border: `1px solid ${theme.accent}40`, borderRadius: "24px", padding: "8px 14px" }}>
+            <Search size={14} color={theme.accent} />
+            <input
+              value={arama} onChange={e => setArama(e.target.value)} placeholder="Bu alt rafta kitap ara..." autoFocus
+              style={{ flex: 1, background: "transparent", border: "none", outline: "none", fontSize: "13px", color: theme.text }}
+            />
+            {arama && (
+              <button onClick={() => setArama("")} style={{ display: "flex", color: theme.textSecondary, background: "none", border: "none", cursor: "pointer", padding: "2px" }}>
+                <X size={14} />
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+      {gorunur && q && gosterilen.length === 0 && (
+        <div style={{ padding: "14px 16px", color: theme.textSecondary, fontSize: "13px", fontStyle: "italic" }}>Sonuç yok</div>
+      )}
+      {gorunur && !(q && gosterilen.length === 0) && (
         <RafSatiri
-          kitaplar={liste}
+          kitaplar={gosterilen}
           rafId={`ozel-${alt.id}`}
           theme={theme}
           dinamikMod={dinamikMod}
@@ -1013,7 +1065,7 @@ function RafArama({ deger, setDeger, theme, acik, setAcik }) {
 // ÖZEL RAF (kullanıcı oluşturur; birden fazla alt raf + kitap)
 // ─────────────────────────────────────────────────────────────
 function OzelKategori({ raf, havuz, theme, dinamikMod, duzenlemeMode, gizlemeMod, gizli, onGizle,
-  onSil, onRename, onAltEkle, onAltSil, onAltRename, onKitapEkleAc, onKitapCikar }) {
+  onSil, onRename, onAltEkle, onAltSil, onAltRename, onKitapEkleAc, onKitapCikar, sensors, onAltSira }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: raf.id })
   const sstyle = { transform: CSS.Transform.toString(transform), transition }
   const [acik, setAcik] = useState(() => {
@@ -1115,30 +1167,38 @@ function OzelKategori({ raf, havuz, theme, dinamikMod, duzenlemeMode, gizlemeMod
               </div>
             </div>
           )}
-          {(raf.altRaflar || []).map(alt => {
-            let liste = (alt.kitapIdler || []).map(id => havuz.get(id)).filter(Boolean)
-            if (q) liste = liste.filter(k => normHarf(k.baslik).includes(q))
-            if (aramaAktif && liste.length === 0) return null
-            return (
-              <OzelAltRaf
-                key={alt.id}
-                raf={raf}
-                alt={alt}
-                liste={liste}
-                theme={theme}
-                dinamikMod={dinamikMod}
-                duzenlemeMode={duzenlemeMode}
-                aramaAktif={aramaAktif}
-                altDuzen={altDuzen}
-                setAltDuzen={setAltDuzen}
-                onAltRename={onAltRename}
-                onAltSil={onAltSil}
-                onKitapEkleAc={onKitapEkleAc}
-                onKitapCikar={onKitapCikar}
-                silinebilir={raf.altRaflar.length > 1}
-              />
-            )
-          })}
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={(e) => { const { active, over } = e; if (over && active.id !== over.id) onAltSira(raf.id, active.id, over.id) }}
+          >
+            <SortableContext items={(raf.altRaflar || []).map(a => a.id)} strategy={verticalListSortingStrategy}>
+              {(raf.altRaflar || []).map(alt => {
+                let liste = (alt.kitapIdler || []).map(id => havuz.get(id)).filter(Boolean)
+                if (q) liste = liste.filter(k => normHarf(k.baslik).includes(q))
+                if (aramaAktif && liste.length === 0) return null
+                return (
+                  <OzelAltRaf
+                    key={alt.id}
+                    raf={raf}
+                    alt={alt}
+                    liste={liste}
+                    theme={theme}
+                    dinamikMod={dinamikMod}
+                    duzenlemeMode={duzenlemeMode}
+                    aramaAktif={aramaAktif}
+                    altDuzen={altDuzen}
+                    setAltDuzen={setAltDuzen}
+                    onAltRename={onAltRename}
+                    onAltSil={onAltSil}
+                    onKitapEkleAc={onKitapEkleAc}
+                    onKitapCikar={onKitapCikar}
+                    silinebilir={raf.altRaflar.length > 1}
+                  />
+                )
+              })}
+            </SortableContext>
+          </DndContext>
           {aramaAktif && (raf.altRaflar || []).every(alt => {
             let l = (alt.kitapIdler || []).map(id => havuz.get(id)).filter(Boolean)
             return l.filter(k => normHarf(k.baslik).includes(q)).length === 0
@@ -1528,6 +1588,15 @@ export default function Kutuphane() {
   function altRename(rafId, altId, baslik) {
     ozelKaydet(ozelRaflar.map(r => r.id === rafId ? { ...r, altRaflar: r.altRaflar.map(a => a.id === altId ? { ...a, baslik } : a) } : r))
   }
+  function altRafSira(rafId, aktifId, ustId) {
+    ozelKaydet(ozelRaflar.map(r => {
+      if (r.id !== rafId) return r
+      const ids = r.altRaflar.map(a => a.id)
+      const oi = ids.indexOf(aktifId), ni = ids.indexOf(ustId)
+      if (oi < 0 || ni < 0) return r
+      return { ...r, altRaflar: arrayMove(r.altRaflar, oi, ni) }
+    }))
+  }
   function kitapEkle(rafId, altId, ids) {
     ozelKaydet(ozelRaflar.map(r => r.id === rafId ? {
       ...r, altRaflar: r.altRaflar.map(a => a.id === altId
@@ -1843,6 +1912,8 @@ export default function Kutuphane() {
                   onAltRename={altRename}
                   onKitapEkleAc={kitapEkleAc}
                   onKitapCikar={kitapCikar}
+                  sensors={sensors}
+                  onAltSira={altRafSira}
                 />
               )
             }

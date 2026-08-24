@@ -130,13 +130,34 @@ function AyarToggle({ etiket, aktif, onToggle, theme, acikLabel = "Açık", kapa
 // YARDIMCI FONKSİYONLAR
 // ════════════════════════════════════════════════════════════════
 
+// Sık geçen bağlaç/edat gibi kelimeler lügatta gösterilmesin (gereksiz/yanlış eşleşme)
+const STOPKELIMELER = new Set([
+  "ve", "veya", "ya", "ile", "ki", "de", "da", "mi", "mı", "mu", "mü",
+  "o", "bu", "şu", "bir", "en", "çok", "daha", "her", "hem", "ne", "ise",
+  "ki,", "de,", "da,",
+])
 function kelimeAra(kelime) {
   const temiz = kelime.toLowerCase().replace(/[.,!?;:'"()\[\]]/g, "").trim()
+  if (!temiz || STOPKELIMELER.has(temiz)) return null
   return lugatVerisi[temiz] || risaleLugat[temiz] || null
 }
 function kavramAra(kelime) {
   const temiz = kelime.toLowerCase().replace(/[.,!?;:'"()\[\]]/g, "").trim()
+  if (!temiz || STOPKELIMELER.has(temiz)) return null
   return kavramlarVerisi[temiz] || null
+}
+// İzafet birleşik ("sırr-ı vahdetle") — tam eşleşme yoksa SON kelimenin ekini kırparak dene
+// ("sırr-ı vahdet"). Dönen: {kelime, anlam, kavram} ya da null.
+function birlesikBul(bk) {
+  const parcalar = bk.split(" ")
+  const son = parcalar[parcalar.length - 1]
+  const enFazla = Math.min(5, Math.max(0, son.length - 2))
+  for (let kes = 0; kes <= enFazla; kes++) {
+    const aday = kes === 0 ? bk : parcalar.slice(0, -1).concat(son.slice(0, son.length - kes)).join(" ")
+    const a = kelimeAra(aday), k = kavramAra(aday)
+    if (a || k) return { kelime: aday, anlam: a, kavram: k }
+  }
+  return null
 }
 function bugunAnahtar() {
   const d = new Date()
@@ -457,9 +478,27 @@ function MetinParcasi({
               }
               const arapKelime = ARAP_RE.test(temiz)
               // Haşiyeli kelimeyi lügat sayma (H + kuş tüyü ile karışmasın)
-              const anlam    = (arapKelime || hasHasiye) ? null : kelimeAra(temiz)
-              const kavram   = (arapKelime || hasHasiye) ? null : kavramAra(temiz)
-              const lugatliMi = (anlam || kavram) && lugatAktif
+              let anlam    = (arapKelime || hasHasiye) ? null : kelimeAra(temiz)
+              let kavram   = (arapKelime || hasHasiye) ? null : kavramAra(temiz)
+              // İZAFET birleşik: "ehl-i", "muhakkıkîn-i" gibi tireli kelimede sonraki kelimeyle de dene
+              let secenekler = null
+              if (!arapKelime && !hasHasiye && temiz.includes("-")) {
+                const sonrakiRaw = kelimeler[ki + 1]
+                const sonraki = sonrakiRaw ? sonrakiRaw.replace(/⟦H\d+⟧/g, "").replace(/[.,!?;:'"()\[\]]/g, "").trim() : ""
+                if (sonraki) {
+                  const bul = birlesikBul(temiz + " " + sonraki)   // ek kırparak da dener
+                  if (bul) {
+                    const liste = [{ kelime: bul.kelime, anlam: bul.anlam, kavram: bul.kavram }]
+                    if (anlam || kavram) liste.push({ kelime: temiz, anlam, kavram })
+                    const sAnlam = kelimeAra(sonraki), sKavram = kavramAra(sonraki)
+                    if (sAnlam || sKavram) liste.push({ kelime: sonraki, anlam: sAnlam, kavram: sKavram })
+                    secenekler = liste
+                    if (!anlam) anlam = bul.anlam       // birincil gösterim birleşik anlam
+                    if (!kavram) kavram = bul.kavram
+                  }
+                }
+              }
+              const lugatliMi = (anlam || kavram || secenekler) && lugatAktif
               const vurgulu  = vurgulananMi(si, ki)
               return (
               <span key={ki}>
@@ -468,7 +507,11 @@ function MetinParcasi({
                   data-vurgu={vurgulu ? vurgulu.id : undefined}
                   onMouseDown={e => kelimeMouseDown(si, ki, e)}
                   onMouseUp={() => kelimeMouseUp(si, ki)}
-                  onClick={e => { if (!vurguModu && lugatliMi) onKelimeTikla(temiz, anlam, kavram, e) }}
+                  onClick={e => { if (!vurguModu && lugatliMi) {
+                    if (secenekler && secenekler.length > 1) onKelimeTikla(temiz, anlam, kavram, e, secenekler)
+                    else if (secenekler) onKelimeTikla(secenekler[0].kelime, secenekler[0].anlam, secenekler[0].kavram, e)
+                    else onKelimeTikla(temiz, anlam, kavram, e)
+                  } }}
                   onMouseEnter={e => { if (lugatliMi && !vurguModu) e.currentTarget.style.opacity = "0.75" }}
                   onMouseLeave={e => { e.currentTarget.style.opacity = "1" }}
                   style={{
@@ -749,6 +792,8 @@ const [duraklatildi, setDuraklatildi]         = useState(false)
 // ── Bar
 const barZamanRef = useRef(null)
 const [barGorunur, setBarGorunur]           = useState(true)
+const barRef = useRef(null)
+const [barYuk, setBarYuk] = useState(56)   // ölçülen bar yüksekliği (safe-area padding dahil)
 const [barKonum, setBarKonum] = useState(() => localStorage.getItem("vukuf-bar-konum") || "alt")
 const [barUiOlcegi, setBarUiOlcegi] = useState(() => parseFloat(localStorage.getItem("vukuf-bar-ui-olcegi") || "1"))
 const [bilgiOlcegi, setBilgiOlcegi] = useState(() => parseFloat(localStorage.getItem("vukuf-bilgi-olcegi") || "1"))
@@ -1112,6 +1157,32 @@ useEffect(() => { localStorage.setItem("vukuf-arap-boyutu", String(arapBoyutu)) 
 useEffect(() => { localStorage.setItem("vukuf-baslik-boyutu", String(baslikBoyutu)) }, [baslikBoyutu])
 useEffect(() => { localStorage.setItem("vukuf-fontlar", JSON.stringify(fontSecimler)) }, [fontSecimler])
 useEffect(() => { localStorage.setItem("vukuf-bar-konum", barKonum) }, [barKonum])
+// Bar yüksekliğini ölç (safe-area padding dahil offsetHeight); dönme/yeniden boyutta güncelle
+useLayoutEffect(() => {
+  const el = barRef.current
+  if (!el) return
+  const olc = () => { const h = el.offsetHeight; if (h) setBarYuk(prev => (Math.abs(prev - h) > 1 ? h : prev)) }
+  olc()
+  let ro
+  try { ro = new ResizeObserver(olc); ro.observe(el) } catch {}
+  window.addEventListener("resize", olc); window.addEventListener("orientationchange", olc)
+  return () => { try { ro && ro.disconnect() } catch {}; window.removeEventListener("resize", olc); window.removeEventListener("orientationchange", olc) }
+}, [barKonum, isMobile, barUiOlcegi])
+
+// Ekran döndürülünce aynı sayfada kal (px scroll konumu farklı sayfaya denk gelmesin)
+const mevcutSayfaRef = useRef(1)
+useEffect(() => { mevcutSayfaRef.current = mevcutSayfa }, [mevcutSayfa])
+useEffect(() => {
+  let zaman
+  const donunce = () => {
+    const hedef = mevcutSayfaRef.current
+    clearTimeout(zaman)
+    zaman = setTimeout(() => { try { sayfayaGit(hedef, 0) } catch {} }, 350)
+  }
+  window.addEventListener("orientationchange", donunce)
+  return () => { window.removeEventListener("orientationchange", donunce); clearTimeout(zaman) }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [])
 useEffect(() => { localStorage.setItem("vukuf-otomatik-gizleme", otomatikGizleme) }, [otomatikGizleme])
 useEffect(() => { localStorage.setItem("vukuf-gizleme-suresi", gizlemeSuresi) }, [gizlemeSuresi])
 useEffect(() => { localStorage.setItem("vukuf-sade-mode", sadeMode) }, [sadeMode])
@@ -1482,13 +1553,13 @@ function fontSecimDegistir(grupId, fontId) {
   setFontSecimler(prev => ({ ...prev, [grupId]: fontId }))
 }
 
-function kelimeTikla(kelime, anlam, kavram, e) {
+function kelimeTikla(kelime, anlam, kavram, e, secenekler = null) {
   const gx = e?.clientX ?? window.innerWidth / 2
   const gy = e?.clientY ?? window.innerHeight / 2
   const x = Math.max(10, Math.min(gx - 150, window.innerWidth - 310))
   const y = gy + 12 + 260 > window.innerHeight ? Math.max(10, gy - 260) : gy + 12
   setPopupKavramAcik(false)
-  setPopup({ kelime, anlam, kavram, x, y })
+  setPopup({ kelime, anlam, kavram, secenekler, x, y })
 }
 
 function dipnotTikla(metin, e, etiket = "DİPNOT") {
@@ -2441,13 +2512,17 @@ const MenuPanel = menuAcik && (
 // ════════════════════════════════════════════════════════════════
 
 const Bar = (
-  <div className="okuma-bar" style={{
+  <div ref={barRef} className="okuma-bar" style={{
     position: "fixed", left: 0, right: 0,
     [barKonum === "alt" ? "bottom" : "top"]: 0,
     background: theme.surface,
     borderTop:    barKonum === "alt" ? `1px solid ${theme.border}` : "none",
     borderBottom: barKonum === "ust" ? `1px solid ${theme.border}` : "none",
-    padding: isMobile ? "8px 12px" : "3px 10px",
+    // Dikey padding + safe-area (çentik/ev alanına kadar arka plan uzansın, içerik güvende)
+    paddingTop:    `calc(${isMobile ? 8 : 3}px + ${barKonum === "ust" ? "env(safe-area-inset-top)" : "0px"})`,
+    paddingBottom: `calc(${isMobile ? 8 : 3}px + ${barKonum === "alt" ? "env(safe-area-inset-bottom)" : "0px"})`,
+    paddingLeft:   `max(${isMobile ? 12 : 10}px, env(safe-area-inset-left))`,
+    paddingRight:  `max(${isMobile ? 12 : 10}px, env(safe-area-inset-right))`,
     display: "flex", alignItems: "center", gap: `${Math.round(4 * barUiOlcegi)}px`,
     justifyContent: "center",
     zIndex: 90, flexWrap: "wrap", rowGap: "4px",
@@ -2619,6 +2694,21 @@ return (
           width: "300px", maxWidth: "92vw", maxHeight: "25vh", overflowY: "auto",
           boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
         }}>
+          {popup.secenekler && popup.secenekler.length > 1 ? (
+            // Birden çok aday (izafet birleşik) — hepsini seçenek olarak göster
+            popup.secenekler.map((s, i) => (
+              <div key={i} style={{ marginBottom: i < popup.secenekler.length - 1 ? "12px" : "0", paddingBottom: i < popup.secenekler.length - 1 ? "12px" : "0", borderBottom: i < popup.secenekler.length - 1 ? `1px solid ${theme.border}` : "none" }}>
+                <div style={{ color: theme.accent, fontWeight: "bold", fontSize: `${Math.round(15 * bilgiOlcegi)}px`, marginBottom: "4px" }}>{s.kelime}</div>
+                {s.anlam && <div style={{ color: theme.textSecondary, fontSize: `${Math.round(13.5 * bilgiOlcegi)}px`, lineHeight: "1.5" }}>{s.anlam}</div>}
+                {s.kavram && s.kavram.map((kv, j) => (
+                  <div key={j} style={{ marginTop: "6px" }}>
+                    <div style={{ fontSize: `${Math.round(12.5 * bilgiOlcegi)}px`, fontWeight: 600, color: theme.text }}>{kv.terim}</div>
+                    <div style={{ fontSize: `${Math.round(12 * bilgiOlcegi)}px`, color: theme.text, lineHeight: "1.6", whiteSpace: "pre-wrap" }}>{kv.aciklama}</div>
+                  </div>
+                ))}
+              </div>
+            ))
+          ) : (<>
           <div style={{ color: theme.accent, fontWeight: "bold", fontSize: `${Math.round(16 * bilgiOlcegi)}px`, marginBottom: "6px" }}>{popup.kelime}</div>
           {popup.anlam && (
             <div style={{ color: theme.textSecondary, fontSize: `${Math.round(14 * bilgiOlcegi)}px`, lineHeight: "1.5" }}>{popup.anlam}</div>
@@ -2646,6 +2736,7 @@ return (
               ))}
             </div>
           )}
+          </>)}
         </div>
       </>
     )}
@@ -2660,7 +2751,13 @@ return (
       onTouchEnd={dokunusBitti}
       style={{
         flex: 1, overflowY: "auto", userSelect: "none",
-        padding: `${barKonum === "ust" ? "80px" : "24px"} 0 ${barKonum === "alt" ? "80px" : "24px"}`,
+        // Üst/alt boşluk BAR YÜKSEKLİĞİNE eşit → metin tam bar hizasında maskelenir;
+        // bar gizliyse boşluk yalnız safe-area kadar (metin gizlenmez).
+        paddingTop:    barKonum === "ust" ? (barGorunur ? `${barYuk}px` : "max(12px, env(safe-area-inset-top))") : "24px",
+        paddingBottom: barKonum === "alt" ? (barGorunur ? `${barYuk}px` : "max(12px, env(safe-area-inset-bottom))") : "24px",
+        paddingLeft: "env(safe-area-inset-left)",
+        paddingRight: "env(safe-area-inset-right)",
+        transition: "padding-top 0.25s ease, padding-bottom 0.25s ease",
       }}
     >
       <div style={{ maxWidth: `${Math.round((isMobile ? 480 : 720) * (yaziBoyutu / 16))}px`, margin: "0 auto", padding: "0 24px" }}>
@@ -2703,7 +2800,7 @@ return (
         {/* Kitap başlığı */}
         <div style={{ textAlign: "center", marginBottom: "48px", paddingTop: "24px" }}>
           <OtoFit as="h1" maxFont={isMobile ? 98 : 158} minFont={isMobile ? 20 : 36}
-            style={{ color: theme.accent, marginBottom: "8px", lineHeight: 1.1, fontFamily: /Nurs[iî]/.test(kitap.yazar || "") ? "LivaNur, serif" : "PlayfairDisplay, serif", whiteSpace: "nowrap" }}>
+            style={{ color: theme.accent, marginBottom: "8px", lineHeight: 1.1, fontFamily: /Nurs[iî]/.test(kitap.yazar || "") ? "LivaNur, serif" : "PlayfairDisplay, serif" }}>
             {kitap.baslik}
           </OtoFit>
           <p style={{ color: theme.textSecondary, fontSize: "44px" }}>{kitap.yazar}</p>

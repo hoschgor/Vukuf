@@ -25,9 +25,13 @@ export default function App() {
     let m = document.querySelector('meta[name="theme-color"]')
     if (!m) { m = document.createElement("meta"); m.setAttribute("name", "theme-color"); document.head.appendChild(m) }
     m.setAttribute("content", bg)
-    // NOT: viewport-fit=cover EKLEMİYORUZ — içeriği güvenli alana taşıyıp
-    // butonları sıkıştırıyordu. iOS letterbox'ı html/body arka planıyla boyar,
-    // o yüzden yalnız arka plan rengi yeterli (düzen eski hâlinde kalır).
+    // viewport-fit=cover: içerik fiziksel kenara kadar uzansın (bar/arka plan çentik
+    // altına da devam eder). Sıkışmayı önlemek için bar ve içeriğe env(safe-area-inset-*)
+    // padding'i okuma ekranında ekli.
+    let vp = document.querySelector('meta[name="viewport"]')
+    if (!vp) { vp = document.createElement("meta"); vp.setAttribute("name", "viewport"); document.head.appendChild(vp) }
+    const icerik = vp.getAttribute("content") || "width=device-width, initial-scale=1"
+    if (!/viewport-fit/.test(icerik)) vp.setAttribute("content", icerik + ", viewport-fit=cover")
   }, [theme])
   return (
     <div style={{ minHeight: "100vh", background: theme.background }}>

@@ -57,6 +57,8 @@ let sayfaYuklendi = false
 // yüklenip animasyonu takmasın). Image nesneleri referansta tutulur → GC etmez.
 const _kapakCache = []
 let _kapakOnbellek = false
+// Dinamik raf'ta ortadaki kitabın indeksi — kitaba girip geri dönünce raf aynı kalsın (oturum içi)
+const _dinamikAktif = {}
 function kapaklariOnbellekle(urls) {
   if (_kapakOnbellek) return
   _kapakOnbellek = true
@@ -267,7 +269,7 @@ function DinamikRaf({ kitaplar: liste, rafId, theme, alimId, kitapSiralama }) {
     : liste
   const kitapSayisi = sirali.length
 
-  const [aktif, setAktif] = useState(0)
+  const [aktif, setAktif] = useState(() => (typeof _dinamikAktif[rafId] === "number" ? _dinamikAktif[rafId] : 0))
   const [dx, setDx] = useState(0)
   const [suruk, setSuruk] = useState(false)
   const drag = useRef({ startX: 0, startY: 0, active: false, moved: false, axis: null })
@@ -278,7 +280,10 @@ function DinamikRaf({ kitaplar: liste, rafId, theme, alimId, kitapSiralama }) {
   const aralik = isMobile ? 158 : 214
   const konteynerH = coverH + 96
 
-  useEffect(() => { setAktif(0); setDx(0) }, [rafId, kitapSayisi])
+  // Kitap sayısı değişirse indeksi aralıkta tut (sıfırlama YOK — geri dönünce raf korunur)
+  useEffect(() => { setAktif(a => Math.max(0, Math.min(kitapSayisi - 1, a))); setDx(0) }, [rafId, kitapSayisi])
+  // Ortadaki kitabı hatırla (oturum içi; kitaba girip geri gelince aynı yerde açılır)
+  useEffect(() => { _dinamikAktif[rafId] = aktif }, [rafId, aktif])
 
   useEffect(() => {
     if (!kitapSayisi || !sayfaYuklendi) return

@@ -535,7 +535,7 @@ function MetinParcasi({
               if (bil && bil.rol === "ek" && !hasHasiye) {
                 const on = temiz.slice(0, bil.kesim)
                 const kalan = temiz.slice(bil.kesim)
-                const lgKey = `${sayfaNo}-c-${bil.grup}`   // birleşik grubun ortak anahtarı
+                const lgKey = `${sayfaNo}-${si}-c-${bil.grup}`   // satır+grup: benzersiz
                 return (
                   <span key={ki}>
                     <span className="lugat-kelime"
@@ -563,7 +563,7 @@ function MetinParcasi({
               }
               const lugatliMi = (anlam || kavram || secenekler) && lugatAktif
               const vurgulu  = vurgulananMi(si, ki)
-              const lgKey = (bil && bil.rol === "tam") ? `${sayfaNo}-c-${bil.grup}` : `${sayfaNo}-w-${ki}`
+              const lgKey = (bil && bil.rol === "tam") ? `${sayfaNo}-${si}-c-${bil.grup}` : `${sayfaNo}-${si}-w-${ki}`
               return (
               <span key={ki}>
                 <span
@@ -918,6 +918,26 @@ const herhangiPanelAcik = ayarlarAcik || sayfaGitAcik || aaAcik || kayitAcik || 
 // ── Lügat popup
 const [popup, setPopup] = useState(null)
 const [popupKavramAcik, setPopupKavramAcik] = useState(false)
+const popupRef = useRef(null)
+// Pop-up'ı kelimenin kutusuna göre yerleştir: öncelik ALTTA (çizgiden sonra küçük boşluk);
+// altta sığmazsa (bar/ekran) hemen ÜSTTE; yatayda kelimeye en yakın sığan konum.
+useLayoutEffect(() => {
+  if (!popup || !popup.rect || popup.yerlesti) return
+  const el = popupRef.current
+  if (!el) return
+  const ph = el.offsetHeight, pw = el.offsetWidth
+  const bosluk = 8, kenar = 8, vw = window.innerWidth, vh = window.innerHeight
+  const altBar = (barKonum === "alt" && barGorunur) ? barYuk : 0
+  const ustBar = (barKonum === "ust" && barGorunur) ? barYuk : 0
+  const altSinir = vh - altBar - kenar, ustSinir = ustBar + kenar
+  const r = popup.rect
+  let y
+  if (r.bottom + bosluk + ph <= altSinir) y = r.bottom + bosluk         // altta sığıyor
+  else y = Math.max(ustSinir, r.top - bosluk - ph)                      // üstte (sığmazsa en yakın üst)
+  let x = r.left + r.width / 2 - pw / 2                                 // yatayda kelime ortası
+  x = Math.max(kenar, Math.min(x, vw - pw - kenar))                    // taşarsa en yakın sığan konum
+  setPopup(p => (p && !p.yerlesti ? { ...p, x, y, yerlesti: true } : p))
+}, [popup, barKonum, barGorunur, barYuk])
 const [dipnotPopup, setDipnotPopup] = useState(null)
 
 // ── Notlar & Vurgular
@@ -1621,12 +1641,14 @@ function fontSecimDegistir(grupId, fontId) {
 }
 
 function kelimeTikla(kelime, anlam, kavram, e, secenekler = null) {
-  const gx = e?.clientX ?? window.innerWidth / 2
-  const gy = e?.clientY ?? window.innerHeight / 2
-  const x = Math.max(10, Math.min(gx - 150, window.innerWidth - 310))
-  const y = gy + 12 + 260 > window.innerHeight ? Math.max(10, gy - 260) : gy + 12
+  // Konum TIKLAMA noktasına göre değil, KELİMENİN kutusuna göre (rect); yerlesimEfekti ölçüp yerleştirir
+  let rect = null
+  try { const rr = e?.currentTarget?.getBoundingClientRect?.(); if (rr) rect = { top: rr.top, bottom: rr.bottom, left: rr.left, width: rr.width } } catch {}
+  const pw = Math.min(300, window.innerWidth * 0.92)
+  let x = 10, y = 60
+  if (rect) { x = Math.max(8, Math.min(rect.left + rect.width / 2 - pw / 2, window.innerWidth - pw - 8)); y = rect.bottom + 8 }
   setPopupKavramAcik(false)
-  setPopup({ kelime, anlam, kavram, secenekler, x, y })
+  setPopup({ kelime, anlam, kavram, secenekler, rect, x, y, yerlesti: !rect })   // rect yoksa doğrudan göster
 }
 
 function dipnotTikla(metin, e, etiket = "DİPNOT") {
@@ -2755,12 +2777,13 @@ return (
     {popup && (
       <>
         <div onClick={() => setPopup(null)} style={{ position: "fixed", inset: 0, zIndex: 299 }} />
-        <div style={{
+        <div ref={popupRef} style={{
           position: "fixed", left: popup.x, top: popup.y,
           background: theme.surface, border: `1px solid ${theme.border}`,
           borderRadius: "12px", padding: "14px 18px", zIndex: 300,
           width: "300px", maxWidth: "92vw", maxHeight: "25vh", overflowY: "auto",
           boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
+          visibility: popup.yerlesti ? "visible" : "hidden",
         }}>
           {popup.secenekler && popup.secenekler.length > 1 ? (
             // Birden çok aday (izafet birleşik) — hepsini seçenek olarak göster

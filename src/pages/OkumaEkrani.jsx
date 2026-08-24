@@ -2,7 +2,7 @@ import KuranOkuma from "./KuranOkuma"
 import { useState, useEffect, useRef, useCallback, useMemo } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import { useApp } from "../AppContext"
-import { kitaplar } from "../data/kitaplar"
+import { kitaplar, kategoriler } from "../data/kitaplar"
 import { okumaKaydet, trFold } from "../data/okumaKayit"
 import lugatVerisi from "../data/lugat.json"
 import risaleLugat from "../data/risale-lugat.json"
@@ -663,7 +663,16 @@ const [fontSecimler, setFontSecimler] = useState(() => {
 const aktifFontId = fontSecimler.turkce || fontSecimler.osmanlica || fontSecimler.arapca || "bookerly"
 const aktifFont   = fontBul(aktifFontId)
 const metinFont  = fontBul(fontSecimler.turkce || fontSecimler.osmanlica || "bookerly").style
-const arapcaFont = fontSecimler.arapca ? fontBul(fontSecimler.arapca).style : null
+// Kitap "Evrad ve Ezkar" kısmında mı? → Arapça yazı fontu varsayılan Me Quran
+const evradKitabiMi = useMemo(() => {
+  const kat = kategoriler.find(k => (k.alimler || []).some(a =>
+    (a.altKategoriler ? a.altKategoriler.flatMap(x => x.kitaplar || []) : (a.kitaplar || [])).some(b => b.id === id)
+  ))
+  return kat?.id === "evrad-ezkar"
+}, [id])
+const arapcaFont = evradKitabiMi
+  ? fontBul("me-quran").style
+  : (fontSecimler.arapca ? fontBul(fontSecimler.arapca).style : null)
 const baslikFont = /Nurs[iî]/.test(kitap?.yazar || "") ? "LivaNur, serif" : metinFont
 const [arapcaRenk, setArapcaRenk] = useState(() => localStorage.getItem("vukuf-arapca-renk") || "")
 const [lugatRenkOzel, setLugatRenkOzel] = useState(() => localStorage.getItem("vukuf-lugat-renk") || "")
@@ -1015,7 +1024,8 @@ useEffect(() => {
     ilkOturumRef.current = false
   }
   Object.values(fontSecimler).forEach(fid => { if (fid) fontYukle(fid) })
-}, [fontSecimler])
+  if (evradKitabiMi) fontYukle("me-quran")
+}, [fontSecimler, evradKitabiMi])
 
 // ════════════════════════════════════════════════════
 // Metin içi arama

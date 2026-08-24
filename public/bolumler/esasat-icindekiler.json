@@ -60,16 +60,16 @@
   "baslik": "C) Zaruriyatta İctihad Olamaz",
   "aciklama": "",
   "sayfa": 16,
-  "oran": 0.375,
-  "satir": 3
+  "oran": 0.2857,
+  "satir": 2
  },
  {
   "seviye": 3,
   "baslik": "D) Zahir-i Şeriata Muhalefet Edilemez",
   "aciklama": "",
   "sayfa": 17,
-  "oran": 0.8182,
-  "satir": 9
+  "oran": 0.8,
+  "satir": 8
  },
  {
   "seviye": 3,

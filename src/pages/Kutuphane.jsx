@@ -108,44 +108,62 @@ function SortableKitap({ kitap, duzenlemeMode, theme, alimId }) {
 function KucukKapak({ kitap, theme, alimId, duzenlemeMode }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "80px" }}>
-      <div
-        style={{
-          width: "80px",
-          height: "128px",
-          background: kitap.gorsel ? `url(${kitap.gorsel}) center/cover no-repeat` : kitapSirtiRengi(kitap.id),
-          borderRadius: "2px 6px 6px 2px",
-          boxShadow: `inset -3px 0 6px rgba(0,0,0,0.3), inset 3px 0 4px rgba(255,255,255,0.1), 2px 2px 6px rgba(0,0,0,0.3)`,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: "6px",
-          cursor: duzenlemeMode ? "default" : "pointer",
-          transition: "transform 0.2s",
-          position: "relative",
-          overflow: "hidden",
-          outline: duzenlemeMode ? `2px dashed rgba(255,255,255,0.5)` : "none",
-        }}
-        onMouseEnter={(e) => !duzenlemeMode && (e.currentTarget.style.transform = "translateY(-6px)")}
-        onMouseLeave={(e) => !duzenlemeMode && (e.currentTarget.style.transform = "translateY(0)")}
-      >
-        {!kitap.gorsel && (
-          <>
-            <div style={{ position: "absolute", left: "6px", top: 0, bottom: 0, width: "2px", background: "rgba(0,0,0,0.2)" }} />
-            <span style={{
-              fontSize: "8px",
-              color: "rgba(255,255,255,0.85)",
-              textAlign: "center",
-              lineHeight: "1.3",
-              fontFamily: kitapFontGetir(alimId) || "PlayfairDisplay, serif",
-              writingMode: "vertical-rl",
-              textOrientation: "mixed",
-              transform: "rotate(180deg)",
-            }}>
-              {kitap.baslik.length > 20 ? kitap.baslik.slice(0, 20) + "…" : kitap.baslik}
-            </span>
-          </>
-        )}
-      </div>
+      {kitap.gorsel ? (
+        // Görsel: şekle duyarlı gölge (drop-shadow, alfayı takip eder) → tam kapak da,
+        // saydam kenarlı kapak da doğru gölge alır; dikdörtgen kutu gölgesi yok.
+        <img
+          src={kitap.gorsel}
+          alt={kitap.baslik}
+          style={{
+            width: "80px",
+            height: "128px",
+            objectFit: "contain",
+            borderRadius: "2px 6px 6px 2px",
+            filter: "drop-shadow(1px 2px 3px rgba(0,0,0,0.38))",
+            cursor: duzenlemeMode ? "default" : "pointer",
+            transition: "transform 0.2s",
+            display: "block",
+            outline: duzenlemeMode ? `2px dashed rgba(255,255,255,0.5)` : "none",
+          }}
+          onMouseEnter={(e) => !duzenlemeMode && (e.currentTarget.style.transform = "translateY(-6px)")}
+          onMouseLeave={(e) => !duzenlemeMode && (e.currentTarget.style.transform = "translateY(0)")}
+        />
+      ) : (
+        <div
+          style={{
+            width: "80px",
+            height: "128px",
+            background: kitapSirtiRengi(kitap.id),
+            borderRadius: "2px 6px 6px 2px",
+            boxShadow: `inset -3px 0 6px rgba(0,0,0,0.3), inset 3px 0 4px rgba(255,255,255,0.1), 2px 2px 6px rgba(0,0,0,0.3)`,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "6px",
+            cursor: duzenlemeMode ? "default" : "pointer",
+            transition: "transform 0.2s",
+            position: "relative",
+            overflow: "hidden",
+            outline: duzenlemeMode ? `2px dashed rgba(255,255,255,0.5)` : "none",
+          }}
+          onMouseEnter={(e) => !duzenlemeMode && (e.currentTarget.style.transform = "translateY(-6px)")}
+          onMouseLeave={(e) => !duzenlemeMode && (e.currentTarget.style.transform = "translateY(0)")}
+        >
+          <div style={{ position: "absolute", left: "6px", top: 0, bottom: 0, width: "2px", background: "rgba(0,0,0,0.2)" }} />
+          <span style={{
+            fontSize: "8px",
+            color: "rgba(255,255,255,0.85)",
+            textAlign: "center",
+            lineHeight: "1.3",
+            fontFamily: kitapFontGetir(alimId) || "PlayfairDisplay, serif",
+            writingMode: "vertical-rl",
+            textOrientation: "mixed",
+            transform: "rotate(180deg)",
+          }}>
+            {kitap.baslik.length > 20 ? kitap.baslik.slice(0, 20) + "…" : kitap.baslik}
+          </span>
+        </div>
+      )}
       <div style={{
         fontSize: "10px",
         fontFamily: kitapFontGetir(alimId) || "inherit",
@@ -192,39 +210,51 @@ function KitapKart({ kitap, theme, alimId, onSil }) {
 function DinamikKapak({ kitap, alimId, coverW, coverH }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", pointerEvents: "none" }}>
-      <div
-        style={{
-          width: `${coverW}px`,
-          height: `${coverH}px`,
-          background: kitap.gorsel ? `url(${kitap.gorsel}) center/cover no-repeat` : kitapSirtiRengi(kitap.id),
-          borderRadius: "3px 9px 9px 3px",
-          boxShadow: `inset -5px 0 10px rgba(0,0,0,0.3), inset 5px 0 6px rgba(255,255,255,0.12), 5px 10px 26px rgba(0,0,0,0.42)`,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: "10px",
-          position: "relative",
-          overflow: "hidden",
-        }}
-      >
-        {!kitap.gorsel && (
-          <>
-            <div style={{ position: "absolute", left: "10px", top: 0, bottom: 0, width: "3px", background: "rgba(0,0,0,0.2)" }} />
-            <span style={{
-              fontSize: `${Math.round(coverW * 0.075)}px`,
-              color: "rgba(255,255,255,0.9)",
-              textAlign: "center",
-              lineHeight: "1.4",
-              fontFamily: kitapFontGetir(alimId) || "PlayfairDisplay, serif",
-              writingMode: "vertical-rl",
-              textOrientation: "mixed",
-              transform: "rotate(180deg)",
-            }}>
-              {kitap.baslik.length > 24 ? kitap.baslik.slice(0, 24) + "…" : kitap.baslik}
-            </span>
-          </>
-        )}
-      </div>
+      {kitap.gorsel ? (
+        // Görsel: şekle duyarlı gölge (drop-shadow) → boyuttan bağımsız tutarlı gölge
+        <img
+          src={kitap.gorsel}
+          alt={kitap.baslik}
+          style={{
+            width: `${coverW}px`,
+            height: `${coverH}px`,
+            objectFit: "contain",
+            borderRadius: "3px 9px 9px 3px",
+            filter: "drop-shadow(4px 9px 16px rgba(0,0,0,0.45))",
+            display: "block",
+          }}
+        />
+      ) : (
+        <div
+          style={{
+            width: `${coverW}px`,
+            height: `${coverH}px`,
+            background: kitapSirtiRengi(kitap.id),
+            borderRadius: "3px 9px 9px 3px",
+            boxShadow: `inset -5px 0 10px rgba(0,0,0,0.3), inset 5px 0 6px rgba(255,255,255,0.12), 5px 10px 26px rgba(0,0,0,0.42)`,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "10px",
+            position: "relative",
+            overflow: "hidden",
+          }}
+        >
+          <div style={{ position: "absolute", left: "10px", top: 0, bottom: 0, width: "3px", background: "rgba(0,0,0,0.2)" }} />
+          <span style={{
+            fontSize: `${Math.round(coverW * 0.075)}px`,
+            color: "rgba(255,255,255,0.9)",
+            textAlign: "center",
+            lineHeight: "1.4",
+            fontFamily: kitapFontGetir(alimId) || "PlayfairDisplay, serif",
+            writingMode: "vertical-rl",
+            textOrientation: "mixed",
+            transform: "rotate(180deg)",
+          }}>
+            {kitap.baslik.length > 24 ? kitap.baslik.slice(0, 24) + "…" : kitap.baslik}
+          </span>
+        </div>
+      )}
     </div>
   )
 }

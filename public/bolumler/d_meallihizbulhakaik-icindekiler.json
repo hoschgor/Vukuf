@@ -77,7 +77,7 @@
   "aciklama": "",
   "sayfa": 81,
   "oran": 0.0,
-  "satir": 0
+  "satir": null
  },
  {
   "seviye": 2,
@@ -100,8 +100,8 @@
   "baslik": "Veysel Karani'nin Münacatı",
   "aciklama": "",
   "sayfa": 102,
-  "oran": 0.5625,
-  "satir": 9
+  "oran": 0.0,
+  "satir": null
  },
  {
   "seviye": 2,

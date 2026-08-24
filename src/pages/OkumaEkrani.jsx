@@ -8,6 +8,7 @@ import lugatVerisi from "../data/lugat.json"
 import risaleLugat from "../data/risale-lugat.json"
 import kavramlarVerisi from "../data/kavramlar.json"
 import KitapAyraci from "../components/KitapAyraci"
+import MushafAyetRozeti from "../components/MushafAyetRozeti"
 import {
   ArrowLeft, BookOpen, Eye, EyeOff, Play, Pause,
   Plus, Minus, AlignJustify, ChevronsUp, ChevronsDown,
@@ -329,6 +330,19 @@ function MetinParcasi({
         // ⟦C⟧ ön eki: ortalı normal satır (künye, imza, ayraç) — işaret ayıklanır
         const merkez = satir.startsWith("⟦C⟧")
         const gosterilecek = merkez ? satir.replace(/^⟦C⟧/, "") : satir
+
+        // Lâhika bölüm ayracı "- N -" → ortalı rozet (mektup no'su), iki yanı ince çizgi
+        const mektupM = gosterilecek.trim().match(/^-\s*(\d+)\s*-$/)
+        if (mektupM) {
+          return (
+            <div key={si} data-satir={`${sayfaNo}-${si}`} id={`baslik-${sayfaNo}-${si}`}
+              style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "16px", margin: "32px 0 20px" }}>
+              <span style={{ flex: 1, maxWidth: "90px", height: "1px", background: theme.border }} />
+              <MushafAyetRozeti sayi={Number(mektupM[1])} size={fontSize * 1.9} ac={theme.accent} />
+              <span style={{ flex: 1, maxWidth: "90px", height: "1px", background: theme.border }} />
+            </div>
+          )
+        }
 
         // Ana/alt başlık (contents.json'dan) — ortalı, LivaNur, hover açıklama
         const bh = basliklarMap[si]
@@ -1366,14 +1380,19 @@ function basligaGit(sayfa, satir, oran = 0, baslikMetni = "", seviye = 1) {
 
   // Hedef satır indeksini belirle: extractor verdiyse onu; yoksa metinde başlığı ara
   let hedefSatir = satir
+  let mektupOdak = false
   if (hedefSatir == null && baslikMetni) {
     const sf = kitapMetni.find(s => s.sayfa === sayfa)
     if (sf) {
       const norm = (s) => trLower(s || "").replace(/⟦[^⟧]*⟧/g, "").replace(/\[\d+\]/g, "").replace(/\s+/g, " ").trim()
       const hedef = norm(baslikMetni)
+      // Lâhika: içindekilerde "N.Mektup" → gövdede "- N -" ayracını ara
+      const mm = baslikMetni.match(/(\d+)\s*\.\s*mektup/i)
+      const mektupRe = mm ? new RegExp(`^-\\s*${mm[1]}\\s*-$`) : null
       const satirlar = sf.metin.split("\n")
       for (let i = 0; i < satirlar.length; i++) {
         if (satirlar[i].startsWith("§")) continue
+        if (mektupRe && mektupRe.test(satirlar[i].replace(/⟦C⟧/g, "").trim())) { hedefSatir = i; mektupOdak = true; break }
         const ln = norm(satirlar[i])
         if (!ln) continue
         if (ln === hedef || ln.startsWith(hedef) || (hedef.length >= 6 && ln.includes(hedef))) { hedefSatir = i; break }
@@ -1385,9 +1404,10 @@ function basligaGit(sayfa, satir, oran = 0, baslikMetni = "", seviye = 1) {
     (document.getElementById(`baslik-${sayfa}-${hedefSatir}`) ||
      document.querySelector(`[data-satir="${sayfa}-${hedefSatir}"]`)))
 
+  const odakla = anaBaslik || mektupOdak   // mektup ayracı: satır başını üste odakla (vurgu arama yok)
   elemanaGit(sayfa, sel, oran,
-    anaBaslik,                                            // ana başlık: odak çizgisi
-    anaBaslik ? null : (el) => aramaVurgula(sayfa, el, baslikMetni, false)) // alt başlık: vurgu (alt çizgisiz)
+    odakla,                                               // ana başlık / mektup: odak çizgisi
+    odakla ? null : (el) => aramaVurgula(sayfa, el, baslikMetni, false)) // alt başlık: vurgu (alt çizgisiz)
 }
 
 // Vurguya git — vurgulanan ilk kelimenin DOM konumuna ([data-vurgu]) tam hizala

@@ -608,7 +608,7 @@ function SortableAlimRafi({ alim, duzenlemeMode, theme, sensors, kitapSiralama, 
   }
 
   return (
-    <div ref={setNodeRef} style={{ ...style, marginBottom: "8px", background: theme.background, borderRadius: "8px", overflow: "hidden", border: `1px solid ${theme.border}` }}>
+    <div id={`alim-raf-${alim.id}`} ref={setNodeRef} style={{ ...style, marginBottom: "8px", background: theme.background, borderRadius: "8px", overflow: "hidden", border: `1px solid ${theme.border}`, scrollMarginTop: "80px" }}>
       <button
         onClick={toggleAlimRafi}
         style={{
@@ -1593,6 +1593,24 @@ export default function Kutuphane() {
     }
   }
 
+  // Aramadan âlim seçilince: kategori açıldıktan sonra o âlimin rafına kaydır + kısa vurgu
+  function alimeOdakla(alimId) {
+    let deneme = 0
+    const t = setInterval(() => {
+      const el = document.getElementById(`alim-raf-${alimId}`)
+      if (el) {
+        clearInterval(t)
+        el.scrollIntoView({ block: "center", behavior: "smooth" })
+        const eskiGolge = el.style.boxShadow
+        el.style.transition = "box-shadow 0.4s"
+        el.style.boxShadow = `0 0 0 3px ${theme.accent}`
+        setTimeout(() => { el.style.boxShadow = eskiGolge || "none" }, 1400)
+      } else if (deneme++ > 15) {
+        clearInterval(t)
+      }
+    }, 80)
+  }
+
   function handleAlimDragEnd(event, kategoriId) {
     const { active, over } = event
     if (active.id !== over?.id) {
@@ -1887,7 +1905,7 @@ export default function Kutuphane() {
                         </Link>
                       ) : (
                         <div
-                          onClick={() => { setGenelArama(""); setGenelAramaAcik(false); setAcikKategori(s.kategoriId) }}
+                          onClick={() => { setGenelArama(""); setGenelAramaAcik(false); setAcikKategori(s.kategoriId); alimeOdakla(s.alimId) }}
                           style={{ display: "flex", alignItems: "center", gap: "12px", padding: "12px 16px", color: theme.text, borderBottom: `1px solid ${theme.border}`, cursor: "pointer", transition: "background 0.15s" }}
                           onMouseEnter={(e) => e.currentTarget.style.background = `${theme.accent}10`}
                           onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}

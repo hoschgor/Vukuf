@@ -1472,6 +1472,8 @@ export default function Kutuphane() {
   const [gizlemeMod, setGizlemeMod] = useState(false)
   const [genelArama, setGenelArama] = useState("")
   const [genelAramaAcik, setGenelAramaAcik] = useState(false)
+  const [gizliAramaDahil, setGizliAramaDahil] = useState(false)   // aramada gizli bölümleri de göster
+  const [gizliUyari, setGizliUyari] = useState(false)             // gizli sonuca tıklanınca kısa not
   const [kategoriArama, setKategoriArama] = useState({})
   const [kitapArama, setKitapArama] = useState({})
 
@@ -1860,10 +1862,17 @@ export default function Kutuphane() {
               <Search size={16} color={theme.accent} />
               <input
                 type="text" placeholder="" value={genelArama}
-                onChange={(e) => setGenelArama(e.target.value)}
+                onChange={(e) => { setGenelArama(e.target.value); if (gizliUyari) setGizliUyari(false) }}
                 style={{ flex: 1, background: "transparent", border: "none", outline: "none", fontSize: "14px", color: theme.text }}
                 autoFocus
               />
+              {gizliRaflar.length > 0 && (
+                <button onClick={() => setGizliAramaDahil(v => !v)}
+                  title={gizliAramaDahil ? "Gizli bölümler dahil" : "Gizli bölümler hariç"}
+                  style={{ display: "flex", alignItems: "center", color: gizliAramaDahil ? theme.accent : theme.textSecondary, background: gizliAramaDahil ? `${theme.accent}15` : "none", border: "none", borderRadius: "6px", cursor: "pointer", padding: "3px" }}>
+                  {gizliAramaDahil ? <Eye size={15} /> : <EyeOff size={15} />}
+                </button>
+              )}
               {genelArama && (
                 <button onClick={() => setGenelArama("")} style={{ display: "flex", color: theme.textSecondary, background: "none", border: "none", cursor: "pointer", padding: "2px" }}>
                   <X size={14} />
@@ -1873,18 +1882,25 @@ export default function Kutuphane() {
 
             {genelArama && (
               <div style={{ maxHeight: "400px", overflowY: "auto" }}>
+                {gizliUyari && (
+                  <div style={{ padding: "10px 16px", fontSize: "12px", color: theme.accent, background: `${theme.accent}12`, borderBottom: `1px solid ${theme.border}` }}>
+                    Bu bölüm gizli — kütüphanede görünür yapıldığında açılabilir.
+                  </div>
+                )}
                 {(() => {
                   const aramaKucuk = trLower(genelArama)
                   const sonuclar = []
                   kategoriler.forEach(kategori => {
+                    const rafGizli = gizliRaflar.includes(kategori.id)
+                    if (rafGizli && !gizliAramaDahil) return          // gizli bölüm aramada gösterilmez
                     kategori.alimler.forEach(alim => {
                       if (trLower(alim.isim).includes(aramaKucuk)) {
-                        sonuclar.push({ tip: "alim", isim: alim.isim, kategori: kategori.baslik, alimId: alim.id, kategoriId: kategori.id })
+                        sonuclar.push({ tip: "alim", isim: alim.isim, kategori: kategori.baslik, alimId: alim.id, kategoriId: kategori.id, gizli: rafGizli })
                       }
                       const kitaplarL = alim.altKategoriler ? alim.altKategoriler.flatMap(a => a.kitaplar) : alim.kitaplar
                       kitaplarL.forEach(kitap => {
                         if (trLower(kitap.baslik).includes(aramaKucuk)) {
-                          sonuclar.push({ tip: "kitap", baslik: kitap.baslik, yazar: alim.isim, kategori: kategori.baslik, kitapId: kitap.id, dosya: kitap.dosya })
+                          sonuclar.push({ tip: "kitap", baslik: kitap.baslik, yazar: alim.isim, kategori: kategori.baslik, kitapId: kitap.id, dosya: kitap.dosya, gizli: rafGizli })
                         }
                       })
                     })
@@ -1894,7 +1910,7 @@ export default function Kutuphane() {
                   }
                   return sonuclar.map((s, i) => (
                     <div key={i}>
-                      {s.tip === "kitap" ? (
+                      {s.tip === "kitap" && !s.gizli ? (
                         <Link
                           to={`/kitap/${s.kitapId}`}
                           onClick={() => { setGenelArama(""); setGenelAramaAcik(false) }}
@@ -1910,15 +1926,18 @@ export default function Kutuphane() {
                         </Link>
                       ) : (
                         <div
-                          onClick={() => { setGenelArama(""); setGenelAramaAcik(false); setAcikKategori(s.kategoriId); alimeOdakla(s.alimId) }}
-                          style={{ display: "flex", alignItems: "center", gap: "12px", padding: "12px 16px", color: theme.text, borderBottom: `1px solid ${theme.border}`, cursor: "pointer", transition: "background 0.15s" }}
+                          onClick={() => {
+                            if (s.gizli) { setGizliUyari(true); return }
+                            setGenelArama(""); setGenelAramaAcik(false); setAcikKategori(s.kategoriId); alimeOdakla(s.alimId)
+                          }}
+                          style={{ display: "flex", alignItems: "center", gap: "12px", padding: "12px 16px", color: s.gizli ? theme.textSecondary : theme.text, borderBottom: `1px solid ${theme.border}`, cursor: "pointer", transition: "background 0.15s", opacity: s.gizli ? 0.7 : 1 }}
                           onMouseEnter={(e) => e.currentTarget.style.background = `${theme.accent}10`}
                           onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
                         >
-                          <Search size={16} color={theme.accent} />
+                          {s.gizli ? <EyeOff size={16} color={theme.textSecondary} /> : (s.tip === "kitap" ? <BookOpen size={16} color={theme.accent} /> : <Search size={16} color={theme.accent} />)}
                           <div>
-                            <div style={{ fontSize: "14px" }}>{s.isim}</div>
-                            <div style={{ fontSize: "11px", color: theme.textSecondary }}>{s.kategori}</div>
+                            <div style={{ fontSize: "14px" }}>{s.tip === "kitap" ? s.baslik : s.isim}</div>
+                            <div style={{ fontSize: "11px", color: theme.textSecondary }}>{s.tip === "kitap" ? `${s.yazar} · ${s.kategori}` : s.kategori}{s.gizli ? " · gizli" : ""}</div>
                           </div>
                         </div>
                       )}

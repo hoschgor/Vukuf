@@ -139,6 +139,7 @@ export default function KuranOkuma({ kitap }) {
   } = useApp()
   const navigate  = useNavigate()
   const isMobile  = useMediaQuery("(max-width: 768px)")
+  const genisEkran = useMediaQuery("(min-width: 1024px)")   // yatay telefon (<1024) bar sağa kaymasın
   const scrollRef = useRef(null)
 
   // Son/Sık Okunanlar rafları için okuma kaydı
@@ -1665,7 +1666,11 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
       background: theme.surface,
       borderTop:    barKonum === "alt" ? `1px solid ${theme.border}` : "none",
       borderBottom: barKonum === "ust" ? `1px solid ${theme.border}` : "none",
-      padding: isMobile ? "8px 12px" : "3px 10px",
+      // Dikey padding + safe-area (yatayda çentik/köşeye butonlar sıkışmasın)
+      paddingTop:    `calc(${isMobile ? 8 : 3}px + ${barKonum === "ust" ? "env(safe-area-inset-top)" : "0px"})`,
+      paddingBottom: `calc(${isMobile ? 8 : 3}px + ${barKonum === "alt" ? "env(safe-area-inset-bottom)" : "0px"})`,
+      paddingLeft:   `max(${isMobile ? 12 : 10}px, env(safe-area-inset-left))`,
+      paddingRight:  `max(${isMobile ? 12 : 10}px, env(safe-area-inset-right))`,
       display: "flex", alignItems: "center", gap: `${Math.round(4 * barUiOlcegi)}px`,
       justifyContent: "center",
       zIndex: 90, flexWrap: "wrap", rowGap: "4px",
@@ -1780,7 +1785,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
       display: "flex", alignItems: "center",
       gap: `${Math.round((isMobile ? 8 : 12) * barUiOlcegi)}px`,
       flexWrap: "wrap", justifyContent: "center",
-      ...(isMobile ? {} : { marginLeft: "auto" }),
+      ...(genisEkran ? { marginLeft: "auto" } : {}),
     }}>
       {sureGoster && !sadeMode && (
         <span style={{ 

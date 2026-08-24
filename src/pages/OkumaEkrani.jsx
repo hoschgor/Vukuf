@@ -296,6 +296,19 @@ function MetinParcasi({
   basliklar, baslikFont, ortala = false, lugatRenk, arapRenk, hasiyeler, hafif = false,
 }) {
   const [secimBaslangic, setSecimBaslangic] = useState(null)
+  const [basili, setBasili] = useState(null)   // tıklanan lügat kalıbı (kısa süre yanan manuel efekt)
+  const basiliTimerRef = useRef(null)
+  // Tıklayınca lügat kalıbını ~1.4sn belli belirsiz yak (mobil dokunmada da görünür)
+  const basiliYak = (key) => {
+    if (basiliTimerRef.current) clearTimeout(basiliTimerRef.current)
+    setBasili(key)
+    basiliTimerRef.current = setTimeout(() => setBasili(null), 1400)
+  }
+  useEffect(() => () => { if (basiliTimerRef.current) clearTimeout(basiliTimerRef.current) }, [])
+  // Efekt: lügat renginde ALT ÇİZGİ (arka plan yok). skipInk:none → g/y gibi inen harflerde kesilmez.
+  const basiliZemin = (key) => (basili && basili === key
+    ? { textDecoration: "underline", textDecorationColor: lugatRenk, textUnderlineOffset: "0.18em", textDecorationThickness: "1.5px", textDecorationSkipInk: "none", WebkitTextDecorationSkipInk: "none" }
+    : null)
   const satirlar = metin.split("\n")
   const hasiyeMap = hasiyeler || {}
 
@@ -448,6 +461,47 @@ function MetinParcasi({
         if (hafif) {
           return <p key={si} data-satir={`${sayfaNo}-${si}`} style={pStil}>{gosterilecek.replace(/⟦H\d+⟧/g, "")}</p>
         }
+        // İZAFET birleşik ön-tarama: "şahsiyet-i beşeriye" gibi eşleşen kısmı işaretle.
+        // rol "bas": ilk kelime (tam kırmızı); rol "ek": sonraki kelimede eşleşen ÖN kısım
+        // kırmızı+tıklanabilir, kalan ek siyah. secenekler = [birleşik, (ilk), (sonraki)].
+        const birlesikMap = {}
+        if (lugatAktif) {
+          const sadeleş = (w) => (w || "").replace(/⟦H\d+⟧/g, "").replace(/[.,!?;:'"()\[\]]/g, "").trim()
+          const sade = kelimeler.map(sadeleş)
+          for (let wi = 0; wi < sade.length - 1; wi++) {
+            if (birlesikMap[wi]) continue
+            const wT = sade[wi]
+            if (!wT.includes("-") || ARAP_RE.test(wT)) continue
+            // En UZUN izafet eşleşmesi: wi'den başlayarak 2..4 kelime; son kelimenin eki kırpılabilir
+            let best = null
+            for (let n = 2; n <= 4 && wi + n - 1 < sade.length; n++) {
+              const parcalar = sade.slice(wi, wi + n)
+              if (parcalar.some(p => !p || ARAP_RE.test(p))) break
+              const son = parcalar[n - 1]
+              const enFazla = Math.min(6, Math.max(0, son.length - 2))
+              for (let kes = 0; kes <= enFazla; kes++) {
+                const sonKirp = son.slice(0, son.length - kes)
+                const aday = parcalar.slice(0, -1).concat(sonKirp).join(" ")
+                const a = kelimeAra(aday), k = kavramAra(aday)
+                if (a || k) { best = { n, kesim: sonKirp.length, kelime: aday, anlam: a, kavram: k }; break }
+              }
+            }
+            if (!best) continue
+            const secenekler = [{ kelime: best.kelime, anlam: best.anlam, kavram: best.kavram }]
+            const iA = kelimeAra(wT), iK = kavramAra(wT)
+            if (iA || iK) secenekler.push({ kelime: wT, anlam: iA, kavram: iK })
+            const sonKel = sade[wi + best.n - 1]
+            const lA = kelimeAra(sonKel), lK = kavramAra(sonKel)
+            if (lA || lK) secenekler.push({ kelime: sonKel, anlam: lA, kavram: lK })
+            for (let d = 0; d < best.n; d++) {
+              const idx = wi + d
+              birlesikMap[idx] = (d === best.n - 1)
+                ? { rol: "ek", kesim: best.kesim, secenekler, grup: wi }
+                : { rol: "tam", secenekler, grup: wi }
+            }
+          }
+        }
+        const birlesikTikla = (sec, e) => onKelimeTikla(sec[0].kelime, sec[0].anlam, sec[0].kavram, e, sec.length > 1 ? sec : null)
         return (
           <p key={si} data-satir={`${sayfaNo}-${si}`} style={pStil}>
             {kelimeler.map((kelime, ki) => {
@@ -476,30 +530,40 @@ function MetinParcasi({
               if (!temiz) {   // yalnız haşiye işaretinden ibaret jeton
                 return <span key={ki}>{hasiyeEk}{bosluk}</span>
               }
+              const bil = birlesikMap[ki]
+              // İZAFET EKİ: eşleşen ön kısım kırmızı+tıklanabilir, kalan ek siyah
+              if (bil && bil.rol === "ek" && !hasHasiye) {
+                const on = temiz.slice(0, bil.kesim)
+                const kalan = temiz.slice(bil.kesim)
+                const lgKey = `${sayfaNo}-c-${bil.grup}`   // birleşik grubun ortak anahtarı
+                return (
+                  <span key={ki}>
+                    <span className="lugat-kelime"
+                      onClick={e => { if (!vurguModu) { basiliYak(lgKey); birlesikTikla(bil.secenekler, e) } }}
+                      onMouseEnter={e => { if (!vurguModu) e.currentTarget.style.opacity = "0.75" }}
+                      onMouseLeave={e => { e.currentTarget.style.opacity = "1" }}
+                      style={{ color: lugatRenk, cursor: vurguModu ? "text" : "pointer", userSelect: "text", ...basiliZemin(lgKey) }}>
+                      {on}
+                    </span>
+                    {kalan && <span style={{ color: "inherit" }}>{kalan}</span>}
+                    {hasiyeEk}{bosluk}
+                  </span>
+                )
+              }
               const arapKelime = ARAP_RE.test(temiz)
               // Haşiyeli kelimeyi lügat sayma (H + kuş tüyü ile karışmasın)
               let anlam    = (arapKelime || hasHasiye) ? null : kelimeAra(temiz)
               let kavram   = (arapKelime || hasHasiye) ? null : kavramAra(temiz)
-              // İZAFET birleşik: "ehl-i", "muhakkıkîn-i" gibi tireli kelimede sonraki kelimeyle de dene
+              // İZAFET birleşiğin TAM (son olmayan) kelimeleri: tam kırmızı, tıklayınca birleşik anlam
               let secenekler = null
-              if (!arapKelime && !hasHasiye && temiz.includes("-")) {
-                const sonrakiRaw = kelimeler[ki + 1]
-                const sonraki = sonrakiRaw ? sonrakiRaw.replace(/⟦H\d+⟧/g, "").replace(/[.,!?;:'"()\[\]]/g, "").trim() : ""
-                if (sonraki) {
-                  const bul = birlesikBul(temiz + " " + sonraki)   // ek kırparak da dener
-                  if (bul) {
-                    const liste = [{ kelime: bul.kelime, anlam: bul.anlam, kavram: bul.kavram }]
-                    if (anlam || kavram) liste.push({ kelime: temiz, anlam, kavram })
-                    const sAnlam = kelimeAra(sonraki), sKavram = kavramAra(sonraki)
-                    if (sAnlam || sKavram) liste.push({ kelime: sonraki, anlam: sAnlam, kavram: sKavram })
-                    secenekler = liste
-                    if (!anlam) anlam = bul.anlam       // birincil gösterim birleşik anlam
-                    if (!kavram) kavram = bul.kavram
-                  }
-                }
+              if (bil && bil.rol === "tam") {
+                secenekler = bil.secenekler
+                if (!anlam) anlam = secenekler[0].anlam
+                if (!kavram) kavram = secenekler[0].kavram
               }
               const lugatliMi = (anlam || kavram || secenekler) && lugatAktif
               const vurgulu  = vurgulananMi(si, ki)
+              const lgKey = (bil && bil.rol === "tam") ? `${sayfaNo}-c-${bil.grup}` : `${sayfaNo}-w-${ki}`
               return (
               <span key={ki}>
                 <span
@@ -508,14 +572,16 @@ function MetinParcasi({
                   onMouseDown={e => kelimeMouseDown(si, ki, e)}
                   onMouseUp={() => kelimeMouseUp(si, ki)}
                   onClick={e => { if (!vurguModu && lugatliMi) {
-                    if (secenekler && secenekler.length > 1) onKelimeTikla(temiz, anlam, kavram, e, secenekler)
+                    basiliYak(lgKey)
+                    // Birleşikte pop-up başlığı = EŞLEŞEN kısım (secenekler[0].kelime), tüm kelime değil
+                    if (secenekler && secenekler.length > 1) onKelimeTikla(secenekler[0].kelime, secenekler[0].anlam, secenekler[0].kavram, e, secenekler)
                     else if (secenekler) onKelimeTikla(secenekler[0].kelime, secenekler[0].anlam, secenekler[0].kavram, e)
                     else onKelimeTikla(temiz, anlam, kavram, e)
                   } }}
                   onMouseEnter={e => { if (lugatliMi && !vurguModu) e.currentTarget.style.opacity = "0.75" }}
                   onMouseLeave={e => { e.currentTarget.style.opacity = "1" }}
                   style={{
-                    background: vurgulu ? vurgulu.renk : "transparent",
+                    ...(vurgulu ? { background: vurgulu.renk } : basiliZemin(lgKey)),
                     borderRadius: vurgulu ? "2px" : "0",
                     color: arapKelime ? arapRenk : (lugatliMi ? lugatRenk : "inherit"),
                     borderBottom: "none",
@@ -810,6 +876,7 @@ const [otomatikGizleme, setOtomatikGizleme] = useState(() => localStorage.getIte
 const [gizlemeSuresi, setGizlemeSuresi] = useState(() => parseInt(localStorage.getItem("vukuf-gizleme-suresi") || "5"))
 const [sureGoster, setSureGoster]           = useState(true)
 const isMobile = useMediaQuery('(max-width: 768px)')
+const genisEkran = useMediaQuery('(min-width: 1024px)')   // yatay telefon (<1024) bar sağa kaymasın
 
 // ── Paneller
 const [ayarlarAcik, setAyarlarAcik]     = useState(false)
@@ -2609,7 +2676,7 @@ const Bar = (
 
     <div style={{
       display: "flex", gap: "8px", alignItems: "center",
-      ...(isMobile ? {} : { marginLeft: "auto" }),
+      ...(genisEkran ? { marginLeft: "auto" } : {}),
     }}>
       {gorunurMu("kisim") && mevcutKisim && (
         <span onClick={(e) => { const yol = mevcutKisimYolu.map(b => b.baslik).join(" / "); dipnotTikla(mevcutKisim.aciklama || yol, e, yol) }}
@@ -2648,7 +2715,8 @@ return (
   <div style={{ height: "100vh", display: "flex", flexDirection: "column", background: theme.background }}>
 
     <style>{`@keyframes odakYanip { 0%{opacity:0} 15%{opacity:1} 70%{opacity:1} 100%{opacity:0} }
-@keyframes aramaVurguAnim { 0%{opacity:0} 12%{opacity:1} 75%{opacity:1} 100%{opacity:0} }`}</style>
+@keyframes aramaVurguAnim { 0%{opacity:0} 12%{opacity:1} 75%{opacity:1} 100%{opacity:0} }
+.lugat-kelime, .lugat-kelime * { -webkit-tap-highlight-color: transparent; }`}</style>
 
     {barKonum === "ust" && Bar}
 
@@ -2751,6 +2819,7 @@ return (
       onTouchEnd={dokunusBitti}
       style={{
         flex: 1, overflowY: "auto", userSelect: "none",
+        WebkitTapHighlightColor: "transparent",   // dokununca gri kutu çıkmasın
         // Üst/alt boşluk BAR YÜKSEKLİĞİNE eşit → metin tam bar hizasında maskelenir;
         // bar gizliyse boşluk yalnız safe-area kadar (metin gizlenmez).
         paddingTop:    barKonum === "ust" ? (barGorunur ? `${barYuk}px` : "max(12px, env(safe-area-inset-top))") : "24px",

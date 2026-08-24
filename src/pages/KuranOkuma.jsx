@@ -113,19 +113,20 @@ function AyarToggle({ etiket, aktif, onToggle, theme, isMobile, barUiOlcegi }) {
 //  - Ayet 1 / sayfanın ilk ayeti → sûre başlığı ya da sayfa bloğu başı.
 function odakKaydirElemani(el, sureId, ayetNo, hedefEl) {
   const sayfaEl = hedefEl.closest("[data-index]")
+  // Ayet 1 → sûre başlığı (yoksa sayfa başı)
   if (!ayetNo || ayetNo <= 1) {
     const baslik = el.querySelector(`[data-sure-baslik="${sureId}"]`)
     if (baslik && (!sayfaEl || baslik.closest("[data-index]") === sayfaEl)) return baslik
     return sayfaEl || hedefEl
   }
+  // Önceki ayet AYNI sayfada ise: ayetin ilk kelimesi = önceki rozetin sonraki kardeşi
   const onceki = el.querySelector(`[data-sure="${sureId}"][data-ayet="${ayetNo - 1}"]`)
-  const ilk = onceki && onceki.nextElementSibling
-  let anchor = (ilk && (!sayfaEl || ilk.closest("[data-index]") === sayfaEl)) ? ilk : hedefEl
-  if (sayfaEl) {
-    const fark = anchor.getBoundingClientRect().top - sayfaEl.getBoundingClientRect().top
-    if (fark < 60) anchor = sayfaEl   // ayet sayfanın en başındaysa sayfa başı
+  if (onceki && sayfaEl && onceki.closest("[data-index]") === sayfaEl) {
+    const ilk = onceki.nextElementSibling
+    if (ilk) return ilk
   }
-  return anchor
+  // Önceki ayet farklı sayfada / yok → ayet bu sayfanın BAŞINDA başlıyor → sayfa başı
+  return sayfaEl || hedefEl
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -171,6 +172,9 @@ export default function KuranOkuma({ kitap }) {
   const [mevcutSayfa, setMevcutSayfa] = useState(() =>
     parseInt(localStorage.getItem("vukuf-son-sayfa") || "1")
   )
+  // Son konum: mount'ta bir kez oku (scroll takibi ezmeden önce), geri yükle
+  const hedefSayfaRef = useRef(parseInt(localStorage.getItem("vukuf-son-sayfa") || "1"))
+  const geriYuklendiRef = useRef(false)
   
   const [sayfaGirdi, setSayfaGirdi] = useState("")
   const [sayfaGirdiAcik, setSayfaGirdiAcik] = useState(false)
@@ -287,7 +291,7 @@ const maxWidth = useMemo(() =>
   useEffect(() => { localStorage.setItem("vukuf-sade-mod",          String(sadeMode))       }, [sadeMode])
   useEffect(() => { localStorage.setItem("vukuf-otomatik-gizleme",  String(otomatikGizleme))}, [otomatikGizleme])
   useEffect(() => { localStorage.setItem("vukuf-gizleme-suresi",    String(gizlemeSuresi))  }, [gizlemeSuresi])
-  useEffect(() => { localStorage.setItem("vukuf-son-sayfa",         String(mevcutSayfa))    }, [mevcutSayfa])
+  useEffect(() => { if (geriYuklendiRef.current) localStorage.setItem("vukuf-son-sayfa", String(mevcutSayfa)) }, [mevcutSayfa])
   useEffect(() => { localStorage.setItem("vukuf-kuran-sayfa-gosterim", sayfaGosterim)       }, [sayfaGosterim])
   useEffect(() => { localStorage.setItem("vukuf-satir-araligi",     String(satirAraligi))   }, [satirAraligi])
   useEffect(() => { localStorage.setItem("vukuf-harf-araligi",      String(harfAraligi))    }, [harfAraligi])
@@ -638,18 +642,30 @@ const cokSatir = wrapAktif && barYuksekligi > tekSatirYuksekligi * 1.0
   }, [sayfaMap])
 
     useEffect(() => {
+  if (geriYuklendiRef.current) return
   if (yukleniyor || !sayfaListesi.length) return
-  if (scrollKilitli) return // Kilitliyken scroll yapma
-  
-  const index = sayfaListesi.findIndex(s => s.sayfaNo === mevcutSayfa)
-  if (index === -1) return
-  
-  const ilkYukleme = !sessionStorage.getItem("vukuf-ilk-yukleme")
-  if (ilkYukleme) {
+
+  // Arama/Tefeül'den sure hedefi geldiyse restore ATLA (sureGit devralır)
+  let h = null
+  try { h = JSON.parse(localStorage.getItem("vukuf-kuran-hedef") || "null") } catch {}
+  if (h && h.sureNo) { geriYuklendiRef.current = true; return }
+
+  const index = sayfaListesi.findIndex(s => s.sayfaNo === hedefSayfaRef.current)
+  if (index <= 0) { geriYuklendiRef.current = true; return }   // Fatiha / bulunamadı
+
+  // Virtualizer ölçümleri oturana kadar birkaç kez hizala (dinamik yükseklik)
+  let tries = 0
+  const go = () => {
+    if (geriYuklendiRef.current) return
     virtualizer.scrollToIndex(index, { align: "start" })
-    sessionStorage.setItem("vukuf-ilk-yukleme", "true")
+    if (++tries < 5) {
+      setTimeout(go, 130)
+    } else {
+      geriYuklendiRef.current = true
+    }
   }
-}, [yukleniyor, sayfaListesi.length, scrollKilitli])
+  requestAnimationFrame(go)
+}, [yukleniyor, sayfaListesi.length])
 
 // Arama'dan gelen sure hedefi: Kuran açılınca o sureye git (bir kez)
 useEffect(() => {
@@ -1146,25 +1162,22 @@ const menuStil = {
   display: "flex",
   flexDirection: "column",
   zIndex: 80,
-  // Bar ve player bar'ın toplam yüksekliğini hesapla
-  top: barKonum === "ust" 
-    ? `${barYuksekligi + (player.durum !== "kapali" ? playerBarYuksekligi : 0)}px` 
+  // Bar + oynatıcı payı; bar GİZLİYSE bar payı düşer (menü otomatik gizlemeyle kayar).
+  // Bar gizliyken oynatıcı kenara geçtiğinden onun payı korunur.
+  top: barKonum === "ust"
+    ? `${(barGorunur ? barYuksekligi : 0) + (player.durum !== "kapali" ? playerBarYuksekligi : 0)}px`
     : "0px",
-  bottom: barKonum === "alt" 
-    ? `${barYuksekligi + (player.durum !== "kapali" ? playerBarYuksekligi : 0)}px` 
+  bottom: barKonum === "alt"
+    ? `${(barGorunur ? barYuksekligi : 0) + (player.durum !== "kapali" ? playerBarYuksekligi : 0)}px`
     : "0px",
+  transition: "top 0.3s ease, bottom 0.3s ease",
   ...(isMobile ? { left: 0 } : {}),
 }
 
-// Menü içeriği için padding hesapla (panelStil'deki gibi)
-const playerBarOffset = player.durum !== "kapali" 
-  ? (isMobile ? playerBarYuksekligi - 41 : playerBarYuksekligi) 
-  : -30
-
-const menuIcerikPadding = {
-  paddingTop: barKonum === "ust" ? `${playerBarOffset}px` : "0px",
-  paddingBottom: barKonum === "alt" ? `${playerBarOffset}px` : "0px",
-}
+// menuStil zaten bar+oynatıcı payını top/bottom ile ayırıyor; içeride EK boşluk
+// gerekmez (eskiden playerBarOffset ile çift sayılıp fazla boşluk kalıyordu).
+// Yalnız listenin son öğesi (Nâs) kenara yapışmasın diye ufak nefeslik.
+const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
 
   // ════════════════════════════════════════════════════════════════
   // SAYFAYA GİT POPUP

@@ -2238,7 +2238,7 @@ const SayfaGitPopup = sayfaGitAcik && (
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px" }}>
         <div style={{ fontSize: "12px", color: theme.textSecondary }}>SAYFAYA GİT (1 – {kitapMetni.length})</div>
         <button onClick={() => setSayfaGosterimAcik(v => !v)} title="Bardaki görünüm tipi"
-          style={{ background: sayfaGosterimAcik ? `${theme.accent}20` : "none", border: "none", borderRadius: "6px", cursor: "pointer", color: theme.textSecondary, padding: "3px", display: "flex" }}>
+          style={{ background: sayfaGosterimAcik ? `${theme.accent}20` : "none", border: "none", borderRadius: "6px", cursor: "pointer", color: theme.accent, padding: "3px", display: "flex" }}>
           <Settings size={14} />
         </button>
       </div>
@@ -2250,7 +2250,7 @@ const SayfaGitPopup = sayfaGitAcik && (
               style={{ display: "flex", alignItems: "center", gap: "6px", padding: "7px 10px", borderRadius: "8px",
                 border: `1px solid ${sayfaGosterim === o.id ? theme.accent : theme.border}`,
                 background: sayfaGosterim === o.id ? `${theme.accent}12` : "transparent",
-                color: theme.text, cursor: "pointer", fontSize: "13px" }}>
+                color: theme.accent, cursor: "pointer", fontSize: "13px" }}>
               <BookOpen size={13} color={theme.accent} />
               {o.on && <span>{o.on}</span>}
               {sayfaGosterim === o.id && <Check size={13} style={{ marginLeft: "auto", color: theme.accent }} />}
@@ -2378,7 +2378,7 @@ const Bar = (
     )}
 
     {gorunurMu("sayfa") && (
-      <button onClick={() => togglePanel(setSayfaGitAcik, !sayfaGitAcik)} style={{ ...barButonStil(sayfaGitAcik), background: `${theme.accent}15`, color: theme.text }}>
+      <button onClick={() => togglePanel(setSayfaGitAcik, !sayfaGitAcik)} style={{ ...barButonStil(sayfaGitAcik), background: `${theme.accent}15`, color: theme.accent }}>
         <BookOpen size={bIkon(13)} color={theme.accent} />
         {sayfaGosterim === "ikon" ? null : (sayfaGosterim === "sayfa" ? mevcutSayfa : `${mevcutSayfa} / ${kitapMetni.length}`)}
       </button>
@@ -2417,7 +2417,7 @@ const Bar = (
       <button onClick={() => togglePanel(setKayitAcik, !kayitAcik)} style={barButonStil(kayitAcik)} title="Kayıtlar">
         <Bookmark size={bIkon(15)} />
         {toplamKayit > 0 && (
-          <span style={{ fontSize: "10px", background: theme.accent, color: "#fff", borderRadius: "10px", padding: "1px 5px", marginLeft: "2px" }}>
+          <span style={{ fontSize: "10px", background: theme.accent, color: theme.surface, borderRadius: "10px", padding: "1px 5px", marginLeft: "2px" }}>
             {toplamKayit}
           </span>
         )}

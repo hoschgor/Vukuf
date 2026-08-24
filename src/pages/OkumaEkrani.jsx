@@ -385,7 +385,7 @@ function MetinParcasi({
               style={{
                 textAlign: "center", margin: (bh.seviye <= 1) ? "34px 0 18px" : "24px 0 12px",
                 fontFamily: baslikFont || "inherit",
-                fontWeight: 700, color: theme.accent, lineHeight: 1.35, overflowWrap: "break-word",
+                fontWeight: 700, color: theme.accent, lineHeight: 1.35,
               }}>
               {gosterilecek.replace(/⟦H\d+⟧/g, "")}
               {bh.aciklama && (
@@ -2702,8 +2702,8 @@ return (
 
         {/* Kitap başlığı */}
         <div style={{ textAlign: "center", marginBottom: "48px", paddingTop: "24px" }}>
-          <OtoFit as="h1" maxFont={isMobile ? 98 : 158} minFont={isMobile ? 34 : 56}
-            style={{ color: theme.accent, marginBottom: "8px", lineHeight: 1.1, fontFamily: /Nurs[iî]/.test(kitap.yazar || "") ? "LivaNur, serif" : "PlayfairDisplay, serif", overflowWrap: "break-word" }}>
+          <OtoFit as="h1" maxFont={isMobile ? 98 : 158} minFont={isMobile ? 20 : 36}
+            style={{ color: theme.accent, marginBottom: "8px", lineHeight: 1.1, fontFamily: /Nurs[iî]/.test(kitap.yazar || "") ? "LivaNur, serif" : "PlayfairDisplay, serif", whiteSpace: "nowrap" }}>
             {kitap.baslik}
           </OtoFit>
           <p style={{ color: theme.textSecondary, fontSize: "44px" }}>{kitap.yazar}</p>

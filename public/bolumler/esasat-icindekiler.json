@@ -1,0 +1,410 @@
+[
+ {
+  "seviye": 1,
+  "baslik": "Esasat-ı Nuriye",
+  "aciklama": "",
+  "sayfa": 4,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "Önsöz",
+  "aciklama": "",
+  "sayfa": 4,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Bir Takriz (Said Özdemir)",
+  "aciklama": "",
+  "sayfa": 8,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "Takriz (Abdülkadir Badıllı)",
+  "aciklama": "",
+  "sayfa": 9,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "Mukaddeme",
+  "aciklama": "",
+  "sayfa": 10,
+  "oran": 0.1429,
+  "satir": 1
+ },
+ {
+  "seviye": 3,
+  "baslik": "A) Esaslarda İttifak Zaruridir",
+  "aciklama": "",
+  "sayfa": 13,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "B) Esasat-ı Şeriatı Esas Tutmak",
+  "aciklama": "",
+  "sayfa": 14,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "C) Zaruriyatta İctihad Olamaz",
+  "aciklama": "",
+  "sayfa": 16,
+  "oran": 0.375,
+  "satir": 3
+ },
+ {
+  "seviye": 3,
+  "baslik": "D) Zahir-i Şeriata Muhalefet Edilemez",
+  "aciklama": "",
+  "sayfa": 17,
+  "oran": 0.8182,
+  "satir": 9
+ },
+ {
+  "seviye": 3,
+  "baslik": "E) Sarih Beyanların Hükümlerinde Te’vil Yapılamaz",
+  "aciklama": "",
+  "sayfa": 18,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "F) Naklî Delillere Teslimiyet Esastır",
+  "aciklama": "",
+  "sayfa": 20,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "1- İhlâs Düsturu ve Esası",
+  "aciklama": "",
+  "sayfa": 28,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "2- Sadakat ve Fedakârlık Düsturu ve Esası",
+  "aciklama": "",
+  "sayfa": 46,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "3- Sebat ve Metanet Esası",
+  "aciklama": "",
+  "sayfa": 55,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "4- Mesleğe Bakan Düsturların Değişmezliği Esası",
+  "aciklama": "",
+  "sayfa": 66,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "5- Takvâyı Muhafaza ve Bid’atlardan Uzak Durmak Esası",
+  "aciklama": "",
+  "sayfa": 78,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "6- İman Kurtarma Hizmeti Esası",
+  "aciklama": "",
+  "sayfa": 83,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "7- Ciddiyet ve Vakar Esası",
+  "aciklama": "",
+  "sayfa": 98,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "8- İhtilaf Çıkarmamak, Tesanüd ve İttifak Etmek Esası",
+  "aciklama": "",
+  "sayfa": 103,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "9- İktisad Düsturu",
+  "aciklama": "",
+  "sayfa": 117,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 2,
+  "baslik": "10- Siyasetten Uzak Durmak Düstur ve Esası",
+  "aciklama": "",
+  "sayfa": 123,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "11- İstiğna Düsturu",
+  "aciklama": "",
+  "sayfa": 129,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 2,
+  "baslik": "12- Müsbet Hareket Etmek Esası",
+  "aciklama": "",
+  "sayfa": 141,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "13- Tebliğ ve Neşir Vazifesi Esası",
+  "aciklama": "",
+  "sayfa": 150,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "Risale-i Nur’u Açık Şekilde Nazara Vermenin Ehemmiyeti",
+  "aciklama": "",
+  "sayfa": 159,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "14- Tarafgirliği Terk Esası",
+  "aciklama": "",
+  "sayfa": 179,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "15- Adaveti Terk Düsturu",
+  "aciklama": "",
+  "sayfa": 183,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 2,
+  "baslik": "16- Enaniyeti Terk Esası",
+  "aciklama": "",
+  "sayfa": 189,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "17- Riya, Şöhret ve Teveccüh-ü Nas Gibi Zararlı Hissiyatları Terk Etmek Düsturu",
+  "aciklama": "",
+  "sayfa": 194,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "18- Rekabeti Terk Etmek Düsturu",
+  "aciklama": "",
+  "sayfa": 206,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 2,
+  "baslik": "19- Hubb-u Cah’ı Terk Etmek Esası",
+  "aciklama": "",
+  "sayfa": 214,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "20- Menfî Irkçılığı Bırakmak, İslâm Milliyetine Dayanmak Esası",
+  "aciklama": "",
+  "sayfa": 217,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "21- Dar ve Geniş Daire Esası",
+  "aciklama": "",
+  "sayfa": 227,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "22- Gaye Sahibi Olmak Esası",
+  "aciklama": "",
+  "sayfa": 233,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "23- Hürmet Etmek Esası",
+  "aciklama": "",
+  "sayfa": 241,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "24- Keyfiyet Esası",
+  "aciklama": "",
+  "sayfa": 248,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "25- Meşveret ve Şûra Esası",
+  "aciklama": "",
+  "sayfa": 255,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "26- Risale-i Nur Eserlerini Esas Almak ve Nazarları Ona Çevirmek \tve Ona Teslimiyetle Kanaat Etmek Esası",
+  "aciklama": "",
+  "sayfa": 262,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "27- Şahsı Değil, Kitabı Esas Almak",
+  "aciklama": "",
+  "sayfa": 269,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "28- Âl-i Beyt’e Muhabbet Esası",
+  "aciklama": "",
+  "sayfa": 276,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "29- Haslar Dairesinin Varlığı Risale-i Nur’da Esastır",
+  "aciklama": "",
+  "sayfa": 282,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "30- Vakf-ı Hayat Esası",
+  "aciklama": "",
+  "sayfa": 300,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "31- Dershane Hizmetleri Esası",
+  "aciklama": "",
+  "sayfa": 307,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "32- Hatt-ı Kur’ânî’nin Muhafaza Esası",
+  "aciklama": "",
+  "sayfa": 311,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "33- Vazife-i İlâhiyeye Karışmamak Düsturu ve Esası",
+  "aciklama": "",
+  "sayfa": 315,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "Bediüzzaman Hazretleri Kimdir?",
+  "aciklama": "",
+  "sayfa": 320,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Risale-i Nur Nedir?",
+  "aciklama": "",
+  "sayfa": 341,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Nurculuk Nedir?",
+  "aciklama": "",
+  "sayfa": 368,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "Bediüzzaman Hazretlerinin Kronolojisi",
+  "aciklama": "",
+  "sayfa": 374,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "İndeks",
+  "aciklama": "",
+  "sayfa": 386,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "Kaynak Eserler",
+  "aciklama": "",
+  "sayfa": 413,
+  "oran": 0.0,
+  "satir": 0
+ }
+]

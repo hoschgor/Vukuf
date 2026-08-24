@@ -326,7 +326,9 @@ function MetinParcasi({
         if (!satir.trim()) return <br key={si} />
         // Dipnot metni satırları (§...) artık altta gösterilmiyor; hover'a taşındı
         if (satir.startsWith("§")) return null
-        const gosterilecek = satir
+        // ⟦C⟧ ön eki: ortalı normal satır (künye, imza, ayraç) — işaret ayıklanır
+        const merkez = satir.startsWith("⟦C⟧")
+        const gosterilecek = merkez ? satir.replace(/^⟦C⟧/, "") : satir
 
         // Ana/alt başlık (contents.json'dan) — ortalı, LivaNur, hover açıklama
         const bh = basliklarMap[si]
@@ -370,7 +372,7 @@ function MetinParcasi({
         const pStil = {
           marginBottom: "10px", lineHeight: satirAraligi,
           letterSpacing: `${harfAraligi}px`,
-          textAlign: ortala ? "center" : (hizalama || "left"),
+          textAlign: (ortala || merkez) ? "center" : (hizalama || "left"),
           wordSpacing: `${kelimeAraligi}px`,
           cursor: vurguModu ? "text" : "default",
         }
@@ -821,7 +823,7 @@ useEffect(() => {
 
 useEffect(() => {
   if (!kitap) return
-  fetch(`/${kitap.dosya}`)
+  fetch(`/kitap-metin/${kitap.dosya}`)
     .then(r => r.json())
     .then(data => { setKitapMetni(data); setYukleniyor(false) })
     .catch(() => setYukleniyor(false))
@@ -1026,7 +1028,7 @@ useEffect(() => {
   for (const sayfa of kitapMetni) {
     const satirlar = sayfa.metin.split("\n")
     for (let si = 0; si < satirlar.length; si++) {
-      const satir = satirlar[si]
+      const satir = satirlar[si].replace(/^⟦C⟧/, "")
       if (satir.startsWith("§")) continue
       const idx = trLower(satir).indexOf(aranan)
       if (idx === -1) continue
@@ -1357,7 +1359,7 @@ function basligaGit(sayfa, satir, oran = 0, baslikMetni = "", seviye = 1) {
   if (hedefSatir == null && baslikMetni) {
     const sf = kitapMetni.find(s => s.sayfa === sayfa)
     if (sf) {
-      const norm = (s) => trLower(s || "").replace(/⟦H\d+⟧/g, "").replace(/\[\d+\]/g, "").replace(/\s+/g, " ").trim()
+      const norm = (s) => trLower(s || "").replace(/⟦[^⟧]*⟧/g, "").replace(/\[\d+\]/g, "").replace(/\s+/g, " ").trim()
       const hedef = norm(baslikMetni)
       const satirlar = sf.metin.split("\n")
       for (let i = 0; i < satirlar.length; i++) {
@@ -2238,7 +2240,7 @@ const SayfaGitPopup = sayfaGitAcik && (
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px" }}>
         <div style={{ fontSize: "12px", color: theme.textSecondary }}>SAYFAYA GİT (1 – {kitapMetni.length})</div>
         <button onClick={() => setSayfaGosterimAcik(v => !v)} title="Bardaki görünüm tipi"
-          style={{ background: sayfaGosterimAcik ? `${theme.accent}20` : "none", border: "none", borderRadius: "6px", cursor: "pointer", color: theme.accent, padding: "3px", display: "flex" }}>
+          style={{ background: sayfaGosterimAcik ? `${theme.accent}20` : "none", border: "none", borderRadius: "6px", cursor: "pointer", color: theme.textSecondary, padding: "3px", display: "flex" }}>
           <Settings size={14} />
         </button>
       </div>
@@ -2250,7 +2252,7 @@ const SayfaGitPopup = sayfaGitAcik && (
               style={{ display: "flex", alignItems: "center", gap: "6px", padding: "7px 10px", borderRadius: "8px",
                 border: `1px solid ${sayfaGosterim === o.id ? theme.accent : theme.border}`,
                 background: sayfaGosterim === o.id ? `${theme.accent}12` : "transparent",
-                color: theme.accent, cursor: "pointer", fontSize: "13px" }}>
+                color: theme.text, cursor: "pointer", fontSize: "13px" }}>
               <BookOpen size={13} color={theme.accent} />
               {o.on && <span>{o.on}</span>}
               {sayfaGosterim === o.id && <Check size={13} style={{ marginLeft: "auto", color: theme.accent }} />}
@@ -2378,7 +2380,7 @@ const Bar = (
     )}
 
     {gorunurMu("sayfa") && (
-      <button onClick={() => togglePanel(setSayfaGitAcik, !sayfaGitAcik)} style={{ ...barButonStil(sayfaGitAcik), background: `${theme.accent}15`, color: theme.accent }}>
+      <button onClick={() => togglePanel(setSayfaGitAcik, !sayfaGitAcik)} style={{ ...barButonStil(sayfaGitAcik), background: `${theme.accent}15`, color: theme.text }}>
         <BookOpen size={bIkon(13)} color={theme.accent} />
         {sayfaGosterim === "ikon" ? null : (sayfaGosterim === "sayfa" ? mevcutSayfa : `${mevcutSayfa} / ${kitapMetni.length}`)}
       </button>
@@ -2417,7 +2419,7 @@ const Bar = (
       <button onClick={() => togglePanel(setKayitAcik, !kayitAcik)} style={barButonStil(kayitAcik)} title="Kayıtlar">
         <Bookmark size={bIkon(15)} />
         {toplamKayit > 0 && (
-          <span style={{ fontSize: "10px", background: theme.accent, color: theme.surface, borderRadius: "10px", padding: "1px 5px", marginLeft: "2px" }}>
+          <span style={{ fontSize: "10px", background: theme.accent, color: "#fff", borderRadius: "10px", padding: "1px 5px", marginLeft: "2px" }}>
             {toplamKayit}
           </span>
         )}

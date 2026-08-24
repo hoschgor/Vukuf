@@ -1,0 +1,154 @@
+[
+ {
+  "seviye": 1,
+  "baslik": "Tesbihat",
+  "aciklama": "",
+  "sayfa": 1,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 2,
+  "baslik": "SABAH NAMAZI",
+  "aciklama": "SABAH",
+  "sayfa": 1,
+  "oran": 0.0714,
+  "satir": 1
+ },
+ {
+  "seviye": 3,
+  "baslik": "Ecirna duası",
+  "aciklama": "",
+  "sayfa": 4,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "Haşir Suresinin Ahiri",
+  "aciklama": "",
+  "sayfa": 7,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "ÖĞLE NAMAZI",
+  "aciklama": "ÖĞLE",
+  "sayfa": 8,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Esmalar",
+  "aciklama": "",
+  "sayfa": 10,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "Fetih Suresinin Ahiri",
+  "aciklama": "",
+  "sayfa": 11,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "İKİNDİ NAMAZI",
+  "aciklama": "İKİNDİ",
+  "sayfa": 12,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Ecirna duası",
+  "aciklama": "",
+  "sayfa": 14,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "Nebe' Suresi",
+  "aciklama": "",
+  "sayfa": 18,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "AKŞAM NAMAZI",
+  "aciklama": "AKŞAM",
+  "sayfa": 21,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Esmalar",
+  "aciklama": "",
+  "sayfa": 25,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "Haşir Suresinin Ahiri",
+  "aciklama": "",
+  "sayfa": 26,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "YATSI NAMAZI",
+  "aciklama": "YATSI",
+  "sayfa": 27,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Esmalar",
+  "aciklama": "",
+  "sayfa": 30,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "Âmenerrasûlu",
+  "aciklama": "",
+  "sayfa": 31,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "Sabah namazının sünneti ile farzı arasında okunacak dua",
+  "aciklama": "",
+  "sayfa": 32,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Namazın son teşehhüdünde selamdan evvel bu dua okunur",
+  "aciklama": "",
+  "sayfa": 32,
+  "oran": 0.625,
+  "satir": 5
+ },
+ {
+  "seviye": 2,
+  "baslik": "Akşam ve Yatsı arasında okunacak dualar",
+  "aciklama": "Namazın son teşehhüdünde",
+  "sayfa": 32,
+  "oran": 0.0,
+  "satir": null
+ }
+]

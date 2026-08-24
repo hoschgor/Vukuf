@@ -19,7 +19,7 @@ const metinCache = new Map()
 async function kitapYukle(dosya) {
   if (metinCache.has(dosya)) return metinCache.get(dosya)
   try {
-    const r = await fetch(`/${dosya}`)
+    const r = await fetch(`/kitap-metin/${dosya}`)
     const d = await r.json()
     metinCache.set(dosya, Array.isArray(d) ? d : [])
   } catch { metinCache.set(dosya, []) }
@@ -102,14 +102,14 @@ export default function OkumaTefeulu() {
       }
     }
     setYukleniyor(false)
-    setHata("Uygun bir bölüm bulunamadı, tekrar deneyiniz.")
+    setHata("Uygun bir bölüm bulunamadı, tekrar dene.")
   }
 
   return (
     <div style={{ maxWidth: "560px", margin: "0 auto", padding: isMobile ? "22px 16px 60px" : "44px 24px 80px" }}>
       <div style={{ textAlign: "center", marginBottom: "26px" }}>
         <Sparkles size={30} color={theme.accent} style={{ marginBottom: "6px" }} />
-        <h1 style={{ fontSize: isMobile ? "26px" : "34px", color: theme.accent, fontFamily: "Souvenir, serif" }}>
+        <h1 style={{ fontSize: isMobile ? "26px" : "34px", color: theme.accent, fontFamily: "PlayfairDisplay, serif" }}>
           Okuma Tefeülü
         </h1>
         <p style={{ fontSize: "13px", color: theme.textSecondary, marginTop: "6px" }}>

@@ -1,0 +1,746 @@
+[
+ {
+  "seviye": 1,
+  "baslik": "HİZMET REHBERİ VE DÜSTURLARI",
+  "aciklama": "",
+  "sayfa": 1,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "BİRİNCİ BÖLÜM",
+  "aciklama": "",
+  "sayfa": 5,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "İHLAS RİSALESİ DÜSTURLARI",
+  "aciklama": "",
+  "sayfa": 6,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 4,
+  "baslik": "AMELDE RIZA-YI İLAHÎ OLMALI",
+  "aciklama": "",
+  "sayfa": 6,
+  "oran": 0.0769,
+  "satir": 1
+ },
+ {
+  "seviye": 4,
+  "baslik": "TENKİD ETMEMEK",
+  "aciklama": "",
+  "sayfa": 13,
+  "oran": 0.0526,
+  "satir": 1
+ },
+ {
+  "seviye": 4,
+  "baslik": "BÜTÜN KUVVETİ İHLASTA VE HAKTA BİLMEK",
+  "aciklama": "",
+  "sayfa": 18,
+  "oran": 0.0667,
+  "satir": 1
+ },
+ {
+  "seviye": 4,
+  "baslik": "FENA Fİ-L İHVAN",
+  "aciklama": "",
+  "sayfa": 21,
+  "oran": 0.0556,
+  "satir": 1
+ },
+ {
+  "seviye": 3,
+  "baslik": "VE DİĞER DÜSTURLAR",
+  "aciklama": "",
+  "sayfa": 23,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 4,
+  "baslik": "VAZİFEMİZ İMAN HİZMETİ",
+  "aciklama": "",
+  "sayfa": 23,
+  "oran": 0.0625,
+  "satir": 1
+ },
+ {
+  "seviye": 4,
+  "baslik": "ESAS-I TAKVA",
+  "aciklama": "",
+  "sayfa": 27,
+  "oran": 0.0526,
+  "satir": 1
+ },
+ {
+  "seviye": 4,
+  "baslik": "GÜCENMEMEK KÜSMEMEK",
+  "aciklama": "",
+  "sayfa": 32,
+  "oran": 0.0667,
+  "satir": 1
+ },
+ {
+  "seviye": 4,
+  "baslik": "SİYASETTEN UZAK DURMAK",
+  "aciklama": "",
+  "sayfa": 35,
+  "oran": 0.05,
+  "satir": 1
+ },
+ {
+  "seviye": 4,
+  "baslik": "TESANÜD ETMEK",
+  "aciklama": "",
+  "sayfa": 39,
+  "oran": 0.0714,
+  "satir": 1
+ },
+ {
+  "seviye": 4,
+  "baslik": "İKTİSAD YAPMAK",
+  "aciklama": "",
+  "sayfa": 42,
+  "oran": 0.05,
+  "satir": 1
+ },
+ {
+  "seviye": 4,
+  "baslik": "UHUVVET DÜSTURU",
+  "aciklama": "",
+  "sayfa": 46,
+  "oran": 0.0667,
+  "satir": 1
+ },
+ {
+  "seviye": 4,
+  "baslik": "MÜNAKAŞA ETMEMEK",
+  "aciklama": "",
+  "sayfa": 48,
+  "oran": 0.05,
+  "satir": 1
+ },
+ {
+  "seviye": 4,
+  "baslik": "HÜSN-Ü ZAN ETMEK, SU-İ ZAN ETMEMEK",
+  "aciklama": "",
+  "sayfa": 52,
+  "oran": 0.0556,
+  "satir": 1
+ },
+ {
+  "seviye": 4,
+  "baslik": "HÜRMET VE MERHAMET ETMEK",
+  "aciklama": "",
+  "sayfa": 58,
+  "oran": 0.05,
+  "satir": 1
+ },
+ {
+  "seviye": 4,
+  "baslik": "GAYE-İ HAYAL SAHİBİ OLMAK",
+  "aciklama": "",
+  "sayfa": 62,
+  "oran": 0.0476,
+  "satir": 1
+ },
+ {
+  "seviye": 4,
+  "baslik": "SIDK ÜZERE OLMAK",
+  "aciklama": "",
+  "sayfa": 66,
+  "oran": 0.0417,
+  "satir": 1
+ },
+ {
+  "seviye": 4,
+  "baslik": "İSTİĞNA DÜSTURU",
+  "aciklama": "",
+  "sayfa": 71,
+  "oran": 0.0667,
+  "satir": 1
+ },
+ {
+  "seviye": 4,
+  "baslik": "HAVARİK-I MEDENİYETİN ZARARLARINDAN KAÇINMAK",
+  "aciklama": "",
+  "sayfa": 77,
+  "oran": 0.0476,
+  "satir": 1
+ },
+ {
+  "seviye": 4,
+  "baslik": "KAZAYA RIZA GÖSTERMEK VE KADERE TESLİM OLMAK",
+  "aciklama": "",
+  "sayfa": 84,
+  "oran": 0.0556,
+  "satir": 1
+ },
+ {
+  "seviye": 4,
+  "baslik": "DİKKAT VE TEENNİ İLE OKUMAK",
+  "aciklama": "",
+  "sayfa": 88,
+  "oran": 0.0526,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "İKİNCİ BÖLÜM",
+  "aciklama": "",
+  "sayfa": 91,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "UHUVVET RİSALESİ DÜSTURLARI",
+  "aciklama": "",
+  "sayfa": 92,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 4,
+  "baslik": "TARAFGİRLİK YAPMAMAK",
+  "aciklama": "",
+  "sayfa": 92,
+  "oran": 0.0476,
+  "satir": 1
+ },
+ {
+  "seviye": 4,
+  "baslik": "İNAD ETMEMEK",
+  "aciklama": "",
+  "sayfa": 97,
+  "oran": 0.05,
+  "satir": 1
+ },
+ {
+  "seviye": 4,
+  "baslik": "HASED VE REKABET ETMEMEK",
+  "aciklama": "",
+  "sayfa": 100,
+  "oran": 0.0556,
+  "satir": 1
+ },
+ {
+  "seviye": 4,
+  "baslik": "KİN VE ADAVET BESLEMEMEK",
+  "aciklama": "",
+  "sayfa": 105,
+  "oran": 0.0476,
+  "satir": 1
+ },
+ {
+  "seviye": 4,
+  "baslik": "MUHABBET FEDAİSİ OLMAK",
+  "aciklama": "",
+  "sayfa": 108,
+  "oran": 0.05,
+  "satir": 1
+ },
+ {
+  "seviye": 4,
+  "baslik": "MASUM SIFATLARI MAHKÛM ETMEK ZULÜMDÜR",
+  "aciklama": "",
+  "sayfa": 111,
+  "oran": 0.1176,
+  "satir": 2
+ },
+ {
+  "seviye": 4,
+  "baslik": "HAKKI BULDUKTAN SONRA EHAK İÇİN İHTİLAF ÇIKARMAMAK, İNHİSAR-I ZİHNİYET YAPMAMAK",
+  "aciklama": "",
+  "sayfa": 114,
+  "oran": 0.0417,
+  "satir": 1
+ },
+ {
+  "seviye": 4,
+  "baslik": "HER DOĞRUYU HERYERDE SÖYLEMEMEK",
+  "aciklama": "",
+  "sayfa": 117,
+  "oran": 0.05,
+  "satir": 1
+ },
+ {
+  "seviye": 3,
+  "baslik": "VE DİĞER DÜSTURLAR",
+  "aciklama": "",
+  "sayfa": 119,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 4,
+  "baslik": "HAKKIN HATIRINI KIRMAMAK, BİLEREK HAKKI KETMETMEMEK",
+  "aciklama": "",
+  "sayfa": 119,
+  "oran": 0.0769,
+  "satir": 1
+ },
+ {
+  "seviye": 4,
+  "baslik": "TEVAZU VE MAHVİYYET",
+  "aciklama": "",
+  "sayfa": 124,
+  "oran": 0.0526,
+  "satir": 1
+ },
+ {
+  "seviye": 4,
+  "baslik": "BİRBİRİNİZİN KUSURUNA BAKMAMAK, AFFETMEK",
+  "aciklama": "",
+  "sayfa": 129,
+  "oran": 0.0714,
+  "satir": 1
+ },
+ {
+  "seviye": 4,
+  "baslik": "CERBEZE YAPMAMAK",
+  "aciklama": "",
+  "sayfa": 132,
+  "oran": 0.0417,
+  "satir": 1
+ },
+ {
+  "seviye": 4,
+  "baslik": "KERAMET VE KEŞFİYAT ARAMAMAK",
+  "aciklama": "",
+  "sayfa": 135,
+  "oran": 0.0667,
+  "satir": 1
+ },
+ {
+  "seviye": 4,
+  "baslik": "TEKELLÜF VE TASANNU YAPMAMAK",
+  "aciklama": "",
+  "sayfa": 138,
+  "oran": 0.0833,
+  "satir": 1
+ },
+ {
+  "seviye": 4,
+  "baslik": "HADDİNDEN FAZLA HÜSN-Ü ZAN VE MÜBALAĞA YAPMAMAK",
+  "aciklama": "",
+  "sayfa": 141,
+  "oran": 0.0625,
+  "satir": 1
+ },
+ {
+  "seviye": 4,
+  "baslik": "HERŞEYİN GÜZEL CİHETİNE BAKMAK BEDBİN VE KARAMSAR OLMAMAK",
+  "aciklama": "",
+  "sayfa": 144,
+  "oran": 0.0625,
+  "satir": 1
+ },
+ {
+  "seviye": 4,
+  "baslik": "HARİCİ CEREYANLARI TAKİP ETMEMEK",
+  "aciklama": "",
+  "sayfa": 151,
+  "oran": 0.0833,
+  "satir": 1
+ },
+ {
+  "seviye": 4,
+  "baslik": "ZARARA KENDİ RAZI OLANIN LEHİNDE BAKILMAZ",
+  "aciklama": "",
+  "sayfa": 156,
+  "oran": 0.0556,
+  "satir": 1
+ },
+ {
+  "seviye": 4,
+  "baslik": "İHTİYATLI HAREKET ETMEK",
+  "aciklama": "",
+  "sayfa": 159,
+  "oran": 0.0667,
+  "satir": 1
+ },
+ {
+  "seviye": 4,
+  "baslik": "TESBİHATLARI VE EVRADLARI OKUMAK",
+  "aciklama": "",
+  "sayfa": 165,
+  "oran": 0.0588,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "ÜÇÜNCÜ BÖLÜM",
+  "aciklama": "",
+  "sayfa": 170,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "YİRMİNCİ LEMA VE YİRMİALTINCI SÖZÜN ZEYLİ DÜSTURLARI",
+  "aciklama": "",
+  "sayfa": 171,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 4,
+  "baslik": "VAZİFE-İ İLAHİYEYE KARIŞMAMAK",
+  "aciklama": "",
+  "sayfa": 171,
+  "oran": 0.0526,
+  "satir": 1
+ },
+ {
+  "seviye": 4,
+  "baslik": "KEMMİYETİ DEĞİL KEYFİYETİ ESAS ALMAK",
+  "aciklama": "",
+  "sayfa": 174,
+  "oran": 0.0526,
+  "satir": 1
+ },
+ {
+  "seviye": 4,
+  "baslik": "ŞAHS-I MÂNEVİYİ ESAS ALMAK",
+  "aciklama": "",
+  "sayfa": 178,
+  "oran": 0.0556,
+  "satir": 1
+ },
+ {
+  "seviye": 4,
+  "baslik": "MÜSBET HAREKET ETMEK MENFİ HAREKET ETMEMEK.",
+  "aciklama": "",
+  "sayfa": 186,
+  "oran": 0.0667,
+  "satir": 1
+ },
+ {
+  "seviye": 4,
+  "baslik": "ACZ VE FAKR",
+  "aciklama": "",
+  "sayfa": 191,
+  "oran": 0.0625,
+  "satir": 1
+ },
+ {
+  "seviye": 4,
+  "baslik": "ŞEFKAT ETMEK",
+  "aciklama": "",
+  "sayfa": 196,
+  "oran": 0.0667,
+  "satir": 1
+ },
+ {
+  "seviye": 4,
+  "baslik": "TEFEKKÜR ETMEK",
+  "aciklama": "",
+  "sayfa": 199,
+  "oran": 0.0625,
+  "satir": 1
+ },
+ {
+  "seviye": 4,
+  "baslik": "ENFÜSİ DÜSTURLAR",
+  "aciklama": "",
+  "sayfa": 202,
+  "oran": 0.0714,
+  "satir": 1
+ },
+ {
+  "seviye": 3,
+  "baslik": "VE DİĞER DÜSTURLAR",
+  "aciklama": "",
+  "sayfa": 206,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 4,
+  "baslik": "ŞÜKR-Ü MUTLAK",
+  "aciklama": "",
+  "sayfa": 206,
+  "oran": 0.0625,
+  "satir": 1
+ },
+ {
+  "seviye": 4,
+  "baslik": "ŞEVK-İ MUTLAK",
+  "aciklama": "",
+  "sayfa": 212,
+  "oran": 0.0625,
+  "satir": 1
+ },
+ {
+  "seviye": 4,
+  "baslik": "SADAKAT, SEBAT VE METANET",
+  "aciklama": "",
+  "sayfa": 215,
+  "oran": 0.0526,
+  "satir": 1
+ },
+ {
+  "seviye": 4,
+  "baslik": "TAAYYÜNLE ZULMETMEMEK, FAZİLETFURUŞLUK YAPMAMAK",
+  "aciklama": "",
+  "sayfa": 219,
+  "oran": 0.0526,
+  "satir": 1
+ },
+ {
+  "seviye": 4,
+  "baslik": "HAZM-I NEFS VE HİSSİYATI FEDA ETMEK",
+  "aciklama": "",
+  "sayfa": 221,
+  "oran": 0.0833,
+  "satir": 1
+ },
+ {
+  "seviye": 4,
+  "baslik": "ŞEAİR-İ İSLÂMİYEYİ MUHAFAZA ETMEK",
+  "aciklama": "",
+  "sayfa": 225,
+  "oran": 0.0526,
+  "satir": 1
+ },
+ {
+  "seviye": 4,
+  "baslik": "KUR'AN HÜKÜMLERİNİ AŞMAMAK VE TAŞMAMAK",
+  "aciklama": "",
+  "sayfa": 232,
+  "oran": 0.0435,
+  "satir": 1
+ },
+ {
+  "seviye": 4,
+  "baslik": "ZARURİYAT-I DİNÎYEYİ MUHAFAZA ETMEK",
+  "aciklama": "",
+  "sayfa": 237,
+  "oran": 0.0625,
+  "satir": 1
+ },
+ {
+  "seviye": 4,
+  "baslik": "DİNİ DÜNYAYA ALET ETMEMEK",
+  "aciklama": "",
+  "sayfa": 242,
+  "oran": 0.0625,
+  "satir": 1
+ },
+ {
+  "seviye": 4,
+  "baslik": "MUARIZLARI HİDDET VE TEHEVVÜRLE VE MUKABELE-İ BİLMİSİLLE KARŞILAMAMALI.",
+  "aciklama": "",
+  "sayfa": 246,
+  "oran": 0.0625,
+  "satir": 1
+ },
+ {
+  "seviye": 4,
+  "baslik": "İLMİ HAZMETMEK VE LİSAN-I HALİ KONUŞTURMAK",
+  "aciklama": "",
+  "sayfa": 248,
+  "oran": 0.0476,
+  "satir": 1
+ },
+ {
+  "seviye": 4,
+  "baslik": "HATT-I KUR'AN'I MUHAFAZA VAZİFESİ",
+  "aciklama": "",
+  "sayfa": 251,
+  "oran": 0.0909,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "DÖRDÜNCÜ BÖLÜM",
+  "aciklama": "",
+  "sayfa": 253,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "HÜCUMAT-I SİTTE DÜSTURLARI",
+  "aciklama": "",
+  "sayfa": 254,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 4,
+  "baslik": "HUBB-U CAHI TERKETMEK",
+  "aciklama": "",
+  "sayfa": 254,
+  "oran": 0.0769,
+  "satir": 1
+ },
+ {
+  "seviye": 4,
+  "baslik": "HAVF ETMEMEK",
+  "aciklama": "",
+  "sayfa": 257,
+  "oran": 0.04,
+  "satir": 1
+ },
+ {
+  "seviye": 4,
+  "baslik": "TAMA GÖSTERMEMEK, HIRS YAPMAMAK",
+  "aciklama": "",
+  "sayfa": 260,
+  "oran": 0.0526,
+  "satir": 1
+ },
+ {
+  "seviye": 4,
+  "baslik": "MENFİ MİLLİYETÇİLİK YAPMAMAK",
+  "aciklama": "",
+  "sayfa": 263,
+  "oran": 0.0476,
+  "satir": 1
+ },
+ {
+  "seviye": 4,
+  "baslik": "TERK-İ ENANİYET",
+  "aciklama": "",
+  "sayfa": 270,
+  "oran": 0.0714,
+  "satir": 1
+ },
+ {
+  "seviye": 4,
+  "baslik": "TENBELLİK VE VAZİFEDARLIK",
+  "aciklama": "",
+  "sayfa": 273,
+  "oran": 0.0556,
+  "satir": 1
+ },
+ {
+  "seviye": 3,
+  "baslik": "VE DİĞER DÜSTURLAR",
+  "aciklama": "",
+  "sayfa": 275,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 4,
+  "baslik": "RİSALE-İ NUR'A KANAAT ETMEK VE SAİR ESERLER",
+  "aciklama": "",
+  "sayfa": 275,
+  "oran": 0.0588,
+  "satir": 1
+ },
+ {
+  "seviye": 4,
+  "baslik": "RİSALE-İ NUR'A PERDE OLMAMAK VE NAZARLARI RİSALE-İ NUR'A VE ŞAHS- I MANEVİYE ÇEVİRMEK",
+  "aciklama": "",
+  "sayfa": 280,
+  "oran": 0.05,
+  "satir": 1
+ },
+ {
+  "seviye": 4,
+  "baslik": "RİYA, ŞÖHRET VE TEVECCÜH-Ü NÂSI TERKETMEK",
+  "aciklama": "",
+  "sayfa": 283,
+  "oran": 0.0625,
+  "satir": 1
+ },
+ {
+  "seviye": 4,
+  "baslik": "MEŞVERET VE ŞURA İLE HAREKET ETMEK",
+  "aciklama": "",
+  "sayfa": 290,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 4,
+  "baslik": "HASENATI İSTİBDAT İLE ŞAHSINDA TOPLAMAMAK",
+  "aciklama": "",
+  "sayfa": 296,
+  "oran": 0.0667,
+  "satir": 1
+ },
+ {
+  "seviye": 4,
+  "baslik": "HADİSATA KADER CİHETİYLE BAKMAK KADERİN MERHAMETİNİ VE ADALETİNİ GÖRMEK",
+  "aciklama": "",
+  "sayfa": 298,
+  "oran": 0.0556,
+  "satir": 1
+ },
+ {
+  "seviye": 4,
+  "baslik": "HİKMETLERİ İLLETLERE TERCİH ETMEMEK",
+  "aciklama": "",
+  "sayfa": 306,
+  "oran": 0.0526,
+  "satir": 1
+ },
+ {
+  "seviye": 4,
+  "baslik": "FEDAKARLIK VE VAKF-I HAYAT",
+  "aciklama": "",
+  "sayfa": 309,
+  "oran": 0.0769,
+  "satir": 1
+ },
+ {
+  "seviye": 4,
+  "baslik": "DAR, GENİŞ VE HASLAR DAİRESİNİN VARLIĞI",
+  "aciklama": "",
+  "sayfa": 313,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 4,
+  "baslik": "MEDRESE HİZMETLERİ",
+  "aciklama": "",
+  "sayfa": 326,
+  "oran": 0.0769,
+  "satir": 1
+ },
+ {
+  "seviye": 4,
+  "baslik": "FERDİ HAREKET ETMEMEK, EKSERİYETE TABİ OLMAK",
+  "aciklama": "",
+  "sayfa": 328,
+  "oran": 0.0588,
+  "satir": 1
+ },
+ {
+  "seviye": 4,
+  "baslik": "TEZELLÜLE DÜŞMEMEK VE TAHAKKÜM ETMEMEK",
+  "aciklama": "",
+  "sayfa": 331,
+  "oran": 0.0588,
+  "satir": 1
+ },
+ {
+  "seviye": 4,
+  "baslik": "ŞERH, İZAH, TANZİM TERTİB VE NEŞİR VAZİFESİ",
+  "aciklama": "",
+  "sayfa": 333,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 4,
+  "baslik": "ÂL-İ BEYT'E MUHABBET ESASI",
+  "aciklama": "",
+  "sayfa": 341,
+  "oran": 0.0,
+  "satir": null
+ }
+]

@@ -37,7 +37,7 @@ const metinCache = new Map()
 async function kitapYukle(dosya) {
   if (metinCache.has(dosya)) return metinCache.get(dosya)
   try {
-    const r = await fetch(`/${dosya}`)
+    const r = await fetch(`/kitap-metin/${dosya}`)
     const d = await r.json()
     metinCache.set(dosya, Array.isArray(d) ? d : [])
   } catch {

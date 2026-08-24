@@ -1,0 +1,82 @@
+[
+ {
+  "seviye": 1,
+  "baslik": "BİR DAVA ADAMININ NOTLARI 2",
+  "aciklama": "",
+  "sayfa": 1,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "Takdim",
+  "aciklama": "",
+  "sayfa": 2,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Zübeyir Gündüzalp Kimdir",
+  "aciklama": "",
+  "sayfa": 3,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Bediüzzaman, Risale-i Nur ve Nur Talebeleri",
+  "aciklama": "",
+  "sayfa": 4,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Tesbitler",
+  "aciklama": "",
+  "sayfa": 10,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Muhtelif Tarifler",
+  "aciklama": "",
+  "sayfa": 14,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Mühim Hususlar",
+  "aciklama": "",
+  "sayfa": 23,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Meslek-Meşreb",
+  "aciklama": "",
+  "sayfa": 27,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Derslerdeki Hareketlerimiz",
+  "aciklama": "",
+  "sayfa": 28,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Üstaddan Hatıralar",
+  "aciklama": "",
+  "sayfa": 30,
+  "oran": 0.0,
+  "satir": 0
+ }
+]

@@ -1,0 +1,146 @@
+[
+ {
+  "seviye": 1,
+  "baslik": "Hizb-ü Envâr-ıl Hakâik-ın Nuriyye",
+  "aciklama": "",
+  "sayfa": 1,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "Yasin Suresi",
+  "aciklama": "",
+  "sayfa": 5,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Fetih Suresi",
+  "aciklama": "",
+  "sayfa": 13,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Rahman Suresi",
+  "aciklama": "",
+  "sayfa": 19,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Haşir Suresinin Ahiri",
+  "aciklama": "",
+  "sayfa": 23,
+  "oran": 0.25,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "Mülk Suresi",
+  "aciklama": "Tebareke",
+  "sayfa": 24,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "Nebe' Suresi",
+  "aciklama": "Nebe",
+  "sayfa": 27,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "Cevşen-ül Kebir",
+  "aciklama": "",
+  "sayfa": 33,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "Evrâd-ı Kudsiyye",
+  "aciklama": "",
+  "sayfa": 87,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "Delâil-in Nur",
+  "aciklama": "",
+  "sayfa": 111,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Sekine",
+  "aciklama": "",
+  "sayfa": 132,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Münâcât-ı Veysel Karani",
+  "aciklama": "",
+  "sayfa": 134,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Duâ-i Tercüman-ı İsm-i A'zam",
+  "aciklama": "",
+  "sayfa": 136,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Duâ-i İsm-i A'zam",
+  "aciklama": "",
+  "sayfa": 140,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Münâcât-ül Kur'an",
+  "aciklama": "",
+  "sayfa": 145,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "Tahmidiye",
+  "aciklama": "",
+  "sayfa": 187,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "Hülasat-ül Hülasa",
+  "aciklama": "",
+  "sayfa": 209,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "Dualar",
+  "aciklama": "",
+  "sayfa": 226,
+  "oran": 0.0,
+  "satir": null
+ }
+]

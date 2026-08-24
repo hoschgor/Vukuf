@@ -1,0 +1,1090 @@
+[
+ {
+  "seviye": 1,
+  "baslik": "Peygamberimizin Hayatı",
+  "aciklama": "",
+  "sayfa": 1,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "Önsöz",
+  "aciklama": "",
+  "sayfa": 2,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Mekke Devri",
+  "aciklama": "",
+  "sayfa": 6,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Efendimizin Dünyaya Gelişine Kadar Olan Hadiseler",
+  "aciklama": "",
+  "sayfa": 6,
+  "oran": 0.0667,
+  "satir": 1
+ },
+ {
+  "seviye": 4,
+  "baslik": "Efendimizin Pak Nesebleri",
+  "aciklama": "",
+  "sayfa": 6,
+  "oran": 0.1333,
+  "satir": 2
+ },
+ {
+  "seviye": 4,
+  "baslik": "Efendimizin Meşhur Dedeleri",
+  "aciklama": "",
+  "sayfa": 9,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 4,
+  "baslik": "Abdullah",
+  "aciklama": "",
+  "sayfa": 18,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 4,
+  "baslik": "Fil Vakası",
+  "aciklama": "",
+  "sayfa": 25,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "Efendimizin Dünyaya Gelişi ve Çocukluğu",
+  "aciklama": "",
+  "sayfa": 30,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 4,
+  "baslik": "Efendimizin Dünyaya Teşrifi",
+  "aciklama": "",
+  "sayfa": 30,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 4,
+  "baslik": "Efendimizin Sütanneye Verilmesi",
+  "aciklama": "",
+  "sayfa": 41,
+  "oran": 0.3846,
+  "satir": 5
+ },
+ {
+  "seviye": 4,
+  "baslik": "Efendimiz Sadoğulları Yurdunda",
+  "aciklama": "",
+  "sayfa": 47,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 4,
+  "baslik": "Efendimizin Annesine Getirilmesi ve Annesinin Vefatı",
+  "aciklama": "",
+  "sayfa": 56,
+  "oran": 0.7,
+  "satir": 7
+ },
+ {
+  "seviye": 4,
+  "baslik": "Efendimiz Dedesi Abdulmuttalib'in Yanında",
+  "aciklama": "",
+  "sayfa": 68,
+  "oran": 0.8333,
+  "satir": 20
+ },
+ {
+  "seviye": 3,
+  "baslik": "Efendimizin 12 Yaşından 38 Yaşına Kadar Olan Hayatı",
+  "aciklama": "",
+  "sayfa": 83,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 4,
+  "baslik": "Amcasıyla Şam'a Gidişi",
+  "aciklama": "",
+  "sayfa": 83,
+  "oran": 0.6316,
+  "satir": 12
+ },
+ {
+  "seviye": 4,
+  "baslik": "Hz. Haticeyle Evlenmesi",
+  "aciklama": "",
+  "sayfa": 100,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 4,
+  "baslik": "Zeyd Bin Harise'yi Azad Etmesi ve Hz.Ali'yi Yanına Alması",
+  "aciklama": "",
+  "sayfa": 105,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 4,
+  "baslik": "Kabe'nin Yeniden İmarı",
+  "aciklama": "",
+  "sayfa": 111,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "Risaletinden Önce İnsanlığın ve Dünyanın Durumu",
+  "aciklama": "",
+  "sayfa": 116,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 4,
+  "baslik": "İnsanlığın ve Dünyanın Durumu",
+  "aciklama": "",
+  "sayfa": 116,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 4,
+  "baslik": "Arabistan'nın Durumu",
+  "aciklama": "",
+  "sayfa": 122,
+  "oran": 0.4286,
+  "satir": 6
+ },
+ {
+  "seviye": 4,
+  "baslik": "Kuss B.Saide Efendimizi Haber Veriyor",
+  "aciklama": "",
+  "sayfa": 135,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 4,
+  "baslik": "Efendimize Peygamberlik Vazifesinin Verilmesi",
+  "aciklama": "",
+  "sayfa": 137,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "İlk Müslümanlar ve Maruz Kaldıkları İşkenceler",
+  "aciklama": "",
+  "sayfa": 147,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 4,
+  "baslik": "Hz.Hatice, Hz. Ebubekir ve Hz.Ali'nin Müslüman Oluşu",
+  "aciklama": "",
+  "sayfa": 147,
+  "oran": 0.7222,
+  "satir": 13
+ },
+ {
+  "seviye": 4,
+  "baslik": "Gizli Davetin Hız Kazanması ve Hz.Bilal'a Yapılan İşkenceler",
+  "aciklama": "",
+  "sayfa": 154,
+  "oran": 0.2,
+  "satir": 3
+ },
+ {
+  "seviye": 4,
+  "baslik": "Hz.Osman,Talha B.Ubeydullah, Halid B.Sad İslam'a Girmeleri",
+  "aciklama": "",
+  "sayfa": 158,
+  "oran": 0.8,
+  "satir": 12
+ },
+ {
+  "seviye": 4,
+  "baslik": "Sad B.Ebi Vakkas, Ebu Zerr-i Gıfari, Habbab B. Eret'in İslam'a Girmeleri",
+  "aciklama": "",
+  "sayfa": 164,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "Aleni Davet",
+  "aciklama": "",
+  "sayfa": 175,
+  "oran": 0.7619,
+  "satir": 16
+ },
+ {
+  "seviye": 4,
+  "baslik": "Efendimizin Peygamberliğini Açıklaması",
+  "aciklama": "",
+  "sayfa": 175,
+  "oran": 0.8095,
+  "satir": 17
+ },
+ {
+  "seviye": 4,
+  "baslik": "Efendimize Hakaret ve Eziyetler",
+  "aciklama": "",
+  "sayfa": 183,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 4,
+  "baslik": "Müşriklerin Ebu Talib'e Şikayetleri ve Yeni İstekleri",
+  "aciklama": "",
+  "sayfa": 200,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 4,
+  "baslik": "Hz. Hamza ve Hz. Ömer'in İslam'a Girmeleri",
+  "aciklama": "",
+  "sayfa": 214,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 4,
+  "baslik": "Habeşistan'a Hicret",
+  "aciklama": "",
+  "sayfa": 223,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 4,
+  "baslik": "Şakkı Kamer Mucizesi",
+  "aciklama": "",
+  "sayfa": 234,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 4,
+  "baslik": "Boykot",
+  "aciklama": "",
+  "sayfa": 243,
+  "oran": 0.2857,
+  "satir": 2
+ },
+ {
+  "seviye": 4,
+  "baslik": "Hüzün Yılı",
+  "aciklama": "",
+  "sayfa": 252,
+  "oran": 0.4375,
+  "satir": 7
+ },
+ {
+  "seviye": 4,
+  "baslik": "Hz. Aişe İle Nişanlanması ve Hz. Sevdeyle Evlenmesi",
+  "aciklama": "",
+  "sayfa": 261,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 4,
+  "baslik": "Taif'e Gidişleri Ve Mekke'ye Geri Dönüşleri",
+  "aciklama": "",
+  "sayfa": 264,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 4,
+  "baslik": "İsra ve Miraç Mucizesi",
+  "aciklama": "",
+  "sayfa": 270,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 4,
+  "baslik": "Medineli İlk Müslümanlar ve Akabe Biatları",
+  "aciklama": "",
+  "sayfa": 293,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 4,
+  "baslik": "Medine'ye Hicret'in Başlaması Ve Hz. Ömer'in Hicreti",
+  "aciklama": "",
+  "sayfa": 308,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Efendimizin Medine'ye Hicreti",
+  "aciklama": "",
+  "sayfa": 313,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 4,
+  "baslik": "Efendimizin Hicreti",
+  "aciklama": "",
+  "sayfa": 313,
+  "oran": 0.6667,
+  "satir": 10
+ },
+ {
+  "seviye": 4,
+  "baslik": "Efendimizin Medine'ye Gelişi",
+  "aciklama": "",
+  "sayfa": 329,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 4,
+  "baslik": "Mekke Devrinin Hülasası",
+  "aciklama": "",
+  "sayfa": 343,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "Medine Devri",
+  "aciklama": "",
+  "sayfa": 352,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Hicretin 1. Yılı",
+  "aciklama": "",
+  "sayfa": 352,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 4,
+  "baslik": "Medine ve Ahalisi",
+  "aciklama": "",
+  "sayfa": 352,
+  "oran": 0.1429,
+  "satir": 1
+ },
+ {
+  "seviye": 4,
+  "baslik": "Müşriklerin Tehdidi",
+  "aciklama": "",
+  "sayfa": 356,
+  "oran": 0.7143,
+  "satir": 15
+ },
+ {
+  "seviye": 4,
+  "baslik": "Muhacirlerle Ensar Arasında Kardeşlik Kurulması",
+  "aciklama": "",
+  "sayfa": 357,
+  "oran": 0.6667,
+  "satir": 6
+ },
+ {
+  "seviye": 4,
+  "baslik": "Mescid-i Nebevi'nin İnşası",
+  "aciklama": "",
+  "sayfa": 361,
+  "oran": 0.8,
+  "satir": 16
+ },
+ {
+  "seviye": 4,
+  "baslik": "Hanunüil-Ciz Mucizesi",
+  "aciklama": "",
+  "sayfa": 363,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 4,
+  "baslik": "Ezanın Meşru Kılınması",
+  "aciklama": "",
+  "sayfa": 365,
+  "oran": 0.5,
+  "satir": 9
+ },
+ {
+  "seviye": 4,
+  "baslik": "Efendimizin Ev Halkını Mekke'den Getirtmesi",
+  "aciklama": "",
+  "sayfa": 367,
+  "oran": 0.5333,
+  "satir": 8
+ },
+ {
+  "seviye": 4,
+  "baslik": "Ashabı Suffa",
+  "aciklama": "",
+  "sayfa": 369,
+  "oran": 0.4615,
+  "satir": 6
+ },
+ {
+  "seviye": 4,
+  "baslik": "İlk İslam Devleti",
+  "aciklama": "",
+  "sayfa": 372,
+  "oran": 0.8696,
+  "satir": 20
+ },
+ {
+  "seviye": 4,
+  "baslik": "Müşriklere Mukabeleye İzin Verilmesi",
+  "aciklama": "",
+  "sayfa": 376,
+  "oran": 0.5,
+  "satir": 5
+ },
+ {
+  "seviye": 4,
+  "baslik": "Hicretin 1. Senesinin Diğer Mühim Bazı Hadiseleri",
+  "aciklama": "",
+  "sayfa": 381,
+  "oran": 0.56,
+  "satir": 14
+ },
+ {
+  "seviye": 3,
+  "baslik": "Hicretin 2. Yılı",
+  "aciklama": "",
+  "sayfa": 382,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 4,
+  "baslik": "Buvat, Safevan ve Uşeyre Gazası",
+  "aciklama": "",
+  "sayfa": 382,
+  "oran": 0.2105,
+  "satir": 4
+ },
+ {
+  "seviye": 4,
+  "baslik": "Abdullah B.Cahş Seriyyesi",
+  "aciklama": "",
+  "sayfa": 383,
+  "oran": 0.3846,
+  "satir": 5
+ },
+ {
+  "seviye": 4,
+  "baslik": "Kıblenin Mescid-i Haram'a Çevrilmesi",
+  "aciklama": "",
+  "sayfa": 386,
+  "oran": 0.5882,
+  "satir": 10
+ },
+ {
+  "seviye": 4,
+  "baslik": "Bedir Muhaberesi",
+  "aciklama": "",
+  "sayfa": 389,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 4,
+  "baslik": "Bedir Muhaberesi Neticesi",
+  "aciklama": "",
+  "sayfa": 405,
+  "oran": 0.9318,
+  "satir": 41
+ },
+ {
+  "seviye": 4,
+  "baslik": "Münafıkların Ortaya Çıkışı",
+  "aciklama": "",
+  "sayfa": 413,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 4,
+  "baslik": "Beni Kaynuka Gazası",
+  "aciklama": "",
+  "sayfa": 422,
+  "oran": 0.8929,
+  "satir": 25
+ },
+ {
+  "seviye": 4,
+  "baslik": "Sevik Gazvesi",
+  "aciklama": "",
+  "sayfa": 427,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 4,
+  "baslik": "Hicretin 2. Senesinin Diğer Mühim Bazı Hadiseleri",
+  "aciklama": "",
+  "sayfa": 428,
+  "oran": 0.3125,
+  "satir": 5
+ },
+ {
+  "seviye": 3,
+  "baslik": "Hicretin 3. Yılı",
+  "aciklama": "",
+  "sayfa": 432,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 4,
+  "baslik": "Gatafan Gazası ve Karde Seriyyesi",
+  "aciklama": "",
+  "sayfa": 432,
+  "oran": 0.55,
+  "satir": 11
+ },
+ {
+  "seviye": 4,
+  "baslik": "Efendimizin Hz. Hafsa ve Hz. Zeyneb'le Evlenmesi",
+  "aciklama": "",
+  "sayfa": 436,
+  "oran": 0.6,
+  "satir": 12
+ },
+ {
+  "seviye": 4,
+  "baslik": "Uhud Muharebesi",
+  "aciklama": "",
+  "sayfa": 437,
+  "oran": 0.7895,
+  "satir": 15
+ },
+ {
+  "seviye": 4,
+  "baslik": "İslam Ordusu Uhud'da",
+  "aciklama": "",
+  "sayfa": 447,
+  "oran": 0.7895,
+  "satir": 30
+ },
+ {
+  "seviye": 4,
+  "baslik": "Uhud Harbinin Seyrini Değiştiren Hadise",
+  "aciklama": "",
+  "sayfa": 454,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 4,
+  "baslik": "Hazin Netice",
+  "aciklama": "",
+  "sayfa": 462,
+  "oran": 0.8788,
+  "satir": 29
+ },
+ {
+  "seviye": 4,
+  "baslik": "Hamraül Esed Seferi",
+  "aciklama": "",
+  "sayfa": 472,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 4,
+  "baslik": "Uhud Mağlubiyetinin Bazı Hikmetleri",
+  "aciklama": "",
+  "sayfa": 476,
+  "oran": 0.8333,
+  "satir": 15
+ },
+ {
+  "seviye": 3,
+  "baslik": "Hicretin 4. Yılı",
+  "aciklama": "",
+  "sayfa": 478,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 4,
+  "baslik": "Reci Vakası ve Bir'i Mauna Faciası",
+  "aciklama": "",
+  "sayfa": 478,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 4,
+  "baslik": "Beni Nadir, Zatürrika ve Bedrül Mevid Gazası",
+  "aciklama": "",
+  "sayfa": 486,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 4,
+  "baslik": "Efendimizin Ümmü Selemeyle Evlenmesi",
+  "aciklama": "",
+  "sayfa": 500,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 4,
+  "baslik": "Hicretin 4. Senesinin Diğer Mühim Bazı Hadiseleri",
+  "aciklama": "",
+  "sayfa": 501,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "Hicretin 5. Yılı",
+  "aciklama": "",
+  "sayfa": 506,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 4,
+  "baslik": "Efendimizin Hz. Zeyneb ve Hz. Cüveyriye'yle Evlenmesi",
+  "aciklama": "",
+  "sayfa": 506,
+  "oran": 0.8462,
+  "satir": 22
+ },
+ {
+  "seviye": 4,
+  "baslik": "İfk Hadisesi",
+  "aciklama": "",
+  "sayfa": 514,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 4,
+  "baslik": "Hendek Muharebesi",
+  "aciklama": "",
+  "sayfa": 526,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 4,
+  "baslik": "Hendek Kazı İşinin Tamamlanması",
+  "aciklama": "",
+  "sayfa": 532,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 4,
+  "baslik": "Harbin Başlaması",
+  "aciklama": "",
+  "sayfa": 539,
+  "oran": 0.5417,
+  "satir": 13
+ },
+ {
+  "seviye": 4,
+  "baslik": "Beni Kurayza Gazası",
+  "aciklama": "",
+  "sayfa": 550,
+  "oran": 0.8,
+  "satir": 24
+ },
+ {
+  "seviye": 4,
+  "baslik": "Hicretin 5. Senesinin Diğer Mühim Bazı Hadiseleri",
+  "aciklama": "",
+  "sayfa": 558,
+  "oran": 0.5517,
+  "satir": 16
+ },
+ {
+  "seviye": 3,
+  "baslik": "Hicretin 6. Yılı",
+  "aciklama": "",
+  "sayfa": 561,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 4,
+  "baslik": "Kurata, Beni Lihyanve İs Seferleri ve Gabe Gazası",
+  "aciklama": "",
+  "sayfa": 561,
+  "oran": 0.6667,
+  "satir": 12
+ },
+ {
+  "seviye": 4,
+  "baslik": "Umre Seferi ve İlk Yağmur Duası",
+  "aciklama": "",
+  "sayfa": 567,
+  "oran": 0.697,
+  "satir": 23
+ },
+ {
+  "seviye": 4,
+  "baslik": "Hudeybiye Anlaşması",
+  "aciklama": "",
+  "sayfa": 580,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 4,
+  "baslik": "Müslümanların Sadâkat İmtihanı",
+  "aciklama": "",
+  "sayfa": 585,
+  "oran": 0.6923,
+  "satir": 18
+ },
+ {
+  "seviye": 4,
+  "baslik": "Hudeybiye Anlaşmasına Kısa Bir Bakış",
+  "aciklama": "",
+  "sayfa": 591,
+  "oran": 0.8621,
+  "satir": 25
+ },
+ {
+  "seviye": 3,
+  "baslik": "Hicretin 7. Yılı",
+  "aciklama": "",
+  "sayfa": 597,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 4,
+  "baslik": "Efendimizin Hükümdarları İslam'a Daveti",
+  "aciklama": "",
+  "sayfa": 597,
+  "oran": 0.7097,
+  "satir": 22
+ },
+ {
+  "seviye": 4,
+  "baslik": "Necaşi ve Heraklus'un İslam'a Davet Edilmesi",
+  "aciklama": "",
+  "sayfa": 599,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 4,
+  "baslik": "Kisra ve Mukavkıs'ın İslam'a Davet Edilmesi",
+  "aciklama": "",
+  "sayfa": 608,
+  "oran": 0.7812,
+  "satir": 25
+ },
+ {
+  "seviye": 4,
+  "baslik": "Gassan Hükümdarı ve Yemame Emiri'nin İslam'a Davet Edilmesi",
+  "aciklama": "",
+  "sayfa": 616,
+  "oran": 0.7778,
+  "satir": 28
+ },
+ {
+  "seviye": 4,
+  "baslik": "Hayber'in Fethi",
+  "aciklama": "",
+  "sayfa": 619,
+  "oran": 0.7917,
+  "satir": 19
+ },
+ {
+  "seviye": 4,
+  "baslik": "Netice",
+  "aciklama": "",
+  "sayfa": 630,
+  "oran": 0.8298,
+  "satir": 39
+ },
+ {
+  "seviye": 4,
+  "baslik": "Kaza Umresi",
+  "aciklama": "",
+  "sayfa": 641,
+  "oran": 0.8511,
+  "satir": 40
+ },
+ {
+  "seviye": 4,
+  "baslik": "Hicretin 7. Senesinin Diğer Mühim Bazı Hadiseleri",
+  "aciklama": "",
+  "sayfa": 651,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Hicretin 8. Yılı",
+  "aciklama": "",
+  "sayfa": 653,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 4,
+  "baslik": "Hz.Zeyneb'in Vefatı",
+  "aciklama": "",
+  "sayfa": 653,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 4,
+  "baslik": "Üç Meşhur Şahsiyetin Müslüman Olmaları",
+  "aciklama": "",
+  "sayfa": 655,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 4,
+  "baslik": "Mute Muharebesi",
+  "aciklama": "",
+  "sayfa": 702,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 4,
+  "baslik": "Beni Mürre, Zatü's-Selasil ve Sifü'l-Bahr Seferleri",
+  "aciklama": "",
+  "sayfa": 673,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 4,
+  "baslik": "Mekke'nin Fethi",
+  "aciklama": "",
+  "sayfa": 678,
+  "oran": 0.375,
+  "satir": 3
+ },
+ {
+  "seviye": 4,
+  "baslik": "İslam Ordusu Mekke Yolunda",
+  "aciklama": "",
+  "sayfa": 688,
+  "oran": 0.4444,
+  "satir": 4
+ },
+ {
+  "seviye": 4,
+  "baslik": "Mekke'ye Giriş Hazırlığı",
+  "aciklama": "",
+  "sayfa": 695,
+  "oran": 0.6364,
+  "satir": 7
+ },
+ {
+  "seviye": 4,
+  "baslik": "Peygamberimizin İkinci Hutbesi",
+  "aciklama": "",
+  "sayfa": 705,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 4,
+  "baslik": "Huneyn Muharebesi",
+  "aciklama": "",
+  "sayfa": 711,
+  "oran": 0.5,
+  "satir": 5
+ },
+ {
+  "seviye": 4,
+  "baslik": "Taif Kuşatması",
+  "aciklama": "",
+  "sayfa": 723,
+  "oran": 0.5,
+  "satir": 6
+ },
+ {
+  "seviye": 4,
+  "baslik": "Umman ve Bahreyn Hükümdarlarının Müslüman Oluşu",
+  "aciklama": "",
+  "sayfa": 737,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 4,
+  "baslik": "Hicretin 8. Senesinin Diğer Mühim Bazı Hadiseleri",
+  "aciklama": "",
+  "sayfa": 741,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Hicretin 9. Yılı",
+  "aciklama": "",
+  "sayfa": 747,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 4,
+  "baslik": "Hicretin 9. Senesindeki Mühim Bazı Hadiseleri - 1",
+  "aciklama": "",
+  "sayfa": 747,
+  "oran": 0.3125,
+  "satir": 5
+ },
+ {
+  "seviye": 4,
+  "baslik": "Hicretin 9. Senesindeki Mühim Bazı Hadiseleri - 2",
+  "aciklama": "",
+  "sayfa": 787,
+  "oran": 0.1,
+  "satir": 1
+ },
+ {
+  "seviye": 4,
+  "baslik": "Hicretin 9. Senesindeki Mühim Bazı Hadiseleri - 3",
+  "aciklama": "",
+  "sayfa": 792,
+  "oran": 0.12,
+  "satir": 3
+ },
+ {
+  "seviye": 4,
+  "baslik": "Tebük Gazası",
+  "aciklama": "",
+  "sayfa": 761,
+  "oran": 0.5625,
+  "satir": 9
+ },
+ {
+  "seviye": 4,
+  "baslik": "İslâm Ordusu, Tebük'te",
+  "aciklama": "",
+  "sayfa": 772,
+  "oran": 0.7273,
+  "satir": 8
+ },
+ {
+  "seviye": 3,
+  "baslik": "Hicretin 10. Yılı",
+  "aciklama": "",
+  "sayfa": 796,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 4,
+  "baslik": "Hicretin 10. Senesindeki Mühim Bazı Hadiseleri - 1",
+  "aciklama": "",
+  "sayfa": 796,
+  "oran": 0.4,
+  "satir": 4
+ },
+ {
+  "seviye": 4,
+  "baslik": "Hicretin 10. Senesindeki Mühim Bazı Hadiseleri - 2",
+  "aciklama": "",
+  "sayfa": 803,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 4,
+  "baslik": "Veda Haccı",
+  "aciklama": "",
+  "sayfa": 804,
+  "oran": 0.6923,
+  "satir": 9
+ },
+ {
+  "seviye": 3,
+  "baslik": "Hicretin 11. Yılı",
+  "aciklama": "",
+  "sayfa": 813,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 4,
+  "baslik": "Üsame Ordusu",
+  "aciklama": "",
+  "sayfa": 813,
+  "oran": 0.4,
+  "satir": 4
+ },
+ {
+  "seviye": 4,
+  "baslik": "Peygamberimizin Hastalanması",
+  "aciklama": "",
+  "sayfa": 814,
+  "oran": 0.0909,
+  "satir": 1
+ },
+ {
+  "seviye": 4,
+  "baslik": "Vefatından Bir Gün Evvel",
+  "aciklama": "",
+  "sayfa": 822,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 4,
+  "baslik": "O Pazartesi",
+  "aciklama": "",
+  "sayfa": 822,
+  "oran": 0.5833,
+  "satir": 7
+ },
+ {
+  "seviye": 4,
+  "baslik": "Vefattan Sonra",
+  "aciklama": "",
+  "sayfa": 825,
+  "oran": 0.3846,
+  "satir": 5
+ }
+]

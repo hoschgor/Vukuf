@@ -1,0 +1,154 @@
+[
+ {
+  "seviye": 1,
+  "baslik": "Hizb-ü Envâr-ıl Hakâik-ın Nuriyye",
+  "aciklama": "",
+  "sayfa": 4,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "Yasin Suresi (Meali)",
+  "aciklama": "",
+  "sayfa": 5,
+  "oran": 0.3571,
+  "satir": 5
+ },
+ {
+  "seviye": 2,
+  "baslik": "Fetih Suresi (Meali)",
+  "aciklama": "",
+  "sayfa": 10,
+  "oran": 0.4,
+  "satir": 6
+ },
+ {
+  "seviye": 2,
+  "baslik": "Rahman Suresi (Meali)",
+  "aciklama": "",
+  "sayfa": 13,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Haşir Suresi'nin Son Beş Ayeti",
+  "aciklama": "",
+  "sayfa": 16,
+  "oran": 0.5625,
+  "satir": 9
+ },
+ {
+  "seviye": 2,
+  "baslik": "Mülk Suresi (Meali)",
+  "aciklama": "",
+  "sayfa": 17,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Nebe' Suresi (Meali)",
+  "aciklama": "",
+  "sayfa": 19,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Hatim Duası",
+  "aciklama": "",
+  "sayfa": 21,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Cevşen-ül Kebîr (Meali)",
+  "aciklama": "",
+  "sayfa": 22,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Evrâd-ı Kudsiye (Meali)",
+  "aciklama": "",
+  "sayfa": 81,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Delâili'n-Nur (Meali)",
+  "aciklama": "",
+  "sayfa": 94,
+  "oran": 0.125,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "Sekîne (Meali)",
+  "aciklama": "",
+  "sayfa": 101,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Veysel Karani'nin Münacatı",
+  "aciklama": "",
+  "sayfa": 102,
+  "oran": 0.5625,
+  "satir": 9
+ },
+ {
+  "seviye": 2,
+  "baslik": "Dua-i Tercümân-ı İsm-i Âzam (Meali)",
+  "aciklama": "",
+  "sayfa": 104,
+  "oran": 0.2222,
+  "satir": 2
+ },
+ {
+  "seviye": 2,
+  "baslik": "Dua-i İsm-i Azam (İsm-i Azam Duası Meali)",
+  "aciklama": "",
+  "sayfa": 109,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Münâcâtü'l-Kur'ân (Meali)",
+  "aciklama": "",
+  "sayfa": 111,
+  "oran": 0.7,
+  "satir": 7
+ },
+ {
+  "seviye": 2,
+  "baslik": "Tahmîdiye (Meali)",
+  "aciklama": "",
+  "sayfa": 140,
+  "oran": 0.0667,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "Hülâsatü'l-Hulasa (Meali)",
+  "aciklama": "",
+  "sayfa": 143,
+  "oran": 0.3636,
+  "satir": 4
+ },
+ {
+  "seviye": 2,
+  "baslik": "Dualar",
+  "aciklama": "",
+  "sayfa": 151,
+  "oran": 0.4167,
+  "satir": 5
+ }
+]

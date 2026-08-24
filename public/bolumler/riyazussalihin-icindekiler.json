@@ -1,0 +1,2978 @@
+[
+ {
+  "seviye": 1,
+  "baslik": "RİYÂZUS-SÂLİHÎN",
+  "aciklama": "",
+  "sayfa": 1,
+  "oran": 0.4,
+  "satir": 2
+ },
+ {
+  "seviye": 2,
+  "baslik": "İYİ NİYET VE SAMİMİYET",
+  "aciklama": "",
+  "sayfa": 4,
+  "oran": 0.0909,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "TEVBE ve ALLAH'TAN AFFEDİLMEYİ İSTEMEK",
+  "aciklama": "",
+  "sayfa": 11,
+  "oran": 0.7143,
+  "satir": 5
+ },
+ {
+  "seviye": 2,
+  "baslik": "SABRIN FAZİLETİ",
+  "aciklama": "",
+  "sayfa": 30,
+  "oran": 0.7143,
+  "satir": 5
+ },
+ {
+  "seviye": 2,
+  "baslik": "DOĞRU SÖZLÜLÜK",
+  "aciklama": "",
+  "sayfa": 49,
+  "oran": 0.25,
+  "satir": 2
+ },
+ {
+  "seviye": 2,
+  "baslik": "ALLAH'IN KULLARINI KONTROL ve DENETİMİ",
+  "aciklama": "",
+  "sayfa": 53,
+  "oran": 0.1333,
+  "satir": 2
+ },
+ {
+  "seviye": 2,
+  "baslik": "ALLAHTAN KORKMAK",
+  "aciklama": "",
+  "sayfa": 59,
+  "oran": 0.6154,
+  "satir": 8
+ },
+ {
+  "seviye": 2,
+  "baslik": "SAĞLAM İMAN ve ALLAH'A GÜVENİP DAYANMAK",
+  "aciklama": "",
+  "sayfa": 62,
+  "oran": 0.25,
+  "satir": 2
+ },
+ {
+  "seviye": 2,
+  "baslik": "ALLAH'IN ÇİZDİĞİ DOĞRU YOLDA OLMAK",
+  "aciklama": "",
+  "sayfa": 69,
+  "oran": 0.6667,
+  "satir": 8
+ },
+ {
+  "seviye": 2,
+  "baslik": "NEFSİLERİMİZİ DOĞRU YOL ÖZERİNDE TERBİYE ETMEYE ÇALIŞMAK",
+  "aciklama": "",
+  "sayfa": 71,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "HAYIRLI İŞLERE KOŞMAK ve İYİLİK YAPMAK",
+  "aciklama": "",
+  "sayfa": 72,
+  "oran": 0.3636,
+  "satir": 4
+ },
+ {
+  "seviye": 2,
+  "baslik": "ALLAH'IN RIZASI ve CENNETİ KAZANMAK İÇİN GAYRET ETMEK",
+  "aciklama": "",
+  "sayfa": 76,
+  "oran": 0.1538,
+  "satir": 2
+ },
+ {
+  "seviye": 2,
+  "baslik": "ÖMRÜN SONLARINA DOĞRU İYİLİKLERİ ARTIRMAYA TEŞVİK",
+  "aciklama": "",
+  "sayfa": 84,
+  "oran": 0.2,
+  "satir": 2
+ },
+ {
+  "seviye": 2,
+  "baslik": "HAYIR YOLLARININ ÇOK OLUŞU",
+  "aciklama": "",
+  "sayfa": 87,
+  "oran": 0.6154,
+  "satir": 8
+ },
+ {
+  "seviye": 2,
+  "baslik": "İBADET VE ALLAH'IN EMİRLERİNDE ÖLÇÜLÜ OLMAK",
+  "aciklama": "",
+  "sayfa": 98,
+  "oran": 0.6875,
+  "satir": 11
+ },
+ {
+  "seviye": 2,
+  "baslik": "İBADET VE HAYIRLI İŞLERİ DEVAMLI YAPMAK",
+  "aciklama": "",
+  "sayfa": 108,
+  "oran": 0.8182,
+  "satir": 9
+ },
+ {
+  "seviye": 2,
+  "baslik": "PEYGAMBER SÜNNETİNİ VE EDEBLERİNİ KORUMAK",
+  "aciklama": "",
+  "sayfa": 111,
+  "oran": 0.0714,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "ALLAH'IN HÜKMÜNE BOYUN EĞMEK",
+  "aciklama": "",
+  "sayfa": 118,
+  "oran": 0.5,
+  "satir": 5
+ },
+ {
+  "seviye": 2,
+  "baslik": "DİNDE MEYDANA GETİRİLEN YENİLİKLERDEN",
+  "aciklama": "",
+  "sayfa": 120,
+  "oran": 0.3333,
+  "satir": 4
+ },
+ {
+  "seviye": 2,
+  "baslik": "İYİ VEYA KÖTÜ ÇIĞIR AÇANLAR",
+  "aciklama": "",
+  "sayfa": 122,
+  "oran": 0.4167,
+  "satir": 5
+ },
+ {
+  "seviye": 2,
+  "baslik": "HAYIR VE İYİLİKLERE ÖNCÜLÜK ETME ve DOĞRU VEYA SAPIKLIĞA ÇAĞIRMA",
+  "aciklama": "",
+  "sayfa": 124,
+  "oran": 0.4615,
+  "satir": 6
+ },
+ {
+  "seviye": 2,
+  "baslik": "İYİLİK VE HAYIRLARDA YARDIMLAŞMA",
+  "aciklama": "",
+  "sayfa": 127,
+  "oran": 0.3636,
+  "satir": 4
+ },
+ {
+  "seviye": 2,
+  "baslik": "NASİHAT İKAZ VE HATIRLATMA",
+  "aciklama": "",
+  "sayfa": 129,
+  "oran": 0.2941,
+  "satir": 5
+ },
+ {
+  "seviye": 2,
+  "baslik": "İSLAMIN İYİ DEDİKLERİNİ EMRETMEK, KÖTÜ DEDİKLERİNDEN SAKINDIRMAK",
+  "aciklama": "",
+  "sayfa": 130,
+  "oran": 0.5385,
+  "satir": 7
+ },
+ {
+  "seviye": 2,
+  "baslik": "SÖZÜ İLE İŞİ BİRBİRİNE BENZEMEYENİN CEZASININ ŞİDDETİ",
+  "aciklama": "",
+  "sayfa": 138,
+  "oran": 0.7,
+  "satir": 7
+ },
+ {
+  "seviye": 2,
+  "baslik": "EMANETİ YERİNE GETİRMEK",
+  "aciklama": "",
+  "sayfa": 139,
+  "oran": 0.8,
+  "satir": 8
+ },
+ {
+  "seviye": 2,
+  "baslik": "ZULMÜN HARAM OLUŞU",
+  "aciklama": "",
+  "sayfa": 147,
+  "oran": 0.0714,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "MÜSLÜMANLARIN HAKLARINA SAYGI GÖStERMEK",
+  "aciklama": "",
+  "sayfa": 156,
+  "oran": 0.3077,
+  "satir": 4
+ },
+ {
+  "seviye": 2,
+  "baslik": "MÜSLÜMANLARIN AYIPLARINI ÖRTMEK",
+  "aciklama": "",
+  "sayfa": 163,
+  "oran": 0.25,
+  "satir": 3
+ },
+ {
+  "seviye": 2,
+  "baslik": "MÜSLÜMANLARIN İHTİYAÇLARINI KARŞILAMAK",
+  "aciklama": "",
+  "sayfa": 164,
+  "oran": 0.5833,
+  "satir": 7
+ },
+ {
+  "seviye": 2,
+  "baslik": "YARDIM VE ARACILIK YAPMAK",
+  "aciklama": "",
+  "sayfa": 166,
+  "oran": 0.1538,
+  "satir": 2
+ },
+ {
+  "seviye": 2,
+  "baslik": "İNSANLARIN ARASINI BULMA",
+  "aciklama": "",
+  "sayfa": 167,
+  "oran": 0.1538,
+  "satir": 2
+ },
+ {
+  "seviye": 2,
+  "baslik": "ZAYIF GÜÇSÜZ ADI ANILMAYAN MÜSLÜMANLARIN DEĞERLERİ",
+  "aciklama": "",
+  "sayfa": 170,
+  "oran": 0.4545,
+  "satir": 5
+ },
+ {
+  "seviye": 2,
+  "baslik": "YETİM KİMSESİZ VE ZAYIFLARI KORUYUP GÖZETMEK",
+  "aciklama": "",
+  "sayfa": 176,
+  "oran": 0.25,
+  "satir": 3
+ },
+ {
+  "seviye": 2,
+  "baslik": "KADINLARA İYİ DAVRANMAK",
+  "aciklama": "",
+  "sayfa": 182,
+  "oran": 0.0769,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "KOCANIN KARISI ÜZERİNDEKİ HAKLARI",
+  "aciklama": "",
+  "sayfa": 186,
+  "oran": 0.0833,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "AİLENİN GEÇİMİ",
+  "aciklama": "",
+  "sayfa": 188,
+  "oran": 0.7143,
+  "satir": 10
+ },
+ {
+  "seviye": 2,
+  "baslik": "MÜ'MİN İYİ VE DEĞERLİ ŞEYLERİ İNFAK ETMELİ",
+  "aciklama": "",
+  "sayfa": 191,
+  "oran": 0.6154,
+  "satir": 8
+ },
+ {
+  "seviye": 2,
+  "baslik": "AİLEDE DİN EĞİTİMİ",
+  "aciklama": "",
+  "sayfa": 193,
+  "oran": 0.0769,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "KOMŞU VE KOMŞULUK HAKKI",
+  "aciklama": "",
+  "sayfa": 195,
+  "oran": 0.1667,
+  "satir": 2
+ },
+ {
+  "seviye": 2,
+  "baslik": "ANA BABAYA İYİLİK VE AKRABAYI ZİYARET",
+  "aciklama": "",
+  "sayfa": 198,
+  "oran": 0.3077,
+  "satir": 4
+ },
+ {
+  "seviye": 2,
+  "baslik": "ANA BABAYA KARŞI GELMENİN VE AKRABA İLE İLGİYİ KESMENİN HARAMLIĞI",
+  "aciklama": "",
+  "sayfa": 210,
+  "oran": 0.4545,
+  "satir": 5
+ },
+ {
+  "seviye": 2,
+  "baslik": "ANA BABAYA DOSTLARINA VE İKRAMA LAYIK KİMSELERE İKRAM ETMEK",
+  "aciklama": "",
+  "sayfa": 213,
+  "oran": 0.1429,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "RASULULLAH'IN SOYUNA İKRAM",
+  "aciklama": "",
+  "sayfa": 216,
+  "oran": 0.3636,
+  "satir": 4
+ },
+ {
+  "seviye": 2,
+  "baslik": "ALİMLERE VE BÜYÜKLERE SAYGILI OLMAK",
+  "aciklama": "",
+  "sayfa": 218,
+  "oran": 0.6923,
+  "satir": 9
+ },
+ {
+  "seviye": 2,
+  "baslik": "İYİ KİŞİLERİ ZİYARET EDİP SOHBETTE BULUNMAK",
+  "aciklama": "",
+  "sayfa": 223,
+  "oran": 0.8333,
+  "satir": 10
+ },
+ {
+  "seviye": 2,
+  "baslik": "ALLAH İÇİN SEVMEK VE BUNU YAYMAK",
+  "aciklama": "",
+  "sayfa": 232,
+  "oran": 0.5,
+  "satir": 4
+ },
+ {
+  "seviye": 2,
+  "baslik": "ALLAH'IN KULUNU SEVMESİNİN İŞARETLERİ",
+  "aciklama": "",
+  "sayfa": 237,
+  "oran": 0.5556,
+  "satir": 5
+ },
+ {
+  "seviye": 2,
+  "baslik": "FAKİR VE GÜÇSÜZLERE EZİYET ETMEMEK",
+  "aciklama": "",
+  "sayfa": 240,
+  "oran": 0.0833,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "GÖRÜNÜŞE GÖRE HÜKÜM VERMEK KALBLERDEKİNİ ALLAH'A BIRAKMAK",
+  "aciklama": "",
+  "sayfa": 240,
+  "oran": 0.8333,
+  "satir": 10
+ },
+ {
+  "seviye": 2,
+  "baslik": "ALLAH'IN GÜÇ VE AZABINA KARŞI DEVAMLI SORUMLULUK BİLİNCİNDE OLMAK",
+  "aciklama": "",
+  "sayfa": 245,
+  "oran": 0.2222,
+  "satir": 2
+ },
+ {
+  "seviye": 2,
+  "baslik": "ALLAH'IN RAHMETİNİ ÜMİD ETMEK",
+  "aciklama": "",
+  "sayfa": 253,
+  "oran": 0.6154,
+  "satir": 8
+ },
+ {
+  "seviye": 2,
+  "baslik": "ALLAH'TAN RAHMETİNİ ÜMİD ETMEK",
+  "aciklama": "",
+  "sayfa": 271,
+  "oran": 0.3,
+  "satir": 3
+ },
+ {
+  "seviye": 2,
+  "baslik": "KORKU İLE ÜMİD ARASINDA YAŞAMAK",
+  "aciklama": "",
+  "sayfa": 272,
+  "oran": 0.8333,
+  "satir": 10
+ },
+ {
+  "seviye": 2,
+  "baslik": "DİNİ HEYECAN VE AHİREt ENDİŞESİNDEN DOLAYI AĞLAMAK VE AĞLAMANIN DEĞERİ",
+  "aciklama": "",
+  "sayfa": 274,
+  "oran": 0.6667,
+  "satir": 8
+ },
+ {
+  "seviye": 2,
+  "baslik": "DÜNYADA İHTİYAÇTAN FAZLASINA SARILMAMANIN GEREKLİLİĞİ VE FAKİRLİĞİN ÜSTÜNLÜĞÜ",
+  "aciklama": "",
+  "sayfa": 279,
+  "oran": 0.8571,
+  "satir": 12
+ },
+ {
+  "seviye": 2,
+  "baslik": "AÇLIK VE SADE YAŞAMANIN ÜSTÜNLÜĞÜ",
+  "aciklama": "",
+  "sayfa": 293,
+  "oran": 0.1111,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "KANAAT, TOK GÖZLÜLÜK VE ORTA YOLU SEÇMEK",
+  "aciklama": "",
+  "sayfa": 312,
+  "oran": 0.0667,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "GÖZ DİKMEKSİZİN VE İSTEMEYEREK SADAKA ALMANIN CAİZ OLUŞU",
+  "aciklama": "",
+  "sayfa": 319,
+  "oran": 0.1,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "ELİNİN EMEĞİYLE GEÇİNİP KİMSEDEN BİR ŞEY İSTEMEMEK",
+  "aciklama": "",
+  "sayfa": 319,
+  "oran": 0.7,
+  "satir": 7
+ },
+ {
+  "seviye": 2,
+  "baslik": "CÖMERTLİK VE HAYIR YOLLARINA HARCAMAK",
+  "aciklama": "",
+  "sayfa": 321,
+  "oran": 0.1667,
+  "satir": 2
+ },
+ {
+  "seviye": 2,
+  "baslik": "CİMRİLİK VE AÇ GÖZLÜLÜKTEN SAKINMAK",
+  "aciklama": "",
+  "sayfa": 328,
+  "oran": 0.7,
+  "satir": 7
+ },
+ {
+  "seviye": 2,
+  "baslik": "BAŞKALARINI KENDİNE TERCİH EtMEK",
+  "aciklama": "",
+  "sayfa": 329,
+  "oran": 0.5833,
+  "satir": 7
+ },
+ {
+  "seviye": 2,
+  "baslik": "AHİRETE YARIŞIRCASINA HAZIRLANMAK",
+  "aciklama": "",
+  "sayfa": 333,
+  "oran": 0.0769,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "ŞÜKREDEN ZENGİNİN FAZİLETİ",
+  "aciklama": "",
+  "sayfa": 334,
+  "oran": 0.0833,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "ÖLÜMÜ DEVAMLI HATIRLAMAK VE NEFSİN ARZULARINI DİZGİNLEMEK",
+  "aciklama": "",
+  "sayfa": 336,
+  "oran": 0.5833,
+  "satir": 7
+ },
+ {
+  "seviye": 2,
+  "baslik": "KABİR ZİYARETİ VE BU ZİYARETTE NE DENİLECEĞİ",
+  "aciklama": "",
+  "sayfa": 341,
+  "oran": 0.7895,
+  "satir": 15
+ },
+ {
+  "seviye": 2,
+  "baslik": "BAŞA GELENLERDEN DOLAYI ÖLÜMÜ İSTEMENİN DOĞRU OLMADIĞI",
+  "aciklama": "",
+  "sayfa": 343,
+  "oran": 0.0833,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "GÜNAHTAN SAKINIP ŞÜPHELİ ŞEYLERDEN UZAK DURMAK",
+  "aciklama": "",
+  "sayfa": 344,
+  "oran": 0.4615,
+  "satir": 6
+ },
+ {
+  "seviye": 2,
+  "baslik": "İNSANLAR BOZULUP BOZUKLUK ARTINCA BİR KENARA ÇEKİLMENİN İYİ OLACAĞI",
+  "aciklama": "",
+  "sayfa": 348,
+  "oran": 0.1538,
+  "satir": 2
+ },
+ {
+  "seviye": 2,
+  "baslik": "İNSANLARLA BİR ARADA YAŞAMANIN KIYMETİ",
+  "aciklama": "",
+  "sayfa": 350,
+  "oran": 0.2222,
+  "satir": 2
+ },
+ {
+  "seviye": 2,
+  "baslik": "ALÇAK GÖNÜLLÜ OLUP MÜ'MİNLERE KOL KANAT GERMEK",
+  "aciklama": "",
+  "sayfa": 350,
+  "oran": 0.6667,
+  "satir": 6
+ },
+ {
+  "seviye": 2,
+  "baslik": "KİBİR VE KENDİNİ BEĞENMENİN HARAM OLUŞU",
+  "aciklama": "",
+  "sayfa": 354,
+  "oran": 0.6667,
+  "satir": 8
+ },
+ {
+  "seviye": 2,
+  "baslik": "GÜZEL AHLAK",
+  "aciklama": "",
+  "sayfa": 358,
+  "oran": 0.6154,
+  "satir": 8
+ },
+ {
+  "seviye": 2,
+  "baslik": "ACELE ETMEMEK YUMUŞAK HUYLULUK VE ACIMAK",
+  "aciklama": "",
+  "sayfa": 362,
+  "oran": 0.0769,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "HATALARI BAĞIŞLAYIP BİLGİSİZLERE UYMAMAK",
+  "aciklama": "",
+  "sayfa": 365,
+  "oran": 0.3846,
+  "satir": 5
+ },
+ {
+  "seviye": 2,
+  "baslik": "ALLAH RIZASI İÇİN EZİYET VE SIKINTILARA KATLANMA",
+  "aciklama": "",
+  "sayfa": 368,
+  "oran": 0.4615,
+  "satir": 6
+ },
+ {
+  "seviye": 2,
+  "baslik": "ALLAH'IN DİNİ İÇİN KIZMAK VE ALLAH'IN DİNİNE YARDIM ETMEK",
+  "aciklama": "",
+  "sayfa": 369,
+  "oran": 0.3333,
+  "satir": 4
+ },
+ {
+  "seviye": 2,
+  "baslik": "İDARECİLERİN EMRİ ALTINDAKİLERE ŞEFKATLİ DAVRANMALARI",
+  "aciklama": "",
+  "sayfa": 371,
+  "oran": 0.5455,
+  "satir": 6
+ },
+ {
+  "seviye": 2,
+  "baslik": "ADALETLİ DEVLET İDARECİSİ",
+  "aciklama": "",
+  "sayfa": 374,
+  "oran": 0.3636,
+  "satir": 4
+ },
+ {
+  "seviye": 2,
+  "baslik": "GÜNAH OLMAYAN KOŞULLARDA YÖNETİCİYE İTAAT",
+  "aciklama": "",
+  "sayfa": 376,
+  "oran": 0.625,
+  "satir": 10
+ },
+ {
+  "seviye": 2,
+  "baslik": "GÖREV VERİLMEDİKÇE İDARECİLİĞE İSTEKLİ OLMAMAK",
+  "aciklama": "",
+  "sayfa": 380,
+  "oran": 0.5,
+  "satir": 6
+ },
+ {
+  "seviye": 2,
+  "baslik": "YÖNETİCİLERİN HAYIRLI KİMSELERİ YARDIMCI EDİNMESİ",
+  "aciklama": "",
+  "sayfa": 382,
+  "oran": 0.0714,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "YÖNETİCİLİK İSTEMEKTE HIRSLI OLANA GÖREV VERMEMEK",
+  "aciklama": "",
+  "sayfa": 382,
+  "oran": 0.7857,
+  "satir": 11
+ },
+ {
+  "seviye": 2,
+  "baslik": "UTANMA DUYGUSU VE ONA TEŞVİK",
+  "aciklama": "",
+  "sayfa": 383,
+  "oran": 0.3571,
+  "satir": 5
+ },
+ {
+  "seviye": 2,
+  "baslik": "SIR SAKLAMA",
+  "aciklama": "",
+  "sayfa": 384,
+  "oran": 0.5714,
+  "satir": 8
+ },
+ {
+  "seviye": 2,
+  "baslik": "SÖZÜNDE DURUP VADİNİ YERİNE GETİRMEK",
+  "aciklama": "",
+  "sayfa": 387,
+  "oran": 0.6154,
+  "satir": 8
+ },
+ {
+  "seviye": 2,
+  "baslik": "ALIŞILAN İYİLİKLERE DEVAM ETMEK",
+  "aciklama": "",
+  "sayfa": 389,
+  "oran": 0.4545,
+  "satir": 5
+ },
+ {
+  "seviye": 2,
+  "baslik": "MÜSLÜMANLARA KARŞI GÜLER YÜZLÜ VE TATLI DİLLİ OLMAK",
+  "aciklama": "",
+  "sayfa": 390,
+  "oran": 0.5333,
+  "satir": 8
+ },
+ {
+  "seviye": 2,
+  "baslik": "DİNLEYENİN ANLIYABİLMESİ İÇİN AÇIK KONUŞMAK; GEREKİRSE TEKRAR ETMEK",
+  "aciklama": "",
+  "sayfa": 391,
+  "oran": 0.5625,
+  "satir": 9
+ },
+ {
+  "seviye": 2,
+  "baslik": "KONUŞAN KİMSENİN DİNLEYENLERİ SUSTURMASI",
+  "aciklama": "",
+  "sayfa": 392,
+  "oran": 0.0714,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "NASİHATTA ÖLÇÜLÜ OLMAK",
+  "aciklama": "",
+  "sayfa": 392,
+  "oran": 0.4286,
+  "satir": 6
+ },
+ {
+  "seviye": 2,
+  "baslik": "AĞIRBAŞLI VE VAKÛR OLMAK",
+  "aciklama": "",
+  "sayfa": 394,
+  "oran": 0.7692,
+  "satir": 10
+ },
+ {
+  "seviye": 2,
+  "baslik": "İBADET VE İLİM GİBİ ŞEYLERİ AĞIRBAŞLILIKLA YERİNE GETİRMEK",
+  "aciklama": "",
+  "sayfa": 395,
+  "oran": 0.3077,
+  "satir": 4
+ },
+ {
+  "seviye": 2,
+  "baslik": "MİSAFİRE İKRAM ETMEK",
+  "aciklama": "",
+  "sayfa": 396,
+  "oran": 0.3,
+  "satir": 3
+ },
+ {
+  "seviye": 2,
+  "baslik": "HAYIRLI İŞLER DOLAYISIYLA MÜJDELEMEK VE TEBRİK ETMEK",
+  "aciklama": "",
+  "sayfa": 397,
+  "oran": 0.8182,
+  "satir": 9
+ },
+ {
+  "seviye": 2,
+  "baslik": "YOLCULUK VE BENZERİ AYRILIŞLARDA VEDALAŞMAK",
+  "aciklama": "",
+  "sayfa": 404,
+  "oran": 0.4444,
+  "satir": 4
+ },
+ {
+  "seviye": 2,
+  "baslik": "İSTİHARE VE İSTİŞARE",
+  "aciklama": "",
+  "sayfa": 407,
+  "oran": 0.4167,
+  "satir": 5
+ },
+ {
+  "seviye": 2,
+  "baslik": "BAZI İBADET VE KULLUK YAPTIĞIMIZ ŞEYLERE FARKLI YOLLARDAN GİDİP GELMEK",
+  "aciklama": "",
+  "sayfa": 408,
+  "oran": 0.3636,
+  "satir": 4
+ },
+ {
+  "seviye": 2,
+  "baslik": "BAZI İŞLERDE SAĞDAN BAŞLAMAK",
+  "aciklama": "",
+  "sayfa": 409,
+  "oran": 0.1333,
+  "satir": 2
+ },
+ {
+  "seviye": 2,
+  "baslik": "YEMEK YEME USÛL VE ÂDÂBI",
+  "aciklama": "",
+  "sayfa": 411,
+  "oran": 0.25,
+  "satir": 3
+ },
+ {
+  "seviye": 2,
+  "baslik": "YEMEKTE KUSUR ARANMAYACAĞI",
+  "aciklama": "",
+  "sayfa": 414,
+  "oran": 0.1429,
+  "satir": 2
+ },
+ {
+  "seviye": 2,
+  "baslik": "SOFRADA BULUNUP ORUÇLU OLAN YEMEK YEMEDİĞİ TAKDİRDE NE SÖYLEMELİ?",
+  "aciklama": "",
+  "sayfa": 414,
+  "oran": 0.7143,
+  "satir": 10
+ },
+ {
+  "seviye": 2,
+  "baslik": "DAVETE GİDEN KİMSEYE BİRİ TAKILIRSA NE YAPACAK?",
+  "aciklama": "",
+  "sayfa": 415,
+  "oran": 0.1818,
+  "satir": 2
+ },
+ {
+  "seviye": 2,
+  "baslik": "SOFRA ADABI VE BİLMEYENE ÖĞRETİLMESİ",
+  "aciklama": "",
+  "sayfa": 415,
+  "oran": 0.6364,
+  "satir": 7
+ },
+ {
+  "seviye": 2,
+  "baslik": "HURMA VE BENZERİ ŞEYLERİ İKİŞER YEMEMEK",
+  "aciklama": "",
+  "sayfa": 416,
+  "oran": 0.3333,
+  "satir": 4
+ },
+ {
+  "seviye": 2,
+  "baslik": "YEMEĞE DOYMAYAN KİMSE NE YAPMALI",
+  "aciklama": "",
+  "sayfa": 416,
+  "oran": 0.75,
+  "satir": 9
+ },
+ {
+  "seviye": 2,
+  "baslik": "YEMEK KABININ ORTASINDAN DEĞİL KENARINDAN YEMEK",
+  "aciklama": "",
+  "sayfa": 417,
+  "oran": 0.3,
+  "satir": 3
+ },
+ {
+  "seviye": 2,
+  "baslik": "YASLANARAK YEMEK YEMEMEK",
+  "aciklama": "",
+  "sayfa": 418,
+  "oran": 0.125,
+  "satir": 2
+ },
+ {
+  "seviye": 2,
+  "baslik": "SOFRA VE YEMEK ADABI",
+  "aciklama": "",
+  "sayfa": 418,
+  "oran": 0.625,
+  "satir": 10
+ },
+ {
+  "seviye": 2,
+  "baslik": "KALABALIKTA YEMEK YEMEK",
+  "aciklama": "",
+  "sayfa": 420,
+  "oran": 0.6471,
+  "satir": 11
+ },
+ {
+  "seviye": 2,
+  "baslik": "İÇECEKLERLE İLGİLİ EDEB VE KURALLARI",
+  "aciklama": "",
+  "sayfa": 421,
+  "oran": 0.2,
+  "satir": 3
+ },
+ {
+  "seviye": 2,
+  "baslik": "SU TULUMUNUN AĞZINDAN SU İÇİLMEMESİ",
+  "aciklama": "",
+  "sayfa": 422,
+  "oran": 0.3571,
+  "satir": 5
+ },
+ {
+  "seviye": 2,
+  "baslik": "MEŞRUBAT KAPLARINA ÜFLEMEMEK",
+  "aciklama": "",
+  "sayfa": 423,
+  "oran": 0.3,
+  "satir": 3
+ },
+ {
+  "seviye": 2,
+  "baslik": "AYAKTA SU İÇİLEBİLECEĞİ, OTURARAK İÇMENİN DAHA UYGUN OLDUĞU",
+  "aciklama": "",
+  "sayfa": 424,
+  "oran": 0.0714,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "TOPLUMA SU DAĞITANIN EN SON İÇECEGİ",
+  "aciklama": "",
+  "sayfa": 425,
+  "oran": 0.6923,
+  "satir": 9
+ },
+ {
+  "seviye": 2,
+  "baslik": "ALTIN VE GÜMÜŞ HARİCİNDE TEMİZ KAPLARDA SU İÇMEK, AKARSUDAN NASIL SU İÇİLECEĞİ",
+  "aciklama": "",
+  "sayfa": 426,
+  "oran": 0.0769,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "YASAKLANAN VE TAVSİYE EDİLEN RENKLER VE ELBİSE TÜRLERİ",
+  "aciklama": "",
+  "sayfa": 427,
+  "oran": 0.7857,
+  "satir": 11
+ },
+ {
+  "seviye": 2,
+  "baslik": "GÖMLEK GİYMEK",
+  "aciklama": "",
+  "sayfa": 431,
+  "oran": 0.2,
+  "satir": 3
+ },
+ {
+  "seviye": 2,
+  "baslik": "GİYECEKLERİN UZUNLUK VE KISALIK ÖLÇÜLERİ VE KİBİR İÇİN GİYİLEN GİYSİ ŞEKİLLERİ",
+  "aciklama": "",
+  "sayfa": 431,
+  "oran": 0.5333,
+  "satir": 8
+ },
+ {
+  "seviye": 2,
+  "baslik": "TEVAZU SEBEBİYLE LÜKS ELBİSE GİYMEMEK",
+  "aciklama": "",
+  "sayfa": 438,
+  "oran": 0.1111,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "ORTA YOLLU ELBİSELER GİYMEK",
+  "aciklama": "",
+  "sayfa": 438,
+  "oran": 0.6667,
+  "satir": 6
+ },
+ {
+  "seviye": 2,
+  "baslik": "İPEK KULLANMANIN ERKEKLERE HARAM OLUŞU",
+  "aciklama": "",
+  "sayfa": 439,
+  "oran": 0.1875,
+  "satir": 3
+ },
+ {
+  "seviye": 2,
+  "baslik": "UYUZ HASTALIĞI OLANIN İPEK GİYEBİLECEĞİ",
+  "aciklama": "",
+  "sayfa": 440,
+  "oran": 0.6923,
+  "satir": 9
+ },
+ {
+  "seviye": 2,
+  "baslik": "YIRTICI VE VAHŞİ HAYVAN DERİLERİNİ KULLANMAK",
+  "aciklama": "",
+  "sayfa": 441,
+  "oran": 0.0625,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "YENİ ELBİSE VE AYAKKABI GİYİLİNCE NASIL DUA EDİLECEĞİ",
+  "aciklama": "",
+  "sayfa": 441,
+  "oran": 0.6875,
+  "satir": 11
+ },
+ {
+  "seviye": 2,
+  "baslik": "ELBİSE GİYERKEN DE SAĞDAN BAŞLAMANIN MÜSTEHAP OLUŞU",
+  "aciklama": "",
+  "sayfa": 442,
+  "oran": 0.1818,
+  "satir": 2
+ },
+ {
+  "seviye": 2,
+  "baslik": "UYKU ADABI",
+  "aciklama": "",
+  "sayfa": 442,
+  "oran": 0.4545,
+  "satir": 5
+ },
+ {
+  "seviye": 2,
+  "baslik": "OTURMA VE YATMA ADABI",
+  "aciklama": "",
+  "sayfa": 444,
+  "oran": 0.2222,
+  "satir": 2
+ },
+ {
+  "seviye": 2,
+  "baslik": "TOPLANTI VE TOPLANTI YERLERİNDE OTURMA ADABI",
+  "aciklama": "",
+  "sayfa": 445,
+  "oran": 0.7857,
+  "satir": 11
+ },
+ {
+  "seviye": 2,
+  "baslik": "RÜYA VE EDEBLERİ",
+  "aciklama": "",
+  "sayfa": 449,
+  "oran": 0.7857,
+  "satir": 11
+ },
+ {
+  "seviye": 2,
+  "baslik": "SELAM VE SELAMI YAYMAK",
+  "aciklama": "",
+  "sayfa": 452,
+  "oran": 0.0769,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "SELAM ALIP VERMENİN ŞEKLİ",
+  "aciklama": "",
+  "sayfa": 455,
+  "oran": 0.0909,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "SELAMIN ADABI",
+  "aciklama": "",
+  "sayfa": 456,
+  "oran": 0.7692,
+  "satir": 10
+ },
+ {
+  "seviye": 2,
+  "baslik": "SELAMI TEKRARLAMAK",
+  "aciklama": "",
+  "sayfa": 457,
+  "oran": 0.4615,
+  "satir": 6
+ },
+ {
+  "seviye": 2,
+  "baslik": "EVİNE GİREN KİMSENİN SELAM VERMESİ",
+  "aciklama": "",
+  "sayfa": 458,
+  "oran": 0.1538,
+  "satir": 2
+ },
+ {
+  "seviye": 2,
+  "baslik": "ÇOCUKLARA SELAM VERİLMESİ",
+  "aciklama": "",
+  "sayfa": 458,
+  "oran": 0.6923,
+  "satir": 9
+ },
+ {
+  "seviye": 2,
+  "baslik": "ERKEĞİN KADINA SELAM VERMESİ",
+  "aciklama": "",
+  "sayfa": 459,
+  "oran": 0.0909,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "İNANMAYANLARA SELAM VERİP ALMAK",
+  "aciklama": "",
+  "sayfa": 460,
+  "oran": 0.0667,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "AYRILIRKEN SELAM VERMEK",
+  "aciklama": "",
+  "sayfa": 460,
+  "oran": 0.8,
+  "satir": 12
+ },
+ {
+  "seviye": 2,
+  "baslik": "EVLERE GİRME KAİDE VE EDEBLERİ",
+  "aciklama": "",
+  "sayfa": 461,
+  "oran": 0.2857,
+  "satir": 4
+ },
+ {
+  "seviye": 2,
+  "baslik": "BİR YERE GİRMEK İÇİN İZİN İSTEYEN KİMSENİN \"KİM O\" SORUSUNA ADINI SÖYLEYEREK CEVAP VERMESİ GEREKTİĞİ",
+  "aciklama": "",
+  "sayfa": 462,
+  "oran": 0.7273,
+  "satir": 8
+ },
+ {
+  "seviye": 2,
+  "baslik": "AKSIRANA \"YERHAMUKELLAH\" DEMEK GEREĞİ",
+  "aciklama": "",
+  "sayfa": 464,
+  "oran": 0.0769,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "KARŞILAŞINCA TOKALAŞMAK YAPMAK",
+  "aciklama": "",
+  "sayfa": 466,
+  "oran": 0.0625,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "HASTA ZİYARETİ VE CENAZE UĞURLAMAK",
+  "aciklama": "",
+  "sayfa": 468,
+  "oran": 0.25,
+  "satir": 3
+ },
+ {
+  "seviye": 2,
+  "baslik": "HASTAYA DUA ETMEK",
+  "aciklama": "",
+  "sayfa": 471,
+  "oran": 0.0769,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "HASTANIN HALİNİ YAKINLARINDAN SORMAK",
+  "aciklama": "",
+  "sayfa": 474,
+  "oran": 0.0769,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "ÖLECEĞİNİ ANLAYANIN YAPACAĞI DUA",
+  "aciklama": "",
+  "sayfa": 474,
+  "oran": 0.4615,
+  "satir": 6
+ },
+ {
+  "seviye": 2,
+  "baslik": "HASTAYA VE ÖLÜMÜ YAKIN OLDUĞU TAHMİN EDİLENLERE İYİ MUAMELE ETMEK",
+  "aciklama": "",
+  "sayfa": 475,
+  "oran": 0.1538,
+  "satir": 2
+ },
+ {
+  "seviye": 2,
+  "baslik": "HASTANIN HASTALIĞININ ŞİDDETİNİ ANLATMASI",
+  "aciklama": "",
+  "sayfa": 475,
+  "oran": 0.7692,
+  "satir": 10
+ },
+ {
+  "seviye": 2,
+  "baslik": "ÖLMEK ÜZERE OLANA KELİME-İ TEVHİD TELKİN ETMEK",
+  "aciklama": "",
+  "sayfa": 476,
+  "oran": 0.7143,
+  "satir": 10
+ },
+ {
+  "seviye": 2,
+  "baslik": "ÖLÜNÜN GÖZÜ KAPATILDIKTAN SONRA NE SÖYLENİR",
+  "aciklama": "",
+  "sayfa": 477,
+  "oran": 0.3077,
+  "satir": 4
+ },
+ {
+  "seviye": 2,
+  "baslik": "ÖLÜNÜN BAŞINDA SÖYLENECEK SÖZ",
+  "aciklama": "",
+  "sayfa": 477,
+  "oran": 0.7692,
+  "satir": 10
+ },
+ {
+  "seviye": 2,
+  "baslik": "BAĞIRIP ÇAĞIRMADAN ÖLÜYE AĞLAMAK",
+  "aciklama": "",
+  "sayfa": 480,
+  "oran": 0.2,
+  "satir": 2
+ },
+ {
+  "seviye": 2,
+  "baslik": "ÖLENİN HALİNİ GİZLEMEK",
+  "aciklama": "",
+  "sayfa": 481,
+  "oran": 0.5556,
+  "satir": 5
+ },
+ {
+  "seviye": 2,
+  "baslik": "CENAZE NAMAZI KILMAK",
+  "aciklama": "",
+  "sayfa": 482,
+  "oran": 0.0909,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "CENAZE NAMAZINDA SAFLARIN DURUMU",
+  "aciklama": "",
+  "sayfa": 483,
+  "oran": 0.0667,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "CENAZE NAMAZINDA OKUNACAK DUALAR",
+  "aciklama": "",
+  "sayfa": 483,
+  "oran": 0.8,
+  "satir": 12
+ },
+ {
+  "seviye": 2,
+  "baslik": "CENAZEYİ HIZLICA TAŞIMAK",
+  "aciklama": "",
+  "sayfa": 486,
+  "oran": 0.3636,
+  "satir": 4
+ },
+ {
+  "seviye": 2,
+  "baslik": "CENAZENİN BORCUNU HEMEN ÖDEMEK",
+  "aciklama": "",
+  "sayfa": 487,
+  "oran": 0.3,
+  "satir": 3
+ },
+ {
+  "seviye": 2,
+  "baslik": "KABİR BAŞINDA ÖĞÜT VERMEK",
+  "aciklama": "",
+  "sayfa": 488,
+  "oran": 0.0833,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "DEFİNDEN SONRA KABİR BAŞINDA DUA",
+  "aciklama": "",
+  "sayfa": 488,
+  "oran": 0.75,
+  "satir": 9
+ },
+ {
+  "seviye": 2,
+  "baslik": "ÖLÜ İÇİN SADAKA VERİP DUA ETMEK",
+  "aciklama": "",
+  "sayfa": 489,
+  "oran": 0.4286,
+  "satir": 6
+ },
+ {
+  "seviye": 2,
+  "baslik": "MÜSLÜMAN ÖLÜLERİ HAYIRLA ANMAK",
+  "aciklama": "",
+  "sayfa": 490,
+  "oran": 0.6429,
+  "satir": 9
+ },
+ {
+  "seviye": 2,
+  "baslik": "KÜÇÜK ÇOCUKLARI ÖLENİN KAZANACAKLARI SEVAP",
+  "aciklama": "",
+  "sayfa": 491,
+  "oran": 0.4,
+  "satir": 4
+ },
+ {
+  "seviye": 2,
+  "baslik": "ZALİM VE AZABA UĞRAYANLARIN YAKINLARINDAN GEÇERKEN KORKUP AĞLAYIP ALLAH'A SIĞINMAK",
+  "aciklama": "",
+  "sayfa": 493,
+  "oran": 0.0769,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "YOLCULUĞA PERŞEMBE GÜNÜ VE ERKEN ÇIKMA GEREĞİ",
+  "aciklama": "",
+  "sayfa": 493,
+  "oran": 0.6923,
+  "satir": 9
+ },
+ {
+  "seviye": 2,
+  "baslik": "YALNIZ YOLCULUK YAPMAMAK",
+  "aciklama": "",
+  "sayfa": 494,
+  "oran": 0.4615,
+  "satir": 6
+ },
+ {
+  "seviye": 2,
+  "baslik": "YOLCULUKTA YÜRÜMEK VE KONAKLAMAK",
+  "aciklama": "",
+  "sayfa": 495,
+  "oran": 0.6667,
+  "satir": 8
+ },
+ {
+  "seviye": 2,
+  "baslik": "YOLCULUK ARKADAŞINA YARDIM ETMEK",
+  "aciklama": "",
+  "sayfa": 498,
+  "oran": 0.2308,
+  "satir": 3
+ },
+ {
+  "seviye": 2,
+  "baslik": "YOLCULUKTA YAPILACAK DUALAR",
+  "aciklama": "",
+  "sayfa": 499,
+  "oran": 0.7,
+  "satir": 7
+ },
+ {
+  "seviye": 2,
+  "baslik": "YOLCULUKTA TEKBİR VE TESBİH GETİRMEK",
+  "aciklama": "",
+  "sayfa": 501,
+  "oran": 0.4286,
+  "satir": 3
+ },
+ {
+  "seviye": 2,
+  "baslik": "YOLCULUKTA DUA ETMEK",
+  "aciklama": "",
+  "sayfa": 503,
+  "oran": 0.3333,
+  "satir": 4
+ },
+ {
+  "seviye": 2,
+  "baslik": "KORKU ANINDA DUA ETMEK",
+  "aciklama": "",
+  "sayfa": 503,
+  "oran": 0.75,
+  "satir": 9
+ },
+ {
+  "seviye": 2,
+  "baslik": "KONAKLAMA YERİNDE YAPILACAK DUA",
+  "aciklama": "",
+  "sayfa": 504,
+  "oran": 0.1818,
+  "satir": 2
+ },
+ {
+  "seviye": 2,
+  "baslik": "YOLCULUKTAN ÇABUK DÖNMEK",
+  "aciklama": "",
+  "sayfa": 505,
+  "oran": 0.1333,
+  "satir": 2
+ },
+ {
+  "seviye": 2,
+  "baslik": "YOLCULUKTAN EVE GÜNDÜZ DÖNMEK",
+  "aciklama": "",
+  "sayfa": 505,
+  "oran": 0.4667,
+  "satir": 7
+ },
+ {
+  "seviye": 2,
+  "baslik": "YOLCUNUN DÖNÜŞTE NE SÖYLEYECEĞİ",
+  "aciklama": "",
+  "sayfa": 506,
+  "oran": 0.1818,
+  "satir": 2
+ },
+ {
+  "seviye": 2,
+  "baslik": "YOLDAN DÖNÜŞTE MESCİDE UĞRAMAK",
+  "aciklama": "",
+  "sayfa": 506,
+  "oran": 0.7273,
+  "satir": 8
+ },
+ {
+  "seviye": 2,
+  "baslik": "KADININ TEK BAŞINA YOLCULUK YAPMAMASI",
+  "aciklama": "",
+  "sayfa": 507,
+  "oran": 0.1818,
+  "satir": 2
+ },
+ {
+  "seviye": 2,
+  "baslik": "KUR'AN OKUMANIN FAZİLETİ",
+  "aciklama": "",
+  "sayfa": 508,
+  "oran": 0.0714,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "KUR'ANI SIK SIK TEKRARLAYIP UNUTULMAYA MAHKUM ETMEMEK",
+  "aciklama": "",
+  "sayfa": 511,
+  "oran": 0.1538,
+  "satir": 2
+ },
+ {
+  "seviye": 2,
+  "baslik": "SESİ KUR'ANLA SÜSLEMEK VE SESİ GÜZEL OLANDAN KUR'AN OKUMASINI İSTEMEK",
+  "aciklama": "",
+  "sayfa": 511,
+  "oran": 0.7692,
+  "satir": 10
+ },
+ {
+  "seviye": 2,
+  "baslik": "BELİRLİ AYET VE SURELERİ OKUMAYA TEŞVİK",
+  "aciklama": "",
+  "sayfa": 513,
+  "oran": 0.3,
+  "satir": 3
+ },
+ {
+  "seviye": 2,
+  "baslik": "KUR'AN OKUYUP MÜZAKERE ETMEK İÇİN TOPLANMAK",
+  "aciklama": "",
+  "sayfa": 519,
+  "oran": 0.3,
+  "satir": 3
+ },
+ {
+  "seviye": 2,
+  "baslik": "ABDESTİ GÜZELCE ALMANIN FAZİLETİ",
+  "aciklama": "",
+  "sayfa": 519,
+  "oran": 0.8,
+  "satir": 8
+ },
+ {
+  "seviye": 2,
+  "baslik": "EZANIN FAZİLETİ",
+  "aciklama": "",
+  "sayfa": 523,
+  "oran": 0.7857,
+  "satir": 11
+ },
+ {
+  "seviye": 2,
+  "baslik": "NAMAZLARIN FAZİLETİ",
+  "aciklama": "",
+  "sayfa": 526,
+  "oran": 0.7273,
+  "satir": 8
+ },
+ {
+  "seviye": 2,
+  "baslik": "SABAH VE İKİNDİ NAMAZININ FAZİLETİ",
+  "aciklama": "",
+  "sayfa": 528,
+  "oran": 0.5,
+  "satir": 7
+ },
+ {
+  "seviye": 2,
+  "baslik": "MESCİDLERE GİRMENİN FAZİLETİ",
+  "aciklama": "",
+  "sayfa": 530,
+  "oran": 0.5625,
+  "satir": 9
+ },
+ {
+  "seviye": 2,
+  "baslik": "NAMAZ İÇİN BEKLEMENİN FAZİLETİ",
+  "aciklama": "",
+  "sayfa": 533,
+  "oran": 0.4167,
+  "satir": 5
+ },
+ {
+  "seviye": 2,
+  "baslik": "CEMAATLE NAMAZ KILANIN FAZİLETİ",
+  "aciklama": "",
+  "sayfa": 534,
+  "oran": 0.4545,
+  "satir": 5
+ },
+ {
+  "seviye": 2,
+  "baslik": "SABAH VE YATSI NAMAZLARINDA CEMAATE DEVAMIN ÖNEMİ",
+  "aciklama": "",
+  "sayfa": 537,
+  "oran": 0.4545,
+  "satir": 5
+ },
+ {
+  "seviye": 2,
+  "baslik": "FARZ NAMAZLARA DEVAM ETMENİN EMREDİLMESİ ERKETMENİN DE YASAKLANMASI",
+  "aciklama": "",
+  "sayfa": 538,
+  "oran": 0.5,
+  "satir": 7
+ },
+ {
+  "seviye": 2,
+  "baslik": "İLK SAFTA NAMAZ KILMANIN SEVABI VE SAFLARIN TERTİP VE DÜZENİ",
+  "aciklama": "",
+  "sayfa": 541,
+  "oran": 0.3,
+  "satir": 3
+ },
+ {
+  "seviye": 2,
+  "baslik": "FARZ NAMAZLARIN ÖNCESİ VE SONRASI KILINAN SÜNNETLER VE FAZİLETİ",
+  "aciklama": "",
+  "sayfa": 545,
+  "oran": 0.7692,
+  "satir": 10
+ },
+ {
+  "seviye": 2,
+  "baslik": "SABAH NAMAZININ SÜNNETİNİN ÖNEMİ",
+  "aciklama": "",
+  "sayfa": 546,
+  "oran": 0.6667,
+  "satir": 8
+ },
+ {
+  "seviye": 2,
+  "baslik": "SABAH NAMAZININ SÜNNETİNİN NASIL KILINACAĞI VE NE OKUNACAĞI",
+  "aciklama": "",
+  "sayfa": 548,
+  "oran": 0.1818,
+  "satir": 2
+ },
+ {
+  "seviye": 2,
+  "baslik": "SABAH NAMAZININ SÜNNETİNDEN SONRA BİRAZ SAĞ TARAF ÜZERİNE UZANMAK",
+  "aciklama": "",
+  "sayfa": 550,
+  "oran": 0.5714,
+  "satir": 8
+ },
+ {
+  "seviye": 2,
+  "baslik": "ÖĞLE NAMAZININ SÜNNETİ",
+  "aciklama": "",
+  "sayfa": 551,
+  "oran": 0.4,
+  "satir": 6
+ },
+ {
+  "seviye": 2,
+  "baslik": "İKİNDİ NAMAZININ SÜNNETİ",
+  "aciklama": "",
+  "sayfa": 553,
+  "oran": 0.0714,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "AKŞAM NAMAZININ ÖNCESİ VE SONRASI KILINAN SÜNNETLER",
+  "aciklama": "",
+  "sayfa": 553,
+  "oran": 0.8571,
+  "satir": 12
+ },
+ {
+  "seviye": 2,
+  "baslik": "YATSI NAMAZININ SÜNNETİ",
+  "aciklama": "",
+  "sayfa": 555,
+  "oran": 0.0909,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "CUMA NAMAZININ SÜNNETİ",
+  "aciklama": "",
+  "sayfa": 555,
+  "oran": 0.5455,
+  "satir": 6
+ },
+ {
+  "seviye": 2,
+  "baslik": "NAFİLE NAMAZLARI EVDE KILMAK",
+  "aciklama": "",
+  "sayfa": 556,
+  "oran": 0.5333,
+  "satir": 8
+ },
+ {
+  "seviye": 2,
+  "baslik": "VİTİR NAMAZI",
+  "aciklama": "",
+  "sayfa": 558,
+  "oran": 0.0556,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "KUŞLUK NAMAZININ FAZİLETİ",
+  "aciklama": "",
+  "sayfa": 559,
+  "oran": 0.6923,
+  "satir": 9
+ },
+ {
+  "seviye": 2,
+  "baslik": "KUŞLUK NAMAZININ VAKTİ",
+  "aciklama": "",
+  "sayfa": 560,
+  "oran": 0.7692,
+  "satir": 10
+ },
+ {
+  "seviye": 2,
+  "baslik": "TAHIYYETÜL MESCİD NAMAZI",
+  "aciklama": "",
+  "sayfa": 561,
+  "oran": 0.2143,
+  "satir": 3
+ },
+ {
+  "seviye": 2,
+  "baslik": "ABDESTEN SONRA KILINAN İKİ REKAT NAMAZ",
+  "aciklama": "",
+  "sayfa": 561,
+  "oran": 0.7857,
+  "satir": 11
+ },
+ {
+  "seviye": 2,
+  "baslik": "CUMA GÜNÜNÜN FAZİLETİ",
+  "aciklama": "",
+  "sayfa": 562,
+  "oran": 0.5,
+  "satir": 5
+ },
+ {
+  "seviye": 2,
+  "baslik": "ŞÜKÜR SECDESİ",
+  "aciklama": "",
+  "sayfa": 566,
+  "oran": 0.5556,
+  "satir": 5
+ },
+ {
+  "seviye": 2,
+  "baslik": "GECE NAMAZININ FAZİLETİ",
+  "aciklama": "",
+  "sayfa": 567,
+  "oran": 0.1667,
+  "satir": 2
+ },
+ {
+  "seviye": 2,
+  "baslik": "RAMAZANDA TERAVİH KILMAK",
+  "aciklama": "",
+  "sayfa": 575,
+  "oran": 0.2857,
+  "satir": 4
+ },
+ {
+  "seviye": 2,
+  "baslik": "KADİR GECESİNİ DEĞERLENDİRMEK",
+  "aciklama": "",
+  "sayfa": 575,
+  "oran": 0.8571,
+  "satir": 12
+ },
+ {
+  "seviye": 2,
+  "baslik": "MİSVAK KULLANMAK VE İNSANLIĞIN YARADILIŞINDAN BERİ YAPAGELDİKLERİ ÖZELLİKLER",
+  "aciklama": "",
+  "sayfa": 578,
+  "oran": 0.1667,
+  "satir": 2
+ },
+ {
+  "seviye": 2,
+  "baslik": "ZEKATLA İLGİLİ AYET VE HADİSLER",
+  "aciklama": "",
+  "sayfa": 580,
+  "oran": 0.6667,
+  "satir": 8
+ },
+ {
+  "seviye": 2,
+  "baslik": "RAMAZAN ORUCU",
+  "aciklama": "",
+  "sayfa": 587,
+  "oran": 0.7778,
+  "satir": 7
+ },
+ {
+  "seviye": 2,
+  "baslik": "RAMAZANDA CÖMERT DAVRANMAK, İBADETLERE FAZLA ZAMAN AYIRMAK",
+  "aciklama": "",
+  "sayfa": 591,
+  "oran": 0.7333,
+  "satir": 11
+ },
+ {
+  "seviye": 2,
+  "baslik": "ŞABAN AYI ORUCU",
+  "aciklama": "",
+  "sayfa": 592,
+  "oran": 0.3571,
+  "satir": 5
+ },
+ {
+  "seviye": 2,
+  "baslik": "HİLAL GÖRÜLDÜĞÜNDE YAPILACAK DUA",
+  "aciklama": "",
+  "sayfa": 593,
+  "oran": 0.4375,
+  "satir": 7
+ },
+ {
+  "seviye": 2,
+  "baslik": "SAHURUN GECİKTİRİLMESİNİN UYGUN OLACAĞI",
+  "aciklama": "",
+  "sayfa": 593,
+  "oran": 0.8125,
+  "satir": 13
+ },
+ {
+  "seviye": 2,
+  "baslik": "İFTAR ETMEKTE ACELE ETMEK",
+  "aciklama": "",
+  "sayfa": 595,
+  "oran": 0.0714,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "ORUÇLUNUN DİLİNİ KORUMASI",
+  "aciklama": "",
+  "sayfa": 597,
+  "oran": 0.4167,
+  "satir": 5
+ },
+ {
+  "seviye": 2,
+  "baslik": "ORUÇLA İLGİLİ BAZI MESELELER",
+  "aciklama": "",
+  "sayfa": 598,
+  "oran": 0.0714,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "MUHARREM, ŞABAN VE HARAM AYLARDA ORUÇ",
+  "aciklama": "",
+  "sayfa": 599,
+  "oran": 0.0909,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "ZİLHİCCE AYINDA TUTULAN ORUÇ",
+  "aciklama": "",
+  "sayfa": 600,
+  "oran": 0.7143,
+  "satir": 10
+ },
+ {
+  "seviye": 2,
+  "baslik": "AREFE GÜNÜ VE MUHARREM AYI 9-10. GÜN ORUÇLARI",
+  "aciklama": "",
+  "sayfa": 601,
+  "oran": 0.1875,
+  "satir": 3
+ },
+ {
+  "seviye": 2,
+  "baslik": "ŞEVVAL AYINDA ALTI GÜN ORUÇ",
+  "aciklama": "",
+  "sayfa": 602,
+  "oran": 0.1667,
+  "satir": 2
+ },
+ {
+  "seviye": 2,
+  "baslik": "PAZARTESİ VE PERŞEMBE ORUCU",
+  "aciklama": "",
+  "sayfa": 602,
+  "oran": 0.5833,
+  "satir": 7
+ },
+ {
+  "seviye": 2,
+  "baslik": "HER AYDAN ÜÇ GÜN ORUÇ TUTMAK",
+  "aciklama": "",
+  "sayfa": 603,
+  "oran": 0.5,
+  "satir": 7
+ },
+ {
+  "seviye": 2,
+  "baslik": "ORUÇLUYU İFTAR ETTİRMEK",
+  "aciklama": "",
+  "sayfa": 605,
+  "oran": 0.0833,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "İTİKAF",
+  "aciklama": "",
+  "sayfa": 606,
+  "oran": 0.1667,
+  "satir": 2
+ },
+ {
+  "seviye": 2,
+  "baslik": "HAC İLE ALAKALI BİLGİLER",
+  "aciklama": "",
+  "sayfa": 607,
+  "oran": 0.1,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "CİHADIN FAZİLETİ",
+  "aciklama": "",
+  "sayfa": 611,
+  "oran": 0.2,
+  "satir": 2
+ },
+ {
+  "seviye": 2,
+  "baslik": "SAVAŞ DIŞINDA DEĞİŞİK SEBEPLERLE ÖLÜP",
+  "aciklama": "",
+  "sayfa": 637,
+  "oran": 0.0833,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "KÖLEYİ HÜRRİYETİNE KAVUŞTURMAK",
+  "aciklama": "",
+  "sayfa": 639,
+  "oran": 0.0714,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "KÖLELERE İYİLİK ETMEK",
+  "aciklama": "",
+  "sayfa": 640,
+  "oran": 0.1,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "HEM ALLAH'IN HEM DE EFENDİSİNİN HAKKINI GÖZETEN KÖLENİN FAZİLETİ",
+  "aciklama": "",
+  "sayfa": 641,
+  "oran": 0.1538,
+  "satir": 2
+ },
+ {
+  "seviye": 2,
+  "baslik": "KARGAŞALAR VE FİTNE ZAMANINDA İBADET ETMENİN ÖNEMİ",
+  "aciklama": "",
+  "sayfa": 642,
+  "oran": 0.6923,
+  "satir": 9
+ },
+ {
+  "seviye": 2,
+  "baslik": "ALIŞVERİŞLE İLGİLİ DEĞERLİ DAVRANIŞLAR",
+  "aciklama": "",
+  "sayfa": 643,
+  "oran": 0.0909,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "İLMİN ÜSTÜNLÜĞÜ",
+  "aciklama": "",
+  "sayfa": 646,
+  "oran": 0.6923,
+  "satir": 9
+ },
+ {
+  "seviye": 2,
+  "baslik": "ALLAH'A HAMD VE ŞÜKRETMEK",
+  "aciklama": "",
+  "sayfa": 652,
+  "oran": 0.8333,
+  "satir": 10
+ },
+ {
+  "seviye": 2,
+  "baslik": "PEYGAMBERİMİZE SALAT VE SELAM GETİRMEK",
+  "aciklama": "",
+  "sayfa": 654,
+  "oran": 0.6667,
+  "satir": 10
+ },
+ {
+  "seviye": 2,
+  "baslik": "DUA VE ZİKİRLER",
+  "aciklama": "",
+  "sayfa": 659,
+  "oran": 0.0833,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "ALLAH'I HER ZAMAN VE HER YERDE DAİMA HATIRDAN ÇIKARMAMAK",
+  "aciklama": "",
+  "sayfa": 675,
+  "oran": 0.5455,
+  "satir": 6
+ },
+ {
+  "seviye": 2,
+  "baslik": "YATARKEN VE UYANIRKEN OKUNACAK DUA",
+  "aciklama": "",
+  "sayfa": 676,
+  "oran": 0.5556,
+  "satir": 5
+ },
+ {
+  "seviye": 2,
+  "baslik": "ALLAH ANILAN TOPLANTILARIN FAZİLETİ",
+  "aciklama": "",
+  "sayfa": 677,
+  "oran": 0.1667,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "SABAH AKŞAM ALLAH'I HATIRLAMAK",
+  "aciklama": "",
+  "sayfa": 682,
+  "oran": 0.8333,
+  "satir": 10
+ },
+ {
+  "seviye": 2,
+  "baslik": "YATAĞA GİRİNCE OKUNACAK DUALAR",
+  "aciklama": "",
+  "sayfa": 686,
+  "oran": 0.8,
+  "satir": 8
+ },
+ {
+  "seviye": 2,
+  "baslik": "RASÛLULLAH'IN HAYATINDAN DUALAR",
+  "aciklama": "",
+  "sayfa": 690,
+  "oran": 0.0667,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "YANINDA OLMAYAN BİR KİMSEYE DUA ETMEK",
+  "aciklama": "",
+  "sayfa": 700,
+  "oran": 0.5556,
+  "satir": 5
+ },
+ {
+  "seviye": 2,
+  "baslik": "DUA İLE İLGİLİ BAZI MESELELER",
+  "aciklama": "",
+  "sayfa": 701,
+  "oran": 0.8,
+  "satir": 12
+ },
+ {
+  "seviye": 2,
+  "baslik": "VELİLER VE KERAMETLERİ (ALLAH'IN GERÇEK MÜ'MİN KULLARINA",
+  "aciklama": "",
+  "sayfa": 704,
+  "oran": 0.2222,
+  "satir": 2
+ },
+ {
+  "seviye": 2,
+  "baslik": "SAKINILMASI GEREKEN ŞEYLER",
+  "aciklama": "",
+  "sayfa": 716,
+  "oran": 0.0769,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "GIYBET DİNLEME YASAĞI, GEREKTİĞİNDE O TOPLANTIYI TERKETME GEREĞİ",
+  "aciklama": "",
+  "sayfa": 722,
+  "oran": 0.7143,
+  "satir": 10
+ },
+ {
+  "seviye": 2,
+  "baslik": "GIYBETİN MÜBAH OLABİLECEĞİ HALLER",
+  "aciklama": "",
+  "sayfa": 724,
+  "oran": 0.6364,
+  "satir": 7
+ },
+ {
+  "seviye": 2,
+  "baslik": "İNSANLAR ARASINDA SÖZ TAŞIMANIN YASAKLIĞI",
+  "aciklama": "",
+  "sayfa": 726,
+  "oran": 0.3846,
+  "satir": 5
+ },
+ {
+  "seviye": 2,
+  "baslik": "İDARECİLERE SÖZ TAŞIMA YASAĞI",
+  "aciklama": "",
+  "sayfa": 727,
+  "oran": 0.5714,
+  "satir": 8
+ },
+ {
+  "seviye": 2,
+  "baslik": "ÇOK YÜZLÜLÜĞÜN (MÜNAFIKLIK) KÖTÜLENMESİ",
+  "aciklama": "",
+  "sayfa": 728,
+  "oran": 0.2,
+  "satir": 2
+ },
+ {
+  "seviye": 2,
+  "baslik": "YALAN SÖYLEMENİN HARAM OLUŞU",
+  "aciklama": "",
+  "sayfa": 729,
+  "oran": 0.3846,
+  "satir": 5
+ },
+ {
+  "seviye": 2,
+  "baslik": "YALAN SÖYLEMENİN CAİZ OLDUĞU YERLER",
+  "aciklama": "",
+  "sayfa": 736,
+  "oran": 0.7692,
+  "satir": 10
+ },
+ {
+  "seviye": 2,
+  "baslik": "SÖYLEYECEĞİ VE NAKLEDECEĞİ SÖZÜ SAĞLAM KAYNAĞA DAYANDIRMAYA TEŞVİK",
+  "aciklama": "",
+  "sayfa": 737,
+  "oran": 0.75,
+  "satir": 9
+ },
+ {
+  "seviye": 2,
+  "baslik": "YALAN ŞAHİTLİĞİN ŞİDDETLE YASAK OLUŞU",
+  "aciklama": "",
+  "sayfa": 738,
+  "oran": 0.8667,
+  "satir": 13
+ },
+ {
+  "seviye": 2,
+  "baslik": "BELİRLİ BİR İNSANA VEYA HAYVANA LANET ETMENİN YASAKLIĞI",
+  "aciklama": "",
+  "sayfa": 740,
+  "oran": 0.0714,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "İSİM BELİRTMEKSİZİN GÜNAHKARLARA LANET ETMENİN CAİZ OLUŞU",
+  "aciklama": "",
+  "sayfa": 742,
+  "oran": 0.5455,
+  "satir": 6
+ },
+ {
+  "seviye": 2,
+  "baslik": "MÜSLÜMANA  HAKSIZ YERDE SÖVMENİN HARAM OLUŞU",
+  "aciklama": "",
+  "sayfa": 743,
+  "oran": 0.0667,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "DİNİ BİR FAYDA OLMAKSIZIN ÖLÜLERE SÖVMENİN YASAK OLUŞU",
+  "aciklama": "",
+  "sayfa": 744,
+  "oran": 0.5556,
+  "satir": 5
+ },
+ {
+  "seviye": 2,
+  "baslik": "MÜSLÜMANLARA EZİYET ETMEMEK VE İNCİTMEMEK",
+  "aciklama": "",
+  "sayfa": 745,
+  "oran": 0.0833,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "MÜSLÜMANLARA BUĞUZ ETME İLİŞKİ KESME VE SIRT ÇEVİRMENİN YASAKLIĞI",
+  "aciklama": "",
+  "sayfa": 746,
+  "oran": 0.0769,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "BİR KİMSENİN SAHİP OLDUĞU DİNİ VE DÜNYEVİ NİMETLERİN ELİNDEN ÇIKMASINI İSTEMENİN HARAM KILINDIĞI",
+  "aciklama": "",
+  "sayfa": 747,
+  "oran": 0.3333,
+  "satir": 4
+ },
+ {
+  "seviye": 2,
+  "baslik": "GİZLİ ŞEYLERİ ARAŞTIRMANIN VE DUYULMASI İSTENMEYEN ŞEYLERİ DUYMAYA ÇALIŞMANIN YASAK OLUŞU",
+  "aciklama": "",
+  "sayfa": 748,
+  "oran": 0.0909,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "ZARURET OLMADIKÇA KÖTÜ ZANDA BULUNMAMAK",
+  "aciklama": "",
+  "sayfa": 750,
+  "oran": 0.0833,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "MÜSLÜMANI KÜÇÜK GÖRME VE AŞAĞILAMANIN YASAK OLUŞU",
+  "aciklama": "",
+  "sayfa": 750,
+  "oran": 0.6667,
+  "satir": 8
+ },
+ {
+  "seviye": 2,
+  "baslik": "MÜSLÜMANIN FELAKETİNE SEVİNMEMEK",
+  "aciklama": "",
+  "sayfa": 752,
+  "oran": 0.0625,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "NESB'E DİL UZATMANIN HARAM OLUŞU",
+  "aciklama": "",
+  "sayfa": 752,
+  "oran": 0.6875,
+  "satir": 11
+ },
+ {
+  "seviye": 2,
+  "baslik": "HİLE VE ALDATMANIN HARAM OLUŞU",
+  "aciklama": "",
+  "sayfa": 753,
+  "oran": 0.2308,
+  "satir": 3
+ },
+ {
+  "seviye": 2,
+  "baslik": "SÖZDEN CAYMA VE AHDİ BOZMANIN YASAKLIĞI",
+  "aciklama": "",
+  "sayfa": 755,
+  "oran": 0.0588,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "BAĞIŞ VE YAPILAN ŞEYLERİN VE İYİLİKLERİN BAŞA KAKMA YASAĞI",
+  "aciklama": "",
+  "sayfa": 756,
+  "oran": 0.875,
+  "satir": 14
+ },
+ {
+  "seviye": 2,
+  "baslik": "ÖVÜNMEK VE HAKSIZ YERE TAŞKINLIK YAPMANIN YASAKLIĞI",
+  "aciklama": "",
+  "sayfa": 758,
+  "oran": 0.0667,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "ÜÇ GÜNDEN FAZLA MÜSLÜMANLARLA İLGİYİ KESMENİNYASAK OLUŞU",
+  "aciklama": "",
+  "sayfa": 758,
+  "oran": 0.8667,
+  "satir": 13
+ },
+ {
+  "seviye": 2,
+  "baslik": "FISILDAŞMA YASAĞI",
+  "aciklama": "",
+  "sayfa": 761,
+  "oran": 0.25,
+  "satir": 3
+ },
+ {
+  "seviye": 2,
+  "baslik": "LÜZUMSUZ VE ŞİDDETLİ CEZALANDIRMANIN YASAK OLUŞU",
+  "aciklama": "",
+  "sayfa": 762,
+  "oran": 0.5455,
+  "satir": 6
+ },
+ {
+  "seviye": 2,
+  "baslik": "CANLILARI YAKMANIN HARAM OLUŞU",
+  "aciklama": "",
+  "sayfa": 766,
+  "oran": 0.2,
+  "satir": 2
+ },
+ {
+  "seviye": 2,
+  "baslik": "ZENGİNİN BORCUNU GECİKTİRMESİNİN HARAM OLDUĞU",
+  "aciklama": "",
+  "sayfa": 767,
+  "oran": 0.1333,
+  "satir": 2
+ },
+ {
+  "seviye": 2,
+  "baslik": "BAĞIŞTAN DÖNMENİN MEKRUH OLUŞU",
+  "aciklama": "",
+  "sayfa": 767,
+  "oran": 0.7333,
+  "satir": 11
+ },
+ {
+  "seviye": 2,
+  "baslik": "YETİM MALI YEMENİN HARAM OLUŞU",
+  "aciklama": "",
+  "sayfa": 768,
+  "oran": 0.75,
+  "satir": 9
+ },
+ {
+  "seviye": 2,
+  "baslik": "FAİZİN HARAM OLUŞU",
+  "aciklama": "",
+  "sayfa": 770,
+  "oran": 0.1111,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "GÖSTERİŞİN (RİYA) HARAMLIĞI",
+  "aciklama": "",
+  "sayfa": 771,
+  "oran": 0.1538,
+  "satir": 2
+ },
+ {
+  "seviye": 2,
+  "baslik": "RİYA OLMADIĞI HALDE RİYA SANILAN ŞEYLER",
+  "aciklama": "",
+  "sayfa": 774,
+  "oran": 0.4167,
+  "satir": 5
+ },
+ {
+  "seviye": 2,
+  "baslik": "YABANCI KADIN VE GENÇ ÇOCUKLARA ŞEHVETLE BAKMANIN YASAK OLUŞU",
+  "aciklama": "",
+  "sayfa": 774,
+  "oran": 0.8333,
+  "satir": 10
+ },
+ {
+  "seviye": 2,
+  "baslik": "YABANCI BİR KADINLA BAŞBAŞA KALMA YASAĞI",
+  "aciklama": "",
+  "sayfa": 777,
+  "oran": 0.5455,
+  "satir": 6
+ },
+ {
+  "seviye": 2,
+  "baslik": "KADINLARIN ERKEKLERE, ERKEKLERİN KADINLARA BENZEME YASAĞI",
+  "aciklama": "",
+  "sayfa": 779,
+  "oran": 0.0833,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "ŞEYTAN VE KAFİRLERİN DAVRANIŞLARINA BENZEMEME YASAĞI",
+  "aciklama": "",
+  "sayfa": 780,
+  "oran": 0.0909,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "ERKEK VE KADINLARIN SAÇ BOYAMASINDA SİYAH RENKTEN SAKINMALARI GEREKTİĞİ",
+  "aciklama": "",
+  "sayfa": 781,
+  "oran": 0.0667,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "BAŞIN BİR KISMININ TRAŞ EDİLİP BİR KISMININ UZUNCA BIRAKILMA YASAĞI",
+  "aciklama": "",
+  "sayfa": 781,
+  "oran": 0.4,
+  "satir": 6
+ },
+ {
+  "seviye": 2,
+  "baslik": "İĞRETİ SAÇ TAKMA VE DÖVME YAPTIRMA, DİŞLERİNİ SÜSLÜ GÖRÜNSÜN DİYE TÖRPÜLETMENİN YASAKLIĞI",
+  "aciklama": "",
+  "sayfa": 782,
+  "oran": 0.5455,
+  "satir": 6
+ },
+ {
+  "seviye": 2,
+  "baslik": "SAÇ VE SAKALDAKİ BEYAZLAŞAN KILLARI KOPARMA YASAĞI",
+  "aciklama": "",
+  "sayfa": 784,
+  "oran": 0.3333,
+  "satir": 4
+ },
+ {
+  "seviye": 2,
+  "baslik": "ÖZÜRSÜZ SAĞ ELİYLE TAHARETLENMENİN MEKRUH OLDUĞU",
+  "aciklama": "",
+  "sayfa": 785,
+  "oran": 0.0625,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "TEK AYAKKABI İLE GEZMENİN MEKRUH OLDUĞU",
+  "aciklama": "",
+  "sayfa": 785,
+  "oran": 0.375,
+  "satir": 6
+ },
+ {
+  "seviye": 2,
+  "baslik": "UYKUYA YATARKEN YANGINA SEBEP OLABİLECEK ŞEYLERİ AÇIK BIRAKMA YASAĞI",
+  "aciklama": "",
+  "sayfa": 786,
+  "oran": 0.1667,
+  "satir": 2
+ },
+ {
+  "seviye": 2,
+  "baslik": "İŞ VE SÖZDE FAYDASIZ YÜKLER YÜKLEMENİN YASAKLIĞI",
+  "aciklama": "",
+  "sayfa": 787,
+  "oran": 0.2727,
+  "satir": 3
+ },
+ {
+  "seviye": 2,
+  "baslik": "ÖLÜLER ARKASINDAN FERYAD EDEREK AĞLAMANIN YASAKLIĞI",
+  "aciklama": "",
+  "sayfa": 788,
+  "oran": 0.1538,
+  "satir": 2
+ },
+ {
+  "seviye": 2,
+  "baslik": "FALCILARA VE GAYBTAN HABER VERDİKLERİNİ İDDİA EDENLERE İNANMANIN HARAM OLUŞU",
+  "aciklama": "",
+  "sayfa": 791,
+  "oran": 0.8125,
+  "satir": 13
+ },
+ {
+  "seviye": 2,
+  "baslik": "UĞURSUZLUĞA İNANMANIN HARAM OLUŞU",
+  "aciklama": "",
+  "sayfa": 794,
+  "oran": 0.2857,
+  "satir": 4
+ },
+ {
+  "seviye": 2,
+  "baslik": "CANLI RESMİ YAPMA VE BULUNDURMA YASAĞI",
+  "aciklama": "",
+  "sayfa": 795,
+  "oran": 0.3571,
+  "satir": 5
+ },
+ {
+  "seviye": 2,
+  "baslik": "AV, ÇOBAN VE ZİRAAT KÖPEĞİ DIŞINDA KÖPEK EDİNMENİN YASAKLIĞI",
+  "aciklama": "",
+  "sayfa": 798,
+  "oran": 0.7273,
+  "satir": 8
+ },
+ {
+  "seviye": 2,
+  "baslik": "HAYVANLARA ÇAN TAKMANIN MEKRUH OLUŞU",
+  "aciklama": "",
+  "sayfa": 799,
+  "oran": 0.5333,
+  "satir": 8
+ },
+ {
+  "seviye": 2,
+  "baslik": "PİSLİK YİYEN HAYVANLARA BİNMENİN YASAK OLUŞU",
+  "aciklama": "",
+  "sayfa": 800,
+  "oran": 0.1176,
+  "satir": 2
+ },
+ {
+  "seviye": 2,
+  "baslik": "MESCİDLERE TÜKÜRMENİN YASAK OLUŞU",
+  "aciklama": "",
+  "sayfa": 800,
+  "oran": 0.4118,
+  "satir": 7
+ },
+ {
+  "seviye": 2,
+  "baslik": "MESCİDDE GÜRÜLTÜ YAPMANIN KERAHETİ",
+  "aciklama": "",
+  "sayfa": 801,
+  "oran": 0.2857,
+  "satir": 4
+ },
+ {
+  "seviye": 2,
+  "baslik": "KÖTÜ KOKULARLA MESCİDE GELME YASAĞI",
+  "aciklama": "",
+  "sayfa": 802,
+  "oran": 0.75,
+  "satir": 9
+ },
+ {
+  "seviye": 2,
+  "baslik": "HUTBE ESNASINDA DİZLERİ DİKİP OTURMANIN MEKRUH OLUŞU",
+  "aciklama": "",
+  "sayfa": 804,
+  "oran": 0.1667,
+  "satir": 2
+ },
+ {
+  "seviye": 2,
+  "baslik": "KURBAN KESMEK İSTEYENİN ZİLHİCCE'NİN İLK ON GÜNÜ GİRDİĞİNDE HACILARA BENZEMEK İÇİN KENDİ SAÇ VE TIRNAĞINI KESMEMESİ GEREKLİLİĞİ",
+  "aciklama": "",
+  "sayfa": 804,
+  "oran": 0.5833,
+  "satir": 7
+ },
+ {
+  "seviye": 2,
+  "baslik": "ÜZERİNE YEMİN EDİLMESİ YASAK OLAN ŞEYLER",
+  "aciklama": "",
+  "sayfa": 805,
+  "oran": 0.0667,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "BİLEREK YALAN YERE YEMİNİN BÜYÜK GÜNAH OLUŞU",
+  "aciklama": "",
+  "sayfa": 806,
+  "oran": 0.5,
+  "satir": 6
+ },
+ {
+  "seviye": 2,
+  "baslik": "YEMİNİ BOZAN KİMSENİN KEFFARETİNİ VERMESİ GEREKTİĞİ",
+  "aciklama": "",
+  "sayfa": 808,
+  "oran": 0.1333,
+  "satir": 2
+ },
+ {
+  "seviye": 2,
+  "baslik": "SÖZ ARASINDA YEMİN MAKSADI OLMAKSIZIN SÖYLENEN SÖZLERİN YEMİN SAYILMAYACAĞI",
+  "aciklama": "",
+  "sayfa": 809,
+  "oran": 0.3333,
+  "satir": 3
+ },
+ {
+  "seviye": 2,
+  "baslik": "DOĞRU BİLE OLSA ALIŞVERİŞTE YEMİN ETMENİN MEKRUH OLDUĞU",
+  "aciklama": "",
+  "sayfa": 810,
+  "oran": 0.0625,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "ALLAH RIZASI İÇİN CENNETTEN BAŞKA BİR ŞEY İSTEMEMEK ALLAH İÇİN BİRŞEY İSTEYENİN GERİ ÇEVRİLMEYECEĞİ",
+  "aciklama": "",
+  "sayfa": 810,
+  "oran": 0.5625,
+  "satir": 9
+ },
+ {
+  "seviye": 2,
+  "baslik": "DEVLET BAŞKANI VEYA İŞBAŞINDAKİLERE PADİŞAHLARIN PADİŞAHI DEMENİN HARAM OLUŞU",
+  "aciklama": "",
+  "sayfa": 811,
+  "oran": 0.1667,
+  "satir": 2
+ },
+ {
+  "seviye": 2,
+  "baslik": "GÜNAHKAR, BİD'ATÇI VE ZALİM KİMSELERE EFENDİ VE BEY İFADELERİYLE HİTAP ETMENİN YASAK OLUŞU",
+  "aciklama": "",
+  "sayfa": 811,
+  "oran": 0.6667,
+  "satir": 8
+ },
+ {
+  "seviye": 2,
+  "baslik": "HASTALIKLARA SÖVMENİN MEKRUH OLUŞU",
+  "aciklama": "",
+  "sayfa": 812,
+  "oran": 0.0909,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "RÜZGARA SÖVMENİN YASAK OLUŞU VE RÜZGAR ESERKEN NE SÖYLENECEĞİ",
+  "aciklama": "",
+  "sayfa": 812,
+  "oran": 0.5455,
+  "satir": 6
+ },
+ {
+  "seviye": 2,
+  "baslik": "HOROZA SÖVMENİN MEKRUH OLUŞU",
+  "aciklama": "",
+  "sayfa": 813,
+  "oran": 0.6667,
+  "satir": 8
+ },
+ {
+  "seviye": 2,
+  "baslik": "BİR KİMSENİN ŞU YILDIZ SAYESİNDE YAĞMURA KAVUŞTUK DEMESİNİN YASAK OLDUĞU",
+  "aciklama": "",
+  "sayfa": 814,
+  "oran": 0.1,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "MÜSLÜMANA KAFİR DEMENİN HARAM OLUŞU",
+  "aciklama": "",
+  "sayfa": 814,
+  "oran": 0.7,
+  "satir": 7
+ },
+ {
+  "seviye": 2,
+  "baslik": "KÖTÜ SÖZ VE FENA LAKIRDININ YASAK OLUŞU",
+  "aciklama": "",
+  "sayfa": 815,
+  "oran": 0.3846,
+  "satir": 5
+ },
+ {
+  "seviye": 2,
+  "baslik": "KONUŞMADA EDEBİYAT YAPMANIN MEKRUH OLUŞU",
+  "aciklama": "",
+  "sayfa": 816,
+  "oran": 0.0909,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "NEFSİM MURDAR OLDU DEMENİN MEKRUH OLUŞU",
+  "aciklama": "",
+  "sayfa": 817,
+  "oran": 0.0769,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "ÜZÜME KERM DEMENİN MEKRUH OLUŞU",
+  "aciklama": "",
+  "sayfa": 817,
+  "oran": 0.4615,
+  "satir": 6
+ },
+ {
+  "seviye": 2,
+  "baslik": "EVLENME GİBİ ŞERİATA UYGUN BİR MAKSAD OLMADIKÇA BİR KADININ GÜZELLİĞİNİN BAŞKA BİR ERKEĞE ANLATILMASININ YASAK OLUŞU",
+  "aciklama": "",
+  "sayfa": 818,
+  "oran": 0.0714,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "DUA EDERKEN KESİN İFADELER KULLANMAK GEREKTİĞİ, \"DİLERSEN BENİ BAĞIŞLA\" DİYEREK DUA ETMENİN MEKRUH OLDUĞU",
+  "aciklama": "",
+  "sayfa": 818,
+  "oran": 0.4286,
+  "satir": 6
+ },
+ {
+  "seviye": 2,
+  "baslik": "ALLAH VE FALANCA DİLERSE DEMENİN DE MEKRUH OLDUĞU",
+  "aciklama": "",
+  "sayfa": 819,
+  "oran": 0.1429,
+  "satir": 2
+ },
+ {
+  "seviye": 2,
+  "baslik": "YATSIDAN SONRA ALLAH'IN RIZASI OLMAYAN KONUŞMALARIN MEKRUH OLDUĞU",
+  "aciklama": "",
+  "sayfa": 819,
+  "oran": 0.5,
+  "satir": 7
+ },
+ {
+  "seviye": 2,
+  "baslik": "KADININ KOCASININ ÇAĞRISINA UYMA ZORUNLULUĞU",
+  "aciklama": "",
+  "sayfa": 820,
+  "oran": 0.5,
+  "satir": 5
+ },
+ {
+  "seviye": 2,
+  "baslik": "KADININ KOCASININ İZNİ OLMAKSIZIN NAFİLE ORUÇ TUTMASININ HARAM OLUŞU",
+  "aciklama": "",
+  "sayfa": 821,
+  "oran": 0.0714,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "İMAMA UYANIN İMAMDAN ÖNCE BAŞINI SECDE VE RÜKUDAN KALDIRMASININ HARAM OLUŞU",
+  "aciklama": "",
+  "sayfa": 821,
+  "oran": 0.4286,
+  "satir": 6
+ },
+ {
+  "seviye": 2,
+  "baslik": "NAMAZDA ELİ BÖĞÜRE KOYMANIN MEKRUH OLUŞU",
+  "aciklama": "",
+  "sayfa": 821,
+  "oran": 0.7857,
+  "satir": 11
+ },
+ {
+  "seviye": 2,
+  "baslik": "NAMAZ KILMANIN MEKRUH OLDUĞU DURUMLAR",
+  "aciklama": "",
+  "sayfa": 822,
+  "oran": 0.1818,
+  "satir": 2
+ },
+ {
+  "seviye": 2,
+  "baslik": "NAMAZDA GÖZLERİ GÖĞE DİKMENİN YASAK OLUŞU",
+  "aciklama": "",
+  "sayfa": 822,
+  "oran": 0.6364,
+  "satir": 7
+ },
+ {
+  "seviye": 2,
+  "baslik": "NAMAZDA BAŞI SAĞA SOLA ÇEVİRMENİN MEKRUH OLUŞU",
+  "aciklama": "",
+  "sayfa": 823,
+  "oran": 0.0769,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "KABİRLERE DOĞRU NAMAZ KILMANIN YASAK OLUŞU",
+  "aciklama": "",
+  "sayfa": 823,
+  "oran": 0.6923,
+  "satir": 9
+ },
+ {
+  "seviye": 2,
+  "baslik": "NAMAZ KILAN KİMSENİN ÖNÜNDEN GEÇMENİN HARAM OLUŞU",
+  "aciklama": "",
+  "sayfa": 824,
+  "oran": 0.1,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "MÜEZZİN KAMETE BAŞLADIĞINDA NAFİLE KILMANIN MEKRUH OLUŞU",
+  "aciklama": "",
+  "sayfa": 824,
+  "oran": 0.6,
+  "satir": 6
+ },
+ {
+  "seviye": 2,
+  "baslik": "SADECE CUMA GÜNÜNÜ ORUCA VE CUMA GECESİNİ NAMAZA AYIRMANIN MEKRUH OLUŞU",
+  "aciklama": "",
+  "sayfa": 825,
+  "oran": 0.0714,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "İFTAR ETMEDEN ORUCU BİRBİRİNE EKLEMENİN HARAM OLUŞU",
+  "aciklama": "",
+  "sayfa": 826,
+  "oran": 0.0769,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "KABİR ÜZERİNE OTURMANIN HARAM OLUŞU",
+  "aciklama": "",
+  "sayfa": 826,
+  "oran": 0.6923,
+  "satir": 9
+ },
+ {
+  "seviye": 2,
+  "baslik": "KABRİ KİREÇLEMEK VE ÜZERİNE BİNA YAPMANIN HARAM OLUŞU",
+  "aciklama": "",
+  "sayfa": 827,
+  "oran": 0.0833,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "KÖLENİN EFENDİSİNDEN KAÇMASININ AĞIR GÜNAH OLUŞU",
+  "aciklama": "",
+  "sayfa": 827,
+  "oran": 0.5,
+  "satir": 6
+ },
+ {
+  "seviye": 2,
+  "baslik": "ŞER'İ CEZALARDA İLTİMAS VE ŞEFAATTE BULUNMANIN HARAM OLUŞU",
+  "aciklama": "",
+  "sayfa": 828,
+  "oran": 0.25,
+  "satir": 2
+ },
+ {
+  "seviye": 2,
+  "baslik": "DURGUN SUYA ABDEST BOZMANIN YASAK OLUŞU",
+  "aciklama": "",
+  "sayfa": 830,
+  "oran": 0.0909,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "BABANIN MAL BAĞIŞLAMADA ÇOCUKLARI ARASINDA AYIRIM YAPMASININ MEKRUH OLDUĞU",
+  "aciklama": "",
+  "sayfa": 830,
+  "oran": 0.5455,
+  "satir": 6
+ },
+ {
+  "seviye": 2,
+  "baslik": "YAS TUTMANIN YASAK OLUŞU",
+  "aciklama": "",
+  "sayfa": 831,
+  "oran": 0.7692,
+  "satir": 10
+ },
+ {
+  "seviye": 2,
+  "baslik": "ŞEHİRLİNİN KÖYLÜYE SİMSARLIK ETMESİNİN VE SATIŞ ÜZERİNE SATIŞ YAPMANIN YASAKLIĞI",
+  "aciklama": "",
+  "sayfa": 832,
+  "oran": 0.625,
+  "satir": 5
+ },
+ {
+  "seviye": 2,
+  "baslik": "İSLAMIN EMRİ DIŞINDA MAL HARCAMANIN YASAK OLUŞU",
+  "aciklama": "",
+  "sayfa": 834,
+  "oran": 0.7692,
+  "satir": 10
+ },
+ {
+  "seviye": 2,
+  "baslik": "SİLAHLA ŞAKALAŞMANIN YASAK OLUŞU",
+  "aciklama": "",
+  "sayfa": 836,
+  "oran": 0.1667,
+  "satir": 2
+ },
+ {
+  "seviye": 2,
+  "baslik": "EZAN OKUNDUKTAN SONRA MESCİDDEN ÇIKMANIN MEKRUH OLUŞU",
+  "aciklama": "",
+  "sayfa": 837,
+  "oran": 0.0588,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "GÜZEL KOKUYU REDDETMENİN MEKRUH OLDUĞU",
+  "aciklama": "",
+  "sayfa": 837,
+  "oran": 0.3529,
+  "satir": 6
+ },
+ {
+  "seviye": 2,
+  "baslik": "BÖBÜRLENMEYECEK KİŞİYİ YÜZÜNE KARŞI ÖVMENİN CAİZ OLDUĞU",
+  "aciklama": "",
+  "sayfa": 837,
+  "oran": 0.8235,
+  "satir": 14
+ },
+ {
+  "seviye": 2,
+  "baslik": "BULAŞICI HASTALIK OLAN YERDEN KAÇMANIN VE BÖYLE BİR YERE GİRMENİN MEKRUH OLUŞU",
+  "aciklama": "",
+  "sayfa": 839,
+  "oran": 0.125,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "SİHİR VE BÜYÜNÜN ÇOK BÜYÜK GÜNAHLARDAN OLDUĞU",
+  "aciklama": "",
+  "sayfa": 841,
+  "oran": 0.8182,
+  "satir": 9
+ },
+ {
+  "seviye": 2,
+  "baslik": "DÜŞMAN ELİNE GEÇİP HAKARET EDİLME KORKUSUNDAN DOLAYI KUR'AN-I KERİM İLE KAFİR MEMLEKETİNE YOLCULUĞUN YASAK OLUŞU",
+  "aciklama": "",
+  "sayfa": 843,
+  "oran": 0.0667,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "ALTIN VE GÜMÜŞ KAP KULLANMANIN YASAK OLUŞU",
+  "aciklama": "",
+  "sayfa": 843,
+  "oran": 0.4,
+  "satir": 6
+ },
+ {
+  "seviye": 2,
+  "baslik": "KADINLARA HAS OLAN SARI RENGE BOYANMIŞ ELBİSEYİ ERKEĞİN GİYMESİNİN HARAM OLUŞU",
+  "aciklama": "",
+  "sayfa": 844,
+  "oran": 0.5,
+  "satir": 7
+ },
+ {
+  "seviye": 2,
+  "baslik": "GÜN BOYU KONUŞMADAN SUSUP DURMANIN YASAK OLUŞU",
+  "aciklama": "",
+  "sayfa": 845,
+  "oran": 0.375,
+  "satir": 6
+ },
+ {
+  "seviye": 2,
+  "baslik": "KİŞİNİN KENDİ BABASINDAN BAŞKASINA BABALIK İDDİASINDA BULUNMASININ HARAM OLUŞU",
+  "aciklama": "",
+  "sayfa": 846,
+  "oran": 0.1818,
+  "satir": 2
+ },
+ {
+  "seviye": 2,
+  "baslik": "ALLAH VE RASÛLÜNÜN YASAKLADIKLARINDAN KAÇINMAK",
+  "aciklama": "",
+  "sayfa": 848,
+  "oran": 0.0769,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "YASAKLARI İŞLEYEN KİMSENİN NE YAPMASI GEREKTİĞİ",
+  "aciklama": "",
+  "sayfa": 849,
+  "oran": 0.0833,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "BELLİ BİR KONUYU KAPSAMAYIP HOŞ CAZİP VE İLGİNÇ HADİSLER",
+  "aciklama": "",
+  "sayfa": 850,
+  "oran": 0.4,
+  "satir": 2
+ },
+ {
+  "seviye": 2,
+  "baslik": "İSTİĞFAR VE TEVBE",
+  "aciklama": "",
+  "sayfa": 893,
+  "oran": 0.5714,
+  "satir": 8
+ },
+ {
+  "seviye": 2,
+  "baslik": "ALLAH'IN MÜ'MİNLERE CENNETTE HAZIRLADIĞI NİMETLER",
+  "aciklama": "",
+  "sayfa": 899,
+  "oran": 0.0769,
+  "satir": 1
+ }
+]

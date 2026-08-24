@@ -117,7 +117,7 @@ export default function Hakkinda() {
                 </a>
               </div>
               <div style={{ fontSize: "12.5px", color: theme.textSecondary, marginTop: "2px" }}>
-                Risale-i Nûr, Kur'ân-ı Kerîm, Evrad, Ezkâr ve Riyâzü's-Sâlihîn kaynakları
+                Risale-i Nûr, Kur'ân-ı Kerîm, Muhtelif Eserler, Evrad, Ezkâr ve Riyâzü's-Sâlihîn kaynakları
               </div>
             </div>
 

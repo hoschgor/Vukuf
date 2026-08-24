@@ -8,7 +8,6 @@ import lugatVerisi from "../data/lugat.json"
 import risaleLugat from "../data/risale-lugat.json"
 import kavramlarVerisi from "../data/kavramlar.json"
 import KitapAyraci from "../components/KitapAyraci"
-import MushafAyetRozeti from "../components/MushafAyetRozeti"
 import {
   ArrowLeft, BookOpen, Eye, EyeOff, Play, Pause,
   Plus, Minus, AlignJustify, ChevronsUp, ChevronsDown,
@@ -331,15 +330,19 @@ function MetinParcasi({
         const merkez = satir.startsWith("⟦C⟧")
         const gosterilecek = merkez ? satir.replace(/^⟦C⟧/, "") : satir
 
-        // Lâhika bölüm ayracı "- N -" → ortalı rozet (mektup no'su), iki yanı ince çizgi
+        // Lâhika bölüm ayracı "- N -" → ortalı süslü ayraç (TÜRKÇE/Latin rakam), iki yanı ince çizgi
         const mektupM = gosterilecek.trim().match(/^-\s*(\d+)\s*-$/)
         if (mektupM) {
           return (
             <div key={si} data-satir={`${sayfaNo}-${si}`} id={`baslik-${sayfaNo}-${si}`}
-              style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "16px", margin: "32px 0 20px" }}>
-              <span style={{ flex: 1, maxWidth: "90px", height: "1px", background: theme.border }} />
-              <MushafAyetRozeti sayi={Number(mektupM[1])} size={fontSize * 1.9} ac={theme.accent} />
-              <span style={{ flex: 1, maxWidth: "90px", height: "1px", background: theme.border }} />
+              style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "12px", margin: "32px 0 20px", color: theme.accent }}>
+              <span style={{ flex: 1, maxWidth: "80px", height: "1px", background: theme.border }} />
+              <span style={{ fontSize: `${fontSize * 0.85}px`, opacity: 0.85 }}>❁</span>
+              <span style={{ fontFamily: baslikFont || "PlayfairDisplay, serif", fontSize: `${fontSize + 20}px`, fontWeight: 700, lineHeight: 1, minWidth: "1.4em", textAlign: "center" }}>
+                {mektupM[1]}
+              </span>
+              <span style={{ fontSize: `${fontSize * 0.85}px`, opacity: 0.85 }}>❁</span>
+              <span style={{ flex: 1, maxWidth: "80px", height: "1px", background: theme.border }} />
             </div>
           )
         }

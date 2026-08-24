@@ -287,7 +287,7 @@ export default function MushafSayfa({
                       <MushafAyetRozeti
                         sayi={el.ayet.no}
                         size={fontSize * 1.4}
-                        ac={theme.accent}
+                        ac={theme.ayetNoRengi || theme.accent}
                         aktif={odakAyet?.sureNo === el.sure.id && odakAyet?.ayetNo === el.ayet.no}
                       />
                     </span>

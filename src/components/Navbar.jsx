@@ -20,6 +20,7 @@ const paletRenkleri = [
   { key: "textSecondary", label: "İkincil Yazı" },
   { key: "accent", label: "Vurgu" },
   { key: "lugatHighlight", label: "Lügat Rengi" },
+  { key: "ayetNoRengi", label: "Âyet No Rengi" },
   { key: "border", label: "Kenarlık" },
 ]
 

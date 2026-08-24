@@ -1,5 +1,17 @@
 export const kategoriler = [
   {
+    id: "orijinal-eserler",
+    baslik: "Kur'an-ı Kerim",
+    kuran: {
+      id: "kuran",
+      baslik: "Kur'ân-ı Kerîm",
+      aciklama: "Yüce Allah ﷻ'ın, efendimiz Hz. Muhammed Mustafa ﷺ'e vahyettiği, tüm zamanların en büyük mucizesi",
+      dosya: "kuran.json",
+      gorsel: "/kitap-kapak/kuran-icon.png",
+    },
+    alimler: [],
+  },
+  {
     id: "tasavvuf",
     baslik: "Tasavvuf",
     alimler: [
@@ -178,18 +190,6 @@ export const kategoriler = [
       { id: "ibn-haldun", isim: "İbn Haldûn", kitaplar: [] },
       { id: "ibn-arabi-diger", isim: "İbn Arabî", kitaplar: [] },
     ],
-  },
-  {
-    id: "orijinal-eserler",
-    baslik: "Kur'an-ı Kerim",
-    kuran: {
-      id: "kuran",
-      baslik: "Kur'ân-ı Kerîm",
-      aciklama: "Yüce Allah ﷻ'ın, efendimiz Hz. Muhammed Mustafa ﷺ'e vahyettiği, tüm zamanların en büyük mucizesi",
-      dosya: "kuran.json",
-      gorsel: "/kitap-kapak/kuran-icon.png",
-    },
-    alimler: [],
   }
 ]
 

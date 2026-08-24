@@ -335,7 +335,7 @@ function MetinParcasi({
             <div key={si} id={`baslik-${sayfaNo}-${si}`} data-satir={`${sayfaNo}-${si}`} style={{
               textAlign: "center", margin: (bh.seviye <= 1) ? "34px 0 18px" : "24px 0 12px",
               fontFamily: baslikFont || "inherit",
-              fontSize: `${fontSize + ((bh.seviye <= 1) ? 84 : 84)}px`,
+              fontSize: `${fontSize + ((bh.seviye <= 1) ? 84 : 64)}px`,
               fontWeight: 700, color: theme.accent, lineHeight: 1.35,
             }}>
               {gosterilecek.replace(/⟦H\d+⟧/g, "")}
@@ -700,7 +700,7 @@ const [ogeSade, setOgeSade] = useState(() => {
   if (k) { try { return JSON.parse(k) } catch { /* yoksay */ } }
   const d = {}; BAR_OGELERI.forEach(o => { if (o.sadeVarsayilan) d[o.key] = true }); return d
 })
-const [sadeMode, setSadeMode]               = useState(() => localStorage.getItem("vukuf-sade-mode") !== "false")
+const [sadeMode, setSadeMode]               = useState(() => localStorage.getItem("vukuf-sade-mode") === "true")
 const [otomatikGizleme, setOtomatikGizleme] = useState(() => localStorage.getItem("vukuf-otomatik-gizleme") !== "false")
 const [gizlemeSuresi, setGizlemeSuresi] = useState(() => parseInt(localStorage.getItem("vukuf-gizleme-suresi") || "5"))
 const [sureGoster, setSureGoster]           = useState(true)
@@ -1449,7 +1449,7 @@ if (yukleniyor) return <div style={{ padding: "40px", color: theme.text }}>Yükl
 // ════════════════════════════════════════════════════
 
 const barButonStil = (aktif = false) => ({
-  color: aktif ? theme.accent : theme.textSecondary,
+  color: theme.accent,
   display: "flex", alignItems: "center", gap: "4px",
   fontSize: `${Math.round(13 * barUiOlcegi)}px`,
   padding: `${Math.round(6 * barUiOlcegi)}px ${Math.round(8 * barUiOlcegi)}px`,
@@ -2450,12 +2450,12 @@ const Bar = (
       {gorunurMu("kisim") && mevcutKisim && (
         <span onClick={(e) => { const yol = mevcutKisimYolu.map(b => b.baslik).join(" / "); dipnotTikla(mevcutKisim.aciklama || yol, e, yol) }}
           title={mevcutKisimYolu.map(b => b.baslik).join(" / ")}
-          style={{ fontSize: `${Math.round(11 * barUiOlcegi)}px`, color: theme.textSecondary, padding: "4px 6px", maxWidth: isMobile ? "150px" : "260px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", cursor: "pointer" }}>
+          style={{ fontSize: `${Math.round(11 * barUiOlcegi)}px`, color: theme.accent, padding: "4px 6px", maxWidth: isMobile ? "150px" : "260px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", cursor: "pointer" }}>
           {mevcutKisimYolu.map(b => b.baslik).join(" / ")}
         </span>
       )}
       {gorunurMu("sure") && (
-        <span style={{ fontSize: `${Math.round(11 * barUiOlcegi)}px`, color: theme.textSecondary, padding: "4px 6px", display: "flex", alignItems: "center", gap: "3px" }}>
+        <span style={{ fontSize: `${Math.round(11 * barUiOlcegi)}px`, color: theme.accent, padding: "4px 6px", display: "flex", alignItems: "center", gap: "3px" }}>
           <Clock size={bIkon(11)} /> {dakikaFormatla(bugunSure)}
         </span>
       )}
@@ -2613,7 +2613,7 @@ return (
 
         {/* Kitap başlığı */}
         <div style={{ textAlign: "center", marginBottom: "48px", paddingTop: "24px" }}>
-          <h1 style={{ fontSize: "98px", color: theme.accent, marginBottom: "8px", lineHeight: 1.1, fontFamily: /Nurs[iî]/.test(kitap.yazar || "") ? "LivaNur, serif" : "PlayfairDisplay, serif" }}>
+          <h1 style={{ fontSize: isMobile ? "98px" : "158px", color: theme.accent, marginBottom: "8px", lineHeight: 1.1, fontFamily: /Nurs[iî]/.test(kitap.yazar || "") ? "LivaNur, serif" : "PlayfairDisplay, serif" }}>
             {kitap.baslik}
           </h1>
           <p style={{ color: theme.textSecondary, fontSize: "44px" }}>{kitap.yazar}</p>
@@ -2684,7 +2684,7 @@ return (
                     onDipnotTikla={dipnotTikla}
                     basliklar={sayfa.basliklar}
                     baslikFont={baslikFont}
-                    ortala={sayfa.sayfa === 1}
+                    ortala={sayfa.sayfa === 1 && (sayfa.metin || "").split("\n").filter(l => l.trim() && !l.startsWith("§")).length <= 6}
                     lugatRenk={lugatRenk}
                     arapRenk={arapRenk}
                     hasiyeler={sayfa.hasiyeler}

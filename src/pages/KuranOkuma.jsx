@@ -43,6 +43,7 @@ const PALET_ALANLARI = [
   { key: "textSecondary",label: "İkincil Yazı" },
   { key: "accent",       label: "Vurgu Rengi" },
   { key: "lugatHighlight",label: "Allah lafızları" },
+  { key: "ayetNoRengi",  label: "Âyet Numarası" },
   { key: "border",       label: "Kenarlık Rengi" },
 ]
 
@@ -102,6 +103,29 @@ function AyarToggle({ etiket, aktif, onToggle, theme, isMobile, barUiOlcegi }) {
       </span>
     </button>
   )
+}
+
+// Ayete odaklanırken kaydırma çıpası:
+//  - data-ayet ayet-sonu ROZETİNDE (ayet numarası). Ayetin BAŞI = önceki ayet
+//    rozetinin bir sonraki kardeşi (ilk kelime). Onu üste hizalarsak ayet başı
+//    en üstte olur; ayet yeni satırdaysa o satır, aynı satırdaysa önceki ayetin
+//    bitişiyle birlikte üstte gelir.
+//  - Ayet 1 / sayfanın ilk ayeti → sûre başlığı ya da sayfa bloğu başı.
+function odakKaydirElemani(el, sureId, ayetNo, hedefEl) {
+  const sayfaEl = hedefEl.closest("[data-index]")
+  if (!ayetNo || ayetNo <= 1) {
+    const baslik = el.querySelector(`[data-sure-baslik="${sureId}"]`)
+    if (baslik && (!sayfaEl || baslik.closest("[data-index]") === sayfaEl)) return baslik
+    return sayfaEl || hedefEl
+  }
+  const onceki = el.querySelector(`[data-sure="${sureId}"][data-ayet="${ayetNo - 1}"]`)
+  const ilk = onceki && onceki.nextElementSibling
+  let anchor = (ilk && (!sayfaEl || ilk.closest("[data-index]") === sayfaEl)) ? ilk : hedefEl
+  if (sayfaEl) {
+    const fark = anchor.getBoundingClientRect().top - sayfaEl.getBoundingClientRect().top
+    if (fark < 60) anchor = sayfaEl   // ayet sayfanın en başındaysa sayfa başı
+  }
+  return anchor
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -221,7 +245,7 @@ const maxWidth = useMemo(() =>
     return k ? JSON.parse(k) : {
       background: "#f5f0e8", surface: "#ffffff", text: "#2c2418",
       textSecondary: "#6b5b4e", accent: "#8b5e3c",
-      border: "#d4c5b0", lugatHighlight: "#c41e3a",
+      border: "#d4c5b0", lugatHighlight: "#c41e3a", ayetNoRengi: "#8b5e3c",
     }
   })
   const [aktifRenk, setAktifRenk] = useState(null)
@@ -370,15 +394,20 @@ const maxWidth = useMemo(() =>
 
   const [barYuksekligi, setBarYuksekligi] = useState(48)
   const barRef = useRef(null)
+  const [playerYuk, setPlayerYuk] = useState(0)  // PlayerBar'ın ÖLÇÜLEN yüksekliği
 
 useLayoutEffect(() => {
   if (!barRef.current) return
-  const observer = new ResizeObserver(entries => {
-    setBarYuksekligi(Math.ceil(entries[0].contentRect.height))
+  const observer = new ResizeObserver(() => {
+    // offsetHeight = padding + border dahil (contentRect padding'i atlıyordu → player bara biniyordu)
+    if (barRef.current) setBarYuksekligi(Math.ceil(barRef.current.offsetHeight))
   })
   observer.observe(barRef.current)
   return () => observer.disconnect()
 })
+
+// Player kapanınca ölçülen yüksekliği sıfırla (tahmine dön)
+useEffect(() => { if (player.durum === "kapali") setPlayerYuk(0) }, [player.durum])
 
 
 const [barUiOlcegi, setBarUiOlcegi] = useState(() =>
@@ -693,9 +722,9 @@ const hizbSayfalari = (cuzNo) => {
     sayfa: bas + Math.round((uzunluk * k) / 4),
   }))
 }
-  const playerBarYuksekligi = isMobile
+  const playerBarYuksekligi = (playerYuk || (isMobile
   ? 41 + Math.max(0, Math.round((1 - barUiOlcegi) * 1))
-  : 40 + Math.max(0, Math.round((1 - barUiOlcegi) * 8))
+  : 40 + Math.max(0, Math.round((1 - barUiOlcegi) * 8))))
   // ── SAYFA YÜKSEKLİKLERİ ──
   const sayfaYukseklikleri = useMemo(() => {
     if (!sayfaListesi.length) return []
@@ -953,17 +982,16 @@ function sureGit(sureId, ayetNo) {
     return
   }
 
-  const offset = (barKonum === "ust" ? barYuksekligi : 0)
-    + (player.durum !== "kapali" ? playerBarYuksekligi : 0)
-    + (ayetNo ? 20 : 8)
+  // ÜST ofset = yalnızca ÜSTü kaplayan öğeler. barKonum="ust": bar (görünürse) +
+  // oynatıcı (dinlemedeyse). barKonum="alt": üstte hiçbir şey yok → 0. Bar gizliyken
+  // "ust"ta oynatıcı üst kenara geçtiği için o hesaba katılır.
+  const ustKaplama = barKonum === "ust"
+    ? ((barGorunur ? barYuksekligi : 0) + (player.durum !== "kapali" ? playerBarYuksekligi : 0))
+    : 0
+  const offset = ustKaplama + (ayetNo ? 6 : 8)
 
-  // Kaydırma hedefi: mümkünse bir ÖNCEKİ ayeti üste hizala (seçili ayet bağlamla,
-  // en üst satıra yapışık değil gelsin). Efekt yine seçili ayette kalır.
-  let kaydirEl = hedefEl
-  if (ayetNo && ayetNo > 1) {
-    const oncekiEl = el.querySelector(`[data-sure="${sureId}"][data-ayet="${ayetNo - 1}"]`)
-    if (oncekiEl) kaydirEl = oncekiEl
-  }
+  // Kaydırma hedefi: ayetin BAŞINI üste hizala (helper ile)
+  const kaydirEl = odakKaydirElemani(el, sureId, ayetNo, hedefEl)
 
   const hedefTop = () =>
     kaydirEl.getBoundingClientRect().top
@@ -1103,7 +1131,7 @@ function sureGit(sureId, ayetNo) {
   borderRadius: "8px",
   fontSize: `${Math.round(12 * barUiOlcegi)}px`,
   background: aktif ? `${theme.accent}20` : "transparent",
-  color: aktif ? theme.accent : theme.textSecondary,
+  color: theme.accent,
   border: "none", cursor: "pointer", transition: "all 0.15s",
   flexShrink: 0,
 })
@@ -1624,40 +1652,15 @@ const menuIcerikPadding = {
       background: theme.surface,
       borderTop:    barKonum === "alt" ? `1px solid ${theme.border}` : "none",
       borderBottom: barKonum === "ust" ? `1px solid ${theme.border}` : "none",
-      padding: isMobile 
-        ? `1px ${Math.round(8 * barUiOlcegi)}px`
-        : `0px ${Math.round(8 * barUiOlcegi)}px`,
-      minHeight: isMobile ? "44px" : "11px",
-      boxSizing: "content-box",
-      display: "flex", 
-      alignItems: "center",
-      alignContent: "center",
-      gap: cokSatir 
-        ? `${Math.round((isMobile ? 6 : 8) * barUiOlcegi)}px`
-        : `${Math.round((isMobile ? 0 : 5) * barUiOlcegi)}px`,
-      zIndex: 90, 
-      flexWrap: wrapAktif ? "wrap" : "nowrap",
-      transition: "opacity 0.3s ease, transform 0.3s ease",
+      padding: isMobile ? "8px 12px" : "3px 10px",
+      display: "flex", alignItems: "center", gap: `${Math.round(4 * barUiOlcegi)}px`,
+      justifyContent: "center",
+      zIndex: 90, flexWrap: "wrap", rowGap: "4px",
+      transition: "opacity 0.3s ease",
       opacity: barGorunur ? 1 : 0,
       pointerEvents: barGorunur ? "auto" : "none",
-      transform: barGorunur ? "translateY(0)" : 
-                 barKonum === "alt" ? "translateY(100%)" : "translateY(-100%)",
-      justifyContent: (wrapAktif || gorunurOgeSayisi < 4) ? "center" : "space-between",
     }}
   >
-    {/* Sol grup */}
-    <div style={{
-      display: "flex",
-      alignItems: "center",
-      flexWrap: wrapAktif ? "wrap" : "nowrap",
-      gap: `${Math.round((isMobile ? 12 : 12) * barUiOlcegi)}px`,
-      flex: (gorunurOgeSayisi < 4) ? "0 0 auto" : 1,
-      justifyContent: (wrapAktif || gorunurOgeSayisi < 4) ? "center" : "flex-start",
-      paddingLeft: (!wrapAktif && isMobile && gorunurOgeSayisi >= 4) ? `${Math.round(26 * barUiOlcegi)}px` : 0,
-      maxWidth: wrapAktif ? "none" : "none",
-      overflow: wrapAktif ? "visible" : "hidden",
-      minWidth: 0,
-    }}>
       <button onClick={() => navigate(-1)} style={{ ...barButonStil(), flexShrink: 0 }}>
         <ArrowLeft size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} /> {!isMobile && ""}
       </button>
@@ -1758,37 +1761,31 @@ const menuIcerikPadding = {
     )}
   </>
 )}
-</div>
 
-    {/* Sağ grup */}
+    {/* Sağ grup — bilgi + ayarlar (okuma ekranı gibi sarar/ortalar) */}
     <div style={{
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      gap: `${Math.round((isMobile ? 12 : 24) * barUiOlcegi)}px`,
-      flexShrink: 0,
-      flexWrap: wrapAktif ? "wrap" : "nowrap",
-      width: wrapAktif ? "100%" : "auto",
-      marginLeft: (wrapAktif || gorunurOgeSayisi < 4) ? 0 : "auto",
-      paddingRight: (!wrapAktif && isMobile) ? `${Math.round(26 * barUiOlcegi)}px` : 0,
+      display: "flex", alignItems: "center",
+      gap: `${Math.round((isMobile ? 8 : 12) * barUiOlcegi)}px`,
+      flexWrap: "wrap", justifyContent: "center",
+      ...(isMobile ? {} : { marginLeft: "auto" }),
     }}>
       {sureGoster && !sadeMode && (
         <span style={{ 
           fontSize: `${Math.round((isMobile ? 9 : 12) * barUiOlcegi)}px`,
-          color: theme.textSecondary, 
-          padding: "5px 4px", 
-          display: "flex", 
-          alignItems: "center", 
+          color: theme.accent,
+          padding: "5px 4px",
+          display: "flex",
+          alignItems: "center",
           gap: "2px",
         }}>
-          <Clock size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} /> 
+          <Clock size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />
           {isMobile ? dakikaFormatla(bugunSure) : `Bugün ${dakikaFormatla(bugunSure)}`}
         </span>
       )}
       {mevcutSureBilgisi && sureBilgisiGoster && (
         <span style={{
           fontSize: `${Math.round((isMobile ? 9 : 12) * barUiOlcegi)}px`,
-          color: theme.textSecondary,
+          color: theme.accent,
           padding: "5px 4px",
           display: "flex",
           alignItems: "center",
@@ -1801,7 +1798,7 @@ const menuIcerikPadding = {
       {cuzBilgisiGoster && mevcutCuzHizb && (
       <span style={{
                 fontSize: `${Math.round((isMobile ? 9 : 12) * barUiOlcegi)}px`,
-                color: theme.textSecondary,
+                color: theme.accent,
                 padding: "5px 4px",
                 display: "flex",
                 alignItems: "center",
@@ -2338,25 +2335,26 @@ const menuIcerikPadding = {
           barYuksekligi={barYuksekligi}
           playerBarYuksekligi={playerBarYuksekligi}
           barUiOlcegi={barUiOlcegi}
+          onOlcum={setPlayerYuk}
           onOdaklan={() => {
             if (!player.aktifAyet) return
             const { sureNo, ayetNo } = player.aktifAyet
             const el = scrollRef.current
             if (!el) return
 
-            const offset = (barKonum === "ust" ? barYuksekligi : 0) +
-              (player.durum !== "kapali" ? playerBarYuksekligi : 0) + 20
+            // ÜST ofset = yalnızca ÜSTü kaplayanlar (bar/oynatıcı altta ise 0)
+            const ustKaplama = barKonum === "ust"
+              ? ((barGorunur ? barYuksekligi : 0) + (player.durum !== "kapali" ? playerBarYuksekligi : 0))
+              : 0
+            const offset = ustKaplama + 6
 
             const hedefElementler = el.querySelectorAll(`[data-sure="${sureNo}"][data-ayet="${ayetNo}"]`)
-            
+
             const odakla = () => {
               if (hedefElementler.length === 0) return
               const hedef = hedefElementler[0]
-              const oncekiNo = ayetNo - 1
-              const oncekiElementler = oncekiNo >= 1
-                ? el.querySelectorAll(`[data-sure="${sureNo}"][data-ayet="${oncekiNo}"]`)
-                : null
-              const baslangic = oncekiElementler?.length > 0 ? oncekiElementler[0] : hedef
+              // Ayetin BAŞINI üste hizala (helper ile)
+              const baslangic = odakKaydirElemani(el, sureNo, ayetNo, hedef)
               baslangic.style.scrollMarginTop = `${offset}px`
               baslangic.scrollIntoView({ behavior: "smooth", block: "start" })
               baslangic.style.scrollMarginTop = "0"

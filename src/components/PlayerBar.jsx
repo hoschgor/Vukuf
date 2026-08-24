@@ -1,21 +1,35 @@
+import { useRef, useEffect } from "react"
 import { Play, Pause, Square, SkipBack, SkipForward, Glasses } from "lucide-react"
 import { KARILAR } from "../data/hooks/useAudioPlayer"
 import { useMediaQuery } from "../data/hooks/useMediaQuery"
 
 
-export default function PlayerBar({ 
-  player, 
-  sureler = [], 
-  theme, 
-  barKonum = "alt", 
+export default function PlayerBar({
+  player,
+  sureler = [],
+  theme,
+  barKonum = "alt",
   barUiOlcegi,
-  barGorunur = true, 
+  barGorunur = true,
   barYuksekligi = 0,
   playerBarYuksekligi,
-  onOdaklan
+  onOdaklan,
+  onOlcum,
 }) {
   const { durum, aktifAyet, kariId, duraklat, devamEt, durdur, oncekiAyet, sonrakiAyet } = player
   const isMobile = useMediaQuery("(max-width: 768px)")
+
+  // Gerçek yüksekliği ölç → ebeveyn (KuranOkuma) menü/içerik ofsetlerinde kullanır
+  const rootRef = useRef(null)
+  useEffect(() => {
+    if (!rootRef.current || !onOlcum) return
+    const ro = new ResizeObserver(() => {
+      // offsetHeight = padding + border dahil (gerçek yükseklik)
+      if (rootRef.current) onOlcum(Math.ceil(rootRef.current.offsetHeight))
+    })
+    ro.observe(rootRef.current)
+    return () => ro.disconnect()
+  }, [onOlcum, durum])
 
   if (durum === "kapali") return null
 
@@ -25,19 +39,10 @@ export default function PlayerBar({
   const mainBarHeight = barYuksekligi || (isMobile ? 44 : 33)
   const playerBarHeight = playerBarYuksekligi
 
-  const getBottomPosition = () => {
-    if (barKonum === "alt") {
-      return barGorunur ? `${mainBarHeight}px` : "0px"
-    }
-    return "auto"
-  }
-
-  const getTopPosition = () => {
-    if (barKonum === "ust") {
-      return barGorunur ? `${mainBarHeight}px` : "0px"
-    }
-    return "auto"
-  }
+  // Bar görünürken oynatıcı barın iç kenarına bitişik; bar gizlenince
+  // oynatıcı barın yerine (kenara) geçsin
+  const getBottomPosition = () => (barKonum === "alt" ? (barGorunur ? `${mainBarHeight}px` : "0px") : "auto")
+  const getTopPosition = () => (barKonum === "ust" ? (barGorunur ? `${mainBarHeight}px` : "0px") : "auto")
 
   const butonStil = (vurgulu = false) => ({
     display: "flex", 
@@ -72,9 +77,9 @@ export default function PlayerBar({
   })
 
   return (
-    <div style={{
-      position: "fixed", 
-      left: 0, 
+    <div ref={rootRef} style={{
+      position: "fixed",
+      left: 0,
       right: 0,
       bottom: getBottomPosition(),
       top: getTopPosition(),
@@ -88,7 +93,7 @@ export default function PlayerBar({
       alignItems: "center", 
       justifyContent: "space-between",
       gap: isMobile ? "8px" : "12px",
-      zIndex: 89,
+      zIndex: 91,
       boxShadow: barKonum === "alt"
         ? `0 -2px 12px ${theme.accent}10`
         : `0 2px 12px ${theme.accent}10`,

@@ -102,7 +102,7 @@ export default function OkumaTefeulu() {
       }
     }
     setYukleniyor(false)
-    setHata("Uygun bir bölüm bulunamadı, tekrar dene.")
+    setHata("Uygun bir bölüm bulunamadı, tekrar deneyiniz.")
   }
 
   return (
@@ -121,7 +121,7 @@ export default function OkumaTefeulu() {
         <KapsamSecici theme={theme} kuranSecenek baslangic={ilk?.secimler} onChange={setScope} />
         {scope.kuran && (
           <div style={{ fontSize: "12px", color: theme.textSecondary, marginTop: "12px" }}>
-            Rastgele bir sûre ya da âyet karşına çıkacak.
+            Rastgele bir sûre ya da âyet karşınıza çıkacak.
           </div>
         )}
       </div>

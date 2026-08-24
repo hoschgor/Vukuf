@@ -13,7 +13,7 @@ export const KARILAR = [
   { id: "Ghamadi_40kbps",             label: "Saad el-Gamidi" },
   { id: "Mohammad_al_Tablaway_128kbps", label: "Mohammad al-Tablaway" },
   { id: "Ibrahim_Akhdar_32kbps",      label: "Ibrahim Akhdar" },
-
+  { id: "ahmed_ibn_ali_al_ajamy_128kbps",      label: "Ali Al Ajamy" },
 ]
 
 const BASE_URL = "https://everyayah.com/data"

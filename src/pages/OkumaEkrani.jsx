@@ -1,5 +1,5 @@
 import KuranOkuma from "./KuranOkuma"
-import { useState, useEffect, useRef, useCallback, useMemo } from "react"
+import { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import { useApp } from "../AppContext"
 import { kitaplar, kategoriler } from "../data/kitaplar"
@@ -205,6 +205,35 @@ function fontBul(fontId) {
 }
 
 // ════════════════════════════════════════════════════════════════
+// OTOFIT — metni yatay taşmaya karşı kutusuna sığdırır.
+//   Kelimeler normal kaydığı sürece dokunmaz; tek bir kelime bile kutu
+//   genişliğini aşıyorsa (yatay kaydırmaya yol açacaksa) font px düşürülür.
+// ════════════════════════════════════════════════════════════════
+function OtoFit({ children, maxFont, minFont = 16, as: Tag = "div", style, ...rest }) {
+  const ref = useRef(null)
+  const [font, setFont] = useState(maxFont)
+  useLayoutEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const sigdir = () => {
+      let cur = maxFont, guard = 0
+      el.style.fontSize = cur + "px"
+      while (cur > minFont && el.scrollWidth > el.clientWidth + 1 && guard++ < 300) {
+        cur -= 2
+        el.style.fontSize = cur + "px"
+      }
+      setFont(prev => (prev === cur ? prev : cur))
+    }
+    sigdir()
+    const hedef = el.parentElement || el
+    let ro
+    try { ro = new ResizeObserver(sigdir); ro.observe(hedef) } catch {}
+    return () => { try { ro && ro.disconnect() } catch {} }
+  }, [children, maxFont, minFont])
+  return <Tag ref={ref} style={{ ...style, fontSize: font + "px" }} {...rest}>{children}</Tag>
+}
+
+// ════════════════════════════════════════════════════════════════
 // METİN PARCASI
 // ════════════════════════════════════════════════════════════════
 const ARAP_RE = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/
@@ -240,7 +269,7 @@ const LATIN_RE = /[A-Za-zÇĞİıÖŞÜçğöşü]/
 
 function MetinParcasi({
   metin, sayfaNo, lugatAktif, onKelimeTikla,
-  theme, fontSize, hizalama, metinFont, arapcaFont, arapBoyut = 6,
+  theme, fontSize, baslikBoyutu = 2, hizalama, metinFont, arapcaFont, arapBoyut = 6,
   vurguModu, vurguRengi, sayfaVurgulari, onVurguEkle, duzenleMod, onVurguKelimeSil,
   dipnotlar, satirAraligi = 1.9, harfAraligi = 0, kelimeAraligi = 0, onDipnotTikla,
   basliklar, baslikFont, ortala = false, lugatRenk, arapRenk, hasiyeler, hafif = false,
@@ -351,12 +380,13 @@ function MetinParcasi({
         const bh = basliklarMap[si]
         if (bh) {
           return (
-            <div key={si} id={`baslik-${sayfaNo}-${si}`} data-satir={`${sayfaNo}-${si}`} style={{
-              textAlign: "center", margin: (bh.seviye <= 1) ? "34px 0 18px" : "24px 0 12px",
-              fontFamily: baslikFont || "inherit",
-              fontSize: `${fontSize + ((bh.seviye <= 1) ? 84 : 64)}px`,
-              fontWeight: 700, color: theme.accent, lineHeight: 1.35,
-            }}>
+            <OtoFit key={si} as="div" id={`baslik-${sayfaNo}-${si}`} data-satir={`${sayfaNo}-${si}`}
+              maxFont={Math.round(fontSize * (bh.seviye <= 1 ? baslikBoyutu : baslikBoyutu * 0.82))} minFont={fontSize + 4}
+              style={{
+                textAlign: "center", margin: (bh.seviye <= 1) ? "34px 0 18px" : "24px 0 12px",
+                fontFamily: baslikFont || "inherit",
+                fontWeight: 700, color: theme.accent, lineHeight: 1.35, overflowWrap: "break-word",
+              }}>
               {gosterilecek.replace(/⟦H\d+⟧/g, "")}
               {bh.aciklama && (
                 <sup onClick={!vurguModu ? (e) => { e.stopPropagation(); onDipnotTikla(bh.aciklama, e, "AÇIKLAMA") } : undefined}
@@ -365,7 +395,7 @@ function MetinParcasi({
                   <Feather size={18} style={{ verticalAlign: "middle" }} />
                 </sup>
               )}
-            </div>
+            </OtoFit>
           )
         }
 
@@ -664,6 +694,8 @@ const [harfAraligi, setHarfAraligi]   = useState(() => parseFloat(localStorage.g
 const [kelimeAraligi, setKelimeAraligi] = useState(() => parseFloat(localStorage.getItem("vukuf-kelime-araligi") || "0"))
 const [hizalama, setHizalama] = useState(() => localStorage.getItem("vukuf-hizalama") || "left")
 const [arapBoyutu, setArapBoyutu] = useState(() => parseInt(localStorage.getItem("vukuf-arap-boyutu") || "6"))
+// Başlık boyutu: gövde yazısının KATI (çarpan). seviye-1 = ×katsayı, seviye-2 biraz küçük.
+const [baslikBoyutu, setBaslikBoyutu] = useState(() => parseFloat(localStorage.getItem("vukuf-baslik-boyutu") || "2"))
 // İlk oturum mu? (font tercihi henüz kaydedilmemişse)
 const ilkOturumRef = useRef(localStorage.getItem("vukuf-fontlar") == null)
 const [fontSecimler, setFontSecimler] = useState(() => {
@@ -1077,6 +1109,7 @@ useEffect(() => { localStorage.setItem("vukuf-harf-araligi", harfAraligi) }, [ha
 useEffect(() => { localStorage.setItem("vukuf-kelime-araligi", kelimeAraligi) }, [kelimeAraligi])
 useEffect(() => { localStorage.setItem("vukuf-hizalama", hizalama) }, [hizalama])
 useEffect(() => { localStorage.setItem("vukuf-arap-boyutu", String(arapBoyutu)) }, [arapBoyutu])
+useEffect(() => { localStorage.setItem("vukuf-baslik-boyutu", String(baslikBoyutu)) }, [baslikBoyutu])
 useEffect(() => { localStorage.setItem("vukuf-fontlar", JSON.stringify(fontSecimler)) }, [fontSecimler])
 useEffect(() => { localStorage.setItem("vukuf-bar-konum", barKonum) }, [barKonum])
 useEffect(() => { localStorage.setItem("vukuf-otomatik-gizleme", otomatikGizleme) }, [otomatikGizleme])
@@ -1575,6 +1608,27 @@ const AaPanel = aaAcik && (
           direction: "rtl", textAlign: "center", color: arapRenk,
         }}>
           بِسْمِ اللّٰهِ الرَّحْمٰنِ الرَّحِيمِ
+        </div>
+      </div>
+
+      {/* BAŞLIK BOYUTU */}
+      <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px" }}>BAŞLIK BOYUTU</div>
+      <div style={{ marginBottom: "16px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", color: theme.textSecondary, marginBottom: "6px" }}>
+          <span>Küçük</span>
+          <span style={{ color: theme.accent, fontWeight: "bold" }}>{Math.round(yaziBoyutu * baslikBoyutu)}px</span>
+          <span>Büyük</span>
+        </div>
+        <input type="range" min="1.2" max="3" step="0.1" value={baslikBoyutu}
+          onChange={e => setBaslikBoyutu(parseFloat(e.target.value))}
+          style={{ width: "100%", accentColor: theme.accent }} />
+        <div style={{
+          marginTop: "10px", padding: "12px", borderRadius: "8px",
+          background: theme.background, border: `1px solid ${theme.border}`,
+          fontFamily: baslikFont || "inherit", fontSize: `${Math.round(yaziBoyutu * baslikBoyutu)}px`,
+          textAlign: "center", color: theme.accent, fontWeight: 700, lineHeight: 1.2,
+        }}>
+          Örnek Başlık
         </div>
       </div>
 
@@ -2648,9 +2702,10 @@ return (
 
         {/* Kitap başlığı */}
         <div style={{ textAlign: "center", marginBottom: "48px", paddingTop: "24px" }}>
-          <h1 style={{ fontSize: isMobile ? "98px" : "158px", color: theme.accent, marginBottom: "8px", lineHeight: 1.1, fontFamily: /Nurs[iî]/.test(kitap.yazar || "") ? "LivaNur, serif" : "PlayfairDisplay, serif" }}>
+          <OtoFit as="h1" maxFont={isMobile ? 98 : 158} minFont={isMobile ? 34 : 56}
+            style={{ color: theme.accent, marginBottom: "8px", lineHeight: 1.1, fontFamily: /Nurs[iî]/.test(kitap.yazar || "") ? "LivaNur, serif" : "PlayfairDisplay, serif", overflowWrap: "break-word" }}>
             {kitap.baslik}
-          </h1>
+          </OtoFit>
           <p style={{ color: theme.textSecondary, fontSize: "44px" }}>{kitap.yazar}</p>
         </div>
 
@@ -2702,6 +2757,7 @@ return (
                     onKelimeTikla={kelimeTikla}
                     theme={theme}
                     fontSize={yaziBoyutu}
+                    baslikBoyutu={baslikBoyutu}
                     hizalama={hizalama}
                     metinFont={metinFont}
                     arapcaFont={arapcaFont}

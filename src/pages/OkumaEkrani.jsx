@@ -1419,7 +1419,8 @@ function elemanaGit(sayfaNo, selectorFn, fallbackOran = 0, cizgi = true, onLand 
   if (!el) return
   setMevcutSayfa(sayfaNo)
   maxSayfaGuncelle(sayfaNo)
-  const ofset = barKonum === "ust" ? 90 : 24
+  // Üst bar hedefi örtmesin: sabit değil, ölçülen bar yüksekliği + pay kadar aşağı hizala.
+  const ofset = barKonum === "ust" ? (barGorunur ? barYuk + 80 : 0) : 4
 
   // Önce sayfaya yaklaş ki lazy mount tetiklensin (henüz fren yok)
   const ref0 = sayfaRefs.current[sayfaNo]
@@ -1462,7 +1463,8 @@ function aramaVurgula(sayfaNo, el, aranan, altCizgi = true) {
     top: rc.top - prefRect.top, left: rc.left - prefRect.left, width: rc.width, height: rc.height,
   }))
   // kelime görünüm dışında/çok yukarıdaysa ona doğru ince ayar kaydır
-  const ofset = barKonum === "ust" ? 110 : 60
+  // Üst bar hedefi örtmesin: ölçülen bar yüksekliği + pay (sabit 110 çentik+2 satırda yetmiyordu).
+  const ofset = barKonum === "ust" ? (barGorunur ? barYuk + 24 : 24) : 60
   const scRect = sc.getBoundingClientRect()
   const rTop = rects[0].top - scRect.top
   if (rTop < ofset || rTop > sc.clientHeight * 0.65) {

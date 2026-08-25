@@ -18,7 +18,7 @@ export const themes = {
     text: "#d9d9d9",
     textSecondary: "#a0a0b0",
     accent: "#5b92f2",
-    lugatHighlight: "#e8a87c",
+    lugatHighlight: "#e8dd7c",
     arabicHighlight: "#fac400",
     ayetNoRengi: "#92c2f6",
     border: "#2d2d4e",

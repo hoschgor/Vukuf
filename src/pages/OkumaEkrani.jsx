@@ -46,10 +46,13 @@ const FONT_GRUPLARI = {
   arapca: {
     label: "Arapça",
     fontlar: [
-      { id: "kfgqpc",            label: "KFGQPC Uthmanic (Önerilen)", style: "'KFGQPC Uthmanic', serif",    google: null },
+      // Yedek zincirine 'me_quran' eklendi: kfgqpc/Indopak'ta OLMAYAN işaretler (waqf/durak,
+      // küçük üst işaretler vb.) sistem serifine düşüp yanlış glyph + harf-bağ kopması yapıyordu.
+      // MeQuran bu işaretleri kapsadığından yedek olarak ondan alınır (gövde harfleri kfgqpc kalır).
+      { id: "kfgqpc",            label: "KFGQPC Uthmanic (Önerilen)", style: "'KFGQPC Uthmanic', 'me_quran', serif", google: null },
       { id: "me-quran",          label: "Me Quran",                   style: "'me_quran', serif",            google: null },
-      { id: "Indopak",           label: "Indopak",                    style: "'Indopak', serif",             google: null },
-      { id: "IndopakNastaleeq",  label: "Indopak Nastaleeq",          style: "'IndopakNastaleeq', serif",    google: null },
+      { id: "Indopak",           label: "Indopak",                    style: "'Indopak', 'me_quran', serif", google: null },
+      { id: "IndopakNastaleeq",  label: "Indopak Nastaleeq",          style: "'IndopakNastaleeq', 'me_quran', serif", google: null },
     ],
   },
 }
@@ -646,6 +649,14 @@ function renderMarkerli(text, dipnotMap, onDipnotTikla, theme, hasiyeMap = {}) {
         ? <HasiyeSup key={i} metin={hasiyeMap[h[1]]} onDipnotTikla={onDipnotTikla} theme={theme} />
         : null
     }
+    // kfgqpc Arapça virgülü (U+060C) DAİRE/durak sembolü olarak çiziyor (düz virgülü yok).
+    // Virgülleri MeQuran'dan normal virgül olarak çiz (boyut/hiza uyumlu; harfler kfgqpc kalır).
+    if (p.includes("،")) {
+      const alt = p.split(/(،)/)
+      return <span key={i}>{alt.map((ap, j) => ap === "،"
+        ? <span key={j} style={{ fontFamily: "'me_quran', serif" }}>،</span>
+        : ap)}</span>
+    }
     return <span key={i}>{p}</span>
   })
 }
@@ -1037,8 +1048,16 @@ useEffect(() => {
 useEffect(() => {
   if (!kitap) return
   fetch(`/kitap-metin/${kitap.dosya}`)
-    .then(r => r.json())
-    .then(data => { setKitapMetni(data); setYukleniyor(false) })
+    .then(r => r.text())
+    .then(t => {
+      // Bazı kaynak metinlerde Arapça, ÖNCEDEN-BİÇİMLENMİŞ harflerle (Arabic Presentation
+      // Forms U+FB50–FDFF / U+FE70–FEFF) kaydedilmiş. kfgqpc bu glyph'leri içermiyor →
+      // sistem fontuna düşüp harf bağını kırıyor ("ufak atlamalar"). Bu karakterleri NFKC ile
+      // TABAN Arapça harflere çeviriyoruz → kfgqpc kendi OpenType şekillendirmesiyle doğru bağlar
+      // (mushaftaki gibi). Yalnız presentation-form dizileri dokunulur; Latin/işaretler etkilenmez.
+      const norm = t.replace(/[ﭐ-﷿ﹰ-﻿]+/g, m => m.normalize("NFKC"))
+      setKitapMetni(JSON.parse(norm)); setYukleniyor(false)
+    })
     .catch(() => setYukleniyor(false))
 }, [kitap])
 
@@ -1286,7 +1305,9 @@ useEffect(() => {
     ilkOturumRef.current = false
   }
   Object.values(fontSecimler).forEach(fid => { if (fid) fontYukle(fid) })
-  if (evradKitabiMi) fontYukle("me-quran")
+  // MeQuran'ı HER durumda yükle: kfgqpc/Indopak yedek zincirindeki 'me_quran' adı çözülebilsin
+  // (eksik işaretler MeQuran'dan gelsin; yüklü değilse tarayıcı doğrudan serif'e düşerdi).
+  fontYukle("me-quran")
 }, [fontSecimler, evradKitabiMi])
 
 // ════════════════════════════════════════════════════

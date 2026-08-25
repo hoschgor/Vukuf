@@ -1666,9 +1666,9 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
       background: theme.surface,
       borderTop:    barKonum === "alt" ? `1px solid ${theme.border}` : "none",
       borderBottom: barKonum === "ust" ? `1px solid ${theme.border}` : "none",
-      // Dikey padding + safe-area (yatayda çentik/köşeye butonlar sıkışmasın)
-      paddingTop:    `calc(${isMobile ? 8 : 3}px + ${barKonum === "ust" ? "env(safe-area-inset-top)" : "0px"})`,
-      paddingBottom: `calc(${isMobile ? 8 : 3}px + ${barKonum === "alt" ? "env(safe-area-inset-bottom)" : "0px"})`,
+      // Dikey padding + safe-area: max() → çift boşluk yok. Baz padding azaltıldı: bar uzamasın.
+      paddingTop:    barKonum === "ust" ? `max(${isMobile ? 5 : 3}px, env(safe-area-inset-top))` : `${isMobile ? 5 : 3}px`,
+      paddingBottom: barKonum === "alt" ? `max(${isMobile ? 5 : 3}px, env(safe-area-inset-bottom))` : `${isMobile ? 5 : 3}px`,
       paddingLeft:   `max(${isMobile ? 12 : 10}px, env(safe-area-inset-left))`,
       paddingRight:  `max(${isMobile ? 12 : 10}px, env(safe-area-inset-right))`,
       display: "flex", alignItems: "center", gap: `${Math.round(4 * barUiOlcegi)}px`,
@@ -1780,15 +1780,33 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
   </>
 )}
 
-    {/* Sağ grup — bilgi + ayarlar (okuma ekranı gibi sarar/ortalar) */}
+    {/* Sağ grup — ayarlar + bilgi (doğal sarma). Grup içi sıra: simgeler önce, bilgi EN SONDA →
+        tek satırda bilgi en sağda; sarma gerekirse yalnız bilgi son satıra iner. */}
     <div style={{
       display: "flex", alignItems: "center",
       gap: `${Math.round((isMobile ? 8 : 12) * barUiOlcegi)}px`,
       flexWrap: "wrap", justifyContent: "center",
+      // Doğal sarma: grup zorla kendi satırına atılmaz. Geniş ekranda sağa yaslanır.
       ...(genisEkran ? { marginLeft: "auto" } : {}),
     }}>
+      {sadeModGoster && (
+        <button onClick={() => setSadeMode(!sadeMode)} style={{ ...barButonStil(sadeMode), padding: isMobile ? "3px" : "4px" }}>
+          <Circle size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />
+        </button>
+      )}
+
+      {temaGoster && (
+        <button onClick={() => togglePanel(setTemaAcik, !temaAcik)} style={{ ...barButonStil(temaAcik), padding: isMobile ? "3px" : "4px" }}>
+          <Palette size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />
+        </button>
+      )}
+
+      <button onClick={() => togglePanel(setAyarlarAcik, !ayarlarAcik)} style={{ ...barButonStil(ayarlarAcik), padding: isMobile ? "3px" : "4px" }}>
+        <Settings size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />
+      </button>
+
       {sureGoster && !sadeMode && (
-        <span style={{ 
+        <span style={{
           fontSize: `${Math.round((isMobile ? 9 : 12) * barUiOlcegi)}px`,
           color: theme.accent,
           padding: "5px 4px",
@@ -1829,21 +1847,6 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
         : `${mevcutCuzHizb.cuz}. Cüz · ${mevcutCuzHizb.hizb}. Hizb`}
       </span>
       )}
-      {sadeModGoster && (
-        <button onClick={() => setSadeMode(!sadeMode)} style={{ ...barButonStil(sadeMode), padding: isMobile ? "3px" : "4px" }}>
-          <Circle size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />
-        </button>
-      )}
-
-      {temaGoster && (
-        <button onClick={() => togglePanel(setTemaAcik, !temaAcik)} style={{ ...barButonStil(temaAcik), padding: isMobile ? "3px" : "4px" }}>
-          <Palette size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />
-        </button>
-      )}
-
-      <button onClick={() => togglePanel(setAyarlarAcik, !ayarlarAcik)} style={{ ...barButonStil(ayarlarAcik), padding: isMobile ? "3px" : "4px" }}>
-        <Settings size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />
-      </button>
     </div>
   </div>
 )

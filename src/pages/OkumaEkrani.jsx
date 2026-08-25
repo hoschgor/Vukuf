@@ -2607,9 +2607,10 @@ const Bar = (
     background: theme.surface,
     borderTop:    barKonum === "alt" ? `1px solid ${theme.border}` : "none",
     borderBottom: barKonum === "ust" ? `1px solid ${theme.border}` : "none",
-    // Dikey padding + safe-area (çentik/ev alanına kadar arka plan uzansın, içerik güvende)
-    paddingTop:    `calc(${isMobile ? 8 : 3}px + ${barKonum === "ust" ? "env(safe-area-inset-top)" : "0px"})`,
-    paddingBottom: `calc(${isMobile ? 8 : 3}px + ${barKonum === "alt" ? "env(safe-area-inset-bottom)" : "0px"})`,
+    // Dikey padding + safe-area: max() → çift boşluk YOK (baz+inset yerine büyüğü kadar)
+    // Baz padding azaltıldı: bar gereksiz uzamasın, ögeler orta bölümde tıklanabilir kalsın.
+    paddingTop:    barKonum === "ust" ? `max(${isMobile ? 5 : 3}px, env(safe-area-inset-top))` : `${isMobile ? 5 : 3}px`,
+    paddingBottom: barKonum === "alt" ? `max(${isMobile ? 5 : 3}px, env(safe-area-inset-bottom))` : `${isMobile ? 5 : 3}px`,
     paddingLeft:   `max(${isMobile ? 12 : 10}px, env(safe-area-inset-left))`,
     paddingRight:  `max(${isMobile ? 12 : 10}px, env(safe-area-inset-right))`,
     display: "flex", alignItems: "center", gap: `${Math.round(4 * barUiOlcegi)}px`,
@@ -2697,21 +2698,12 @@ const Bar = (
     )}
 
     <div style={{
-      display: "flex", gap: "8px", alignItems: "center",
+      display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap", justifyContent: "center",
+      // Doğal sarma: grup zorla kendi satırına atılmaz; sığmazsa en sona (bilgi en altta) düşer.
+      // Geniş ekranda sağa yaslanır. Grup içi sıra: simgeler önce, bilgi (kısım/süre) EN SONDA →
+      // tek satırda bilgi en sağda; sarma gerekirse yalnız bilgi son satıra iner.
       ...(genisEkran ? { marginLeft: "auto" } : {}),
     }}>
-      {gorunurMu("kisim") && mevcutKisim && (
-        <span onClick={(e) => { const yol = mevcutKisimYolu.map(b => b.baslik).join(" / "); dipnotTikla(mevcutKisim.aciklama || yol, e, yol) }}
-          title={mevcutKisimYolu.map(b => b.baslik).join(" / ")}
-          style={{ fontSize: `${Math.round(11 * barUiOlcegi)}px`, color: theme.accent, padding: "4px 6px", maxWidth: isMobile ? "150px" : "260px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", cursor: "pointer" }}>
-          {mevcutKisimYolu.map(b => b.baslik).join(" / ")}
-        </span>
-      )}
-      {gorunurMu("sure") && (
-        <span style={{ fontSize: `${Math.round(11 * barUiOlcegi)}px`, color: theme.accent, padding: "4px 6px", display: "flex", alignItems: "center", gap: "3px" }}>
-          <Clock size={bIkon(11)} /> {dakikaFormatla(bugunSure)}
-        </span>
-      )}
       {gorunurMu("sade") && (
         <button onClick={() => setSadeMode(!sadeMode)} style={{ ...barButonStil(sadeMode), padding: "4px" }} title="Sade mod">
           <Circle size={bIkon(15)} />
@@ -2725,6 +2717,18 @@ const Bar = (
       <button onClick={() => togglePanel(setAyarlarAcik, !ayarlarAcik)} style={{ ...barButonStil(ayarlarAcik), padding: "4px" }} title="Ayarlar">
         <Settings size={bIkon(15)} />
       </button>
+      {gorunurMu("kisim") && mevcutKisim && (
+        <span onClick={(e) => { const yol = mevcutKisimYolu.map(b => b.baslik).join(" / "); dipnotTikla(mevcutKisim.aciklama || yol, e, yol) }}
+          title={mevcutKisimYolu.map(b => b.baslik).join(" / ")}
+          style={{ fontSize: `${Math.round(11 * barUiOlcegi)}px`, color: theme.accent, padding: "4px 6px", maxWidth: isMobile ? "150px" : "260px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", cursor: "pointer" }}>
+          {mevcutKisimYolu.map(b => b.baslik).join(" / ")}
+        </span>
+      )}
+      {gorunurMu("sure") && (
+        <span style={{ fontSize: `${Math.round(11 * barUiOlcegi)}px`, color: theme.accent, padding: "4px 6px", display: "flex", alignItems: "center", gap: "3px" }}>
+          <Clock size={bIkon(11)} /> {dakikaFormatla(bugunSure)}
+        </span>
+      )}
     </div>
   </div>
 )

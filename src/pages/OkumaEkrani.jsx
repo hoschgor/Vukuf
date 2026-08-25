@@ -34,15 +34,7 @@ const FONT_GRUPLARI = {
       { id: "merriweather", label: "Merriweather",     style: "'Merriweather', serif",      google: "Merriweather:ital,wght@0,300;0,400;1,300" },
     ],
   },
-  osmanlica: {
-    label: "Osmanlıca",
-    fontlar: [
-      { id: "crimson",   label: "Crimson Text",    style: "'Crimson Text', serif",    google: "Crimson+Text:ital,wght@0,400;0,600;1,400" },
-      { id: "garamond",  label: "EB Garamond",     style: "'EB Garamond', serif",     google: "EB+Garamond:ital,wght@0,400;0,500;1,400" },
-      { id: "cormorant", label: "Cormorant",       style: "'Cormorant', serif",       google: "Cormorant:ital,wght@0,300;0,400;1,300" },
-      { id: "im-fell",   label: "IM Fell English", style: "'IM Fell English', serif", google: "IM+Fell+English:ital@0;1" },
-    ],
-  },
+
   arapca: {
     label: "Arapça",
     fontlar: [
@@ -2230,19 +2222,6 @@ const TemaPanel = temaAcik && (
         </button>
       ))}
 
-      {/* Arapça / Osmanlıca metin rengi */}
-      <div style={{ borderTop: `1px solid ${theme.border}`, marginTop: "10px", paddingTop: "10px" }}>
-        <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px" }}>ARAPÇA / OSMANLICA RENGİ</div>
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <input type="color" value={arapcaRenk || theme.arabicHighlight}
-            onChange={e => setArapcaRenk(e.target.value)}
-            style={{ width: "40px", height: "28px", border: `1px solid ${theme.border}`, borderRadius: "6px", background: theme.background, cursor: "pointer", padding: "2px" }} />
-          <span style={{ flex: 1, fontSize: "12px", color: arapcaRenk || theme.arabicHighlight }}>بِسْمِ اللّٰه · Bismillâh</span>
-          {arapcaRenk && (
-            <button onClick={() => setArapcaRenk("")} title="Temaya sıfırla" style={{ fontSize: "11px", color: theme.textSecondary, background: "none", border: "none", cursor: "pointer" }}>Sıfırla</button>
-          )}
-        </div>
-      </div>
 
       {/* Lügat (Latin) kelime rengi */}
       <div style={{ marginTop: "10px" }}>

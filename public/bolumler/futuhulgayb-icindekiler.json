@@ -1,0 +1,178 @@
+[
+  {
+    "seviye": 1,
+    "baslik": "Giriş",
+    "aciklama": "Kitabın başlangıç bölümü. İki adım, kalp ve ruh ile dünyadan ve nefsten uzaklaşma, hakikate ulaşma, ilim ve ariflerin sohbeti, nefsi tanıma, Allah dostlarının hali, iyiliği emredip kötülükten sakındırma.",
+    "sayfa": 1,
+    "oran": 0.0,
+    "satir": 0
+  },
+  {
+    "seviye": 1,
+    "baslik": "Kur’ân Yaratık Değildir",
+    "aciklama": "Kur'an'ın Allah'ın ezelî ve ebedî kelâmı olduğu, onu mahlûk saymamanın gerekliliği. İmam Şafii ve İmam Ahmed'in bu konudaki görüşleri. Mushaflara yazılanın mahlûk olmadığı.",
+    "sayfa": 2,
+    "oran": 0.0,
+    "satir": 0
+  },
+  {
+    "seviye": 1,
+    "baslik": "Gizli Şirk (Putperestlik)",
+    "aciklama": "Kalpte Allah'tan başka güvenilen, korkulan ve ümit bağlanan her şeyin put olduğu. Lâ ilâhe illallah'ın gerçek anlamı. Dünya malı, makam, insanlar, nefsânî arzular, paraya tapma vb. gizli şirk örnekleri. Kalp putlardan temizlenmedikçe ibadetlerin faydasız olacağı.",
+    "sayfa": 2,
+    "oran": 0.0,
+    "satir": 0
+  },
+  {
+    "seviye": 1,
+    "baslik": "Nefs",
+    "aciklama": "Nefsin daima kötülüğe meyilli olduğu, onunla mücahede etmenin gerekliliği. Nefsin hakları (helâl yiyecek, içecek, giyecek, mesken) ile heves ve arzuları arasındaki fark. Nefse muhalefet etmenin önemi. Nefs-i emmarenin terbiye ile nefs-i mutmainne hâline gelmesi. Nefsin Hak ile kul arasında bir perde olduğu.",
+    "sayfa": 3,
+    "oran": 0.0,
+    "satir": 0
+  },
+  {
+    "seviye": 1,
+    "baslik": "Ölmeden Evvel Ölmek",
+    "aciklama": "İki çeşit ölüm: Bedenin ölümü ve nefsânî arzuların, kötü âdetlerin ölmesi. Hevâ ve istekler ölmeden önce ölmenin gerekliliği. Fenâ ve bekā kavramları. Nefsi terbiye edip yok ettikten sonra hakiki hayata kavuşma. Bâyezid-i Bestâmî'nin nefsini bırakıp Allah'a gitmesi.",
+    "sayfa": 4,
+    "oran": 0.0,
+    "satir": 0
+  },
+  {
+    "seviye": 1,
+    "baslik": "Kader",
+    "aciklama": "Kaderi bahane ederek tembellik etmenin yanlışlığı. Allah dostlarının çalışma ve gayret prensibi. Allah'ın yapacağından mesul olmadığı, insanların ise yaptıklarından sorumlu olduğu. Kadere razı olma, belâlara sabır ve nimetlere şükür. Emniyet içinde olmamak ve sürekli taat hâlinde bulunmak.",
+    "sayfa": 5,
+    "oran": 0.0,
+    "satir": 0
+  },
+  {
+    "seviye": 1,
+    "baslik": "İçi Düzeltmek",
+    "aciklama": "Zâhirî elbiselerin önce öze, kalbe ve nefse giydirilmesi gerektiği. İç düzeltilmeden dışın düzeltilemeyeceği. İslam'ın teslimiyet olduğu. İhlâsın amellerin özü olduğu. Tasavvufun safa'dan geldiği.",
+    "sayfa": 6,
+    "oran": 0.0,
+    "satir": 0
+  },
+  {
+    "seviye": 1,
+    "baslik": "İmtihan",
+    "aciklama": "Allah dostluğu iddiasında bulunanların sınanması gerektiği. Belâların evliyalık için bir vekil olduğu. İddia edilen şeyin zıddı ile imtihan edilme. Nimetlerin verilip geri alınmasıyla kulun denenmesi. Belânın her hayrın temeli olduğu.",
+    "sayfa": 7,
+    "oran": 0.0,
+    "satir": 0
+  },
+  {
+    "seviye": 1,
+    "baslik": "Hz. Musa ve Ateş",
+    "aciklama": "Hz. Musa'nın ateşi (nuru) görmesiyle başlayan ilahî tecelli. Kalp gözü ile Hakk'ı görme. Dünyaya ve tüm sebeplere veda edip Allah'a yönelme. Müminin de benzer şekilde Allah'a yakınlaşınca tüm yönlerin kapandığını görmesi. Sır, sırrın sırrıdır.",
+    "sayfa": 8,
+    "oran": 0.0,
+    "satir": 0
+  },
+  {
+    "seviye": 1,
+    "baslik": "Yağmur ve Toprak",
+    "aciklama": "İlâhî hazinelerin kalp toprağına inmesi. Bu tecellilerle kalpte hayırların, sırların, hikmetlerin ve tevhidin yeşermesi. Kalbin insanların, cinlerin, meleklerin ve ruhların toplanma yeri olması.",
+    "sayfa": 9,
+    "oran": 0.0,
+    "satir": 0
+  },
+  {
+    "seviye": 1,
+    "baslik": "Hz. Yusuf",
+    "aciklama": "Hz. Yusuf'un kuyu ve zindan sıkıntılarından sonra ferahlığa kavuşması. Sıkıntı anlarında dilsiz olup, genişlikte konuşma. Tüm aile efradını yanına çağırması. Sabır ve teslimiyetin ardından gelen ferahlık.",
+    "sayfa": 9,
+    "oran": 0.0,
+    "satir": 0
+  },
+  {
+    "seviye": 1,
+    "baslik": "Hz. İbrahim",
+    "aciklama": "Hz. İbrahim'in ateşe atılırken tüm fânî vasıtalardan sıyrılıp sadece Allah'a yönelmesi. Bunun üzerine ateşin serin ve selamet olması. Kulun tevhid ve ihlâs ile Tekvin sıfatının çerçevesine girmesi ve 'Ol' demesi.",
+    "sayfa": 9,
+    "oran": 0.0,
+    "satir": 0
+  },
+  {
+    "seviye": 1,
+    "baslik": "Kıtmîr",
+    "aciklama": "Allah dostlarının nefslerini eritip mânen ölmeleri, kader karşısında hareketsiz durmaları. Ashâb-ı Kehf'in köpeği Kıtmîr misali. Nefsin kalıntılarının kader eşiğinde serili olması.",
+    "sayfa": 10,
+    "oran": 0.0,
+    "satir": 0
+  },
+  {
+    "seviye": 1,
+    "baslik": "İlim",
+    "aciklama": "İlim ve amel ilişkisi. İlim, amel içindir; ezberlemek veya göstermek için değil. Önce öğrenip amel etmek, sonra öğretmek. Zâhir ilminin bâtın ilmine götürmesi. Âlimlerin peygamberlerin vârisleri olduğu. İlmin kendisiyle amel edilmeyince gittiği.",
+    "sayfa": 10,
+    "oran": 0.0,
+    "satir": 0
+  },
+  {
+    "seviye": 1,
+    "baslik": "Amel",
+    "aciklama": "Amellerin suret ve şeklinin değil, mânâ ve ruhunun makbul olduğu. İhlâs ile yapılmayan amellerin değersizliği. Amelsiz ilmin bereketsizliği. İlim ağacının meyvesinin amel olduğu. Önce kalp arazisini kazıp hikmet suyunu fışkırtmak, sonra binayı yapmak.",
+    "sayfa": 11,
+    "oran": 0.0,
+    "satir": 0
+  },
+  {
+    "seviye": 1,
+    "baslik": "Fakirlere Sadâka",
+    "aciklama": "Dilenen fakirlerin araştırılması, gerçek ihtiyaç sahibi ile gösteriş yapanın ayırt edilmesi. Kalbe danışarak hareket etmek. Sahte fakirlerin gerçek fakirlere yapılan yardımlara engel olması.",
+    "sayfa": 12,
+    "oran": 0.0,
+    "satir": 0
+  },
+  {
+    "seviye": 1,
+    "baslik": "Paylaşmak",
+    "aciklama": "Eldekilerin müşterek olduğu, komşuların ortak olduğu. Allah'ın verdiği rızıklardan O'na vekaleten muhtaçlara vermek. Nimetler karşısında nasıl hareket edileceğinin Allah tarafından gösterilmesi.",
+    "sayfa": 12,
+    "oran": 0.0,
+    "satir": 0
+  },
+  {
+    "seviye": 1,
+    "baslik": "Çalışmak",
+    "aciklama": "Hiçbir şeyin kendiliğinden gelmediği, çalışma, çaba ve gayretin gerekliliği. Kadere dayanıp oturmanın yanlışlığı. Helâl rızkı elde etmek için çalışmak, Allah yolunda mücahede etmek.",
+    "sayfa": 12,
+    "oran": 0.0,
+    "satir": 0
+  },
+  {
+    "seviye": 1,
+    "baslik": "Allah Korkusu ve Sevgisi",
+    "aciklama": "Allah'ın sırf zatı ve rızası için sevilip korkulması. Cennet ve cehennem olmasa da O'na itaat edilmesi. Korku ve umudun dengeli olması. Müminin aynı derecede korku ve ümit içinde olması. Gerçek âşıkın cenneti değil, Allah'ın cemâlini istemesi.",
+    "sayfa": 13,
+    "oran": 0.0,
+    "satir": 0
+  },
+  {
+    "seviye": 1,
+    "baslik": "Hakk’ı Görmek",
+    "aciklama": "Allah'ı seveni görmenin kalp gözüyle Allah'ı görmek olduğu. Allah'ın bu dünyada kalp gözüyle, ahirette kafa gözüyle görüleceği. Peygamber Efendimiz'in Miraç'ta Rabbi görmesi. Kalbi mânevî sağlığa kavuşan herkesin Rabbini görebileceği.",
+    "sayfa": 14,
+    "oran": 0.0,
+    "satir": 0
+  },
+  {
+    "seviye": 1,
+    "baslik": "Ârif",
+    "aciklama": "Allah'ı tanıyan kişinin en zorlandığı şeyin insanlarla konuşmak olduğu. Arifin peygamberlerin kuvvetine muhtaç olması. Arifin ahirete dünyadan farklı bakmadığı. Dünya hayatının müminin zindanı olduğu, takva ile bu zindandan kurtulup ferahlığa kavuşulması. Uykuda olan insanların ölünce uyanması.",
+    "sayfa": 15,
+    "oran": 0.0,
+    "satir": 0
+  },
+  {
+    "seviye": 1,
+    "baslik": "Mürşid",
+    "aciklama": "Resûlullah'a bağlılığın ona vekâlet etme mertebesine yükselmesi. Kalbin mescit yapılıp Allah'tan başka hiçbir şeye yer verilmemesi. Müridin bir kılavuza muhtaç olması, çölün tehlikelerinden korunması. Mürşide sımsıkı bağlanmanın gerekliliği. Ziyaretin önemi ve karşılıksız verilen ilmin kıymeti.",
+    "sayfa": 16,
+    "oran": 0.0,
+    "satir": 0
+  }
+]

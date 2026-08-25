@@ -1,0 +1,162 @@
+[
+  {
+    "seviye": 1,
+    "baslik": "BİRİNCİ BÖLÜM: Müteşâbih Haberler Hakkında Selefin İ'tikâdı",
+    "aciklama": "Selef mezhebinin hak olduğu, avâmın müteşâbih haberler karşısında uyması gereken yedi vazife: Takdîs, Tasdîk, Aczini i'tirâf, Sükût, İmsâk, Keff, Teslîm.",
+    "sayfa": 1,
+    "oran": 0.0,
+    "satir": 0
+  },
+  {
+    "seviye": 2,
+    "baslik": "1. Vazife: Takdîs",
+    "aciklama": "Allahü Teâlâ'yı cisim olmaktan ve cisme benzer şeylerden tenzîh etmek. El, parmak, sûret, nüzûl, fevk gibi müteşâbih lafızların açıklaması ve bunların Allah hakkında cisim anlamına gelmeyeceği.",
+    "sayfa": 2,
+    "oran": 0.0,
+    "satir": 0
+  },
+  {
+    "seviye": 2,
+    "baslik": "2. Vazife: Îmân ve Tasdîk",
+    "aciklama": "Resûlullah'ın müteşâbih lafızlarla Allah'ı vasfetmesinde sâdık olduğuna inanmak. Mücmel olarak tasdîk etmenin mümkün olduğu ve bu konuda suâl sormanın bid'at olduğu.",
+    "sayfa": 7,
+    "oran": 0.0,
+    "satir": 0
+  },
+  {
+    "seviye": 2,
+    "baslik": "3. Vazife: Aczini İ'tirâf",
+    "aciklama": "Müteşâbih sözlerin hakîkatine vâkıf olmadığını, künhünü anlamaktan âciz olduğunu ikrâr etmek. İmâm-ı Mâlik'in 'keyfiyyeti meçhûldür' sözü ve Ebû Bekr'in aczi i'tirâf etmesi.",
+    "sayfa": 10,
+    "oran": 0.0,
+    "satir": 0
+  },
+  {
+    "seviye": 2,
+    "baslik": "4. Vazife: Sükût",
+    "aciklama": "Müteşâbihât hakkında suâl sormaktan sükût etmek. Suâl etmenin gücün yetmediği işe atılmak olduğu, âriflerin avâma anlatmaktan âciz kalacağı. Vâizlerin kürsîlerde te'vîle dalarak cevâb vermesinin haram oluşu.",
+    "sayfa": 11,
+    "oran": 0.0,
+    "satir": 0
+  },
+  {
+    "seviye": 2,
+    "baslik": "5. Vazife: İmsâk",
+    "aciklama": "Müteşâbih lafızlarda tasarruf yapmaktan, müdâhele etmekten kendini alıkoymak. Tefsîr, te'vîl, tasrîf, tefrî', cem', tefrîk yapmanın yasak olduğu ve her birinin detaylı açıklaması.",
+    "sayfa": 13,
+    "oran": 0.0,
+    "satir": 0
+  },
+  {
+    "seviye": 3,
+    "baslik": "Tefsîr Yolu ile Tasarruf",
+    "aciklama": "Müteşâbih lafızları başka bir dile çevirmenin ve değiştirmenin tehlikeleri. İstivâ, ayn, usbu' gibi kelimelerin farklı dillerdeki karşılıklarının tam olmadığı.",
+    "sayfa": 13,
+    "oran": 0.0,
+    "satir": 0
+  },
+  {
+    "seviye": 3,
+    "baslik": "Te'vîl Yolu ile Tasarruf",
+    "aciklama": "Avâmın te'vîli, avâm ile âlim arasındaki te'vîl, ârifin te'vîli. Kat'î, şübheli ve zannî te'vîller. Te'vîlin kimlere anlatılabileceği ve kimlerden saklanması gerektiği.",
+    "sayfa": 17,
+    "oran": 0.0,
+    "satir": 0
+  },
+  {
+    "seviye": 3,
+    "baslik": "Tasrîf, Tefrî', Cem', Tefrîk",
+    "aciklama": "Kelimenin yapısını bozmak, teferruâta girmek, farklı haberleri bir araya toplamak ve toplu olanları ayırmanın sakıncaları.",
+    "sayfa": 28,
+    "oran": 0.0,
+    "satir": 0
+  },
+  {
+    "seviye": 2,
+    "baslik": "6. Vazife: Keff",
+    "aciklama": "Müteşâbih sözler hakkında konuşmamaktan başka, üzerinde düşünmekten de kendini alıkoymak. Zihni başka meşguliyetlerle meşgûl etmenin yolları.",
+    "sayfa": 31,
+    "oran": 0.0,
+    "satir": 0
+  },
+  {
+    "seviye": 2,
+    "baslik": "7. Vazife: Teslîm",
+    "aciklama": "Ma'rifet ehline, peygamberlere, velîlere ve râsih ilimli âlimlere teslîm olmak. Avâmın kendi âcizliğini bilmesi ve ma'rifet denizindeki farklı dereceler.",
+    "sayfa": 41,
+    "oran": 0.0,
+    "satir": 0
+  },
+  {
+    "seviye": 1,
+    "baslik": "İKİNCİ BÖLÜM: SELEF İ'TİKÂDININ İSBÂTI",
+    "aciklama": "Selef mezhebinin hak olduğunu gösteren aklî ve naklî delîller.",
+    "sayfa": 44,
+    "oran": 0.0,
+    "satir": 0
+  },
+  {
+    "seviye": 2,
+    "baslik": "Aklî Delîl",
+    "aciklama": "İcmâlî delîl (dört esâs) ve tafsîlî delîl. Ashâb-ı kirâmın müteşâbih sözler hakkındaki tutumu.",
+    "sayfa": 44,
+    "oran": 0.0,
+    "satir": 0
+  },
+  {
+    "seviye": 2,
+    "baslik": "Naklî Burhânlar",
+    "aciklama": "Bid'atin kötü olduğuna dair hadîs-i şerîfler. Sahâbe-i kirâmın müteşâbih sözler hakkında suâl soranları azarlaması ve bid'atin selef sünnetine muhâlif olduğu.",
+    "sayfa": 48,
+    "oran": 0.0,
+    "satir": 0
+  },
+  {
+    "seviye": 1,
+    "baslik": "ÜÇÜNCÜ BÖLÜM: Müteşâbih Sözler Hakkında Çeşitli ve Fâideli Beş Fasıl",
+    "aciklama": "Müteşâbih lafızlarla ilgili müşküllerin çözümü, suâl ve cevâblar, îmân ve tasdîk mertebeleri, avâmın mükelleftir.",
+    "sayfa": 55,
+    "oran": 0.0,
+    "satir": 0
+  },
+  {
+    "seviye": 2,
+    "baslik": "Birinci Fasıl: Müteşâbih Lafızların Kullanılma Sebebi",
+    "aciklama": "Resûlullah'ın niçin vehme götüren kelimeler kullandığı sorusuna cevâb. Karînelerle vehimlerin giderilmesi. Takdîs ma'rifetinin karîne oluşu.",
+    "sayfa": 55,
+    "oran": 0.0,
+    "satir": 0
+  },
+  {
+    "seviye": 2,
+    "baslik": "İkinci Fasıl: Müteşâbih Suâllere Verilecek Cevaplar",
+    "aciklama": "İstivâ, fevk, el, parmak, Kur'ân'ın mahlûk olup olmaması, harflerin kadîmliği, îmânın kadîmliği gibi suâllere nasıl cevâb verileceği. İmâm-ı Mâlik'in sözü.",
+    "sayfa": 68,
+    "oran": 0.0,
+    "satir": 0
+  },
+  {
+    "seviye": 2,
+    "baslik": "Üçüncü Fasıl: Îmân Kadîm midir?",
+    "aciklama": "Îmânın kadîm olup olmadığı sorusuna verilecek cevâb. Varlığın dört mertebesi üzerinden Kur'ân ve ateş misâli ile açıklama.",
+    "sayfa": 71,
+    "oran": 0.0,
+    "satir": 0
+  },
+  {
+    "seviye": 2,
+    "baslik": "Dördüncü Fasıl: Avâmın Delîlsiz Îmânı",
+    "aciklama": "Avâmın delîl bilmeden de kat'î tasdîk edebileceği. Tasdîkin altı mertebesi. Taklîd ile îmânın geçerliliği ve mukallid ile ârif arasındaki fark.",
+    "sayfa": 76,
+    "oran": 0.0,
+    "satir": 0
+  },
+  {
+    "seviye": 2,
+    "baslik": "Beşinci Fasıl: Îmân ve Ma'rifet Farkı",
+    "aciklama": "Avâmın i'tikâd ile değil hakîkî ma'rifet ile mükellef olduğu itirazına cevâb. Kat'î tasdîkin yeterli olduğu, delîlin matlûb değil fâidenin matlûb olduğu. Mü'min mukallid ile yahûdî mukallid arasındaki fark.",
+    "sayfa": 81,
+    "oran": 0.0,
+    "satir": 0
+  }
+]

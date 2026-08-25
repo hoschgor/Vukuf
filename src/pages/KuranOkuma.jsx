@@ -399,6 +399,21 @@ const maxWidth = useMemo(() =>
 
   const [barYuksekligi, setBarYuksekligi] = useState(48)
   const barRef = useRef(null)
+  // PWA (standalone) modu: iOS'ta safe-area-inset-bottom gerçek ~34px → alt bar fazla boşluklu.
+  // Tarayıcıda inset ≈0. Bu yüzden safe-area'yı yalnız PWA'da bir miktar kırpıyoruz.
+  const [pwaModu, setPwaModu] = useState(() => {
+    try { return (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) || window.navigator.standalone === true } catch { return false }
+  })
+  useEffect(() => {
+    try {
+      const mq = window.matchMedia("(display-mode: standalone)")
+      const guncelle = () => setPwaModu(mq.matches || window.navigator.standalone === true)
+      mq.addEventListener ? mq.addEventListener("change", guncelle) : mq.addListener(guncelle)
+      return () => { mq.removeEventListener ? mq.removeEventListener("change", guncelle) : mq.removeListener(guncelle) }
+    } catch {}
+  }, [])
+  // PWA'da alt barın DOĞRUDAN alt boşluğu (px). Büyüt = daha çok, küçült = daha az. Web etkilenmez.
+  const pwaAltBosluk = 8
   const [playerYuk, setPlayerYuk] = useState(0)  // PlayerBar'ın ÖLÇÜLEN yüksekliği
 
 useLayoutEffect(() => {
@@ -1667,8 +1682,13 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
       borderTop:    barKonum === "alt" ? `1px solid ${theme.border}` : "none",
       borderBottom: barKonum === "ust" ? `1px solid ${theme.border}` : "none",
       // Dikey padding + safe-area: max() → çift boşluk yok. Baz padding azaltıldı: bar uzamasın.
+      // PWA'da alt boşluk DOĞRUDAN pwaAltBosluk (safe-area yok); web'de max(base, inset).
       paddingTop:    barKonum === "ust" ? `max(${isMobile ? 5 : 3}px, env(safe-area-inset-top))` : `${isMobile ? 5 : 3}px`,
-      paddingBottom: barKonum === "alt" ? `max(${isMobile ? 5 : 3}px, env(safe-area-inset-bottom))` : `${isMobile ? 5 : 3}px`,
+      paddingBottom: barKonum === "alt"
+        ? (pwaModu
+            ? `${pwaAltBosluk}px`
+            : `max(${isMobile ? 5 : 3}px, env(safe-area-inset-bottom))`)
+        : `${isMobile ? 5 : 3}px`,
       paddingLeft:   `max(${isMobile ? 12 : 10}px, env(safe-area-inset-left))`,
       paddingRight:  `max(${isMobile ? 12 : 10}px, env(safe-area-inset-right))`,
       display: "flex", alignItems: "center", gap: `${Math.round(4 * barUiOlcegi)}px`,

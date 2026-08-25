@@ -860,6 +860,25 @@ const barZamanRef = useRef(null)
 const [barGorunur, setBarGorunur]           = useState(true)
 const barRef = useRef(null)
 const [barYuk, setBarYuk] = useState(56)   // ölçülen bar yüksekliği (safe-area padding dahil)
+const [gecisHazir, setGecisHazir] = useState(false)  // padding geçişi: açılıştaki ölçüm oturana kadar KAPALI (kayma olmasın)
+// PWA (ana ekrana eklenmiş / standalone) modu: iOS burada safe-area-inset-bottom'u gerçek
+// ~34px verir → alt bar fazla boşluklu görünür. Tarayıcıda inset ~0, kompakt. Bu yüzden
+// safe-area katkısını YALNIZ PWA'da bir miktar kırpıyoruz (web'e dokunmuyoruz).
+const [pwaModu, setPwaModu] = useState(() => {
+  try { return (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) || window.navigator.standalone === true } catch { return false }
+})
+useEffect(() => {
+  try {
+    const mq = window.matchMedia("(display-mode: standalone)")
+    const guncelle = () => setPwaModu(mq.matches || window.navigator.standalone === true)
+    mq.addEventListener ? mq.addEventListener("change", guncelle) : mq.addListener(guncelle)
+    return () => { mq.removeEventListener ? mq.removeEventListener("change", guncelle) : mq.removeListener(guncelle) }
+  } catch {}
+}, [])
+// PWA'da alt barın DOĞRUDAN alt boşluğu (px). Büyüt = daha çok boşluk, küçült = daha az.
+// safe-area/max karmaşası yok; web bundan etkilenmez (web'de pwaModu=false).
+// ~8 web'e yakın kompakt durur; home-indicator payı istersen 16-20 yapabilirsin.
+const pwaAltBosluk = 8
 const [barKonum, setBarKonum] = useState(() => localStorage.getItem("vukuf-bar-konum") || "alt")
 const [barUiOlcegi, setBarUiOlcegi] = useState(() => parseFloat(localStorage.getItem("vukuf-bar-ui-olcegi") || "1"))
 const [bilgiOlcegi, setBilgiOlcegi] = useState(() => parseFloat(localStorage.getItem("vukuf-bilgi-olcegi") || "1"))
@@ -1253,7 +1272,17 @@ useLayoutEffect(() => {
   let ro
   try { ro = new ResizeObserver(olc); ro.observe(el) } catch {}
   window.addEventListener("resize", olc); window.addEventListener("orientationchange", olc)
-  return () => { try { ro && ro.disconnect() } catch {}; window.removeEventListener("resize", olc); window.removeEventListener("orientationchange", olc) }
+  // Fontlar yüklenince yeniden ölç (metin metrikleri değişip barı büyütebilir) —
+  // sonra padding geçişini AÇ. Böylece açılıştaki ölçüm düzeltmesi animasyonsuz olur:
+  // içerik "boşluklu açılıp sonra kayma" yapmaz; geçiş yalnız bar göster/gizle için kalır.
+  let zaman
+  const gecisiAc = () => setGecisHazir(true)
+  if (typeof document !== "undefined" && document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(() => { olc(); zaman = setTimeout(gecisiAc, 80) }).catch(() => { zaman = setTimeout(gecisiAc, 400) })
+  } else {
+    zaman = setTimeout(gecisiAc, 400)
+  }
+  return () => { try { ro && ro.disconnect() } catch {}; window.removeEventListener("resize", olc); window.removeEventListener("orientationchange", olc); if (zaman) clearTimeout(zaman) }
 }, [barKonum, isMobile, barUiOlcegi])
 
 // Ekran döndürülünce aynı sayfada kal (px scroll konumu farklı sayfaya denk gelmesin)
@@ -2609,8 +2638,13 @@ const Bar = (
     borderBottom: barKonum === "ust" ? `1px solid ${theme.border}` : "none",
     // Dikey padding + safe-area: max() → çift boşluk YOK (baz+inset yerine büyüğü kadar)
     // Baz padding azaltıldı: bar gereksiz uzamasın, ögeler orta bölümde tıklanabilir kalsın.
+    // PWA'da alt boşluk DOĞRUDAN pwaAltBosluk (safe-area yok); web'de eskisi gibi max(base, inset).
     paddingTop:    barKonum === "ust" ? `max(${isMobile ? 5 : 3}px, env(safe-area-inset-top))` : `${isMobile ? 5 : 3}px`,
-    paddingBottom: barKonum === "alt" ? `max(${isMobile ? 5 : 3}px, env(safe-area-inset-bottom))` : `${isMobile ? 5 : 3}px`,
+    paddingBottom: barKonum === "alt"
+      ? (pwaModu
+          ? `${pwaAltBosluk}px`
+          : `max(${isMobile ? 5 : 3}px, env(safe-area-inset-bottom))`)
+      : `${isMobile ? 5 : 3}px`,
     paddingLeft:   `max(${isMobile ? 12 : 10}px, env(safe-area-inset-left))`,
     paddingRight:  `max(${isMobile ? 12 : 10}px, env(safe-area-inset-right))`,
     display: "flex", alignItems: "center", gap: `${Math.round(4 * barUiOlcegi)}px`,
@@ -2853,7 +2887,7 @@ return (
         paddingBottom: barKonum === "alt" ? (barGorunur ? `${barYuk}px` : "max(12px, env(safe-area-inset-bottom))") : "24px",
         paddingLeft: "env(safe-area-inset-left)",
         paddingRight: "env(safe-area-inset-right)",
-        transition: "padding-top 0.25s ease, padding-bottom 0.25s ease",
+        transition: gecisHazir ? "padding-top 0.25s ease, padding-bottom 0.25s ease" : "none",
       }}
     >
       <div style={{ maxWidth: `${Math.round((isMobile ? 480 : 720) * (yaziBoyutu / 16))}px`, margin: "0 auto", padding: "0 24px" }}>

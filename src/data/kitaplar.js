@@ -63,22 +63,6 @@ export const kategoriler = [
           ],
       },
       { id: "kucuk-eserler", isim: "Küçük Eserler", kitaplar: [] },
-    ],
-  },
-  {
-    id: "muhtelif-eserler",
-    baslik: "Muhtelif Eserler",
-    // ── Muhtelif Eserler (Türkçe) — iki raf ────────────────────────────────────
-    alimler: [
-      {
-        id: "muhtelif-eserler-genel",
-        isim: "Muhtelif Eserler",
-        kitaplar: [
-          { id: "pey_hayati", baslik: "Peygamberimizin Hayatı", yazar: "",                   dosya: "pey_hayati-metin.json", gorsel: "/kitap-kapak/pey_hayati.png", aciklama: "Peygamber Efendimizin (asm) hayatını anlatan siyer eseri." },
-          { id: "bilmen",     baslik: "Büyük İslam İlmihali",   yazar: "Ömer Nasuhi Bilmen", dosya: "bilmen-metin.json",     gorsel: "/kitap-kapak/bilmen.png",     aciklama: "Ömer Nasuhi Bilmen'in kaleme aldığı kapsamlı ilmihal." },
-          { id: "safii",      baslik: "Büyük Şafiî İlmihali",   yazar: "",                   dosya: "safii-metin.json",      gorsel: "/kitap-kapak/safii.png",      aciklama: "Şâfiî mezhebine göre ibadet esaslarını anlatan ilmihal." },
-        ],
-      },
       {
         id: "risale-i-nur-muhtelif",
         isim: "Risale-i Nur / Muhtelif Eserler",
@@ -233,9 +217,17 @@ export const kategoriler = [
       {
         id: "ibn-haldun", isim: "İbn Haldûn", kitaplar: [] },
       { id: "ibn-arabi-diger", isim: "İbn Arabî", kitaplar: [] },
+      {
+        id: "diger-kitaplar",
+        isim: "Diğer",
+        kitaplar: [
+          { id: "pey_hayati", baslik: "Peygamberimizin Hayatı", yazar: "",                   dosya: "pey_hayati-metin.json", gorsel: "/kitap-kapak/pey_hayati.png", aciklama: "Peygamber Efendimizin (asm) hayatını anlatan siyer eseri." },
+          { id: "bilmen",     baslik: "Büyük İslam İlmihali",   yazar: "Ömer Nasuhi Bilmen", dosya: "bilmen-metin.json",     gorsel: "/kitap-kapak/bilmen.png",     aciklama: "Ömer Nasuhi Bilmen'in kaleme aldığı kapsamlı ilmihal." },
+          { id: "safii",      baslik: "Büyük Şafiî İlmihali",   yazar: "",                   dosya: "safii-metin.json",      gorsel: "/kitap-kapak/safii.png",      aciklama: "Şâfiî mezhebine göre ibadet esaslarını anlatan ilmihal." },
+        ],
+      },
     ],
   },
-  
   {
     id: "hadis",
     baslik: "Hadis-i Şerif",

@@ -38,6 +38,34 @@ export const kategoriler = [
     ],
   },
   {
+    id: "risale",
+    baslik: "Risale-i Nûr",
+    alimler: [
+      {
+        id: "buyuk-eserler",
+        isim: "Büyük Eserler",
+        kitaplar: [
+            { id: "sozler",                      baslik: "Sözler",                       gorsel: "/kitap-kapak/sozler.png",                yazar: "Bediüzzaman Said Nursî", dosya: "sozler-metin.json",                      aciklama: "Risale-i Nur'un temel eseri; iman hakikatlerini temsil ve hikâyelerle anlatan otuz üç Söz." },
+            { id: "mektubat",                    baslik: "Mektubat",                     gorsel: "/kitap-kapak/mektubat.png",              yazar: "Bediüzzaman Said Nursî", dosya: "mektubat-metin.json",                    aciklama: "Talebelerin sorularına verilen cevaplardan oluşan otuz üç Mektup." },
+            { id: "lemalar",                     baslik: "Lem'alar",                     gorsel: "/kitap-kapak/lemalar.png",               yazar: "Bediüzzaman Said Nursî", dosya: "lemalar-metin.json",                     aciklama: "İman ve Kur'ân hakikatlerine dair otuz üç Lem'a; İhlas ve Hastalar Risalesi gibi bölümler." },
+            { id: "sualar",                      baslik: "Şuâlar",                       gorsel: "/kitap-kapak/sualar.png",                yazar: "Bediüzzaman Said Nursî", dosya: "sualar-metin.json",                      aciklama: "Âyetü'l-Kübrâ ve Meyve Risalesi gibi tahkikî iman derslerini içeren şuâlar." },
+            { id: "mesnevi-i-nuriye",            baslik: "Mesnevî-i Nuriye",             gorsel: "/kitap-kapak/mesneviinuriye.png",        yazar: "Bediüzzaman Said Nursî", dosya: "mesnevi-i-nuriye-metin.json",            aciklama: "Risale-i Nur'un çekirdeği sayılan, Arapça aslından tercüme kısa ve derin bahisler." },
+            { id: "isaratul-icaz",               baslik: "İşârâtü'l-İ'câz",              gorsel: "/kitap-kapak/isarat.png",                yazar: "Bediüzzaman Said Nursî", dosya: "isaratul-icaz-metin.json",               aciklama: "Bakara sûresinin tefsiri; Kur'ân'ın nazmındaki i'câzı gösterir." },
+            { id: "asa-yi-musa",                 baslik: "Asâ-yı Mûsâ",                  gorsel: "/kitap-kapak/asayimusa.png",             yazar: "Bediüzzaman Said Nursî", dosya: "asa-yi-musa-metin.json",                 aciklama: "İman esaslarını delilleriyle ispatlayan iki kısımlık derleme." },
+            { id: "barla-lahikasi",              baslik: "Barla Lâhikası",               gorsel: "/kitap-kapak/barla.png",                 yazar: "Bediüzzaman Said Nursî", dosya: "barla-lahikasi-metin.json",              aciklama: "Barla döneminde talebelerle mektuplaşmalar." },
+            { id: "kastamonu-lahikasi",          baslik: "Kastamonu Lâhikası",           gorsel: "/kitap-kapak/kastamonu.png",             yazar: "Bediüzzaman Said Nursî", dosya: "kastamonu-lahikasi-metin.json",          aciklama: "Kastamonu dönemi mektuplaşmaları." },
+            { id: "emirdag-lahikasi",            baslik: "Emirdağ Lâhikası",             gorsel: "/kitap-kapak/emirdag.png",               yazar: "Bediüzzaman Said Nursî", dosya: "emirdag-lahikasi-metin.json",            aciklama: "Emirdağ dönemi mektupları; hizmet düsturları." },
+            { id: "iman-ve-kufur-muvazeneleri",  baslik: "İman ve Küfür Muvazeneleri",   gorsel: "/kitap-kapak/imanvekufur.png",           yazar: "Bediüzzaman Said Nursî", dosya: "iman-ve-kufur-muvazeneleri-metin.json",  aciklama: "İman ile küfrün neticelerini karşılaştıran seçme bahisler." },
+            { id: "sikke-i-tasdik-i-gaybi",      baslik: "Sikke-i Tasdîk-ı Gaybî",       gorsel: "/kitap-kapak/gaybi.png",                 yazar: "Bediüzzaman Said Nursî", dosya: "sikke-i-tasdik-i-gaybi-metin.json",      aciklama: "Risale-i Nur'a dair gaybî işaretler ve tevafuklar." },
+            { id: "muhakemat",                   baslik: "Muhâkemat",                    gorsel: "/kitap-kapak/muhakemat.png",             yazar: "Bediüzzaman Said Nursî", dosya: "muhakemat-metin.json",                   aciklama: "İlk dönem eseri; Kur'ân hakikatlerinin anlaşılmasında usûl ve muhakeme." },
+            { id: "tarihce-i-hayat",             baslik: "Tarihçe-i Hayat",              gorsel: "/kitap-kapak/tarihce.png",               yazar: "Bediüzzaman Said Nursî", dosya: "tarihce-i-hayat-metin.json",             aciklama: "Bediüzzaman'ın hayatını dönem dönem anlatan biyografi." },
+            { id: "ilk-donem-eserleri",          baslik: "İlk Dönem Eserleri",           gorsel: "/kitap-kapak/ilkdonem.png",              yazar: "Bediüzzaman Said Nursî", dosya: "ilk-donem-eserleri-metin.json",          aciklama: "Münâzarât, Hutbe-i Şâmiye gibi erken dönem eserleri." },
+          ],
+      },
+      { id: "kucuk-eserler", isim: "Küçük Eserler", kitaplar: [] },
+    ],
+  },
+  {
     id: "muhtelif-eserler",
     baslik: "Muhtelif Eserler",
     // ── Muhtelif Eserler (Türkçe) — iki raf ────────────────────────────────────
@@ -203,43 +231,11 @@ export const kategoriler = [
     baslik: "Diğer",
     alimler: [
       {
-        id: "bediuzzaman",
-        isim: "Bediüzzaman Said Nursî",
-        altKategoriler: [
-        {
-          id: "buyuk-eserler",
-          baslik: "Büyük Eserler",
-          kitaplar: [
-            { id: "sozler",                      baslik: "Sözler",                       gorsel: "/kitap-kapak/sozler.png",                yazar: "Bediüzzaman Said Nursî", dosya: "sozler-metin.json",                      aciklama: "Risale-i Nur'un temel eseri; iman hakikatlerini temsil ve hikâyelerle anlatan otuz üç Söz." },
-            { id: "mektubat",                    baslik: "Mektubat",                     gorsel: "/kitap-kapak/mektubat.png",              yazar: "Bediüzzaman Said Nursî", dosya: "mektubat-metin.json",                    aciklama: "Talebelerin sorularına verilen cevaplardan oluşan otuz üç Mektup." },
-            { id: "lemalar",                     baslik: "Lem'alar",                     gorsel: "/kitap-kapak/lemalar.png",               yazar: "Bediüzzaman Said Nursî", dosya: "lemalar-metin.json",                     aciklama: "İman ve Kur'ân hakikatlerine dair otuz üç Lem'a; İhlas ve Hastalar Risalesi gibi bölümler." },
-            { id: "sualar",                      baslik: "Şuâlar",                       gorsel: "/kitap-kapak/sualar.png",                yazar: "Bediüzzaman Said Nursî", dosya: "sualar-metin.json",                      aciklama: "Âyetü'l-Kübrâ ve Meyve Risalesi gibi tahkikî iman derslerini içeren şuâlar." },
-            { id: "mesnevi-i-nuriye",            baslik: "Mesnevî-i Nuriye",             gorsel: "/kitap-kapak/mesneviinuriye.png",        yazar: "Bediüzzaman Said Nursî", dosya: "mesnevi-i-nuriye-metin.json",            aciklama: "Risale-i Nur'un çekirdeği sayılan, Arapça aslından tercüme kısa ve derin bahisler." },
-            { id: "isaratul-icaz",               baslik: "İşârâtü'l-İ'câz",              gorsel: "/kitap-kapak/isarat.png",                yazar: "Bediüzzaman Said Nursî", dosya: "isaratul-icaz-metin.json",               aciklama: "Bakara sûresinin tefsiri; Kur'ân'ın nazmındaki i'câzı gösterir." },
-            { id: "asa-yi-musa",                 baslik: "Asâ-yı Mûsâ",                  gorsel: "/kitap-kapak/asayimusa.png",             yazar: "Bediüzzaman Said Nursî", dosya: "asa-yi-musa-metin.json",                 aciklama: "İman esaslarını delilleriyle ispatlayan iki kısımlık derleme." },
-            { id: "barla-lahikasi",              baslik: "Barla Lâhikası",               gorsel: "/kitap-kapak/barla.png",                 yazar: "Bediüzzaman Said Nursî", dosya: "barla-lahikasi-metin.json",              aciklama: "Barla döneminde talebelerle mektuplaşmalar." },
-            { id: "kastamonu-lahikasi",          baslik: "Kastamonu Lâhikası",           gorsel: "/kitap-kapak/kastamonu.png",             yazar: "Bediüzzaman Said Nursî", dosya: "kastamonu-lahikasi-metin.json",          aciklama: "Kastamonu dönemi mektuplaşmaları." },
-            { id: "emirdag-lahikasi",            baslik: "Emirdağ Lâhikası",             gorsel: "/kitap-kapak/emirdag.png",               yazar: "Bediüzzaman Said Nursî", dosya: "emirdag-lahikasi-metin.json",            aciklama: "Emirdağ dönemi mektupları; hizmet düsturları." },
-            { id: "iman-ve-kufur-muvazeneleri",  baslik: "İman ve Küfür Muvazeneleri",   gorsel: "/kitap-kapak/imanvekufur.png",           yazar: "Bediüzzaman Said Nursî", dosya: "iman-ve-kufur-muvazeneleri-metin.json",  aciklama: "İman ile küfrün neticelerini karşılaştıran seçme bahisler." },
-            { id: "sikke-i-tasdik-i-gaybi",      baslik: "Sikke-i Tasdîk-ı Gaybî",       gorsel: "/kitap-kapak/gaybi.png",                 yazar: "Bediüzzaman Said Nursî", dosya: "sikke-i-tasdik-i-gaybi-metin.json",      aciklama: "Risale-i Nur'a dair gaybî işaretler ve tevafuklar." },
-            { id: "muhakemat",                   baslik: "Muhâkemat",                    gorsel: "/kitap-kapak/muhakemat.png",             yazar: "Bediüzzaman Said Nursî", dosya: "muhakemat-metin.json",                   aciklama: "İlk dönem eseri; Kur'ân hakikatlerinin anlaşılmasında usûl ve muhakeme." },
-            { id: "tarihce-i-hayat",             baslik: "Tarihçe-i Hayat",              gorsel: "/kitap-kapak/tarihce.png",               yazar: "Bediüzzaman Said Nursî", dosya: "tarihce-i-hayat-metin.json",             aciklama: "Bediüzzaman'ın hayatını dönem dönem anlatan biyografi." },
-            { id: "ilk-donem-eserleri",          baslik: "İlk Dönem Eserleri",           gorsel: "/kitap-kapak/ilkdonem.png",              yazar: "Bediüzzaman Said Nursî", dosya: "ilk-donem-eserleri-metin.json",          aciklama: "Münâzarât, Hutbe-i Şâmiye gibi erken dönem eserleri." },
-          ],
-        },
-        {
-          id: "kucuk-eserler",
-          baslik: "Küçük Eserler",
-          kitaplar: [
-
-          ],
-        },
-      ],
-      },
-      { id: "ibn-haldun", isim: "İbn Haldûn", kitaplar: [] },
+        id: "ibn-haldun", isim: "İbn Haldûn", kitaplar: [] },
       { id: "ibn-arabi-diger", isim: "İbn Arabî", kitaplar: [] },
     ],
   },
+  
   {
     id: "hadis",
     baslik: "Hadis-i Şerif",

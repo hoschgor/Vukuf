@@ -261,6 +261,9 @@ function OtoFit({ children, maxFont, minFont = 16, as: Tag = "div", style, ...re
 // METİN PARCASI
 // ════════════════════════════════════════════════════════════════
 const ARAP_RE = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/
+// kfgqpc'nin bozuk/eksik \u00E7izdi\u011Fi, MeQuran'dan render edilecek i\u015Faretler:
+// U+060C virg\u00FCl, U+06EA uzatma/durak, U+FD3E/U+FD3F s\u00FCsl\u00FC ayet parantezleri. (capturing grup: split ayra\u00E7lar\u0131 korur)
+const MQ_ISARET = /([\u060C\u06EA\uFD3E\uFD3F])/
 const HASIYE_RE = /\u27E6H(\d+)\u27E7/g
 // Ba\u015Fl\u0131k metni normalizasyonu (DOM aramas\u0131 i\u00E7in): k\u00FC\u00E7\u00FCk harf + bo\u015Fluk sadele\u015Ftir + sondaki noktalama
 const bnormR = (s) => (s || "").toLowerCase().replace(/\s+/g, " ").trim().replace(/[:.\-\u2013\u2014\u2022*\u00B7\s]+$/, "")
@@ -649,12 +652,15 @@ function renderMarkerli(text, dipnotMap, onDipnotTikla, theme, hasiyeMap = {}) {
         ? <HasiyeSup key={i} metin={hasiyeMap[h[1]]} onDipnotTikla={onDipnotTikla} theme={theme} />
         : null
     }
-    // kfgqpc Arapça virgülü (U+060C) DAİRE/durak sembolü olarak çiziyor (düz virgülü yok).
-    // Virgülleri MeQuran'dan normal virgül olarak çiz (boyut/hiza uyumlu; harfler kfgqpc kalır).
-    if (p.includes("،")) {
-      const alt = p.split(/(،)/)
-      return <span key={i}>{alt.map((ap, j) => ap === "،"
-        ? <span key={j} style={{ fontFamily: "'me_quran', serif" }}>،</span>
+    // kfgqpc'nin BOZDUĞU/eksik olduğu Arapça işaretleri MeQuran'dan çiz (harfler/rakamlar kfgqpc
+    // kalır, birleşik işaret bile doğru oturur — Playwright ile test edildi):
+    //   ، U+060C virgül → kfgqpc daire/durak sembolü çiziyor
+    //   ۪ U+06EA (uzatma/durak) → kfgqpc iri ◉ ve satır-içi yer kaplıyor (kelimeyi bölüyor)
+    //   ﴾ U+FD3E / ﴿ U+FD3F süslü ayet parantezleri → kfgqpc'de YOK (ters/bozuk); MeQuran madalyon
+    if (MQ_ISARET.test(p)) {
+      const alt = p.split(MQ_ISARET)
+      return <span key={i}>{alt.map((ap, j) => (ap && MQ_ISARET.test(ap))
+        ? <span key={j} style={{ fontFamily: "'me_quran', serif" }}>{ap}</span>
         : ap)}</span>
     }
     return <span key={i}>{p}</span>
@@ -839,7 +845,10 @@ const evradKitabiMi = useMemo(() => {
   ))
   return kat?.id === "evrad-ezkar"
 }, [id])
-const arapcaFont = evradKitabiMi
+// Evrad/Ezkar VARSAYILANI Me Quran; ama kullanıcı Arapça fontu menüden bir kez seçtiyse
+// (arapcaElle) artık ONA saygı duy — kilit yok, her yerde seçim geçerli.
+const [arapcaElle, setArapcaElle] = useState(() => localStorage.getItem("vukuf-arapca-elle") === "1")
+const arapcaFont = (evradKitabiMi && !arapcaElle)
   ? fontBul("me-quran").style
   : (fontSecimler.arapca ? fontBul(fontSecimler.arapca).style : null)
 const baslikFont = /Nurs[iî]/.test(kitap?.yazar || "") ? "LivaNur, serif" : metinFont
@@ -1210,9 +1219,14 @@ useLayoutEffect(() => {
   const ank = fontAnkorRef.current
   if (!ank) return
   ustSatirGeriYukle(ank)
-  // OtoFit başlık küçültmesi geç oturursa bir sonraki karede bir kez daha
+  // Font-family DEĞİŞİMİNDE yeni font ASENKRON yüklenip metni yeniden akıtabilir → tek restore
+  // yetmez. rAF + kısa timeout + fonts.ready ile birkaç kez geri çek (OtoFit/başlık de geç oturabilir).
   const rafId = requestAnimationFrame(() => ustSatirGeriYukle(ank))
-  return () => cancelAnimationFrame(rafId)
+  const t1 = setTimeout(() => ustSatirGeriYukle(ank), 90)
+  const t2 = setTimeout(() => ustSatirGeriYukle(ank), 260)
+  let iptal = false
+  try { document.fonts && document.fonts.ready && document.fonts.ready.then(() => { if (!iptal) ustSatirGeriYukle(ank) }) } catch {}
+  return () => { cancelAnimationFrame(rafId); clearTimeout(t1); clearTimeout(t2); iptal = true }
 }, [yaziBoyutu, satirAraligi, harfAraligi, kelimeAraligi, hizalama, arapBoyutu, baslikBoyutu, fontSecimler])
 
 // ── Son okuma konumu: çıkışta kaydet, açılışta geri dön (sistemi yormadan)
@@ -1766,6 +1780,8 @@ function kayitKonumSec(e) {
 
 function fontSecimDegistir(grupId, fontId) {
   setFontSecimler(prev => ({ ...prev, [grupId]: fontId }))
+  // Arapça fontu elle seçildi → Evrad'daki Me Quran kilidini kaldır (seçim her yerde geçerli)
+  if (grupId === "arapca") { setArapcaElle(true); try { localStorage.setItem("vukuf-arapca-elle", "1") } catch {} }
 }
 
 function kelimeTikla(kelime, anlam, kavram, e, secenekler = null) {

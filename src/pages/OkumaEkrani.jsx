@@ -1521,8 +1521,22 @@ function aramaVurgula(sayfaNo, el, aranan, altCizgi = true) {
   const rects = Array.from(r.getClientRects())
   if (!rects.length) return
   const prefRect = pref.getBoundingClientRect()
-  const kutular = rects.map(rc => ({
-    top: rc.top - prefRect.top, left: rc.left - prefRect.left, width: rc.width, height: rc.height,
+  // Aynı SATIRDAKİ parça kutuları TEK sürekli kutuda birleştir (kelime araları/boşluk dahil):
+  // getClientRects kelime başına ayrı rect verebiliyor → aralarda boşluk + dikey çizgi kalıyordu.
+  // Dikey olarak çakışan rect'ler aynı satır sayılır; sarma varsa satır başına ayrı kutu kalır.
+  const gruplar = []
+  for (const rc of rects) {
+    if (rc.width <= 0 || rc.height <= 0) continue
+    const mY = rc.top + rc.height / 2
+    let g = gruplar.find(x => mY > x.top && mY < x.bottom)
+    if (!g) gruplar.push({ top: rc.top, bottom: rc.bottom, left: rc.left, right: rc.right })
+    else {
+      g.top = Math.min(g.top, rc.top); g.bottom = Math.max(g.bottom, rc.bottom)
+      g.left = Math.min(g.left, rc.left); g.right = Math.max(g.right, rc.right)
+    }
+  }
+  const kutular = gruplar.map(g => ({
+    top: g.top - prefRect.top, left: g.left - prefRect.left, width: g.right - g.left, height: g.bottom - g.top,
   }))
   // kelime görünüm dışında/çok yukarıdaysa ona doğru ince ayar kaydır
   // Üst bar hedefi örtmesin: ölçülen bar yüksekliği + pay (sabit 110 çentik+2 satırda yetmiyordu).

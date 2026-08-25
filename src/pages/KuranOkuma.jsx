@@ -566,7 +566,8 @@ const cokSatir = wrapAktif && barYuksekligi > tekSatirYuksekligi * 1.0
 
   const handleScroll = useCallback(() => {
     scrollHiziAlgila()    // ← hız algılama ayrı devam eder
-
+    // Aa paneli açıkken kaydırılırsa font-ankorunu tazele
+    if (aaAcikRef.current && ustSatirYakalaRef.current) fontAnkorRef.current = ustSatirYakalaRef.current()
   }, [scrollbarGoster, scrollHiziAlgila])
 
   // ════════════════════════════════════════════════════════════════
@@ -624,6 +625,25 @@ const cokSatir = wrapAktif && barYuksekligi > tekSatirYuksekligi * 1.0
   // VERİ HAZIRLAMA
   // ════════════════════════════════════════════════════════════════
   const { sayfaMap, sureler, toplamSayfa, sureSayfaLookup, ayetSayfaLookup } = useMushaf(mushafData, sayfaHaritaJson)
+
+  // Aa paneli açılınca üst ayeti yakala (ref senkronu + ilk ankor)
+  useEffect(() => { aaAcikRef.current = aaAcik }, [aaAcik])
+  useEffect(() => { if (aaAcik) fontAnkorRef.current = ustSatirYakala() }, [aaAcik])
+  // Font/boyut/aralık değişince: reflow sonrası aynı ayete geri çek (virtualizer oturana dek birkaç kez)
+  const fontIlkRef = useRef(true)
+  useLayoutEffect(() => {
+    if (fontIlkRef.current) { fontIlkRef.current = false; return }
+    const ank = fontAnkorRef.current
+    if (!ank) return
+    ustSatirGeriYukle(ank)
+    let r1, r2, t
+    r1 = requestAnimationFrame(() => {
+      ustSatirGeriYukle(ank)
+      r2 = requestAnimationFrame(() => ustSatirGeriYukle(ank))
+    })
+    t = setTimeout(() => ustSatirGeriYukle(ank), 80)   // virtualizer measureElement geç oturursa
+    return () => { cancelAnimationFrame(r1); cancelAnimationFrame(r2); clearTimeout(t) }
+  }, [yaziBoyutu, satirAraligi, harfAraligi, arapcaFontId])
 
   const mevcutSureBilgisi = useMemo(() => {
     if (!sayfaMap?.size) return null
@@ -757,6 +777,47 @@ const hizbSayfalari = (cuzNo) => {
   const playerBarYuksekligi = (playerYuk || (isMobile
   ? 41 + Math.max(0, Math.round((1 - barUiOlcegi) * 1))
   : 40 + Math.max(0, Math.round((1 - barUiOlcegi) * 8))))
+
+  // ════════════════════════════════════════════════════
+  // Font/boyut değişiminde OKUMA YERİNİ KORU (sayfa atlamasın)
+  // En üstte görünen ayeti (data-sure+data-ayet) yakala; reflow sonrası aynı yere çek.
+  // ════════════════════════════════════════════════════
+  const fontAnkorRef = useRef(null)
+  const aaAcikRef = useRef(false)
+  const ustReferansY = () => {
+    const el = scrollRef.current
+    if (!el) return 0
+    const ustKaplama = barKonum === "ust"
+      ? ((barGorunur ? barYuksekligi : 0) + (player.durum !== "kapali" ? playerBarYuksekligi : 0))
+      : 0
+    return el.getBoundingClientRect().top + ustKaplama + 4
+  }
+  const ustSatirYakala = () => {
+    const el = scrollRef.current
+    if (!el) return null
+    const refY = ustReferansY()
+    const ayetler = el.querySelectorAll("[data-sure][data-ayet]")
+    for (let i = 0; i < ayetler.length; i++) {
+      const r = ayetler[i].getBoundingClientRect()
+      if (r.bottom > refY + 1) return {
+        sure: ayetler[i].getAttribute("data-sure"),
+        ayet: ayetler[i].getAttribute("data-ayet"),
+        ofset: r.top - refY,
+      }
+    }
+    return null
+  }
+  const ustSatirGeriYukle = (ank) => {
+    const el = scrollRef.current
+    if (!el || !ank || !ank.sure) return
+    const h = el.querySelector(`[data-sure="${ank.sure}"][data-ayet="${ank.ayet}"]`)
+    if (!h) return
+    const simdi = h.getBoundingClientRect().top - ustReferansY()
+    el.scrollTop += (simdi - ank.ofset)
+  }
+  const ustSatirYakalaRef = useRef(null)
+  ustSatirYakalaRef.current = ustSatirYakala   // handleScroll her zaman güncel sürümü çağırsın
+
   // ── SAYFA YÜKSEKLİKLERİ ──
   const sayfaYukseklikleri = useMemo(() => {
     if (!sayfaListesi.length) return []

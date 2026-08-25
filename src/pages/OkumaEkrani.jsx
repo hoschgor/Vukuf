@@ -842,6 +842,10 @@ const scrollRef    = useRef(null)
 const sayfaRefs    = useRef({})
 const sonScrollRef = useRef(0)
 const sonKonumRef  = useRef(null)   // { sayfa, oran } — son okuma konumu
+// İçindekiler menüsü kaydırma konumu (oturum içi): panel kapanıp açılınca aynı yere döner;
+// kitaptan çıkıp geri gelince bileşen yeniden bağlanır → ref sıfırlanır (0'dan başlar).
+const menuListeRef = useRef(null)
+const menuScrollRef = useRef(0)
 const konumYuklendiRef = useRef(false)
 const [donusTip, setDonusTip] = useState("")   // "arama" | "tefeul" — geldiği yere dönüş pill'i
 const [mevcutSayfa, setMevcutSayfa] = useState(1)
@@ -1102,6 +1106,41 @@ const tahminYukHam = (i) => {
 }
 
 // ════════════════════════════════════════════════════
+// Font/boyut değişiminde OKUMA YERİNİ KORU (sayfa atlamasın)
+// Değişimden önce en üstte görünen satırı yakala; reflow sonrası aynı satırı
+// aynı yüksekliğe geri çek. useLayoutEffect → paint öncesi, kayma/flash yok.
+// ════════════════════════════════════════════════════
+const fontAnkorRef = useRef(null)
+const aaAcikRef = useRef(false)
+// Okunabilir alanın üst referans Y'si (üst bar altı)
+const ustReferansY = () => {
+  const el = scrollRef.current
+  if (!el) return 0
+  return el.getBoundingClientRect().top + ((barKonum === "ust" && barGorunur) ? barYuk : 0) + 4
+}
+// En üstte (referansın altında) görünen ilk satırı yakala → {satir, ofset}
+const ustSatirYakala = () => {
+  const el = scrollRef.current
+  if (!el) return null
+  const refY = ustReferansY()
+  const satirlar = el.querySelectorAll("[data-satir]")
+  for (let i = 0; i < satirlar.length; i++) {
+    const r = satirlar[i].getBoundingClientRect()
+    if (r.bottom > refY + 1) return { satir: satirlar[i].getAttribute("data-satir"), ofset: r.top - refY }
+  }
+  return null
+}
+// Yakalanan satırı aynı yüksekliğe geri çek
+const ustSatirGeriYukle = (ank) => {
+  const el = scrollRef.current
+  if (!el || !ank || !ank.satir) return
+  const h = el.querySelector(`[data-satir="${ank.satir}"]`)
+  if (!h) return
+  const simdi = h.getBoundingClientRect().top - ustReferansY()
+  el.scrollTop += (simdi - ank.ofset)
+}
+
+// ════════════════════════════════════════════════════
 // Scroll takibi
 // ════════════════════════════════════════════════════
 
@@ -1110,6 +1149,8 @@ useEffect(() => {
   if (!el) return
   function onScroll() {
     sonScrollRef.current = el.scrollTop
+    // Aa paneli açıkken kullanıcı kaydırırsa font-ankorunu tazele (geri çekilecek satır güncel kalsın)
+    if (aaAcikRef.current) fontAnkorRef.current = ustSatirYakala()
     const merkez = el.getBoundingClientRect().top + el.clientHeight / 2
     let bulunan = null
     for (const [no, ref] of Object.entries(sayfaRefs.current)) {
@@ -1133,6 +1174,27 @@ useEffect(() => {
   onScroll()
   return () => el.removeEventListener("scroll", onScroll)
 }, [yukleniyor, kitapMetni])
+
+// Aa paneli açılınca üst satırı yakala (ref senkronu + ilk ankor)
+useEffect(() => { aaAcikRef.current = aaAcik }, [aaAcik])
+useEffect(() => { if (aaAcik) fontAnkorRef.current = ustSatirYakala() }, [aaAcik])
+
+// İçindekiler menüsü açılınca son kaydırma konumuna dön (oturum içi hafıza)
+useLayoutEffect(() => {
+  if (menuAcik && menuListeRef.current) menuListeRef.current.scrollTop = menuScrollRef.current
+}, [menuAcik])
+
+// Font/boyut/aralık/hizalama değişince: reflow sonrası aynı satıra geri çek (paint öncesi)
+const fontIlkRef = useRef(true)
+useLayoutEffect(() => {
+  if (fontIlkRef.current) { fontIlkRef.current = false; return }  // ilk mount: atla
+  const ank = fontAnkorRef.current
+  if (!ank) return
+  ustSatirGeriYukle(ank)
+  // OtoFit başlık küçültmesi geç oturursa bir sonraki karede bir kez daha
+  const rafId = requestAnimationFrame(() => ustSatirGeriYukle(ank))
+  return () => cancelAnimationFrame(rafId)
+}, [yaziBoyutu, satirAraligi, harfAraligi, kelimeAraligi, hizalama, arapBoyutu, baslikBoyutu, fontSecimler])
 
 // ── Son okuma konumu: çıkışta kaydet, açılışta geri dön (sistemi yormadan)
 const konumKaydet = useCallback(() => {
@@ -2614,7 +2676,8 @@ const MenuPanel = menuAcik && (
         <span style={{ fontSize: `${Math.round(15 * barUiOlcegi)}px`, fontWeight: 600, color: theme.accent }}>İçindekiler</span>
         <button onClick={() => setMenuAcik(false)} style={{ background: "none", border: "none", cursor: "pointer", color: theme.textSecondary }}><X size={Math.round(16 * barUiOlcegi)} /></button>
       </div>
-      <div style={{ flex: 1, overflowY: "auto", padding: "4px 0" }}>
+      <div ref={menuListeRef} onScroll={e => { menuScrollRef.current = e.currentTarget.scrollTop }}
+        style={{ flex: 1, overflowY: "auto", padding: "4px 0" }}>
         {(icindekiler && icindekiler.length > 0) ? (
           icindekilerAgaci(icindekiler).map(menuDugumRender)
         ) : (

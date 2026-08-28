@@ -34,7 +34,15 @@ const FONT_GRUPLARI = {
       { id: "merriweather", label: "Merriweather",     style: "'Merriweather', serif",      google: "Merriweather:ital,wght@0,300;0,400;1,300" },
     ],
   },
-
+  osmanlica: {
+    label: "Osmanlıca",
+    fontlar: [
+      { id: "crimson",   label: "Crimson Text",    style: "'Crimson Text', serif",    google: "Crimson+Text:ital,wght@0,400;0,600;1,400" },
+      { id: "garamond",  label: "EB Garamond",     style: "'EB Garamond', serif",     google: "EB+Garamond:ital,wght@0,400;0,500;1,400" },
+      { id: "cormorant", label: "Cormorant",       style: "'Cormorant', serif",       google: "Cormorant:ital,wght@0,300;0,400;1,300" },
+      { id: "im-fell",   label: "IM Fell English", style: "'IM Fell English', serif", google: "IM+Fell+English:ital@0;1" },
+    ],
+  },
   arapca: {
     label: "Arapça",
     fontlar: [
@@ -253,9 +261,35 @@ function OtoFit({ children, maxFont, minFont = 16, as: Tag = "div", style, ...re
 // METİN PARCASI
 // ════════════════════════════════════════════════════════════════
 const ARAP_RE = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/
-// kfgqpc'nin bozuk/eksik \u00E7izdi\u011Fi, MeQuran'dan render edilecek i\u015Faretler:
-// U+060C virg\u00FCl, U+06EA uzatma/durak, U+FD3E/U+FD3F s\u00FCsl\u00FC ayet parantezleri. (capturing grup: split ayra\u00E7lar\u0131 korur)
-const MQ_ISARET = /([\u060C\u06EA\uFD3E\uFD3F])/
+// \u2500\u2500 kfgqpc UYUMSUZLUK TABLOSU (kfgqpc\u2194MeQuran \u00E7ifti; ger\u00E7ek font render'\u0131yla \u00E7\u0131kar\u0131ld\u0131) \u2500\u2500
+// kfgqpc harf/rakamda g\u00FCzel ama baz\u0131 i\u015Faretleri \u25C9 \u00E7iziyor, baz\u0131 Fars/Osmanl\u0131 harflerini de
+// (glyph var ama \u25C9 placeholder). MeQuran bunlar\u0131 do\u011Fru \u00E7iziyor. Yeni bozuk karakter \u00E7\u0131karsa
+// a\u015Fa\u011F\u0131daki listelere tek kod eklemek yeterli.
+//   \u0130\u015EARETLER (birle\u015Fik/ayr\u0131k \u2014 tek tek MeQuran span'i ba\u011F\u0131 BOZMAZ):
+//     \u060C U+060C virg\u00FCl \u00B7 \u06DF U+06DF \u00B7 \u06E3 U+06E3 \u00B7 \u06EA U+06EA \u00B7 \u06EB U+06EB \u00B7 \u06ED U+06ED \u00B7 \u0658 U+0658
+//     \uFD3E U+FD3E \u00B7 \uFD3F U+FD3F s\u00FCsl\u00FC ayet parantezleri
+const MQ_ISARET = /([\u060C\u06DF\u06E3\u06EA\u06EB\u06ED\u0658\uFD3E\uFD3F])/
+//   FARS/OSMANLI HARFLER\u0130 (BA\u011ELANAN taban harf \u2014 tek harfi ayr\u0131 fonta al\u0131nca ba\u011F kopar \u2192
+//     Persli harf i\u00E7eren KEL\u0130MEN\u0130N TAMAMI MeQuran'dan \u00E7izilir):
+//     \u067E \u0679 \u0686 \u0698 \u06A9 \u06AF \u06CC \u06BE \u06C1 \u06D2 \u0688 \u0691
+const KF_FARS = new Set([0x067E,0x0679,0x0686,0x0698,0x06A9,0x06AF,0x06CC,0x06BE,0x06C1,0x06D2,0x0688,0x0691])
+const MQ_STIL = { fontFamily: "'me_quran', serif" }
+const farsHarfVar = (s) => { for (const ch of s) if (KF_FARS.has(ch.codePointAt(0))) return true; return false }
+// Bir d\u00FCz metin par\u00E7as\u0131n\u0131 kelime baz\u0131nda i\u015Fler: Persli kelime \u2192 t\u00FCm kelime MeQuran; de\u011Filse
+// yaln\u0131z bozuk i\u015Faretler MeQuran span'ine al\u0131n\u0131r. Bo\u015Fluklar korunur.
+function arapParcaRender(p, anahtar) {
+  const tokenlar = p.split(/(\s+)/)
+  return <span key={anahtar}>{tokenlar.map((tk, j) => {
+    if (!tk) return null
+    if (/^\s+$/.test(tk)) return tk
+    if (farsHarfVar(tk)) return <span key={j} style={MQ_STIL}>{tk}</span>
+    if (MQ_ISARET.test(tk)) {
+      const alt = tk.split(MQ_ISARET)
+      return <span key={j}>{alt.map((ap, z) => (ap && MQ_ISARET.test(ap)) ? <span key={z} style={MQ_STIL}>{ap}</span> : ap)}</span>
+    }
+    return tk
+  })}</span>
+}
 const HASIYE_RE = /\u27E6H(\d+)\u27E7/g
 // Ba\u015Fl\u0131k metni normalizasyonu (DOM aramas\u0131 i\u00E7in): k\u00FC\u00E7\u00FCk harf + bo\u015Fluk sadele\u015Ftir + sondaki noktalama
 const bnormR = (s) => (s || "").toLowerCase().replace(/\s+/g, " ").trim().replace(/[:.\-\u2013\u2014\u2022*\u00B7\s]+$/, "")
@@ -644,18 +678,9 @@ function renderMarkerli(text, dipnotMap, onDipnotTikla, theme, hasiyeMap = {}) {
         ? <HasiyeSup key={i} metin={hasiyeMap[h[1]]} onDipnotTikla={onDipnotTikla} theme={theme} />
         : null
     }
-    // kfgqpc'nin BOZDUĞU/eksik olduğu Arapça işaretleri MeQuran'dan çiz (harfler/rakamlar kfgqpc
-    // kalır, birleşik işaret bile doğru oturur — Playwright ile test edildi):
-    //   ، U+060C virgül → kfgqpc daire/durak sembolü çiziyor
-    //   ۪ U+06EA (uzatma/durak) → kfgqpc iri ◉ ve satır-içi yer kaplıyor (kelimeyi bölüyor)
-    //   ﴾ U+FD3E / ﴿ U+FD3F süslü ayet parantezleri → kfgqpc'de YOK (ters/bozuk); MeQuran madalyon
-    if (MQ_ISARET.test(p)) {
-      const alt = p.split(MQ_ISARET)
-      return <span key={i}>{alt.map((ap, j) => (ap && MQ_ISARET.test(ap))
-        ? <span key={j} style={{ fontFamily: "'me_quran', serif" }}>{ap}</span>
-        : ap)}</span>
-    }
-    return <span key={i}>{p}</span>
+    // kfgqpc'nin ◉ çizdiği işaretleri ve Fars/Osmanlı harfli kelimeleri MeQuran'dan çiz
+    // (harfler/rakamlar kfgqpc kalır; detay: MQ_ISARET / KF_FARS / arapParcaRender).
+    return arapParcaRender(p, i)
   })
 }
 
@@ -1984,7 +2009,7 @@ const AaPanel = aaAcik && (
       </div>
 
       <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px" }}>YAZI TİPİ</div>
-      {Object.entries(FONT_GRUPLARI).map(([grupId, grup]) => (
+      {Object.entries(FONT_GRUPLARI).filter(([grupId]) => grupId !== "osmanlica").map(([grupId, grup]) => (
         <FontSecici
           key={grupId}
           grupId={grupId}
@@ -2222,6 +2247,19 @@ const TemaPanel = temaAcik && (
         </button>
       ))}
 
+      {/* Arapça harf rengi */}
+      <div style={{ borderTop: `1px solid ${theme.border}`, marginTop: "10px", paddingTop: "10px" }}>
+        <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px" }}>ARAPÇA HARF RENGİ</div>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <input type="color" value={arapcaRenk || theme.arabicHighlight}
+            onChange={e => setArapcaRenk(e.target.value)}
+            style={{ width: "40px", height: "28px", border: `1px solid ${theme.border}`, borderRadius: "6px", background: theme.background, cursor: "pointer", padding: "2px" }} />
+          <span style={{ flex: 1, fontSize: "12px", color: arapcaRenk || theme.arabicHighlight }}>بِسْمِ اللّٰه · Bismillâh</span>
+          {arapcaRenk && (
+            <button onClick={() => setArapcaRenk("")} title="Temaya sıfırla" style={{ fontSize: "11px", color: theme.textSecondary, background: "none", border: "none", cursor: "pointer" }}>Sıfırla</button>
+          )}
+        </div>
+      </div>
 
       {/* Lügat (Latin) kelime rengi */}
       <div style={{ marginTop: "10px" }}>

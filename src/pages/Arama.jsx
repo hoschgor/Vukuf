@@ -164,7 +164,7 @@ export default function Arama() {
         Arama
       </h1>
       <p style={{ fontSize: "13px", color: theme.textSecondary, marginBottom: "20px" }}>
-        Kitaplarda her şeyi, Kur'an'da sure adlarını ara.
+        Kitaplarda her şeyi, Kur'an'da sure adlarını arayabilirsiniz.
       </p>
 
       {/* Arama kutusu */}

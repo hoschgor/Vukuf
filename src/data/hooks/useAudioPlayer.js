@@ -14,6 +14,11 @@ export const KARILAR = [
   { id: "Mohammad_al_Tablaway_128kbps", label: "Mohammad al-Tablaway" },
   { id: "Ibrahim_Akhdar_32kbps",      label: "Ibrahim Akhdar" },
   { id: "ahmed_ibn_ali_al_ajamy_128kbps",      label: "Ali Al Ajamy" },
+  { id: "Fares_Abbad_64kbps",      label: "Fares Abbad" },
+  { id: "Hani_Rifai_192kbps",      label: "Hani Rifai" },
+  { id: "Khaalid_Abdullaah_al-Qahtaanee_192kbps",      label: "Khaalid Abdullah Al Qahtaanee" },
+  { id: "Nabil_Rifa3i_48kbps",      label: "Nabil Rifai" },
+  { id: "mahmoud_ali_al_banna_32kbps",      label: "Mahmoud Ali Al Banna" },
 ]
 
 const BASE_URL = "https://everyayah.com/data"

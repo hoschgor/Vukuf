@@ -416,7 +416,7 @@ function MetinParcasi({
   }
 
   return (
-    <div style={{ fontSize: `${fontSize}px`, fontFamily: metinFont }}>
+    <div style={{ fontSize: `${fontSize}px`, fontFamily: metinFont, overflowWrap: "anywhere", wordBreak: "break-word", maxWidth: "100%" }}>
       {satirlar.map((satir, si) => {
         if (!satir.trim()) return <br key={si} />
         // Dipnot metni satırları (§...) artık altta gösterilmiyor; hover'a taşındı
@@ -1027,6 +1027,19 @@ useLayoutEffect(() => {
   setPopup(p => (p && !p.yerlesti ? { ...p, x, y, yerlesti: true } : p))
 }, [popup, barKonum, barGorunur, barYuk])
 const [dipnotPopup, setDipnotPopup] = useState(null)
+// Atıf kaynağı: bir popup/dipnot açılırken tıklanan SATIRI hatırla → Kur'an'a atıfla gidip
+// "Okumaya dön" ile geri gelince tam o satıra odaklan + işaretle (odak biraz aşağıda karşılamasın).
+const atifKaynakRef = useRef(null)
+const atifKaynakYakala = (e) => {
+  try {
+    const line = e?.currentTarget?.closest?.("[data-satir]")
+    const key = line?.getAttribute?.("data-satir")
+    if (!key) { atifKaynakRef.current = null; return }
+    const sayfa = parseInt(key.split("-")[0]) || null
+    const arabic = line.getAttribute("dir") === "rtl" || (line.style && line.style.direction === "rtl")
+    atifKaynakRef.current = { satirKey: key, sayfa, arabic }
+  } catch { atifKaynakRef.current = null }
+}
 
 // ── Notlar & Vurgular
 const [notlar, setNotlar]     = useState(() => okumaVerisiYukle(id).notlar)
@@ -1323,6 +1336,22 @@ useEffect(() => {
         () => document.querySelector(`[data-satir="${sn}-${aramaHedef.satirIdx}"]`),
         0, false, (el) => aramaVurgula(sn, el, aramaHedef.aranan))
     }, 200)
+    return
+  }
+
+  // 1b) Kur'an atıfından "Okumaya dön" ile geri gelindiyse → tam KAYNAK SATIRA odaklan + işaretle
+  let donusOdak = null
+  try { donusOdak = JSON.parse(localStorage.getItem("vukuf-okuma-donus-odak") || "null") } catch {}
+  if (donusOdak && donusOdak.kitapId === id && donusOdak.satirKey) {
+    konumYuklendiRef.current = true
+    try { localStorage.removeItem("vukuf-okuma-donus-odak") } catch {}
+    const sn = Math.min(Math.max(1, donusOdak.sayfa || 1), kitapMetni.length)
+    maxSayfaGuncelle(sn)
+    setTimeout(() => {
+      elemanaGit(sn,
+        () => document.querySelector(`[data-satir="${donusOdak.satirKey}"]`),
+        0, false, (el) => aramaVurgula(sn, el, "", true, true))   // satırın tamamını işaretle (Arapça bölüm dahil)
+    }, 240)
     return
   }
 
@@ -1810,6 +1839,11 @@ function ayeteGit(atif) {
     localStorage.setItem("vukuf-kuran-hedef", JSON.stringify({ sureNo: atif.sureNo, ayetNo: atif.ayetNo }))
     localStorage.setItem("vukuf-donus", "okuma")
     localStorage.setItem("vukuf-donus-yol", `/kitap/${id}`)
+    // Geri dönüşte tam kaynağa odaklan
+    if (atifKaynakRef.current && atifKaynakRef.current.satirKey)
+      localStorage.setItem("vukuf-okuma-donus-odak", JSON.stringify({ kitapId: id, ...atifKaynakRef.current }))
+    else
+      localStorage.removeItem("vukuf-okuma-donus-odak")
   } catch {}
   setPopup(null); setDipnotPopup(null)
   navigate("/kuran")
@@ -1869,6 +1903,7 @@ function fontSecimDegistir(grupId, fontId) {
 }
 
 function kelimeTikla(kelime, anlam, kavram, e, secenekler = null) {
+  atifKaynakYakala(e)   // atıf için tıklanan satırı hatırla
   // Konum TIKLAMA noktasına göre değil, KELİMENİN kutusuna göre (rect); yerlesimEfekti ölçüp yerleştirir
   let rect = null
   try { const rr = e?.currentTarget?.getBoundingClientRect?.(); if (rr) rect = { top: rr.top, bottom: rr.bottom, left: rr.left, width: rr.width } } catch {}
@@ -1880,6 +1915,7 @@ function kelimeTikla(kelime, anlam, kavram, e, secenekler = null) {
 }
 
 function dipnotTikla(metin, e, etiket = "DİPNOT") {
+  atifKaynakYakala(e)   // atıf için tıklanan satırı hatırla
   const gx = e?.clientX ?? window.innerWidth / 2
   const gy = e?.clientY ?? window.innerHeight / 2
   const x = Math.max(10, Math.min(gx - 150, window.innerWidth - 310))
@@ -3089,7 +3125,7 @@ return (
       onTouchStart={dokunusBasladi}
       onTouchEnd={dokunusBitti}
       style={{
-        flex: 1, overflowY: "auto", userSelect: "none",
+        flex: 1, overflowY: "auto", overflowX: "hidden", userSelect: "none",
         WebkitTapHighlightColor: "transparent",   // dokununca gri kutu çıkmasın
         // Üst/alt boşluk BAR YÜKSEKLİĞİNE eşit → metin tam bar hizasında maskelenir;
         // bar gizliyse boşluk yalnız safe-area kadar (metin gizlenmez).
@@ -3100,7 +3136,7 @@ return (
         transition: gecisHazir ? "padding-top 0.25s ease, padding-bottom 0.25s ease" : "none",
       }}
     >
-      <div style={{ maxWidth: `${Math.round((isMobile ? 480 : 720) * (yaziBoyutu / 16))}px`, margin: "0 auto", padding: "0 24px" }}>
+      <div style={{ maxWidth: `${Math.round((isMobile ? 480 : 720) * (yaziBoyutu / 16))}px`, width: "100%", margin: "0 auto", padding: "0 24px", boxSizing: "border-box" }}>
 
         {/* İşaret ekleme modu bandı */}
         {kayitKonumModu && (

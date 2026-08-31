@@ -46,6 +46,16 @@ export default function useAudioPlayer() {
   const [aktifAyet, setAktifAyet] = useState(null)
   const [hata, setHata] = useState(null)
   const kariIdRef = useRef(kariId)
+  const donguRef = useRef(false)   // kuyruk bitince başa dön (tekrar modları)
+  // Çalma hızı (playbackRate)
+  const [hiz, setHiz] = useState(() => parseFloat(localStorage.getItem("vukuf-calma-hizi") || "1") || 1)
+  const hizRef = useRef(hiz)
+  useEffect(() => {
+    hizRef.current = hiz
+    try { localStorage.setItem("vukuf-calma-hizi", String(hiz)) } catch {}
+    if (audioRef.current) audioRef.current.playbackRate = hiz
+  }, [hiz])
+  const hizAyarla = useCallback((h) => setHiz(h), [])
   
 
 useEffect(() => {
@@ -83,13 +93,17 @@ useEffect(() => {
 
   const sonrakiAyetCal = useCallback(() => {
     const kuyruk = kuyrukRef.current
-    const indis = kuyrukIndisRef.current + 1
+    let indis = kuyrukIndisRef.current + 1
     if (indis >= kuyruk.length) {
-      setDurum("kapali")
-      setAktifAyet(null)
-      kuyrukIndisRef.current = 0
-      kuyrukRef.current = []
-      return
+      if (donguRef.current && kuyruk.length) {
+        indis = 0   // TEKRAR modu: kuyruğun başına dön (playlist gibi)
+      } else {
+        setDurum("kapali")
+        setAktifAyet(null)
+        kuyrukIndisRef.current = 0
+        kuyrukRef.current = []
+        return
+      }
     }
     kuyrukIndisRef.current = indis
     const { sureNo, ayetNo, besmeleIcin } = kuyruk[indis]
@@ -101,15 +115,27 @@ useEffect(() => {
     if (!audio) return
     setHata(null)
     audio.src = mp3Url(kariIdRef.current, sureNo, ayetNo)
+    audio.playbackRate = hizRef.current
     audio.play()
-      .then(() => { setDurum("caliyor"); setAktifAyet({ sureNo, ayetNo, besmeleIcin }) })
+      .then(() => { audio.playbackRate = hizRef.current; setDurum("caliyor"); setAktifAyet({ sureNo, ayetNo, besmeleIcin }) })
       .catch(() => { setHata("Oynatma başlatılamadı"); setDurum("kapali") })
   }, [])
 
   const ayetCal = useCallback((sureNo, ayetNo) => {
+    donguRef.current = false
     kuyrukRef.current = [{ sureNo, ayetNo }]
     kuyrukIndisRef.current = 0
     _ayetOynat(sureNo, ayetNo)
+  }, [_ayetOynat])
+
+  // TEKRAR modları için: hazır bir âyet listesini [{sureNo,ayetNo,besmeleIcin?}] oynat.
+  // dongu=true → kuyruk bitince başa döner (sayfa/ayet/sure tekrarı hep bunu kullanır).
+  const listeCal = useCallback((liste, dongu = false) => {
+    if (!liste || !liste.length) return
+    donguRef.current = !!dongu
+    kuyrukRef.current = liste
+    kuyrukIndisRef.current = 0
+    _ayetOynat(liste[0].sureNo, liste[0].ayetNo, liste[0].besmeleIcin)
   }, [_ayetOynat])
 
 
@@ -118,6 +144,7 @@ const BESMELE_OKUYANLAR = [
 ]
 
 const sureCal = useCallback((sureNo, toplamAyetSayisi, baslangicAyet = 1) => {
+  donguRef.current = false
   const kuyruk = []
 
   // Besmele ekle — sure 1 ve 9 hariç, kari besmele okumuyorsa
@@ -165,6 +192,7 @@ const sureCal = useCallback((sureNo, toplamAyetSayisi, baslangicAyet = 1) => {
     if (!audio) return
     audio.pause()
     audio.src = ""
+    donguRef.current = false
     kuyrukRef.current = []
     kuyrukIndisRef.current = 0
     setDurum("kapali")
@@ -186,9 +214,10 @@ const sureCal = useCallback((sureNo, toplamAyetSayisi, baslangicAyet = 1) => {
 
   return {
     durum, aktifAyet, kariId, hata,
-    ayetCal, sureCal, besmeleCal,
+    ayetCal, sureCal, besmeleCal, listeCal,
     duraklat, devamEt, durdur,
     oncekiAyet, sonrakiAyet,
+    hiz, hizAyarla,
     setKariId, mp3Url, besmeleUrl, KARILAR,
   }
 }

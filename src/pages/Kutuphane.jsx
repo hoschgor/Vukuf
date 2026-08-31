@@ -855,7 +855,7 @@ function SortableKategori({ kategori,
           <span style={{ fontSize: "12px", color: theme.textSecondary }}>
             {kategori.kuran
               ? (acikKategori === kategori.id ? "▲" : "▼")
-              : `${kategori.alimler.length} alim ${acikKategori === kategori.id ? "▲" : "▼"}`
+              : `${kategori.alimler.length} ${kategori.id === "risale" ? "Eser Türü" : "alim"} ${acikKategori === kategori.id ? "▲" : "▼"}`
             }
           </span>
         </div>

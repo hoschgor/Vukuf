@@ -13,7 +13,7 @@ import {
   Plus, Minus, AlignJustify, ChevronsUp, ChevronsDown,
   Bookmark, X, Type, StickyNote, Palette,
   Search, Highlighter, ChevronDown, Clock, Settings,
-  ChevronUp, ChevronRight, Edit2, Pencil, Circle, Feather, List, Check, Shuffle,
+  ChevronUp, ChevronRight, Edit2, Pencil, Circle, Feather, List, Check, Shuffle, Asterisk, ArrowRight,
 } from "lucide-react"
 import { useMediaQuery } from '../data/hooks/useMediaQuery'
 
@@ -665,6 +665,21 @@ function HasiyeSup({ metin, onDipnotTikla, theme, vurguModu }) {
 }
 
 // Bir satırdaki [n] dipnot ve ⟦Hn⟧ haşiye işaretlerini tıklanır işaretlere çevirir
+// Popup metninde ayet atfı (ör. "Fussilet Sûresi, 41:44") bul → {sureNo, ayetNo}.
+// Sûre/âyet biçimi "sure:ayet" (rakam) olarak geçer; ilk geçerli eşleşme alınır.
+function ayetAtfiBul(p) {
+  if (!p) return null
+  let t = (p.anlam || "")
+  const ekle = (arr) => (arr || []).forEach(kv => { t += " " + (kv.aciklama || "") + " " + ((kv.kaynaklar || []).join(" ")) })
+  ekle(p.kavram)
+  ;(p.secenekler || []).forEach(s => { t += " " + (s.anlam || ""); ekle(s.kavram) })
+  const m = t.match(/(\d{1,3})\s*[:：]\s*(\d{1,3})/)
+  if (!m) return null
+  const sureNo = +m[1], ayetNo = +m[2]
+  if (sureNo < 1 || sureNo > 114 || ayetNo < 1) return null
+  return { sureNo, ayetNo }
+}
+
 function renderMarkerli(text, dipnotMap, onDipnotTikla, theme, hasiyeMap = {}) {
   const parcalar = text.split(/(\[\s*\d+\s*\]|⟦H\d+⟧)/g)
   return parcalar.map((p, i) => {
@@ -1012,6 +1027,7 @@ const [vurguRengi, setVurguRengi] = useState(VURGU_RENKLERI[0].renk)
 // ── Arama
 const [aramaMetni, setAramaMetni]           = useState("")
 const [aramaEslesmeler, setAramaEslesmeler] = useState([])
+const [tamArama, setTamArama]               = useState(false)  // * : birebir (tam) arama — normalize yok
 const [aramaIndeks, setAramaIndeks]         = useState(0)
 
 // ── Okuma süresi
@@ -1347,14 +1363,15 @@ useEffect(() => {
 
 useEffect(() => {
   if (!aramaMetni.trim() || !kitapMetni.length) { setAramaEslesmeler([]); return }
-  const aranan = trLower(aramaMetni)  // şapka/aksan + büyük-küçük duyarsız, uzunluk korur
+  // tamArama: birebir (büyük/küçük + şapka/aksan duyarlı); değilse trLower ile normalize
+  const aranan = tamArama ? aramaMetni : trLower(aramaMetni)
   const eslesmeler = []
   for (const sayfa of kitapMetni) {
     const satirlar = sayfa.metin.split("\n")
     for (let si = 0; si < satirlar.length; si++) {
       const satir = satirlar[si].replace(/^⟦C⟧/, "")
       if (satir.startsWith("§")) continue
-      const idx = trLower(satir).indexOf(aranan)
+      const idx = (tamArama ? satir : trLower(satir)).indexOf(aranan)
       if (idx === -1) continue
       const bas = Math.max(0, idx - 30)
       const son = idx + aranan.length + 50
@@ -1366,7 +1383,7 @@ useEffect(() => {
   }
   setAramaEslesmeler(eslesmeler)
   setAramaIndeks(0)
-}, [aramaMetni, kitapMetni])
+}, [aramaMetni, kitapMetni, tamArama])
 
 useEffect(() => { localStorage.setItem("vukuf-yazi-boyutu", yaziBoyutu) }, [yaziBoyutu])
 useEffect(() => { localStorage.setItem("vukuf-satir-araligi", satirAraligi) }, [satirAraligi])
@@ -1727,29 +1744,38 @@ function odakGit(sayfaNo, oran = 0, opt = {}) {
 // İçindekiler'den git. Ana başlık → #baslik + odak çizgisi. Alt başlık → başlığı
 // ham METİNDE (arama mantığıyla) bulup satır indeksini çıkar, [data-satir]'a git ve
 // kelime araması gibi (alt çizgisiz) işaretle.
-function basligaGit(sayfa, satir, oran = 0, baslikMetni = "", seviye = 1) {
+function basligaGit(sayfa, satir, oran = 0, baslikMetni = "", seviye = 1, aciklama = "") {
   setMenuAcik(false)
   const anaBaslik = (seviye || 1) <= 1
 
-  // Hedef satır indeksini belirle: extractor verdiyse onu; yoksa metinde başlığı ara
+  // Hedef satır indeksini belirle: extractor verdiyse onu; yoksa metinde başlığı ara.
+  // Başlık gövdede geçmiyorsa AÇIKLAMA ile ara (ör. "Mülk Suresi" yok → aciklama "Tebareke").
   let hedefSatir = satir
   let mektupOdak = false
-  if (hedefSatir == null && baslikMetni) {
+  let bulunanTerim = baslikMetni
+  if (hedefSatir == null) {
     const sf = kitapMetni.find(s => s.sayfa === sayfa)
     if (sf) {
       const norm = (s) => trLower(s || "").replace(/⟦[^⟧]*⟧/g, "").replace(/\[\d+\]/g, "").replace(/\s+/g, " ").trim()
-      const hedef = norm(baslikMetni)
-      // Lâhika: içindekilerde "N.Mektup" → gövdede "- N -" ayracını ara
-      const mm = baslikMetni.match(/(\d+)\s*\.\s*mektup/i)
-      const mektupRe = mm ? new RegExp(`^-\\s*${mm[1]}\\s*-$`) : null
       const satirlar = sf.metin.split("\n")
-      for (let i = 0; i < satirlar.length; i++) {
-        if (satirlar[i].startsWith("§")) continue
-        if (mektupRe && mektupRe.test(satirlar[i].replace(/⟦C⟧/g, "").trim())) { hedefSatir = i; mektupOdak = true; break }
-        const ln = norm(satirlar[i])
-        if (!ln) continue
-        if (ln === hedef || ln.startsWith(hedef) || (hedef.length >= 6 && ln.includes(hedef))) { hedefSatir = i; break }
+      const ara = (terim) => {
+        if (!terim) return -1
+        const hedef = norm(terim)
+        if (!hedef) return -1
+        const mm = terim.match(/(\d+)\s*\.\s*mektup/i)
+        const mektupRe = mm ? new RegExp(`^-\\s*${mm[1]}\\s*-$`) : null
+        for (let i = 0; i < satirlar.length; i++) {
+          if (satirlar[i].startsWith("§")) continue
+          if (mektupRe && mektupRe.test(satirlar[i].replace(/⟦C⟧/g, "").trim())) { mektupOdak = true; return i }
+          const ln = norm(satirlar[i])
+          if (!ln) continue
+          if (ln === hedef || ln.startsWith(hedef) || (hedef.length >= 6 && ln.includes(hedef))) return i
+        }
+        return -1
       }
+      let r = ara(baslikMetni)
+      if (r < 0 && aciklama) { r = ara(aciklama); if (r >= 0) bulunanTerim = aciklama }
+      if (r >= 0) hedefSatir = r
     }
   }
 
@@ -1760,7 +1786,18 @@ function basligaGit(sayfa, satir, oran = 0, baslikMetni = "", seviye = 1) {
   const odakla = anaBaslik || mektupOdak   // mektup ayracı: satır başını üste odakla (vurgu arama yok)
   elemanaGit(sayfa, sel, oran,
     odakla,                                               // ana başlık / mektup: odak çizgisi
-    odakla ? null : (el) => aramaVurgula(sayfa, el, baslikMetni, false)) // alt başlık: vurgu (alt çizgisiz)
+    odakla ? null : (el) => aramaVurgula(sayfa, el, bulunanTerim, false)) // alt başlık: bulunan terimi vurgula
+}
+
+// Popup'taki ayet atfına git: hedefi+dönüşü sakla, Kur'an Okuma'yı aç (üstte "Okumaya dön" çıkar)
+function ayeteGit(atif) {
+  try {
+    localStorage.setItem("vukuf-kuran-hedef", JSON.stringify({ sureNo: atif.sureNo, ayetNo: atif.ayetNo }))
+    localStorage.setItem("vukuf-donus", "okuma")
+    localStorage.setItem("vukuf-donus-yol", `/kitap/${id}`)
+  } catch {}
+  setPopup(null)
+  navigate("/kuran")
 }
 
 // Vurguya git — vurgulanan ilk kelimenin DOM konumuna ([data-vurgu]) tam hizala
@@ -2596,6 +2633,12 @@ const AramaPanel = aramaAcik && (
             color: theme.text, fontSize: "14px", outline: "none",
           }}
         />
+        <button onClick={() => setTamArama(v => !v)} title={tamArama ? "Birebir arama açık (tam yazıldığı gibi)" : "Birebir arama (tam yazıldığı gibi ara)"}
+          style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "26px", height: "26px", borderRadius: "6px", flexShrink: 0,
+            background: tamArama ? theme.accent : `${theme.accent}15`, color: tamArama ? "#fff" : theme.accent,
+            border: "none", cursor: "pointer", fontSize: "15px", fontWeight: "bold", lineHeight: 1 }}>
+          <Asterisk size={15} />
+        </button>
         {aramaMetni && (
           <button onClick={() => { setAramaMetni(""); setAramaEslesmeler([]) }} style={{ color: theme.textSecondary, background: "none", border: "none", cursor: "pointer" }}>
             <X size={14} />
@@ -2710,7 +2753,7 @@ const menuDugumRender = (node) => {
         ) : (
           <span style={{ width: `${Math.round(20 * mo)}px`, flexShrink: 0 }} />
         )}
-        <button onClick={() => { if (node.sayfa) basligaGit(node.sayfa, node.satir, node.oran || 0, node.baslik, node.seviye); setMenuAcik(false) }}
+        <button onClick={() => { if (node.sayfa) basligaGit(node.sayfa, node.satir, node.oran || 0, node.baslik, node.seviye, node.aciklama); setMenuAcik(false) }}
           title={node.aciklama || ""}
           style={{
             flex: 1, textAlign: "left", background: "transparent", border: "none", cursor: "pointer",
@@ -2999,6 +3042,18 @@ return (
             </div>
           )}
           </>)}
+          {/* Ayet atfı varsa → âyete git (Kur'an Okuma'da açılır, üstte "Okumaya dön") */}
+          {(() => {
+            const atif = ayetAtfiBul(popup)
+            return atif ? (
+              <button onClick={() => ayeteGit(atif)} title={`${atif.sureNo}. sûre, ${atif.ayetNo}. âyete git`}
+                style={{ marginTop: "10px", display: "flex", alignItems: "center", gap: "6px",
+                  background: `${theme.accent}18`, color: theme.accent, border: `1px solid ${theme.accent}40`,
+                  borderRadius: "20px", padding: "5px 12px", fontSize: "12px", fontWeight: 500, cursor: "pointer" }}>
+                <ArrowRight size={13} /> Âyete git
+              </button>
+            ) : null
+          })()}
         </div>
       </>
     )}

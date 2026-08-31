@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from "react"
 import { useNavigate } from "react-router-dom"
-import { Search, X, BookOpen, ChevronRight, Loader, SlidersHorizontal } from "lucide-react"
+import { Search, X, BookOpen, ChevronRight, Loader, SlidersHorizontal, Asterisk } from "lucide-react"
 import { useApp } from "../AppContext"
 import { useMediaQuery } from "../data/hooks/useMediaQuery"
 import { normHarf } from "../data/okumaKayit"
@@ -65,6 +65,7 @@ export default function Arama() {
   }, [])
 
   const [sorgu, setSorgu] = useState(ilk?.sorgu || "")
+  const [tamArama, setTamArama] = useState(false)  // * : birebir (tam) arama — normalize yok
   const [yukleniyor, setYukleniyor] = useState(false)
   const [kitapSonuc, setKitapSonuc] = useState([])
   const [sureSonuc, setSureSonuc] = useState([])
@@ -91,10 +92,19 @@ export default function Arama() {
     const q = sorgu.trim()
     if (q.length < 2) { setKitapSonuc([]); setSureSonuc([]); setYukleniyor(false); return }
     const benimId = ++aramaIdRef.current
-    const norm = trLower(q)
+    const kucult = (s) => (tamArama ? s : trLower(s))   // tamArama: birebir; değilse normalize
+    const norm = kucult(q)
 
-    // 1) Sure adları — anında (yalnız filtre yokken; kısım/alim seçiliyken gizli)
-    setSureSonuc(filtreAktif ? [] : SURELER.filter(s => trLower(s.ad).includes(norm)).slice(0, 15))
+    // 1) Sure adları — anında (yalnız filtre yokken). "Fussilet, 44" → virgül sonrası ayet no.
+    //    İsim kısmıyla eşleştir; eşleşen surelere ayetNo iliştir (varsa o ayete gider).
+    const vp = q.split(/[,،]/)
+    const isimTerim = kucult(vp[0].trim())
+    const ayetStr = (vp[1] || "").trim()
+    const ayetNo = /^\d+$/.test(ayetStr) ? parseInt(ayetStr, 10) : null
+    setSureSonuc(filtreAktif ? [] : SURELER
+      .filter(s => kucult(s.ad).includes(isimTerim))
+      .slice(0, 15)
+      .map(s => ({ ...s, ayetNo })))
 
     // 2) Kitap içi — debounce + önbellek (kapsam = seçilen filtre)
     setYukleniyor(true)
@@ -112,7 +122,7 @@ export default function Arama() {
           for (let si = 0; si < satirlar.length; si++) {
             const satir = satirlar[si]
             if (!satir || satir.startsWith("§")) continue
-            const idx = trLower(satir).indexOf(norm)
+            const idx = (tamArama ? satir : trLower(satir)).indexOf(norm)
             if (idx === -1) continue
             const bas = Math.max(0, idx - 30)
             const son = idx + norm.length + 55
@@ -130,7 +140,7 @@ export default function Arama() {
     }, 320)
 
     return () => clearTimeout(t)
-  }, [sorgu, kapsam, filtreAktif])
+  }, [sorgu, kapsam, filtreAktif, tamArama])
 
   // Kitap içi sonuca git: hedefi belleğe yaz, kitabı aç (OkumaEkrani açılışta okur)
   function kitabaGit(r) {
@@ -147,7 +157,8 @@ export default function Arama() {
   // Sureye git: numarayı belleğe yaz, Kuran'ı aç (KuranOkuma açılışta okur)
   function sureyeGit(s) {
     try {
-      localStorage.setItem("vukuf-kuran-hedef", JSON.stringify({ sureNo: s.no }))
+      // ayetNo varsa (ör. "Fussilet, 44") o âyete, yoksa sure başına git
+      localStorage.setItem("vukuf-kuran-hedef", JSON.stringify(s.ayetNo ? { sureNo: s.no, ayetNo: s.ayetNo } : { sureNo: s.no }))
       localStorage.setItem("vukuf-donus", "arama")
     } catch {}
     durumKaydet()
@@ -185,6 +196,11 @@ export default function Arama() {
             color: theme.text, fontSize: "16px", fontFamily: "inherit",
           }}
         />
+        <button onClick={() => setTamArama(v => !v)} title={tamArama ? "Birebir arama açık (tam yazıldığı gibi)" : "Birebir arama (tam yazıldığı gibi ara)"}
+          style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "30px", height: "30px", borderRadius: "8px", flexShrink: 0,
+            background: tamArama ? theme.accent : `${theme.accent}15`, color: tamArama ? "#fff" : theme.accent, border: "none", cursor: "pointer" }}>
+          <Asterisk size={17} />
+        </button>
         {sorgu && (
           <button onClick={() => setSorgu("")} style={{ background: "none", border: "none", cursor: "pointer", color: theme.textSecondary, display: "flex" }}>
             <X size={18} />
@@ -248,7 +264,7 @@ export default function Arama() {
                     background: `${theme.accent}08`, border: `1px solid ${theme.border}`, color: theme.text,
                   }}>
                   <span style={{ fontSize: "11px", color: theme.accent, minWidth: "26px", fontWeight: 700 }}>{s.no}</span>
-                  <span style={{ flex: 1, fontSize: "15px" }}>{s.ad} Sûresi</span>
+                  <span style={{ flex: 1, fontSize: "15px" }}>{s.ad} Sûresi{s.ayetNo ? <span style={{ color: theme.textSecondary, fontSize: "13px" }}> · {s.ayetNo}. âyet</span> : null}</span>
                   <ChevronRight size={16} color={theme.accent} />
                 </button>
               ))}

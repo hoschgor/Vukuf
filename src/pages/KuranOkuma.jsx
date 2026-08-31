@@ -151,7 +151,17 @@ export default function KuranOkuma({ kitap }) {
   const [odakAyrac, setOdakAyrac] = useState(null)
   const odakAyracTimeoutRef = useRef(null)
   const kuranHedefRef = useRef(false)   // Arama'dan gelen sure hedefi işlendi mi
-  const [donusTip, setDonusTip] = useState("")   // "arama" | "tefeul"
+  const [donusTip, setDonusTip] = useState("")   // "arama" | "tefeul" | "okuma"
+  const [donusYol, setDonusYol] = useState("")   // "okuma" için geri dönülecek kitap yolu
+  // ── TEKRAR / DÖNGÜ ──
+  const [tekrarModu, setTekrarModu] = useState(null)     // aktif mod: null | "sayfa" | "ayet" | "sure"
+  const [donguAyarAcik, setDonguAyarAcik] = useState(false)
+  const [tmMod, setTmMod] = useState("ayet")             // panel form: seçili mod
+  const [tmSayfaBas, setTmSayfaBas] = useState(1)
+  const [tmSayfaSon, setTmSayfaSon] = useState(1)
+  const [tmSure, setTmSure] = useState(1)
+  const [tmAyetBas, setTmAyetBas] = useState(1)
+  const [tmAyetSon, setTmAyetSon] = useState(1)
   const barZamanRef  = useRef(null)
   const sureSayacRef = useRef(null)
   const scrollHiziRef = useRef({ sonScrollTop: 0, sonZaman: Date.now(), scrollSayisi: 0 })
@@ -715,12 +725,17 @@ useEffect(() => {
   }
 }, [sayfaListesi.length])
 
-// Arama/Tefeül'den mi gelindi? (bir kez oku, bayrağı temizle)
+// Arama/Tefeül/Okuma'dan mı gelindi? (bir kez oku, bayrağı temizle)
 useEffect(() => {
   try {
     const d = localStorage.getItem("vukuf-donus")
     if (d === "arama" || d === "tefeul") {
       setDonusTip(d)
+      localStorage.removeItem("vukuf-donus")
+    } else if (d === "okuma") {
+      // Okuma ekranındaki popup'tan ayete gelindi → "Okumaya dön" (kitaba geri git)
+      setDonusTip("okuma")
+      setDonusYol(localStorage.getItem("vukuf-donus-yol") || "/")
       localStorage.removeItem("vukuf-donus")
     }
   } catch {}
@@ -886,8 +901,12 @@ const hizbSayfalari = (cuzNo) => {
     // ...diğer opsiyonlar
   })
 
-  // Sayfa navigasyonu sırasında otomatik scroll düzeltmesini kapat
-  virtualizer.shouldAdjustScrollPositionOnItemSizeChange = () => false
+  // Virtualizer, ölçülen sayfa yüksekliği tahminden sapınca normalde scroll'u dengeler
+  // (görünen içerik zıplamaz). Bunu SADECE programlı navigasyon penceresinde kapatıyoruz
+  // (o an sureGit kendi hizalamasını yapıyor); organik kaydırmada AÇIK → hızlı kaydırırken
+  // "geri atma"/satır kayması olmaz.
+  const navAyarRef = useRef(false)
+  virtualizer.shouldAdjustScrollPositionOnItemSizeChange = () => !navAyarRef.current
 
 // ════════════════════════════════════════════════════════════════
 // KAYIT BÖLÜMÜ
@@ -1048,6 +1067,7 @@ function sureGit(sureId, ayetNo) {
 
   const hedefIndex = sayfaListesi.findIndex(s => s.sayfaNo === sayfa)
   if (hedefIndex === -1) return
+  navAyarRef.current = true   // navigasyon penceresi: virtualizer oto-düzeltmesini bu süre kapat
 
   setScrollKilitli(true)
   setMevcutSayfa(sayfa)
@@ -1106,6 +1126,8 @@ function sureGit(sureId, ayetNo) {
     if (Math.abs(fark) > 3) {
       el.scrollTo({ top: el.scrollTop + fark, behavior: "smooth" })
     }
+    // navigasyon bitti → virtualizer oto-düzeltmesini geri AÇ (organik kaydırma stabil)
+    setTimeout(() => { navAyarRef.current = false }, 400)
     // bundan sonra bir daha scroll YOK
   }
 
@@ -1189,6 +1211,47 @@ function sureGit(sureId, ayetNo) {
     })
   }, [])
 
+
+  // Tekrar ayar panelini aç — mevcut bağlama göre alanları ön-doldur
+  function acDonguAyar() {
+    const akt = player.aktifAyet
+    const sn = akt?.sureNo || mevcutSureBilgisi?.id || 1
+    const an = akt?.ayetNo || 1
+    setTmSure(sn)
+    setTmAyetBas(an); setTmAyetSon(an)
+    setTmSayfaBas(mevcutSayfa); setTmSayfaSon(mevcutSayfa)
+    setDonguAyarAcik(true)
+  }
+  // Seçilen moda göre âyet listesi kurup döngülü çal (playlist gibi başa döner)
+  function tekrariUygula() {
+    let liste = []
+    if (tmMod === "sure") {
+      const s = mushafData.find(x => x.id === +tmSure)
+      if (s) liste = (s.ayetler || []).map(a => ({ sureNo: s.id, ayetNo: a.no }))
+    } else if (tmMod === "ayet") {
+      const s = mushafData.find(x => x.id === +tmSure)
+      if (s) {
+        const b = Math.max(1, Math.min(+tmAyetBas, +tmAyetSon))
+        const e = Math.min(s.ayetSayisi, Math.max(+tmAyetBas, +tmAyetSon))
+        for (let a = b; a <= e; a++) liste.push({ sureNo: s.id, ayetNo: a })
+      }
+    } else if (tmMod === "sayfa") {
+      const b = Math.min(+tmSayfaBas, +tmSayfaSon), e = Math.max(+tmSayfaBas, +tmSayfaSon)
+      for (const s of mushafData) for (const a of (s.ayetler || [])) {
+        if (a.sayfa >= b && a.sayfa <= e) liste.push({ sureNo: s.id, ayetNo: a.no, _sq: s.id * 10000 + a.no })
+      }
+      liste.sort((x, y) => x._sq - y._sq)
+    }
+    if (!liste.length) return
+    setTekrarModu(tmMod)
+    setDonguAyarAcik(false)
+    player.listeCal(liste, true)
+  }
+  function tekrariSifirla() {
+    setTekrarModu(null)
+    setDonguAyarAcik(false)
+    player.durdur()
+  }
 
   function togglePanel(setter, deger) {
     setAaAcik(false); setTemaAcik(false)
@@ -1982,6 +2045,71 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
         />
       )}
 
+      {/* TEKRAR / DÖNGÜ AYAR PANELİ */}
+      {donguAyarAcik && (() => {
+        const inpStil = { width: "64px", padding: "7px 8px", borderRadius: "8px", border: `1px solid ${theme.border}`, background: theme.background, color: theme.text, fontSize: "14px", textAlign: "center", outline: "none" }
+        const modBtn = (mod, etiket) => (
+          <button onClick={() => setTmMod(mod)} style={{
+            flex: 1, padding: "8px 6px", borderRadius: "10px", cursor: "pointer", fontSize: "13px", fontWeight: 600,
+            border: `1px solid ${tmMod === mod ? theme.accent : theme.border}`,
+            background: tmMod === mod ? theme.accent : "transparent",
+            color: tmMod === mod ? "#fff" : theme.textSecondary,
+          }}>{etiket}</button>
+        )
+        const satir = (label, cocuk) => (
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px", marginTop: "12px" }}>
+            <span style={{ fontSize: "13px", color: theme.textSecondary }}>{label}</span>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>{cocuk}</div>
+          </div>
+        )
+        return (
+          <>
+            <div onClick={() => setDonguAyarAcik(false)} style={{ position: "fixed", inset: 0, zIndex: 199, background: "rgba(0,0,0,0.35)" }} />
+            <div style={{ position: "fixed", left: "50%", top: "50%", transform: "translate(-50%,-50%)", zIndex: 200,
+              width: "min(92vw, 340px)", background: theme.surface, border: `1px solid ${theme.border}`, borderRadius: "16px",
+              boxShadow: "0 12px 40px rgba(0,0,0,0.3)", padding: "18px", maxHeight: "82vh", overflowY: "auto" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "14px" }}>
+                <span style={{ fontSize: "15px", fontWeight: 700, color: theme.accent }}>Tekrar (Döngü)</span>
+                <button onClick={() => setDonguAyarAcik(false)} style={{ background: "none", border: "none", cursor: "pointer", color: theme.textSecondary, display: "flex" }}><X size={16} /></button>
+              </div>
+
+              <div style={{ display: "flex", gap: "6px" }}>
+                {modBtn("sayfa", "Sayfa")}
+                {modBtn("ayet", "Âyet")}
+                {modBtn("sure", "Sûre")}
+              </div>
+
+              {tmMod === "sayfa" && (
+                <>
+                  {satir("Başlangıç sayfa", <input type="number" min={1} max={toplamSayfa} value={tmSayfaBas} onChange={e => setTmSayfaBas(e.target.value)} style={inpStil} />)}
+                  {satir("Bitiş sayfa", <input type="number" min={1} max={toplamSayfa} value={tmSayfaSon} onChange={e => setTmSayfaSon(e.target.value)} style={inpStil} />)}
+                  <div style={{ fontSize: "11.5px", color: theme.textSecondary, marginTop: "8px", opacity: 0.85 }}>Seçilen ardışık sayfalar sırayla okunur, sona gelince başa döner.</div>
+                </>
+              )}
+              {tmMod === "ayet" && (
+                <>
+                  {satir("Sûre no", <input type="number" min={1} max={114} value={tmSure} onChange={e => setTmSure(e.target.value)} style={inpStil} />)}
+                  {satir("Başlangıç âyet", <input type="number" min={1} value={tmAyetBas} onChange={e => setTmAyetBas(e.target.value)} style={inpStil} />)}
+                  {satir("Bitiş âyet", <input type="number" min={1} value={tmAyetSon} onChange={e => setTmAyetSon(e.target.value)} style={inpStil} />)}
+                  <div style={{ fontSize: "11.5px", color: theme.textSecondary, marginTop: "8px", opacity: 0.85 }}>Seçilen ardışık âyetler playlist gibi tekrar eder.</div>
+                </>
+              )}
+              {tmMod === "sure" && (
+                <>
+                  {satir("Sûre no", <input type="number" min={1} max={114} value={tmSure} onChange={e => setTmSure(e.target.value)} style={inpStil} />)}
+                  <div style={{ fontSize: "11.5px", color: theme.textSecondary, marginTop: "8px", opacity: 0.85 }}>Seçilen sûre baştan sona tekrar eder.</div>
+                </>
+              )}
+
+              <div style={{ display: "flex", gap: "8px", marginTop: "18px" }}>
+                <button onClick={tekrariSifirla} style={{ flex: 1, padding: "11px", borderRadius: "12px", border: `1px solid ${theme.border}`, background: "transparent", color: theme.textSecondary, cursor: "pointer", fontSize: "14px", fontWeight: 600 }}>Sıfırla</button>
+                <button onClick={tekrariUygula} style={{ flex: 1, padding: "11px", borderRadius: "12px", border: "none", background: theme.accent, color: "#fff", cursor: "pointer", fontSize: "14px", fontWeight: 600 }}>Kaydet</button>
+              </div>
+            </div>
+          </>
+        )
+      })()}
+
       {/* Kayıt paneli */}
       {kayitPaneliAcik && (
         <KayitPaneli
@@ -2478,6 +2606,8 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
               setTimeout(odakla, 600)
             }
           }}
+          onDonguAyar={acDonguAyar}
+          tekrarAktif={!!tekrarModu}
         />
         {/* Virtualizer ile sayfa içeriği */}
         <div
@@ -2668,8 +2798,13 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
             background: theme.accent, color: "#fff", borderRadius: "22px",
             padding: "8px 8px 8px 14px", boxShadow: "0 4px 16px rgba(0,0,0,0.25)",
           }}>
-            <button onClick={() => { try { localStorage.setItem(`vukuf-${donusTip}-devam`, "1") } catch {}; navigate(donusTip === "tefeul" ? "/okuma-tefeul" : "/arama") }} style={{ display: "flex", alignItems: "center", gap: "6px", background: "none", border: "none", color: "#fff", cursor: "pointer", fontSize: "13px", fontFamily: "inherit" }}>
-              {donusTip === "tefeul" ? <Shuffle size={15} /> : <Search size={15} />} {donusTip === "tefeul" ? "Tefeüle dön" : "Aramaya dön"}
+            <button onClick={() => {
+                if (donusTip === "okuma") { navigate(donusYol || "/"); return }
+                try { localStorage.setItem(`vukuf-${donusTip}-devam`, "1") } catch {}
+                navigate(donusTip === "tefeul" ? "/okuma-tefeul" : "/arama")
+              }} style={{ display: "flex", alignItems: "center", gap: "6px", background: "none", border: "none", color: "#fff", cursor: "pointer", fontSize: "13px", fontFamily: "inherit" }}>
+              {donusTip === "okuma" ? <BookOpen size={15} /> : donusTip === "tefeul" ? <Shuffle size={15} /> : <Search size={15} />}
+              {donusTip === "okuma" ? "Okumaya dön" : donusTip === "tefeul" ? "Tefeüle dön" : "Aramaya dön"}
             </button>
             <button onClick={() => setDonusTip("")} title="Kapat" style={{ display: "flex", background: "rgba(255,255,255,0.25)", border: "none", color: "#fff", cursor: "pointer", borderRadius: "50%", padding: "3px" }}>
               <X size={13} />

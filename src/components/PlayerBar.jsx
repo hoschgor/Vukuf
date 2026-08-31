@@ -1,5 +1,5 @@
 import { useRef, useEffect } from "react"
-import { Play, Pause, Square, SkipBack, SkipForward, Glasses } from "lucide-react"
+import { Play, Pause, Square, SkipBack, SkipForward, Glasses, Repeat, Gauge } from "lucide-react"
 import { KARILAR } from "../data/hooks/useAudioPlayer"
 import { useMediaQuery } from "../data/hooks/useMediaQuery"
 
@@ -15,9 +15,13 @@ export default function PlayerBar({
   playerBarYuksekligi,
   onOdaklan,
   onOlcum,
+  onDonguAyar,          // döngü/tekrar ayar arayüzünü aç (KuranOkuma yönetir)
+  tekrarAktif = false,  // bir tekrar modu seçili mi (buton vurgusu)
 }) {
-  const { durum, aktifAyet, kariId, duraklat, devamEt, durdur, oncekiAyet, sonrakiAyet } = player
+  const { durum, aktifAyet, kariId, duraklat, devamEt, durdur, oncekiAyet, sonrakiAyet, hiz = 1, hizAyarla } = player
   const isMobile = useMediaQuery("(max-width: 768px)")
+  const HIZLAR = [0.75, 1, 1.25, 1.5, 2]
+  const hizSonraki = () => { const i = HIZLAR.indexOf(hiz); hizAyarla && hizAyarla(HIZLAR[(i + 1) % HIZLAR.length]) }
 
   // Gerçek yüksekliği ölç → ebeveyn (KuranOkuma) menü/içerik ofsetlerinde kullanır
   const rootRef = useRef(null)
@@ -170,6 +174,37 @@ export default function PlayerBar({
           title="Okunan ayete odaklan"
         >
           <Glasses size={isMobile ? 17 : 19} />
+        </button>
+
+        {/* DÖNGÜ / TEKRAR — ayar arayüzünü açar (sayfa/ayet/sure tekrarı) */}
+        <button
+          onClick={onDonguAyar}
+          title="Tekrar (döngü) ayarları"
+          style={{
+            display: "flex", alignItems: "center", justifyContent: "center",
+            width: isMobile ? "27px" : "29px", height: isMobile ? "27px" : "29px", borderRadius: "50%",
+            border: "none", cursor: "pointer", flexShrink: 0, touchAction: "manipulation", padding: 0,
+            background: tekrarAktif ? theme.accent : "transparent",
+            color: tekrarAktif ? "#fff" : theme.textSecondary,
+          }}
+        >
+          <Repeat size={isMobile ? 15 : 16} />
+        </button>
+
+        {/* ÇALMA HIZI — dokununca sıradaki hıza geçer */}
+        <button
+          onClick={hizSonraki}
+          title="Çalma hızı"
+          style={{
+            display: "flex", alignItems: "center", justifyContent: "center", gap: "2px",
+            minWidth: isMobile ? "36px" : "40px", height: isMobile ? "27px" : "29px", borderRadius: "14px",
+            border: "none", cursor: "pointer", flexShrink: 0, touchAction: "manipulation", padding: "0 6px",
+            background: hiz !== 1 ? `${theme.accent}22` : "transparent",
+            color: hiz !== 1 ? theme.accent : theme.textSecondary,
+            fontSize: `${Math.round((isMobile ? 10 : 11) * (barUiOlcegi || 1))}px`, fontWeight: 600, fontFamily: "inherit",
+          }}
+        >
+          <Gauge size={isMobile ? 13 : 14} />{hiz}×
         </button>
 
         {/* Kontrol butonları */}

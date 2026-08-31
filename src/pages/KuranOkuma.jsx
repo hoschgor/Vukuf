@@ -35,6 +35,15 @@ const ARAPCA_FONTLAR = [
   { id: "IndopakNastaleeq",  label: "Indopak Nastaleeq",          style: "'IndopakNastaleeq', serif",    google: null },
 ]
 
+// Sûre adı araması için normalize: büyük/küçük + şapka/aksan duyarsız (â→a, İ/I, ş→s…)
+function srNorm(s) {
+  return (s || "").replace(/İ/g, "i").replace(/I/g, "ı").toLowerCase()
+    .replace(/[âàáäā]/g, "a").replace(/[îïíìī]/g, "i").replace(/[ûüúùū]/g, "u")
+    .replace(/[ôöóòō]/g, "o").replace(/[êëéèē]/g, "e")
+    .replace(/ç/g, "c").replace(/ş/g, "s").replace(/ğ/g, "g").replace(/ı/g, "i")
+    .replace(/['`’‘-]/g, "").trim()
+}
+
 // ── Özel tema sabitleri
 const PALET_ALANLARI = [
   { key: "background",   label: "Ana Arka Plan" },
@@ -160,8 +169,17 @@ export default function KuranOkuma({ kitap }) {
   const [tmSayfaBas, setTmSayfaBas] = useState(1)
   const [tmSayfaSon, setTmSayfaSon] = useState(1)
   const [tmSure, setTmSure] = useState(1)
+  const [tmSureArama, setTmSureArama] = useState("")   // sûre adı arama kutusu
   const [tmAyetBas, setTmAyetBas] = useState(1)
   const [tmAyetSon, setTmAyetSon] = useState(1)
+  const [tmBesmele, setTmBesmele] = useState(true)   // döngüde sûre başına gelince besmele ile başla
+  const [sureUyari, setSureUyari] = useState("")     // Sûre modunda maks aşımı: 3 sn'lik uyarı
+  const sureUyariTimerRef = useRef(null)
+  const sureUyariGoster = useCallback((mesaj) => {
+    setSureUyari(mesaj)
+    if (sureUyariTimerRef.current) clearTimeout(sureUyariTimerRef.current)
+    sureUyariTimerRef.current = setTimeout(() => setSureUyari(""), 3000)
+  }, [])
   const barZamanRef  = useRef(null)
   const sureSayacRef = useRef(null)
   const scrollHiziRef = useRef({ sonScrollTop: 0, sonZaman: Date.now(), scrollSayisi: 0 })
@@ -186,6 +204,15 @@ export default function KuranOkuma({ kitap }) {
   // Son konum: mount'ta bir kez oku (scroll takibi ezmeden önce), geri yükle
   const hedefSayfaRef = useRef(parseInt(localStorage.getItem("vukuf-son-sayfa") || "1"))
   const geriYuklendiRef = useRef(false)
+  // İlk açılışta kaydırma "oturana" kadar içeriği gizle → kullanıcı geçişi görmez,
+  // doğrudan kaldığı yerde açılır. Güvenlik zamanlayıcısı her koşulda gösterir.
+  const [konumHazir, setKonumHazir] = useState(false)
+  const konumHazirRef = useRef(false)
+  const konumuGoster = useCallback(() => {
+    if (konumHazirRef.current) return
+    konumHazirRef.current = true
+    setKonumHazir(true)
+  }, [])
   
   const [sayfaGirdi, setSayfaGirdi] = useState("")
   const [sayfaGirdiAcik, setSayfaGirdiAcik] = useState(false)
@@ -349,6 +376,16 @@ const maxWidth = useMemo(() =>
       }
     }
     localStorage.setItem("vukuf-kuran-arapca-font", arapcaFontId)
+    // Fontu ÖNDEN yükle → sayfalar ilk çizilişte doğru metrikle ölçülür (fallback→gerçek
+    // font geçişinde yükseklik değişip sayfa sınırında sıçrama olmasın). Yüklenince ölçümü tazele.
+    try {
+      const aile = (font?.style.match(/'[^']+'|"[^"]+"|[^,]+/) || [""])[0].trim()
+      if (aile && document.fonts && document.fonts.load) {
+        document.fonts.load(`24px ${aile}`).then(() => {
+          if (document.fonts.check(`24px ${aile}`)) { try { virtualizer.measure() } catch {} }
+        }).catch(() => {})
+      }
+    } catch {}
   }, [arapcaFontId])
 
   // kayitKonumModu true olduğunda 3 sn sonra iptal et
@@ -691,27 +728,42 @@ const cokSatir = wrapAktif && barYuksekligi > tekSatirYuksekligi * 1.0
   if (geriYuklendiRef.current) return
   if (yukleniyor || !sayfaListesi.length) return
 
-  // Arama/Tefeül'den sure hedefi geldiyse restore ATLA (sureGit devralır)
+  // Arama/Tefeül'den sure hedefi geldiyse restore ATLA (sureGit devralır) —
+  // içerik gizli kalsın, sure hedefi effect'i sureGit sonrası gösterecek.
   let h = null
   try { h = JSON.parse(localStorage.getItem("vukuf-kuran-hedef") || "null") } catch {}
   if (h && h.sureNo) { geriYuklendiRef.current = true; return }
 
   const index = sayfaListesi.findIndex(s => s.sayfaNo === hedefSayfaRef.current)
-  if (index <= 0) { geriYuklendiRef.current = true; return }   // Fatiha / bulunamadı
+  if (index <= 0) { geriYuklendiRef.current = true; konumuGoster(); return }   // Fatiha / bulunamadı
 
-  // Virtualizer ölçümleri oturana kadar birkaç kez hizala (dinamik yükseklik)
+  // Virtualizer ölçümleri oturana kadar birkaç kez hizala (dinamik yükseklik).
+  // İçerik gizliyken hizala → geçiş görünmez, doğrudan hedefte açılır.
+  navAyarRef.current = true
   let tries = 0
   const go = () => {
-    if (geriYuklendiRef.current) return
     virtualizer.scrollToIndex(index, { align: "start" })
-    if (++tries < 5) {
-      setTimeout(go, 130)
+    if (++tries < 6) {
+      setTimeout(go, 110)
     } else {
       geriYuklendiRef.current = true
+      // Son bir hizalama + göster (bir sonraki frame'de, ölçüm oturduktan sonra)
+      requestAnimationFrame(() => {
+        virtualizer.scrollToIndex(index, { align: "start" })
+        konumuGoster()
+        setTimeout(() => { navAyarRef.current = false }, 250)
+      })
     }
   }
   requestAnimationFrame(go)
 }, [yukleniyor, sayfaListesi.length])
+
+// Güvenlik: ne olursa olsun içerik en geç ~1sn içinde görünür olsun
+useEffect(() => {
+  if (yukleniyor) return
+  const t = setTimeout(konumuGoster, 1000)
+  return () => clearTimeout(t)
+}, [yukleniyor])
 
 // Arama'dan gelen sure hedefi: Kuran açılınca o sureye git (bir kez)
 useEffect(() => {
@@ -721,7 +773,11 @@ useEffect(() => {
   if (h && h.sureNo) {
     kuranHedefRef.current = true
     try { localStorage.removeItem("vukuf-kuran-hedef") } catch {}
-    setTimeout(() => sureGit(h.sureNo, h.ayetNo || null), 350)   // ayetNo varsa ayete, yoksa sure başlığına
+    setTimeout(() => {
+      sureGit(h.sureNo, h.ayetNo || null)   // ayetNo varsa ayete, yoksa sure başlığına
+      // sureGit hizalaması otursun, sonra içeriği göster
+      setTimeout(konumuGoster, 260)
+    }, 350)
   }
 }, [sayfaListesi.length])
 
@@ -895,18 +951,37 @@ const hizbSayfalari = (cuzNo) => {
     count: sayfaListesi.length,
     getScrollElement: () => scrollRef.current,
     estimateSize: (index) => {
+      // Daha önce GERÇEK ölçülen yükseklik varsa onu kullan → tahmin gerçeğe yakınsar,
+      // sayfa sınırında ölçüm düzeltmesi (sıçrama) minimuma iner. Yoksa hesaplı tahmin.
+      const sayfa = sayfaListesi[index]
+      const gercek = sayfa && sayfaGercekYukseklikleriRef.current[sayfa.sayfaNo]
+      if (gercek && gercek > 0) return gercek
       return sayfaYukseklikleri[index] || (isMobile ? 500 : 700)
     },
-    overscan: isMobile ? 4 : 3,
+    // Overscan artırıldı: sayfalar GÖRÜNÜME GİRMEDEN ölçülsün → ölçüm oturunca
+    // görünen içerik zıplamaz (mobilde "sayfa başına gelince aşağı kayma" azalır).
+    overscan: isMobile ? 8 : 5,
     // ...diğer opsiyonlar
   })
 
-  // Virtualizer, ölçülen sayfa yüksekliği tahminden sapınca normalde scroll'u dengeler
-  // (görünen içerik zıplamaz). Bunu SADECE programlı navigasyon penceresinde kapatıyoruz
-  // (o an sureGit kendi hizalamasını yapıyor); organik kaydırmada AÇIK → hızlı kaydırırken
-  // "geri atma"/satır kayması olmaz.
+  // ── SCROLL DENGELEME STRATEJİSİ ──
+  // Web'de sorunsuz, MOBİLDE sayfa sınırında sıçrama var. Sebep: bir sayfa görünüme
+  // girip measureElement ile ölçülünce (tahminden sapınca) virtualizer scrollTop'u
+  // düzeltir; masaüstünde bu pürüzsüz, ama mobil momentum/inertia kaydırmasıyla
+  // çakışınca gözle görülür "sıçrama" oluşuyor.
+  //   → MOBİLDE: ölçüm kaynaklı scroll düzeltmesini KAPAT. Böylece görünen üst satır
+  //     yerinde kalır (aşağıdaki içerik kayar, o da ekran dışında → sıçrama görünmez).
+  //     Tahminler gerçek ölçülen yüksekliklerle beslendiği için (estimateSize) toplam
+  //     boyut sapması da küçük kalır.
+  //   → MASAÜSTÜNDE: düzeltme AÇIK (zaten düzgün çalışıyor, hızlı kaydırmada geri atmayı önler).
+  //   → Programlı navigasyon (sureGit/restore) penceresinde HER İKİSİNDE de KAPALI
+  //     (o an ilgili fonksiyon kendi hizalamasını settle-loop ile yapıyor).
   const navAyarRef = useRef(false)
-  virtualizer.shouldAdjustScrollPositionOnItemSizeChange = () => !navAyarRef.current
+  virtualizer.shouldAdjustScrollPositionOnItemSizeChange = () => {
+    if (navAyarRef.current) return false   // programlı hizalama sürüyor
+    if (isMobile) return false             // mobilde momentum'la çakışmasın → sıçrama yok
+    return true                            // masaüstü: dengele
+  }
 
 // ════════════════════════════════════════════════════════════════
 // KAYIT BÖLÜMÜ
@@ -1218,6 +1293,7 @@ function sureGit(sureId, ayetNo) {
     const sn = akt?.sureNo || mevcutSureBilgisi?.id || 1
     const an = akt?.ayetNo || 1
     setTmSure(sn)
+    setTmSureArama("")
     setTmAyetBas(an); setTmAyetSon(an)
     setTmSayfaBas(mevcutSayfa); setTmSayfaSon(mevcutSayfa)
     setDonguAyarAcik(true)
@@ -1243,6 +1319,20 @@ function sureGit(sureId, ayetNo) {
       liste.sort((x, y) => x._sq - y._sq)
     }
     if (!liste.length) return
+    // Besmele ile başla: döngüde bir sûrenin 1. âyetine gelince önüne besmele (sûre 1 ve 9 hariç)
+    if (tmBesmele) {
+      const bes = []
+      for (const it of liste) {
+        if (it.ayetNo === 1 && it.sureNo !== 1 && it.sureNo !== 9) bes.push({ sureNo: 1, ayetNo: 1, besmeleIcin: it.sureNo })
+        bes.push(it)
+      }
+      liste = bes
+    }
+    // Yalnız kaydedilen mod aktif olsun; diğer modların değerleri sıfırlansın (karışmasın)
+    if (tmMod !== "sayfa") { setTmSayfaBas(1); setTmSayfaSon(1) }
+    if (tmMod !== "ayet")  { setTmAyetBas(1); setTmAyetSon(1) }
+    if (tmMod === "sayfa") { setTmSure(1) }
+    setTmSureArama("")
     setTekrarModu(tmMod)
     setDonguAyarAcik(false)
     player.listeCal(liste, true)
@@ -2062,11 +2152,62 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
             <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>{cocuk}</div>
           </div>
         )
+        // Sûre adı arama (â→a, büyük/küçük duyarsız — sure menüsü gibi)
+        const seciliSure = mushafData.find(s => s.id === +tmSure) || null
+        const maksSure = mushafData.length || 114
+        const aramaQ = tmSureArama.trim()
+        const sureEslesme = aramaQ
+          ? mushafData.filter(s => srNorm(s.isim).includes(srNorm(aramaQ)) || String(s.id).includes(aramaQ)).slice(0, 8) : []
+        const sureSec = (s) => { setTmSure(s.id); setTmSureArama(""); setTmAyetBas(1); setTmAyetSon(1) }
+        // Yazarken sûre NUMARASI maksimumu aşarsa: uyar (3 sn) + maks sûreye sabitle
+        const sureAramaYaz = (v) => {
+          const t = v.trim()
+          if (/^\d+$/.test(t) && parseInt(t) > maksSure) {
+            const maxS = mushafData.find(s => s.id === maksSure)
+            if (maxS) sureSec(maxS)
+            sureUyariGoster(`En fazla ${maksSure} sûre var — son sûreye sabitlendi.`)
+            return
+          }
+          setTmSureArama(v)
+        }
+        const sureAramaAlani = (
+          <div style={{ position: "relative", width: "168px" }}>
+            <input value={tmSureArama} onChange={e => sureAramaYaz(e.target.value)}
+              placeholder={seciliSure ? `${seciliSure.id}. ${seciliSure.isim}` : "Sûre adı / no…"}
+              style={{ ...inpStil, width: "168px", textAlign: "left" }} />
+            {sureEslesme.length > 0 && (
+              <div style={{ position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0, zIndex: 210,
+                background: theme.surface, border: `1px solid ${theme.border}`, borderRadius: "10px",
+                boxShadow: "0 8px 24px rgba(0,0,0,0.2)", maxHeight: "200px", overflowY: "auto", padding: "4px" }}>
+                {sureEslesme.map(s => (
+                  <button key={s.id} onClick={() => sureSec(s)} style={{ width: "100%", textAlign: "left", padding: "8px 10px",
+                    borderRadius: "8px", border: "none", background: "transparent", color: theme.text, cursor: "pointer", fontSize: "13px", fontFamily: "inherit" }}>
+                    <span style={{ color: theme.accent, fontWeight: 700 }}>{s.id}.</span> {s.isim}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )
+        // Sayfa aralığındaki sûre adları (maks 5) + max sayfa sabitleme
+        const sayfaClamp = (v) => v === "" ? "" : Math.min(toplamSayfa, Math.max(1, parseInt(v) || 1))
+        const sayfaAralikBilgi = () => {
+          const b = Math.min(+tmSayfaBas || 1, +tmSayfaSon || 1), e = Math.max(+tmSayfaBas || 1, +tmSayfaSon || 1)
+          const adlar = mushafData.filter(s => (s.ayetler || []).some(a => a.sayfa >= b && a.sayfa <= e)).map(s => s.isim)
+          if (!adlar.length) return ""
+          // Çok sûre varsa: ilk 2 + … + son (ör. "İhlâs, Felâk, …, Nâs Sûreleri")
+          const gost = adlar.length <= 3 ? adlar.join(", ") : `${adlar[0]}, ${adlar[1]}, …, ${adlar[adlar.length - 1]}`
+          return `${gost} Sûre${adlar.length > 1 ? "leri" : "si"}`
+        }
+        const ayetClamp = (v) => v === "" ? "" : Math.max(1, Math.min(seciliSure?.ayetSayisi || 999, parseInt(v) || 1))
+        const ayetGecersiz = tmMod === "ayet" && seciliSure && +tmAyetBas > +tmAyetSon
+        const sayfaGecersiz = tmMod === "sayfa" && (+tmSayfaBas || 1) > (+tmSayfaSon || 1)
+        const kaydetGecersiz = (tmMod !== "sayfa" && !seciliSure) || ayetGecersiz || sayfaGecersiz
         return (
           <>
             <div onClick={() => setDonguAyarAcik(false)} style={{ position: "fixed", inset: 0, zIndex: 199, background: "rgba(0,0,0,0.35)" }} />
             <div style={{ position: "fixed", left: "50%", top: "50%", transform: "translate(-50%,-50%)", zIndex: 200,
-              width: "min(92vw, 340px)", background: theme.surface, border: `1px solid ${theme.border}`, borderRadius: "16px",
+              width: "min(92vw, 360px)", background: theme.surface, border: `1px solid ${theme.border}`, borderRadius: "16px",
               boxShadow: "0 12px 40px rgba(0,0,0,0.3)", padding: "18px", maxHeight: "82vh", overflowY: "auto" }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "14px" }}>
                 <span style={{ fontSize: "15px", fontWeight: 700, color: theme.accent }}>Tekrar (Döngü)</span>
@@ -2081,29 +2222,48 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
 
               {tmMod === "sayfa" && (
                 <>
-                  {satir("Başlangıç sayfa", <input type="number" min={1} max={toplamSayfa} value={tmSayfaBas} onChange={e => setTmSayfaBas(e.target.value)} style={inpStil} />)}
-                  {satir("Bitiş sayfa", <input type="number" min={1} max={toplamSayfa} value={tmSayfaSon} onChange={e => setTmSayfaSon(e.target.value)} style={inpStil} />)}
-                  <div style={{ fontSize: "11.5px", color: theme.textSecondary, marginTop: "8px", opacity: 0.85 }}>Seçilen ardışık sayfalar sırayla okunur, sona gelince başa döner.</div>
+                  {satir("Başlangıç sayfa", <input type="number" min={1} max={toplamSayfa} value={tmSayfaBas} onChange={e => setTmSayfaBas(sayfaClamp(e.target.value))} style={inpStil} />)}
+                  {satir("Bitiş sayfa", <input type="number" min={1} max={toplamSayfa} value={tmSayfaSon} onChange={e => setTmSayfaSon(sayfaClamp(e.target.value))} style={inpStil} />)}
+                  {sayfaGecersiz
+                    ? <div style={{ fontSize: "11.5px", color: "#c0392b", marginTop: "10px" }}>Başlangıç sayfası bitiş sayfasından büyük olamaz.</div>
+                    : (sayfaAralikBilgi() && <div style={{ fontSize: "12.5px", color: theme.accent, marginTop: "10px", fontWeight: 500 }}>{sayfaAralikBilgi()}</div>)}
+                  <div style={{ fontSize: "11.5px", color: theme.textSecondary, marginTop: "6px", opacity: 0.85 }}>Seçilen ardışık sayfalar sırayla okunur, sona gelince başa döner.</div>
                 </>
               )}
               {tmMod === "ayet" && (
                 <>
-                  {satir("Sûre no", <input type="number" min={1} max={114} value={tmSure} onChange={e => setTmSure(e.target.value)} style={inpStil} />)}
-                  {satir("Başlangıç âyet", <input type="number" min={1} value={tmAyetBas} onChange={e => setTmAyetBas(e.target.value)} style={inpStil} />)}
-                  {satir("Bitiş âyet", <input type="number" min={1} value={tmAyetSon} onChange={e => setTmAyetSon(e.target.value)} style={inpStil} />)}
-                  <div style={{ fontSize: "11.5px", color: theme.textSecondary, marginTop: "8px", opacity: 0.85 }}>Seçilen ardışık âyetler playlist gibi tekrar eder.</div>
+                  {satir("Sûre", sureAramaAlani)}
+                  {sureUyari && <div style={{ fontSize: "11.5px", color: "#c0392b", marginTop: "8px" }}>{sureUyari}</div>}
+                  {satir("Başlangıç âyet", <input type="number" min={1} max={seciliSure?.ayetSayisi || 999} value={tmAyetBas} onChange={e => setTmAyetBas(ayetClamp(e.target.value))} style={inpStil} />)}
+                  {satir("Bitiş âyet", <input type="number" min={1} max={seciliSure?.ayetSayisi || 999} value={tmAyetSon} onChange={e => setTmAyetSon(ayetClamp(e.target.value))} style={inpStil} />)}
+                  {ayetGecersiz && <div style={{ fontSize: "11.5px", color: "#c0392b", marginTop: "8px" }}>Başlangıç âyeti bitişten büyük olamaz.</div>}
+                  <div style={{ fontSize: "11.5px", color: theme.textSecondary, marginTop: "6px", opacity: 0.85 }}>Seçilen ardışık âyetler playlist gibi tekrar eder.</div>
                 </>
               )}
               {tmMod === "sure" && (
                 <>
-                  {satir("Sûre no", <input type="number" min={1} max={114} value={tmSure} onChange={e => setTmSure(e.target.value)} style={inpStil} />)}
+                  {satir("Sûre", sureAramaAlani)}
+                  {sureUyari && <div style={{ fontSize: "11.5px", color: "#c0392b", marginTop: "8px" }}>{sureUyari}</div>}
                   <div style={{ fontSize: "11.5px", color: theme.textSecondary, marginTop: "8px", opacity: 0.85 }}>Seçilen sûre baştan sona tekrar eder.</div>
                 </>
               )}
 
-              <div style={{ display: "flex", gap: "8px", marginTop: "18px" }}>
+              {/* Besmele ile başla — döngüde sûre başına gelince */}
+              <button onClick={() => setTmBesmele(v => !v)} style={{
+                width: "100%", marginTop: "14px", display: "flex", alignItems: "center", justifyContent: "space-between",
+                padding: "9px 12px", borderRadius: "10px", cursor: "pointer", fontSize: "13px", fontFamily: "inherit",
+                border: `1px solid ${tmBesmele ? theme.accent : theme.border}`,
+                background: tmBesmele ? `${theme.accent}12` : "transparent", color: tmBesmele ? theme.accent : theme.textSecondary,
+              }}>
+                <span>Besmele ile başla</span>
+                <span style={{ fontSize: "11px", fontWeight: 700 }}>{tmBesmele ? "Açık" : "Kapalı"}</span>
+              </button>
+
+              <div style={{ display: "flex", gap: "8px", marginTop: "14px" }}>
                 <button onClick={tekrariSifirla} style={{ flex: 1, padding: "11px", borderRadius: "12px", border: `1px solid ${theme.border}`, background: "transparent", color: theme.textSecondary, cursor: "pointer", fontSize: "14px", fontWeight: 600 }}>Sıfırla</button>
-                <button onClick={tekrariUygula} style={{ flex: 1, padding: "11px", borderRadius: "12px", border: "none", background: theme.accent, color: "#fff", cursor: "pointer", fontSize: "14px", fontWeight: 600 }}>Kaydet</button>
+                <button onClick={tekrariUygula} disabled={kaydetGecersiz}
+                  style={{ flex: 1, padding: "11px", borderRadius: "12px", border: "none", cursor: kaydetGecersiz ? "not-allowed" : "pointer", fontSize: "14px", fontWeight: 600,
+                    background: theme.accent, color: "#fff", opacity: kaydetGecersiz ? 0.5 : 1 }}>Kaydet</button>
               </div>
             </div>
           </>
@@ -2625,8 +2785,9 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
               : "16px",
             scrollbarWidth: scrollbarGorunur ? "thin" : "none",
             msOverflowStyle: scrollbarGorunur ? "auto" : "none",
-            transition: "scrollbar-width 0.3s ease",
+            transition: "scrollbar-width 0.3s ease, opacity 0.2s ease",
             cursor: kayitKonumModu ? "crosshair" : "default",
+            opacity: konumHazir ? 1 : 0,
           }}
           onClick={(e) => {
             if (kayitKonumModu) {
@@ -2789,6 +2950,21 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
         </div>
 
         {barKonum === "alt" && Bar}
+
+        {!konumHazir && (
+          <div style={{
+            position: "absolute", inset: 0, zIndex: 40,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            background: theme.background, pointerEvents: "none",
+          }}>
+            <div style={{
+              width: 26, height: 26, borderRadius: "50%",
+              border: `3px solid ${theme.accent}30`, borderTopColor: theme.accent,
+              animation: "vukufDon 0.7s linear infinite",
+            }} />
+            <style>{`@keyframes vukufDon{to{transform:rotate(360deg)}}`}</style>
+          </div>
+        )}
 
         {donusTip && (
           <div style={{

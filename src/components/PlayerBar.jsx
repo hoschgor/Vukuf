@@ -1,5 +1,5 @@
-import { useRef, useEffect } from "react"
-import { Play, Pause, Square, SkipBack, SkipForward, Glasses, Repeat, Gauge } from "lucide-react"
+import { useRef, useEffect, useState } from "react"
+import { Play, Pause, Square, SkipBack, SkipForward, Glasses, Repeat, Gauge, Check, RotateCcw } from "lucide-react"
 import { KARILAR } from "../data/hooks/useAudioPlayer"
 import { useMediaQuery } from "../data/hooks/useMediaQuery"
 
@@ -20,8 +20,7 @@ export default function PlayerBar({
 }) {
   const { durum, aktifAyet, kariId, duraklat, devamEt, durdur, oncekiAyet, sonrakiAyet, hiz = 1, hizAyarla } = player
   const isMobile = useMediaQuery("(max-width: 768px)")
-  const HIZLAR = [0.75, 1, 1.25, 1.5, 2]
-  const hizSonraki = () => { const i = HIZLAR.indexOf(hiz); hizAyarla && hizAyarla(HIZLAR[(i + 1) % HIZLAR.length]) }
+  const [hizAcik, setHizAcik] = useState(false)
 
   // Gerçek yüksekliği ölç → ebeveyn (KuranOkuma) menü/içerik ofsetlerinde kullanır
   const rootRef = useRef(null)
@@ -108,8 +107,28 @@ export default function PlayerBar({
       maxWidth: "100%",
       boxSizing: "border-box",
     }}>
+      {hizAcik ? (
+        /* ÇALMA HIZI — bar tamamen yatay kaydırıcı olur (overflow:hidden içinde görünür) */
+        <div style={{ display: "flex", alignItems: "center", gap: isMobile ? "10px" : "14px", width: "100%" }}>
+          <Gauge size={17} color={theme.accent} style={{ flexShrink: 0 }} />
+          <span style={{ fontSize: "12px", color: theme.textSecondary, whiteSpace: "nowrap", flexShrink: 0 }}>Hız</span>
+          <input type="range" min={0.5} max={2} step={0.05} value={hiz}
+            onChange={e => hizAyarla && hizAyarla(parseFloat(e.target.value))}
+            style={{ flex: 1, minWidth: 0, accentColor: theme.accent, cursor: "pointer" }} />
+          <span style={{ fontSize: "13px", fontWeight: 700, color: theme.accent, minWidth: "38px", textAlign: "right", flexShrink: 0 }}>{hiz}×</span>
+          <button onClick={() => hizAyarla && hizAyarla(1)} title="1×'e sıfırla (kapatmaz)"
+            style={{ display: "flex", alignItems: "center", justifyContent: "center", width: isMobile ? "28px" : "30px", height: isMobile ? "28px" : "30px", borderRadius: "50%", cursor: "pointer", flexShrink: 0,
+              border: `1px solid ${theme.border}`, background: "transparent", color: theme.textSecondary }}>
+            <RotateCcw size={15} />
+          </button>
+          <button onClick={() => setHizAcik(false)} title="Tamam"
+            style={{ display: "flex", alignItems: "center", justifyContent: "center", width: isMobile ? "30px" : "32px", height: isMobile ? "30px" : "32px", borderRadius: "50%", border: "none", cursor: "pointer", background: theme.accent, color: "#fff", flexShrink: 0 }}>
+            <Check size={16} />
+          </button>
+        </div>
+      ) : (<>
       {/* Sol: sure · ayet · kari adı */}
-      <div style={{ 
+      <div style={{
         flex: "0 1 auto",
         minWidth: 0,
         maxWidth: isMobile ? "75%" : "100%",
@@ -191,9 +210,9 @@ export default function PlayerBar({
           <Repeat size={isMobile ? 15 : 16} />
         </button>
 
-        {/* ÇALMA HIZI — dokununca sıradaki hıza geçer */}
+        {/* ÇALMA HIZI — dokununca bar tamamen yatay kaydırıcıya döner (aşağıda hizAcik dalı) */}
         <button
-          onClick={hizSonraki}
+          onClick={() => setHizAcik(true)}
           title="Çalma hızı"
           style={{
             display: "flex", alignItems: "center", justifyContent: "center", gap: "2px",
@@ -204,7 +223,7 @@ export default function PlayerBar({
             fontSize: `${Math.round((isMobile ? 10 : 11) * (barUiOlcegi || 1))}px`, fontWeight: 600, fontFamily: "inherit",
           }}
         >
-          <Gauge size={isMobile ? 13 : 14} />{hiz}×
+          <Gauge size={isMobile ? 16 : 17} />{hiz}×
         </button>
 
         {/* Kontrol butonları */}
@@ -258,6 +277,7 @@ export default function PlayerBar({
           <SkipForward size={isMobile ? 15 : 14} />
         </button>
       </div>
+      </>)}
     </div>
   )
 }

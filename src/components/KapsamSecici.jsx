@@ -122,7 +122,11 @@ export default function KapsamSecici({ theme, kuranSecenek = false, baslangic, o
         onSelect={v => { setSecKisim(v); setSecAlim(""); setSecEser(""); setSecKitap("") }} />
 
       {!kuranMi && (
-        <Dropdown theme={theme} label="Alim" value={secAlim} placeholder="Tüm alimler" disabled={!secKisim}
+        <Dropdown theme={theme}
+          label={secKisim === "risale" ? "Eser Türü" : "Alim"}
+          value={secAlim}
+          placeholder={secKisim === "risale" ? "Tüm eser türleri" : "Tüm alimler"}
+          disabled={!secKisim}
           options={alimSecenek.map(a => ({ id: a.id, ad: a.isim }))}
           onSelect={v => { setSecAlim(v); setSecEser(""); setSecKitap("") }} />
       )}

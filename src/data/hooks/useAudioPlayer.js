@@ -34,8 +34,11 @@ export function besmeleUrl(kariId) {
   return mp3Url(kariId, 1, 1)
 }
 
+const kariEtiket = (id) => (KARILAR.find(k => k.id === id)?.label || "Kur'ân-ı Kerîm")
+
 export default function useAudioPlayer() {
   const audioRef = useRef(null)
+  const onyukleRef = useRef(null)   // sıradaki âyeti arka planda önden yükleyen gizli <audio>
   const kuyrukRef = useRef([])
   const kuyrukIndisRef = useRef(0)
 
@@ -46,7 +49,38 @@ export default function useAudioPlayer() {
   const [aktifAyet, setAktifAyet] = useState(null)
   const [hata, setHata] = useState(null)
   const kariIdRef = useRef(kariId)
+  const oncekiAyetRef = useRef(null)   // Media Session "previoustrack" için (tanımdan sonra atanır)
   const donguRef = useRef(false)   // kuyruk bitince başa dön (tekrar modları)
+
+  // Media Session meta verisi (kilit ekranı başlığı) — oturumu canlı tutar
+  const mediaMeta = useCallback((sureNo, ayetNo, besmeleIcin) => {
+    if (!("mediaSession" in navigator)) return
+    try {
+      if (window.MediaMetadata) {
+        navigator.mediaSession.metadata = new window.MediaMetadata({
+          title: besmeleIcin ? "Bismillâhirrahmânirrahîm" : `${sureNo}. Sûre · ${ayetNo}. Âyet`,
+          artist: kariEtiket(kariIdRef.current),
+          album: "Kur'ân-ı Kerîm",
+        })
+      }
+      navigator.mediaSession.playbackState = "playing"
+    } catch {}
+  }, [])
+
+  // Sıradaki âyeti önden yükle (arka planda ağ yavaşladığında sessizliği azaltır)
+  const sonrakiOnyukle = useCallback(() => {
+    const on = onyukleRef.current
+    const kuyruk = kuyrukRef.current
+    if (!on || !kuyruk.length) return
+    let idx = kuyrukIndisRef.current + 1
+    if (idx >= kuyruk.length) { if (donguRef.current) idx = 0; else return }
+    const s = kuyruk[idx]
+    if (!s) return
+    try {
+      const url = mp3Url(kariIdRef.current, s.sureNo, s.ayetNo)
+      if (on.src !== url) { on.src = url; on.load() }
+    } catch {}
+  }, [])
   // Çalma hızı (playbackRate)
   const [hiz, setHiz] = useState(() => parseFloat(localStorage.getItem("vukuf-calma-hizi") || "1") || 1)
   const hizRef = useRef(hiz)
@@ -66,17 +100,35 @@ useEffect(() => {
   useEffect(() => {
     const audio = new Audio()
     audio.preload = "auto"
+    // Arka planda/kilit ekranında sesin devam etmesi için ipuçları
+    try { audio.setAttribute("playsinline", "") } catch {}
     audioRef.current = audio
+
+    // Sıradaki âyeti önden yükleyen gizli eleman (arka planda ağ yavaşlar → boşluk/sessizlik olmasın)
+    const on = new Audio()
+    on.preload = "auto"
+    onyukleRef.current = on
 
     audio.addEventListener("ended", () => sonrakiAyetCal())
     audio.addEventListener("error", () => {
       setHata("Ses yüklenemedi")
       setDurum("kapali")
     })
+    // Kilit ekranı / bildirim kontrolleri (Media Session) → oturum aktif kalır, arka planda çalmaya devam
+    if ("mediaSession" in navigator) {
+      try {
+        navigator.mediaSession.setActionHandler("play",  () => { audio.play().then(() => { setDurum("caliyor"); try { navigator.mediaSession.playbackState = "playing" } catch {} }).catch(() => {}) })
+        navigator.mediaSession.setActionHandler("pause", () => { audio.pause(); setDurum("duraklatildi"); try { navigator.mediaSession.playbackState = "paused" } catch {} })
+        navigator.mediaSession.setActionHandler("nexttrack",     () => sonrakiAyetCal())
+        navigator.mediaSession.setActionHandler("previoustrack", () => oncekiAyetRef.current && oncekiAyetRef.current())
+      } catch {}
+    }
 
     return () => {
       audio.pause()
       audio.src = ""
+      on.pause()
+      on.src = ""
     }
   }, [])
 
@@ -117,9 +169,15 @@ useEffect(() => {
     audio.src = mp3Url(kariIdRef.current, sureNo, ayetNo)
     audio.playbackRate = hizRef.current
     audio.play()
-      .then(() => { audio.playbackRate = hizRef.current; setDurum("caliyor"); setAktifAyet({ sureNo, ayetNo, besmeleIcin }) })
+      .then(() => {
+        audio.playbackRate = hizRef.current
+        setDurum("caliyor")
+        setAktifAyet({ sureNo, ayetNo, besmeleIcin })
+        mediaMeta(sureNo, ayetNo, besmeleIcin)   // kilit ekranı oturumunu güncelle/canlı tut
+        sonrakiOnyukle()                          // bir sonrakini önden yükle (arka plan boşluğunu azalt)
+      })
       .catch(() => { setHata("Oynatma başlatılamadı"); setDurum("kapali") })
-  }, [])
+  }, [mediaMeta, sonrakiOnyukle])
 
   const ayetCal = useCallback((sureNo, ayetNo) => {
     donguRef.current = false
@@ -177,13 +235,14 @@ const sureCal = useCallback((sureNo, toplamAyetSayisi, baslangicAyet = 1) => {
     if (!audio || durum !== "caliyor") return
     audio.pause()
     setDurum("duraklatildi")
+    try { if ("mediaSession" in navigator) navigator.mediaSession.playbackState = "paused" } catch {}
   }, [durum])
 
   const devamEt = useCallback(() => {
     const audio = audioRef.current
     if (!audio || durum !== "duraklatildi") return
     audio.play()
-      .then(() => setDurum("caliyor"))
+      .then(() => { setDurum("caliyor"); try { if ("mediaSession" in navigator) navigator.mediaSession.playbackState = "playing" } catch {} })
       .catch(() => setDurum("kapali"))
   }, [durum])
 
@@ -192,12 +251,14 @@ const sureCal = useCallback((sureNo, toplamAyetSayisi, baslangicAyet = 1) => {
     if (!audio) return
     audio.pause()
     audio.src = ""
+    if (onyukleRef.current) { try { onyukleRef.current.pause(); onyukleRef.current.src = "" } catch {} }
     donguRef.current = false
     kuyrukRef.current = []
     kuyrukIndisRef.current = 0
     setDurum("kapali")
     setAktifAyet(null)
     setHata(null)
+    try { if ("mediaSession" in navigator) { navigator.mediaSession.playbackState = "none"; navigator.mediaSession.metadata = null } } catch {}
   }, [])
 
   const oncekiAyet = useCallback(() => {
@@ -207,6 +268,7 @@ const sureCal = useCallback((sureNo, toplamAyetSayisi, baslangicAyet = 1) => {
     const { sureNo, ayetNo, besmeleIcin } = kuyrukRef.current[indis]
     _ayetOynat(sureNo, ayetNo, besmeleIcin)
   }, [_ayetOynat])
+  oncekiAyetRef.current = oncekiAyet   // Media Session "previoustrack" handler'ı güncel kalsın
 
   const sonrakiAyet = useCallback(() => {
     sonrakiAyetCal()

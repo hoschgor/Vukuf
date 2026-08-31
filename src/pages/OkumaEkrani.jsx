@@ -665,19 +665,32 @@ function HasiyeSup({ metin, onDipnotTikla, theme, vurguModu }) {
 }
 
 // Bir satırdaki [n] dipnot ve ⟦Hn⟧ haşiye işaretlerini tıklanır işaretlere çevirir
-// Popup metninde ayet atfı (ör. "Fussilet Sûresi, 41:44") bul → {sureNo, ayetNo}.
-// Sûre/âyet biçimi "sure:ayet" (rakam) olarak geçer; ilk geçerli eşleşme alınır.
-function ayetAtfiBul(p) {
-  if (!p) return null
+// Metinde TÜM ayet atıflarını bul: "<Sûre adı> Sûresi, <sure>:<ayet>" (İsrâ Sûresi, 17:44;
+// bk. Yunus Sûresi, 10:108; Beled Sûresi, 90:10). "Sûresi" büyük/küçük duyarsız aranır.
+// → [{ ad, sureNo, ayetNo }] (tekrarsız). Navigasyon rakamlarla (sure:ayet) yapılır.
+function ayetAtiflari(text) {
+  if (!text) return []
+  const re = /([A-Za-zÇĞİÖŞÜçğıöşüâîûôêÂÎÛ'’.\-]+)\s+s[uû]res[iî]\s*[,:]?\s*(\d{1,3})\s*[:：]\s*(\d{1,3})/gi
+  const gorulen = new Set(), sonuc = []
+  let m
+  while ((m = re.exec(text)) !== null) {
+    const sureNo = +m[2], ayetNo = +m[3]
+    if (sureNo < 1 || sureNo > 114 || ayetNo < 1) continue
+    const k = `${sureNo}:${ayetNo}`
+    if (gorulen.has(k)) continue
+    gorulen.add(k)
+    sonuc.push({ ad: (m[1] || "").replace(/[.\-]+$/g, "").trim(), sureNo, ayetNo })
+  }
+  return sonuc
+}
+// Lügat/kavram popup'unun tüm metnini birleştir (atıf taraması için)
+function popupMetni(p) {
+  if (!p) return ""
   let t = (p.anlam || "")
   const ekle = (arr) => (arr || []).forEach(kv => { t += " " + (kv.aciklama || "") + " " + ((kv.kaynaklar || []).join(" ")) })
   ekle(p.kavram)
   ;(p.secenekler || []).forEach(s => { t += " " + (s.anlam || ""); ekle(s.kavram) })
-  const m = t.match(/(\d{1,3})\s*[:：]\s*(\d{1,3})/)
-  if (!m) return null
-  const sureNo = +m[1], ayetNo = +m[2]
-  if (sureNo < 1 || sureNo > 114 || ayetNo < 1) return null
-  return { sureNo, ayetNo }
+  return t
 }
 
 function renderMarkerli(text, dipnotMap, onDipnotTikla, theme, hasiyeMap = {}) {
@@ -1582,10 +1595,12 @@ function elemanaGit(sayfaNo, selectorFn, fallbackOran = 0, cizgi = true, onLand 
 
 // Bulunan öğede aranan metni seçili gibi vurgula (kutular sayfaya göre konumlanır) +
 // kelime görünür değilse ona kaydır. Kısa süre sonra söner.
-function aramaVurgula(sayfaNo, el, aranan, altCizgi = true) {
+function aramaVurgula(sayfaNo, el, aranan, altCizgi = true, tumEleman = false) {
   const sc = scrollRef.current, pref = sayfaRefs.current[sayfaNo]
   if (!el || !sc || !pref) return
-  let r = araliktaBul(el, aranan)
+  // tumEleman: başlık gibi hedeflerde SATIRIN TAMAMINI işaretle → 2 satıra sarıyorsa
+  // (görünen 2. satır dahil) her satır için ayrı kutu çıkar, alt satır boş kalmaz.
+  let r = tumEleman ? null : araliktaBul(el, aranan)
   if (!r) { r = document.createRange(); r.selectNodeContents(el) }
   const rects = Array.from(r.getClientRects())
   if (!rects.length) return
@@ -1786,7 +1801,7 @@ function basligaGit(sayfa, satir, oran = 0, baslikMetni = "", seviye = 1, acikla
   const odakla = anaBaslik || mektupOdak   // mektup ayracı: satır başını üste odakla (vurgu arama yok)
   elemanaGit(sayfa, sel, oran,
     odakla,                                               // ana başlık / mektup: odak çizgisi
-    odakla ? null : (el) => aramaVurgula(sayfa, el, bulunanTerim, false)) // alt başlık: bulunan terimi vurgula
+    odakla ? null : (el) => aramaVurgula(sayfa, el, bulunanTerim, false, true)) // alt başlık: SATIRIN TAMAMINI vurgula (2 satır sarıyorsa alt satır dahil)
 }
 
 // Popup'taki ayet atfına git: hedefi+dönüşü sakla, Kur'an Okuma'yı aç (üstte "Okumaya dön" çıkar)
@@ -1796,8 +1811,23 @@ function ayeteGit(atif) {
     localStorage.setItem("vukuf-donus", "okuma")
     localStorage.setItem("vukuf-donus-yol", `/kitap/${id}`)
   } catch {}
-  setPopup(null)
+  setPopup(null); setDipnotPopup(null)
   navigate("/kuran")
+}
+// Atıf ok(lar)ı — birden fazla sûre atfı varsa hepsi kompakt rozet olarak, göz yormadan
+const atifOklari = (atiflar) => {
+  if (!atiflar || !atiflar.length) return null
+  return (
+    <div style={{ marginTop: "10px", display: "flex", flexWrap: "wrap", gap: "6px" }}>
+      {atiflar.map((a, i) => (
+        <button key={i} onClick={() => ayeteGit(a)} title={`${a.ad ? a.ad + " " : ""}${a.sureNo}:${a.ayetNo} âyetine git`}
+          style={{ display: "flex", alignItems: "center", gap: "5px", background: `${theme.accent}18`, color: theme.accent,
+            border: `1px solid ${theme.accent}40`, borderRadius: "20px", padding: "5px 11px", fontSize: "12px", fontWeight: 500, cursor: "pointer" }}>
+          <ArrowRight size={13} /> {a.ad || "Âyet"} {a.sureNo}:{a.ayetNo}
+        </button>
+      ))}
+    </div>
+  )
 }
 
 // Vurguya git — vurgulanan ilk kelimenin DOM konumuna ([data-vurgu]) tam hizala
@@ -2973,7 +3003,7 @@ return (
           position: "fixed", left: dipnotPopup.x, top: dipnotPopup.y,
           background: theme.surface, border: `1px solid ${theme.border}`,
           borderRadius: "12px", padding: "14px 16px", zIndex: 300,
-          width: "300px", maxWidth: "92vw", maxHeight: "25vh", overflowY: "auto",
+          width: "300px", maxWidth: "92vw", maxHeight: "45vh", overflowY: "auto",
           boxShadow: "0 8px 24px rgba(0,0,0,0.18)",
         }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
@@ -2983,6 +3013,8 @@ return (
           <div style={{ color: theme.text, fontSize: `${Math.round(15 * bilgiOlcegi)}px`, lineHeight: "1.7", whiteSpace: "pre-wrap" }}>
             {dipnotPopup.metin}
           </div>
+          {/* Dipnotta ayet atfı/atıfları → Kur'an Okuma'ya köprü (birden fazlaysa hepsi) */}
+          {atifOklari(ayetAtiflari(dipnotPopup.metin))}
         </div>
       </>
     )}
@@ -3042,18 +3074,8 @@ return (
             </div>
           )}
           </>)}
-          {/* Ayet atfı varsa → âyete git (Kur'an Okuma'da açılır, üstte "Okumaya dön") */}
-          {(() => {
-            const atif = ayetAtfiBul(popup)
-            return atif ? (
-              <button onClick={() => ayeteGit(atif)} title={`${atif.sureNo}. sûre, ${atif.ayetNo}. âyete git`}
-                style={{ marginTop: "10px", display: "flex", alignItems: "center", gap: "6px",
-                  background: `${theme.accent}18`, color: theme.accent, border: `1px solid ${theme.accent}40`,
-                  borderRadius: "20px", padding: "5px 12px", fontSize: "12px", fontWeight: 500, cursor: "pointer" }}>
-                <ArrowRight size={13} /> Âyete git
-              </button>
-            ) : null
-          })()}
+          {/* Ayet atfı/atıfları varsa → âyete git (Kur'an Okuma'da açılır, üstte "Okumaya dön") */}
+          {atifOklari(ayetAtiflari(popupMetni(popup)))}
         </div>
       </>
     )}

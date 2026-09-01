@@ -3127,13 +3127,13 @@ return (
       style={{
         flex: 1, overflowY: "auto", overflowX: "hidden", userSelect: "none",
         WebkitTapHighlightColor: "transparent",   // dokununca gri kutu çıkmasın
-        // Üst/alt boşluk BAR YÜKSEKLİĞİNE eşit → metin tam bar hizasında maskelenir;
-        // bar gizliyse boşluk yalnız safe-area kadar (metin gizlenmez).
-        paddingTop:    barKonum === "ust" ? (barGorunur ? `${barYuk}px` : "max(12px, env(safe-area-inset-top))") : "24px",
-        paddingBottom: barKonum === "alt" ? (barGorunur ? `${barYuk}px` : "max(12px, env(safe-area-inset-bottom))") : "24px",
+        // Üst/alt boşluk BAR YÜKSEKLİĞİNE eşit ve SABİT (barGorunur'a bağlı DEĞİL) →
+        // bar gizlenip görününce padding değişmiyor, dolayısıyla scroll kaymıyor
+        // (KuranOkuma'daki gibi; bar sabit bir katman olarak kayıp gösteriliyor).
+        paddingTop:    barKonum === "ust" ? `${barYuk}px` : "24px",
+        paddingBottom: barKonum === "alt" ? `${barYuk}px` : "24px",
         paddingLeft: "env(safe-area-inset-left)",
         paddingRight: "env(safe-area-inset-right)",
-        transition: gecisHazir ? "padding-top 0.25s ease, padding-bottom 0.25s ease" : "none",
       }}
     >
       <div style={{ maxWidth: `${Math.round((isMobile ? 480 : 720) * (yaziBoyutu / 16))}px`, width: "100%", margin: "0 auto", padding: "0 24px", boxSizing: "border-box" }}>

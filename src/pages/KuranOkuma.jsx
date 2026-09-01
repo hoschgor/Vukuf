@@ -24,7 +24,7 @@ import {
   Play, Pause, Plus, Minus, Type, Palette,
   Settings, Circle, Clock, ChevronsUp, ChevronsDown,
   Pencil, ChevronLeft, Bookmark, BookOpen, Feather,
-  Layers, Check, Shuffle,
+  Layers, Check, Shuffle, Mic,
 } from "lucide-react"
 
 // ── Arapça font listesi
@@ -173,6 +173,7 @@ export default function KuranOkuma({ kitap }) {
   const [tmAyetBas, setTmAyetBas] = useState(1)
   const [tmAyetSon, setTmAyetSon] = useState(1)
   const [tmBesmele, setTmBesmele] = useState(true)   // döngüde sûre başına gelince besmele ile başla
+  const [kariSecAcik, setKariSecAcik] = useState(false)   // döngü panelinde kâri seçim listesi açık mı
   const [sureUyari, setSureUyari] = useState("")     // Sûre modunda maks aşımı: 3 sn'lik uyarı
   const sureUyariTimerRef = useRef(null)
   const sureUyariGoster = useCallback((mesaj) => {
@@ -1126,34 +1127,57 @@ const sayfayaKaydir = useCallback((index, align = "start") => {
 
 
 const sayfaGercekYukseklikleriRef = useRef({})
-// Kayıtlı sayfaya gitme fonksiyonu
+// Kayıtlı sayfaya gitme fonksiyonu — konum GİZLİYKEN oturur, sonra açılır (göz kırpması yok);
+// üst bar varsa hedefi barın hemen ALTINA hizalar (ne örter ne fazla aşağı atar).
 const kayitSayfaGit = useCallback((sayfa, scrollY, kayitId) => {
   const index = sayfaListesi.findIndex(s => s.sayfaNo === sayfa)
   if (index === -1) return
-  virtualizer.scrollToIndex(index, { align: "start" })
-  setTimeout(() => {
+  navAyarRef.current = true
+  if (isMobile) {
+    konumGoster(false)
+    if (gecisGosterTimerRef.current) clearTimeout(gecisGosterTimerRef.current)
+    gecisGosterTimerRef.current = setTimeout(() => konumGoster(true), 1200)   // emniyet
+  }
+  const barOfset = isMobile ? 20 : 25
+
+  const uygula = () => {
     const el = scrollRef.current
     if (!el) return
-    const virtualItem = virtualizer.getVirtualItems().find(v => v.index === index)
-    const sayfaBaslangic = virtualItem?.start || 0
-    const sayfaYukseklik = sayfaGercekYukseklikleriRef.current[sayfa]
+    virtualizer.scrollToIndex(index, { align: "start" })   // hedef sayfayı render et/hizala
+    const vi = virtualizer.getVirtualItems().find(v => v.index === index)
+    const sayfaBaslangic = vi?.start || 0
+    const sayfaYukseklik = (vi ? (vi.end - vi.start) : 0)
+      || sayfaGercekYukseklikleriRef.current[sayfa]
       || sayfaYukseklikleri[index]
       || 500
-    const barOfset = isMobile ? 20 : 13
-    el.scrollTop = sayfaBaslangic + (scrollY || 0) * sayfaYukseklik - barOfset
-
-    if (kayitId) {
-      if (odakAyracTimeoutRef.current) {
-        clearTimeout(odakAyracTimeoutRef.current)
-      }
-      setOdakAyrac(kayitId)
-      odakAyracTimeoutRef.current = setTimeout(() => {
-        setOdakAyrac(null)
-        odakAyracTimeoutRef.current = null
-      }, 4200)
+    el.scrollTop = sayfaBaslangic + (scrollY || 0) * sayfaYukseklik - barOfset   // aynı karede oran
+  }
+  let tries = 0
+  const go = () => {
+    uygula()
+    if (++tries < 5) {
+      setTimeout(go, 90)
+    } else {
+      requestAnimationFrame(() => {
+        uygula()
+        if (gecisGosterTimerRef.current) { clearTimeout(gecisGosterTimerRef.current); gecisGosterTimerRef.current = null }
+        konumuGoster()
+        setTimeout(() => { navAyarRef.current = false }, 300)
+        // İşaret vurgusunu AÇILDIKTAN sonra başlat → animasyonu gizleme ekranı yutmaz,
+        // tam görünür oynar (daha uzun süre görünür kalır).
+        if (kayitId) {
+          if (odakAyracTimeoutRef.current) clearTimeout(odakAyracTimeoutRef.current)
+          setOdakAyrac(kayitId)
+          odakAyracTimeoutRef.current = setTimeout(() => {
+            setOdakAyrac(null)
+            odakAyracTimeoutRef.current = null
+          }, 6000)
+        }
+      })
     }
-  }, isMobile ? 400 : 150)
-}, [sayfaListesi, virtualizer, sayfaYukseklikleri, isMobile])
+  }
+  requestAnimationFrame(go)
+}, [sayfaListesi, virtualizer, sayfaYukseklikleri, isMobile, barKonum, barGorunur, barYuksekligi, playerBarYuksekligi, player.durum, konumGoster, konumuGoster])
 
 // Sayfa numarası güncelleme
 useEffect(() => {
@@ -2359,9 +2383,47 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
                 </>
               )}
 
+              {/* Kâri seçimi */}
+              {(() => {
+                const kariler = player.KARILAR || []
+                const seciliKari = kariler.find(k => k.id === player.kariId)
+                return (
+                  <div style={{ position: "relative", marginTop: "14px" }}>
+                    <button onClick={() => setKariSecAcik(a => !a)} style={{
+                      width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px",
+                      padding: "9px 12px", borderRadius: "10px", cursor: "pointer", fontSize: "13px", fontFamily: "inherit",
+                      border: `1px solid ${kariSecAcik ? theme.accent : theme.border}`, background: "transparent", color: theme.text,
+                    }}>
+                      <span style={{ display: "flex", alignItems: "center", gap: "8px", overflow: "hidden" }}>
+                        <Mic size={15} style={{ color: theme.accent, flexShrink: 0 }} />
+                        <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{seciliKari?.label || "Kâri seç"}</span>
+                      </span>
+                      <ChevronDown size={16} style={{ flexShrink: 0, transform: kariSecAcik ? "rotate(180deg)" : "none", transition: "transform .2s", color: theme.textSecondary }} />
+                    </button>
+                    {kariSecAcik && (
+                      <div style={{ position: "absolute", bottom: "calc(100% + 4px)", left: 0, right: 0, zIndex: 210,
+                        background: theme.surface, border: `1px solid ${theme.border}`, borderRadius: "10px",
+                        boxShadow: "0 8px 24px rgba(0,0,0,0.2)", maxHeight: "220px", overflowY: "auto", padding: "4px" }}>
+                        {kariler.map(k => (
+                          <button key={k.id} onClick={() => { player.setKariId(k.id); setKariSecAcik(false) }} style={{
+                            width: "100%", display: "flex", alignItems: "center", gap: "8px", textAlign: "left",
+                            padding: "8px 10px", borderRadius: "8px", border: "none", cursor: "pointer", fontSize: "13px", fontFamily: "inherit",
+                            background: k.id === player.kariId ? `${theme.accent}15` : "transparent",
+                            color: k.id === player.kariId ? theme.accent : theme.text,
+                          }}>
+                            <span style={{ flex: 1 }}>{k.label}</span>
+                            {k.id === player.kariId && <Check size={14} color={theme.accent} />}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )
+              })()}
+
               {/* Besmele ile başla — döngüde sûre başına gelince */}
               <button onClick={() => setTmBesmele(v => !v)} style={{
-                width: "100%", marginTop: "14px", display: "flex", alignItems: "center", justifyContent: "space-between",
+                width: "100%", marginTop: "10px", display: "flex", alignItems: "center", justifyContent: "space-between",
                 padding: "9px 12px", borderRadius: "10px", cursor: "pointer", fontSize: "13px", fontFamily: "inherit",
                 border: `1px solid ${tmBesmele ? theme.accent : theme.border}`,
                 background: tmBesmele ? `${theme.accent}12` : "transparent", color: tmBesmele ? theme.accent : theme.textSecondary,
@@ -2922,6 +2984,8 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
             if (window.innerWidth <= 768) return
             if (menuKapatildiRef.current) return
             if (popup || aaAcik || temaAcik || ozelTemaPanelAcik || menuAcikRef.current) return
+            // Kelime / âyet no / sûre başı-play (etkileşimli öğe) tıklanınca bar durumu DEĞİŞMESİN
+            if (e.target?.closest?.("button, [data-kelime], [data-sure], [data-ayet], [data-sure-baslik]")) return
             barToggle()
           }}
           onTouchStart={(e) => {
@@ -2969,7 +3033,10 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
             if (touchHareketRef.current) {
               return
             }
-            
+            // Kelime / âyet no / sûre başı-play (etkileşimli öğe) tıklanınca bar durumu DEĞİŞMESİN
+            if (e.target?.closest?.("button, [data-kelime], [data-sure], [data-ayet], [data-sure-baslik]")) {
+              return
+            }
             // Tıklama ise bar'ı toggle et
             barToggle()
           }}

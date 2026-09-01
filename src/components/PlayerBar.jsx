@@ -127,68 +127,52 @@ export default function PlayerBar({
           </button>
         </div>
       ) : (<>
-      {/* Sol: sure · ayet · kari adı */}
+      {/* SOL grup: (sure·ayet + kâri adı) → Gözlük → Döngü */}
       <div style={{
+        display: "flex",
+        alignItems: "center",
+        gap: isMobile ? "4px" : "6px",
         flex: "0 1 auto",
         minWidth: 0,
-        maxWidth: isMobile ? "75%" : "100%",
-        overflow: "hidden",
-        paddingLeft: isMobile ? "5%" : "1%",
+        paddingLeft: isMobile ? "3%" : "1%",
       }}>
-        <div style={{
-          fontSize: `${Math.round((isMobile ? 12 : 11) * barUiOlcegi)}px`,
-          fontWeight: "500", 
-          color: theme.text,
-          overflow: "hidden", 
-          textOverflow: "ellipsis", 
-          whiteSpace: "nowrap",
-          lineHeight: "1.2",
-        }}>
-          {aktifSure
-            ? (aktifAyet.besmeleIcin
-                ? "Bismillahirrahmanirrahim"
-                : `${aktifSure.isim} ${isMobile ? '·' : '·'} ${aktifAyet.ayetNo}`)
-            : "Besmele"}
+        {/* sure · ayet · kari adı (yeri/gösterimi aynı) */}
+        <div style={{ minWidth: 0, overflow: "hidden" }}>
+          <div style={{
+            fontSize: `${Math.round((isMobile ? 12 : 11) * barUiOlcegi)}px`,
+            fontWeight: "500",
+            color: theme.text,
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+            lineHeight: "1.2",
+          }}>
+            {aktifSure
+              ? (aktifAyet.besmeleIcin
+                  ? "Bismillahirrahmanirrahim"
+                  : `${aktifSure.isim} ${isMobile ? '·' : '·'} ${aktifAyet.ayetNo}`)
+              : "Besmele"}
+          </div>
+          <div style={{
+            fontSize: `${Math.round((isMobile ? 10 : 11) * barUiOlcegi)}px`,
+            color: theme.textSecondary,
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+            opacity: 0.7,
+          }}>
+            {aktifKari?.label || kariId}
+          </div>
         </div>
-        <div style={{
-          fontSize: `${Math.round((isMobile ? 10 : 11) * barUiOlcegi)}px`,
-          color: theme.textSecondary,
-          overflow: "hidden", 
-          textOverflow: "ellipsis", 
-          whiteSpace: "nowrap",
-          opacity: 0.7,
-        }}>
-          {aktifKari?.label || kariId}
-        </div>
-      </div>
 
-      {/* Sağ grup: Gözlük + kontroller */}
-      <div style={{ 
-        display: "flex", 
-        alignItems: "center", 
-        gap: isMobile ? "4px" : "6px",
-        flexShrink: 0,
-        marginRight: isMobile ? "3%" : "1%",
-      }}>
-        {/* GÖZLÜK - En solda ama ayrı duruyor */}
+        {/* GÖZLÜK */}
         <button
           onClick={onOdaklan}
           style={{
-            display: "flex", 
-            alignItems: "center", 
-            justifyContent: "center",
-            width: isMobile ? "28px" : "30px", 
-            height: isMobile ? "28px" : "30px", 
-            borderRadius: "50%",
-            border: "none", 
-            cursor: "pointer",
-            background: "transparent", 
-            color: theme.textSecondary,
-            transition: "all 0.15s", 
-            flexShrink: 0,
-            touchAction: "manipulation",
-            padding: 0,
-            marginRight: isMobile ? "4px" : "6px",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            width: isMobile ? "28px" : "30px", height: isMobile ? "28px" : "30px", borderRadius: "50%",
+            border: "none", cursor: "pointer", background: "transparent", color: theme.textSecondary,
+            transition: "all 0.15s", flexShrink: 0, touchAction: "manipulation", padding: 0,
           }}
           title="Okunan ayete odaklan"
         >
@@ -209,7 +193,16 @@ export default function PlayerBar({
         >
           <Repeat size={isMobile ? 15 : 16} />
         </button>
+      </div>
 
+      {/* SAĞ grup: Çalma hızı → oynatma butonları */}
+      <div style={{
+        display: "flex",
+        alignItems: "center",
+        gap: isMobile ? "4px" : "6px",
+        flexShrink: 0,
+        marginRight: isMobile ? "3%" : "1%",
+      }}>
         {/* ÇALMA HIZI — dokununca bar tamamen yatay kaydırıcıya döner (aşağıda hizAcik dalı) */}
         <button
           onClick={() => setHizAcik(true)}

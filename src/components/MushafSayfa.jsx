@@ -248,24 +248,28 @@ function MushafSayfa({
                     !aktifAyet?.besmeleIcin
 
                   return (
-                    <MushafKelime
-                      key={el.kelime.id}
-                      data-sure={el.sure.id}
-                      data-ayet={el.ayet.no}
-                      kelime={el.kelime}
-                      position={el.position || (index + 1)}
-                      aktif={aktif}
-                      theme={theme}
-                      arapcaFont={arapcaFont}
-                      yaziBoyutu={fontSize}
-                      lineHeight={lineHeight}
-                      harfAraligi={harfAraligi}
-                      kayitKonumModu={kayitKonumModu}
-                      onTikla={(kelime, e) => {
-                        if (kayitKonumModu) return
-                        onKelimeTikla?.(kelime, el.sure, el.ayet, e)
-                      }}
-                    />
+                    // data-kelime SARMALAYICI span → okuma alanı tık koruması kelimeyi tanısın
+                    // (kelimeye dokununca bar durumu değişmesin). Ayrı attribute → sureGit'in
+                    // [data-sure][data-ayet] hizalamasını ETKİLEMEZ. display:contents → düzeni bozmaz.
+                    <span key={el.kelime.id} data-kelime="1" style={{ display: "contents" }}>
+                      <MushafKelime
+                        data-sure={el.sure.id}
+                        data-ayet={el.ayet.no}
+                        kelime={el.kelime}
+                        position={el.position || (index + 1)}
+                        aktif={aktif}
+                        theme={theme}
+                        arapcaFont={arapcaFont}
+                        yaziBoyutu={fontSize}
+                        lineHeight={lineHeight}
+                        harfAraligi={harfAraligi}
+                        kayitKonumModu={kayitKonumModu}
+                        onTikla={(kelime, e) => {
+                          if (kayitKonumModu) return
+                          onKelimeTikla?.(kelime, el.sure, el.ayet, e)
+                        }}
+                      />
+                    </span>
                   )
                 }
 

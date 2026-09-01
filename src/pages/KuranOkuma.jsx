@@ -755,28 +755,31 @@ const cokSatir = wrapAktif && barYuksekligi > tekSatirYuksekligi * 1.0
     const el = scrollRef.current
     const vi = virtualizer.getVirtualItems().find(v => v.index === index)
     if (el && vi && (hedefOranRef.current || 0) > 0.001) {
-      const hgt = sayfaGercekYukseklikleriRef.current[hedefSayfaRef.current] || (vi.end - vi.start)
+      const hgt = (vi.end - vi.start) || olcKilitRef.current[hedefSayfaRef.current] || 500
       el.scrollTop = vi.start + hedefOranRef.current * hgt
     }
   }
   navAyarRef.current = true
-  let tries = 0
+  let tries = 0, fontOkTick = 0
   const go = () => {
     virtualizer.scrollToIndex(index, { align: "start" })
-    if (++tries < 6) {
-      setTimeout(go, 110)
-    } else {
-      geriYuklendiRef.current = true
+    oranUygula()                          // HER adımda hizala + sayfa içi oranı uygula (gizliyken otursun)
+    tries++
+    if (fontHazirRef.current) fontOkTick++
+    // FONT hazır olup ölçümler oturmadan AÇMA → yükseklikler kesinleşsin (altta boşluk / açılış
+    // sonrası atlama olmasın). Font hazır olduktan sonra da ~3 frame bekle.
+    const hazir = tries >= 5 && fontOkTick >= 3
+    if (!hazir && tries < 24) { setTimeout(go, 100); return }
+    geriYuklendiRef.current = true
+    requestAnimationFrame(() => {
+      virtualizer.scrollToIndex(index, { align: "start" })   // son kez tam hizala
+      oranUygula()                                           // sayfa içi oran (satır hizası)
       requestAnimationFrame(() => {
-        virtualizer.scrollToIndex(index, { align: "start" })   // son kez tam hizala
-        oranUygula()                                           // sayfa içi oran (satır hizası)
-        requestAnimationFrame(() => {
-          oranUygula()                                         // ölçüm oturunca oranı tazele
-          konumuGoster()                                       // bir sonraki frame'de aç (piksel-doğru)
-          setTimeout(() => { navAyarRef.current = false }, 300)
-        })
+        oranUygula()                                         // ölçüm oturunca oranı tazele
+        konumuGoster()                                       // GİZLİYKEN yere oturdu → şimdi aç
+        setTimeout(() => { navAyarRef.current = false }, 300)
       })
-    }
+    })
   }
   requestAnimationFrame(go)
 }, [yukleniyor, sayfaListesi.length])
@@ -785,7 +788,7 @@ const cokSatir = wrapAktif && barYuksekligi > tekSatirYuksekligi * 1.0
 // (ve ilk-açılış settle bayrağı takılı kalmasın → organik kaydırma normale dönsün)
 useEffect(() => {
   if (yukleniyor) return
-  const t = setTimeout(() => { konumuGoster(); navAyarRef.current = false }, 1500)
+  const t = setTimeout(() => { konumuGoster(); navAyarRef.current = false }, 2600)
   return () => clearTimeout(t)
 }, [yukleniyor])
 
@@ -970,50 +973,94 @@ const hizbSayfalari = (cuzNo) => {
     })
   }, [sayfaListesi, yaziBoyutu, isMobile])
 
+  // ÖLÇÜM KİLİDİ: her sayfa BİR KEZ ölçülür ve değeri kilitlenir. Sayfa görünümden çıkıp
+  // tekrar girince (özellikle YUKARI kaydırıp okunmuş sayfalara dönünce) yeniden ölçülüp
+  // minik farkla düzeltme yapılmaz → sayfa sınırı "sıçraması" olmaz. Font/aralık değişince
+  // kilit temizlenir (aşağıdaki effect).
+  const olcKilitRef = useRef({})   // sayfaNo → kilitli yükseklik
+  const olcuIlkRef = useRef(true)
+  const fontHazirRef = useRef(false)   // Arapça font YÜKLENDİ mi? Yüklenmeden ölçüm kilitlenmez
+                                       // (fallback font daha uzun → altta boşluk kalırdı)
+  // Ölçülen gerçek yüksekliklerin ORTALAMASI → henüz ölçülmemiş sayfalar için isabetli tahmin
+  // (mushaf sayfaları benzer boyda) → render öncesi ayrılan yer içeriğe yakın, altta boşluk küçük.
+  const ortalamaYukRef = useRef(0)
+  const olcSayacRef = useRef(0)
+  const olcToplamRef = useRef(0)
+
   // ── VIRTUALIZER ──
   const virtualizer = useVirtualizer({
     count: sayfaListesi.length,
     getScrollElement: () => scrollRef.current,
     estimateSize: (index) => {
-      // Daha önce GERÇEK ölçülen yükseklik varsa onu kullan → tahmin gerçeğe yakınsar,
-      // sayfa sınırında ölçüm düzeltmesi (sıçrama) minimuma iner. Yoksa hesaplı tahmin.
+      // Kilitli GERÇEK yükseklik varsa onu kullan → tahmin=ölçüm, düzeltme (sıçrama) olmaz.
       const sayfa = sayfaListesi[index]
-      const gercek = sayfa && sayfaGercekYukseklikleriRef.current[sayfa.sayfaNo]
-      if (gercek && gercek > 0) return gercek
+      const kilitli = sayfa && olcKilitRef.current[sayfa.sayfaNo]
+      if (kilitli && kilitli > 0) return kilitli
+      // Ölçülen sayfaların ortalaması (varsa) → boşluğu en aza indirir. Yoksa hesaplı tahmin.
+      if (ortalamaYukRef.current > 0) return ortalamaYukRef.current
       return sayfaYukseklikleri[index] || (isMobile ? 500 : 700)
     },
-    // Overscan artırıldı: sayfalar GÖRÜNÜME GİRMEDEN ölçülsün → ölçüm oturunca
-    // görünen içerik zıplamaz (mobilde "sayfa başına gelince aşağı kayma" azalır).
+    // measureElement: ölçümü YUMUŞAT. Sayfa tekrar görünüme girince minik farkla (jitter)
+    // yeniden ölçülüp scroll'u sıçratmasın diye küçük farkları YOK SAY (eski değeri koru).
+    // Ama BÜYÜK fark (Arapça font sonradan uygulanınca yükseklik ciddi değişir) → GÜNCELLE
+    // → altta boşluk kendiliğinden kapanır (yazı tipi değiştirince olan düzelme, otomatik).
+    measureElement: (element) => {
+      const idx = Number(element.getAttribute("data-index"))
+      const sayfa = sayfaListesi[idx]
+      const key = sayfa && sayfa.sayfaNo
+      const h = Math.round(element.getBoundingClientRect().height)
+      if (h <= 0) return (key != null && olcKilitRef.current[key]) || (isMobile ? 500 : 700)
+      const eski = key != null ? olcKilitRef.current[key] : null
+      if (eski != null && Math.abs(h - eski) <= 8) return eski   // küçük fark → koru (sıçrama yok)
+      if (key != null) {
+        const yeni = eski == null
+        olcKilitRef.current[key] = h                              // ilk ölçüm ya da büyük düzeltme
+        if (yeni) { olcSayacRef.current++; olcToplamRef.current += h }
+        else { olcToplamRef.current += (h - eski) }
+        if (olcSayacRef.current > 0) ortalamaYukRef.current = olcToplamRef.current / olcSayacRef.current
+      }
+      return h
+    },
     overscan: isMobile ? 8 : 5,
-    // ...diğer opsiyonlar
   })
 
+  // Font / satır aralığı / harf aralığı değişince kilitleri temizle + yeniden ölç
+  useEffect(() => {
+    if (olcuIlkRef.current) { olcuIlkRef.current = false; return }
+    olcKilitRef.current = {}
+    ortalamaYukRef.current = 0; olcSayacRef.current = 0; olcToplamRef.current = 0
+    try { virtualizer.measure() } catch {}
+  }, [yaziBoyutu, satirAraligi, harfAraligi]) // eslint-disable-line
+
+  // Arapça font hazır olunca: erken (fallback) kilitleri temizle + doğru yükseklikle yeniden ölç
+  useEffect(() => {
+    let bitti = false
+    const isaretle = () => {
+      if (bitti) return
+      bitti = true
+      fontHazirRef.current = true
+      olcKilitRef.current = {}            // font öncesi konmuş kilitleri at
+      ortalamaYukRef.current = 0; olcSayacRef.current = 0; olcToplamRef.current = 0
+      try { virtualizer.measure() } catch {}
+    }
+    try { if (document.fonts && document.fonts.ready) document.fonts.ready.then(isaretle) } catch {}
+    const t = setTimeout(isaretle, 1200)  // fontlar takılırsa yine de devam
+    return () => { clearTimeout(t) }
+  }, []) // eslint-disable-line
+
   // ── SCROLL DENGELEME STRATEJİSİ ──
-  // Web'de sorunsuz, MOBİLDE sayfa sınırında sıçrama var. Sebep: bir sayfa görünüme
-  // girip measureElement ile ölçülünce (tahminden sapınca) virtualizer scrollTop'u
-  // düzeltir; masaüstünde bu pürüzsüz, ama mobil momentum/inertia kaydırmasıyla
-  // çakışınca gözle görülür "sıçrama" oluşuyor.
-  //   → MOBİLDE: ölçüm kaynaklı scroll düzeltmesini KAPAT. Böylece görünen üst satır
-  //     yerinde kalır (aşağıdaki içerik kayar, o da ekran dışında → sıçrama görünmez).
-  //     Tahminler gerçek ölçülen yüksekliklerle beslendiği için (estimateSize) toplam
-  //     boyut sapması da küçük kalır.
-  //   → MASAÜSTÜNDE: düzeltme AÇIK (zaten düzgün çalışıyor, hızlı kaydırmada geri atmayı önler).
-  //   → Programlı navigasyon (sureGit/restore) penceresinde HER İKİSİNDE de KAPALI
-  //     (o an ilgili fonksiyon kendi hizalamasını settle-loop ile yapıyor).
+  // Sıçramanın kaynağı, sayfa tekrar görünüme girince minik farkla yeniden ölçülüp düzeltme
+  // yapılmasıydı. measureElement artık küçük farkları YOK SAYIYOR (yalnız büyük/font kaynaklı
+  // farkta güncelliyor) → tekrar girişte boyut değişmez, düzeltme tetiklenmez → sıçrama olmaz.
+  //   → MOBİLDE: ölçüm kaynaklı düzeltme KAPALI (momentumla çakışmasın). MASAÜSTÜNDE: AÇIK.
+  //     Programlı navigasyonda: KAPALI.
   const navAyarRef = useRef(false)
-  const scrollYonRef = useRef(null)       // "up" | "down" | null — PARMAK yönünden (programlı
-                                          // scroll düzeltmesi yönü kirletmesin diye touch'tan)
+  const scrollYonRef = useRef(null)       // (bilgi amaçlı; şu an shouldAdjust kullanmıyor)
   const sonTouchYRef = useRef(0)
   const sonKayitZamanRef = useRef(0)      // vukuf-son-konum yazımını kısması (throttle)
   virtualizer.shouldAdjustScrollPositionOnItemSizeChange = () => {
     if (navAyarRef.current) return false   // programlı hizalama sürüyor → karışma
-    if (isMobile) {
-      // MOBİL: yalnız YUKARI kaydırırken düzelt. Yukarı kaydırınca sayfalar ÜSTTEN girer;
-      // ölçülünce (tahminden sapınca) düzeltilmezse görünen içerik sıçrar → düzelt.
-      // AŞAĞI kaydırmada sayfalar alttan girer, değişim ekran dışında kalır → düzeltme KAPALI
-      // (harika çalışıyor, momentumla çakışmasın).
-      return scrollYonRef.current === "up"
-    }
+    if (isMobile) return false             // mobilde momentumla çakışmasın (kilit sıçramayı önler)
     return true                            // masaüstü: dengele
   }
 

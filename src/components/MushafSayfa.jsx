@@ -6,21 +6,21 @@ import SureBasligi from "./SureBasligi"
 import Besmele from "./Besmele"
 import SureSonu from "./SureSonu"
 import { useMediaQuery } from "../data/hooks/useMediaQuery"
-import { useRef, useEffect } from "react"
+import { useRef, useEffect, memo } from "react"
 
 function arapcaRakamla(sayi) {
   const rakamlar = '٠١٢٣٤٥٦٧٨٩'
   return String(sayi).split('').map(d => rakamlar[parseInt(d)] || d).join('')
 }
 
-export default function MushafSayfa({
+function MushafSayfa({
   sayfaNo,
   elemanlar = [],
   sureler = [],
   theme,
   arapcaFont,
   yaziBoyutu = 20,
-  satirAraligi, 
+  satirAraligi,
   harfAraligi,
   player,
   aktifAyet,
@@ -35,7 +35,7 @@ export default function MushafSayfa({
   odakSure = null,
   odakAyrac = null,
 }) {
-  
+
   const isMobile = useMediaQuery("(max-width: 768px)")
   const fontSize = isMobile ? yaziBoyutu : yaziBoyutu + 2
   const lineHeight = satirAraligi || (isMobile ? 2.2 : 2.0) // Azaltıldı
@@ -72,12 +72,18 @@ export default function MushafSayfa({
     }
   })
   inlineGrupKapat()
-  
-  const sayfaRef = useRef(null)
 
+  const sayfaRef = useRef(null)
+  const sonYukRef = useRef(0)
+
+  // Yükseklik ölçümünü yalnız GERÇEKTEN değişince bildir (her render'da değil).
   useEffect(() => {
     if (sayfaRef.current && onYukseklikOlcum) {
-      onYukseklikOlcum(sayfaNo, sayfaRef.current.offsetHeight)
+      const h = sayfaRef.current.offsetHeight
+      if (Math.abs(h - sonYukRef.current) > 0.5) {
+        sonYukRef.current = h
+        onYukseklikOlcum(sayfaNo, h)
+      }
     }
   })
 
@@ -223,7 +229,7 @@ export default function MushafSayfa({
                 fontFamily: arapcaFont,
                 color: theme.text,
                 paddingTop: `${fontSize * 0.15}px`, // Azaltıldı
-                paddingBottom: arapcaFont.toLowerCase().includes('me_quran') 
+                paddingBottom: arapcaFont.toLowerCase().includes('me_quran')
                   ? `${fontSize * 0.1}px`
                   : `${fontSize * 0.1}px`,
                 marginBottom: fontSize * (isMobile ? 0.15 : 0.2), // ÇOK AZALTILDI (20'den 0.15'e)
@@ -312,3 +318,65 @@ export default function MushafSayfa({
     </div>
   )
 }
+
+// ── PERFORMANS: Sayfayı yalnız KENDİ içeriği değişince yeniden çiz.
+// Üst bileşen (KuranOkuma) her kaydırma/ses tick'inde yeniden render olunca, memo olmadan
+// görünen TÜM sayfalar yeniden çiziliyordu → "yazı geç yükleniyor" jank'ı. Aşağıdaki
+// karşılaştırma, fonksiyon prop'larının kimliğini (her render'da değişir) YOK SAYAR; vurgu/
+// odak/oynatma değişimlerinde ise yalnız İLGİLİ sayfayı (o sûreyi içeren) yeniden çizer.
+function sayfadaSureVar(elemanlar, sureNo) {
+  return sureNo != null && (elemanlar || []).some(e => e.sure && e.sure.id === sureNo)
+}
+
+function mushafSayfaEsit(a, b) {
+  if (
+    a.sayfaNo !== b.sayfaNo ||
+    a.elemanlar !== b.elemanlar ||
+    a.sureler !== b.sureler ||
+    a.theme !== b.theme ||
+    a.arapcaFont !== b.arapcaFont ||
+    a.yaziBoyutu !== b.yaziBoyutu ||
+    a.satirAraligi !== b.satirAraligi ||
+    a.harfAraligi !== b.harfAraligi ||
+    a.kayitKonumModu !== b.kayitKonumModu
+  ) return false
+
+  // sayfaKayitlari her render'da YENİ dizi (filter) → referansla değil DEĞERLE karşılaştır
+  const kayitImza = (arr) => (arr || []).map(k => `${k.id}:${k.scrollY || 0}:${k.baslik || ""}`).join("|")
+  if (kayitImza(a.sayfaKayitlari) !== kayitImza(b.sayfaKayitlari)) return false
+
+  // Okunan âyet vurgusu + oynatma durumu → yalnız ilgili sûreyi içeren sayfa
+  const aK = a.aktifAyet ? `${a.aktifAyet.sureNo}:${a.aktifAyet.ayetNo}:${a.aktifAyet.besmeleIcin || 0}` : ""
+  const bK = b.aktifAyet ? `${b.aktifAyet.sureNo}:${b.aktifAyet.ayetNo}:${b.aktifAyet.besmeleIcin || 0}` : ""
+  const durumDegisti = (a.player && a.player.durum) !== (b.player && b.player.durum)
+  if (aK !== bK || durumDegisti) {
+    if (sayfadaSureVar(b.elemanlar, a.aktifAyet && a.aktifAyet.sureNo) ||
+        sayfadaSureVar(b.elemanlar, b.aktifAyet && b.aktifAyet.sureNo)) return false
+  }
+
+  // Odak âyet (ok ile gidilen) → ilgili sayfa
+  const oaA = a.odakAyet ? `${a.odakAyet.sureNo}:${a.odakAyet.ayetNo}` : ""
+  const oaB = b.odakAyet ? `${b.odakAyet.sureNo}:${b.odakAyet.ayetNo}` : ""
+  if (oaA !== oaB) {
+    if (sayfadaSureVar(b.elemanlar, a.odakAyet && a.odakAyet.sureNo) ||
+        sayfadaSureVar(b.elemanlar, b.odakAyet && b.odakAyet.sureNo)) return false
+  }
+
+  // Odak sûre (menüden gidilen sûre başlığı vurgusu) → ilgili sayfa
+  const osA = a.odakSure ? `${a.odakSure.id}:${a.odakSure.nonce || 0}` : ""
+  const osB = b.odakSure ? `${b.odakSure.id}:${b.odakSure.nonce || 0}` : ""
+  if (osA !== osB) {
+    if (sayfadaSureVar(b.elemanlar, a.odakSure && a.odakSure.id) ||
+        sayfadaSureVar(b.elemanlar, b.odakSure && b.odakSure.id)) return false
+  }
+
+  // Kayıt ayracı vurgusu → yalnız o ayracı içeren sayfa
+  if (a.odakAyrac !== b.odakAyrac) {
+    const kayitlar = b.sayfaKayitlari || []
+    if (kayitlar.some(k => k.id === a.odakAyrac || k.id === b.odakAyrac)) return false
+  }
+
+  return true  // fonksiyon prop'ları ve player kimliği yok sayılır → gereksiz render yok
+}
+
+export default memo(MushafSayfa, mushafSayfaEsit)

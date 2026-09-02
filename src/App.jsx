@@ -10,6 +10,8 @@ import Arama from "./pages/Arama"
 import Hakkinda from "./pages/Hakkinda"
 import { useApp } from "./AppContext"
 import KuranOkuma from "./pages/KuranOkuma"
+   import KuranOkumaDeneme from "./pages/KuranOkumaDeneme"  // yolunu klasörüne göre ayarla
+   
 
 export default function App() {
   const { theme } = useApp()
@@ -45,6 +47,7 @@ export default function App() {
         <Route path="/okuma-tefeul" element={<OkumaTefeulu />} />
         <Route path="/kitap/:id" element={<OkumaEkrani />} />
         <Route path="/hakkinda" element={<Hakkinda />} />
+        <Route path="/kuran-deneme" element={<KuranOkumaDeneme />} />
       </Routes>
     </div>
   )

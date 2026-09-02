@@ -3,7 +3,6 @@ import { createPortal } from "react-dom"
 import { useNavigate } from "react-router-dom"
 import { useApp } from "../AppContext"
 import { okumaKaydet, KURAN_ID, normHarf } from "../data/okumaKayit"
-import { useVirtualizer } from "@tanstack/react-virtual"
 import arapcaLugat from "../data/arapca-lugat.json"
 import ayetMeal from "../data/ayet-meal.json"
 import sayfaHaritaJson from "../data/sayfa-harita.json"
@@ -131,11 +130,42 @@ function odakKaydirElemani(el, sureId, ayetNo, hedefEl) {
   // Önceki ayet AYNI sayfada ise: ayetin ilk kelimesi = önceki rozetin sonraki kardeşi
   const onceki = el.querySelector(`[data-sure="${sureId}"][data-ayet="${ayetNo - 1}"]`)
   if (onceki && sayfaEl && onceki.closest("[data-index]") === sayfaEl) {
-    const ilk = onceki.nextElementSibling
+    let ilk = onceki.nextElementSibling
+    // Kelime, display:contents SARMALAYICI (data-kelime) içinde → getBoundingClientRect boş
+    // döner. Gerçek KUTULU kelime elemanını (içteki çocuk) al ki hizalama doğru olsun.
+    if (ilk && ilk.getAttribute && ilk.getAttribute("data-kelime") != null) ilk = ilk.firstElementChild || ilk
     if (ilk) return ilk
   }
   // Önceki ayet farklı sayfada / yok → ayet bu sayfanın BAŞINDA başlıyor → sayfa başı
   return sayfaEl || hedefEl
+}
+
+// ════════════════════════════════════════════════════════════════
+// SAYFA BLOK — akış modeli (react-virtual YOK). Sayfa görünüme YAKLAŞINCA gerçek içeriği
+// render eder ve bir daha KALDIRMAZ → sayfa sınırlarında yeniden-render/göz kırpma olmaz.
+// Sayfalar normal akışta olduğu için tarayıcının doğal scroll-anchoring'i konumu sabit tutar
+// (sıçrama yok) ve her sayfa DOM'da (yer tutucu) olduğundan gidişler anındadır.
+// ════════════════════════════════════════════════════════════════
+const NOOP_OLCUM = () => {}
+function SayfaBlok({ minHeight, margin, gorunur0 = false, cocuk }) {
+  const ref = useRef(null)
+  const [gorunur, setGorunur] = useState(gorunur0)
+  useEffect(() => {
+    if (gorunur) return
+    const el = ref.current
+    if (!el) return
+    const io = new IntersectionObserver(
+      ([e]) => { if (e.isIntersecting) { setGorunur(true); io.disconnect() } },
+      { rootMargin: margin }
+    )
+    io.observe(el)
+    return () => io.disconnect()
+  }, [gorunur, margin])
+  return (
+    <div ref={ref} style={{ minHeight: gorunur ? undefined : `${minHeight}px` }}>
+      {gorunur ? cocuk : null}
+    </div>
+  )
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -238,7 +268,8 @@ export default function KuranOkuma({ kitap }) {
   
   // ── Yazı boyutu
   const [yaziBoyutu, setYaziBoyutu] = useState(() =>
-    parseInt(localStorage.getItem("vukuf-yazi-boyutu") || "20")
+    // Kuran'ın kendi yazı boyutu anahtarı → Okuma ekranından BAĞIMSIZ (birbirini etkilemez)
+    parseInt(localStorage.getItem("vukuf-kuran-yazi-boyutu") || localStorage.getItem("vukuf-yazi-boyutu") || "20")
   )
   const [satirAraligi, setSatirAraligi] = useState(() =>
     parseFloat(localStorage.getItem("vukuf-satir-araligi") || "2.4")
@@ -334,7 +365,7 @@ const maxWidth = useMemo(() =>
   // EFFECT'LER
   // ════════════════════════════════════════════════════════════════
 
-  useEffect(() => { localStorage.setItem("vukuf-yazi-boyutu",       String(yaziBoyutu))     }, [yaziBoyutu])
+  useEffect(() => { localStorage.setItem("vukuf-kuran-yazi-boyutu", String(yaziBoyutu))     }, [yaziBoyutu])
   useEffect(() => { localStorage.setItem("vukuf-bar-konum",         barKonum)               }, [barKonum])
   useEffect(() => { localStorage.setItem("vukuf-sade-mod",          String(sadeMode))       }, [sadeMode])
   useEffect(() => { localStorage.setItem("vukuf-otomatik-gizleme",  String(otomatikGizleme))}, [otomatikGizleme])
@@ -386,15 +417,10 @@ const maxWidth = useMemo(() =>
       }
     }
     localStorage.setItem("vukuf-kuran-arapca-font", arapcaFontId)
-    // Fontu ÖNDEN yükle → sayfalar ilk çizilişte doğru metrikle ölçülür (fallback→gerçek
-    // font geçişinde yükseklik değişip sayfa sınırında sıçrama olmasın). Yüklenince ölçümü tazele.
+    // Fontu önden yükle (akış modelinde ölçüm tazeleme gerekmez; tarayıcı doğal akışta yeniden dizer)
     try {
       const aile = (font?.style.match(/'[^']+'|"[^"]+"|[^,]+/) || [""])[0].trim()
-      if (aile && document.fonts && document.fonts.load) {
-        document.fonts.load(`24px ${aile}`).then(() => {
-          if (document.fonts.check(`24px ${aile}`)) { try { virtualizer.measure() } catch {} }
-        }).catch(() => {})
-      }
+      if (aile && document.fonts && document.fonts.load) document.fonts.load(`24px ${aile}`).catch(() => {})
     } catch {}
   }, [arapcaFontId])
 
@@ -686,7 +712,7 @@ const cokSatir = wrapAktif && barYuksekligi > tekSatirYuksekligi * 1.0
   // Aa paneli açılınca üst ayeti yakala (ref senkronu + ilk ankor)
   useEffect(() => { aaAcikRef.current = aaAcik }, [aaAcik])
   useEffect(() => { if (aaAcik) fontAnkorRef.current = ustSatirYakala() }, [aaAcik])
-  // Font/boyut/aralık değişince: reflow sonrası aynı ayete geri çek (virtualizer oturana dek birkaç kez)
+  // Font/boyut/aralık değişince: reflow sonrası aynı ayete geri çek (birkaç kez — reflow oturana dek)
   const fontIlkRef = useRef(true)
   useLayoutEffect(() => {
     if (fontIlkRef.current) { fontIlkRef.current = false; return }
@@ -698,7 +724,7 @@ const cokSatir = wrapAktif && barYuksekligi > tekSatirYuksekligi * 1.0
       ustSatirGeriYukle(ank)
       r2 = requestAnimationFrame(() => ustSatirGeriYukle(ank))
     })
-    t = setTimeout(() => ustSatirGeriYukle(ank), 80)   // virtualizer measureElement geç oturursa
+    t = setTimeout(() => ustSatirGeriYukle(ank), 80)   // reflow geç oturursa son bir düzeltme
     return () => { cancelAnimationFrame(r1); cancelAnimationFrame(r2); clearTimeout(t) }
   }, [yaziBoyutu, satirAraligi, harfAraligi, arapcaFontId])
 
@@ -734,62 +760,36 @@ const cokSatir = wrapAktif && barYuksekligi > tekSatirYuksekligi * 1.0
     }))
   }, [sayfaMap])
 
-    useEffect(() => {
+    useLayoutEffect(() => {
   if (geriYuklendiRef.current) return
   if (yukleniyor || !sayfaListesi.length) return
 
-  // Arama/Tefeül'den sure hedefi geldiyse restore ATLA (sureGit devralır) —
-  // içerik gizli kalsın, sure hedefi effect'i sureGit sonrası gösterecek.
+  // Arama/Tefeül'den sure hedefi geldiyse restore ATLA (sureGit devralır).
   let h = null
   try { h = JSON.parse(localStorage.getItem("vukuf-kuran-hedef") || "null") } catch {}
   if (h && h.sureNo) { geriYuklendiRef.current = true; return }
 
-  const index = sayfaListesi.findIndex(s => s.sayfaNo === hedefSayfaRef.current)
-  if (index < 0 || (index === 0 && (hedefOranRef.current || 0) < 0.01)) {
-    geriYuklendiRef.current = true; konumuGoster(); return   // Fatiha başı / bulunamadı
-  }
+  geriYuklendiRef.current = true
+  const sayfa = hedefSayfaRef.current
+  const oran = hedefOranRef.current || 0
+  if (!sayfa || (sayfa <= 1 && oran < 0.01)) { konumuGoster(); return }   // Fatiha başı
 
-  // Doğru sayfaya oturan SADE yöntem: birkaç kez hedefe hizala (ölçüm otururken), sonra
-  // sayfa içi ORANI (satır hizası) uygula ve göster. İçerik gizliyken hizala + üst sayfa adı
-  // gezinmesini durdur + fade yok → "göz kırpması" olmadan, doğru yerde (sayfa ortası dahil) açılır.
-  const oranUygula = () => {
-    const el = scrollRef.current
-    const vi = virtualizer.getVirtualItems().find(v => v.index === index)
-    if (el && vi && (hedefOranRef.current || 0) > 0.001) {
-      const hgt = (vi.end - vi.start) || olcKilitRef.current[hedefSayfaRef.current] || 500
-      el.scrollTop = vi.start + hedefOranRef.current * hgt
-    }
+  // AKIŞ MODELİ: sayfa div'i hep DOM'da (yer tutucu). İLK hizalama BOYAMADAN ÖNCE (layout
+  // effect, senkron) yapılır → kullanıcı hiç Fatiha'yı görüp sonra sıçramaz; spinner GEREKMEZ.
+  // SayfaBlok içeriği render olurken yükseklik oturana dek birkaç kez daha hizalanır.
+  let tries = 0
+  const git = () => {
+    sayfayaHizala(sayfa, { ust: 12, oran })
+    if (++tries < 6) setTimeout(git, 60)
+    else konumuGoster()
   }
-  navAyarRef.current = true
-  let tries = 0, fontOkTick = 0
-  const go = () => {
-    virtualizer.scrollToIndex(index, { align: "start" })
-    oranUygula()                          // HER adımda hizala + sayfa içi oranı uygula (gizliyken otursun)
-    tries++
-    if (fontHazirRef.current) fontOkTick++
-    // FONT hazır olup ölçümler oturmadan AÇMA → yükseklikler kesinleşsin (altta boşluk / açılış
-    // sonrası atlama olmasın). Font hazır olduktan sonra da ~3 frame bekle.
-    const hazir = tries >= 5 && fontOkTick >= 3
-    if (!hazir && tries < 24) { setTimeout(go, 100); return }
-    geriYuklendiRef.current = true
-    requestAnimationFrame(() => {
-      virtualizer.scrollToIndex(index, { align: "start" })   // son kez tam hizala
-      oranUygula()                                           // sayfa içi oran (satır hizası)
-      requestAnimationFrame(() => {
-        oranUygula()                                         // ölçüm oturunca oranı tazele
-        konumuGoster()                                       // GİZLİYKEN yere oturdu → şimdi aç
-        setTimeout(() => { navAyarRef.current = false }, 300)
-      })
-    })
-  }
-  requestAnimationFrame(go)
+  git()   // senkron ilk hizalama (paint öncesi)
 }, [yukleniyor, sayfaListesi.length])
 
-// Güvenlik: ne olursa olsun içerik en geç bu süre içinde görünür olsun
-// (ve ilk-açılış settle bayrağı takılı kalmasın → organik kaydırma normale dönsün)
+// Güvenlik: içerik en geç bu süre içinde görünür olsun
 useEffect(() => {
   if (yukleniyor) return
-  const t = setTimeout(() => { konumuGoster(); navAyarRef.current = false }, 2600)
+  const t = setTimeout(konumuGoster, 1500)
   return () => clearTimeout(t)
 }, [yukleniyor])
 
@@ -974,96 +974,26 @@ const hizbSayfalari = (cuzNo) => {
     })
   }, [sayfaListesi, yaziBoyutu, isMobile])
 
-  // ÖLÇÜM KİLİDİ: her sayfa BİR KEZ ölçülür ve değeri kilitlenir. Sayfa görünümden çıkıp
-  // tekrar girince (özellikle YUKARI kaydırıp okunmuş sayfalara dönünce) yeniden ölçülüp
-  // minik farkla düzeltme yapılmaz → sayfa sınırı "sıçraması" olmaz. Font/aralık değişince
-  // kilit temizlenir (aşağıdaki effect).
-  const olcKilitRef = useRef({})   // sayfaNo → kilitli yükseklik
-  const olcuIlkRef = useRef(true)
-  const fontHazirRef = useRef(false)   // Arapça font YÜKLENDİ mi? Yüklenmeden ölçüm kilitlenmez
-                                       // (fallback font daha uzun → altta boşluk kalırdı)
-  // Ölçülen gerçek yüksekliklerin ORTALAMASI → henüz ölçülmemiş sayfalar için isabetli tahmin
-  // (mushaf sayfaları benzer boyda) → render öncesi ayrılan yer içeriğe yakın, altta boşluk küçük.
-  const ortalamaYukRef = useRef(0)
-  const olcSayacRef = useRef(0)
-  const olcToplamRef = useRef(0)
-
-  // ── VIRTUALIZER ──
-  const virtualizer = useVirtualizer({
-    count: sayfaListesi.length,
-    getScrollElement: () => scrollRef.current,
-    estimateSize: (index) => {
-      // Kilitli GERÇEK yükseklik varsa onu kullan → tahmin=ölçüm, düzeltme (sıçrama) olmaz.
-      const sayfa = sayfaListesi[index]
-      const kilitli = sayfa && olcKilitRef.current[sayfa.sayfaNo]
-      if (kilitli && kilitli > 0) return kilitli
-      // Ölçülen sayfaların ortalaması (varsa) → boşluğu en aza indirir. Yoksa hesaplı tahmin.
-      if (ortalamaYukRef.current > 0) return ortalamaYukRef.current
-      return sayfaYukseklikleri[index] || (isMobile ? 500 : 700)
-    },
-    // measureElement: ölçümü YUMUŞAT. Sayfa tekrar görünüme girince minik farkla (jitter)
-    // yeniden ölçülüp scroll'u sıçratmasın diye küçük farkları YOK SAY (eski değeri koru).
-    // Ama BÜYÜK fark (Arapça font sonradan uygulanınca yükseklik ciddi değişir) → GÜNCELLE
-    // → altta boşluk kendiliğinden kapanır (yazı tipi değiştirince olan düzelme, otomatik).
-    measureElement: (element) => {
-      const idx = Number(element.getAttribute("data-index"))
-      const sayfa = sayfaListesi[idx]
-      const key = sayfa && sayfa.sayfaNo
-      const h = Math.round(element.getBoundingClientRect().height)
-      if (h <= 0) return (key != null && olcKilitRef.current[key]) || (isMobile ? 500 : 700)
-      const eski = key != null ? olcKilitRef.current[key] : null
-      if (eski != null && Math.abs(h - eski) <= 8) return eski   // küçük fark → koru (sıçrama yok)
-      if (key != null) {
-        const yeni = eski == null
-        olcKilitRef.current[key] = h                              // ilk ölçüm ya da büyük düzeltme
-        if (yeni) { olcSayacRef.current++; olcToplamRef.current += h }
-        else { olcToplamRef.current += (h - eski) }
-        if (olcSayacRef.current > 0) ortalamaYukRef.current = olcToplamRef.current / olcSayacRef.current
-      }
-      return h
-    },
-    overscan: isMobile ? 8 : 5,
-  })
-
-  // Font / satır aralığı / harf aralığı değişince kilitleri temizle + yeniden ölç
-  useEffect(() => {
-    if (olcuIlkRef.current) { olcuIlkRef.current = false; return }
-    olcKilitRef.current = {}
-    ortalamaYukRef.current = 0; olcSayacRef.current = 0; olcToplamRef.current = 0
-    try { virtualizer.measure() } catch {}
-  }, [yaziBoyutu, satirAraligi, harfAraligi]) // eslint-disable-line
-
-  // Arapça font hazır olunca: erken (fallback) kilitleri temizle + doğru yükseklikle yeniden ölç
-  useEffect(() => {
-    let bitti = false
-    const isaretle = () => {
-      if (bitti) return
-      bitti = true
-      fontHazirRef.current = true
-      olcKilitRef.current = {}            // font öncesi konmuş kilitleri at
-      ortalamaYukRef.current = 0; olcSayacRef.current = 0; olcToplamRef.current = 0
-      try { virtualizer.measure() } catch {}
-    }
-    try { if (document.fonts && document.fonts.ready) document.fonts.ready.then(isaretle) } catch {}
-    const t = setTimeout(isaretle, 1200)  // fontlar takılırsa yine de devam
-    return () => { clearTimeout(t) }
-  }, []) // eslint-disable-line
-
-  // ── SCROLL DENGELEME STRATEJİSİ ──
-  // Sıçramanın kaynağı, sayfa tekrar görünüme girince minik farkla yeniden ölçülüp düzeltme
-  // yapılmasıydı. measureElement artık küçük farkları YOK SAYIYOR (yalnız büyük/font kaynaklı
-  // farkta güncelliyor) → tekrar girişte boyut değişmez, düzeltme tetiklenmez → sıçrama olmaz.
-  //   → MOBİLDE: ölçüm kaynaklı düzeltme KAPALI (momentumla çakışmasın). MASAÜSTÜNDE: AÇIK.
-  //     Programlı navigasyonda: KAPALI.
-  const navAyarRef = useRef(false)
-  const scrollYonRef = useRef(null)       // (bilgi amaçlı; şu an shouldAdjust kullanmıyor)
+  // ── AKIŞ MODELİ (react-virtual YOK) ──
+  // Tüm sayfalar SayfaBlok ile normal akışta render edilir; her sayfa div'i DOM'da (yer tutucu)
+  // olduğundan gidişler ANINDA (scrollIntoView) ve tarayıcının doğal scroll-anchoring'i konumu
+  // sabit tuttuğundan ölçüm kilidi / kalibrasyon / shouldAdjust / gizleme GEREKMEZ.
+  const sayfaRefs = useRef({})            // sayfaNo → sayfa div'i (anında gidiş için)
+  const scrollYonRef = useRef(null)       // (touch handler'ları set eder; şu an kullanılmıyor)
   const sonTouchYRef = useRef(0)
   const sonKayitZamanRef = useRef(0)      // vukuf-son-konum yazımını kısması (throttle)
-  virtualizer.shouldAdjustScrollPositionOnItemSizeChange = () => {
-    if (navAyarRef.current) return false   // programlı hizalama sürüyor → karışma
-    if (isMobile) return false             // mobilde momentumla çakışmasın (kilit sıçramayı önler)
-    return true                            // masaüstü: dengele
-  }
+
+  // Bir sayfayı üste hizala (anında). ofset = üstteki bar/oynatıcı payı.
+  const sayfayaHizala = useCallback((sayfaNo, opt = {}) => {
+    const el = scrollRef.current
+    const node = sayfaRefs.current[sayfaNo]
+    if (!el || !node) return false
+    const scRect = el.getBoundingClientRect()
+    const nRect = node.getBoundingClientRect()
+    const ust = opt.ust != null ? opt.ust : 12
+    el.scrollTop += (nRect.top - scRect.top) - ust + (opt.oran ? (node.offsetHeight * opt.oran) : 0)
+    return true
+  }, [])
 
 // ════════════════════════════════════════════════════════════════
 // KAYIT BÖLÜMÜ
@@ -1074,13 +1004,12 @@ const kayitEkle = useCallback((baslik, scrollY) => {
 
   let oran = scrollY
   if (oran === undefined) {
-    const ortaY = el.scrollTop + el.clientHeight * 0.25
-    const sayfaIndex = sayfaListesi.findIndex(s => s.sayfaNo === mevcutSayfa)
-    if (sayfaIndex === -1) return
-    const sayfaYukseklik = sayfaYukseklikleri[sayfaIndex] || 500
-    const virtualItem = virtualizer.getVirtualItems().find(v => v.index === sayfaIndex)
-    const sayfaBaslangic = virtualItem?.start || 0
-    oran = (ortaY - sayfaBaslangic) / sayfaYukseklik
+    const node = sayfaRefs.current[mevcutSayfa]
+    if (!node) return
+    const scRect = el.getBoundingClientRect()
+    const nRect = node.getBoundingClientRect()
+    const noktaY = el.clientHeight * 0.25   // viewport üstünden ~%25
+    oran = (noktaY - (nRect.top - scRect.top)) / (node.offsetHeight || 1)
   }
 
   const yeniKayit = {
@@ -1096,7 +1025,7 @@ const kayitEkle = useCallback((baslik, scrollY) => {
     localStorage.setItem("vukuf-kayitlar", JSON.stringify(yeni))
     return yeni
   })
-}, [mevcutSayfa, sayfaListesi, sayfaYukseklikleri, virtualizer])
+}, [mevcutSayfa])
 
 // Kayıt güncelleme fonksiyonu
 const kayitGuncelle = useCallback((id, baslik) => {
@@ -1120,87 +1049,56 @@ const kayitSil = useCallback((id) => {
 
 
 
-const sayfayaKaydir = useCallback((index, align = "start") => {
-  // Tek seferlik scroll
-  virtualizer.scrollToIndex(index, { align })
-}, [virtualizer])
+const sayfayaKaydir = useCallback((sayfaNo) => { sayfayaHizala(sayfaNo, { ust: 12 }) }, [sayfayaHizala])
 
+// Üst içerik payı (bar/oynatıcı örtüşü) — hizalama ofseti
+const ustPay = () => (barKonum === "ust"
+  ? ((barGorunur ? barYuksekligi : 0) + (player.durum !== "kapali" ? playerBarYuksekligi : 0) + 8)
+  : 16)
 
-const sayfaGercekYukseklikleriRef = useRef({})
-// Kayıtlı sayfaya gitme fonksiyonu — konum GİZLİYKEN oturur, sonra açılır (göz kırpması yok);
-// üst bar varsa hedefi barın hemen ALTINA hizalar (ne örter ne fazla aşağı atar).
+const sayfaGercekYukseklikleriRef = useRef({})   // (geri uyumluluk; artık kullanılmıyor)
+// Kayıtlı konuma ANINDA git — üst bar payını bırak, sayfa içi oranı uygula, işaret vurgusu.
 const kayitSayfaGit = useCallback((sayfa, scrollY, kayitId) => {
-  const index = sayfaListesi.findIndex(s => s.sayfaNo === sayfa)
-  if (index === -1) return
-  navAyarRef.current = true
-  if (isMobile) {
-    konumGoster(false)
-    if (gecisGosterTimerRef.current) clearTimeout(gecisGosterTimerRef.current)
-    gecisGosterTimerRef.current = setTimeout(() => konumGoster(true), 1200)   // emniyet
-  }
-  const barOfset = isMobile ? 20 : 25
-
-  const uygula = () => {
-    const el = scrollRef.current
-    if (!el) return
-    virtualizer.scrollToIndex(index, { align: "start" })   // hedef sayfayı render et/hizala
-    const vi = virtualizer.getVirtualItems().find(v => v.index === index)
-    const sayfaBaslangic = vi?.start || 0
-    const sayfaYukseklik = (vi ? (vi.end - vi.start) : 0)
-      || sayfaGercekYukseklikleriRef.current[sayfa]
-      || sayfaYukseklikleri[index]
-      || 500
-    el.scrollTop = sayfaBaslangic + (scrollY || 0) * sayfaYukseklik - barOfset   // aynı karede oran
-  }
+  const ust = ustPay() + (isMobile ? 6 : 4)
   let tries = 0
-  const go = () => {
-    uygula()
-    if (++tries < 5) {
-      setTimeout(go, 90)
-    } else {
-      requestAnimationFrame(() => {
-        uygula()
-        if (gecisGosterTimerRef.current) { clearTimeout(gecisGosterTimerRef.current); gecisGosterTimerRef.current = null }
-        konumuGoster()
-        setTimeout(() => { navAyarRef.current = false }, 300)
-        // İşaret vurgusunu AÇILDIKTAN sonra başlat → animasyonu gizleme ekranı yutmaz,
-        // tam görünür oynar (daha uzun süre görünür kalır).
-        if (kayitId) {
-          if (odakAyracTimeoutRef.current) clearTimeout(odakAyracTimeoutRef.current)
-          setOdakAyrac(kayitId)
-          odakAyracTimeoutRef.current = setTimeout(() => {
-            setOdakAyrac(null)
-            odakAyracTimeoutRef.current = null
-          }, 6000)
-        }
-      })
-    }
+  const git = () => {
+    sayfayaHizala(sayfa, { ust, oran: scrollY || 0 })
+    if (++tries < 6) setTimeout(git, 60)
   }
-  requestAnimationFrame(go)
-}, [sayfaListesi, virtualizer, sayfaYukseklikleri, isMobile, barKonum, barGorunur, barYuksekligi, playerBarYuksekligi, player.durum, konumGoster, konumuGoster])
+  requestAnimationFrame(git)
+  if (kayitId) {
+    if (odakAyracTimeoutRef.current) clearTimeout(odakAyracTimeoutRef.current)
+    setOdakAyrac(kayitId)
+    odakAyracTimeoutRef.current = setTimeout(() => { setOdakAyrac(null); odakAyracTimeoutRef.current = null }, 6000)
+  }
+}, [isMobile, barKonum, barGorunur, barYuksekligi, playerBarYuksekligi, player.durum, sayfayaHizala])
 
-// Sayfa numarası güncelleme
+// Üstteki sayfayı takip et (header) + son konumu (mid-page) kaydet — sayfaRefs ile
 useEffect(() => {
   const el = scrollRef.current
-  if (!el) return
-
+  if (!el || !sayfaListesi.length) return
+  let raf = 0
   const sayfaGuncelle = () => {
-    // İçerik gizliyken (ilk açılış / âyete gidiş settle'ı) üstteki sayfa adı "gezinmesin"
+    raf = 0
     if (!konumHazirRef.current) return
-    const items = virtualizer.getVirtualItems()
-    if (!items.length) return
-    // Header: viewport ORTASINDAKİ sayfa
-    const ortaY = el.scrollTop + el.clientHeight / 2
-    const aktif = items.find(item => item.start <= ortaY && item.end >= ortaY) || items[0]
-    if (aktif && sayfaListesi[aktif.index]) setMevcutSayfa(sayfaListesi[aktif.index].sayfaNo)
-
-    // Kayıt: viewport ÜSTÜNDEKİ sayfa + o sayfadaki oran (satır hizası) → mid-page geri dönüş
-    const topY = el.scrollTop
-    const ustAktif = items.find(item => item.start <= topY && item.end > topY) || items[0]
-    if (ustAktif && sayfaListesi[ustAktif.index]) {
-      const h = ustAktif.end - ustAktif.start
-      const oran = h > 0 ? Math.max(0, Math.min(1, (topY - ustAktif.start) / h)) : 0
-      sonKonumRef.current = { sayfa: sayfaListesi[ustAktif.index].sayfaNo, oran }
+    const scTop = el.getBoundingClientRect().top + 2
+    // Sayfalar belge akışında sıralı → ikili arama: top'u scTop'u geçmeyen SON sayfa
+    let lo = 0, hi = sayfaListesi.length - 1, idx = 0
+    while (lo <= hi) {
+      const mid = (lo + hi) >> 1
+      const n = sayfaRefs.current[sayfaListesi[mid].sayfaNo]
+      if (!n) { hi = mid - 1; continue }   // ölçülemeyen düğüm → sola daral
+      if (n.getBoundingClientRect().top <= scTop) { idx = mid; lo = mid + 1 }
+      else hi = mid - 1
+    }
+    const s = sayfaListesi[idx]
+    const node = s ? sayfaRefs.current[s.sayfaNo] : null
+    const no = node ? s.sayfaNo : null
+    if (no != null && node) {
+      setMevcutSayfa(no)
+      const r = node.getBoundingClientRect()
+      const oran = Math.max(0, Math.min(1, (scTop - r.top) / (node.offsetHeight || 1)))
+      sonKonumRef.current = { sayfa: no, oran }
       const simdi = Date.now()
       if (simdi - sonKayitZamanRef.current > 600) {
         sonKayitZamanRef.current = simdi
@@ -1208,10 +1106,10 @@ useEffect(() => {
       }
     }
   }
-
-  el.addEventListener('scroll', sayfaGuncelle, { passive: true })
-  return () => el.removeEventListener('scroll', sayfaGuncelle)
-}, [virtualizer, sayfaListesi])
+  const onScroll = () => { if (!raf) raf = requestAnimationFrame(sayfaGuncelle) }
+  el.addEventListener('scroll', onScroll, { passive: true })
+  return () => el.removeEventListener('scroll', onScroll)
+}, [sayfaListesi])
 
 // Sayfadan çıkarken / gizlenince anlık konumu (mid-page) kesin kaydet
 useEffect(() => {
@@ -1239,143 +1137,54 @@ useEffect(() => {
 function sayfayaGit(no) {
   const n = parseInt(no)
   if (n < 1 || n > toplamSayfa) return
-
-  setMevcutSayfa(n)
-  setAyetArama({})
-  setPopup(null)
-
-  const index = sayfaListesi.findIndex(s => s.sayfaNo === n)
-  if (index === -1) return
-
-  virtualizer.scrollToIndex(index, { align: "start" })
-
-  // Virtualizer render ettikten sonra pozisyonu düzelt
-  setTimeout(() => {
-    const el = scrollRef.current
-    if (!el) return
-    const targetItem = virtualizer.getVirtualItems().find(v => v.index === index)
-    if (targetItem) el.scrollTop = targetItem.start
-  }, isMobile ? 400 : 150)
+  setMevcutSayfa(n); setAyetArama({}); setPopup(null)
+  const ust = ustPay()
+  let tries = 0
+  const git = () => { sayfayaHizala(n, { ust }); if (++tries < 6) setTimeout(git, 60) }
+  requestAnimationFrame(git)
 }
 
-
+// AKIŞ MODELİ: sayfaya anında git (div hep DOM'da), içerik render olunca âyet/sûre elemanına
+// tam hizala. react-virtual/gizleme/settle YOK — anında ve göz kırpmasız.
 function sureGit(sureId, ayetNo) {
   const sayfa = ayetNo
     ? ayetSayfasi(sureId, ayetNo, ayetSayfaLookup)
     : sureBaslangicSayfasi(sureId, sureSayfaLookup)
+  if (!sayfa) return
 
-  const hedefIndex = sayfaListesi.findIndex(s => s.sayfaNo === sayfa)
-  if (hedefIndex === -1) return
-  navAyarRef.current = true   // navigasyon penceresi: virtualizer oto-düzeltmesini bu süre kapat
-
-  // Mobilde: hizalama oturana kadar içeriği gizle → settle "mini sıçraması" görünmez,
-  // doğrudan hedefte açılır (özellikle Okuma ekranından atıfla gelişte belirgindi).
-  if (isMobile) {
-    konumGoster(false)
-    if (gecisGosterTimerRef.current) clearTimeout(gecisGosterTimerRef.current)
-    gecisGosterTimerRef.current = setTimeout(() => konumGoster(true), 1100)   // emniyet
-  }
-
-  setScrollKilitli(true)
   setMevcutSayfa(sayfa)
-  setMenuAcik(false)
-  setMenuArama("")
-  setAcikSure(null)
-  setAyetArama({})
-  setPopup(null)
-  setAcikCuz(null)
+  setMenuAcik(false); setMenuArama(""); setAcikSure(null); setAyetArama({}); setPopup(null); setAcikCuz(null)
 
-  virtualizer.scrollToIndex(hedefIndex, { align: "start" })
-  setScrollKilitli(false)
-
-  function odaklanHedefe(deneme = 0) {
-  const el = scrollRef.current
-  if (!el) return
+  const offset = ustPay() + (ayetNo ? 6 : 8)
+  sayfayaHizala(sayfa, { ust: offset })   // önce sayfaya (içerik render tetiklenir)
 
   const selector = ayetNo
     ? `[data-sure="${sureId}"][data-ayet="${ayetNo}"]`
     : `[data-sure-baslik="${sureId}"]`
-  const hedefEl = el.querySelector(selector)
-
-  if (!hedefEl) {
-    if (deneme < 2) setTimeout(() => odaklanHedefe(deneme + 1), 200)
-    return
+  let tries = 0, hizaAdim = 0
+  const hizala = () => {
+    const el = scrollRef.current
+    if (!el) return
+    const hedefEl = el.querySelector(selector)
+    if (!hedefEl) { if (++tries < 16) setTimeout(hizala, 60); return }   // sayfa henüz render olmadı
+    const kaydirEl = odakKaydirElemani(el, sureId, ayetNo, hedefEl)
+    const scRect = el.getBoundingClientRect()
+    const kRect = kaydirEl.getBoundingClientRect()
+    const fark = (kRect.top - scRect.top) - offset
+    if (Math.abs(fark) > 1) el.scrollTop += fark
+    if (++hizaAdim < 4) setTimeout(hizala, 70)   // içerik otururken birkaç kez daha
   }
-
-  // ÜST ofset = yalnızca ÜSTü kaplayan öğeler. barKonum="ust": bar (görünürse) +
-  // oynatıcı (dinlemedeyse). barKonum="alt": üstte hiçbir şey yok → 0. Bar gizliyken
-  // "ust"ta oynatıcı üst kenara geçtiği için o hesaba katılır.
-  const ustKaplama = barKonum === "ust"
-    ? ((barGorunur ? barYuksekligi : 0) + (player.durum !== "kapali" ? playerBarYuksekligi : 0))
-    : 0
-  const offset = ustKaplama + (ayetNo ? 6 : 8)
-
-  // Kaydırma hedefi: ayetin BAŞINI üste hizala (helper ile)
-  const kaydirEl = odakKaydirElemani(el, sureId, ayetNo, hedefEl)
-
-  const hedefTop = () =>
-    kaydirEl.getBoundingClientRect().top
-    - el.getBoundingClientRect().top
-    + el.scrollTop
-    - offset
-
-  // 1) Anında hedefe zıpla — smooth yok
-  el.scrollTop = hedefTop()
-
-  // 2) Ölçümler oturana kadar sessizce düzelt, sonra tek fren, sonra DUR
-  let bitti = false
-  let sabit = 0
-  let adim = 0
-
-  const bitir = (fark) => {
-    if (bitti) return
-    bitti = true
-    if (Math.abs(fark) > 3) {
-      el.scrollTo({ top: el.scrollTop + fark, behavior: "smooth" })
-    }
-    // Hizalama oturdu → içeriği HEMEN göster (mobilde gizlemiştik).
-    if (gecisGosterTimerRef.current) { clearTimeout(gecisGosterTimerRef.current); gecisGosterTimerRef.current = null }
-    konumuGoster()
-    // navigasyon bitti → virtualizer oto-düzeltmesini geri AÇ (organik kaydırma stabil)
-    setTimeout(() => { navAyarRef.current = false }, 400)
-    // bundan sonra bir daha scroll YOK
-  }
-
-  const otur = () => {
-    if (bitti || ++adim > 30) return bitir(0)   // ~yarım saniye emniyet limiti
-    const fark = hedefTop() - el.scrollTop
-
-    if (Math.abs(fark) <= 2) {
-      // hizadayız — 3 frame üst üste sabitse bitmiştir, animasyona gerek bile yok
-      if (++sabit >= 3) return bitir(0)
-      return requestAnimationFrame(otur)
-    }
-
-    sabit = 0
-    if (Math.abs(fark) > 80) {
-      el.scrollTop = hedefTop()                 // hâlâ uzak: anında düzelt, göze batmaz
-      requestAnimationFrame(otur)
-    } else {
-      bitir(fark)                               // yakın: tek kısa smooth = fren
-    }
-  }
-  requestAnimationFrame(otur)
+  requestAnimationFrame(hizala)
 
   if (ayetNo) {
     setOdakAyet({ sureNo: sureId, ayetNo })
-    setTimeout(() => setOdakAyet(null), 2000)
+    setTimeout(() => setOdakAyet(null), 2200)
   } else {
     odakSureNonce.current += 1
     setOdakSure({ id: sureId, nonce: odakSureNonce.current })
     if (odakSureTimeoutRef.current) clearTimeout(odakSureTimeoutRef.current)
-    odakSureTimeoutRef.current = setTimeout(() => {
-      setOdakSure(null)
-      odakSureTimeoutRef.current = null
-    }, 4200)
+    odakSureTimeoutRef.current = setTimeout(() => { setOdakSure(null); odakSureTimeoutRef.current = null }, 4200)
   }
-}
-
-  setTimeout(() => odaklanHedefe(0), isMobile ? 160 : 120)
 }
 
 
@@ -2902,47 +2711,13 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
           onOdaklan={() => {
             if (!player.aktifAyet) return
             const { sureNo, ayetNo } = player.aktifAyet
-            const el = scrollRef.current
-            if (!el) return
-
-            // ÜST ofset = yalnızca ÜSTü kaplayanlar (bar/oynatıcı altta ise 0)
-            const ustKaplama = barKonum === "ust"
-              ? ((barGorunur ? barYuksekligi : 0) + (player.durum !== "kapali" ? playerBarYuksekligi : 0))
-              : 0
-            const offset = ustKaplama + 6
-
-            const hedefElementler = el.querySelectorAll(`[data-sure="${sureNo}"][data-ayet="${ayetNo}"]`)
-
-            const odakla = () => {
-              if (hedefElementler.length === 0) return
-              const hedef = hedefElementler[0]
-              // Ayetin BAŞINI üste hizala (helper ile)
-              const baslangic = odakKaydirElemani(el, sureNo, ayetNo, hedef)
-              baslangic.style.scrollMarginTop = `${offset}px`
-              baslangic.scrollIntoView({ behavior: "smooth", block: "start" })
-              baslangic.style.scrollMarginTop = "0"
-              // Vurgulama kısmı
-            setOdakAyet({ sureNo, ayetNo })
-            setTimeout(() => setOdakAyet(null), 2000)
-            }
-
-            if (hedefElementler.length > 0) {
-              // Sayfa zaten render edilmiş, direkt odaklan
-              odakla()
-            } else {
-              // Farklı sayfada, önce sayfaya git
-              const sayfa = ayetSayfasi(sureNo, ayetNo, ayetSayfaLookup)
-              if (!sayfa) return
-              const index = sayfaListesi.findIndex(s => s.sayfaNo === sayfa)
-              if (index === -1) return
-              sayfayaKaydir(index)
-              setTimeout(odakla, 600)
-            }
+            // Akış modeli: sayfaya git + âyete hizala + odak (sureGit bunu yapıyor)
+            sureGit(sureNo, ayetNo)
           }}
           onDonguAyar={acDonguAyar}
           tekrarAktif={!!tekrarModu}
         />
-        {/* Virtualizer ile sayfa içeriği */}
+        {/* Akış modeli: tüm sayfalar normal belge akışında (SayfaBlok ile tembel içerik) */}
         <div
           ref={scrollRef}
           className="kuran-scroll-container" 
@@ -2960,24 +2735,25 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
             msOverflowStyle: scrollbarGorunur ? "auto" : "none",
             transition: "scrollbar-width 0.3s ease",
             cursor: kayitKonumModu ? "crosshair" : "default",
-            // Anında göster (fade yok) → hazır olunca "göz kırpması" olmadan net açılır
-            opacity: konumHazir ? 1 : 0,
-            visibility: konumHazir ? "visible" : "hidden",
+            // Akış modeli: içerik hep görünür. İlk konumlandırma boyamadan ÖNCE (useLayoutEffect)
+            // yapıldığından gizleme/spinner GEREKMEZ — sıçrama zaten görünmez.
           }}
           onClick={(e) => {
             if (kayitKonumModu) {
               const el = scrollRef.current
               if (!el) return
-              const rect = el.getBoundingClientRect()
-              const tiklamaY = e.clientY - rect.top + el.scrollTop
-              const sayfaIndex = sayfaListesi.findIndex(s => s.sayfaNo === mevcutSayfa)
-              const virtualItem = virtualizer.getVirtualItems().find(v => v.index === sayfaIndex)
-              const sayfaBaslangic = virtualItem?.start || 0
-              const sayfaYukseklik = sayfaGercekYukseklikleriRef.current[mevcutSayfa]
-                || sayfaYukseklikleri[sayfaIndex]
-                || 500
-              const oran = Math.max(0, Math.min(1, (tiklamaY - sayfaBaslangic) / sayfaYukseklik))
-              kayitEkle(`Sayfa ${mevcutSayfa}`, oran)
+              // Tıklanan sayfayı ve o sayfadaki oranı bul (akış: sayfaRefs)
+              let hedefNo = mevcutSayfa
+              const cel = e.target?.closest?.("[data-index]")
+              if (cel) { const n = parseInt(cel.getAttribute("data-index")); if (n) hedefNo = n }
+              const node = sayfaRefs.current[hedefNo]
+              if (!node) { setKayitKonumModu(false); return }
+              const nRect = node.getBoundingClientRect()
+              const oran = Math.max(0, Math.min(1, (e.clientY - nRect.top) / (node.offsetHeight || 1)))
+              // kayitEkle mevcutSayfa'yı kullanır → önce onu ayarla, sonra ekle
+              setMevcutSayfa(hedefNo)
+              const yeniKayit = { id: Date.now().toString(), sayfa: hedefNo, scrollY: oran, baslik: `Sayfa ${hedefNo}`, olusturma: Date.now() }
+              setKayitlar(prev => { const y = [...prev, yeniKayit]; localStorage.setItem("vukuf-kayitlar", JSON.stringify(y)); return y })
               setKayitKonumModu(false)
               return
             }
@@ -3069,89 +2845,65 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
           
           <div
             style={{
-              height: `${virtualizer.getTotalSize()}px`,
               position: "relative",
               maxWidth: `${Math.round((isMobile ? 480 : 720) * (yaziBoyutu / 20))}px`,
-              width: "maxWidth",
+              width: "100%",
               margin: "0 auto",
               padding: isMobile ? "4px 12px" : "6px 24px",
               boxSizing: "border-box",
             }}
           >
-            {virtualizer.getVirtualItems().map(vItem => {
-              const sayfa = sayfaListesi[vItem.index]
-              if (!sayfa) return null
-
-              return (
-                <div
-                  key={vItem.key}
-                  ref={virtualizer.measureElement}
-                  data-index={vItem.index}
-                  style={{
-                    position: "absolute",
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    width: "100%",
-                    boxSizing: "border-box",
-                    transform: `translateY(${vItem.start}px)`,
-                  }}
-                >
-                  <MushafSayfa
-                    sayfaNo={sayfa.sayfaNo}
-                    elemanlar={sayfa.elemanlar}
-                    sureler={mushafData}
-                    theme={theme}
-                    arapcaFont={aktifArapcaFont.style}
-                    yaziBoyutu={yaziBoyutu}
-                    satirAraligi={satirAraligi}
-                    harfAraligi={harfAraligi}
-                    player={player}
-                    odakAyet={odakAyet}
-                    odakSure={odakSure}
-                    odakAyrac={odakAyrac}
-                    aktifAyet={player.aktifAyet}
-                    onKelimeTikla={kelimeTikla}
-                    onAyetTikla={ayetTikla}
-                    onSureTikla={(sure, e) => {
-                      if (kayitKonumModu) return
-                      sureTikla(sure, e)
-                    }}
-                    kayitKonumModu={kayitKonumModu}
-                    sayfaKayitlari={kayitlar.filter(k => k.sayfa === sayfa.sayfaNo)}
-                    onKayitTikla={(kayit) => {
-                      if (window.confirm(`"${kayit.baslik}" kaydını silmek istiyor musun?`)) {
-                        const yeni = kayitlar.filter(k => k.id !== kayit.id)
-                        setKayitlar(yeni)
-                        localStorage.setItem("vukuf-kayitlar", JSON.stringify(yeni))
-                      }
-                    }}
-                    onYukseklikOlcum={(sayfaNo, yukseklik) => {
-                      sayfaGercekYukseklikleriRef.current[sayfaNo] = yukseklik
-                    }}
-                  />
-                </div>
-              )
-            })}
+            {sayfaListesi.map((sayfa, i) => (
+              <div
+                key={sayfa.sayfaNo}
+                ref={el => { if (el) sayfaRefs.current[sayfa.sayfaNo] = el }}
+                data-index={sayfa.sayfaNo}
+                style={{ position: "relative" }}
+              >
+                <SayfaBlok
+                  minHeight={sayfaYukseklikleri[i] || (isMobile ? 500 : 700)}
+                  margin={isMobile ? "3000px 0px" : "2200px 0px"}
+                  gorunur0={i < 3}
+                  cocuk={
+                    <MushafSayfa
+                      sayfaNo={sayfa.sayfaNo}
+                      elemanlar={sayfa.elemanlar}
+                      sureler={mushafData}
+                      theme={theme}
+                      arapcaFont={aktifArapcaFont.style}
+                      yaziBoyutu={yaziBoyutu}
+                      satirAraligi={satirAraligi}
+                      harfAraligi={harfAraligi}
+                      player={player}
+                      odakAyet={odakAyet}
+                      odakSure={odakSure}
+                      odakAyrac={odakAyrac}
+                      aktifAyet={player.aktifAyet}
+                      onKelimeTikla={kelimeTikla}
+                      onAyetTikla={ayetTikla}
+                      onSureTikla={(sure, e) => {
+                        if (kayitKonumModu) return
+                        sureTikla(sure, e)
+                      }}
+                      kayitKonumModu={kayitKonumModu}
+                      sayfaKayitlari={kayitlar.filter(k => k.sayfa === sayfa.sayfaNo)}
+                      onKayitTikla={(kayit) => {
+                        if (window.confirm(`"${kayit.baslik}" kaydını silmek istiyor musun?`)) {
+                          const yeni = kayitlar.filter(k => k.id !== kayit.id)
+                          setKayitlar(yeni)
+                          localStorage.setItem("vukuf-kayitlar", JSON.stringify(yeni))
+                        }
+                      }}
+                      onYukseklikOlcum={NOOP_OLCUM}
+                    />
+                  }
+                />
+              </div>
+            ))}
           </div>
         </div>
 
         {barKonum === "alt" && Bar}
-
-        {!konumHazir && (
-          <div style={{
-            position: "absolute", inset: 0, zIndex: 40,
-            display: "flex", alignItems: "center", justifyContent: "center",
-            background: theme.background, pointerEvents: "none",
-          }}>
-            <div style={{
-              width: 26, height: 26, borderRadius: "50%",
-              border: `3px solid ${theme.accent}30`, borderTopColor: theme.accent,
-              animation: "vukufDon 0.7s linear infinite",
-            }} />
-            <style>{`@keyframes vukufDon{to{transform:rotate(360deg)}}`}</style>
-          </div>
-        )}
 
         {donusTip && (
           <div style={{

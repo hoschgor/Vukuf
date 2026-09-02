@@ -9,6 +9,7 @@ export default function YuklemeEkrani({
   etiket = null,           // isteğe bağlı alt yazı (rozet zaten kendi halkasıyla "yükleniyor"u anlatır)
   yukseklik = "78vh",
   arkaplan = true,
+  fade = true,             // giriş fade animasyonu (örtü olarak kullanılınca kapatılır → çift flaş olmaz)
 }) {
   return (
     <div
@@ -21,7 +22,7 @@ export default function YuklemeEkrani({
         justifyContent: "center",
         gap: "20px",
         background: arkaplan ? theme?.background : "transparent",
-        animation: "vukufYukGiris 0.45s ease",
+        animation: fade ? "vukufYukGiris 0.45s ease" : "none",
       }}
     >
       <style>{`

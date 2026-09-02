@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom"
 import { BookOpen, Search, Shuffle, Menu, X, Palette, Pencil, Info, Type, Sparkles } from "lucide-react"
 import { useApp } from "../AppContext"
 import { useMediaQuery } from "../data/hooks/useMediaQuery"
+import IosSwitch from "./IosSwitch"
 
 const temaAciklamalari = {
   sepia: "Göz yormayan sıcak ton",
@@ -24,42 +25,23 @@ const paletRenkleri = [
   { key: "border", label: "Kenarlık" },
 ]
 
-// iOS tarzı aç/kapa anahtarı (temaya uygun)
-function IosSwitch({ acik, onToggle, theme }) {
-  return (
-    <button
-      onClick={onToggle}
-      role="switch"
-      aria-checked={acik}
-      style={{
-        width: "46px", height: "28px", borderRadius: "999px", border: "none",
-        cursor: "pointer", padding: 0, flexShrink: 0, position: "relative",
-        background: acik ? theme.accent : theme.border,
-        transition: "background 0.25s ease",
-      }}
-    >
-      <span style={{
-        position: "absolute", top: "3px", left: acik ? "21px" : "3px",
-        width: "22px", height: "22px", borderRadius: "50%", background: "#fff",
-        transition: "left 0.25s cubic-bezier(.4,.1,.3,1)",
-        boxShadow: "0 1px 3px rgba(0,0,0,0.3)",
-      }} />
-    </button>
-  )
-}
-
-// Panel satırı: başlık + açıklama + anahtar
+// Panel satırı: başlık + açıklama + anahtar (tüm satır tıklanabilir)
 function AyarSatiri({ baslik, aciklama, acik, onToggle, theme }) {
   return (
-    <div style={{
-      display: "flex", alignItems: "center", justifyContent: "space-between",
-      gap: "14px", padding: "12px 4px",
-    }}>
+    <div
+      onClick={onToggle}
+      role="button"
+      aria-pressed={acik}
+      style={{
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        gap: "14px", padding: "12px 4px", cursor: "pointer",
+      }}
+    >
       <div style={{ minWidth: 0 }}>
         <div style={{ fontSize: "15px", color: theme.text, fontWeight: 500 }}>{baslik}</div>
         {aciklama && <div style={{ fontSize: "12px", color: theme.textSecondary, marginTop: "2px" }}>{aciklama}</div>}
       </div>
-      <IosSwitch acik={acik} onToggle={onToggle} theme={theme} />
+      <IosSwitch acik={acik} theme={theme} />
     </div>
   )
 }
@@ -176,12 +158,12 @@ export default function Navbar() {
             title="Görünüm ayarları"
             aria-label="Görünüm ayarları"
             style={{
-              color: (dinamik || dinamikPanelAcik) ? theme.accent : theme.textSecondary,
+              color: dinamikPanelAcik ? theme.accent : theme.textSecondary,
               padding: "6px",
               borderRadius: "8px",
               display: "flex",
               alignItems: "center",
-              background: (dinamik || dinamikPanelAcik) ? `${theme.accent}15` : "transparent",
+              background: dinamikPanelAcik ? `${theme.accent}15` : "transparent",
             }}
           >
             <Sparkles size={18} />

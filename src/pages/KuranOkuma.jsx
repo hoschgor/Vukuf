@@ -15,6 +15,7 @@ import KayitPaneli from "../components/KayitPaneli"
 import KariSecici from "../components/KariSecici"
 import KelimePopup from "../components/KelimePopup"
 import YuklemeEkrani from "../components/YuklemeEkrani"
+import IosSwitch from "../components/IosSwitch"
 import AyetPopup from "../components/AyetPopup"
 import { useMushaf, sureBaslangicSayfasi, ayetSayfasi } from "../data/hooks/useMushaf"
 import useAudioPlayer, { BESMELE_OKUYANLAR } from "../data/hooks/useAudioPlayer"
@@ -97,22 +98,32 @@ function lugat(kelimeHam) {
 }
 function AyarToggle({ etiket, aktif, onToggle, theme, isMobile, barUiOlcegi }) {
   return (
-    <button onClick={onToggle} style={{
-      width: "100%", padding: "8px 12px", borderRadius: "8px",
-      fontSize: `${Math.round((isMobile ? 11 : 12) * barUiOlcegi)}px`,
-      background: aktif ? `${theme.accent}15` : theme.background,
-      color: aktif ? theme.accent : theme.textSecondary,
-      border: `1px solid ${aktif ? theme.accent : theme.border}`,
+    <div onClick={onToggle} role="button" aria-pressed={aktif} style={{
+      width: "100%", padding: "7px 10px", borderRadius: "8px",
+      fontSize: `${Math.round((isMobile ? 12 : 13) * barUiOlcegi)}px`,
+      color: theme.text,
       cursor: "pointer", display: "flex", alignItems: "center",
-      justifyContent: "space-between", marginBottom: "6px",
+      justifyContent: "space-between", gap: "12px", marginBottom: "3px",
     }}>
       <span>{etiket}</span>
-      <span style={{ fontSize: `${Math.round((isMobile ? 9 : 11) * barUiOlcegi)}px` }}>
-        {aktif ? "Açık" : "Kapalı"}
-      </span>
-    </button>
+      <IosSwitch acik={aktif} theme={theme} boyut={0.8} />
+    </div>
   )
 }
+
+// Sade modda gösterilip gizlenebilen bar öğeleri (Sade Mod İçerikleri bölümü + gizleme mantığı)
+const SADE_OGELERI = [
+  { key: "sureMenu",    label: "Sûre Menüsü" },
+  { key: "kayit",       label: "Kayıt Menüsü" },
+  { key: "sayfaGit",    label: "Sayfaya Gitme" },
+  { key: "tekrar",      label: "Tekrar (Döngü)" },
+  { key: "yaziTipi",    label: "Yazı Tipi" },
+  { key: "otoOynat",    label: "Otomatik Oynatma" },
+  { key: "tema",        label: "Tema Paneli" },
+  { key: "okumaZamani", label: "Okuma Zamanı" },
+  { key: "sureBilgisi", label: "Sûre Bilgisi" },
+  { key: "cuzBilgisi",  label: "Cüz / Hizb Bilgisi" },
+]
 
 // Ayete odaklanırken kaydırma çıpası:
 //  - data-ayet ayet-sonu ROZETİNDE (ayet numarası). Ayetin BAŞI = önceki ayet
@@ -309,6 +320,12 @@ export default function KuranOkuma({ kitap }) {
   const [yaziTipiGoster, setYaziTipiGoster] = useState(() => localStorage.getItem("vukuf-btn-yazitipi") !== "false")
   const [otoOynatGoster, setOtoOynatGoster] = useState(() => localStorage.getItem("vukuf-btn-otooynat") !== "false")
   const [tekrarBtnGoster, setTekrarBtnGoster] = useState(() => localStorage.getItem("vukuf-btn-tekrar") !== "false")   // döngü/tekrar barda görünsün mü (sade modda da geçerli)
+  // Sade modda GİZLENECEK öğeler (true = gizli). Varsayılan: yazı tipi + oto. oynatma + okuma zamanı.
+  const [sadeGizli, setSadeGizli] = useState(() => {
+    try { const v = JSON.parse(localStorage.getItem("vukuf-kuran-sade-gizli") || "null"); if (v && typeof v === "object") return v } catch {}
+    return { yaziTipi: true, otoOynat: true, okumaZamani: true }
+  })
+  const [sadeIcerikAcik, setSadeIcerikAcik] = useState(false)   // "Sade Mod İçerikleri" bölümü açık mı
   const [gorunumAcik, setGorunumAcik] = useState(false)
   
 
@@ -397,6 +414,7 @@ const maxWidth = useMemo(() =>
     localStorage.setItem("vukuf-btn-otooynat", String(otoOynatGoster))
     localStorage.setItem("vukuf-btn-tekrar",   String(tekrarBtnGoster))
   }, [sureGoster, sureBilgisiGoster, cuzBilgisiGoster, sureMenuGoster, kayitGoster, sayfaGitGoster, sadeModGoster, temaGoster, yaziTipiGoster, otoOynatGoster, tekrarBtnGoster])
+  useEffect(() => { try { localStorage.setItem("vukuf-kuran-sade-gizli", JSON.stringify(sadeGizli)) } catch {} }, [sadeGizli])
 
 
   useEffect(() => {
@@ -532,22 +550,26 @@ useEffect(() => {
   localStorage.setItem("vukuf-bar-ui-olcegi", String(barUiOlcegi))
 }, [barUiOlcegi])
 
+// Bir bar öğesi sade modda görünür mü? (sade değilse hep görünür; sade modda sadeGizli'ye bağlı)
+const sadeGorunur = (key) => !(sadeMode && sadeGizli[key])
+
 const gorunurOgeSayisi = useMemo(() => {
   let n = 2 // Geri + Ayarlar
-  if (sureMenuGoster) n++
-  if (kayitGoster) n++
-  if (sayfaGitGoster) n++
-  if (!sadeMode && yaziTipiGoster) n++
-  if (!sadeMode && otoOynatGoster) n++
+  if (sureMenuGoster && sadeGorunur("sureMenu")) n++
+  if (kayitGoster && sadeGorunur("kayit")) n++
+  if (sayfaGitGoster && sadeGorunur("sayfaGit")) n++
+  if (tekrarBtnGoster && sadeGorunur("tekrar")) n++
+  if (yaziTipiGoster && sadeGorunur("yaziTipi")) n++
+  if (otoOynatGoster && sadeGorunur("otoOynat")) n++
   if (sadeModGoster) n++
-  if (temaGoster) n++
-  if (!sadeMode && sureGoster) n++
-  if (sureBilgisiGoster) n++      // mevcutSureBilgisi bağımlılığı kaldırıldı
-  if (cuzBilgisiGoster) n++       // mevcutCuzHizb bağımlılığı kaldırıldı
+  if (temaGoster && sadeGorunur("tema")) n++
+  if (sureGoster && sadeGorunur("okumaZamani")) n++
+  if (sureBilgisiGoster && sadeGorunur("sureBilgisi")) n++
+  if (cuzBilgisiGoster && sadeGorunur("cuzBilgisi")) n++
   return n
-}, [sureMenuGoster, kayitGoster, sayfaGitGoster, yaziTipiGoster, otoOynatGoster,
+}, [sureMenuGoster, kayitGoster, sayfaGitGoster, tekrarBtnGoster, yaziTipiGoster, otoOynatGoster,
     sadeModGoster, temaGoster, sureGoster, sureBilgisiGoster, cuzBilgisiGoster,
-    sadeMode])
+    sadeMode, sadeGizli])
 const wrapAktif = isMobile && barUiOlcegi > 0.9 && gorunurOgeSayisi >= 5
 const tekSatirYuksekligi = isMobile ? 44 : 36
 const cokSatir = wrapAktif && barYuksekligi > tekSatirYuksekligi * 1.0
@@ -848,6 +870,34 @@ useEffect(() => {
     .sort((a, b) => a[0] - b[0])
     .map(([no, baslangic]) => ({ no, baslangic }))
 }, [mushafData])
+
+// Sayfa içine ortalı Arapça CÜZ işareti: sayfa no → o sayfada BAŞLAYAN cüz no
+const sayfaCuzBaslangic = useMemo(() => {
+  const m = {}
+  for (const c of cuzListesi) if (m[c.baslangic] == null) m[c.baslangic] = c.no
+  return m
+}, [cuzListesi])
+
+// HİZB işareti: veride ayet.hizb varsa her hizb değerinin İLK sayfası → o sayfada başlar.
+// (Cüz başı olan sayfalarda cüz işareti öncelikli olduğundan buradan çıkarılır.)
+const sayfaHizbBaslangic = useMemo(() => {
+  const ilkSayfa = {}   // hizbNo → min sayfa
+  let varMi = false
+  for (const sure of mushafData) for (const a of (sure.ayetler || [])) {
+    const hz = a.hizb ?? a.hizip ?? a.hzb
+    if (hz == null) continue
+    varMi = true
+    if (ilkSayfa[hz] == null || a.sayfa < ilkSayfa[hz]) ilkSayfa[hz] = a.sayfa
+  }
+  if (!varMi) return {}
+  const m = {}   // sayfa → hizb no
+  for (const hz of Object.keys(ilkSayfa)) {
+    const sf = ilkSayfa[hz]
+    if (sayfaCuzBaslangic[sf] != null) continue   // cüz başı → cüz işareti gösterilecek
+    if (m[sf] == null) m[sf] = Number(hz)
+  }
+  return m
+}, [mushafData, sayfaCuzBaslangic])
 
 const mevcutCuzHizb = useMemo(() => {
   if (!cuzListesi.length) return null
@@ -1769,16 +1819,14 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
         <div>
         </div>
           <div style={{ fontSize: `${Math.round((isMobile ? 11 : 12) * barUiOlcegi)}px`, color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px" }}>Otomatik Gizleme</div>
-          <button onClick={() => setOtomatikGizleme(!otomatikGizleme)} style={{
-            width: "100%", padding: "8px 12px", borderRadius: "8px", fontSize: `${Math.round((isMobile ? 11 : 12) * barUiOlcegi)}px`,
-            background: otomatikGizleme ? `${theme.accent}15` : theme.background,
-            color: otomatikGizleme ? theme.accent : theme.textSecondary,
-            border: `1px solid ${otomatikGizleme ? theme.accent : theme.border}`,
-            cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between",
+          <div onClick={() => setOtomatikGizleme(!otomatikGizleme)} role="button" aria-pressed={otomatikGizleme} style={{
+            width: "100%", padding: "7px 10px", borderRadius: "8px", fontSize: `${Math.round((isMobile ? 12 : 13) * barUiOlcegi)}px`,
+            color: theme.text,
+            cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px",
           }}>
             <span>Otomatik gizleme</span>
-            <span style={{ fontSize: `${Math.round((isMobile ? 11 : 12) * barUiOlcegi)}px` }}>{otomatikGizleme ? "Açık" : "Kapalı"}</span>
-          </button>
+            <IosSwitch acik={otomatikGizleme} theme={theme} boyut={0.82} />
+          </div>
           {otomatikGizleme && (
             <div style={{ marginTop: "8px" }}>
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: `${Math.round((isMobile ? 11 : 12) * barUiOlcegi)}px`, color: theme.textSecondary, marginBottom: "4px" }}>
@@ -1829,6 +1877,37 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
           </div>
         )}
       </div>
+
+        {/* Sade Mod İçerikleri — sade modda hangi öğeler GÖSTERİLSİN (anahtar açık = görünür) */}
+        <div>
+          <button
+            onClick={() => setSadeIcerikAcik(v => !v)}
+            style={{
+              width: "100%", padding: "4px 0", background: "none", border: "none",
+              cursor: "pointer", display: "flex", alignItems: "center",
+              justifyContent: "space-between",
+              fontSize: `${Math.round((isMobile ? 11 : 12) * barUiOlcegi)}px`,
+              color: theme.textSecondary, letterSpacing: "1px",
+            }}
+          >
+            <span>Sade Mod İçerikleri</span>
+            {sadeIcerikAcik
+              ? <ChevronDown size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />
+              : <ChevronRight size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />}
+          </button>
+          {sadeIcerikAcik && (
+            <div style={{ marginTop: "10px" }}>
+              <div style={{ fontSize: `${Math.round((isMobile ? 9 : 10) * barUiOlcegi)}px`, color: theme.textSecondary, opacity: .7, marginBottom: "6px", paddingLeft: "2px" }}>Sade modda görünecek öğeler</div>
+              {SADE_OGELERI.map(o => (
+                <AyarToggle key={o.key} etiket={o.label}
+                  aktif={!sadeGizli[o.key]}
+                  onToggle={() => setSadeGizli(p => ({ ...p, [o.key]: !p[o.key] }))}
+                  {...{theme, isMobile, barUiOlcegi}} />
+              ))}
+            </div>
+          )}
+        </div>
+
         <div style={{ position: "relative", zIndex: 300 }}>
           <KariSecici
             kariId={player.kariId}
@@ -1878,13 +1957,13 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
         <ArrowLeft size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} /> {!isMobile && ""}
       </button>
       
-            {sureMenuGoster && (
+            {sureMenuGoster && sadeGorunur("sureMenu") && (
         <button onClick={() => setMenuAcik(!menuAcik)} style={{ ...barButonStil(menuAcik), flexShrink: 0 }}>
           <Menu size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />
         </button>
       )}
 
-      {kayitGoster && (
+      {kayitGoster && sadeGorunur("kayit") && (
         <button
           onClick={() => {
             if (kayitlar.length > 0) {
@@ -1902,7 +1981,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
         </button>
       )}
       
-      {sayfaGitGoster && (
+      {sayfaGitGoster && sadeGorunur("sayfaGit") && (
         <button
           onClick={() => setSayfaGitAcik(!sayfaGitAcik)}
           style={{
@@ -1921,7 +2000,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
 
       {/* TEKRAR / DÖNGÜ — döngü ayar panelini açar (oynatıcı kapalıyken de erişilir).
           Sade modda da görünür; yalnız kendi görünürlük ayarına bağlı. */}
-      {tekrarBtnGoster && (
+      {tekrarBtnGoster && sadeGorunur("tekrar") && (
         <button
           onClick={acDonguAyar}
           style={{ ...barButonStil(donguAyarAcik), flexShrink: 0 }}
@@ -1931,15 +2010,13 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
         </button>
       )}
 
-      {!sadeMode && (
-  <>
-    {yaziTipiGoster && (
+    {yaziTipiGoster && sadeGorunur("yaziTipi") && (
       <button onClick={() => togglePanel(setAaAcik, !aaAcik)} style={barButonStil(aaAcik)}>
         <Feather size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />
       </button>
     )}
 
-    {otoOynatGoster && (
+    {otoOynatGoster && sadeGorunur("otoOynat") && (
       <>
         <button
           onClick={() => setOtomatikKaydirma(!otomatikKaydirma)}
@@ -1984,8 +2061,6 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
         )}
       </>
     )}
-  </>
-)}
 
     {/* Sağ grup — ayarlar + bilgi (doğal sarma). Grup içi sıra: simgeler önce, bilgi EN SONDA →
         tek satırda bilgi en sağda; sarma gerekirse yalnız bilgi son satıra iner. */}
@@ -2002,7 +2077,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
         </button>
       )}
 
-      {temaGoster && (
+      {temaGoster && sadeGorunur("tema") && (
         <button onClick={() => togglePanel(setTemaAcik, !temaAcik)} style={{ ...barButonStil(temaAcik), padding: isMobile ? "3px" : "4px" }}>
           <Palette size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />
         </button>
@@ -2012,7 +2087,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
         <Settings size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />
       </button>
 
-      {sureGoster && !sadeMode && (
+      {sureGoster && sadeGorunur("okumaZamani") && (
         <span style={{
           fontSize: `${Math.round((isMobile ? 9 : 12) * barUiOlcegi)}px`,
           color: theme.accent,
@@ -2025,7 +2100,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
           {isMobile ? dakikaFormatla(bugunSure) : `Bugün ${dakikaFormatla(bugunSure)}`}
         </span>
       )}
-      {mevcutSureBilgisi && sureBilgisiGoster && (
+      {mevcutSureBilgisi && sureBilgisiGoster && sadeGorunur("sureBilgisi") && (
         <span style={{
           fontSize: `${Math.round((isMobile ? 9 : 12) * barUiOlcegi)}px`,
           color: theme.accent,
@@ -2038,7 +2113,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
           {mevcutSureBilgisi.isim}
         </span>
       )}
-      {cuzBilgisiGoster && mevcutCuzHizb && (
+      {cuzBilgisiGoster && mevcutCuzHizb && sadeGorunur("cuzBilgisi") && (
       <span style={{
                 fontSize: `${Math.round((isMobile ? 9 : 12) * barUiOlcegi)}px`,
                 color: theme.accent,
@@ -2076,7 +2151,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
           pointerEvents: konumHazir ? "none" : "auto",
           transition: "opacity 0.35s ease",
         }}>
-          <YuklemeEkrani theme={theme} yukseklik="100%" arkaplan={false} />
+          <YuklemeEkrani theme={theme} yukseklik="100%" arkaplan={false} fade={false} />
         </div>
       )}
 
@@ -2266,15 +2341,14 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
               })()}
 
               {/* Besmele ile başla — döngüde sûre başına gelince */}
-              <button onClick={() => setTmBesmele(v => !v)} style={{
+              <div onClick={() => setTmBesmele(v => !v)} role="button" aria-pressed={tmBesmele} style={{
                 width: "100%", marginTop: "10px", display: "flex", alignItems: "center", justifyContent: "space-between",
-                padding: "9px 12px", borderRadius: "10px", cursor: "pointer", fontSize: "13px", fontFamily: "inherit",
-                border: `1px solid ${tmBesmele ? theme.accent : theme.border}`,
-                background: tmBesmele ? `${theme.accent}12` : "transparent", color: tmBesmele ? theme.accent : theme.textSecondary,
+                padding: "9px 12px", borderRadius: "10px", cursor: "pointer", fontSize: "13px", gap: "12px",
+                border: `1px solid ${theme.border}`, background: "transparent", color: theme.text,
               }}>
                 <span>Besmele ile başla</span>
-                <span style={{ fontSize: "11px", fontWeight: 700 }}>{tmBesmele ? "Açık" : "Kapalı"}</span>
-              </button>
+                <IosSwitch acik={tmBesmele} theme={theme} boyut={0.82} />
+              </div>
 
               <div style={{ display: "flex", gap: "8px", marginTop: "14px" }}>
                 <button onClick={tekrariSifirla} style={{ flex: 1, padding: "11px", borderRadius: "12px", border: `1px solid ${theme.border}`, background: "transparent", color: theme.textSecondary, cursor: "pointer", fontSize: "14px", fontWeight: 600 }}>Sıfırla</button>
@@ -2917,6 +2991,8 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
                       odakSure={odakSure}
                       odakAyrac={odakAyrac}
                       aktifAyet={player.aktifAyet}
+                      cuzBaslangic={sayfaCuzBaslangic[sayfa.sayfaNo] ?? null}
+                      hizbBaslangic={sayfaHizbBaslangic[sayfa.sayfaNo] ?? null}
                       onKelimeTikla={kelimeTikla}
                       onAyetTikla={ayetTikla}
                       onSureTikla={(sure, e) => {

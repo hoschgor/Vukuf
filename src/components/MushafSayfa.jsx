@@ -34,6 +34,8 @@ function MushafSayfa({
   odakAyet = null,
   odakSure = null,
   odakAyrac = null,
+  cuzBaslangic = null,   // bu sayfa yeni bir CÜZ başlatıyorsa cüz no
+  hizbBaslangic = null,  // bu sayfa yeni bir HİZB başlatıyorsa hizb no (cüz başı değilse)
 }) {
 
   const isMobile = useMediaQuery("(max-width: 768px)")
@@ -139,6 +141,36 @@ function MushafSayfa({
         <div style={{ flex: 1, height: "1px", background: `linear-gradient(to right, transparent, ${theme.accent}40, transparent)` }} />
       </div>
 
+      {/* CÜZ / HİZB işareti — sayfa yeni bir cüz/hizb başlatıyorsa ortalı Arapça başlık.
+          Cüz başı ise "الجزء N" (hizb başı da olduğundan cüz önceliklidir); yalnız hizb başı ise "الحزب N". */}
+      {(cuzBaslangic != null || hizbBaslangic != null) && (() => {
+        const cuz = cuzBaslangic != null
+        const no = cuz ? cuzBaslangic : hizbBaslangic
+        const kelime = cuz ? "الجزء" : "الحزب"
+        const rakamRengi = theme.ayetNoRengi || theme.accent   // rakam → Âyet No rengi
+        return (
+          <div style={{
+            width: "100%", display: "flex", alignItems: "center", justifyContent: "center",
+            gap: isMobile ? "10px" : "14px",
+            margin: `${fontSize * 0.22}px 0 ${fontSize * 0.34}px`, clear: "both",
+          }}>
+            <span style={{ flex: 1, maxWidth: "34%", height: "1px", background: `linear-gradient(to right, transparent, ${theme.accent}55)` }} />
+            <span style={{
+              fontFamily: arapcaFont,
+              fontSize: `${Math.round(fontSize * 0.9)}px`,
+              lineHeight: 1.1,
+              direction: "rtl", whiteSpace: "nowrap",
+              opacity: 0.92,
+              display: "inline-flex", alignItems: "baseline", gap: "0.3em",
+            }}>
+              <span style={{ color: theme.accent }}>{kelime}</span>
+              <span style={{ color: rakamRengi, fontWeight: 700 }}>{arapcaRakamla(no)}</span>
+            </span>
+            <span style={{ flex: 1, maxWidth: "34%", height: "1px", background: `linear-gradient(to left, transparent, ${theme.accent}55)` }} />
+          </div>
+        )
+      })()}
+
       {/* Secde kenar rozeti */}
       {secdeAyetleri.length > 0 && (
         <SecdeKenar
@@ -228,6 +260,7 @@ function MushafSayfa({
                 lineHeight: lineHeight,
                 fontFamily: arapcaFont,
                 color: theme.text,
+                letterSpacing: `${harfAraligi || 0}px`,   // harf aralığı buradan (kaptan) miras alınır → tüm kelimelere uygulanır
                 paddingTop: `${fontSize * 0.15}px`, // Azaltıldı
                 paddingBottom: arapcaFont.toLowerCase().includes('me_quran')
                   ? `${fontSize * 0.1}px`
@@ -342,7 +375,9 @@ function mushafSayfaEsit(a, b) {
     a.yaziBoyutu !== b.yaziBoyutu ||
     a.satirAraligi !== b.satirAraligi ||
     a.harfAraligi !== b.harfAraligi ||
-    a.kayitKonumModu !== b.kayitKonumModu
+    a.kayitKonumModu !== b.kayitKonumModu ||
+    a.cuzBaslangic !== b.cuzBaslangic ||
+    a.hizbBaslangic !== b.hizbBaslangic
   ) return false
 
   // sayfaKayitlari her render'da YENİ dizi (filter) → referansla değil DEĞERLE karşılaştır

@@ -9,6 +9,7 @@ import risaleLugat from "../data/risale-lugat.json"
 import kavramlarVerisi from "../data/kavramlar.json"
 import KitapAyraci from "../components/KitapAyraci"
 import YuklemeEkrani from "../components/YuklemeEkrani"
+import IosSwitch from "../components/IosSwitch"
 import {
   ArrowLeft, BookOpen, Eye, EyeOff, Play, Pause,
   Plus, Minus, AlignJustify, ChevronsUp, ChevronsDown,
@@ -116,17 +117,25 @@ function icindekilerAgaci(list) {
 }
 
 function AyarToggle({ etiket, aktif, onToggle, theme, acikLabel = "Açık", kapaliLabel = "Kapalı" }) {
+  // Varsayılan (Açık/Kapalı) → yalnız anahtar; özel etiket (ör. Gizli/Görünür) → anlam korunsun diye yazı da
+  const ozelEtiket = acikLabel !== "Açık" || kapaliLabel !== "Kapalı"
   return (
-    <button onClick={onToggle} style={{
-      width: "100%", padding: "8px 12px", borderRadius: "8px", fontSize: "12px",
-      background: aktif ? `${theme.accent}15` : theme.background,
-      color: aktif ? theme.accent : theme.textSecondary,
-      border: `1px solid ${aktif ? theme.accent : theme.border}`,
-      cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "6px",
+    <div onClick={onToggle} role="button" aria-pressed={aktif} style={{
+      width: "100%", padding: "7px 10px", borderRadius: "8px", fontSize: "13px",
+      color: theme.text,
+      cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between",
+      gap: "12px", marginBottom: "3px",
     }}>
       <span>{etiket}</span>
-      <span style={{ fontSize: "11px", fontWeight: "bold" }}>{aktif ? acikLabel : kapaliLabel}</span>
-    </button>
+      <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+        {ozelEtiket && (
+          <span style={{ fontSize: "11px", fontWeight: 600, color: aktif ? theme.accent : theme.textSecondary }}>
+            {aktif ? acikLabel : kapaliLabel}
+          </span>
+        )}
+        <IosSwitch acik={aktif} theme={theme} boyut={0.8} />
+      </span>
+    </div>
   )
 }
 
@@ -2434,16 +2443,14 @@ const AyarlarPanel = ayarlarAcik && (
       {/* Otomatik gizleme */}
       <div>
         <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px" }}>OTOMATİK GİZLEME</div>
-        <button onClick={() => setOtomatikGizleme(!otomatikGizleme)} style={{
-          width: "100%", padding: "8px 12px", borderRadius: "8px", fontSize: "13px",
-          background: otomatikGizleme ? `${theme.accent}15` : theme.background,
-          color: otomatikGizleme ? theme.accent : theme.textSecondary,
-          border: `1px solid ${otomatikGizleme ? theme.accent : theme.border}`,
-          cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between",
+        <div onClick={() => setOtomatikGizleme(!otomatikGizleme)} role="button" aria-pressed={otomatikGizleme} style={{
+          width: "100%", padding: "7px 10px", borderRadius: "8px", fontSize: "13px",
+          color: theme.text,
+          cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px",
         }}>
           <span>Otomatik gizleme</span>
-          <span style={{ fontSize: "12px", fontWeight: "bold" }}>{otomatikGizleme ? "Açık" : "Kapalı"}</span>
-        </button>
+          <IosSwitch acik={otomatikGizleme} theme={theme} boyut={0.82} />
+        </div>
         {otomatikGizleme && (
           <div style={{ marginTop: "8px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", color: theme.textSecondary, marginBottom: "4px" }}>
@@ -2521,15 +2528,16 @@ const AyarlarPanel = ayarlarAcik && (
           background: "transparent", border: "none", cursor: "pointer", padding: "2px 0",
           fontSize: "11px", color: theme.textSecondary, letterSpacing: "1px",
         }}>
-          <span>SADE MODDA GİZLENECEKLER</span>
+          <span>SADE MOD İÇERİKLERİ</span>
           {sadeIcerikAcik ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
         </button>
         {sadeIcerikAcik && (
           <div style={{ marginTop: "8px" }}>
+            {/* Düz mantık: anahtar AÇIK = öğe sade modda GÖSTERİLİR. ogeSade[key]=true "gizli"
+                anlamına geldiği için anahtar bunun TERSİ (gösteriliyor mu). */}
             {BAR_OGELERI.map(o => (
               <AyarToggle key={o.key} etiket={o.label} theme={theme}
-                acikLabel="Gizli" kapaliLabel="Görünür"
-                aktif={ogeSade[o.key] === true}
+                aktif={!ogeSade[o.key]}
                 onToggle={() => setOgeSade(p => ({ ...p, [o.key]: !p[o.key] }))}
               />
             ))}
@@ -3046,7 +3054,7 @@ return (
         pointerEvents: okumaHazir ? "none" : "auto",
         transition: "opacity 0.35s ease",
       }}>
-        <YuklemeEkrani theme={theme} yukseklik="100%" arkaplan={false} />
+        <YuklemeEkrani theme={theme} yukseklik="100%" arkaplan={false} fade={false} />
       </div>
     )}
 

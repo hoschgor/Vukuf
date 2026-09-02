@@ -8,6 +8,7 @@ import lugatVerisi from "../data/lugat.json"
 import risaleLugat from "../data/risale-lugat.json"
 import kavramlarVerisi from "../data/kavramlar.json"
 import KitapAyraci from "../components/KitapAyraci"
+import YuklemeEkrani from "../components/YuklemeEkrani"
 import {
   ArrowLeft, BookOpen, Eye, EyeOff, Play, Pause,
   Plus, Minus, AlignJustify, ChevronsUp, ChevronsDown,
@@ -930,6 +931,15 @@ const [barGorunur, setBarGorunur]           = useState(true)
 const barRef = useRef(null)
 const [barYuk, setBarYuk] = useState(56)   // ölçülen bar yüksekliği (safe-area padding dahil)
 const [gecisHazir, setGecisHazir] = useState(false)  // padding geçişi: açılıştaki ölçüm oturana kadar KAPALI (kayma olmasın)
+// Açılış örtüsü: konum oturana dek rozet göster, oturunca kaymadan aç (KuranOkuma ile tutarlı)
+const [okumaHazir, setOkumaHazir] = useState(false)
+const [acilisOrtu, setAcilisOrtu] = useState(true)
+const okumayiGoster = useCallback(() => setOkumaHazir(true), [])
+useEffect(() => {
+  if (!okumaHazir) return
+  const t = setTimeout(() => setAcilisOrtu(false), 420)
+  return () => clearTimeout(t)
+}, [okumaHazir])
 // PWA (ana ekrana eklenmiş / standalone) modu: iOS burada safe-area-inset-bottom'u gerçek
 // ~34px verir → alt bar fazla boşluklu görünür. Tarayıcıda inset ~0, kompakt. Bu yüzden
 // safe-area katkısını YALNIZ PWA'da bir miktar kırpıyoruz (web'e dokunmuyoruz).
@@ -1335,6 +1345,7 @@ useEffect(() => {
       elemanaGit(sn,
         () => document.querySelector(`[data-satir="${sn}-${aramaHedef.satirIdx}"]`),
         0, false, (el) => aramaVurgula(sn, el, aramaHedef.aranan))
+      okumayiGoster()   // hizalama oturdu → açılış örtüsü solar
     }, 200)
     return
   }
@@ -1351,6 +1362,7 @@ useEffect(() => {
       elemanaGit(sn,
         () => document.querySelector(`[data-satir="${donusOdak.satirKey}"]`),
         0, false, (el) => aramaVurgula(sn, el, "", true, true))   // satırın tamamını işaretle (Arapça bölüm dahil)
+      okumayiGoster()
     }, 240)
     return
   }
@@ -1362,9 +1374,18 @@ useEffect(() => {
   if (kayitli && kayitli.sayfa > 1 || (kayitli && kayitli.oran > 0.02)) {
     const hedef = Math.min(Math.max(1, kayitli.sayfa || 1), kitapMetni.length)
     maxSayfaGuncelle(hedef)   // üstteki sayfalar hafif render → yukarı kaydırma sıçramaz
-    setTimeout(() => sayfayaGit(hedef, kayitli.oran || 0), 160)
+    setTimeout(() => { sayfayaGit(hedef, kayitli.oran || 0); okumayiGoster() }, 160)
+  } else {
+    okumayiGoster()   // hedef yok (baştan) → hemen aç
   }
 }, [yukleniyor, kitapMetni, id])
+
+// Güvenlik: içerik en geç bu süre içinde görünür olsun
+useEffect(() => {
+  if (yukleniyor) return
+  const t = setTimeout(okumayiGoster, 1500)
+  return () => clearTimeout(t)
+}, [yukleniyor, okumayiGoster])
 
 // ════════════════════════════════════════════════════
 // Otomatik kaydırma
@@ -1934,7 +1955,7 @@ const toplamKayit = kayitlar.length + toplamNot + toplamVurgu
 
 if (!kitap)     return <div style={{ padding: "40px", color: theme.text }}>Kitap bulunamadı.</div>
 if (kitap.id === "kuran") return <KuranOkuma kitap={kitap} />
-if (yukleniyor) return <div style={{ padding: "40px", color: theme.text }}>Yükleniyor...</div>
+if (yukleniyor) return <YuklemeEkrani theme={theme} yukseklik="100vh" />
 
 // ════════════════════════════════════════════════════
 // Ortak stiller
@@ -3014,7 +3035,20 @@ const Bar = (
 // ════════════════════════════════════════════════════════════════
 
 return (
-  <div style={{ height: "100vh", display: "flex", flexDirection: "column", background: theme.background }}>
+  <div style={{ height: "100vh", display: "flex", flexDirection: "column", background: theme.background, position: "relative" }}>
+
+    {/* AÇILIŞ ÖRTÜSÜ — konum oturana dek rozet; oturunca kaymadan solar. */}
+    {acilisOrtu && (
+      <div style={{
+        position: "absolute", inset: 0, zIndex: 95,
+        background: theme.background,
+        opacity: okumaHazir ? 0 : 1,
+        pointerEvents: okumaHazir ? "none" : "auto",
+        transition: "opacity 0.35s ease",
+      }}>
+        <YuklemeEkrani theme={theme} yukseklik="100%" arkaplan={false} />
+      </div>
+    )}
 
     <style>{`@keyframes odakYanip { 0%{opacity:0} 15%{opacity:1} 70%{opacity:1} 100%{opacity:0} }
 @keyframes aramaVurguAnim { 0%{opacity:0} 12%{opacity:1} 75%{opacity:1} 100%{opacity:0} }

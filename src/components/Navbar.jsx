@@ -24,6 +24,46 @@ const paletRenkleri = [
   { key: "border", label: "Kenarlık" },
 ]
 
+// iOS tarzı aç/kapa anahtarı (temaya uygun)
+function IosSwitch({ acik, onToggle, theme }) {
+  return (
+    <button
+      onClick={onToggle}
+      role="switch"
+      aria-checked={acik}
+      style={{
+        width: "46px", height: "28px", borderRadius: "999px", border: "none",
+        cursor: "pointer", padding: 0, flexShrink: 0, position: "relative",
+        background: acik ? theme.accent : theme.border,
+        transition: "background 0.25s ease",
+      }}
+    >
+      <span style={{
+        position: "absolute", top: "3px", left: acik ? "21px" : "3px",
+        width: "22px", height: "22px", borderRadius: "50%", background: "#fff",
+        transition: "left 0.25s cubic-bezier(.4,.1,.3,1)",
+        boxShadow: "0 1px 3px rgba(0,0,0,0.3)",
+      }} />
+    </button>
+  )
+}
+
+// Panel satırı: başlık + açıklama + anahtar
+function AyarSatiri({ baslik, aciklama, acik, onToggle, theme }) {
+  return (
+    <div style={{
+      display: "flex", alignItems: "center", justifyContent: "space-between",
+      gap: "14px", padding: "12px 4px",
+    }}>
+      <div style={{ minWidth: 0 }}>
+        <div style={{ fontSize: "15px", color: theme.text, fontWeight: 500 }}>{baslik}</div>
+        {aciklama && <div style={{ fontSize: "12px", color: theme.textSecondary, marginTop: "2px" }}>{aciklama}</div>}
+      </div>
+      <IosSwitch acik={acik} onToggle={onToggle} theme={theme} />
+    </div>
+  )
+}
+
 export default function Navbar() {
   const { theme, currentTheme, setCurrentTheme, customTheme, ozelTemaKaydet } = useApp()
   const location = useLocation()
@@ -32,6 +72,10 @@ export default function Navbar() {
   const [dinamik, setDinamik] = useState(() => {
     try { return localStorage.getItem("vukuf-dinamik-mod") === "1" } catch { return false }
   })
+  const [girisAnim, setGirisAnim] = useState(() => {
+    try { return localStorage.getItem("vukuf-giris-animasyonu") !== "0" } catch { return true }  // varsayılan AÇIK
+  })
+  const [dinamikPanelAcik, setDinamikPanelAcik] = useState(false)
 
   // Dinamik mod düğmesi yalnızca Kitaplık sayfasında görünür
   const dinamikGoster = location.pathname === "/"
@@ -41,6 +85,14 @@ export default function Navbar() {
       const yeni = !prev
       try { localStorage.setItem("vukuf-dinamik-mod", yeni ? "1" : "0") } catch {}
       window.dispatchEvent(new CustomEvent("vukuf-dinamik", { detail: yeni }))
+      return yeni
+    })
+  }
+
+  function toggleGirisAnim() {
+    setGirisAnim(prev => {
+      const yeni = !prev
+      try { localStorage.setItem("vukuf-giris-animasyonu", yeni ? "1" : "0") } catch {}
       return yeni
     })
   }
@@ -120,16 +172,16 @@ export default function Navbar() {
         {/* Dinamik mod (yalnızca Kitaplık sayfasında) */}
         {dinamikGoster && (
           <button
-            onClick={toggleDinamik}
-            title="Dinamik görünüm"
-            aria-label="Dinamik görünüm"
+            onClick={() => { setDinamikPanelAcik(true); setMenuAcik(false); setTemaAcik(false) }}
+            title="Görünüm ayarları"
+            aria-label="Görünüm ayarları"
             style={{
-              color: dinamik ? theme.accent : theme.textSecondary,
+              color: (dinamik || dinamikPanelAcik) ? theme.accent : theme.textSecondary,
               padding: "6px",
               borderRadius: "8px",
               display: "flex",
               alignItems: "center",
-              background: dinamik ? `${theme.accent}15` : "transparent",
+              background: (dinamik || dinamikPanelAcik) ? `${theme.accent}15` : "transparent",
             }}
           >
             <Sparkles size={18} />
@@ -215,6 +267,45 @@ export default function Navbar() {
         </div>
         </div>
       </nav>
+
+      {/* Görünüm ayarları — alttan açılır panel (Dinamik Mod + Giriş Animasyonu) */}
+      {dinamikPanelAcik && (
+        <>
+          <div
+            onClick={() => setDinamikPanelAcik(false)}
+            style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.35)", zIndex: 300 }}
+          />
+          <div style={{
+            position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 301,
+            background: theme.surface,
+            borderTop: `1px solid ${theme.border}`,
+            borderRadius: "20px 20px 0 0",
+            padding: "8px 20px calc(18px + env(safe-area-inset-bottom))",
+            boxShadow: "0 -8px 30px rgba(0,0,0,0.22)",
+            animation: "vukufSheetUp 0.28s cubic-bezier(.22,.61,.36,1)",
+            maxWidth: "520px", margin: "0 auto",
+          }}>
+            <style>{`@keyframes vukufSheetUp { from { transform: translateY(100%) } to { transform: translateY(0) } }`}</style>
+            <div style={{ width: "40px", height: "4px", borderRadius: "2px", background: theme.border, margin: "6px auto 10px" }} />
+            <div style={{ fontSize: "12px", color: theme.textSecondary, letterSpacing: "1px", padding: "2px 4px 6px" }}>GÖRÜNÜM</div>
+            <AyarSatiri
+              baslik="Dinamik Mod"
+              aciklama="Kitaplıkta akan (coverflow) kapak görünümü"
+              acik={dinamik}
+              onToggle={toggleDinamik}
+              theme={theme}
+            />
+            <div style={{ height: "1px", background: theme.border, opacity: 0.6, margin: "2px 0" }} />
+            <AyarSatiri
+              baslik="Giriş Animasyonu"
+              aciklama="Açılışta tezhipli giriş ekranı (sonraki açılışta geçerli)"
+              acik={girisAnim}
+              onToggle={toggleGirisAnim}
+              theme={theme}
+            />
+          </div>
+        </>
+      )}
 
       {/* Özel tema paneli */}
       {ozelPanelAcik && (

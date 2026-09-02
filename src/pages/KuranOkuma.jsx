@@ -14,6 +14,7 @@ import KitapAyraci from "../components/KitapAyraci"
 import KayitPaneli from "../components/KayitPaneli"
 import KariSecici from "../components/KariSecici"
 import KelimePopup from "../components/KelimePopup"
+import YuklemeEkrani from "../components/YuklemeEkrani"
 import AyetPopup from "../components/AyetPopup"
 import { useMushaf, sureBaslangicSayfasi, ayetSayfasi } from "../data/hooks/useMushaf"
 import useAudioPlayer, { BESMELE_OKUYANLAR } from "../data/hooks/useAudioPlayer"
@@ -253,6 +254,14 @@ export default function KuranOkuma({ kitap }) {
   }, [])
   const konumuGoster = useCallback(() => konumGoster(true), [konumGoster])
   const gecisGosterTimerRef = useRef(null)   // gizli kalırsa en geç bu süre sonra göster (emniyet)
+  // Açılış örtüsü: ilk açılış/atıf'ta konum oturana dek rozet gösterilir; oturunca (konumHazir)
+  // solarak kalkar (içerik altında zaten doğru konumda → kayma görünmez). Sonra DOM'dan kalkar.
+  const [acilisOrtu, setAcilisOrtu] = useState(true)
+  useEffect(() => {
+    if (!konumHazir) return
+    const t = setTimeout(() => setAcilisOrtu(false), 420)   // fade süresinden biraz sonra kaldır
+    return () => clearTimeout(t)
+  }, [konumHazir])
   
   const [sayfaGirdi, setSayfaGirdi] = useState("")
   const [sayfaGirdiAcik, setSayfaGirdiAcik] = useState(false)
@@ -1168,13 +1177,14 @@ function sureGit(sureId, ayetNo) {
     const el = scrollRef.current
     if (!el) return
     const hedefEl = el.querySelector(selector)
-    if (!hedefEl) { if (++tries < 16) setTimeout(hizala, 60); return }   // sayfa henüz render olmadı
+    if (!hedefEl) { if (++tries < 16) setTimeout(hizala, 60); else konumuGoster(); return }   // sayfa henüz render olmadı
     const kaydirEl = odakKaydirElemani(el, sureId, ayetNo, hedefEl)
     const scRect = el.getBoundingClientRect()
     const kRect = kaydirEl.getBoundingClientRect()
     const fark = (kRect.top - scRect.top) - offset
     if (Math.abs(fark) > 1) el.scrollTop += fark
     if (++hizaAdim < 4) setTimeout(hizala, 70)   // içerik otururken birkaç kez daha
+    else konumuGoster()                          // hizalama oturdu → açılış örtüsü (varsa) kalkar
   }
   requestAnimationFrame(hizala)
 
@@ -2051,19 +2061,25 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
   // ANA RENDER
   // ════════════════════════════════════════════════════════════════
 
-  if (yukleniyor) return (
-    <div style={{
-      display: "flex", alignItems: "center", justifyContent: "center",
-      height: "100vh", color: theme.textSecondary, fontSize: "14px",
-    }}>
-      Yükleniyor...
-    </div>
-  )
+  if (yukleniyor) return <YuklemeEkrani theme={theme} yukseklik="100vh" />
 
   return (
     <div
-      style={{ height: "100vh", display: "flex", background: theme.background, overflow: "hidden" }}
+      style={{ height: "100vh", display: "flex", background: theme.background, overflow: "hidden", position: "relative" }}
     >
+      {/* AÇILIŞ ÖRTÜSÜ — konum oturana dek rozet; oturunca kaymadan solar. */}
+      {acilisOrtu && (
+        <div style={{
+          position: "absolute", inset: 0, zIndex: 95,
+          background: theme.background,
+          opacity: konumHazir ? 0 : 1,
+          pointerEvents: konumHazir ? "none" : "auto",
+          transition: "opacity 0.35s ease",
+        }}>
+          <YuklemeEkrani theme={theme} yukseklik="100%" arkaplan={false} />
+        </div>
+      )}
+
       {/* Paneller */}
       {AaPanel}
       {TemaPanel}

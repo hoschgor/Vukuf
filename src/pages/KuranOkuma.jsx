@@ -16,14 +16,14 @@ import KariSecici from "../components/KariSecici"
 import KelimePopup from "../components/KelimePopup"
 import AyetPopup from "../components/AyetPopup"
 import { useMushaf, sureBaslangicSayfasi, ayetSayfasi } from "../data/hooks/useMushaf"
-import useAudioPlayer from "../data/hooks/useAudioPlayer"
+import useAudioPlayer, { BESMELE_OKUYANLAR } from "../data/hooks/useAudioPlayer"
 import { useMediaQuery } from "../data/hooks/useMediaQuery"
 import {
   ArrowLeft, Search, X, ChevronRight, ChevronDown, Menu,
   Play, Pause, Plus, Minus, Type, Palette,
   Settings, Circle, Clock, ChevronsUp, ChevronsDown,
   Pencil, ChevronLeft, Bookmark, BookOpen, Feather,
-  Layers, Check, Shuffle, Mic,
+  Layers, Check, Shuffle, Mic, Repeat,
 } from "lucide-react"
 
 // ── Arapça font listesi
@@ -282,7 +282,7 @@ export default function KuranOkuma({ kitap }) {
   const [barGorunur, setBarGorunur]       = useState(true)
   const [barKonum, setBarKonum]           = useState(() => localStorage.getItem("vukuf-bar-konum") || "alt")
   const [sadeMode, setSadeMode]           = useState(() => localStorage.getItem("vukuf-sade-mod") === "true")
-  const [otomatikGizleme, setOtomatikGizleme] = useState(() => localStorage.getItem("vukuf-otomatik-gizleme") !== "false")
+  const [otomatikGizleme, setOtomatikGizleme] = useState(() => localStorage.getItem("vukuf-otomatik-gizleme") === "true")   // varsayılan KAPALI (yeni kullanıcı bar gizlemeden başlar)
   const [gizlemeSuresi, setGizlemeSuresi] = useState(() => parseInt(localStorage.getItem("vukuf-gizleme-suresi") || "5"))
   const [sureGoster, setSureGoster] = useState(() =>
     localStorage.getItem("vukuf-okuma-zamani") !== "false"
@@ -299,6 +299,7 @@ export default function KuranOkuma({ kitap }) {
   const [temaGoster, setTemaGoster]           = useState(() => localStorage.getItem("vukuf-btn-tema")   !== "false")
   const [yaziTipiGoster, setYaziTipiGoster] = useState(() => localStorage.getItem("vukuf-btn-yazitipi") !== "false")
   const [otoOynatGoster, setOtoOynatGoster] = useState(() => localStorage.getItem("vukuf-btn-otooynat") !== "false")
+  const [tekrarBtnGoster, setTekrarBtnGoster] = useState(() => localStorage.getItem("vukuf-btn-tekrar") !== "false")   // döngü/tekrar barda görünsün mü (sade modda da geçerli)
   const [gorunumAcik, setGorunumAcik] = useState(false)
   
 
@@ -385,7 +386,8 @@ const maxWidth = useMemo(() =>
     localStorage.setItem("vukuf-btn-tema",     String(temaGoster))
     localStorage.setItem("vukuf-btn-yazitipi", String(yaziTipiGoster))
     localStorage.setItem("vukuf-btn-otooynat", String(otoOynatGoster))
-  }, [sureGoster, sureBilgisiGoster, cuzBilgisiGoster, sureMenuGoster, kayitGoster, sayfaGitGoster, sadeModGoster, temaGoster, yaziTipiGoster, otoOynatGoster])
+    localStorage.setItem("vukuf-btn-tekrar",   String(tekrarBtnGoster))
+  }, [sureGoster, sureBilgisiGoster, cuzBilgisiGoster, sureMenuGoster, kayitGoster, sayfaGitGoster, sadeModGoster, temaGoster, yaziTipiGoster, otoOynatGoster, tekrarBtnGoster])
 
 
   useEffect(() => {
@@ -1234,8 +1236,10 @@ function sureGit(sureId, ayetNo) {
   // Tekrar ayar panelini aç — mevcut bağlama göre alanları ön-doldur
   function acDonguAyar() {
     const akt = player.aktifAyet
-    const sn = akt?.sureNo || mevcutSureBilgisi?.id || 1
-    const an = akt?.ayetNo || 1
+    // Besmele çalıyorsa gerçek hedef sûre besmeleIcin'de (aktifAyet.sureNo=1/Fatiha olur).
+    // O yüzden besmeleIcin varsa onu ve 1. âyeti al → panel "Fatiha 1" yerine o sûreyi gösterir.
+    const sn = akt?.besmeleIcin || akt?.sureNo || mevcutSureBilgisi?.id || 1
+    const an = akt?.besmeleIcin ? 1 : (akt?.ayetNo || 1)
     setTmSure(sn)
     setTmSureArama("")
     setTmAyetBas(an); setTmAyetSon(an)
@@ -1263,8 +1267,10 @@ function sureGit(sureId, ayetNo) {
       liste.sort((x, y) => x._sq - y._sq)
     }
     if (!liste.length) return
-    // Besmele ile başla: döngüde bir sûrenin 1. âyetine gelince önüne besmele (sûre 1 ve 9 hariç)
-    if (tmBesmele) {
+    // Besmele ile başla: döngüde bir sûrenin 1. âyetine gelince önüne besmele (sûre 1 ve 9 hariç).
+    // Besmeleyi zaten okuyan kâriler (Abdussamed vb.) için ayrı besmele EKLENMEZ → "Fatiha 1"
+    // tekrarı / çift besmele olmaz.
+    if (tmBesmele && !BESMELE_OKUYANLAR.includes(player.kariId)) {
       const bes = []
       for (const it of liste) {
         if (it.ayetNo === 1 && it.sureNo !== 1 && it.sureNo !== 9) bes.push({ sureNo: 1, ayetNo: 1, besmeleIcin: it.sureNo })
@@ -1805,6 +1811,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
             <AyarToggle etiket="Sûre Menüsü"   aktif={sureMenuGoster} onToggle={() => setSureMenuGoster(v => !v)} {...{theme, isMobile, barUiOlcegi}} />
             <AyarToggle etiket="Kayıt Menüsü"  aktif={kayitGoster}    onToggle={() => setKayitGoster(v => !v)}    {...{theme, isMobile, barUiOlcegi}} />
             <AyarToggle etiket="Sayfaya Gitme" aktif={sayfaGitGoster} onToggle={() => setSayfaGitGoster(v => !v)} {...{theme, isMobile, barUiOlcegi}} />
+            <AyarToggle etiket="Tekrar (Döngü)" aktif={tekrarBtnGoster} onToggle={() => setTekrarBtnGoster(v => !v)} {...{theme, isMobile, barUiOlcegi}} />
             <AyarToggle etiket="Yazı Tipi"         aktif={yaziTipiGoster} onToggle={() => setYaziTipiGoster(v => !v)} {...{theme, isMobile, barUiOlcegi}} />
             <AyarToggle etiket="Otomatik Oynatma"  aktif={otoOynatGoster} onToggle={() => setOtoOynatGoster(v => !v)} {...{theme, isMobile, barUiOlcegi}} />
             <AyarToggle etiket="Sade Mod"      aktif={sadeModGoster}  onToggle={() => setSadeModGoster(v => !v)}  {...{theme, isMobile, barUiOlcegi}} />
@@ -1901,7 +1908,19 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
           {sayfaGosterim === "ikon" ? null : (sayfaGosterim === "sayfa" ? mevcutSayfa : `${mevcutSayfa} / ${toplamSayfa}`)}
         </button>
       )}
-      
+
+      {/* TEKRAR / DÖNGÜ — döngü ayar panelini açar (oynatıcı kapalıyken de erişilir).
+          Sade modda da görünür; yalnız kendi görünürlük ayarına bağlı. */}
+      {tekrarBtnGoster && (
+        <button
+          onClick={acDonguAyar}
+          style={{ ...barButonStil(donguAyarAcik), flexShrink: 0 }}
+          title="Tekrar (döngü) ayarları"
+        >
+          <Repeat size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />
+        </button>
+      )}
+
       {!sadeMode && (
   <>
     {yaziTipiGoster && (
@@ -2710,7 +2729,10 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
           onOlcum={setPlayerYuk}
           onOdaklan={() => {
             if (!player.aktifAyet) return
-            const { sureNo, ayetNo } = player.aktifAyet
+            const { sureNo, ayetNo, besmeleIcin } = player.aktifAyet
+            // Besmele çalıyorsa (besmeleIcin=hedef sûre) → Fatiha 1'e değil, o sûrenin başına
+            // (başlık + besmele componenti orada) git.
+            if (besmeleIcin) { sureGit(besmeleIcin); return }
             // Akış modeli: sayfaya git + âyete hizala + odak (sureGit bunu yapıyor)
             sureGit(sureNo, ayetNo)
           }}

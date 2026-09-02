@@ -1,4 +1,6 @@
+import { useState, useEffect, useRef } from 'react'
 import { useMediaQuery } from '../data/hooks/useMediaQuery'
+import { BESMELE_OKUYANLAR } from '../data/hooks/useAudioPlayer'
 
 function KucukRozet({ x, y, ac, caliniyor }) {
   const cicekIcerik = (
@@ -80,10 +82,35 @@ export default function Besmele({ theme, sureId, sureNo, ayetSayisi, player }) {
   const w = 500
   const h = 70
 
-  // Sadece bu sure için Besmele çalınıyorsa true olacak
+  // Abdussamed gibi besmeleyi ZATEN kendi okuyan kârilerde ayrı besmele öğesi yoktur;
+  // sûrenin 1. âyeti çalınırken besmele âyet başında (~ilk 1.5 sn) okunur. Bu sırada
+  // besmele componentini hareketlendirmek için kısa süreli bir bayrak yakıyoruz.
+  const [besmeleliKariVurgu, setBesmeleliKariVurgu] = useState(false)
+  const zamanlayiciRef = useRef(null)
+  const durum = player?.durum
+  const aSure = player?.aktifAyet?.sureNo
+  const aAyet = player?.aktifAyet?.ayetNo
+  const aBesmeleIcin = player?.aktifAyet?.besmeleIcin
+  const kariId = player?.kariId
+  useEffect(() => {
+    const besmeleliKari = BESMELE_OKUYANLAR.includes(kariId)
+    const buSurenin1Ayeti = aSure === sureNo && aAyet === 1 && !aBesmeleIcin
+    if (durum === "caliyor" && besmeleliKari && buSurenin1Ayeti) {
+      setBesmeleliKariVurgu(true)
+      if (zamanlayiciRef.current) clearTimeout(zamanlayiciRef.current)
+      zamanlayiciRef.current = setTimeout(() => { setBesmeleliKariVurgu(false); zamanlayiciRef.current = null }, 7000)
+    } else {
+      setBesmeleliKariVurgu(false)
+      if (zamanlayiciRef.current) { clearTimeout(zamanlayiciRef.current); zamanlayiciRef.current = null }
+    }
+    return () => { if (zamanlayiciRef.current) { clearTimeout(zamanlayiciRef.current); zamanlayiciRef.current = null } }
+  }, [durum, aSure, aAyet, aBesmeleIcin, kariId, sureNo])
+
+  // Sadece bu sure için Besmele çalınıyorsa (ayrı besmele öğesi) VEYA besmeleyi kendi okuyan
+  // kâride bu sûrenin 1. âyeti yeni başladıysa (ilk ~1.5 sn) → hareket/vurgu.
   const caliniyor =
-    player?.durum === "caliyor" &&
-    player?.aktifAyet?.besmeleIcin === sureNo
+    (player?.durum === "caliyor" && player?.aktifAyet?.besmeleIcin === sureNo) ||
+    besmeleliKariVurgu
 
   return (
     <div style={{

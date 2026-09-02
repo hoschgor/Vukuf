@@ -23,6 +23,11 @@ export const KARILAR = [
 
 const BASE_URL = "https://everyayah.com/data"
 
+// Kayıtlarında sûre başındaki besmeleyi ZATEN okuyan kâriler → ayrı besmele (Fatiha 1:1) EKLENMEZ
+export const BESMELE_OKUYANLAR = [
+  "AbdulSamad_64kbps_QuranExplorer.Com",
+]
+
 export function mp3Url(kariId, sureNo, ayetNo) {
   const s = String(sureNo).padStart(3, "0");
   const a = String(ayetNo).padStart(3, "0");
@@ -59,6 +64,15 @@ export default function useAudioPlayer() {
   const kariIdRef = useRef(kariId)
   const donguRef = useRef(false)   // kuyruk bitince başa dön (tekrar modları)
   const gecisKilidiRef = useRef(0) // çok hızlı ikinci geçişi (çift ilerleme) yok say
+  const durumRef = useRef(durum)   // "ended"/MediaSession/visibility handler'ları güncel durumu okusun
+  useEffect(() => {
+    durumRef.current = durum
+    try {
+      if ("mediaSession" in navigator)
+        navigator.mediaSession.playbackState =
+          durum === "caliyor" ? "playing" : durum === "duraklatildi" ? "paused" : "none"
+    } catch {}
+  }, [durum])
 
   // Çalma hızı (playbackRate)
   const [hiz, setHiz] = useState(() => parseFloat(localStorage.getItem("vukuf-calma-hizi") || "1") || 1)
@@ -217,8 +231,16 @@ export default function useAudioPlayer() {
 
     if ("mediaSession" in navigator) {
       try {
-        navigator.mediaSession.setActionHandler("play",  () => { const a = aktifEl(); if (a) a.play().then(() => { setDurum("caliyor"); try { navigator.mediaSession.playbackState = "playing" } catch {} }).catch(() => {}) })
-        navigator.mediaSession.setActionHandler("pause", () => { const a = aktifEl(); if (a) a.pause(); setDurum("duraklatildi"); try { navigator.mediaSession.playbackState = "paused" } catch {} })
+        navigator.mediaSession.setActionHandler("play",  () => {
+          const a = aktifEl(); if (!a) return
+          const b = bostaEl(); if (b && b !== a && !b.paused) { try { b.pause() } catch {} }   // çift ses guard
+          a.play().then(() => { setDurum("caliyor"); try { navigator.mediaSession.playbackState = "playing" } catch {} }).catch(() => {})
+        })
+        navigator.mediaSession.setActionHandler("pause", () => {
+          for (const el of elsRef.current) { if (el) { try { el.pause() } catch {} } }   // her iki tamponu da durdur
+          setDurum("duraklatildi")
+          try { navigator.mediaSession.playbackState = "paused" } catch {}
+        })
         navigator.mediaSession.setActionHandler("nexttrack",     () => sonrakiAyetCalRef.current())
         navigator.mediaSession.setActionHandler("previoustrack", () => oncekiAyetRef.current && oncekiAyetRef.current())
       } catch {}
@@ -229,6 +251,25 @@ export default function useAudioPlayer() {
     }
     // eslint-disable-next-line
   }, [])
+
+  // ── Foreground'a dönünce GERÇEK durumla senkronla ──
+  // Kilit ekranında oynatma/duraklatma yapılıp uygulama açılınca React durumu ile <audio>
+  // elemanının gerçek hali ayrışabiliyor (UI "çalıyor" der ama ses yok; ya da boştaki tampon
+  // yanlışlıkla çalıp çift ses olur). Görünür olunca tek elemana indir + durumu gerçeğe çek.
+  useEffect(() => {
+    const senkronla = () => {
+      if (document.visibilityState !== "visible") return
+      if (durumRef.current === "kapali") return
+      const a = aktifEl(); if (!a) return
+      const b = bostaEl()
+      if (b && b !== a && !b.paused) { try { b.pause() } catch {} }   // çift ses guard
+      if (durumRef.current === "caliyor" && a.paused) setDurum("duraklatildi")
+      else if (durumRef.current === "duraklatildi" && !a.paused) setDurum("caliyor")
+    }
+    document.addEventListener("visibilitychange", senkronla)
+    window.addEventListener("focus", senkronla)
+    return () => { document.removeEventListener("visibilitychange", senkronla); window.removeEventListener("focus", senkronla) }
+  }, [aktifEl, bostaEl])
 
   // Kâri değişince: çalıyorsa durdur, tamponları temizle
   useEffect(() => {
@@ -260,10 +301,6 @@ export default function useAudioPlayer() {
     _ayetOynat(liste[0].sureNo, liste[0].ayetNo, liste[0].besmeleIcin, false)
   }, [_ayetOynat, kilitAc])
 
-  const BESMELE_OKUYANLAR = [
-    "AbdulSamad_64kbps_QuranExplorer.Com",
-  ]
-
   const sureCal = useCallback((sureNo, toplamAyetSayisi, baslangicAyet = 1) => {
     kilitAc()
     donguRef.current = false
@@ -287,19 +324,28 @@ export default function useAudioPlayer() {
 
   const duraklat = useCallback(() => {
     const a = aktifEl()
-    if (!a || durum !== "caliyor") return
-    a.pause()
+    if (!a || durum === "kapali") return
+    // Her iki tamponu da durdur → arkada bir tampon çalıyor kalmasın (çift ses)
+    for (const el of elsRef.current) { if (el) { try { el.pause() } catch {} } }
     setDurum("duraklatildi")
     try { if ("mediaSession" in navigator) navigator.mediaSession.playbackState = "paused" } catch {}
   }, [durum, aktifEl])
 
   const devamEt = useCallback(() => {
     const a = aktifEl()
-    if (!a || durum !== "duraklatildi") return
+    if (!a || durum === "kapali") return
+    if (!aktifAyet) return
+    // Src bir şekilde düştüyse (arka planda iOS boşaltmış olabilir) mevcut âyeti yeniden yükle
+    const beklenen = mp3Url(kariIdRef.current, aktifAyet.sureNo, aktifAyet.ayetNo)
+    if (a.dataset.url !== beklenen || !a.src) {
+      _ayetOynat(aktifAyet.sureNo, aktifAyet.ayetNo, aktifAyet.besmeleIcin, false)
+      return
+    }
+    const b = bostaEl(); if (b && b !== a && !b.paused) { try { b.pause() } catch {} }   // çift ses guard
     a.play()
       .then(() => { setDurum("caliyor"); try { if ("mediaSession" in navigator) navigator.mediaSession.playbackState = "playing" } catch {} })
       .catch(() => setDurum("kapali"))
-  }, [durum, aktifEl])
+  }, [durum, aktifEl, bostaEl, aktifAyet, _ayetOynat])
 
   const durdur = useCallback(() => {
     for (const a of elsRef.current) { try { a.pause(); a.src = ""; a.dataset.url = "" } catch {} }

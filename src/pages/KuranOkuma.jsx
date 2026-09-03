@@ -159,20 +159,55 @@ function odakKaydirElemani(el, sureId, ayetNo, hedefEl) {
 // (sıçrama yok) ve her sayfa DOM'da (yer tutucu) olduğundan gidişler anındadır.
 // ════════════════════════════════════════════════════════════════
 const NOOP_OLCUM = () => {}
-function SayfaBlok({ minHeight, margin, gorunur0 = false, cocuk }) {
+function SayfaBlok({ minHeight, margin, gorunur0 = false, cocuk, sayfaNo, onOlcum, scrollRef }) {
   const ref = useRef(null)
   const [gorunur, setGorunur] = useState(gorunur0)
   useEffect(() => {
     if (gorunur) return
     const el = ref.current
     if (!el) return
+    // ÖNEMLİ: root = SCROLL KONTEYNERİ (varsayılan viewport DEĞİL). Kaydırma iç konteynerde
+    // olduğundan viewport-root güvenilir tetiklenmiyordu → sayfa görünüme girip boş görünüp
+    // sonra doluyordu. Konteyner-root + geniş margin → sayfa görünmeden çok önce render olur.
     const io = new IntersectionObserver(
       ([e]) => { if (e.isIntersecting) { setGorunur(true); io.disconnect() } },
-      { rootMargin: margin }
+      { root: (scrollRef && scrollRef.current) || null, rootMargin: margin }
     )
     io.observe(el)
     return () => io.disconnect()
   }, [gorunur, margin])
+
+  // İçerik görünür olunca (boyamadan ÖNCE): (a) yer tutucu (minHeight) ile gerçek yükseklik farkını,
+  // blok görünüm ÜSTÜNDEYSE scrollTop'a ekleyerek telafi et (ilk-render sıçramasını engeller);
+  // (b) gerçek yüksekliği ebeveyne bildir → kalıcılaşır → sonraki yer tutucu = gerçek (fark=0).
+  const telafiRef = useRef(false)
+  useLayoutEffect(() => {
+    if (!gorunur) return
+    const el = ref.current
+    if (!el) return
+    const yeni = el.offsetHeight
+    if (!telafiRef.current && !gorunur0) {
+      telafiRef.current = true
+      const sc = scrollRef && scrollRef.current
+      const fark = yeni - minHeight
+      if (sc && fark) {
+        const r = el.getBoundingClientRect()
+        const scr = sc.getBoundingClientRect()
+        const ustte = r.top < scr.top
+        try { console.log(`[vukuf-yuk] sayfa ${sayfaNo} render → minHeight=${minHeight} gerçek=${yeni} FARK=${fark} üstte=${ustte}`) } catch {}
+        if (ustte) sc.scrollTop += fark   // üstteki sayfa büyüdü → viewport'u sabit tut
+      }
+    }
+    if (onOlcum) onOlcum(sayfaNo, yeni)
+  }, [gorunur])
+
+  // Geç yerleşen (font/rozet) için ölçümü tazele — telafi YOK (blok görünürde olabilir, oynatmayalım)
+  useEffect(() => {
+    if (!gorunur || !onOlcum) return
+    const t = setTimeout(() => { if (ref.current) onOlcum(sayfaNo, ref.current.offsetHeight) }, 350)
+    return () => clearTimeout(t)
+  }, [gorunur, onOlcum, sayfaNo])
+
   return (
     <div ref={ref} style={{ minHeight: gorunur ? undefined : `${minHeight}px` }}>
       {gorunur ? cocuk : null}
@@ -1116,6 +1151,79 @@ const sayfayaKaydir = useCallback((sayfaNo) => { sayfayaHizala(sayfaNo, { ust: 1
 const ustPay = () => (barKonum === "ust"
   ? ((barGorunur ? barYuksekligi : 0) + (player.durum !== "kapali" ? playerBarYuksekligi : 0) + 8)
   : 16)
+
+// GERÇEK SAYFA YÜKSEKLİKLERİ — yer tutucu tahminini gerçekle değiştirir → yukarı kaydırırken
+// render olan sayfa sıçratmaz. Önbellek AYARLARA bağlı (font/boyut/aralık değişince yükseklikler
+// değişir → geçersiz). localStorage'dan (anahtar eşleşirse) hidrate; sayfa render/ön-ölçüm olunca
+// güncellenip kalıcılaşır. Arka planda TÜM sayfalar ön-ölçülür → hiç görülmemiş sayfa da sıçramaz.
+const yukAnahtari = `${isMobile ? "m" : "d"}|${yaziBoyutu}|${satirAraligi}|${harfAraligi}|${arapcaFontId}`
+const gercekYukRef = useRef(null)
+if (gercekYukRef.current === null) {
+  try {
+    const s = JSON.parse(localStorage.getItem("vukuf-kuran-sayfa-yuk") || "null")
+    gercekYukRef.current = (s && s.k === yukAnahtari && s.h) ? s.h : {}
+    try { console.log(`[vukuf-yuk] hydrate: ${Object.keys(gercekYukRef.current).length} sayfa | kayıtlı anahtar=${s && s.k} | mevcut anahtar=${yukAnahtari}`) } catch {}
+  } catch { gercekYukRef.current = {} }
+}
+const yukAnahtariRef = useRef(yukAnahtari)
+const yukKaydetTimerRef = useRef(null)
+const yukKaydet = useCallback(() => {
+  try { localStorage.setItem("vukuf-kuran-sayfa-yuk", JSON.stringify({ k: yukAnahtariRef.current, h: gercekYukRef.current })) } catch {}
+}, [])
+const sayfaYukOlcum = useCallback((sayfaNo, h) => {
+  if (!h || !sayfaNo) return
+  const onceki = gercekYukRef.current[sayfaNo]
+  const yeni = Math.round(h)
+  if (onceki && Math.abs(onceki - yeni) < 2) return   // önemsiz değişim → yazma
+  gercekYukRef.current[sayfaNo] = yeni
+  if (yukKaydetTimerRef.current) clearTimeout(yukKaydetTimerRef.current)
+  yukKaydetTimerRef.current = setTimeout(yukKaydet, 800)
+}, [yukKaydet])
+
+// Arka plan ön-ölçüm sırası (görünmez klon ile). -1 = boşta.
+const [olcIdx, setOlcIdx] = useState(-1)
+const olcumRef = useRef(null)
+
+// Ayarlar değişince önbellek geçersiz → temizle + ön-ölçümü baştan başlat
+useEffect(() => {
+  if (yukAnahtariRef.current === yukAnahtari) return
+  yukAnahtariRef.current = yukAnahtari
+  gercekYukRef.current = {}
+  try { localStorage.removeItem("vukuf-kuran-sayfa-yuk") } catch {}
+  setOlcIdx(0)
+}, [yukAnahtari])
+
+// Kapanış/sekme gizlenince önbelleği kesin kaydet (debounce beklemesin)
+useEffect(() => {
+  const kaydet = () => yukKaydet()
+  window.addEventListener("pagehide", kaydet)
+  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") kaydet() })
+  return () => { kaydet(); window.removeEventListener("pagehide", kaydet) }
+}, [yukKaydet])
+
+// Ön-ölçümü başlat (ilk yerleşmeden sonra)
+useEffect(() => {
+  if (yukleniyor || !sayfaListesi.length) return
+  const t = setTimeout(() => setOlcIdx(i => (i < 0 ? 0 : i)), 1200)
+  return () => clearTimeout(t)
+}, [yukleniyor, sayfaListesi.length])
+
+// Görünmez klonu ölç → önbelleğe al → boşta bir sonrakine geç (zaten ölçülüyse atla)
+useLayoutEffect(() => {
+  if (olcIdx < 0 || olcIdx >= sayfaListesi.length) return
+  const el = olcumRef.current
+  const sn = sayfaListesi[olcIdx] && sayfaListesi[olcIdx].sayfaNo
+  if (el && sn != null && !gercekYukRef.current[sn]) sayfaYukOlcum(sn, el.offsetHeight)
+  const ileri = () => setOlcIdx(i => {
+    if (i >= 0 && i + 1 < sayfaListesi.length) return i + 1
+    try { console.log(`[vukuf-yuk] ön-ölçüm BİTTİ: ${Object.keys(gercekYukRef.current).length} sayfa önbellekte`); yukKaydet() } catch {}
+    return -1
+  })
+  const ric = typeof window.requestIdleCallback === "function" ? window.requestIdleCallback : (cb) => setTimeout(cb, 24)
+  const cic = typeof window.cancelIdleCallback === "function" ? window.cancelIdleCallback : clearTimeout
+  const id = ric(ileri, { timeout: 200 })
+  return () => cic(id)
+}, [olcIdx])
 
 const sayfaGercekYukseklikleriRef = useRef({})   // (geri uyumluluk; artık kullanılmıyor)
 // Kayıtlı konuma ANINDA git — üst bar payını bırak, sayfa içi oranı uygula, işaret vurgusu.
@@ -2837,8 +2945,9 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
             flex: 1,
             overflowY: "auto",
             overflowX: "hidden",
-            paddingTop: barKonum === "ust" 
-              ? `${barYuksekligi + (player.durum !== "kapali" ? playerBarYuksekligi : 0) + 8}px` 
+            overflowAnchor: "none",   // doğal anchoring (iOS'ta yok/güvenilmez) yerine gerçek-yükseklik + telafi
+            paddingTop: barKonum === "ust"
+              ? `${barYuksekligi + (player.durum !== "kapali" ? playerBarYuksekligi : 0) + 8}px`
               : "16px",
             paddingBottom: barKonum === "alt" 
               ? `${barYuksekligi + (player.durum !== "kapali" ? playerBarYuksekligi : 0) + 8}px` 
@@ -2965,6 +3074,39 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
               boxSizing: "border-box",
             }}
           >
+            {/* ARKA PLAN ÖN-ÖLÇÜM KLONU — görünmez, akış-dışı (absolute), sayfa div'leriyle AYNI
+                genişlikte (left/right = yatay padding). Sıradaki sayfayı ölçüp önbelleğe alır. */}
+            {olcIdx >= 0 && olcIdx < sayfaListesi.length && (() => {
+              const s = sayfaListesi[olcIdx]
+              if (!s) return null
+              return (
+                <div ref={olcumRef} aria-hidden="true" style={{
+                  position: "absolute", top: 0, left: isMobile ? "12px" : "24px", right: isMobile ? "12px" : "24px",
+                  visibility: "hidden", pointerEvents: "none", zIndex: -1,
+                }}>
+                  <MushafSayfa
+                    sayfaNo={s.sayfaNo}
+                    elemanlar={s.elemanlar}
+                    sureler={mushafData}
+                    theme={theme}
+                    arapcaFont={aktifArapcaFont.style}
+                    yaziBoyutu={yaziBoyutu}
+                    satirAraligi={satirAraligi}
+                    harfAraligi={harfAraligi}
+                    player={player}
+                    aktifAyet={null}
+                    cuzBaslangic={sayfaCuzBaslangic[s.sayfaNo] ?? null}
+                    hizbBaslangic={sayfaHizbBaslangic[s.sayfaNo] ?? null}
+                    onKelimeTikla={NOOP_OLCUM}
+                    onAyetTikla={NOOP_OLCUM}
+                    onSureTikla={NOOP_OLCUM}
+                    sayfaKayitlari={[]}
+                    onKayitTikla={NOOP_OLCUM}
+                    onYukseklikOlcum={NOOP_OLCUM}
+                  />
+                </div>
+              )
+            })()}
             {sayfaListesi.map((sayfa, i) => (
               <div
                 key={sayfa.sayfaNo}
@@ -2973,9 +3115,12 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
                 style={{ position: "relative" }}
               >
                 <SayfaBlok
-                  minHeight={sayfaYukseklikleri[i] || (isMobile ? 500 : 700)}
-                  margin={isMobile ? "3000px 0px" : "2200px 0px"}
+                  minHeight={gercekYukRef.current[sayfa.sayfaNo] || sayfaYukseklikleri[i] || (isMobile ? 500 : 700)}
+                  margin={isMobile ? "4500px 0px" : "3500px 0px"}
                   gorunur0={i < 3}
+                  sayfaNo={sayfa.sayfaNo}
+                  onOlcum={sayfaYukOlcum}
+                  scrollRef={scrollRef}
                   cocuk={
                     <MushafSayfa
                       sayfaNo={sayfa.sayfaNo}

@@ -2,7 +2,14 @@ import { useState } from "react"
 import { useMediaQuery } from "../data/hooks/useMediaQuery"
 
 const VAKIF_CPS = new Set([0x615, 0x617, 0x06D8, 0x06D9, 0x08D6, 0x08D7, 0x08DE])
-const OZEL_CPS = new Set([0x08D1, 0x08D2, 0x08D9, 0x06DC, 0x08D5, 0x06EB])
+// HALKA İŞARETLERİ: KFGQPC bu kıraat/tecvid işaretlerini ◉ (noktalı-daire) çiziyor — fontta
+// hepsi TEK ortak "ring" glifine düşüyor (fonttools ile KFGQPC cmap'inden tespit edildi). me_quran
+// ise hepsini DOĞRU çiziyor (küçük alt/üst işaret, imâle elması vb.). Bir kelime bunlardan birini
+// içeriyor VE aktif font KFGQPC ise → kelimenin TAMAMINI me_quran ile çiz: BÖLME YOK, harf bitişmesi
+// korunur (ör. Bakara 2:245 يبصط [06E3], Hûd 11:41 مجرىها [06EA]). U+08D5 (üst küçük sad) İKİ fontta
+// da YOK → tofu olmasın diye string'den çıkarılır (Bakara يبصط sonundaki ص işareti).
+const HALKA_ISARET = new Set([0x06DF, 0x06E3, 0x06EA, 0x06EB, 0x06ED])
+const OZEL_CPS = new Set([0x08D1, 0x08D2, 0x08D9])
 const CIM_CPS = new Set([0x06DA])
 const TUM_OZEL_CPS = new Set([...VAKIF_CPS, ...OZEL_CPS, ...CIM_CPS])
 const CIM_RENK = '#f39c12'
@@ -194,6 +201,13 @@ export default function MushafKelime({
 
           if (arapcaFont.toLowerCase().includes('kufi') || arapcaFont.toLowerCase().includes('kûfi')) {
             return <span style={{ letterSpacing: 0 }}>{kelime.arabic}</span>
+          }
+
+          // HALKA işareti + KFGQPC → tüm kelimeyi me_quran ile çiz (bölme yok → bitişme korunur;
+          // KFGQPC'nin ◉ halkası yerine me_quran'ın doğru işareti). 08D5 (iki fontta da yok) çıkarılır.
+          if (isKfgqpc && [...kelime.arabic].some(c => HALKA_ISARET.has(c.codePointAt(0)))) {
+            const temiz = [...kelime.arabic].filter(c => c.codePointAt(0) !== 0x08D5).join('')
+            return <span style={{ fontFamily: "'me_quran', serif" }}>{temiz}</span>
           }
 
           const hasOzel = [...kelime.arabic].some(c => TUM_OZEL_CPS.has(c.codePointAt(0)))

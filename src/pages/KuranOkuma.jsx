@@ -159,43 +159,37 @@ function odakKaydirElemani(el, sureId, ayetNo, hedefEl) {
 // (sıçrama yok) ve her sayfa DOM'da (yer tutucu) olduğundan gidişler anındadır.
 // ════════════════════════════════════════════════════════════════
 const NOOP_OLCUM = () => {}
-function SayfaBlok({ minHeight, margin, gorunur0 = false, cocuk, scrollRef }) {
+// Sayfa bloğu: içerik iki yoldan mount edilir → (1) IntersectionObserver (yavaş/normal kaydırma),
+// (2) `zorla` — üst bileşenin SCROLL konumundan hesapladığı pencere. iOS'ta momentum (fling)
+// kaydırması sırasında IO geri-çağrıları kısılıyor → sayfa görünüme mount OLMADAN giriyordu
+// (boş kare) sonra dolup sıçrıyordu. Scroll dinleyicisi momentum'da da tetiklendiği için `zorla`
+// pencresi sayfaları görünüme GİRMEDEN ÖNCE mount eder → boş kare yok, sıçrama yok.
+function SayfaBlok({ minHeight, margin, gorunur0 = false, zorla = false, cocuk, scrollRef }) {
   const ref = useRef(null)
-  const [gorunur, setGorunur] = useState(gorunur0)
+  const [ioGor, setIoGor] = useState(gorunur0)
+  const goster = ioGor || zorla
   useEffect(() => {
-    if (gorunur) return
+    if (ioGor) return
     const el = ref.current
     if (!el) return
-    // ÖNEMLİ: root = SCROLL KONTEYNERİ (varsayılan viewport DEĞİL). Kaydırma iç konteynerde
-    // olduğundan viewport-root güvenilir tetiklenmiyordu → sayfa görünüme girip boş görünüp
-    // sonra doluyordu. Konteyner-root + geniş margin → sayfa görünmeden çok önce render olur.
+    // ÖNEMLİ: root = SCROLL KONTEYNERİ (varsayılan viewport DEĞİL). IO burada yalnız yedek
+    // tetikleyici; asıl mount `zorla` (scroll-penceresi) ile önden yapılıyor.
     const io = new IntersectionObserver(
-      ([e]) => { if (e.isIntersecting) { setGorunur(true); io.disconnect() } },
+      ([e]) => { if (e.isIntersecting) { setIoGor(true); io.disconnect() } },
       { root: (scrollRef && scrollRef.current) || null, rootMargin: margin }
     )
     io.observe(el)
     return () => io.disconnect()
-  }, [gorunur, margin])
+  }, [ioGor, margin])
 
-  // İçerik görünür olunca (boyamadan ÖNCE): yer tutucu (minHeight) ile gerçek yükseklik farkını,
-  // blok görünüm ÜSTÜNDEYSE scrollTop'a ekleyerek telafi et (ilk-render sıçramasını engeller).
-  const telafiRef = useRef(false)
-  useLayoutEffect(() => {
-    if (!gorunur || telafiRef.current || gorunur0) return
-    telafiRef.current = true
-    const el = ref.current
-    const sc = scrollRef && scrollRef.current
-    if (!el || !sc) return
-    const fark = el.offsetHeight - minHeight
-    if (!fark) return
-    const r = el.getBoundingClientRect()
-    const scr = sc.getBoundingClientRect()
-    if (r.top < scr.top) sc.scrollTop += fark   // üstteki sayfa büyüdü → viewport'u sabit tut
-  }, [gorunur])
-
+  // NOT: scrollTop TELAFİSİ KALDIRILDI. iOS'ta momentum (fling) sırasında programatik scrollTop
+  // yazımı fling'i ANINDA durduruyordu ("sıçrayıp duruyor"). Onun yerine konumu tarayıcının DOĞAL
+  // scroll-anchoring'i tutuyor (konteynerde overflowAnchor:auto) — compositor'da çalışır, momentum'u
+  // kesmez. Scroll-penceresi sayfaları önden mount ettiği için anchoring'in tutunacağı gerçek içerik
+  // hazır olur (boş kare yok).
   return (
-    <div ref={ref} style={{ minHeight: gorunur ? undefined : `${minHeight}px` }}>
-      {gorunur ? cocuk : null}
+    <div ref={ref} style={{ minHeight: goster ? undefined : `${minHeight}px` }}>
+      {goster ? cocuk : null}
     </div>
   )
 }
@@ -275,6 +269,75 @@ export default function KuranOkuma({ kitap }) {
   const hedefOranRef = useRef(_sonKonum0.oran || 0)
   const sonKonumRef = useRef({ sayfa: _sonKonum0.sayfa, oran: _sonKonum0.oran || 0 })  // anlık konum (kaydetmek için)
   const geriYuklendiRef = useRef(false)
+  // ════════════════════════════════════════════════════════════════
+  // SCROLL-PENCERESİ (mobil sıçrama çözümü)
+  // Temel kural: bir sayfa mount olunca yüksekliği tahminden GERÇEĞE atlar. Bu fark, sayfa
+  // görünümün ÜSTÜNDEYSE altındaki her şeyi kaydırır = SIÇRAMA. Safari (iOS) scroll-anchoring'i
+  // DESTEKLEMEDİĞİ için tarayıcı bunu gizleyemiyor (Chrome/Firefox gizlediğinden webde sorun yok).
+  // Çözüm, farkı telafi etmek değil, MOMENTUM SIRASINDA ÜSTTE HİÇ MOUNT ETMEMEK:
+  //  • AŞAĞI yöndeki sayfalar her zaman mount edilir → görünümü kaydırmaz, sıçrama üretmez.
+  //  • YUKARI yöndeki sayfalar YALNIZ parmak ekrandayken veya kaydırma durmuşken mount edilir;
+  //    o anda momentum yoktur, konumu ölçüm-tabanlı "yeniden sabitleme" ile birebir koruruz.
+  //  • Fling (parmak kalkmış, kayıyor) sırasında üst pencere DONDURULUR → hiç yükseklik değişmez
+  //    → hiç sıçrama olmaz. Üst tampon geniş tutulduğu için fling boyunca hazır sayfa biter değil.
+  // ════════════════════════════════════════════════════════════════
+  const PENCERE_ALT = 8      // aşağı tampon (her zaman güvenli)
+  const PENCERE_UST = 16     // yukarı tampon (güçlü bir fling ~3-8 ekran = ~8 sayfa; 16 rahat kapsar)
+  const UST_ADIM = 6         // yukarı tampon kademeli büyür (tek seferde donma olmasın)
+  const gosterSetRef = useRef(new Set())
+  const [, setGosterNonce] = useState(0)
+  const dokunuyorRef = useRef(false)      // parmak ekranda mı
+  const sonScrollAnRef = useRef(0)        // son scroll olayının zamanı
+  const durakTimerRef = useRef(null)      // kaydırma durunca üst tamponu büyüt
+  const ripinRef = useRef(null)           // {sayfaNo, top} → mount sonrası konumu geri sabitle
+  // Momentum = parmak kalkmış AMA hâlâ kayıyor. Bu anda üstte mount da, scrollTop yazımı da YASAK.
+  const momentumdaMi = () => !dokunuyorRef.current && (performance.now() - sonScrollAnRef.current) < 160
+
+  // sabitle=false → gidiş (navigasyon/açılış) sırasında konumu geri sabitleME; zaten hedefe
+  // kaydırılacak, yeniden-sabitleme o kaydırmayla çakışırdı.
+  const pencereGuncelle = useCallback((no, zorlaUst = false, sabitle = true) => {
+    if (!no) return
+    const set = gosterSetRef.current
+    let degisti = false, ustEklendi = false
+    // AŞAĞI: her zaman (görünümü kaydırmaz)
+    for (let p = no; p <= no + PENCERE_ALT; p++) {
+      if (!set.has(p)) { set.add(p); degisti = true }
+    }
+    // YUKARI: momentum sırasında ASLA (donuk pencere). Diğer hallerde kademeli büyüt.
+    if (zorlaUst || !momentumdaMi()) {
+      let hedef = Math.max(1, no - PENCERE_UST)
+      // kademeli: mevcut en küçük mount'lu sayfadan UST_ADIM kadar daha yukarı
+      let enKucuk = no
+      while (enKucuk > 1 && set.has(enKucuk - 1)) enKucuk--
+      // gidiş/açılışta (zorlaUst) tamponu TEK SEFERDE doldur; kaydırma sırasında kademeli büyüt
+      const kademe = zorlaUst ? hedef : Math.max(hedef, enKucuk - UST_ADIM)
+      for (let p = kademe; p < no; p++) {
+        if (!set.has(p)) { set.add(p); degisti = true; ustEklendi = true }
+      }
+    }
+    if (!degisti) return
+    if (ustEklendi && sabitle) {
+      // Üstte mount olacak → mevcut sayfanın konteyner içindeki konumunu ölç; mount sonrası
+      // (boyamadan önce) aynı konuma geri sabitleyeceğiz. Momentum dışında olduğu için güvenli.
+      const el = sayfaRefs.current[no]
+      const sc = scrollRef.current
+      if (el && sc) ripinRef.current = { sayfaNo: no, top: el.getBoundingClientRect().top - sc.getBoundingClientRect().top }
+    }
+    setGosterNonce(n => n + 1)   // set büyüdü → render map yeniden okusun
+  }, [])
+
+  // Mount sonrası, BOYAMADAN ÖNCE: çıpa sayfayı ölçülen eski konumuna geri sabitle.
+  // Ölçüm-tabanlı olduğu için tarayıcı kendi anchoring'ini yaptıysa fark 0 çıkar (çift telafi yok).
+  useLayoutEffect(() => {
+    const r = ripinRef.current
+    if (!r) return
+    ripinRef.current = null
+    const el = sayfaRefs.current[r.sayfaNo]
+    const sc = scrollRef.current
+    if (!el || !sc) return
+    const fark = (el.getBoundingClientRect().top - sc.getBoundingClientRect().top) - r.top
+    if (fark) sc.scrollTop += fark
+  })
   // İlk açılışta VE bir âyete/sayfaya giderken (mobilde) kaydırma "oturana" kadar
   // içeriği gizle → kullanıcı ara geçişi/mini sıçramayı görmez, doğrudan hedefte açılır.
   const [konumHazir, setKonumHazir] = useState(false)
@@ -1142,13 +1205,14 @@ const ustPay = () => (barKonum === "ust"
 
 // NOT: Arka plan ön-ölçüm + kalıcı yükseklik önbelleği KALDIRILDI — font değiştirilince tüm
 // önbelleği geçersiz kılıp 604 sayfayı yeniden ölçüyor, bu da içeriği sürekli kaydırıyordu.
-// Yukarı-kaydırma sıçraması asıl olarak IntersectionObserver root'unun scroll konteynerine
-// alınmasıyla çözüldü; SayfaBlok'taki ilk-render telafisi kalan farkı kapatıyor. Yer-tutucu
-// tahmini (sayfaYukseklikleri) ne kadar doğruysa telafi o kadar küçük → sıçrama o kadar az.
+// Yukarı-kaydırma: (1) mount SCROLL-PENCERESİNDEN sürülür (momentum'da IO kısıldığından boş kare
+// olmasın), (2) konumu tarayıcının DOĞAL scroll-anchoring'i tutar (overflowAnchor:auto) — manuel
+// scrollTop telafisi KALDIRILDI çünkü iOS'ta fling'i durduruyordu ("sıçrayıp duruyor").
 
 const sayfaGercekYukseklikleriRef = useRef({})   // (geri uyumluluk; artık kullanılmıyor)
 // Kayıtlı konuma ANINDA git — üst bar payını bırak, sayfa içi oranı uygula, işaret vurgusu.
 const kayitSayfaGit = useCallback((sayfa, scrollY, kayitId) => {
+  pencereGuncelle(sayfa, true, false)   // gidiş: üst tamponu hazırla, konumu sabitleme
   const ust = ustPay() + (isMobile ? 6 : 4)
   let tries = 0
   const git = () => {
@@ -1167,6 +1231,7 @@ const kayitSayfaGit = useCallback((sayfa, scrollY, kayitId) => {
 useEffect(() => {
   const el = scrollRef.current
   if (!el || !sayfaListesi.length) return
+  pencereGuncelle(hedefSayfaRef.current || mevcutSayfa, true, false)   // açılış: üst tamponu önden hazırla
   let raf = 0
   const sayfaGuncelle = () => {
     raf = 0
@@ -1186,6 +1251,7 @@ useEffect(() => {
     const no = node ? s.sayfaNo : null
     if (no != null && node) {
       setMevcutSayfa(no)
+      pencereGuncelle(no)   // üst+alt sayfaları önden mount et (momentum'da boş kare/sıçrama olmasın)
       const r = node.getBoundingClientRect()
       const oran = Math.max(0, Math.min(1, (scTop - r.top) / (node.offsetHeight || 1)))
       sonKonumRef.current = { sayfa: no, oran }
@@ -1196,9 +1262,27 @@ useEffect(() => {
       }
     }
   }
-  const onScroll = () => { if (!raf) raf = requestAnimationFrame(sayfaGuncelle) }
+  const onScroll = () => {
+    sonScrollAnRef.current = performance.now()   // momentum tespiti için
+    if (!raf) raf = requestAnimationFrame(sayfaGuncelle)
+    // Kaydırma DURUNCA (momentum bitince) üst tamponu kademeli büyüt — o an scrollTop yazımı
+    // güvenli, çünkü kesilecek bir momentum yok. Fling boyunca üst pencere donuk kalır.
+    if (durakTimerRef.current) clearTimeout(durakTimerRef.current)
+    durakTimerRef.current = setTimeout(function buyut() {
+      if (momentumdaMi()) return
+      const oncekiBoyut = gosterSetRef.current.size
+      pencereGuncelle(sonKonumRef.current?.sayfa || 1, false, true)   // kademeli + konumu sabitle
+      // hedef tampona ulaşana dek kademeli devam et
+      if (gosterSetRef.current.size !== oncekiBoyut) {
+        durakTimerRef.current = setTimeout(buyut, 120)
+      }
+    }, 220)
+  }
   el.addEventListener('scroll', onScroll, { passive: true })
-  return () => el.removeEventListener('scroll', onScroll)
+  return () => {
+    el.removeEventListener('scroll', onScroll)
+    if (durakTimerRef.current) clearTimeout(durakTimerRef.current)
+  }
 }, [sayfaListesi])
 
 // Sayfadan çıkarken / gizlenince anlık konumu (mid-page) kesin kaydet
@@ -1227,7 +1311,7 @@ useEffect(() => {
 function sayfayaGit(no) {
   const n = parseInt(no)
   if (n < 1 || n > toplamSayfa) return
-  setMevcutSayfa(n); setAyetArama({}); setPopup(null)
+  setMevcutSayfa(n); pencereGuncelle(n, true, false); setAyetArama({}); setPopup(null)
   const ust = ustPay()
   let tries = 0
   const git = () => { sayfayaHizala(n, { ust }); if (++tries < 6) setTimeout(git, 60) }
@@ -1243,6 +1327,7 @@ function sureGit(sureId, ayetNo) {
   if (!sayfa) return
 
   setMevcutSayfa(sayfa)
+  pencereGuncelle(sayfa, true, false)
   setMenuAcik(false); setMenuArama(""); setAcikSure(null); setAyetArama({}); setPopup(null); setAcikCuz(null)
 
   const offset = ustPay() + (ayetNo ? 6 : 8)
@@ -2866,7 +2951,9 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
             flex: 1,
             overflowY: "auto",
             overflowX: "hidden",
-            overflowAnchor: "none",   // doğal anchoring (iOS'ta yok/güvenilmez) yerine gerçek-yükseklik + telafi
+            overflowAnchor: "auto",   // DOĞAL scroll-anchoring AÇIK: üst sayfa mount olup büyüyünce
+                                      // tarayıcı görünen konumu compositor'da tutar (momentum'u kesmez).
+                                      // Manuel scrollTop telafisi kaldırıldı (fling'i durduruyordu).
             paddingTop: barKonum === "ust"
               ? `${barYuksekligi + (player.durum !== "kapali" ? playerBarYuksekligi : 0) + 8}px`
               : "16px",
@@ -2908,7 +2995,8 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
           }}
           onTouchStart={(e) => {
             dokunusBasladi()
-            
+            dokunuyorRef.current = true   // parmak ekranda → üst pencere büyütmek GÜVENLİ (momentum yok)
+
             // Touch başlangıç pozisyonunu kaydet
             const touch = e.touches[0]
             if (touch) {
@@ -2941,7 +3029,8 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
           }}
           onTouchEnd={(e) => {
             dokunusBitti()
-            if (barKilitli) return 
+            dokunuyorRef.current = false   // parmak kalktı → bundan sonrası MOMENTUM: üstte mount YOK
+            if (barKilitli) return
             // Eğer popup veya panel açık ise işlemi engelle
             if (popup || aaAcik || temaAcik || ozelTemaPanelAcik || menuAcikRef.current) {
               return
@@ -2958,6 +3047,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
             // Tıklama ise bar'ı toggle et
             barToggle()
           }}
+          onTouchCancel={() => { dokunuyorRef.current = false }}
           onScroll={() => {
             // Scroll'un bar'ı etkilemesini engelle
           }}
@@ -3006,6 +3096,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
                   minHeight={sayfaYukseklikleri[i] || (isMobile ? 500 : 700)}
                   margin={isMobile ? "4500px 0px" : "3500px 0px"}
                   gorunur0={i < 3}
+                  zorla={gosterSetRef.current.has(sayfa.sayfaNo)}
                   scrollRef={scrollRef}
                   cocuk={
                     <MushafSayfa

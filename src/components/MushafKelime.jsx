@@ -2,13 +2,27 @@ import { useState } from "react"
 import { useMediaQuery } from "../data/hooks/useMediaQuery"
 
 const VAKIF_CPS = new Set([0x615, 0x617, 0x06D8, 0x06D9, 0x08D6, 0x08D7, 0x08DE])
-// HALKA İŞARETLERİ: KFGQPC bu kıraat/tecvid işaretlerini ◉ (noktalı-daire) çiziyor — fontta
-// hepsi TEK ortak "ring" glifine düşüyor (fonttools ile KFGQPC cmap'inden tespit edildi). me_quran
-// ise hepsini DOĞRU çiziyor (küçük alt/üst işaret, imâle elması vb.). Bir kelime bunlardan birini
-// içeriyor VE aktif font KFGQPC ise → kelimenin TAMAMINI me_quran ile çiz: BÖLME YOK, harf bitişmesi
-// korunur (ör. Bakara 2:245 يبصط [06E3], Hûd 11:41 مجرىها [06EA]). U+08D5 (üst küçük sad) İKİ fontta
-// da YOK → tofu olmasın diye string'den çıkarılır (Bakara يبصط sonundaki ص işareti).
-const HALKA_ISARET = new Set([0x06DF, 0x06E3, 0x06EA, 0x06EB, 0x06ED])
+// ── TECVİD / KIRAAT İŞARETLERİ (font-bağımsız, kendi çizimimiz) ────────────────────────────
+// KFGQPC bu işaretlerin HEPSİNİ tek bir bozuk ◉ (noktalı-daire) glifine düşürüyor (fonttools ile
+// KFGQPC cmap'inden tespit edildi). Başka fonta (me_quran) düşmek kelimenin görüntüsünü bozuyor.
+// ÇÖZÜM: işareti string'den ÇIKAR (kelime TEK span'de, aktif fontta, bitişmesi bozulmadan kalır) ve
+// kuralı belirten KÜÇÜK RENKLİ SİMGEYİ mutlak-konumlu overlay olarak çiz. Overlay akışa girmediği
+// için ne satır kırılımını ne de sayfa yüksekliğini etkiler.
+// Simgeler mushaf geleneğindeki kısa gösterimlerdir (alt/üst küçük harf, imâle elması, işmâm halkası).
+const TECVID_ISARET = {
+  // Bakara 2:245 يبصط — kıraat farkı: sîn ile de okunur (altta küçük س), sâd ile de (üstte küçük ص)
+  0x06E3: { sembol: 'س', yer: 'alt', renk: '#c0392b', ad: 'Kıraat farkı: sîn ile okunuş' },
+  0x08D5: { sembol: 'ص', yer: 'ust', renk: '#c0392b', ad: 'Kıraat farkı: sâd ile okunuş' },
+  // Hûd 11:41 مجرىها — Hafs'ta tek imâle yeri. Mushaf işareti: harfin altında küçük elmas (معين).
+  0x06EA: { sembol: '◆', yer: 'alt', renk: '#8e44ad', ad: 'İmâle' },
+  // Yûsuf 12:11 تأمنا — işmâm. Mushaf işareti: üstte küçük halka.
+  0x06EB: { sembol: '○', yer: 'ust', renk: '#16a085', ad: 'İşmâm' },
+  // Hûd 11:42 اركب معنا — idgâm-ı mütecâniseyn (bâ, mîm'e idgâm olur): altta küçük م
+  0x06ED: { sembol: 'م', yer: 'alt', renk: '#2980b9', ad: 'İdgâm-ı mütecâniseyn' },
+  // Vasl hâlinde okunmayan harf: üstte küçük halka-sıfır
+  0x06DF: { sembol: '٥', yer: 'ust', renk: '#7f8c8d', ad: 'Vasılda okunmaz' },
+}
+const TECVID_CPS = new Set(Object.keys(TECVID_ISARET).map(Number))
 const OZEL_CPS = new Set([0x08D1, 0x08D2, 0x08D9])
 const CIM_CPS = new Set([0x06DA])
 const TUM_OZEL_CPS = new Set([...VAKIF_CPS, ...OZEL_CPS, ...CIM_CPS])
@@ -95,6 +109,19 @@ export default function MushafKelime({
   const besmelekontrol = besmeleMi(kelime.id)
   const hasUpperIndicator = kelime.vakif || kelime.secde
   const vakifRengi = kelime.vakif ? vakifRengiAl(kelime.vakif) : null
+  // Kelimedeki tecvid/kıraat işaretleri: string'den çıkarılır, simge olarak overlay çizilir.
+  const tecvidler = []
+  let temizArabic = kelime.arabic
+  if ([...kelime.arabic].some(c => TECVID_CPS.has(c.codePointAt(0)))) {
+    const kalan = []
+    for (const c of kelime.arabic) {
+      const cp = c.codePointAt(0)
+      const t = TECVID_ISARET[cp]
+      if (t) { if (!tecvidler.some(x => x.sembol === t.sembol && x.yer === t.yer)) tecvidler.push(t) }
+      else kalan.push(c)
+    }
+    temizArabic = kalan.join('')
+  }
   const efektifLineHeight = arapcaFont.toLowerCase().includes('me_quran') || arapcaFont.toLowerCase().includes('mequran')
   
   ? Math.max(lineHeight, 5.2)
@@ -183,6 +210,34 @@ export default function MushafKelime({
         </span>
       )}
 
+      {/* Tecvid / kıraat kuralı simgeleri — MUTLAK konumlu (akışa girmez: satır kırılımını ve
+          sayfa yüksekliğini etkilemez). Kelimenin altına/üstüne ortalı, küçük ve renkli. */}
+      {tecvidler.map((t, ti) => (
+        <span
+          key={`tv-${ti}`}
+          title={t.ad}
+          style={{
+            position: "absolute",
+            left: "50%",
+            // Kutu yüksekliği satır aralığına göre değiştiğinden ÜST/ALT kenara değil, kutunun
+            // DİKEY MERKEZİNE (harflerin bulunduğu yer) göre konumlandırılır → satır aralığı
+            // ayarı değişse de simge kelimeye aynı uzaklıkta kalır.
+            top: "50%",
+            transform: `translate(-50%, -50%) translateY(${t.yer === "ust" ? "-" : ""}${yaziBoyutu * (t.yer === "ust" ? 0.74 : 0.62)}px)`,
+            fontSize: `${yaziBoyutu * 0.34}px`,
+            lineHeight: 1,
+            color: t.renk,
+            fontFamily: "'Scheherazade New', serif",
+            fontWeight: 700,
+            pointerEvents: "none",
+            whiteSpace: "nowrap",
+            zIndex: 3,
+          }}
+        >
+          {t.sembol}
+        </span>
+      ))}
+
       {/* Arapça metin */}
       <span
         style={{
@@ -200,23 +255,18 @@ export default function MushafKelime({
           const isKfgqpc = arapcaFont.toLowerCase().includes('kfgqpc')
 
           if (arapcaFont.toLowerCase().includes('kufi') || arapcaFont.toLowerCase().includes('kûfi')) {
-            return <span style={{ letterSpacing: 0 }}>{kelime.arabic}</span>
+            return <span style={{ letterSpacing: 0 }}>{temizArabic}</span>
           }
 
-          // HALKA işareti + KFGQPC → tüm kelimeyi me_quran ile çiz (bölme yok → bitişme korunur;
-          // KFGQPC'nin ◉ halkası yerine me_quran'ın doğru işareti). 08D5 (iki fontta da yok) çıkarılır.
-          if (isKfgqpc && [...kelime.arabic].some(c => HALKA_ISARET.has(c.codePointAt(0)))) {
-            const temiz = [...kelime.arabic].filter(c => c.codePointAt(0) !== 0x08D5).join('')
-            return <span style={{ fontFamily: "'me_quran', serif" }}>{temiz}</span>
-          }
-
-          const hasOzel = [...kelime.arabic].some(c => TUM_OZEL_CPS.has(c.codePointAt(0)))
+          // NOT: tecvid işaretleri temizArabic'te YOK (yukarıda çıkarıldı) → kelime tek parça,
+          // aktif fontta, bitişmesi bozulmadan çizilir; kural simgesi aşağıda overlay olarak gelir.
+          const hasOzel = [...temizArabic].some(c => TUM_OZEL_CPS.has(c.codePointAt(0)))
 
           if (!hasOzel) {
-            return <span>{kelime.arabic}</span>
+            return <span>{temizArabic}</span>
           }
 
-          const chars = [...kelime.arabic]
+          const chars = [...temizArabic]
           const spans = []
           let normalBuf = ''
           let atla = false

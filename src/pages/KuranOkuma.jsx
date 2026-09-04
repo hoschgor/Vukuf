@@ -20,12 +20,16 @@ import AyetPopup from "../components/AyetPopup"
 import { useMushaf, sureBaslangicSayfasi, ayetSayfasi } from "../data/hooks/useMushaf"
 import useAudioPlayer, { BESMELE_OKUYANLAR } from "../data/hooks/useAudioPlayer"
 import { useMediaQuery } from "../data/hooks/useMediaQuery"
+import { flushSync } from "react-dom"
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, TouchSensor, useSensor, useSensors } from "@dnd-kit/core"
+import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable"
+import { CSS } from "@dnd-kit/utilities"
 import {
   ArrowLeft, Search, X, ChevronRight, ChevronDown, Menu,
   Play, Pause, Plus, Minus, Type, Palette,
   Settings, Circle, Clock, ChevronsUp, ChevronsDown,
   Pencil, ChevronLeft, Bookmark, BookOpen, Feather,
-  Layers, Check, Shuffle, Mic, Repeat,
+  Layers, Check, Shuffle, Mic, Repeat, Gem, UnfoldHorizontal, GripVertical, RotateCcw, Save, AlignLeft, AlignRight,
 } from "lucide-react"
 
 // ── Arapça font listesi
@@ -122,7 +126,124 @@ const SADE_OGELERI = [
   { key: "tema",        label: "Tema Paneli" },
   { key: "okumaZamani", label: "Okuma Zamanı" },
   { key: "sureBilgisi", label: "Sûre Bilgisi" },
-  { key: "cuzBilgisi",  label: "Cüz / Hizb Bilgisi" },
+  { key: "cuzBilgisi",  label: "Cüz Bilgisi" },
+  { key: "hizbBilgisi", label: "Hizb Bilgisi" },
+  { key: "bilgi",       label: "Bilgi (İşaretler)" },
+]
+
+// Alt bardaki SIRALANABİLİR butonlar (varsayılan sıra). Geri tuşu ve sağdaki
+// sade/tema/ayarlar kümesi sabittir.
+const SIRALANABILIR = [
+  { key: "geri",        label: "Geri",               Ikon: ArrowLeft, taraf: "sol" },
+  { key: "sureMenu",    label: "Sûre Menüsü",        Ikon: Menu,      taraf: "sol" },
+  { key: "kayit",       label: "Kayıt",              Ikon: Bookmark,  taraf: "sol" },
+  { key: "sayfaGit",    label: "Sayfaya Gitme",      Ikon: BookOpen,  taraf: "sol" },
+  { key: "tekrar",      label: "Tekrar (Döngü)",     Ikon: Repeat,    taraf: "sol" },
+  { key: "bilgi",       label: "Bilgi (İşaretler)",  Ikon: Gem,  taraf: "sol" },
+  { key: "yaziTipi",    label: "Yazı Tipi",          Ikon: Feather,   taraf: "sol" },
+  { key: "otoOynat",    label: "Otomatik Kaydırma",  Ikon: Play,      taraf: "sol" },
+  { key: "sadeMod",     label: "Sade Mod",           Ikon: Circle,    taraf: "sag" },
+  { key: "tema",        label: "Tema Paneli",        Ikon: Palette,   taraf: "sag" },
+  { key: "ayarlar",     label: "Ayarlar",            Ikon: Settings,  taraf: "sag" },
+  { key: "okumaZamani", label: "Okuma Zamanı",       Ikon: Clock,     taraf: "sag" },
+  { key: "sureBilgisi", label: "Sûre Bilgisi",       Ikon: Layers,    taraf: "sag" },
+  { key: "cuzHizb",     label: "Cüz / Hizb Bilgisi", Ikon: BookOpen,  taraf: "sag" },
+]
+const VARSAYILAN_SIRA = SIRALANABILIR.map(o => o.key)
+const SIRA_BILGI = Object.fromEntries(SIRALANABILIR.map(o => [o.key, o]))
+const VARSAYILAN_TARAF = Object.fromEntries(SIRALANABILIR.map(o => [o.key, o.taraf]))
+
+// Sürüklenebilir sıra satırı — ana menüdeki (Kütüphane) davranışın aynısı: 6 noktalı
+// tutamaktan sürüklenir. Sağda öğenin SOLA mı SAĞA mı yaslanacağı seçilir.
+function SiraSatiri({ k, taraf, onTaraf, theme, isMobile }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: k })
+  const o = SIRA_BILGI[k]
+  if (!o) return null
+  const Ikon = o.Ikon
+  const yasBtn = (deger, Simge) => (
+    <button
+      onClick={(e) => { e.stopPropagation(); onTaraf(k, deger) }}
+      title={deger === "sol" ? "Sola yasla" : "Sağa yasla"}
+      style={{
+        display: "flex", alignItems: "center", padding: "4px",
+        borderRadius: "5px", cursor: "pointer",
+        border: `1px solid ${taraf === deger ? theme.accent : theme.border}`,
+        background: taraf === deger ? `${theme.accent}1e` : "transparent",
+        color: taraf === deger ? theme.accent : theme.textSecondary,
+      }}
+    ><Simge size={12} /></button>
+  )
+  return (
+    <div
+      ref={setNodeRef}
+      style={{
+        transform: CSS.Transform.toString(transform), transition,
+        display: "flex", alignItems: "center", gap: "8px",
+        padding: "7px 8px", borderRadius: "8px",
+        background: theme.background,
+        border: `1px solid ${isDragging ? theme.accent : theme.border}`,
+        boxShadow: isDragging ? "0 6px 18px rgba(0,0,0,0.25)" : "none",
+        marginBottom: "5px", position: "relative", zIndex: isDragging ? 5 : 1,
+      }}
+    >
+      <span
+        {...attributes}
+        {...listeners}
+        style={{ cursor: "grab", touchAction: "none", color: theme.textSecondary, display: "flex", flexShrink: 0 }}
+      >
+        <GripVertical size={16} />
+      </span>
+      <Ikon size={15} color={theme.accent} style={{ flexShrink: 0 }} />
+      <span style={{
+        flex: 1, minWidth: 0, color: theme.text,
+        fontSize: isMobile ? "12px" : "13px",
+        overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+      }}>{o.label}</span>
+      <span style={{ display: "flex", gap: "3px", flexShrink: 0 }}>
+        {yasBtn("sol", AlignLeft)}
+        {yasBtn("sag", AlignRight)}
+      </span>
+    </div>
+  )
+}
+
+// ── BİLGİ PANELİ İÇERİĞİ ──────────────────────────────────────────────────────
+// Renkler MushafKelime'deki çizim renkleriyle BİREBİR aynı tutulmalı (VAKIF_RENKLERI / TECVID_ISARET).
+const BILGI_BOLUMLERI = [
+  {
+    baslik: "Sayfa İşaretleri",
+    satirlar: [
+      { secde: true, renk: "#2e7d4f", ad: "Secde âyeti",     aciklama: "Okununca tilâvet secdesi gerekir. Sayfa kenarında bu rozetle gösterilir.", ornek: "A'râf 206" },
+      { cuz: true,   renk: "#b8860b", ad: "Cüz başlangıcı",  aciklama: "Cüz başlangıcında, cüz numarasını gösterir." },
+    ],
+  },
+  {
+    baslik: "Vakıf (Durak) İşaretleri",
+    satirlar: [
+      { sembol: "م",  renk: "#e74c3c", ad: "Vakf-ı lâzım",      aciklama: "Durmak gerekir; geçilirse mânâ bozulur." },
+      { sembol: "ط",  renk: "#e67e22", ad: "Vakf-ı mutlak",     aciklama: "Durmak evlâdır." },
+      { sembol: "ج",  renk: "#f39c12", ad: "Vakf-ı câiz",       aciklama: "Durmak da geçmek de câizdir." },
+      { sembol: "ص",  renk: "#2ecc71", ad: "Vakf-ı murahhas",   aciklama: "Nefes yetmezse durulur; geçmek evlâdır." },
+      { sembol: "ق",  renk: "#3498db", ad: "Kîle aleyhi'l-vakf", aciklama: "Durulur denmiştir; geçmek evlâdır." },
+      { sembol: "لا", renk: "#e67e22", ad: "Lâ vakfe",          aciklama: "Burada durulmaz; âyet sonu değilse geçilir." },
+      { sembol: "مع", renk: "#9b59b6", ad: "Muânaka (sarmaşık)", aciklama: "Yan yana iki noktadan YALNIZ birinde durulur." },
+      { sembol: "س",  renk: "#1abc9c", ad: "Sekte",             aciklama: "Nefes almadan kısa bir duruş yapılır." },
+    ],
+  },
+  {
+    baslik: "Tecvid / Kıraat İşaretleri",
+    satirlar: [
+      { sembol: "س",  renk: "#c0392b", ad: "Kıraat farkı: sîn",  aciklama: "Harfin ALTINDA. Sîn ile de okunabileceğini gösterir.", ornek: "Bakara 245" },
+      { sembol: "ص",  renk: "#c0392b", ad: "Kıraat farkı: sâd",  aciklama: "Harfin ÜSTÜNDE. Sâd ile de okunabileceğini gösterir.", ornek: "Bakara 245" },
+      { sembol: "◆",  renk: "#8e44ad", ad: "İmâle",              aciklama: "Elifi \"e\"ye meylettirerek okumak.", ornek: "Hûd 41" },
+      { sembol: "○",  renk: "#16a085", ad: "İşmâm",              aciklama: "Ötreyi dudak yumarak sessizce göstermek.", ornek: "Yûsuf 11" },
+      { sembol: "م",  renk: "#2980b9", ad: "İdgâm-ı mütecâniseyn", aciklama: "Mahreçleri bir, sıfatları ayrı iki harfin birleşmesi.", ornek: "Hûd 42" },
+      { sembol: "ن",  renk: "#c0392b", ad: "Küçük nûn (sıla)",   aciklama: "Vasıl hâlinde okunan ince nûn.", ornek: "Hûd 42" },
+      { sembol: "٥",  renk: "#7f8c8d", ad: "Vasılda okunmaz",    aciklama: "Geçerek okunduğunda bu harf okunmaz." },
+      { sembol: "مد", renk: "#c0392b", ad: "Medd",               aciklama: "Uzatarak okuma işareti." },
+      { sembol: "قصر", renk: "#c0392b", ad: "Kasr",              aciklama: "Uzatmadan, kısa okuma işareti." },
+    ],
+  },
 ]
 
 // Ayete odaklanırken kaydırma çıpası:
@@ -281,63 +402,83 @@ export default function KuranOkuma({ kitap }) {
   //  • Fling (parmak kalkmış, kayıyor) sırasında üst pencere DONDURULUR → hiç yükseklik değişmez
   //    → hiç sıçrama olmaz. Üst tampon geniş tutulduğu için fling boyunca hazır sayfa biter değil.
   // ════════════════════════════════════════════════════════════════
-  const PENCERE_ALT = 8      // aşağı tampon (her zaman güvenli)
-  const PENCERE_UST = 16     // yukarı tampon (güçlü bir fling ~3-8 ekran = ~8 sayfa; 16 rahat kapsar)
-  const UST_ADIM = 6         // yukarı tampon kademeli büyür (tek seferde donma olmasın)
+  const PENCERE_ALT = 12     // aşağı tampon (her zaman güvenli, sıçrama üretmez)
+  const PENCERE_UST = 30     // yukarı tampon: fling ne kadar uzun olsa da hazır sayfa bitmesin
+  const UST_ADIM = 8         // yukarı tampon kademeli büyür (tek seferde donma olmasın)
   const gosterSetRef = useRef(new Set())
   const [, setGosterNonce] = useState(0)
   const dokunuyorRef = useRef(false)      // parmak ekranda mı
   const sonScrollAnRef = useRef(0)        // son scroll olayının zamanı
+  const sonScrollTopRef = useRef(-1)      // "gerçekten durdu mu" kontrolü
   const durakTimerRef = useRef(null)      // kaydırma durunca üst tamponu büyüt
-  const ripinRef = useRef(null)           // {sayfaNo, top} → mount sonrası konumu geri sabitle
-  // Momentum = parmak kalkmış AMA hâlâ kayıyor. Bu anda üstte mount da, scrollTop yazımı da YASAK.
-  const momentumdaMi = () => !dokunuyorRef.current && (performance.now() - sonScrollAnRef.current) < 160
+  const oturtRef = useRef(null)           // geç oturan yükseklikleri yutan kısa "sabit tut" döngüsü
 
-  // sabitle=false → gidiş (navigasyon/açılış) sırasında konumu geri sabitleME; zaten hedefe
-  // kaydırılacak, yeniden-sabitleme o kaydırmayla çakışırdı.
-  const pencereGuncelle = useCallback((no, zorlaUst = false, sabitle = true) => {
+  // AŞAĞI pencere: görünümün ALTINA sayfa eklemek görüneni kaydırmaz → telafi GEREKTİRMEZ.
+  // Kaydırma dinleyicisinden (momentum dâhil) serbestçe çağrılabilir.
+  const altPencere = useCallback((no) => {
     if (!no) return
     const set = gosterSetRef.current
-    let degisti = false, ustEklendi = false
-    // AŞAĞI: her zaman (görünümü kaydırmaz)
+    let degisti = false
     for (let p = no; p <= no + PENCERE_ALT; p++) {
       if (!set.has(p)) { set.add(p); degisti = true }
     }
-    // YUKARI: momentum sırasında ASLA (donuk pencere). Diğer hallerde kademeli büyüt.
-    if (zorlaUst || !momentumdaMi()) {
-      let hedef = Math.max(1, no - PENCERE_UST)
-      // kademeli: mevcut en küçük mount'lu sayfadan UST_ADIM kadar daha yukarı
-      let enKucuk = no
-      while (enKucuk > 1 && set.has(enKucuk - 1)) enKucuk--
-      // gidiş/açılışta (zorlaUst) tamponu TEK SEFERDE doldur; kaydırma sırasında kademeli büyüt
-      const kademe = zorlaUst ? hedef : Math.max(hedef, enKucuk - UST_ADIM)
-      for (let p = kademe; p < no; p++) {
-        if (!set.has(p)) { set.add(p); degisti = true; ustEklendi = true }
-      }
-    }
-    if (!degisti) return
-    if (ustEklendi && sabitle) {
-      // Üstte mount olacak → mevcut sayfanın konteyner içindeki konumunu ölç; mount sonrası
-      // (boyamadan önce) aynı konuma geri sabitleyeceğiz. Momentum dışında olduğu için güvenli.
-      const el = sayfaRefs.current[no]
-      const sc = scrollRef.current
-      if (el && sc) ripinRef.current = { sayfaNo: no, top: el.getBoundingClientRect().top - sc.getBoundingClientRect().top }
-    }
-    setGosterNonce(n => n + 1)   // set büyüdü → render map yeniden okusun
+    if (degisti) setGosterNonce(n => n + 1)
   }, [])
 
-  // Mount sonrası, BOYAMADAN ÖNCE: çıpa sayfayı ölçülen eski konumuna geri sabitle.
-  // Ölçüm-tabanlı olduğu için tarayıcı kendi anchoring'ini yaptıysa fark 0 çıkar (çift telafi yok).
-  useLayoutEffect(() => {
-    const r = ripinRef.current
-    if (!r) return
-    ripinRef.current = null
-    const el = sayfaRefs.current[r.sayfaNo]
+  // Gidiş/açılış: hedefin iki yanını da doldur. Sonrasında zaten hedefe kaydırılacağı için
+  // konum düzeltmesi YAPILMAZ (düzeltme o kaydırmayla çakışırdı).
+  const pencereHazirla = useCallback((no) => {
+    if (!no) return
+    const set = gosterSetRef.current
+    let degisti = false
+    for (let p = Math.max(1, no - PENCERE_UST); p <= no + PENCERE_ALT; p++) {
+      if (!set.has(p)) { set.add(p); degisti = true }
+    }
+    if (degisti) setGosterNonce(n => n + 1)
+  }, [])
+
+  // YUKARI pencere — YALNIZ kaydırma TAMAMEN durmuşken çağrılır.
+  // Üste sayfa eklemek görüneni kaydırır, bunu telafi etmek gerekir. KRİTİK: ölçüm ile DOM
+  // mutasyonu AYNI SENKRON BLOKTA olmalı. Önceki sürümde ölçüm zamanlayıcıda, mutasyon sonraki
+  // render'da yapılıyordu; arada kaydırma bir tık ilerlediği için telafi "büyümeyi" değil ESKİ
+  // KAYDIRMA KONUMUNU geri yüklüyor ve dururken geriye sıçratıyordu (videoda +36/+38 px).
+  // flushSync ile mutasyon senkron yapılır → araya kaydırma giremez → telafi birebir doğru.
+  const ustPencereBuyut = useCallback(() => {
     const sc = scrollRef.current
-    if (!el || !sc) return
-    const fark = (el.getBoundingClientRect().top - sc.getBoundingClientRect().top) - r.top
-    if (fark) sc.scrollTop += fark
-  })
+    if (!sc || dokunuyorRef.current) return
+    const no = sonKonumRef.current?.sayfa
+    const cipa = no && sayfaRefs.current[no]
+    if (!no || !cipa) return
+    const set = gosterSetRef.current
+    let enKucuk = no
+    while (enKucuk > 1 && set.has(enKucuk - 1)) enKucuk--
+    const kademe = Math.max(Math.max(1, no - PENCERE_UST), enKucuk - UST_ADIM)
+    if (kademe >= enKucuk) return                    // büyüyecek yer yok
+    let eklendi = false
+    for (let p = kademe; p < enKucuk; p++) { if (!set.has(p)) { set.add(p); eklendi = true } }
+    if (!eklendi) return
+
+    const oncekiTop = cipa.getBoundingClientRect().top - sc.getBoundingClientRect().top
+    flushSync(() => setGosterNonce(n => n + 1))      // DOM'u SENKRON güncelle
+    const sonrakiTop = cipa.getBoundingClientRect().top - sc.getBoundingClientRect().top
+    const fark = sonrakiTop - oncekiTop
+    if (fark) sc.scrollTop += fark                   // büyümeyi birebir telafi et (görünmez)
+
+    // Geç oturan yükseklikler (font/ölçüm) için kısa süre çıpayı sabit tut; kullanıcı
+    // dokunursa DERHAL bırak (kimseyle güreşmeyelim).
+    if (oturtRef.current) cancelAnimationFrame(oturtRef.current)
+    const bitis = performance.now() + 400
+    const tut = () => {
+      oturtRef.current = null
+      if (dokunuyorRef.current) return
+      const s2 = scrollRef.current, c2 = sayfaRefs.current[no]
+      if (!s2 || !c2) return
+      const d = (c2.getBoundingClientRect().top - s2.getBoundingClientRect().top) - oncekiTop
+      if (Math.abs(d) > 0.5) s2.scrollTop += d
+      if (performance.now() < bitis) oturtRef.current = requestAnimationFrame(tut)
+    }
+    oturtRef.current = requestAnimationFrame(tut)
+  }, [])
   // İlk açılışta VE bir âyete/sayfaya giderken (mobilde) kaydırma "oturana" kadar
   // içeriği gizle → kullanıcı ara geçişi/mini sıçramayı görmez, doğrudan hedefte açılır.
   const [konumHazir, setKonumHazir] = useState(false)
@@ -377,6 +518,10 @@ export default function KuranOkuma({ kitap }) {
   const [satirAraligi, setSatirAraligi] = useState(() =>
     parseFloat(localStorage.getItem("vukuf-satir-araligi") || "2.4")
   )
+  // TAM GENİŞLİK: sayfa metnini ekran boyunca yayar, kenar boşluğu bırakmaz (web + mobil;
+  // yüksek çözünürlüklü ekranda küçük puntoyla tam ekran okumak isteyenler için).
+  const [tamGenislik, setTamGenislik] = useState(() => localStorage.getItem("vukuf-tam-genislik") === "true")
+  useEffect(() => { localStorage.setItem("vukuf-tam-genislik", String(tamGenislik)) }, [tamGenislik])
   const [harfAraligi, setHarfAraligi] = useState(() =>
     parseFloat(localStorage.getItem("vukuf-harf-araligi") || "0")
   )
@@ -395,6 +540,7 @@ export default function KuranOkuma({ kitap }) {
   const [barKilitli, setBarKilitli] = useState(false)
   const [sureBilgisiGoster, setSureBilgisiGoster] = useState(() => localStorage.getItem("vukuf-sure-bilgisi") !== "false")
   const [cuzBilgisiGoster, setCuzBilgisiGoster] = useState(() => localStorage.getItem("vukuf-cuz-bilgisi") !== "false")
+  const [hizbBilgisiGoster, setHizbBilgisiGoster] = useState(() => localStorage.getItem("vukuf-hizb-bilgisi") !== "false")
   const [sureMenuGoster, setSureMenuGoster]   = useState(() => localStorage.getItem("vukuf-btn-sure")   !== "false")
   const [kayitGoster, setKayitGoster]         = useState(() => localStorage.getItem("vukuf-btn-kayit")  !== "false")
   const [sayfaGitGoster, setSayfaGitGoster]   = useState(() => localStorage.getItem("vukuf-btn-sayfa")  !== "false")
@@ -402,7 +548,46 @@ export default function KuranOkuma({ kitap }) {
   const [temaGoster, setTemaGoster]           = useState(() => localStorage.getItem("vukuf-btn-tema")   !== "false")
   const [yaziTipiGoster, setYaziTipiGoster] = useState(() => localStorage.getItem("vukuf-btn-yazitipi") !== "false")
   const [otoOynatGoster, setOtoOynatGoster] = useState(() => localStorage.getItem("vukuf-btn-otooynat") !== "false")
-  const [tekrarBtnGoster, setTekrarBtnGoster] = useState(() => localStorage.getItem("vukuf-btn-tekrar") !== "false")   // döngü/tekrar barda görünsün mü (sade modda da geçerli)
+  const [tekrarBtnGoster, setTekrarBtnGoster] = useState(() => localStorage.getItem("vukuf-btn-tekrar") !== "false")
+  const [bilgiGoster, setBilgiGoster] = useState(() => localStorage.getItem("vukuf-btn-bilgi") !== "false")   // işaret/tecvid bilgi paneli butonu
+  const [bilgiAcik, setBilgiAcik] = useState(false)
+  // Buton sıralaması: alt bar flex olduğundan sıra CSS `order` ile veriliyor (JSX yeri değişmez).
+  const [butonSirasi, setButonSirasi] = useState(() => {
+    try {
+      const k = JSON.parse(localStorage.getItem("vukuf-buton-sirasi") || "null")
+      if (Array.isArray(k)) {
+        const temiz = k.filter(x => VARSAYILAN_SIRA.includes(x))
+        return [...temiz, ...VARSAYILAN_SIRA.filter(x => !temiz.includes(x))]   // yeni butonlar sona
+      }
+    } catch {}
+    return VARSAYILAN_SIRA
+  })
+  const [butonTaraf, setButonTaraf] = useState(() => {
+    try {
+      const k = JSON.parse(localStorage.getItem("vukuf-buton-taraf") || "null")
+      if (k && typeof k === "object") return { ...VARSAYILAN_TARAF, ...k }
+    } catch {}
+    return VARSAYILAN_TARAF
+  })
+  const [siraAcik, setSiraAcik] = useState(false)
+  const [siraTaslak, setSiraTaslak] = useState(VARSAYILAN_SIRA)      // kaydedilene dek uygulanmaz
+  const [tarafTaslak, setTarafTaslak] = useState(VARSAYILAN_TARAF)
+  const [sifirlaOnay, setSifirlaOnay] = useState(false)
+  const sira = (k) => { const i = butonSirasi.indexOf(k); return i === -1 ? 99 : i }
+  const siraSensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  )
+  const siraPaneliAc = () => {
+    setSiraTaslak(butonSirasi); setTarafTaslak(butonTaraf); setSifirlaOnay(false); setSiraAcik(true)
+  }
+  const siraKaydet = () => {
+    setButonSirasi(siraTaslak); setButonTaraf(tarafTaslak)
+    localStorage.setItem("vukuf-buton-sirasi", JSON.stringify(siraTaslak))
+    localStorage.setItem("vukuf-buton-taraf", JSON.stringify(tarafTaslak))
+    setSiraAcik(false)
+  }   // döngü/tekrar barda görünsün mü (sade modda da geçerli)
   // Sade modda GİZLENECEK öğeler (true = gizli). Varsayılan: yazı tipi + oto. oynatma + okuma zamanı.
   const [sadeGizli, setSadeGizli] = useState(() => {
     try { const v = JSON.parse(localStorage.getItem("vukuf-kuran-sade-gizli") || "null"); if (v && typeof v === "object") return v } catch {}
@@ -458,7 +643,8 @@ const maxWidth = useMemo(() =>
   const [menuAcik, setMenuAcik]   = useState(false)
   const [menuArama, setMenuArama] = useState("")
   const [acikSure, setAcikSure]   = useState(null)
-  const [anaBaslik, setAnaBaslik] = useState("sure")
+  const [anaBaslik, setAnaBaslik] = useState(null)   // iki çekmece de KAPALI başlar; oturum içinde hatırlanır
+  const [cuzArama, setCuzArama] = useState("")
   const [acikCuz, setAcikCuz]     = useState(null)
   const [ayetArama, setAyetArama] = useState({})
 
@@ -488,6 +674,7 @@ const maxWidth = useMemo(() =>
     localStorage.setItem("vukuf-okuma-zamani", String(sureGoster))
     localStorage.setItem("vukuf-sure-bilgisi", String(sureBilgisiGoster))
     localStorage.setItem("vukuf-cuz-bilgisi",  String(cuzBilgisiGoster))
+    localStorage.setItem("vukuf-hizb-bilgisi", String(hizbBilgisiGoster))
     localStorage.setItem("vukuf-btn-sure",     String(sureMenuGoster))
     localStorage.setItem("vukuf-btn-kayit",    String(kayitGoster))
     localStorage.setItem("vukuf-btn-sayfa",    String(sayfaGitGoster))
@@ -496,7 +683,8 @@ const maxWidth = useMemo(() =>
     localStorage.setItem("vukuf-btn-yazitipi", String(yaziTipiGoster))
     localStorage.setItem("vukuf-btn-otooynat", String(otoOynatGoster))
     localStorage.setItem("vukuf-btn-tekrar",   String(tekrarBtnGoster))
-  }, [sureGoster, sureBilgisiGoster, cuzBilgisiGoster, sureMenuGoster, kayitGoster, sayfaGitGoster, sadeModGoster, temaGoster, yaziTipiGoster, otoOynatGoster, tekrarBtnGoster])
+    localStorage.setItem("vukuf-btn-bilgi",    String(bilgiGoster))
+  }, [sureGoster, sureBilgisiGoster, cuzBilgisiGoster, hizbBilgisiGoster, sureMenuGoster, kayitGoster, sayfaGitGoster, sadeModGoster, temaGoster, yaziTipiGoster, otoOynatGoster, tekrarBtnGoster, bilgiGoster])
   useEffect(() => { try { localStorage.setItem("vukuf-kuran-sade-gizli", JSON.stringify(sadeGizli)) } catch {} }, [sadeGizli])
 
 
@@ -554,27 +742,42 @@ const maxWidth = useMemo(() =>
       .catch(() => setYukleniyor(false))
   }, [])
 
-  // ── Otomatik kaydırma
+  // ── Otomatik kaydırma (rAF + zaman-tabanlı, alt-piksel)
+  // ESKİ: setInterval ile her seferinde tam 1px → hız 1'de 5px/sn (sürünüyordu) ve 1px'lik
+  // sıçramalar "sekme" olarak görünüyordu; kare süresiyle senkron olmadığı için de titriyordu.
+  // YENİ: requestAnimationFrame ile geçen SÜREYE göre kesirli ilerleme (px/sn). Her karede
+  // ekran yenilemesiyle senkron, alt-piksel → tamamen pürüzsüz. Hız kademeleri geometrik
+  // ilerler; 1 rahat okuma temposu, 10 hızlı tarama.
   useEffect(() => {
-    if (!otomatikKaydirma || duraklatildi) {
-      if (otomatikRef.current) { 
-        clearInterval(otomatikRef.current); 
-        otomatikRef.current = null 
-      }
-      return
+    if (!otomatikKaydirma || duraklatildi) return
+    const el = scrollRef.current
+    if (!el) return
+    // Hız ölçeği (px/sn). Eski eğri çok hızlıydı (10 → 193 px/sn ≈ saniyede 4+ satır).
+    // Yeni çapa noktaları: 1 → 6 (çok yavaş, teenni ile), 10 → ~18 (rahat okuma),
+    // 20 → ~61 px/sn (azamî okuma hızı, ~1,4 satır/sn). Kesirli bırakılır; birikimli
+    // ilerleme zaten alt-piksel çalıştığı için yuvarlamaya gerek yok.
+    // 1-10 bandı aynı; 10-20 bandı KULLANICI İSTEĞİYLE daha da yumuşatıldı.
+    // Çapa noktaları: 1 → 6, 10 → 18, 15 → ~25, 20 → ~36 px/sn (~0,8 satır/sn).
+    const kademe = Math.min(20, Math.max(1, kaydirmaHizi))
+    const pxSn = kademe <= 10
+      ? 6 * Math.pow(1.13, kademe - 1)
+      : 18 * Math.pow(1.0718, kademe - 10)
+    let raf = 0, sonT = 0
+    let hedef = el.scrollTop            // kesirli konum (tarayıcı scrollTop'u yuvarlarsa hassasiyet kaybolmasın)
+    const adim = (t) => {
+      if (!sonT) sonT = t
+      const dt = Math.min(64, t - sonT)  // sekme arka plana geçip dönerse dev sıçrama olmasın
+      sonT = t
+      // Kullanıcı elle kaydırdıysa (veya sayfa penceresi konumu düzelttiyse) senkronize ol
+      if (Math.abs(el.scrollTop - hedef) > 4) hedef = el.scrollTop
+      hedef += (pxSn * dt) / 1000
+      el.scrollTop = hedef
+      // Sona gelince kendiliğinden dursun
+      if (el.scrollTop + el.clientHeight >= el.scrollHeight - 1) { setOtomatikKaydirma(false); return }
+      raf = requestAnimationFrame(adim)
     }
-    const ms = Math.max(20, 220 - kaydirmaHizi * 20)
-    otomatikRef.current = setInterval(() => {
-      if (scrollRef.current) {
-        scrollRef.current.scrollTop += 1
-      }
-    }, ms)
-    return () => { 
-      if (otomatikRef.current) { 
-        clearInterval(otomatikRef.current); 
-        otomatikRef.current = null 
-      } 
-    }
+    raf = requestAnimationFrame(adim)
+    return () => cancelAnimationFrame(raf)
   }, [otomatikKaydirma, kaydirmaHizi, duraklatildi])
 
   // menuAcik useEffect — dışarı tıklayınca kapat
@@ -642,16 +845,17 @@ const gorunurOgeSayisi = useMemo(() => {
   if (kayitGoster && sadeGorunur("kayit")) n++
   if (sayfaGitGoster && sadeGorunur("sayfaGit")) n++
   if (tekrarBtnGoster && sadeGorunur("tekrar")) n++
+  if (bilgiGoster && sadeGorunur("bilgi")) n++
   if (yaziTipiGoster && sadeGorunur("yaziTipi")) n++
   if (otoOynatGoster && sadeGorunur("otoOynat")) n++
   if (sadeModGoster) n++
   if (temaGoster && sadeGorunur("tema")) n++
   if (sureGoster && sadeGorunur("okumaZamani")) n++
   if (sureBilgisiGoster && sadeGorunur("sureBilgisi")) n++
-  if (cuzBilgisiGoster && sadeGorunur("cuzBilgisi")) n++
+  if ((cuzBilgisiGoster && sadeGorunur("cuzBilgisi")) || (hizbBilgisiGoster && sadeGorunur("hizbBilgisi"))) n++
   return n
-}, [sureMenuGoster, kayitGoster, sayfaGitGoster, tekrarBtnGoster, yaziTipiGoster, otoOynatGoster,
-    sadeModGoster, temaGoster, sureGoster, sureBilgisiGoster, cuzBilgisiGoster,
+}, [sureMenuGoster, kayitGoster, sayfaGitGoster, tekrarBtnGoster, bilgiGoster, yaziTipiGoster, otoOynatGoster,
+    sadeModGoster, temaGoster, sureGoster, sureBilgisiGoster, cuzBilgisiGoster, hizbBilgisiGoster,
     sadeMode, sadeGizli])
 const wrapAktif = isMobile && barUiOlcegi > 0.9 && gorunurOgeSayisi >= 5
 const tekSatirYuksekligi = isMobile ? 44 : 36
@@ -954,6 +1158,14 @@ useEffect(() => {
     .map(([no, baslangic]) => ({ no, baslangic }))
 }, [mushafData])
 
+// Cüz araması: yalnız rakam (ör. "12" → 12. cüz). Boşsa tüm cüzler.
+// NOT: cuzListesi'nden SONRA tanımlanmalı — önce tanımlanırsa render sırasında TDZ hatası verir.
+const filtreliCuzler = useMemo(() => {
+  const q = (cuzArama || "").replace(/\D/g, "")
+  if (!q) return cuzListesi
+  return cuzListesi.filter(c => String(c.no).includes(q))
+}, [cuzListesi, cuzArama])
+
 // Sayfa içine ortalı Arapça CÜZ işareti: sayfa no → o sayfada BAŞLAYAN cüz no
 const sayfaCuzBaslangic = useMemo(() => {
   const m = {}
@@ -1212,7 +1424,7 @@ const ustPay = () => (barKonum === "ust"
 const sayfaGercekYukseklikleriRef = useRef({})   // (geri uyumluluk; artık kullanılmıyor)
 // Kayıtlı konuma ANINDA git — üst bar payını bırak, sayfa içi oranı uygula, işaret vurgusu.
 const kayitSayfaGit = useCallback((sayfa, scrollY, kayitId) => {
-  pencereGuncelle(sayfa, true, false)   // gidiş: üst tamponu hazırla, konumu sabitleme
+  pencereHazirla(sayfa)   // gidiş: hedefin iki yanını hazırla (telafi yok, zaten kaydırılacak)
   const ust = ustPay() + (isMobile ? 6 : 4)
   let tries = 0
   const git = () => {
@@ -1231,7 +1443,7 @@ const kayitSayfaGit = useCallback((sayfa, scrollY, kayitId) => {
 useEffect(() => {
   const el = scrollRef.current
   if (!el || !sayfaListesi.length) return
-  pencereGuncelle(hedefSayfaRef.current || mevcutSayfa, true, false)   // açılış: üst tamponu önden hazırla
+  pencereHazirla(hedefSayfaRef.current || mevcutSayfa)   // açılış: hedefin çevresini önden hazırla
   let raf = 0
   const sayfaGuncelle = () => {
     raf = 0
@@ -1251,7 +1463,7 @@ useEffect(() => {
     const no = node ? s.sayfaNo : null
     if (no != null && node) {
       setMevcutSayfa(no)
-      pencereGuncelle(no)   // üst+alt sayfaları önden mount et (momentum'da boş kare/sıçrama olmasın)
+      altPencere(no)   // yalnız AŞAĞI (güvenli). Yukarısı ancak kaydırma tam durunca büyür.
       const r = node.getBoundingClientRect()
       const oran = Math.max(0, Math.min(1, (scTop - r.top) / (node.offsetHeight || 1)))
       sonKonumRef.current = { sayfa: no, oran }
@@ -1263,25 +1475,33 @@ useEffect(() => {
     }
   }
   const onScroll = () => {
-    sonScrollAnRef.current = performance.now()   // momentum tespiti için
+    sonScrollAnRef.current = performance.now()
     if (!raf) raf = requestAnimationFrame(sayfaGuncelle)
-    // Kaydırma DURUNCA (momentum bitince) üst tamponu kademeli büyüt — o an scrollTop yazımı
-    // güvenli, çünkü kesilecek bir momentum yok. Fling boyunca üst pencere donuk kalır.
+    // Üst tamponu YALNIZ kaydırma GERÇEKTEN durunca büyüt. "Durdu" için iki şart: (1) parmak
+    // ekranda değil, (2) son kontrolden bu yana scrollTop hiç değişmemiş. Yavaşlayan momentumun
+    // kuyruğunda scroll olayları seyrekleştiği için tek başına zamanlayıcıya güvenmek, hâlâ
+    // kayarken müdahale edip DURURKEN GERİYE SIÇRAMAYA yol açıyordu.
     if (durakTimerRef.current) clearTimeout(durakTimerRef.current)
-    durakTimerRef.current = setTimeout(function buyut() {
-      if (momentumdaMi()) return
-      const oncekiBoyut = gosterSetRef.current.size
-      pencereGuncelle(sonKonumRef.current?.sayfa || 1, false, true)   // kademeli + konumu sabitle
-      // hedef tampona ulaşana dek kademeli devam et
-      if (gosterSetRef.current.size !== oncekiBoyut) {
-        durakTimerRef.current = setTimeout(buyut, 120)
+    durakTimerRef.current = setTimeout(function dene() {
+      const sc = scrollRef.current
+      if (!sc) return
+      if (dokunuyorRef.current || sc.scrollTop !== sonScrollTopRef.current) {
+        sonScrollTopRef.current = sc.scrollTop            // hâlâ hareket var → tekrar bak
+        durakTimerRef.current = setTimeout(dene, 140)
+        return
       }
-    }, 220)
+      const oncekiBoyut = gosterSetRef.current.size
+      ustPencereBuyut()
+      if (gosterSetRef.current.size !== oncekiBoyut) {
+        durakTimerRef.current = setTimeout(dene, 160)     // tampon dolana dek kademeli devam
+      }
+    }, 200)
   }
   el.addEventListener('scroll', onScroll, { passive: true })
   return () => {
     el.removeEventListener('scroll', onScroll)
     if (durakTimerRef.current) clearTimeout(durakTimerRef.current)
+    if (oturtRef.current) cancelAnimationFrame(oturtRef.current)
   }
 }, [sayfaListesi])
 
@@ -1311,7 +1531,7 @@ useEffect(() => {
 function sayfayaGit(no) {
   const n = parseInt(no)
   if (n < 1 || n > toplamSayfa) return
-  setMevcutSayfa(n); pencereGuncelle(n, true, false); setAyetArama({}); setPopup(null)
+  setMevcutSayfa(n); pencereHazirla(n); setAyetArama({}); setPopup(null)
   const ust = ustPay()
   let tries = 0
   const git = () => { sayfayaHizala(n, { ust }); if (++tries < 6) setTimeout(git, 60) }
@@ -1327,7 +1547,7 @@ function sureGit(sureId, ayetNo) {
   if (!sayfa) return
 
   setMevcutSayfa(sayfa)
-  pencereGuncelle(sayfa, true, false)
+  pencereHazirla(sayfa)
   setMenuAcik(false); setMenuArama(""); setAcikSure(null); setAyetArama({}); setPopup(null); setAcikCuz(null)
 
   const offset = ustPay() + (ayetNo ? 6 : 8)
@@ -1660,6 +1880,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
           </div>
         </div>
 
+  
         {/* SATIR ARALIĞI */}
         <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px" }}>SATIR ARALIĞI</div>
         <div style={{ marginBottom: "20px" }}>
@@ -1711,6 +1932,31 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
         </div>
 
         {/* YAZI TİPİ */}
+      {/* TAM GENİŞLİK — web + mobil */}
+        {(
+          <div
+            onClick={() => setTamGenislik(v => !v)}
+            role="button"
+            aria-pressed={tamGenislik}
+            style={{
+              display: "flex", alignItems: "center", gap: "9px",
+              padding: "9px 10px", marginBottom: "20px", borderRadius: "9px",
+              cursor: "pointer", color: theme.text,
+              background: tamGenislik ? `${theme.accent}12` : "transparent",
+              border: `1px solid ${tamGenislik ? `${theme.accent}44` : theme.border}`,
+            }}
+          >
+            <UnfoldHorizontal size={16} color={theme.accent} style={{ flexShrink: 0 }} />
+            <span style={{ flex: 1, minWidth: 0 }}>
+              <span style={{ display: "block", fontSize: "12px", fontWeight: 600 }}>Tam Genişlik</span>
+              <span style={{ display: "block", fontSize: "11px", color: theme.textSecondary, lineHeight: 1.35 }}>
+                Yazıyı ekran boyunca yayar, kenar boşluklarını kaldırır.
+              </span>
+            </span>
+            <IosSwitch acik={tamGenislik} theme={theme} boyut={0.82} />
+          </div>
+        )}
+
         <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px" }}>YAZI TİPİ</div>
         <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
           {ARAPCA_FONTLAR.map(font => (
@@ -1974,16 +2220,38 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
         {/* İçerik — sadece açıkken */}
         {gorunumAcik && (
           <div style={{ marginTop: "10px" }}>
+            {/* Görüntüleme'nin İLK seçeneği */}
+            <button
+              onClick={siraPaneliAc}
+              style={{
+                width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
+                gap: "8px", padding: "9px 10px", marginBottom: "10px",
+                background: `${theme.accent}12`, border: `1px solid ${theme.accent}33`,
+                borderRadius: "9px", cursor: "pointer", color: theme.text,
+                fontSize: `${Math.round((isMobile ? 12 : 13) * barUiOlcegi)}px`,
+              }}
+            >
+              <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <GripVertical size={15} color={theme.accent} />
+                Buton Sıralaması
+              </span>
+              <ChevronRight size={15} color={theme.textSecondary} />
+            </button>
+
             <div style={{ fontSize: `${Math.round((isMobile ? 9 : 10) * barUiOlcegi)}px`, color: theme.textSecondary, opacity: .7, marginBottom: "6px", paddingLeft: "2px" }}>Bilgi</div>
             <AyarToggle etiket="Okuma zamanı"       aktif={sureGoster}        onToggle={() => setSureGoster(v => !v)}        {...{theme, isMobile, barUiOlcegi}} />
             <AyarToggle etiket="Sûre bilgisi"       aktif={sureBilgisiGoster} onToggle={() => setSureBilgisiGoster(v => !v)} {...{theme, isMobile, barUiOlcegi}} />
-            <AyarToggle etiket="Cüz / Hizb bilgisi" aktif={cuzBilgisiGoster}  onToggle={() => setCuzBilgisiGoster(v => !v)}  {...{theme, isMobile, barUiOlcegi}} />
+            <AyarToggle etiket="Cüz bilgisi"  aktif={cuzBilgisiGoster}   onToggle={() => setCuzBilgisiGoster(v => !v)}   {...{theme, isMobile, barUiOlcegi}} />
+            <AyarToggle etiket="Hizb bilgisi" aktif={hizbBilgisiGoster}  onToggle={() => setHizbBilgisiGoster(v => !v)}  {...{theme, isMobile, barUiOlcegi}} />
 
             <div style={{ fontSize: `${Math.round((isMobile ? 9 : 10) * barUiOlcegi)}px`, color: theme.textSecondary, opacity: .7, margin: "10px 0 6px", paddingLeft: "2px" }}>Menü Butonları</div>
             <AyarToggle etiket="Sûre Menüsü"   aktif={sureMenuGoster} onToggle={() => setSureMenuGoster(v => !v)} {...{theme, isMobile, barUiOlcegi}} />
             <AyarToggle etiket="Kayıt Menüsü"  aktif={kayitGoster}    onToggle={() => setKayitGoster(v => !v)}    {...{theme, isMobile, barUiOlcegi}} />
             <AyarToggle etiket="Sayfaya Gitme" aktif={sayfaGitGoster} onToggle={() => setSayfaGitGoster(v => !v)} {...{theme, isMobile, barUiOlcegi}} />
             <AyarToggle etiket="Tekrar (Döngü)" aktif={tekrarBtnGoster} onToggle={() => setTekrarBtnGoster(v => !v)} {...{theme, isMobile, barUiOlcegi}} />
+            <AyarToggle etiket="Bilgi (İşaretler)" aktif={bilgiGoster} onToggle={() => setBilgiGoster(v => !v)} {...{theme, isMobile, barUiOlcegi}} />
+
+
             <AyarToggle etiket="Yazı Tipi"         aktif={yaziTipiGoster} onToggle={() => setYaziTipiGoster(v => !v)} {...{theme, isMobile, barUiOlcegi}} />
             <AyarToggle etiket="Otomatik Oynatma"  aktif={otoOynatGoster} onToggle={() => setOtoOynatGoster(v => !v)} {...{theme, isMobile, barUiOlcegi}} />
             <AyarToggle etiket="Sade Mod"      aktif={sadeModGoster}  onToggle={() => setSadeModGoster(v => !v)}  {...{theme, isMobile, barUiOlcegi}} />
@@ -2039,6 +2307,36 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
   // BAR
   // ════════════════════════════════════════════════════════════════
 
+  // Bar öğesi görünür mü? (ayar + sade mod). Bu yardımcı sadeGorunur / mevcutSureBilgisi /
+  // mevcutCuzHizb tanımlandıktan SONRA gelmeli — daha yukarıda tanımlanırsa render sırasında
+  // TDZ hatası verir ve ekran beyaz kalır.
+  const butonAcikMi = (k) => {
+    switch (k) {
+      case "geri":        return true
+      case "sureMenu":    return sureMenuGoster && sadeGorunur("sureMenu")
+      case "kayit":       return kayitGoster && sadeGorunur("kayit")
+      case "sayfaGit":    return sayfaGitGoster && sadeGorunur("sayfaGit")
+      case "tekrar":      return tekrarBtnGoster && sadeGorunur("tekrar")
+      case "bilgi":       return bilgiGoster && sadeGorunur("bilgi")
+      case "yaziTipi":    return yaziTipiGoster && sadeGorunur("yaziTipi")
+      case "otoOynat":    return otoOynatGoster && sadeGorunur("otoOynat")
+      case "sadeMod":     return !!sadeModGoster
+      case "tema":        return temaGoster && sadeGorunur("tema")
+      case "ayarlar":     return true
+      case "okumaZamani": return sureGoster && sadeGorunur("okumaZamani")
+      case "sureBilgisi": return !!mevcutSureBilgisi && sureBilgisiGoster && sadeGorunur("sureBilgisi")
+      case "cuzHizb":     return !!mevcutCuzHizb && ((cuzBilgisiGoster && sadeGorunur("cuzBilgisi")) || (hizbBilgisiGoster && sadeGorunur("hizbBilgisi")))
+      default:            return false
+    }
+  }
+  // Sıra + taraf. "sag" öğeler 50+ order alır; GÖRÜNÜR ilk sağ öğeye marginLeft:auto verilir →
+  // o ve sonrası sağa yaslanır. Hiç sağ öğe yoksa hiçbir şey itilmez (düzen bozulmaz).
+  const ilkSagKey = butonSirasi.find(k => butonTaraf[k] === "sag" && butonAcikMi(k))
+  const barOge = (k) => ({
+    order: (butonTaraf[k] === "sag" ? 50 : 0) + sira(k),
+    ...(k === ilkSagKey ? { marginLeft: "auto" } : {}),
+  })
+
   const Bar = (
   <div
     ref={barRef}
@@ -2067,12 +2365,12 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
       pointerEvents: barGorunur ? "auto" : "none",
     }}
   >
-      <button onClick={() => navigate(-1)} style={{ ...barButonStil(), flexShrink: 0 }}>
+      <button onClick={() => navigate(-1)} style={{ ...barButonStil(), flexShrink: 0, ...barOge("geri") }}>
         <ArrowLeft size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} /> {!isMobile && ""}
       </button>
       
             {sureMenuGoster && sadeGorunur("sureMenu") && (
-        <button onClick={() => setMenuAcik(!menuAcik)} style={{ ...barButonStil(menuAcik), flexShrink: 0 }}>
+        <button onClick={() => setMenuAcik(!menuAcik)} style={{ ...barButonStil(menuAcik), flexShrink: 0, ...barOge("sureMenu") }}>
           <Menu size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />
         </button>
       )}
@@ -2087,6 +2385,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
               setKayitPaneliAcik(false)
             }
           }}
+          style={{ ...barOge("kayit") }}
         >
           <Bookmark color={theme.accent}
             size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)}
@@ -2100,6 +2399,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
           onClick={() => setSayfaGitAcik(!sayfaGitAcik)}
           style={{
             ...barButonStil(),
+            ...barOge("sayfaGit"),
             fontSize: `${Math.round((isMobile ? 11 : 14) * barUiOlcegi)}px`,
             minWidth: isMobile ? "40px" : "48px",
             justifyContent: "center",
@@ -2117,15 +2417,25 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
       {tekrarBtnGoster && sadeGorunur("tekrar") && (
         <button
           onClick={acDonguAyar}
-          style={{ ...barButonStil(donguAyarAcik), flexShrink: 0 }}
+          style={{ ...barButonStil(donguAyarAcik), flexShrink: 0, ...barOge("tekrar") }}
           title="Tekrar (döngü) ayarları"
         >
           <Repeat size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />
         </button>
       )}
 
+      {bilgiGoster && sadeGorunur("bilgi") && (
+        <button
+          onClick={() => setBilgiAcik(true)}
+          style={{ ...barButonStil(bilgiAcik), flexShrink: 0, ...barOge("bilgi") }}
+          title="İşaretler ve tecvid bilgisi"
+        >
+          <Gem size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />
+        </button>
+      )}
+
     {yaziTipiGoster && sadeGorunur("yaziTipi") && (
-      <button onClick={() => togglePanel(setAaAcik, !aaAcik)} style={barButonStil(aaAcik)}>
+      <button onClick={() => togglePanel(setAaAcik, !aaAcik)} style={{ ...barButonStil(aaAcik), ...barOge("yaziTipi") }}>
         <Feather size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />
       </button>
     )}
@@ -2134,7 +2444,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
       <>
         <button
           onClick={() => setOtomatikKaydirma(!otomatikKaydirma)}
-          style={barButonStil(otomatikKaydirma)}
+          style={{ ...barButonStil(otomatikKaydirma), ...barOge("otoOynat") }}
           title="Otomatik kaydırma"
         >
           {otomatikKaydirma
@@ -2144,6 +2454,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
 
         {otomatikKaydirma && (
           <div style={{
+            ...barOge("otoOynat"),
             display: "flex",
             alignItems: "center",
             gap: "2px",
@@ -2176,33 +2487,25 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
       </>
     )}
 
-    {/* Sağ grup — ayarlar + bilgi (doğal sarma). Grup içi sıra: simgeler önce, bilgi EN SONDA →
-        tek satırda bilgi en sağda; sarma gerekirse yalnız bilgi son satıra iner. */}
-    <div style={{
-      display: "flex", alignItems: "center",
-      gap: `${Math.round((isMobile ? 8 : 12) * barUiOlcegi)}px`,
-      flexWrap: "wrap", justifyContent: "center",
-      // Doğal sarma: grup zorla kendi satırına atılmaz. Geniş ekranda sağa yaslanır.
-      ...(genisEkran ? { marginLeft: "auto" } : {}),
-    }}>
       {sadeModGoster && (
-        <button onClick={() => setSadeMode(!sadeMode)} style={{ ...barButonStil(sadeMode), padding: isMobile ? "3px" : "4px" }}>
+        <button onClick={() => setSadeMode(!sadeMode)} style={{ ...barButonStil(sadeMode), padding: isMobile ? "3px" : "4px", ...barOge("sadeMod") }}>
           <Circle size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />
         </button>
       )}
 
       {temaGoster && sadeGorunur("tema") && (
-        <button onClick={() => togglePanel(setTemaAcik, !temaAcik)} style={{ ...barButonStil(temaAcik), padding: isMobile ? "3px" : "4px" }}>
+        <button onClick={() => togglePanel(setTemaAcik, !temaAcik)} style={{ ...barButonStil(temaAcik), padding: isMobile ? "3px" : "4px", ...barOge("tema") }}>
           <Palette size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />
         </button>
       )}
 
-      <button onClick={() => togglePanel(setAyarlarAcik, !ayarlarAcik)} style={{ ...barButonStil(ayarlarAcik), padding: isMobile ? "3px" : "4px" }}>
+      <button onClick={() => togglePanel(setAyarlarAcik, !ayarlarAcik)} style={{ ...barButonStil(ayarlarAcik), padding: isMobile ? "3px" : "4px", ...barOge("ayarlar") }}>
         <Settings size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />
       </button>
 
       {sureGoster && sadeGorunur("okumaZamani") && (
         <span style={{
+          ...barOge("okumaZamani"),
           fontSize: `${Math.round((isMobile ? 9 : 12) * barUiOlcegi)}px`,
           color: theme.accent,
           padding: "5px 4px",
@@ -2216,6 +2519,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
       )}
       {mevcutSureBilgisi && sureBilgisiGoster && sadeGorunur("sureBilgisi") && (
         <span style={{
+          ...barOge("sureBilgisi"),
           fontSize: `${Math.round((isMobile ? 9 : 12) * barUiOlcegi)}px`,
           color: theme.accent,
           padding: "5px 4px",
@@ -2227,23 +2531,35 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
           {mevcutSureBilgisi.isim}
         </span>
       )}
-      {cuzBilgisiGoster && mevcutCuzHizb && sadeGorunur("cuzBilgisi") && (
-      <span style={{
-                fontSize: `${Math.round((isMobile ? 9 : 12) * barUiOlcegi)}px`,
-                color: theme.accent,
-                padding: "5px 4px",
-                display: "flex",
-                alignItems: "center",
-                gap: "2px",
-                whiteSpace: "nowrap",
-      }}>
-      <BookOpen size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />
-      {isMobile
-        ? `${mevcutCuzHizb.cuz}C·${mevcutCuzHizb.hizb}H`
-        : `${mevcutCuzHizb.cuz}. Cüz · ${mevcutCuzHizb.hizb}. Hizb`}
-      </span>
-      )}
-    </div>
+      {(() => {
+        // Cüz ve Hizb ayrı ayarlar. Kısa (mobil) gösterim: tek bilgi açıksa yer olduğu için tam
+        // yazılır ("1. Cüz" / "Hizb 1"); İKİSİ birden açıksa sığması için kısaltılır ("9C·3H").
+        const cuzAcik  = cuzBilgisiGoster  && sadeGorunur("cuzBilgisi")
+        const hizbAcik = hizbBilgisiGoster && sadeGorunur("hizbBilgisi")
+        if (!mevcutCuzHizb || (!cuzAcik && !hizbAcik)) return null
+        const metin = isMobile
+          ? (cuzAcik && hizbAcik
+              ? `${mevcutCuzHizb.cuz}C·${mevcutCuzHizb.hizb}H`
+              : cuzAcik ? `${mevcutCuzHizb.cuz}. Cüz` : `Hizb ${mevcutCuzHizb.hizb}`)
+          : (cuzAcik && hizbAcik
+              ? `${mevcutCuzHizb.cuz}. Cüz · ${mevcutCuzHizb.hizb}. Hizb`
+              : cuzAcik ? `${mevcutCuzHizb.cuz}. Cüz` : `${mevcutCuzHizb.hizb}. Hizb`)
+        return (
+          <span style={{
+            ...barOge("cuzHizb"),
+            fontSize: `${Math.round((isMobile ? 9 : 12) * barUiOlcegi)}px`,
+            color: theme.accent,
+            padding: "5px 4px",
+            display: "flex",
+            alignItems: "center",
+            gap: "2px",
+            whiteSpace: "nowrap",
+          }}>
+            <BookOpen size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />
+            {metin}
+          </span>
+        )
+      })()}
   </div>
 )
   // ════════════════════════════════════════════════════════════════
@@ -2566,36 +2882,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
         alignItems: "center", 
         gap: "8px" 
       }}>
-        <Search size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} color={theme.accent} />
-        <input
-          type="text"
-          placeholder="Sûre ismi..."
-          value={menuArama}
-          onChange={e => setMenuArama(e.target.value)}
-          autoFocus
-          style={{ 
-            flex: 1, 
-            background: "transparent", 
-            border: "none", 
-            outline: "none", 
-            fontSize: `${Math.round((isMobile ? 11 : 12) * barUiOlcegi)}px`, 
-            color: theme.text 
-          }}
-        />
-        {menuArama && (
-          <button 
-            onClick={() => setMenuArama("")} 
-            style={{ 
-              color: theme.textSecondary, 
-              display: "flex", 
-              background: "none", 
-              border: "none", 
-              cursor: "pointer" 
-            }}
-          >
-            <X size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />
-          </button>
-        )}
+        <span style={{ flex: 1 }} />
         <button 
           onClick={() => setMenuAcik(false)} 
           style={{ 
@@ -2616,8 +2903,8 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
         ...menuIcerikPadding,
       }}>
        {/* ── ANA BAŞLIKLAR — arama yokken ── */}
-      {!menuArama && (
-        <>
+      {/* Cüz + Sûre çekmeceleri — başlıklar her zaman görünür */}
+      <>
           {/* Cüz başlığı */}
           <button
             onClick={() => setAnaBaslik(anaBaslik === "cuz" ? null : "cuz")}
@@ -2642,7 +2929,32 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
             Cüz
           </button>
 
-          {anaBaslik === "cuz" && cuzListesi.map(cuz => (
+          {anaBaslik === "cuz" && (
+            <div style={{
+              display: "flex", alignItems: "center", gap: "8px",
+              padding: "10px 8px", borderBottom: `1px solid ${theme.border}`,
+            }}>
+              <Search size={Math.round((isMobile ? 16 : 19) * barUiOlcegi)} color={theme.accent} />
+              <input
+                type="text"
+                inputMode="numeric"
+                placeholder="Cüz numarası..."
+                value={cuzArama}
+                onChange={e => setCuzArama(e.target.value.replace(/\D/g, ""))}
+                style={{
+                  flex: 1, background: "transparent", border: "none", outline: "none",
+                  fontSize: `${Math.round((isMobile ? 11 : 12) * barUiOlcegi)}px`, color: theme.text,
+                }}
+              />
+              {cuzArama && (
+                <button onClick={() => setCuzArama("")} style={{ color: theme.textSecondary, display: "flex", background: "none", border: "none", cursor: "pointer" }}>
+                  <X size={Math.round((isMobile ? 16 : 19) * barUiOlcegi)} />
+                </button>
+              )}
+            </div>
+          )}
+
+          {anaBaslik === "cuz" && filtreliCuzler.map(cuz => (
             <div key={cuz.no}>
               <div style={{
                 display: "flex",
@@ -2752,11 +3064,35 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
               : <ChevronRight size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />}
             Sûre
           </button>
-        </>
-      )}
+      </>
+
+              {/* ── Sûre araması — listenin en başında */}
+              {anaBaslik === "sure" && (
+                <div style={{
+                  display: "flex", alignItems: "center", gap: "8px",
+                  padding: "10px 8px", borderBottom: `1px solid ${theme.border}`,
+                }}>
+                  <Search size={Math.round((isMobile ? 16 : 19) * barUiOlcegi)} color={theme.accent} />
+                  <input
+                    type="text"
+                    placeholder="Sûre ismi..."
+                    value={menuArama}
+                    onChange={e => setMenuArama(e.target.value)}
+                    style={{
+                      flex: 1, background: "transparent", border: "none", outline: "none",
+                      fontSize: `${Math.round((isMobile ? 11 : 12) * barUiOlcegi)}px`, color: theme.text,
+                    }}
+                  />
+                  {menuArama && (
+                    <button onClick={() => setMenuArama("")} style={{ color: theme.textSecondary, display: "flex", background: "none", border: "none", cursor: "pointer" }}>
+                      <X size={Math.round((isMobile ? 16 : 19) * barUiOlcegi)} />
+                    </button>
+                  )}
+                </div>
+              )}
 
               {/* ── Sûre Listesi */}
-              {(menuArama || anaBaslik === "sure") && filtreliSureler.map(sure => (
+              {anaBaslik === "sure" && filtreliSureler.map(sure => (
                 <div key={sure.id}>
                   <div style={{ 
                     display: "flex", 
@@ -2995,7 +3331,8 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
           }}
           onTouchStart={(e) => {
             dokunusBasladi()
-            dokunuyorRef.current = true   // parmak ekranda → üst pencere büyütmek GÜVENLİ (momentum yok)
+            dokunuyorRef.current = true   // parmak ekranda → üst pencere büyütme YOK
+            if (oturtRef.current) { cancelAnimationFrame(oturtRef.current); oturtRef.current = null }
 
             // Touch başlangıç pozisyonunu kaydet
             const touch = e.touches[0]
@@ -3078,10 +3415,10 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
           <div
             style={{
               position: "relative",
-              maxWidth: `${Math.round((isMobile ? 480 : 720) * (yaziBoyutu / 20))}px`,
+              maxWidth: tamGenislik ? "100%" : `${Math.round((isMobile ? 480 : 720) * (yaziBoyutu / 20))}px`,
               width: "100%",
               margin: "0 auto",
-              padding: isMobile ? "4px 12px" : "6px 24px",
+              padding: tamGenislik ? (isMobile ? "4px 4px" : "6px 8px") : (isMobile ? "4px 12px" : "6px 24px"),
               boxSizing: "border-box",
             }}
           >
@@ -3138,6 +3475,243 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
             ))}
           </div>
         </div>
+
+        {/* ── BUTON SIRALAMASI PANELİ: sürükle-bırak + sol/sağ yaslama + canlı önizleme ── */}
+        {siraAcik && (
+          <div
+            onClick={() => setSiraAcik(false)}
+            style={{
+              position: "fixed", inset: 0, zIndex: 400, background: "rgba(0,0,0,0.45)",
+              display: "flex", alignItems: "center", justifyContent: "center", padding: "16px",
+            }}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                width: "100%", maxWidth: isMobile ? "340px" : "410px",
+                maxHeight: "84vh", display: "flex", flexDirection: "column",
+                background: theme.background, border: `1px solid ${theme.border}`,
+                borderRadius: "14px", boxShadow: "0 12px 40px rgba(0,0,0,0.35)", overflow: "hidden",
+              }}
+            >
+              <div style={{
+                display: "flex", alignItems: "center", justifyContent: "space-between",
+                padding: "12px 14px", borderBottom: `1px solid ${theme.border}`,
+              }}>
+                <span style={{ display: "flex", alignItems: "center", gap: "7px", color: theme.text, fontSize: isMobile ? "14px" : "15px", fontWeight: 600 }}>
+                  <GripVertical size={16} color={theme.accent} /> Buton Sıralaması
+                </span>
+                <button onClick={() => setSiraAcik(false)} style={{
+                  background: "transparent", border: "none", color: theme.textSecondary,
+                  cursor: "pointer", padding: "4px", display: "flex",
+                }} aria-label="Kapat"><X size={17} /></button>
+              </div>
+
+              {/* Canlı önizleme — taslak sıra + sol/sağ yaslama; kapalı butonlar soluk */}
+              <div style={{ padding: "10px 14px 8px", borderBottom: `1px solid ${theme.border}` }}>
+                <div style={{ fontSize: "10px", letterSpacing: "1px", textTransform: "uppercase", color: theme.textSecondary, opacity: 0.7, marginBottom: "6px" }}>Önizleme</div>
+                <div style={{
+                  display: "flex", alignItems: "center", gap: "6px",
+                  padding: "7px 8px", borderRadius: "9px",
+                  background: `${theme.accent}0d`, border: `1px solid ${theme.border}`,
+                }}>
+                  <ArrowLeft size={15} color={theme.textSecondary} style={{ opacity: 0.5 }} />
+                  {["sol", "sag"].map(taraf => (
+                    <span key={taraf} style={{
+                      display: "flex", alignItems: "center", gap: "6px",
+                      ...(taraf === "sag" ? { marginLeft: "auto" } : {}),
+                    }}>
+                      {siraTaslak.filter(k => (tarafTaslak[k] || "sol") === taraf).map(k => {
+                        const o = SIRA_BILGI[k]; if (!o) return null
+                        const I = o.Ikon
+                        return <I key={k} size={15} color={theme.accent} style={{ opacity: butonAcikMi(k) ? 1 : 0.22 }} />
+                      })}
+                    </span>
+                  ))}
+                  <Settings size={15} color={theme.textSecondary} style={{ opacity: 0.5 }} />
+                </div>
+                <div style={{ fontSize: "10px", color: theme.textSecondary, opacity: 0.65, marginTop: "5px" }}>
+                  Soluk simgeler kapalı butonlardır.
+                </div>
+              </div>
+
+              {/* Sürüklenebilir liste */}
+              <div style={{ overflowY: "auto", padding: "10px 14px", flex: 1 }}>
+                <DndContext
+                  sensors={siraSensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={({ active, over }) => {
+                    if (over && active.id !== over.id) {
+                      setSiraTaslak(prev => arrayMove(prev, prev.indexOf(active.id), prev.indexOf(over.id)))
+                    }
+                  }}
+                >
+                  <SortableContext items={siraTaslak} strategy={verticalListSortingStrategy}>
+                    {siraTaslak.map(k => (
+                      <SiraSatiri
+                        key={k}
+                        k={k}
+                        taraf={tarafTaslak[k] || "sol"}
+                        onTaraf={(key, deger) => setTarafTaslak(prev => ({ ...prev, [key]: deger }))}
+                        theme={theme}
+                        isMobile={isMobile}
+                      />
+                    ))}
+                  </SortableContext>
+                </DndContext>
+              </div>
+
+              {/* Sıfırla (çift onay) / Kaydet */}
+              <div style={{ padding: "10px 14px", borderTop: `1px solid ${theme.border}`, display: "flex", gap: "8px" }}>
+                <button
+                  onClick={() => {
+                    if (!sifirlaOnay) { setSifirlaOnay(true); return }
+                    setSiraTaslak(VARSAYILAN_SIRA); setTarafTaslak(VARSAYILAN_TARAF); setSifirlaOnay(false)
+                  }}
+                  style={{
+                    flex: 1, padding: "10px 8px", borderRadius: "9px", cursor: "pointer",
+                    border: `1px solid ${sifirlaOnay ? "#c0392b" : theme.border}`,
+                    background: sifirlaOnay ? "#c0392b12" : "transparent",
+                    color: sifirlaOnay ? "#c0392b" : theme.textSecondary,
+                    fontSize: isMobile ? "12px" : "13px", fontWeight: 600,
+                    display: "flex", alignItems: "center", justifyContent: "center", gap: "5px",
+                  }}
+                >
+                  <RotateCcw size={14} />
+                  {sifirlaOnay ? "Emin misin?" : "Sıfırla"}
+                </button>
+                <button
+                  onClick={siraKaydet}
+                  style={{
+                    flex: 1, padding: "10px 8px", borderRadius: "9px", border: "none",
+                    background: theme.accent, color: "#fff", cursor: "pointer",
+                    fontSize: isMobile ? "12px" : "13px", fontWeight: 600,
+                    display: "flex", alignItems: "center", justifyContent: "center", gap: "5px",
+                  }}
+                >
+                  <Save size={14} /> Kaydet
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── BİLGİ PANELİ: vakıf (durak) işaretleri + tecvid/kıraat simgeleri ──
+            Kapanış: Tamam · çarpı · panel dışına tıklama. */}
+        {bilgiAcik && (
+          <div
+            onClick={() => setBilgiAcik(false)}
+            style={{
+              position: "fixed", inset: 0, zIndex: 400,
+              background: "rgba(0,0,0,0.45)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              padding: "16px",
+              animation: "vukufBilgiFade 0.18s ease",
+            }}
+          >
+            <style>{`@keyframes vukufBilgiFade{from{opacity:0}to{opacity:1}}`}</style>
+            <div
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                width: "100%", maxWidth: isMobile ? "340px" : "420px",
+                maxHeight: "78vh", display: "flex", flexDirection: "column",
+                background: theme.background,
+                border: `1px solid ${theme.border}`,
+                borderRadius: "14px",
+                boxShadow: "0 12px 40px rgba(0,0,0,0.35)",
+                overflow: "hidden",
+              }}
+            >
+              {/* Başlık */}
+              <div style={{
+                display: "flex", alignItems: "center", justifyContent: "space-between",
+                padding: "12px 14px", borderBottom: `1px solid ${theme.border}`,
+              }}>
+                <span style={{ display: "flex", alignItems: "center", gap: "7px", color: theme.text, fontSize: isMobile ? "14px" : "15px", fontWeight: 600 }}>
+                  <Gem size={16} color={theme.accent} /> İşaretler ve Tecvid
+                </span>
+                <button onClick={() => setBilgiAcik(false)} style={{
+                  background: "transparent", border: "none", color: theme.textSecondary,
+                  cursor: "pointer", padding: "4px", display: "flex", alignItems: "center",
+                }} aria-label="Kapat"><X size={17} /></button>
+              </div>
+
+              {/* İçerik */}
+              <div style={{ overflowY: "auto", padding: "12px 14px", flex: 1 }}>
+                {BILGI_BOLUMLERI.map(bolum => (
+                  <div key={bolum.baslik} style={{ marginBottom: "14px" }}>
+                    <div style={{
+                      fontSize: isMobile ? "10px" : "11px", letterSpacing: "1px",
+                      textTransform: "uppercase", color: theme.textSecondary,
+                      opacity: 0.75, marginBottom: "7px",
+                    }}>{bolum.baslik}</div>
+                    {bolum.satirlar.map(s => (
+                      <div key={s.ad} style={{
+                        display: "flex", alignItems: "center", gap: "10px",
+                        padding: "6px 0", borderBottom: `1px solid ${theme.border}22`,
+                      }}>
+                        <span style={{
+                          minWidth: "30px", textAlign: "center", flexShrink: 0,
+                          fontFamily: "'Scheherazade New', serif",
+                          fontSize: isMobile ? "17px" : "19px", fontWeight: 700,
+                          color: s.renk, lineHeight: 1.25,
+                          display: "inline-flex", flexDirection: "column",
+                          alignItems: "center", gap: "2px",
+                        }}>
+                          {s.secde ? (
+                            /* Mushaftaki secde rozetinin aynısı (bkz. SecdeKenar) */
+                            <>
+                              <svg width="17" height="17" viewBox="0 0 24 24">
+                                <path
+                                  d="M12 2 L14.5 8.5 L21.5 8.5 L16 13 L18.5 20 L12 16 L5.5 20 L8 13 L2.5 8.5 L9.5 8.5 Z"
+                                  fill="none" stroke="#2e7d4f" strokeWidth="1.5" strokeLinejoin="round"
+                                />
+                                <circle cx="12" cy="11" r="2.5" fill="#2e7d4f" />
+                              </svg>
+                              <span style={{ fontSize: "8px", color: "#2e7d4f", lineHeight: 1, fontFamily: aktifArapcaFont.style }}>سَجْدَة</span>
+                            </>
+                          ) : s.cuz ? (
+                            /* Sayfa içindeki cüz işaretinin aynısı: "الجزء" + rakam yeri BOŞ
+                               (gerçek sayfada burada cüz numarası çıkar). */
+                            <span style={{
+                              display: "inline-flex", alignItems: "center", gap: "3px",
+                              fontFamily: aktifArapcaFont.style, direction: "rtl", whiteSpace: "nowrap",
+                            }}>
+                              <span style={{ color: theme.accent, fontSize: isMobile ? "15px" : "17px", lineHeight: 1.1 }}>الجزء</span>
+                              <span style={{
+                                display: "inline-block", width: "12px", height: "12px",
+                                border: `1.5px dashed ${theme.ayetNoRengi || theme.accent}`,
+                                borderRadius: "3px",
+                              }} />
+                            </span>
+                          ) : s.sembol}
+                        </span>
+                        <span style={{ flex: 1, minWidth: 0 }}>
+                          <span style={{ display: "block", color: theme.text, fontSize: isMobile ? "12px" : "13px", fontWeight: 600 }}>{s.ad}</span>
+                          <span style={{ display: "block", color: theme.textSecondary, fontSize: isMobile ? "11px" : "12px", lineHeight: 1.4 }}>{s.aciklama}</span>
+                          {s.ornek && (
+                            <span style={{ display: "block", color: theme.accent, fontSize: isMobile ? "10px" : "11px", marginTop: "2px", opacity: 0.9 }}>
+                              Örnek Âyet: {s.ornek}
+                            </span>
+                          )}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+
+              {/* Tamam */}
+              <div style={{ padding: "10px 14px", borderTop: `1px solid ${theme.border}` }}>
+                <button onClick={() => setBilgiAcik(false)} style={{
+                  width: "100%", padding: "10px", borderRadius: "9px",
+                  border: "none", background: theme.accent, color: "#fff",
+                  fontSize: isMobile ? "13px" : "14px", fontWeight: 600, cursor: "pointer",
+                }}>Tamam</button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {barKonum === "alt" && Bar}
 

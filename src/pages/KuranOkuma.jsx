@@ -9,6 +9,7 @@ import sayfaHaritaJson from "../data/sayfa-harita.json"
 import SureBasligi from "../components/SureBasligi"
 import Besmele from "../components/Besmele"
 import MushafSayfa from "../components/MushafSayfa"
+import { gorselIcinTemizle } from "../components/MushafKelime"
 import PlayerBar from "../components/PlayerBar"
 import KitapAyraci from "../components/KitapAyraci"
 import KayitPaneli from "../components/KayitPaneli"
@@ -18,6 +19,7 @@ import YuklemeEkrani from "../components/YuklemeEkrani"
 import IosSwitch from "../components/IosSwitch"
 import AyetPopup from "../components/AyetPopup"
 import { barSatirOlc } from "../components/BarSiraPaneli"
+import GorselOlustur from "../components/GorselOlustur"
 import { useMushaf, sureBaslangicSayfasi, ayetSayfasi } from "../data/hooks/useMushaf"
 import useAudioPlayer, { BESMELE_OKUYANLAR } from "../data/hooks/useAudioPlayer"
 import { useMediaQuery } from "../data/hooks/useMediaQuery"
@@ -31,6 +33,7 @@ import {
   Settings, Circle, Clock, ChevronsUp, ChevronsDown,
   Pencil, ChevronLeft, Bookmark, BookOpen, Feather,
   Layers, Check, Shuffle, Mic, Repeat, Gem, UnfoldHorizontal, GripVertical, RotateCcw, Save, AlignLeft, AlignRight,
+  Camera, FoldHorizontal, ChevronUp,
 } from "lucide-react"
 
 // ── Arapça font listesi
@@ -130,6 +133,7 @@ const SADE_OGELERI = [
   { key: "cuzBilgisi",  label: "Cüz Bilgisi" },
   { key: "hizbBilgisi", label: "Hizb Bilgisi" },
   { key: "bilgi",       label: "Bilgi (İşaretler)" },
+  { key: "gorsel",      label: "Görsel Oluştur" },
 ]
 
 // Alt bardaki SIRALANABİLİR butonlar (varsayılan sıra). Geri tuşu ve sağdaki
@@ -141,6 +145,7 @@ const SIRALANABILIR = [
   { key: "sayfaGit",    label: "Sayfaya Gitme",      Ikon: BookOpen,  taraf: "sol" },
   { key: "tekrar",      label: "Tekrar (Döngü)",     Ikon: Repeat,    taraf: "sol" },
   { key: "bilgi",       label: "Bilgi (İşaretler)",  Ikon: Gem,  taraf: "sol" },
+  { key: "gorsel",      label: "Görsel Oluştur",     Ikon: Camera,    taraf: "sol" },
   { key: "yaziTipi",    label: "Yazı Tipi",          Ikon: Feather,   taraf: "sol" },
   { key: "otoOynat",    label: "Otomatik Kaydırma",  Ikon: Play,      taraf: "sol" },
   { key: "sadeMod",     label: "Sade Mod",           Ikon: Circle,    taraf: "sag" },
@@ -522,6 +527,14 @@ export default function KuranOkuma({ kitap }) {
   const [sayfaGirdi, setSayfaGirdi] = useState("")
   const [sayfaGirdiAcik, setSayfaGirdiAcik] = useState(false)
   const [kayitKonumModu, setKayitKonumModu] = useState(false)
+  // GÖRSEL OLUŞTUR: fotoğraf makinesi butonu "âyet seçme modunu" açar; kullanıcı bir âyete
+  // dokununca o âyetin verisiyle görsel paneli açılır. ayetTikla useCallback([]) olduğundan
+  // mod ve açıcı REF üzerinden okunur (kimlik değişip MushafSayfa'yı boşa render etmesin).
+  const [gorselModu, setGorselModu] = useState(false)
+  const gorselModuRef = useRef(false)
+  const gorselAcRef = useRef(null)
+  const [gorselVeri, setGorselVeri] = useState(null)
+  useEffect(() => { gorselModuRef.current = gorselModu }, [gorselModu])
   
 
   const [kayitlar, setKayitlar] = useState(() => {
@@ -543,6 +556,14 @@ export default function KuranOkuma({ kitap }) {
   // yüksek çözünürlüklü ekranda küçük puntoyla tam ekran okumak isteyenler için).
   const [tamGenislik, setTamGenislik] = useState(() => localStorage.getItem("vukuf-tam-genislik") === "true")
   useEffect(() => { localStorage.setItem("vukuf-tam-genislik", String(tamGenislik)) }, [tamGenislik])
+  // KENAR BOŞLUĞU: Tam Genişlik'in tersi. Metin genişliği yazı boyutuyla BÜYÜMEZ; ekranın
+  // sabit bir yüzdesinde kalır → yazı ne kadar büyürse büyüsün kenarlarda boşluk durur ve
+  // satır uzunluğu sabit kaldığı için (özellikle webde) satır takibi kolaylaşır.
+  const [kenarBosluk, setKenarBosluk] = useState(() => localStorage.getItem("vukuf-kenar-bosluk") === "true")
+  useEffect(() => { localStorage.setItem("vukuf-kenar-bosluk", String(kenarBosluk)) }, [kenarBosluk])
+  // İkisi aynı anda açık olamaz (biri kenar boşluğunu kaldırır, diğeri ekler)
+  const tamGenislikDegis = () => setTamGenislik(v => { const y = !v; if (y) setKenarBosluk(false); return y })
+  const kenarBoslukDegis = () => setKenarBosluk(v => { const y = !v; if (y) setTamGenislik(false); return y })
   const [harfAraligi, setHarfAraligi] = useState(() =>
     parseFloat(localStorage.getItem("vukuf-harf-araligi") || "0")
   )
@@ -571,6 +592,7 @@ export default function KuranOkuma({ kitap }) {
   const [otoOynatGoster, setOtoOynatGoster] = useState(() => localStorage.getItem("vukuf-btn-otooynat") !== "false")
   const [tekrarBtnGoster, setTekrarBtnGoster] = useState(() => localStorage.getItem("vukuf-btn-tekrar") !== "false")
   const [bilgiGoster, setBilgiGoster] = useState(() => localStorage.getItem("vukuf-btn-bilgi") !== "false")   // işaret/tecvid bilgi paneli butonu
+  const [gorselGoster, setGorselGoster] = useState(() => localStorage.getItem("vukuf-btn-gorsel") !== "false") // âyet paylaşım görseli butonu
   const [bilgiAcik, setBilgiAcik] = useState(false)
   // Buton sıralaması: alt bar flex olduğundan sıra CSS `order` ile veriliyor (JSX yeri değişmez).
   const [butonSirasi, setButonSirasi] = useState(() => {
@@ -651,6 +673,8 @@ const maxWidth = useMemo(() =>
   const [aktifRenk, setAktifRenk] = useState(null)
 
   // ── Arapça font
+  const [yaziTipiAcik, setYaziTipiAcik] = useState(false)   // Aa panelindeki yazı tipi listesi açık mı
+  const yaziTipiListeRef = useRef(null)
   const [arapcaFontId, setArapcaFontId] = useState(() =>
     localStorage.getItem("vukuf-kuran-arapca-font") || "kfgqpc"
   )
@@ -706,7 +730,8 @@ const maxWidth = useMemo(() =>
     localStorage.setItem("vukuf-btn-otooynat", String(otoOynatGoster))
     localStorage.setItem("vukuf-btn-tekrar",   String(tekrarBtnGoster))
     localStorage.setItem("vukuf-btn-bilgi",    String(bilgiGoster))
-  }, [sureGoster, sureBilgisiGoster, cuzBilgisiGoster, hizbBilgisiGoster, sureMenuGoster, kayitGoster, sayfaGitGoster, sadeModGoster, temaGoster, yaziTipiGoster, otoOynatGoster, tekrarBtnGoster, bilgiGoster])
+    localStorage.setItem("vukuf-btn-gorsel",   String(gorselGoster))
+  }, [sureGoster, sureBilgisiGoster, cuzBilgisiGoster, hizbBilgisiGoster, sureMenuGoster, kayitGoster, sayfaGitGoster, sadeModGoster, temaGoster, yaziTipiGoster, otoOynatGoster, tekrarBtnGoster, bilgiGoster, gorselGoster])
   useEffect(() => { try { localStorage.setItem("vukuf-kuran-sade-gizli", JSON.stringify(sadeGizli)) } catch {} }, [sadeGizli])
 
 
@@ -884,6 +909,7 @@ const gorunurOgeSayisi = useMemo(() => {
   if (sayfaGitGoster && sadeGorunur("sayfaGit")) n++
   if (tekrarBtnGoster && sadeGorunur("tekrar")) n++
   if (bilgiGoster && sadeGorunur("bilgi")) n++
+  if (gorselGoster && sadeGorunur("gorsel")) n++
   if (yaziTipiGoster && sadeGorunur("yaziTipi")) n++
   if (otoOynatGoster && sadeGorunur("otoOynat")) n++
   if (sadeModGoster) n++
@@ -892,7 +918,7 @@ const gorunurOgeSayisi = useMemo(() => {
   if (sureBilgisiGoster && sadeGorunur("sureBilgisi")) n++
   if ((cuzBilgisiGoster && sadeGorunur("cuzBilgisi")) || (hizbBilgisiGoster && sadeGorunur("hizbBilgisi"))) n++
   return n
-}, [sureMenuGoster, kayitGoster, sayfaGitGoster, tekrarBtnGoster, bilgiGoster, yaziTipiGoster, otoOynatGoster,
+}, [sureMenuGoster, kayitGoster, sayfaGitGoster, tekrarBtnGoster, bilgiGoster, gorselGoster, yaziTipiGoster, otoOynatGoster,
     sadeModGoster, temaGoster, sureGoster, sureBilgisiGoster, cuzBilgisiGoster, hizbBilgisiGoster,
     sadeMode, sadeGizli])
 const wrapAktif = isMobile && barUiOlcegi > 0.9 && gorunurOgeSayisi >= 5
@@ -1658,7 +1684,38 @@ function sureGit(sureId, ayetNo) {
     })
   }, [])
 
+  // Bir âyetin ARAPÇA metnini SAYFA ELEMANLARINDAN toplar — sayfayı çizen kaynağın aynısı,
+  // böylece veri şekli ne olursa olsun ekranda görünenle birebir aynı metni alırız.
+  // Âyet iki sayfaya taşabildiği için komşu sayfalara da bakılır.
+  const ayetArapcasi = useCallback((sureNo, ayetNo) => {
+    if (!sayfaMap || !sayfaMap.size) return ""
+    const bas = ayetSayfasi(sureNo, ayetNo, ayetSayfaLookup) || 1
+    const parcalar = []
+    for (let p = Math.max(1, bas - 1); p <= bas + 1; p++) {
+      for (const el of (sayfaMap.get(p) || [])) {
+        if (el.tip === "kelime" && el.sure?.id === sureNo && Number(el.ayet?.no) === Number(ayetNo)) {
+          parcalar.push(el.kelime.arabic)
+        }
+      }
+    }
+    // Sayfada overlay olarak çizilen tecvid/vakıf işaretlerini ÇIKAR: canvas'ta bunlar
+    // fontun bozuk glifine düşüyor (KFGQPC'de ◉, diğerlerinde □ veya kopuk boşluk).
+    return gorselIcinTemizle(parcalar.join(" "))
+  }, [sayfaMap, ayetSayfaLookup])
+
+  const gorselAc = useCallback((sure, ayetNo) => {
+    const meal = ayetMeal[sure.id]?.[ayetNo] || null
+    setGorselVeri({
+      arapca: ayetArapcasi(sure.id, ayetNo) || null,
+      meal,
+      kaynak: `${sure.isim} sûresi, ${ayetNo}. âyet`,
+    })
+    setGorselModu(false)
+  }, [ayetArapcasi])
+  useEffect(() => { gorselAcRef.current = gorselAc }, [gorselAc])
+
   const ayetTikla = useCallback((sure, ayetNo, e) => {
+    if (gorselModuRef.current) { gorselAcRef.current?.(sure, ayetNo); return }
     const meal = ayetMeal[sure.id]?.[ayetNo] || null
     setPopup({
       tip:    "ayet",
@@ -1901,7 +1958,36 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
     <>
       <div onClick={() => setAaAcik(false)} style={{ position: "fixed", inset: 0, zIndex: 195 }} />
       <div style={{ ...panelStil("center"), width: "300px", maxHeight: "80vh", overflowY: "auto", zIndex: 200 }}>
-        
+
+        {/* TEK ÖNİZLEME — panelin üstünde sabit durur, aşağıdaki BÜTÜN ayarlar
+            (boyut, satır aralığı, harf aralığı, yazı tipi) bunu anında değiştirir.
+            Eskiden her ayarın altında ayrı bir önizleme vardı; menü kalabalıktı. */}
+        <div style={{
+          // Panelin kendi 12px padding'i olduğu için negatif marj + eşit padding ile
+          // yapıştırılır; yoksa altından kayan yazı üst boşlukta görünüyordu.
+          position: "sticky", top: "-12px", zIndex: 2,
+          background: theme.surface,
+          margin: "-12px -12px 12px", padding: "12px 12px 10px",
+          borderBottom: `1px solid ${theme.border}`,
+        }}>
+          <div style={{ fontSize: "10px", color: theme.textSecondary, letterSpacing: "1px", marginBottom: "6px", opacity: 0.8 }}>
+            ÖNİZLEME · {aktifArapcaFont.label}
+          </div>
+          <div style={{
+            padding: "10px 12px", borderRadius: "9px",
+            background: theme.background, border: `1px solid ${theme.border}`,
+            direction: "rtl", textAlign: "center",
+            fontFamily: aktifArapcaFont.style,
+            fontSize: `${Math.min(yaziBoyutu, 44)}px`,
+            lineHeight: satirAraligi,
+            letterSpacing: `${harfAraligi}px`,
+            color: theme.text,
+            overflow: "hidden",
+          }}>
+            بِسۡمِ ٱللَّهِ ٱلرَّحۡمَٰنِ ٱلرَّحِيمِ
+          </div>
+        </div>
+
         {/* YAZI BOYUTU */}
         <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px" }}>YAZI BOYUTU</div>
         <div style={{ marginBottom: "20px" }}>
@@ -1919,18 +2005,6 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
             onChange={e => setYaziBoyutu(parseInt(e.target.value))}
             style={{ width: "100%", accentColor: theme.accent }}
           />
-          <div style={{
-            marginTop: "8px", padding: "8px 12px", borderRadius: "8px",
-            background: theme.background, border: `1px solid ${theme.border}`,
-            direction: "rtl", textAlign: "center",
-            fontFamily: aktifArapcaFont.style,
-            fontSize: `${Math.min(yaziBoyutu, 100)}px`,
-            lineHeight: satirAraligi,
-            letterSpacing: `${harfAraligi}px`,
-            color: theme.text,
-          }}>
-            بِسۡمِ ٱللَّهِ ٱلرَّحۡمَٰنِ ٱلرَّحِيمِ
-          </div>
         </div>
 
   
@@ -1951,18 +2025,6 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
             onChange={e => setSatirAraligi(parseFloat(e.target.value))}
             style={{ width: "100%", accentColor: theme.accent }}
           />
-          <div style={{
-            marginTop: "8px", padding: "8px 12px", borderRadius: "8px",
-            background: theme.background, border: `1px solid ${theme.border}`,
-            direction: "rtl", textAlign: "center",
-            fontFamily: aktifArapcaFont.style,
-            fontSize: `${Math.min(yaziBoyutu, 22)}px`,
-            lineHeight: satirAraligi,
-            letterSpacing: `${harfAraligi}px`,
-            color: theme.text,
-          }}>
-            بِسۡمِ ٱللَّهِ ٱلرَّحۡمَٰنِ ٱلرَّحِيمِ
-          </div>
         </div>
 
         {/* HARF ARALIĞI */}
@@ -1986,32 +2048,78 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
 
         {/* YAZI TİPİ */}
       {/* TAM GENİŞLİK — web + mobil */}
-        {(
-          <div
-            onClick={() => setTamGenislik(v => !v)}
-            role="button"
-            aria-pressed={tamGenislik}
-            style={{
-              display: "flex", alignItems: "center", gap: "9px",
-              padding: "9px 10px", marginBottom: "20px", borderRadius: "9px",
-              cursor: "pointer", color: theme.text,
-              background: tamGenislik ? `${theme.accent}12` : "transparent",
-              border: `1px solid ${tamGenislik ? `${theme.accent}44` : theme.border}`,
-            }}
-          >
-            <UnfoldHorizontal size={16} color={theme.accent} style={{ flexShrink: 0 }} />
-            <span style={{ flex: 1, minWidth: 0 }}>
-              <span style={{ display: "block", fontSize: "12px", fontWeight: 600 }}>Tam Genişlik</span>
-              <span style={{ display: "block", fontSize: "11px", color: theme.textSecondary, lineHeight: 1.35 }}>
-                Yazıyı ekran boyunca yayar, kenar boşluklarını kaldırır.
-              </span>
+        <div
+          onClick={tamGenislikDegis}
+          role="button"
+          aria-pressed={tamGenislik}
+          style={{
+            display: "flex", alignItems: "center", gap: "9px",
+            padding: "9px 10px", marginBottom: "8px", borderRadius: "9px",
+            cursor: "pointer", color: theme.text,
+            background: tamGenislik ? `${theme.accent}12` : "transparent",
+            border: `1px solid ${tamGenislik ? `${theme.accent}44` : theme.border}`,
+          }}
+        >
+          <UnfoldHorizontal size={16} color={theme.accent} style={{ flexShrink: 0 }} />
+          <span style={{ flex: 1, minWidth: 0 }}>
+            <span style={{ display: "block", fontSize: "12px", fontWeight: 600 }}>Tam Genişlik</span>
+            <span style={{ display: "block", fontSize: "11px", color: theme.textSecondary, lineHeight: 1.35 }}>
+              Yazıyı ekran boyunca yayar, kenar boşluklarını kaldırır.
             </span>
-            <IosSwitch acik={tamGenislik} theme={theme} boyut={0.82} />
-          </div>
-        )}
+          </span>
+          <IosSwitch acik={tamGenislik} theme={theme} boyut={0.82} />
+        </div>
 
-        <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px" }}>YAZI TİPİ</div>
-        <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+        {/* KENAR BOŞLUĞU — Tam Genişlik'in tersi; ikisi birlikte açılamaz */}
+        <div
+          onClick={kenarBoslukDegis}
+          role="button"
+          aria-pressed={kenarBosluk}
+          style={{
+            display: "flex", alignItems: "center", gap: "9px",
+            padding: "9px 10px", marginBottom: "20px", borderRadius: "9px",
+            cursor: "pointer", color: theme.text,
+            background: kenarBosluk ? `${theme.accent}12` : "transparent",
+            border: `1px solid ${kenarBosluk ? `${theme.accent}44` : theme.border}`,
+          }}
+        >
+          <FoldHorizontal size={16} color={theme.accent} style={{ flexShrink: 0 }} />
+          <span style={{ flex: 1, minWidth: 0 }}>
+            <span style={{ display: "block", fontSize: "12px", fontWeight: 600 }}>Kenar Boşluğu</span>
+            <span style={{ display: "block", fontSize: "11px", color: theme.textSecondary, lineHeight: 1.35 }}>
+              Yazı büyüse de kenarlarda boşluk kalır; metin ortada, satır takibi kolay.
+            </span>
+          </span>
+          <IosSwitch acik={kenarBosluk} theme={theme} boyut={0.82} />
+        </div>
+
+        {/* YAZI TİPİ — açılır kapanır. column-reverse: liste düğmenin ÜSTÜNDE açılır
+            (aşağı açılınca panelin altında kalıp görünmüyordu); açılışta da görünür
+            alana kaydırılır. */}
+        <div style={{ display: "flex", flexDirection: "column-reverse" }}>
+        <button
+          onClick={() => {
+            const yeni = !yaziTipiAcik
+            setYaziTipiAcik(yeni)
+            if (yeni) requestAnimationFrame(() => {
+              try { yaziTipiListeRef.current?.scrollIntoView({ block: "nearest" }) } catch { /* yoksay */ }
+            })
+          }}
+          style={{
+            width: "100%", display: "flex", alignItems: "center", gap: "8px",
+            padding: "9px 10px", borderRadius: "9px", cursor: "pointer",
+            background: "transparent", border: `1px solid ${theme.border}`,
+            color: theme.text, marginTop: yaziTipiAcik ? "8px" : "0",
+          }}
+        >
+          <Feather size={15} color={theme.accent} style={{ flexShrink: 0 }} />
+          <span style={{ flex: 1, minWidth: 0, textAlign: "left" }}>
+            <span style={{ display: "block", fontSize: "10px", letterSpacing: "1px", color: theme.textSecondary }}>YAZI TİPİ</span>
+            <span style={{ display: "block", fontSize: "12px", fontWeight: 600 }}>{aktifArapcaFont.label}</span>
+          </span>
+          {yaziTipiAcik ? <ChevronDown size={16} color={theme.textSecondary} /> : <ChevronUp size={16} color={theme.textSecondary} />}
+        </button>
+        <div ref={yaziTipiListeRef} style={{ display: yaziTipiAcik ? "flex" : "none", flexDirection: "column", gap: "2px" }}>
           {ARAPCA_FONTLAR.map(font => (
             <button
               key={font.id}
@@ -2034,6 +2142,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
               </span>
             </button>
           ))}
+        </div>
         </div>
       </div>
     </>
@@ -2303,6 +2412,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
             <AyarToggle etiket="Sayfaya Gitme" aktif={sayfaGitGoster} onToggle={() => setSayfaGitGoster(v => !v)} {...{theme, isMobile, barUiOlcegi}} />
             <AyarToggle etiket="Tekrar (Döngü)" aktif={tekrarBtnGoster} onToggle={() => setTekrarBtnGoster(v => !v)} {...{theme, isMobile, barUiOlcegi}} />
             <AyarToggle etiket="Bilgi (İşaretler)" aktif={bilgiGoster} onToggle={() => setBilgiGoster(v => !v)} {...{theme, isMobile, barUiOlcegi}} />
+            <AyarToggle etiket="Görsel Oluştur" aktif={gorselGoster} onToggle={() => setGorselGoster(v => !v)} {...{theme, isMobile, barUiOlcegi}} />
 
 
             <AyarToggle etiket="Yazı Tipi"         aktif={yaziTipiGoster} onToggle={() => setYaziTipiGoster(v => !v)} {...{theme, isMobile, barUiOlcegi}} />
@@ -2371,6 +2481,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
       case "sayfaGit":    return sayfaGitGoster && sadeGorunur("sayfaGit")
       case "tekrar":      return tekrarBtnGoster && sadeGorunur("tekrar")
       case "bilgi":       return bilgiGoster && sadeGorunur("bilgi")
+      case "gorsel":      return gorselGoster && sadeGorunur("gorsel")
       case "yaziTipi":    return yaziTipiGoster && sadeGorunur("yaziTipi")
       case "otoOynat":    return otoOynatGoster && sadeGorunur("otoOynat")
       case "sadeMod":     return !!sadeModGoster
@@ -2488,6 +2599,16 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
           title="İşaretler ve tecvid bilgisi"
         >
           <Gem size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />
+        </button>
+      )}
+
+      {gorselGoster && sadeGorunur("gorsel") && (
+        <button
+          onClick={() => { setPopup(null); setGorselModu(v => !v) }}
+          style={{ ...barButonStil(gorselModu), flexShrink: 0, ...barOge("gorsel") }}
+          title="Âyet görseli oluştur"
+        >
+          <Camera size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />
         </button>
       )}
 
@@ -2686,6 +2807,18 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
           onKapat={() => setPopup(null)}
         />
       )}
+
+      {/* GÖRSEL OLUŞTUR */}
+      <GorselOlustur
+        acik={!!gorselVeri}
+        kapat={() => setGorselVeri(null)}
+        arapca={gorselVeri?.arapca || null}
+        meal={gorselVeri?.meal || null}
+        kaynak={gorselVeri?.kaynak || null}
+        arapcaFont={aktifArapcaFont.style}
+        theme={theme}
+        isMobile={isMobile}
+      />
 
       {/* TEKRAR / DÖNGÜ AYAR PANELİ */}
       {donguAyarAcik && (() => {
@@ -2926,6 +3059,32 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
           Kayıt koymak istediğiniz satıra dokunun
         </div>
       )}
+      {gorselModu && (
+        <div style={{
+          position: "fixed",
+          top: barKonum === "ust" ? `${barYuksekligi + 12}px` : "auto",
+          bottom: barKonum === "ust" ? "auto" : `${barYuksekligi + 12}px`,
+          left: "50%", transform: "translateX(-50%)",
+          background: theme.surface,
+          border: `1px solid ${theme.accent}`,
+          borderRadius: "12px",
+          padding: "10px 16px",
+          fontSize: `${Math.round((isMobile ? 11 : 12) * barUiOlcegi)}px`,
+          color: theme.text,
+          zIndex: 499,
+          display: "flex", alignItems: "center", gap: "10px",
+          boxShadow: "0 4px 20px rgba(0,0,0,0.18)",
+          maxWidth: "92vw",
+        }}>
+          <Camera size={14} color={theme.accent} />
+          <span>Görsel için bir âyet numarasına dokunun</span>
+          <button
+            onClick={() => setGorselModu(false)}
+            style={{ background: "transparent", border: "none", color: theme.textSecondary, cursor: "pointer", padding: "2px", display: "flex" }}
+            aria-label="Vazgeç"
+          ><X size={14} /></button>
+        </div>
+      )}
       {/* Sure menüsü */}
       {menuAcik && (
   <>
@@ -2950,7 +3109,14 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
         alignItems: "center", 
         gap: "8px" 
       }}>
-        <span style={{ flex: 1 }} />
+        <span style={{
+          flex: 1, minWidth: 0,
+          color: theme.accent,
+          fontSize: isMobile ? "14px" : "15px",
+          fontWeight: 600,
+          letterSpacing: "0.3px",
+          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+        }}>Sûre &amp; Cüz Menüsü</span>
         <button 
           onClick={() => setMenuAcik(false)} 
           style={{ 
@@ -3488,7 +3654,9 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
           <div
             style={{
               position: "relative",
-              maxWidth: tamGenislik ? "100%" : `${Math.round((isMobile ? 480 : 720) * (yaziBoyutu / 20))}px`,
+              maxWidth: tamGenislik ? "100%"
+                : kenarBosluk ? (isMobile ? "90%" : "62%")
+                : `${Math.round((isMobile ? 480 : 720) * (yaziBoyutu / 20))}px`,
               width: "100%",
               margin: "0 auto",
               padding: tamGenislik ? (isMobile ? "4px 4px" : "6px 8px") : (isMobile ? "4px 12px" : "6px 24px"),

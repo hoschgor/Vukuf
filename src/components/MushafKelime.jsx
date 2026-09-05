@@ -23,9 +23,27 @@ const TECVID_ISARET = {
   0x06DF: { sembol: '٥', yer: 'ust', renk: '#7f8c8d', ad: 'Vasılda okunmaz' },
 }
 const TECVID_CPS = new Set(Object.keys(TECVID_ISARET).map(Number))
+// Birleşik (harekeler/işaretler) — taban harf saymak için: bunlar harf DEĞİL.
+const BIRLESIK_RE = /[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06ED\u08D3-\u08FF]/
 const OZEL_CPS = new Set([0x08D1, 0x08D2, 0x08D9])
 const CIM_CPS = new Set([0x06DA])
 const TUM_OZEL_CPS = new Set([...VAKIF_CPS, ...OZEL_CPS, ...CIM_CPS])
+// ── PAYLAŞIM GÖRSELİ İÇİN TEMİZLEME ────────────────────────────────────────────────────────
+// Aşağıdaki işaretlerin HİÇBİRİ sayfada aktif fontla akış içinde çizilmiyor: hepsi ya string'den
+// çıkarılıp mutlak-konumlu overlay olarak (kendi rengi/fontuyla) çiziliyor, ya da ayrı bir span'e
+// alınıyor. Canvas'a (Görsel Oluştur) ham metin verilince bu işaretler fontun bozuk glifine
+// düşüyordu: KFGQPC'de ◉ halkası, başka fontlarda boş kutu (□) veya kopuk boşluk.
+// Bu yüzden görsel üretirken metinden ÇIKARILIRLAR. Harflere ve harekelere dokunulmaz,
+// hiçbir renk/biçim değişikliği yapılmaz — sadece bu işaretler atılır.
+export const GORSEL_CIKAR_CPS = new Set([...TECVID_CPS, ...VAKIF_CPS, ...OZEL_CPS, ...CIM_CPS, 0x06DB])
+export function gorselIcinTemizle(metin) {
+  return [...String(metin || "")]
+    .filter(c => !GORSEL_CIKAR_CPS.has(c.codePointAt(0)))
+    .join("")
+    .replace(/\s+/g, " ")
+    .trim()
+}
+
 const CIM_RENK = '#f39c12'
 const VAKIF_RENK = {
   0x615:  '#e67e22',
@@ -110,17 +128,28 @@ export default function MushafKelime({
   const hasUpperIndicator = kelime.vakif || kelime.secde
   const vakifRengi = kelime.vakif ? vakifRengiAl(kelime.vakif) : null
   // Kelimedeki tecvid/kıraat işaretleri: string'den çıkarılır, simge olarak overlay çizilir.
+  // İşaret, string'de BAĞLI OLDUĞU HARFTEN SONRA geldiği için o ana kadar sayılan TABAN harf
+  // sayısıyla yatay konumu bulunur → simge kelimenin ortasına değil, ait olduğu harfin üzerine/
+  // altına gelir (ör. Bakara 2:245'te üstteki ص "tı" harfinin, alttaki س "sad"ın hizasında).
   const tecvidler = []
   let temizArabic = kelime.arabic
   if ([...kelime.arabic].some(c => TECVID_CPS.has(c.codePointAt(0)))) {
     const kalan = []
+    let taban = 0
     for (const c of kelime.arabic) {
       const cp = c.codePointAt(0)
       const t = TECVID_ISARET[cp]
-      if (t) { if (!tecvidler.some(x => x.sembol === t.sembol && x.yer === t.yer)) tecvidler.push(t) }
-      else kalan.push(c)
+      if (t) { tecvidler.push({ ...t, taban }); continue }   // işaret metinden çıkar
+      kalan.push(c)
+      if (!BIRLESIK_RE.test(c)) taban++                       // yalnız taban (harf) say
     }
     temizArabic = kalan.join('')
+    const toplam = Math.max(1, taban)
+    // oran: sağdan (RTL başlangıcı) itibaren harfin merkezi → soldan yüzde konumu
+    for (const tv of tecvidler) {
+      const oran = Math.min(1, Math.max(0, (tv.taban - 0.5) / toplam))
+      tv.sol = (1 - oran) * 100
+    }
   }
   const efektifLineHeight = arapcaFont.toLowerCase().includes('me_quran') || arapcaFont.toLowerCase().includes('mequran')
   
@@ -218,7 +247,7 @@ export default function MushafKelime({
           title={t.ad}
           style={{
             position: "absolute",
-            left: "50%",
+            left: `${t.sol ?? 50}%`,
             // Kutu yüksekliği satır aralığına göre değiştiğinden ÜST/ALT kenara değil, kutunun
             // DİKEY MERKEZİNE (harflerin bulunduğu yer) göre konumlandırılır → satır aralığı
             // ayarı değişse de simge kelimeye aynı uzaklıkta kalır.

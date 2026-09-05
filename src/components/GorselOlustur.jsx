@@ -49,14 +49,22 @@ const KARARTMALAR = [
 // "oto" = zemin koyuysa fildişi, açıksa koyu (varsayılan davranış).
 // Yanında hazır öneriler, kullanıcının seçtiği ÖZEL renk ve SON 5 renk durur.
 const ONERILEN_RENKLER = [
-  { id: "beyaz",   ad: "Beyaz",    renk: "#ffffff" },
-  { id: "fildisi", ad: "Fildişi",  renk: "#f6f1e6" },
-  { id: "krem",    ad: "Krem",     renk: "#eadfc4" },
-  { id: "altin",   ad: "Altın",    renk: "#d9b45a" },
-  { id: "nane",    ad: "Nane",     renk: "#cfe8d5" },
-  { id: "gok",     ad: "Gök",      renk: "#cfe0f5" },
-  { id: "gul",     ad: "Gül",      renk: "#f3d3d3" },
-  { id: "koyu",    ad: "Koyu",     renk: "#1d1a14" },
+  { id: "beyaz",    ad: "Beyaz",       renk: "#ffffff" },
+  { id: "fildisi",  ad: "Fildişi",     renk: "#f6f1e6" },
+  { id: "krem",     ad: "Krem",        renk: "#eadfc4" },
+  { id: "kum",      ad: "Kum",         renk: "#dcc9a6" },
+  { id: "altin",    ad: "Altın",       renk: "#d9b45a" },
+  { id: "bakir",    ad: "Bakır",       renk: "#c98a4b" },
+  { id: "nane",     ad: "Nane",        renk: "#cfe8d5" },
+  { id: "zumrut",   ad: "Zümrüt",      renk: "#7fc9a5" },
+  { id: "gok",      ad: "Gök",         renk: "#cfe0f5" },
+  { id: "lacivert", ad: "Lâcivert",    renk: "#8fb4e3" },
+  { id: "gul",      ad: "Gül",         renk: "#f3d3d3" },
+  { id: "mercan",   ad: "Mercan",      renk: "#e59a8a" },
+  { id: "lila",     ad: "Lila",        renk: "#d9cdf0" },
+  { id: "gri",      ad: "Açık Gri",    renk: "#c9cdd2" },
+  { id: "kahve",    ad: "Kahve",       renk: "#5a4632" },
+  { id: "koyu",     ad: "Koyu",        renk: "#1d1a14" },
 ]
 const SON_RENK_ANAHTAR = "vukuf-gorsel-son-renkler"
 const sonRenkleriOku = () => {
@@ -260,9 +268,20 @@ export async function gorselCiz(ctx, ayar) {
     if (kaynakVar) {
       const bo = S * 0.05 * olcek
       const b = S * 0.028 * olcek
+      ctx.font = kucukFontYap(b)
+      // Kaynak uzun olabilir (kitap · kısım · sayfa) → EN FAZLA 2 SATIRA sarılır,
+      // taşarsa son satır "…" ile kısaltılır.
+      let sat = satirlaraBol(ctx, kaynak, kutuW)
+      if (sat.length > 2) {
+        const son = sat.slice(1).join(" ")
+        let kirp = son
+        while (kirp.length > 1 && ctx.measureText(kirp + "…").width > kutuW) kirp = kirp.slice(0, -1)
+        sat = [sat[0], kirp.trim() + "…"]
+      }
+      const satirYuk = b * 1.4
       bloklar.push({ tip: "bosluk", yuk: bo })
-      bloklar.push({ tip: "kaynak", boy: b, yuk: b * 1.4 })
-      toplam += bo + b * 1.4
+      bloklar.push({ tip: "kaynak", boy: b, satirlar: sat, yuk: sat.length * satirYuk, satirYuk })
+      toplam += bo + sat.length * satirYuk
     }
     return { bloklar, toplam }
   }
@@ -299,8 +318,7 @@ export async function gorselCiz(ctx, ayar) {
     } else if (b.tip === "kaynak") {
       ctx.font = kucukFontYap(b.boy)
       ctx.fillStyle = vurguRenk
-      ctx.fillText(kaynak, W / 2, y)
-      y += b.yuk
+      for (const st of b.satirlar) { ctx.fillText(st, W / 2, y + (b.satirYuk - b.boy) / 2); y += b.satirYuk }
     } else {
       y += b.yuk
     }
@@ -336,7 +354,7 @@ export default function GorselOlustur({
   const [uyari, setUyari] = useState("")
   const [yaziRengi, setYaziRengi] = useState(null)          // null = otomatik
   const [sonRenkler, setSonRenkler] = useState(() => sonRenkleriOku())
-  const renkGirisRef = useRef(null)
+  const ozelRenkMi = !!yaziRengi && !ONERILEN_RENKLER.some(r => r.renk === yaziRengi)
 
   // Panel her açılışta içeriğe göre mantıklı başlasın
   useEffect(() => {
@@ -589,32 +607,43 @@ export default function GorselOlustur({
           <div style={{ ...seritStil, marginBottom: "4px", alignItems: "center" }}>
             <button onClick={() => setYaziRengi(null)} style={cipStil(yaziRengi === null)}>Otomatik</button>
 
-            {/* Özel renk — tarayıcının renk seçicisi */}
-            <button
-              onClick={() => renkGirisRef.current?.click()}
-              title="Özel renk"
+            {/* ÖZEL RENK — input'un KENDİSİ düğme; tıklanınca tarayıcının renk paleti açılır.
+                (Gizli/sıfır boyutlu input iOS'ta paleti açmıyordu ve panelin altında ince bir
+                beyaz çizgi olarak sızıyordu.) */}
+            <label
+              title="Özel renk seç"
               style={{
-                ...cipStil(!!yaziRengi && !ONERILEN_RENKLER.some(r => r.renk === yaziRengi) && !sonRenkler.includes(yaziRengi)),
-                padding: "5px 9px",
+                position: "relative", display: "flex", alignItems: "center", gap: "5px",
+                padding: isMobile ? "5px 9px" : "6px 11px", borderRadius: "999px", cursor: "pointer",
+                border: `1px solid ${ozelRenkMi ? theme.accent : theme.border}`,
+                background: ozelRenkMi ? `${theme.accent}1e` : "transparent",
+                color: ozelRenkMi ? theme.accent : theme.textSecondary,
+                fontSize: isMobile ? "11px" : "12px", fontWeight: 600, whiteSpace: "nowrap", flexShrink: 0,
+                overflow: "hidden",
               }}
             >
-              <Pipette size={13} /> Özel
-            </button>
-            <input
-              ref={renkGirisRef}
-              type="color"
-              value={yaziRengi || "#f6f1e6"}
-              onChange={e => setYaziRengi(e.target.value)}
-              onBlur={e => setSonRenkler(sonRenkEkle(e.target.value))}
-              style={{ position: "absolute", width: 0, height: 0, opacity: 0, pointerEvents: "none" }}
-            />
+              <Pipette size={13} />
+              Özel
+              <span style={{
+                width: "14px", height: "14px", borderRadius: "50%",
+                background: yaziRengi || "#f6f1e6",
+                border: `1px solid ${theme.border}`, flexShrink: 0,
+              }} />
+              <input
+                type="color"
+                value={yaziRengi || "#f6f1e6"}
+                onChange={e => setYaziRengi(e.target.value)}
+                onBlur={e => setSonRenkler(sonRenkEkle(e.target.value))}
+                style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer", border: "none", padding: 0 }}
+              />
+            </label>
 
-            {sonRenkler.length > 0 && <span style={{ width: "1px", alignSelf: "stretch", background: theme.border, flexShrink: 0, margin: "0 2px" }} />}
+            {sonRenkler.length > 0 && <span style={{ width: "1px", height: "22px", background: theme.border, flexShrink: 0, margin: "0 2px" }} />}
             {sonRenkler.map(r => (
               <button key={`son-${r}`} onClick={() => setYaziRengi(r)} title={`Son kullanılan: ${r}`} style={renkKutu(r, yaziRengi === r)} />
             ))}
 
-            <span style={{ width: "1px", alignSelf: "stretch", background: theme.border, flexShrink: 0, margin: "0 2px" }} />
+            <span style={{ width: "1px", height: "22px", background: theme.border, flexShrink: 0, margin: "0 2px" }} />
             {ONERILEN_RENKLER.map(r => (
               <button key={r.id} onClick={() => { setYaziRengi(r.renk); setSonRenkler(sonRenkEkle(r.renk)) }} title={r.ad} style={renkKutu(r.renk, yaziRengi === r.renk)} />
             ))}

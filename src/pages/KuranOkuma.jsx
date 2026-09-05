@@ -674,7 +674,7 @@ const maxWidth = useMemo(() =>
 
   // ── Arapça font
   const [yaziTipiAcik, setYaziTipiAcik] = useState(false)   // Aa panelindeki yazı tipi listesi açık mı
-  const yaziTipiListeRef = useRef(null)
+  const yaziTipiBtnRef = useRef(null)
   const [arapcaFontId, setArapcaFontId] = useState(() =>
     localStorage.getItem("vukuf-kuran-arapca-font") || "kfgqpc"
   )
@@ -2098,11 +2098,14 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
             alana kaydırılır. */}
         <div style={{ display: "flex", flexDirection: "column-reverse" }}>
         <button
+          ref={yaziTipiBtnRef}
           onClick={() => {
             const yeni = !yaziTipiAcik
             setYaziTipiAcik(yeni)
+            // Liste YUKARI açıldığı için düğme panelin dibinde kalıyordu; açılışta
+            // DÜĞMEYİ görünür alanın altına çek → hem liste hem "kapat" düğmesi görünsün.
             if (yeni) requestAnimationFrame(() => {
-              try { yaziTipiListeRef.current?.scrollIntoView({ block: "nearest" }) } catch { /* yoksay */ }
+              try { yaziTipiBtnRef.current?.scrollIntoView({ block: "end", behavior: "smooth" }) } catch { /* yoksay */ }
             })
           }}
           style={{
@@ -2119,7 +2122,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
           </span>
           {yaziTipiAcik ? <ChevronDown size={16} color={theme.textSecondary} /> : <ChevronUp size={16} color={theme.textSecondary} />}
         </button>
-        <div ref={yaziTipiListeRef} style={{ display: yaziTipiAcik ? "flex" : "none", flexDirection: "column", gap: "2px" }}>
+        <div style={{ display: yaziTipiAcik ? "flex" : "none", flexDirection: "column", gap: "2px" }}>
           {ARAPCA_FONTLAR.map(font => (
             <button
               key={font.id}

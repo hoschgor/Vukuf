@@ -1002,9 +1002,10 @@ const [barKonum, setBarKonum] = useState(() => localStorage.getItem("vukuf-bar-k
 const [barUiOlcegi, setBarUiOlcegi] = useState(() => parseFloat(localStorage.getItem("vukuf-bar-ui-olcegi") || "1"))
 const [bilgiOlcegi, setBilgiOlcegi] = useState(() => parseFloat(localStorage.getItem("vukuf-bilgi-olcegi") || "1"))
 const [yaziTipiAcik, setYaziTipiAcik] = useState(false)   // Aa panelindeki yazı tipi listesi açık mı
-const yaziTipiListeRef = useRef(null)
+const yaziTipiBtnRef = useRef(null)
 const [gorselVeri, setGorselVeri] = useState(null)   // görsel oluşturucuya gidecek metin
-const [gorselIpucu, setGorselIpucu] = useState(false) // "önce metin seç" yönlendirmesi
+const [gorselIpucu, setGorselIpucu] = useState(null)  // görsel düğmesi uyarı metni (null = yok)
+const gorselIpucuTimerRef = useRef(null)
 const [ogeGorunur, setOgeGorunur] = useState(() => {
   try { return JSON.parse(localStorage.getItem("vukuf-bar-gorunur")) || {} } catch { return {} }
 })
@@ -2084,24 +2085,28 @@ const mevcutKisim = mevcutKisimYolu.length ? mevcutKisimYolu[mevcutKisimYolu.len
 // ── GÖRSEL OLUŞTUR: seçili metinden paylaşım görseli
 // Kullanıcı metni parmağıyla seçer (uzun basıp tutamakları kaydırarak), sonra
 // fotoğraf makinesi düğmesine basar. Seçim yoksa kısa bir yönlendirme gösterilir.
-const GORSEL_AZAMI = 900   // karakter — daha uzunu görselde okunmaz hâle geliyor
+// Görsele girecek metnin AZAMİ uzunluğu. Bunun üstünde yazı okunmaz hâle geldiği için
+// KIRPMA YAPILMAZ, panel AÇILMAZ: kullanıcıya daha kısa bir bölüm seçmesi söylenir.
+const GORSEL_AZAMI = 900
+// Uyarıyı göster ve 3,5 sn sonra kaldır (üst üste basılırsa sayaç sıfırlanır)
+const gorselUyar = (tip, uzunluk) => {
+  const mesaj = tip === "uzun"
+    ? `Seçim çok uzun (${uzunluk} karakter). Görselde okunabilmesi için en fazla ${GORSEL_AZAMI} karakterlik bir bölüm seç.`
+    : "Önce görsele koymak istediğin bölümü veya cümleyi seç, sonra bu düğmeye dokun."
+  setGorselIpucu(mesaj)
+  if (gorselIpucuTimerRef.current) clearTimeout(gorselIpucuTimerRef.current)
+  gorselIpucuTimerRef.current = setTimeout(() => setGorselIpucu(null), 3500)
+}
 const gorselYap = () => {
   let sec = ""
   try { sec = String(window.getSelection ? window.getSelection().toString() : "") } catch { sec = "" }
   sec = sec.replace(/\s+/g, " ").trim()
-  if (!sec) { setGorselIpucu(true); setTimeout(() => setGorselIpucu(false), 2600); return }
-  let kirpildi = false
-  if (sec.length > GORSEL_AZAMI) {
-    // Kelime ortasından kesme; son boşluktan kırp
-    const kes = sec.slice(0, GORSEL_AZAMI)
-    sec = kes.slice(0, Math.max(kes.lastIndexOf(" "), GORSEL_AZAMI - 80)).trim() + "…"
-    kirpildi = true
-  }
+  if (!sec) { gorselUyar("yok"); return }
+  if (sec.length > GORSEL_AZAMI) { gorselUyar("uzun", sec.length); return }
   const yol = mevcutKisimYolu.map(b => b.baslik).join(" · ")
   setGorselVeri({
     metin: sec,
     kaynak: [kitap?.baslik || kitap?.isim, yol, `s. ${mevcutSayfa}`].filter(Boolean).join(" · "),
-    kirpildi,
   })
   try { window.getSelection()?.removeAllRanges() } catch { /* yoksay */ }
 }
@@ -2320,11 +2325,14 @@ const AaPanel = aaAcik && (
           (aşağı açılınca panelin altında kalıp görünmüyordu); açılışta görünür alana kaydırılır. */}
       <div style={{ display: "flex", flexDirection: "column-reverse" }}>
         <button
+          ref={yaziTipiBtnRef}
           onClick={() => {
             const yeni = !yaziTipiAcik
             setYaziTipiAcik(yeni)
+            // Liste YUKARI açıldığı için düğme panelin dibinde kalıyordu; açılışta
+            // DÜĞMEYİ görünür alanın altına çek → hem liste hem "kapat" düğmesi görünsün.
             if (yeni) requestAnimationFrame(() => {
-              try { yaziTipiListeRef.current?.scrollIntoView({ block: "nearest" }) } catch { /* yoksay */ }
+              try { yaziTipiBtnRef.current?.scrollIntoView({ block: "end", behavior: "smooth" }) } catch { /* yoksay */ }
             })
           }}
           style={{
@@ -2343,7 +2351,7 @@ const AaPanel = aaAcik && (
           </span>
           {yaziTipiAcik ? <ChevronDown size={16} color={theme.textSecondary} /> : <ChevronUp size={16} color={theme.textSecondary} />}
         </button>
-        <div ref={yaziTipiListeRef} style={{ display: yaziTipiAcik ? "block" : "none" }}>
+        <div style={{ display: yaziTipiAcik ? "block" : "none" }}>
           {Object.entries(FONT_GRUPLARI).filter(([grupId]) => grupId !== "osmanlica").map(([grupId, grup]) => (
             <FontSecici
               key={grupId}
@@ -3314,9 +3322,10 @@ const GorselIpucu = gorselIpucu && (
     color: theme.text, fontSize: "12px", maxWidth: "92vw",
     display: "flex", alignItems: "center", gap: "9px",
     boxShadow: "0 4px 20px rgba(0,0,0,0.18)", pointerEvents: "none",
+    lineHeight: 1.4,
   }}>
-    <Camera size={14} color={theme.accent} />
-    <span>Önce görsele koymak istediğin bölümü veya cümleyi seç</span>
+    <Camera size={14} color={theme.accent} style={{ flexShrink: 0 }} />
+    <span>{gorselIpucu}</span>
   </div>
 )
 

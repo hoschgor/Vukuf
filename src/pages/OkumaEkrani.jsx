@@ -19,7 +19,7 @@ import {
   GripVertical, Eye as EyeIkon, UnfoldHorizontal,
 } from "lucide-react"
 import { useMediaQuery } from '../data/hooks/useMediaQuery'
-import BarSiraPaneli from '../components/BarSiraPaneli'
+import BarSiraPaneli, { barSatirOlc } from '../components/BarSiraPaneli'
 
 // ════════════════════════════════════════════════════════════════
 // SABİTLER
@@ -962,6 +962,11 @@ const barZamanRef = useRef(null)
 const [barGorunur, setBarGorunur]           = useState(true)
 const barRef = useRef(null)
 const [barYuk, setBarYuk] = useState(56)   // ölçülen bar yüksekliği (safe-area padding dahil)
+// Bar TEK SATIRA sığmıyor mu? Sığmıyorsa sol/sağ ayrımı bırakılır (ortada boşluk kalmasın)
+// ve öğeler tespit edilen satır sayısına DENGELİ dağıtılır (bkz. aşağıdaki ölçüm).
+const [barCokSatir, setBarCokSatir] = useState(false)
+const [barSatirKes, setBarSatirKes] = useState([])   // satır kırma ayraçlarının order değerleri
+const barOlcRef = useRef(null)                       // ölçüm fonksiyonu (buton seti değişince tetiklenir)
 const [gecisHazir, setGecisHazir] = useState(false)  // padding geçişi: açılıştaki ölçüm oturana kadar KAPALI (kayma olmasın)
 // Açılış örtüsü: konum oturana dek rozet göster, oturunca kaymadan aç (KuranOkuma ile tutarlı)
 const [okumaHazir, setOkumaHazir] = useState(false)
@@ -1514,7 +1519,17 @@ useEffect(() => { localStorage.setItem("vukuf-bar-konum", barKonum) }, [barKonum
 useLayoutEffect(() => {
   const el = barRef.current
   if (!el) return
-  const olc = () => { const h = el.offsetHeight; if (h) setBarYuk(prev => (Math.abs(prev - h) > 1 ? h : prev)) }
+  const olc = () => {
+    const h = el.offsetHeight; if (h) setBarYuk(prev => (Math.abs(prev - h) > 1 ? h : prev))
+    // Sarma tespiti + DENGELİ DAĞITIM (barSatirOlc). Doğal sarma 1. satırı tıka basa doldurup
+    // 2. satırı neredeyse boş bırakıyordu. Bunun yerine gereken satır sayısı bulunur ve öğeler
+    // satır genişlikleri birbirine en yakın olacak biçimde bölünür; kırma noktalarına tam
+    // genişlikte, yüksekliksiz görünmez ayraç konur.
+    const { cokSatir, kes } = barSatirOlc(el)
+    setBarCokSatir(cokSatir)
+    setBarSatirKes(p => (p.length === kes.length && p.every((v, i) => v === kes[i]) ? p : kes))
+  }
+  barOlcRef.current = olc
   olc()
   let ro
   try { ro = new ResizeObserver(olc); ro.observe(el) } catch {}
@@ -1531,6 +1546,15 @@ useLayoutEffect(() => {
   }
   return () => { try { ro && ro.disconnect() } catch {}; window.removeEventListener("resize", olc); window.removeEventListener("orientationchange", olc); if (zaman) clearTimeout(zaman) }
 }, [barKonum, isMobile, barUiOlcegi])
+
+// Bar yüksekliği DEĞİŞMEDEN buton seti/sırası/metni değişebilir (sade mod, kısım adı,
+// süre...). ResizeObserver bunu görmez. KuranOkuma ile AYNI yapı: bağımlılıksız layout
+// effect her render'dan sonra ölçer. Sonuç aynıysa state referansı korunur → döngü olmaz.
+useLayoutEffect(() => {
+  if (barOlcRef.current) barOlcRef.current()
+  const id = requestAnimationFrame(() => { try { barOlcRef.current && barOlcRef.current() } catch {} })
+  return () => cancelAnimationFrame(id)
+})
 
 // Ekran döndürülünce aynı sayfada kal (px scroll konumu farklı sayfaya denk gelmesin)
 const mevcutSayfaRef = useRef(1)
@@ -2994,9 +3018,10 @@ const barOgeAcik = (k) => {
 // Sıra + taraf: "sag" öğeler 50+ order alır; GÖRÜNÜR ilk sağ öğe marginLeft:auto ile boşluğu iter.
 const barSira = (k) => { const i = butonSirasi.indexOf(k); return i === -1 ? 99 : i }
 const ilkSagKey = butonSirasi.find(k => butonTaraf[k] === "sag" && barOgeAcik(k))
+// order 10'un katları: satır kırma ayraçları aradaki tek sayıya (ör. 35) yerleşebilsin.
 const barOge = (k) => ({
-  order: (butonTaraf[k] === "sag" ? 50 : 0) + barSira(k),
-  ...(k === ilkSagKey ? { marginLeft: "auto" } : {}),
+  order: ((butonTaraf[k] === "sag" ? 50 : 0) + barSira(k)) * 10,
+  ...(!barCokSatir && k === ilkSagKey ? { marginLeft: "auto" } : {}),
 })
 
 const Bar = (
@@ -3019,7 +3044,10 @@ const Bar = (
     paddingRight:  `max(${isMobile ? 12 : 10}px, env(safe-area-inset-right))`,
     display: "flex", alignItems: "center", gap: `${Math.round(4 * barUiOlcegi)}px`,
     justifyContent: "center",
-    zIndex: 90, flexWrap: "wrap", rowGap: "4px",
+    zIndex: 90, flexWrap: "wrap",
+    // Ayraç varken satır arası ayracın kendi yüksekliğinden gelir; rowGap iki kez uygulanıp
+    // bar gereksiz uzamasın diye sıfırlanır.
+    rowGap: barSatirKes.length ? "0px" : "4px",
     transition: "opacity 0.3s ease",
     opacity: barGorunur ? 1 : 0,
     pointerEvents: barGorunur ? "auto" : "none",
@@ -3093,8 +3121,10 @@ const Bar = (
         {otomatikKaydirma ? <Pause size={bIkon(15)} /> : <Play size={bIkon(15)} />}
       </button>
     )}
+    {/* Hız kutusu oto düğmesiyle AYNI order'ı alır → sıralamada onun yanında kalır.
+        order verilmezse 0'a düşüp barın en başına atlıyordu. */}
     {gorunurMu("oto") && otomatikKaydirma && (
-      <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "4px", ...barOge("oto") }}>
         <button onClick={() => setKaydirmaHizi(Math.max(1, kaydirmaHizi - 1))} style={{ ...barButonStil(), padding: "2px" }}><Minus size={bIkon(13)} /></button>
         <span style={{ fontSize: "12px", color: theme.textSecondary }}>{kaydirmaHizi}</span>
         <button onClick={() => setKaydirmaHizi(Math.min(20, kaydirmaHizi + 1))} style={{ ...barButonStil(), padding: "2px" }}><Plus size={bIkon(13)} /></button>
@@ -3126,6 +3156,17 @@ const Bar = (
           <Clock size={bIkon(11)} /> {dakikaFormatla(bugunSure)}
         </span>
       )}
+
+      {/* Satır kırma ayraçları: tam genişlikte, yüksekliksiz. order değerleri ölçümle
+          hesaplanır; öğeler satırlara dengeli dağılsın diye araya girerler. */}
+      {barSatirKes.map((o, i) => (
+        <span
+          key={`bar-kes-${i}`}
+          data-bar-kes="1"
+          aria-hidden="true"
+          style={{ flexBasis: "100%", width: "100%", height: "4px", order: o, pointerEvents: "none" }}
+        />
+      ))}
   </div>
 )
 

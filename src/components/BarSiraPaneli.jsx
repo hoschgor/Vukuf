@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react"
 import {
-  DndContext, closestCenter, KeyboardSensor, PointerSensor, TouchSensor, useSensor, useSensors,
+  DndContext, closestCenter, KeyboardSensor, MouseSensor, TouchSensor, useSensor, useSensors,
 } from "@dnd-kit/core"
 import {
   arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy,
@@ -20,6 +20,104 @@ import { GripVertical, X, RotateCcw, Save, AlignLeft, AlignRight, ArrowLeft, Set
 // onKaydet(yeniSira, yeniTaraf)             — Kaydet'e basılınca
 // ════════════════════════════════════════════════════════════════
 
+// ════════════════════════════════════════════════════════════════
+// BAR SATIR DAĞITIMI (ortak yardımcı)
+// Alt bar tek satıra sığmazsa tarayıcının doğal sarması 1. satırı tıka basa doldurup
+// son satırı neredeyse boş bırakır. Bunun yerine:
+//   1) açgözlü paketleme ile GEREKEN satır sayısı (L) bulunur,
+//   2) dinamik programlama ile öğeler tam L satıra, satır genişlikleri birbirine
+//      en yakın olacak şekilde bölünür (hedef genişlikten sapmanın karesi en küçük),
+//   3) kırma noktalarında hangi order değerine ayraç konacağı döner.
+//
+// birim : [{ o: order, w: genişlik }]  — GÖRSEL sırada, aynı order'ı paylaşanlar birleşik
+// ic    : barın iç (padding hariç) genişliği
+// bos   : öğeler arası yatay boşluk
+// dönüş : { cokSatir, kes: [order, ...] }
+// ════════════════════════════════════════════════════════════════
+export function barSatirDagit(birim, ic, bos, gercekSatir = 0) {
+  const n = birim.length
+  if (n < 2 || !(ic > 0)) return { cokSatir: false, kes: [] }
+  // 1) doğal satır sayısı (genişlik hesabından). Ayrıca DOM'da gerçekten kaç satıra
+  //    indiği ölçülmüşse (gercekSatir) büyüğü alınır — hesap eksik kalırsa sağ/sol
+  //    yaslaması bırakılmayıp barda kocaman boşluk kalmasın.
+  let L = 1, gen = 0, adet = 0
+  for (const b of birim) {
+    const ek = adet ? bos + b.w : b.w
+    if (adet && gen + ek > ic + 0.5) { L++; adet = 1; gen = b.w }
+    else { adet++; gen += ek }
+  }
+  // Genişlik hesabı "tek satır" diyor ama DOM gerçekten sarmışsa: yaslamayı yine de bırak
+  // (ortada kocaman boşluk kalmasın) ama AYRAÇ EKLEME. Ayraç eklersek bir sonraki ölçümde
+  // gerçek satır okunamayacağı için karar geri döner ve açılıp kapanan bir salınım olur.
+  if (L < 2) return gercekSatir >= 2 ? { cokSatir: true, kes: [] } : { cokSatir: false, kes: [] }
+  // 2) kümülatif genişlikler → i..j aralığının genişliği
+  const kum = [0]
+  for (let i = 0; i < n; i++) kum.push(kum[i] + birim[i].w)
+  const gW = (i, j) => kum[j] - kum[i] + bos * (j - i - 1)
+  const hedef = (kum[n] + bos * (n - L)) / L
+  const INF = Infinity
+  let onc = new Array(n + 1).fill(INF); onc[0] = 0
+  const iz = []
+  for (let l = 1; l <= L; l++) {
+    const cur = new Array(n + 1).fill(INF)
+    const geri = new Array(n + 1).fill(-1)
+    for (let j = l; j <= n; j++) {
+      for (let i = l - 1; i < j; i++) {
+        if (onc[i] === INF) continue
+        const w = gW(i, j)
+        if (w > ic + 0.5) continue
+        const fark = hedef - w
+        const c = onc[i] + fark * fark
+        if (c < cur[j]) { cur[j] = c; geri[j] = i }
+      }
+    }
+    iz.push(geri); onc = cur
+  }
+  if (onc[n] === INF) return { cokSatir: true, kes: [] }
+  // 3) geri izleme → satır uzunlukları → kırma order'ları
+  const uzun = []
+  let j = n
+  for (let l = L; l >= 1; l--) { const i = iz[l - 1][j]; uzun.unshift(j - i); j = i }
+  const kes = []
+  let idx = 0
+  for (let i = 0; i < uzun.length - 1; i++) {
+    idx += uzun[i]
+    if (idx > 0 && idx < n) kes.push(Math.round((birim[idx - 1].o + birim[idx].o) / 2))
+  }
+  return { cokSatir: true, kes }
+}
+
+// Bar DOM'undan ölçüm alıp barSatirDagit'i çalıştırır. el = bar elemanı.
+// Ayraçlar (data-bar-kes) ve görünmez öğeler ölçüme girmez; aynı order'lı çocuklar
+// (ör. oto-kaydırma düğmesi + hız kutusu) tek birim sayılır ki araları bölünmesin.
+export function barSatirOlc(el) {
+  if (!el) return { cokSatir: false, kes: [] }
+  const st = getComputedStyle(el)
+  const bos = parseFloat(st.columnGap) || 0
+  const ic = el.clientWidth - (parseFloat(st.paddingLeft) || 0) - (parseFloat(st.paddingRight) || 0)
+  const cocuk = [...el.children].filter(x => x.dataset && x.dataset.barKes !== "1" && (x.offsetWidth || x.offsetHeight))
+  const ayracVar = [...el.children].some(x => x.dataset && x.dataset.barKes === "1")
+  // Ayraç YOKKEN (yani doğal sarma) DOM'daki gerçek satır sayısını da ölç: öğe yükseklikleri
+  // farklı olduğundan offsetTop değil, DİKEY MERKEZ kümelenir (align-items: center).
+  // Ayraç varken bu ölçüm kendi sonucumuzu geri okur → kullanılmaz (kilitlenme olmasın).
+  let gercekSatir = 0
+  if (!ayracVar && cocuk.length > 1) {
+    const merkez = cocuk.map(x => x.offsetTop + x.offsetHeight / 2).sort((a, b) => a - b)
+    gercekSatir = 1
+    for (let i = 1; i < merkez.length; i++) if (merkez[i] - merkez[i - 1] > 3) gercekSatir++
+  }
+  const ham = cocuk
+    .map(x => ({ o: parseInt(getComputedStyle(x).order, 10) || 0, w: x.offsetWidth }))
+    .sort((a, b) => a.o - b.o)
+  const birim = []
+  for (const g of ham) {
+    const s = birim[birim.length - 1]
+    if (s && s.o === g.o) s.w += bos + g.w
+    else birim.push({ o: g.o, w: g.w })
+  }
+  return barSatirDagit(birim, ic, bos, gercekSatir)
+}
+
 function SiraSatiri({ k, bilgi, taraf, onTaraf, theme, isMobile }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: k })
   const o = bilgi[k]
@@ -27,6 +125,11 @@ function SiraSatiri({ k, bilgi, taraf, onTaraf, theme, isMobile }) {
   const Ikon = o.Ikon
   const yasBtn = (deger, Simge) => (
     <button
+      // Bu düğmeler sürüklemeyi BAŞLATMASIN (satırın tamamı sürükleme tutamağı oldu).
+      // MouseSensor onMouseDown, TouchSensor onTouchStart dinler → ikisi de durdurulur.
+      onMouseDown={(e) => e.stopPropagation()}
+      onPointerDown={(e) => e.stopPropagation()}
+      onTouchStart={(e) => e.stopPropagation()}
       onClick={(e) => { e.stopPropagation(); onTaraf(k, deger) }}
       title={deger === "sol" ? "Sola yasla" : "Sağa yasla"}
       style={{
@@ -41,6 +144,8 @@ function SiraSatiri({ k, bilgi, taraf, onTaraf, theme, isMobile }) {
   return (
     <div
       ref={setNodeRef}
+      {...attributes}
+      {...listeners}
       style={{
         transform: CSS.Transform.toString(transform), transition,
         display: "flex", alignItems: "center", gap: "8px",
@@ -49,13 +154,16 @@ function SiraSatiri({ k, bilgi, taraf, onTaraf, theme, isMobile }) {
         border: `1px solid ${isDragging ? theme.accent : theme.border}`,
         boxShadow: isDragging ? "0 6px 18px rgba(0,0,0,0.25)" : "none",
         marginBottom: "5px", position: "relative", zIndex: isDragging ? 5 : 1,
+        // Satırın TAMAMI sürükleme tutamağı; yazı seçilmesin ki sürükleme kesilmesin
+        cursor: isDragging ? "grabbing" : "grab",
+        // manipulation → dikey kaydırma tarayıcıya kalır; sürükleme basılı tutmayla başlar.
+        // (6 nokta tutamağı "none" alır → oradan anında ve kaydırmasız sürüklenir.)
+        touchAction: "manipulation",
+        userSelect: "none", WebkitUserSelect: "none", msUserSelect: "none",
+        WebkitTouchCallout: "none", WebkitTapHighlightColor: "transparent",
       }}
     >
-      <span
-        {...attributes}
-        {...listeners}
-        style={{ cursor: "grab", touchAction: "none", color: theme.textSecondary, display: "flex", flexShrink: 0 }}
-      >
+      <span style={{ color: theme.textSecondary, display: "flex", flexShrink: 0, touchAction: "none" }}>
         <GripVertical size={16} />
       </span>
       {Ikon && <Ikon size={15} color={theme.accent} style={{ flexShrink: 0 }} />}
@@ -88,9 +196,13 @@ export default function BarSiraPaneli({
     if (acik) { setSiraTaslak(sira); setTarafTaslak(taraf); setSifirlaOnay(false) }
   }, [acik])
 
+  // PointerSensor DEĞİL, MouseSensor + TouchSensor: PointerSensor dokunmayı da mesafeyle
+  // yakaladığı için parmak 5px kayar kaymaz sürükleme başlıyor ve liste AŞAĞI YUKARI
+  // KAYDIRILAMIYORDU. Ayrım yapınca fare mesafeyle, dokunma ise kısa basılı tutmayla
+  // başlar; parmak beklemeden kayarsa (tolerance) sürükleme iptal olur → kaydırma serbest.
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } }),
+    useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 170, tolerance: 6 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   )
 

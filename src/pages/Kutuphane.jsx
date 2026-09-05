@@ -12,7 +12,7 @@ import {
   DndContext,
   closestCenter,
   KeyboardSensor,
-  PointerSensor,
+  MouseSensor,
   TouchSensor,
   useSensor,
   useSensors,
@@ -30,6 +30,49 @@ import {
   Pencil, Check, GripVertical, GripHorizontal, Search, X, BookOpen, Sparkles,
   ChevronLeft, ChevronRight, Eye, EyeOff, Plus, Trash2, Clock, Star, FolderPlus, RotateCcw,
 } from "lucide-react"
+
+// ════════════════════════════════════════════════════════════════
+// SÜRÜKLEME ERGONOMİSİ
+// Düzenleme modu AÇIKKEN satırın/kartın TAMAMI sürükleme tutamağıdır (yalnız 6 nokta
+// simgesi değil) ve yazılar seçilemez — seçim başlarsa sürükleme kesiliyordu.
+// Düzenleme modu KAPALIYKEN hiçbir şey değişmez: props boş döner, stil eklenmez.
+//
+// Satırın içindeki gerçek denetimler (arama düğmesi, göz, yeniden adlandırma girdisi,
+// sil...) sürüklemeyi başlatmasın diye olay hedefi currentTarget'a kadar yürünür;
+// yol üzerinde etkileşimli bir eleman ya da data-nodrag varsa sürükleme başlatılmaz.
+// ════════════════════════════════════════════════════════════════
+const SURUKLEME_DISI = new Set(["INPUT", "TEXTAREA", "SELECT", "BUTTON", "A"])
+
+function surukleEngel(e) {
+  let n = e.target
+  while (n && n !== e.currentTarget) {
+    if (n.tagName && SURUKLEME_DISI.has(n.tagName)) return true
+    if (n.dataset && n.dataset.nodrag === "1") return true
+    n = n.parentNode
+  }
+  return false
+}
+
+// hepsi=true → hedef ayrımı yapılmaz (ör. kitap kartı: içeriğin tamamı <a>)
+function surukleProps(aktif, attributes, listeners, hepsi = false) {
+  if (!aktif) return {}
+  if (hepsi) return { ...attributes, ...listeners }
+  const sarmalanmis = {}
+  for (const k in listeners) {
+    const fn = listeners[k]
+    sarmalanmis[k] = (e) => { if (surukleEngel(e)) return; if (fn) fn(e) }
+  }
+  return { ...attributes, ...sarmalanmis }
+}
+
+const surukleStil = (aktif) => aktif ? {
+  cursor: "grab",
+  // manipulation → dikey kaydırma tarayıcıda kalır (liste rahat gezilir); sürükleme kısa
+  // basılı tutmayla başlar. 6 nokta tutamağı "none" alır → oradan anında sürüklenir.
+  touchAction: "manipulation",
+  userSelect: "none", WebkitUserSelect: "none", msUserSelect: "none",
+  WebkitTouchCallout: "none", WebkitTapHighlightColor: "transparent",
+} : {}
 
 const kitapRenkleri = [
   "#8B4513", "#A0522D", "#6B3A2A", "#7B3F00",
@@ -73,13 +116,16 @@ function SortableKitap({ kitap, duzenlemeMode, theme, alimId }) {
   const style = { transform: CSS.Transform.toString(transform), transition }
 
   return (
-    <div ref={setNodeRef} style={{ ...style, position: "relative" }}>
+    <div
+      ref={setNodeRef}
+      // Düzenleme modunda kartın TAMAMI sürüklenir (kapak dahil); mod kapalıyken hiç değişmez
+      {...surukleProps(duzenlemeMode, attributes, listeners, true)}
+      style={{ ...style, position: "relative", ...surukleStil(duzenlemeMode) }}
+    >
       {duzenlemeMode && (
         <div
-          {...attributes}
-          {...listeners}
           style={{
-            cursor: "grab",
+            // Tutamaktan başlayan dokunuşta kaydırma yok → anında sürükleme
             touchAction: "none",
             position: "absolute",
             top: "2px",
@@ -98,6 +144,8 @@ function SortableKitap({ kitap, duzenlemeMode, theme, alimId }) {
       <Link
         to={duzenlemeMode ? "#" : `/kitap/${kitap.id}`}
         onClick={e => duzenlemeMode && e.preventDefault()}
+        // Düzenleme modunda tarayıcının kendi bağlantı/görsel sürüklemesi devreye girmesin
+        draggable={duzenlemeMode ? false : undefined}
         style={{ textDecoration: "none" }}
       >
         <KucukKapak kitap={kitap} theme={theme} alimId={alimId} duzenlemeMode={duzenlemeMode} />
@@ -116,6 +164,7 @@ function KucukKapak({ kitap, theme, alimId, duzenlemeMode }) {
         <img
           src={kitap.gorsel}
           alt={kitap.baslik}
+          draggable={duzenlemeMode ? false : undefined}
           style={{
             width: "80px",
             height: "128px",
@@ -562,6 +611,7 @@ function KitapRafi({ kitaplar: liste, rafId, duzenlemeMode, theme, sensors, kita
 function GozBtn({ gizli, onClick, theme }) {
   return (
     <span
+      data-nodrag="1"
       onClick={(e) => { e.stopPropagation(); onClick() }}
       title={gizli ? "Rafı göster" : "Rafı gizle"}
       style={{ display: "flex", alignItems: "center", cursor: "pointer", color: gizli ? theme.textSecondary : theme.accent, padding: "2px" }}
@@ -616,6 +666,7 @@ function SortableAlimRafi({ alim, duzenlemeMode, theme, sensors, kitapSiralama, 
     <div id={`alim-raf-${alim.id}`} ref={setNodeRef} style={{ ...style, marginBottom: "8px", background: theme.background, borderRadius: "8px", overflow: "hidden", border: `1px solid ${theme.border}`, scrollMarginTop: "80px" }}>
       <button
         onClick={toggleAlimRafi}
+        {...surukleProps(duzenlemeMode, attributes, listeners)}
         style={{
           width: "100%",
           display: "flex",
@@ -628,16 +679,12 @@ function SortableAlimRafi({ alim, duzenlemeMode, theme, sensors, kitapSiralama, 
           fontFamily: "PlayfairDisplay, serif",
           cursor: "pointer",
           borderBottom: gorunur ? `1px solid ${theme.border}` : "none",
+          ...surukleStil(duzenlemeMode),
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
           {duzenlemeMode && (
-            <span
-              {...attributes}
-              {...listeners}
-              onClick={e => e.stopPropagation()}
-              style={{ cursor: "grab", touchAction: "none", color: theme.textSecondary, display: "flex" }}
-            >
+            <span style={{ color: theme.textSecondary, display: "flex", touchAction: "none" }}>
               <GripVertical size={16} />
             </span>
           )}
@@ -813,21 +860,18 @@ function SortableKategori({ kategori,
           setAcikKategori(yeni)
           localStorage.setItem("vukuf-acik-kategori", JSON.stringify(yeni))
         }}
+        {...surukleProps(duzenlemeMode, attributes, listeners)}
         style={{
           width: "100%", padding: "20px 24px", display: "flex", alignItems: "center", justifyContent: "space-between",
           background: `linear-gradient(135deg, ${theme.accent}25, ${theme.accent}10)`,
           borderBottom: acikKategori === kategori.id ? `1px solid ${theme.border}` : "none",
           cursor: "pointer", color: theme.text,
+          ...surukleStil(duzenlemeMode),
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
           {duzenlemeMode && (
-            <span
-              {...attributes}
-              {...listeners}
-              onClick={e => e.stopPropagation()}
-              style={{ cursor: "grab", touchAction: "none", color: theme.accent, display: "flex" }}
-            >
+            <span style={{ color: theme.accent, display: "flex", touchAction: "none" }}>
               <GripVertical size={20} />
             </span>
           )}
@@ -1006,16 +1050,12 @@ function OzelAltRaf({ raf, alt, liste, theme, dinamikMod, duzenlemeMode, aramaAk
     <div ref={setNodeRef} style={sstyle}>
       <div
         onClick={duzenAd != null ? undefined : toggle}
-        style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 16px", borderBottom: `1px solid ${theme.border}`, gap: "10px", cursor: duzenAd != null ? "default" : "pointer" }}
+        {...surukleProps(duzenlemeMode, attributes, listeners)}
+        style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 16px", borderBottom: `1px solid ${theme.border}`, gap: "10px", cursor: duzenAd != null ? "default" : "pointer", ...surukleStil(duzenlemeMode) }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0, flex: 1 }}>
           {duzenlemeMode && (
-            <span
-              {...attributes}
-              {...listeners}
-              onClick={e => e.stopPropagation()}
-              style={{ cursor: "grab", touchAction: "none", color: theme.textSecondary, display: "flex", flexShrink: 0 }}
-            >
+            <span style={{ color: theme.textSecondary, display: "flex", flexShrink: 0, touchAction: "none" }}>
               <GripVertical size={14} />
             </span>
           )}
@@ -1097,6 +1137,7 @@ function RafArama({ deger, setDeger, theme, acik, setAcik }) {
   return (
     <>
       <span
+        data-nodrag="1"
         onClick={(e) => { e.stopPropagation(); acik ? setAcik(false) : setAcik(true) }}
         title="Rafta ara"
         style={{
@@ -1138,20 +1179,17 @@ function OzelKategori({ raf, havuz, theme, dinamikMod, duzenlemeMode, gizlemeMod
     <div ref={setNodeRef} style={{ ...sstyle, marginBottom: "32px", background: theme.surface, borderRadius: "16px", overflow: "hidden", border: `1px solid ${theme.border}`, boxShadow: "0 2px 12px rgba(0,0,0,0.06)", opacity: gizli ? 0.55 : 1 }}>
       <div
         onClick={toggle}
+        {...surukleProps(duzenlemeMode, attributes, listeners)}
         style={{
           width: "100%", padding: "18px 20px", display: "flex", alignItems: "center", justifyContent: "space-between",
           background: `linear-gradient(135deg, ${theme.accent}25, ${theme.accent}10)`,
           borderBottom: acik ? `1px solid ${theme.border}` : "none", cursor: "pointer", color: theme.text,
+          ...surukleStil(duzenlemeMode),
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0, flex: 1 }}>
           {duzenlemeMode && (
-            <span
-              {...attributes}
-              {...listeners}
-              onClick={e => e.stopPropagation()}
-              style={{ cursor: "grab", touchAction: "none", color: theme.accent, display: "flex", flexShrink: 0 }}
-            >
+            <span style={{ color: theme.accent, display: "flex", flexShrink: 0, touchAction: "none" }}>
               <GripVertical size={20} />
             </span>
           )}
@@ -1288,20 +1326,17 @@ function OtomatikKategori({ rafId, baslik, Ikon, kitaplar: liste, theme, dinamik
     <div ref={setNodeRef} style={{ ...sstyle, marginBottom: "32px", background: theme.surface, borderRadius: "16px", overflow: "hidden", border: `1px solid ${theme.border}`, boxShadow: "0 2px 12px rgba(0,0,0,0.06)", opacity: gizli ? 0.55 : 1 }}>
       <div
         onClick={toggle}
+        {...surukleProps(duzenlemeMode, attributes, listeners)}
         style={{
           width: "100%", padding: "18px 20px", display: "flex", alignItems: "center", justifyContent: "space-between",
           background: `linear-gradient(135deg, ${theme.accent}25, ${theme.accent}10)`,
           borderBottom: acik ? `1px solid ${theme.border}` : "none", cursor: "pointer", color: theme.text,
+          ...surukleStil(duzenlemeMode),
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
           {duzenlemeMode && (
-            <span
-              {...attributes}
-              {...listeners}
-              onClick={e => e.stopPropagation()}
-              style={{ cursor: "grab", touchAction: "none", color: theme.accent, display: "flex", flexShrink: 0 }}
-            >
+            <span style={{ color: theme.accent, display: "flex", flexShrink: 0, touchAction: "none" }}>
               <GripVertical size={20} />
             </span>
           )}
@@ -1582,9 +1617,14 @@ export default function Kutuphane() {
   const hepsiGoster = duzenlemeMode && gizlemeMod
   const gorunenIdler = tamSira.filter(id => hepsiGoster || !gizliRaflar.includes(id))
 
+  // PointerSensor DEĞİL, MouseSensor + TouchSensor: PointerSensor dokunmayı da mesafeyle
+  // yakaladığı için düzenleme modunda parmak birkaç piksel kayar kaymaz sürükleme başlıyor,
+  // sayfa AŞAĞI YUKARI KAYDIRILAMIYORDU. Ayrım yapınca fare mesafeyle, dokunma kısa basılı
+  // tutmayla başlar; parmak beklemeden kayarsa (tolerance) sürükleme iptal → kaydırma serbest.
+  // (BarSiraPaneli ile aynı değerler — tüm sıralama menüleri aynı hissiyatta olsun.)
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } }),
+    useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 170, tolerance: 6 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   )
 
@@ -1765,7 +1805,7 @@ export default function Kutuphane() {
 
       <div style={{ marginBottom: "32px" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px", flexWrap: "wrap", gap: "10px" }}>
-          <h1 style={{ fontSize: "28px", color: theme.text, letterSpacing: "1px", fontFamily: "PlayfairDisplay, serif" }}>
+          <h1 style={{ fontSize: "28px", color: theme.textSecondary, letterSpacing: "1px", fontFamily: "PlayfairDisplay, serif" }}>
             Kitaplık
           </h1>
           <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>

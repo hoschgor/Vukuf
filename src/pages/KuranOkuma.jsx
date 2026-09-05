@@ -17,6 +17,7 @@ import KelimePopup from "../components/KelimePopup"
 import YuklemeEkrani from "../components/YuklemeEkrani"
 import IosSwitch from "../components/IosSwitch"
 import AyetPopup from "../components/AyetPopup"
+import { barSatirOlc } from "../components/BarSiraPaneli"
 import { useMushaf, sureBaslangicSayfasi, ayetSayfasi } from "../data/hooks/useMushaf"
 import useAudioPlayer, { BESMELE_OKUYANLAR } from "../data/hooks/useAudioPlayer"
 import { useMediaQuery } from "../data/hooks/useMediaQuery"
@@ -162,6 +163,9 @@ function SiraSatiri({ k, taraf, onTaraf, theme, isMobile }) {
   const Ikon = o.Ikon
   const yasBtn = (deger, Simge) => (
     <button
+      // Bu düğmeler sürüklemeyi BAŞLATMASIN (satırın tamamı sürükleme tutamağı)
+      onPointerDown={(e) => e.stopPropagation()}
+      onTouchStart={(e) => e.stopPropagation()}
       onClick={(e) => { e.stopPropagation(); onTaraf(k, deger) }}
       title={deger === "sol" ? "Sola yasla" : "Sağa yasla"}
       style={{
@@ -176,6 +180,8 @@ function SiraSatiri({ k, taraf, onTaraf, theme, isMobile }) {
   return (
     <div
       ref={setNodeRef}
+      {...attributes}
+      {...listeners}
       style={{
         transform: CSS.Transform.toString(transform), transition,
         display: "flex", alignItems: "center", gap: "8px",
@@ -184,13 +190,14 @@ function SiraSatiri({ k, taraf, onTaraf, theme, isMobile }) {
         border: `1px solid ${isDragging ? theme.accent : theme.border}`,
         boxShadow: isDragging ? "0 6px 18px rgba(0,0,0,0.25)" : "none",
         marginBottom: "5px", position: "relative", zIndex: isDragging ? 5 : 1,
+        // Satırın TAMAMI tutamak; yazı seçilmesin ki sürükleme kesilmesin
+        cursor: isDragging ? "grabbing" : "grab",
+        touchAction: "none",
+        userSelect: "none", WebkitUserSelect: "none", msUserSelect: "none",
+        WebkitTouchCallout: "none", WebkitTapHighlightColor: "transparent",
       }}
     >
-      <span
-        {...attributes}
-        {...listeners}
-        style={{ cursor: "grab", touchAction: "none", color: theme.textSecondary, display: "flex", flexShrink: 0 }}
-      >
+      <span style={{ color: theme.textSecondary, display: "flex", flexShrink: 0 }}>
         <GripVertical size={16} />
       </span>
       <Ikon size={15} color={theme.accent} style={{ flexShrink: 0 }} />
@@ -412,6 +419,19 @@ export default function KuranOkuma({ kitap }) {
   const sonScrollTopRef = useRef(-1)      // "gerçekten durdu mu" kontrolü
   const durakTimerRef = useRef(null)      // kaydırma durunca üst tamponu büyüt
   const oturtRef = useRef(null)           // geç oturan yükseklikleri yutan kısa "sabit tut" döngüsü
+  const beklenenTopRef = useRef(-1)       // BİZİM yazdığımız son scrollTop (kullanıcı kaydırmasını ayırt etmek için)
+
+  // Çıpayı ölçüp konumu birebir geri koyar. Tek atışta yapmak yetmiyordu: tarayıcı scrollTop'u
+  // yuvarlıyor ve geriye ~1px artık kalıyordu (kendiliğinden duruşta "1px yukarı kayma").
+  // Ölç → yaz → TEKRAR ölç döngüsüyle artık 0.25px altına iner.
+  const konumSabitle = (sc, cipa, hedefTop, tur = 3) => {
+    for (let i = 0; i < tur; i++) {
+      const d = (cipa.getBoundingClientRect().top - sc.getBoundingClientRect().top) - hedefTop
+      if (Math.abs(d) < 0.25) break
+      sc.scrollTop += d
+    }
+    beklenenTopRef.current = sc.scrollTop
+  }
 
   // AŞAĞI pencere: görünümün ALTINA sayfa eklemek görüneni kaydırmaz → telafi GEREKTİRMEZ.
   // Kaydırma dinleyicisinden (momentum dâhil) serbestçe çağrılabilir.
@@ -460,21 +480,22 @@ export default function KuranOkuma({ kitap }) {
 
     const oncekiTop = cipa.getBoundingClientRect().top - sc.getBoundingClientRect().top
     flushSync(() => setGosterNonce(n => n + 1))      // DOM'u SENKRON güncelle
-    const sonrakiTop = cipa.getBoundingClientRect().top - sc.getBoundingClientRect().top
-    const fark = sonrakiTop - oncekiTop
-    if (fark) sc.scrollTop += fark                   // büyümeyi birebir telafi et (görünmez)
+    konumSabitle(sc, cipa, oncekiTop)                // büyümeyi birebir telafi et (görünmez)
 
-    // Geç oturan yükseklikler (font/ölçüm) için kısa süre çıpayı sabit tut; kullanıcı
-    // dokunursa DERHAL bırak (kimseyle güreşmeyelim).
+    // Geç oturan yükseklikler (font/ölçüm) için kısa süre çıpayı sabit tut. Kullanıcı dokunursa
+    // ya da ARAYA GERÇEK BİR KAYDIRMA girerse DERHAL bırak: momentum sırasında scrollTop'a
+    // yazmak iOS'ta akışı öldürüyor ("yukarı çekip bıraktığımda yarıda duruyor").
     if (oturtRef.current) cancelAnimationFrame(oturtRef.current)
-    const bitis = performance.now() + 400
+    const bitis = performance.now() + 300
     const tut = () => {
       oturtRef.current = null
       if (dokunuyorRef.current) return
       const s2 = scrollRef.current, c2 = sayfaRefs.current[no]
       if (!s2 || !c2) return
+      // Bizim yazdığımızdan başka bir sebeple konum değiştiyse (momentum/kullanıcı) → çekil
+      if (beklenenTopRef.current >= 0 && Math.abs(s2.scrollTop - beklenenTopRef.current) > 1.5) return
       const d = (c2.getBoundingClientRect().top - s2.getBoundingClientRect().top) - oncekiTop
-      if (Math.abs(d) > 0.5) s2.scrollTop += d
+      if (Math.abs(d) > 0.5) konumSabitle(s2, c2, oncekiTop, 2)
       if (performance.now() < bitis) oturtRef.current = requestAnimationFrame(tut)
     }
     oturtRef.current = requestAnimationFrame(tut)
@@ -575,8 +596,9 @@ export default function KuranOkuma({ kitap }) {
   const [sifirlaOnay, setSifirlaOnay] = useState(false)
   const sira = (k) => { const i = butonSirasi.indexOf(k); return i === -1 ? 99 : i }
   const siraSensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } }),
+    // Sürükleme KOLAY başlasın: kısa mesafe / kısa basılı tutma
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 110, tolerance: 8 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   )
   const siraPaneliAc = () => {
@@ -813,12 +835,28 @@ const maxWidth = useMemo(() =>
   // PWA'da alt barın DOĞRUDAN alt boşluğu (px). Büyüt = daha çok, küçült = daha az. Web etkilenmez.
   const pwaAltBosluk = 8
   const [playerYuk, setPlayerYuk] = useState(0)  // PlayerBar'ın ÖLÇÜLEN yüksekliği
+  // Bar TEK SATIRA sığmıyor mu? Sığmıyorsa iki şey yapılır:
+  //  1) sol/sağ yaslama bırakılır (ortada boşluk kalmasın, öğeler sırayla ortalansın),
+  //  2) öğeler tespit edilen SATIR SAYISINA DENGELİ dağıtılır (barSatirOlc). Doğal sarma
+  //     1. satırı tıka basa doldurup 2. satırı neredeyse boş bırakıyordu; bunun yerine gereken
+  //     satır sayısı bulunur ve öğeler satır genişlikleri birbirine en yakın olacak biçimde
+  //     bölünür. Kırma noktalarına tam genişlikte, yüksekliksiz görünmez ayraç konur.
+  const [barCokSatir, setBarCokSatir] = useState(false)
+  const [barSatirKes, setBarSatirKes] = useState([])   // ayraçların order değerleri
 
 useLayoutEffect(() => {
   if (!barRef.current) return
+  const olcSatir = () => {
+    const el = barRef.current
+    if (!el) return
+    const { cokSatir, kes } = barSatirOlc(el)
+    setBarCokSatir(cokSatir)
+    setBarSatirKes(p => (p.length === kes.length && p.every((v, i) => v === kes[i]) ? p : kes))
+  }
   const observer = new ResizeObserver(() => {
     // offsetHeight = padding + border dahil (contentRect padding'i atlıyordu → player bara biniyordu)
     if (barRef.current) setBarYuksekligi(Math.ceil(barRef.current.offsetHeight))
+    olcSatir()
   })
   observer.observe(barRef.current)
   return () => observer.disconnect()
@@ -1476,6 +1514,12 @@ useEffect(() => {
   }
   const onScroll = () => {
     sonScrollAnRef.current = performance.now()
+    // Bu kaydırma BİZİM yazdığımız değerden mi geliyor, yoksa gerçek (parmak/momentum) mi?
+    // Gerçekse "oturt" döngüsünü derhal bırak — momentum sırasında scrollTop'a yazmak akışı öldürür.
+    if (oturtRef.current && beklenenTopRef.current >= 0 &&
+        Math.abs(el.scrollTop - beklenenTopRef.current) > 1.5) {
+      cancelAnimationFrame(oturtRef.current); oturtRef.current = null
+    }
     if (!raf) raf = requestAnimationFrame(sayfaGuncelle)
     // Üst tamponu YALNIZ kaydırma GERÇEKTEN durunca büyüt. "Durdu" için iki şart: (1) parmak
     // ekranda değil, (2) son kontrolden bu yana scrollTop hiç değişmemiş. Yavaşlayan momentumun
@@ -1485,7 +1529,13 @@ useEffect(() => {
     durakTimerRef.current = setTimeout(function dene() {
       const sc = scrollRef.current
       if (!sc) return
-      if (dokunuyorRef.current || sc.scrollTop !== sonScrollTopRef.current) {
+      // ÜÇ şart birden: (1) parmak yok, (2) son kontrolden beri scrollTop hiç değişmedi,
+      // (3) en az 260 ms'dir HİÇ scroll olayı gelmedi. (3) olmadan, ana iş parçacığı bir render
+      // yüzünden tıkanıp olaylar birikince zamanlayıcı önce çalışabiliyor ve momentum sürerken
+      // "durdu" sanıp scrollTop'a yazıyorduk → fling başlangıcında nadiren yarıda duruş.
+      if (dokunuyorRef.current ||
+          sc.scrollTop !== sonScrollTopRef.current ||
+          performance.now() - sonScrollAnRef.current < 260) {
         sonScrollTopRef.current = sc.scrollTop            // hâlâ hareket var → tekrar bak
         durakTimerRef.current = setTimeout(dene, 140)
         return
@@ -1560,6 +1610,9 @@ function sureGit(sureId, ayetNo) {
   const hizala = () => {
     const el = scrollRef.current
     if (!el) return
+    // Kullanıcı bu arada kaydırmaya başladıysa hizalamayı BIRAK: momentum sırasında
+    // scrollTop'a yazmak iOS'ta akışı öldürüyor (yarıda duruş).
+    if (dokunuyorRef.current) { konumuGoster(); return }
     const hedefEl = el.querySelector(selector)
     if (!hedefEl) { if (++tries < 16) setTimeout(hizala, 60); else konumuGoster(); return }   // sayfa henüz render olmadı
     const kaydirEl = odakKaydirElemani(el, sureId, ayetNo, hedefEl)
@@ -2332,9 +2385,10 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
   // Sıra + taraf. "sag" öğeler 50+ order alır; GÖRÜNÜR ilk sağ öğeye marginLeft:auto verilir →
   // o ve sonrası sağa yaslanır. Hiç sağ öğe yoksa hiçbir şey itilmez (düzen bozulmaz).
   const ilkSagKey = butonSirasi.find(k => butonTaraf[k] === "sag" && butonAcikMi(k))
+  // order 10'un katları: satır kırma ayraçları aradaki tek sayıya (ör. 35) yerleşebilsin.
   const barOge = (k) => ({
-    order: (butonTaraf[k] === "sag" ? 50 : 0) + sira(k),
-    ...(k === ilkSagKey ? { marginLeft: "auto" } : {}),
+    order: ((butonTaraf[k] === "sag" ? 50 : 0) + sira(k)) * 10,
+    ...(!barCokSatir && k === ilkSagKey ? { marginLeft: "auto" } : {}),
   })
 
   const Bar = (
@@ -2359,7 +2413,10 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
       paddingRight:  `max(${isMobile ? 12 : 10}px, env(safe-area-inset-right))`,
       display: "flex", alignItems: "center", gap: `${Math.round(4 * barUiOlcegi)}px`,
       justifyContent: "center",
-      zIndex: 90, flexWrap: "wrap", rowGap: "4px",
+      zIndex: 90, flexWrap: "wrap",
+    // Ayraç varken satır arası ayracın kendi yüksekliğinden gelir; rowGap iki kez uygulanıp
+    // bar gereksiz uzamasın diye sıfırlanır.
+    rowGap: barSatirKes.length ? "0px" : "4px",
       transition: "opacity 0.3s ease",
       opacity: barGorunur ? 1 : 0,
       pointerEvents: barGorunur ? "auto" : "none",
@@ -2560,6 +2617,17 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
           </span>
         )
       })()}
+
+      {/* Satır kırma ayraçları: tam genişlikte, yüksekliksiz. order değerleri ölçümle
+          hesaplanır; öğeler satırlara dengeli dağılsın diye araya girerler. */}
+      {barSatirKes.map((o, i) => (
+        <span
+          key={`bar-kes-${i}`}
+          data-bar-kes="1"
+          aria-hidden="true"
+          style={{ flexBasis: "100%", width: "100%", height: "4px", order: o, pointerEvents: "none" }}
+        />
+      ))}
   </div>
 )
   // ════════════════════════════════════════════════════════════════
@@ -3333,6 +3401,11 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
             dokunusBasladi()
             dokunuyorRef.current = true   // parmak ekranda → üst pencere büyütme YOK
             if (oturtRef.current) { cancelAnimationFrame(oturtRef.current); oturtRef.current = null }
+            // Bekleyen "durdu mu" zinciri iptal + son konum geçersiz: yeni harekete BAYAT bir
+            // eşleşmeyle "durdu" kararı vererek fling'i kesmesin.
+            if (durakTimerRef.current) { clearTimeout(durakTimerRef.current); durakTimerRef.current = null }
+            sonScrollTopRef.current = -1
+            beklenenTopRef.current = -1
 
             // Touch başlangıç pozisyonunu kaydet
             const touch = e.touches[0]

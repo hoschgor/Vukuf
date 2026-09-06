@@ -131,15 +131,23 @@ export default function MushafKelime({
   // İşaret, string'de BAĞLI OLDUĞU HARFTEN SONRA geldiği için o ana kadar sayılan TABAN harf
   // sayısıyla yatay konumu bulunur → simge kelimenin ortasına değil, ait olduğu harfin üzerine/
   // altına gelir (ör. Bakara 2:245'te üstteki ص "tı" harfinin, alttaki س "sad"ın hizasında).
+  // U+0656 (subscript alef) = harfin ALTINA küçük dik çizgi (kasra uzatması / uzun "î").
+  // KFGQPC bu glifi ÇİFT ESRE (kasratan) gibi çiziyor → hatalı görünüyor. me_quran/Indopak
+  // doğru (tek dik çizgi) çiziyor. Bu yüzden YALNIZ KFGQPC'de bu işaret string'den çıkarılıp
+  // altta dik çizgi olarak overlay çizilir; diğer fontlarda dokunulmaz (onlar doğru çiziyor).
+  const kfgqpcMi = arapcaFont.toLowerCase().includes('kfgqpc')
   const tecvidler = []
+  const uzatmalar = []          // U+0656 konumları (yalnız KFGQPC'de)
   let temizArabic = kelime.arabic
-  if ([...kelime.arabic].some(c => TECVID_CPS.has(c.codePointAt(0)))) {
+  const uzatmaVar = kfgqpcMi && kelime.arabic.includes('ٖ')
+  if ([...kelime.arabic].some(c => TECVID_CPS.has(c.codePointAt(0))) || uzatmaVar) {
     const kalan = []
     let taban = 0
     for (const c of kelime.arabic) {
       const cp = c.codePointAt(0)
       const t = TECVID_ISARET[cp]
       if (t) { tecvidler.push({ ...t, taban }); continue }   // işaret metinden çıkar
+      if (uzatmaVar && cp === 0x0656) { uzatmalar.push({ taban }); continue }  // dik çizgi overlay olacak
       kalan.push(c)
       if (!BIRLESIK_RE.test(c)) taban++                       // yalnız taban (harf) say
     }
@@ -150,7 +158,13 @@ export default function MushafKelime({
       const oran = Math.min(1, Math.max(0, (tv.taban - 0.5) / toplam))
       tv.sol = (1 - oran) * 100
     }
+    for (const uz of uzatmalar) {
+      const oran = Math.min(1, Math.max(0, (uz.taban - 0.5) / toplam))
+      uz.sol = (1 - oran) * 100
+    }
   }
+  const uzatmaRengi = (lafzatullahMi(kelime.arabic) || besmeleMi(kelime.id))
+    ? (theme.lugatHighlight || theme.accent) : theme.text
   const efektifLineHeight = arapcaFont.toLowerCase().includes('me_quran') || arapcaFont.toLowerCase().includes('mequran')
   
   ? Math.max(lineHeight, 5.2)
@@ -265,6 +279,28 @@ export default function MushafKelime({
         >
           {t.sembol}
         </span>
+      ))}
+
+      {/* U+0656 uzatma çizgisi (yalnız KFGQPC) — harfin ALTINA küçük, hafif eğik dik çizgi.
+          Metin renginde (tecvid kuralı değil, olağan imlâ). Tecvid simgeleriyle aynı mantıkla
+          kutunun DİKEY MERKEZİNE göre konumlanır → satır aralığı değişse de harfe aynı uzaklıkta. */}
+      {uzatmalar.map((uz, ui) => (
+        <span
+          key={`uz-${ui}`}
+          style={{
+            position: "absolute",
+            left: `${uz.sol ?? 50}%`,
+            top: "50%",
+            transform: `translate(-50%, -50%) translateY(${yaziBoyutu * 0.46}px) rotate(6deg)`,
+            width: `${Math.max(1.4, yaziBoyutu * 0.05)}px`,
+            height: `${yaziBoyutu * 0.27}px`,
+            borderRadius: `${yaziBoyutu * 0.05}px`,
+            background: uzatmaRengi,
+            opacity: aktif ? 1 : 0.95,
+            pointerEvents: "none",
+            zIndex: 3,
+          }}
+        />
       ))}
 
       {/* Arapça metin */}

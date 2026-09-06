@@ -121,6 +121,9 @@ function AyarToggle({ etiket, aktif, onToggle, theme, isMobile, barUiOlcegi }) {
 }
 
 // Sade modda gösterilip gizlenebilen bar öğeleri (Sade Mod İçerikleri bölümü + gizleme mantığı)
+// Videoda gösterilecek AZAMİ âyet sayısı (Bakara gibi uzun sûreler için sınır)
+const VIDEO_AZAMI_AYET = 25
+
 const SADE_OGELERI = [
   { key: "sureMenu",    label: "Sûre Menüsü" },
   { key: "kayit",       label: "Kayıt Menüsü" },
@@ -1095,6 +1098,11 @@ const cokSatir = wrapAktif && barYuksekligi > tekSatirYuksekligi * 1.0
   // VERİ HAZIRLAMA
   // ════════════════════════════════════════════════════════════════
   const { sayfaMap, sureler, toplamSayfa, sureSayfaLookup, ayetSayfaLookup } = useMushaf(mushafData, sayfaHaritaJson)
+  // Bu üçü, kimliği sabit kalması gereken callback'lerden REF üzerinden okunur.
+  // (Doğrudan bağımlılık verilirse useMushaf her render'da yeni nesne döndürdüğünde
+  //  callback kimlikleri değişip aşağı doğru gereksiz yeniden hesaplama zinciri kuruluyor.)
+  const mushafRef = useRef(null)
+  mushafRef.current = { sayfaMap, ayetSayfaLookup, mevcutSayfa }
 
   // Aa paneli açılınca üst ayeti yakala (ref senkronu + ilk ankor)
   useEffect(() => { aaAcikRef.current = aaAcik }, [aaAcik])
@@ -1691,6 +1699,8 @@ function sureGit(sureId, ayetNo) {
   // böylece veri şekli ne olursa olsun ekranda görünenle birebir aynı metni alırız.
   // Âyet iki sayfaya taşabildiği için komşu sayfalara da bakılır.
   const ayetArapcasi = useCallback((sureNo, ayetNo) => {
+    const sayfaMap = mushafRef.current.sayfaMap
+    const ayetSayfaLookup = mushafRef.current.ayetSayfaLookup
     if (!sayfaMap || !sayfaMap.size) return ""
     const bas = ayetSayfasi(sureNo, ayetNo, ayetSayfaLookup) || 1
     const parcalar = []
@@ -1704,7 +1714,7 @@ function sureGit(sureId, ayetNo) {
     // Sayfada overlay olarak çizilen tecvid/vakıf işaretlerini ÇIKAR: canvas'ta bunlar
     // fontun bozuk glifine düşüyor (KFGQPC'de ◉, diğerlerinde □ veya kopuk boşluk).
     return gorselIcinTemizle(parcalar.join(" "))
-  }, [sayfaMap, ayetSayfaLookup])
+  }, [])
 
   const gorselAc = useCallback((sure, ayetNo) => {
     const meal = ayetMeal[sure.id]?.[ayetNo] || null
@@ -1718,29 +1728,92 @@ function sureGit(sureId, ayetNo) {
     setGorselModu(false)
   }, [ayetArapcasi])
 
-  // VİDEO SESİ — âyetin kâri kaydının adresi. useAudioPlayer'ın adresi nasıl kurduğunu
-  // dışarıdan bilmediğimiz için sırayla denenir: (1) kancanın kendi yardımcısı,
-  // (2) kâri kaydındaki taban adres alanı, (3) yaygın everyayah düzeni.
-  // Hiçbiri tutmazsa null döner → video SESSİZ kaydedilir (panel bunu bildirir).
-  const ayetSesUrl = useCallback((sureNo, ayetNo, kId) => {
+  // ── VİDEO SESİ ──────────────────────────────────────────────────────────────
+  // useAudioPlayer `mp3Url(kariId, sureNo, ayetNo)` fonksiyonunu dışa veriyor
+  // (everyayah.com/data/<kari>/SSSAAA.mp3) → tahmine/öğrenmeye gerek yok.
+  const ayetSesUrl = useCallback((sureNo, ayetNo) => {
     try {
-      for (const ad of ["ayetSesUrl", "sesUrl", "ayetUrl", "urlUret"]) {
-        if (typeof player[ad] === "function") {
-          const u = player[ad](sureNo, ayetNo, kId)
-          if (u) return u
-        }
-      }
-      const kari = (player.KARILAR || []).find(k => k.id === (kId || player.kariId))
-      if (!kari) return null
-      const no = `${String(sureNo).padStart(3, "0")}${String(ayetNo).padStart(3, "0")}.mp3`
-      for (const ad of ["base", "taban", "url", "klasor", "folder", "path"]) {
-        const t = kari[ad]
-        if (typeof t === "string" && t) return t.endsWith("/") ? t + no : `${t}/${no}`
-      }
-      return null
-    } catch { return null }
+      if (typeof player.mp3Url === "function") return player.mp3Url(player.kariId, sureNo, ayetNo)
+    } catch { /* yoksay */ }
+    return null
   }, [player])
+
+  // Videoda gösterilecek âyet listesi.
+  //   adet: sayı | "hepsi" (sûrenin tamamı) | "sayfa" (âyetin bulunduğu mushaf sayfası)
+  //         | "ozel" (baslangic..bitis arası)
+  // Uzun sûre/sayfa seçimlerinde VIDEO_AZAMI_AYET ile kırpılır.
+  // Sûre başından başlıyorsa (Fâtiha/Tevbe hariç ve kâri kaydında besmele okumuyorsa)
+  // başa BESMELE parçası eklenir. "Tek Sayfa" iki sûreye taşabildiği için her parçanın
+  // etiketi KENDİ sûresinin adıyla kurulur.
+  const videoAyetListesi = useCallback((sureNo, baslangic, adet, bitis) => {
+    const sureBul = (id) => mushafData.find(x => x.id === id)
+    const sure = sureBul(sureNo)
+    if (!sure) return { liste: [], kirpildi: false, toplamAyet: 0, sureAdi: "" }
+    const toplamAyet = (sure.ayetler || []).length
+
+    let ciftler = []
+    if (adet === "sayfa") {
+      const { sayfaMap, ayetSayfaLookup } = mushafRef.current
+      const sayfa = ayetSayfasi(sureNo, baslangic, ayetSayfaLookup) || mushafRef.current.mevcutSayfa || 1
+      const gorulen = new Set()
+      for (const el of (sayfaMap.get(sayfa) || [])) {
+        if (el.tip !== "kelime" || !el.sure || !el.ayet) continue
+        const k = `${el.sure.id}:${el.ayet.no}`
+        if (gorulen.has(k)) continue
+        gorulen.add(k)
+        ciftler.push({ sureNo: el.sure.id, ayetNo: Number(el.ayet.no) })
+      }
+    } else {
+      const sonAyet = adet === "hepsi"
+        ? toplamAyet
+        : adet === "ozel"
+          ? Math.min(Math.max(Number(bitis) || baslangic, baslangic), toplamAyet)
+          : Math.min(baslangic + Number(adet) - 1, toplamAyet)
+      for (let a = baslangic; a <= sonAyet; a++) ciftler.push({ sureNo, ayetNo: a })
+    }
+
+    const istenen = ciftler.length
+    const kirpildi = istenen > VIDEO_AZAMI_AYET
+    if (kirpildi) ciftler = ciftler.slice(0, VIDEO_AZAMI_AYET)
+
+    const liste = []
+    const ilk = ciftler[0]
+    if (ilk && ilk.ayetNo === 1 && ilk.sureNo !== 1 && ilk.sureNo !== 9
+        && !BESMELE_OKUYANLAR.includes(player.kariId)) {
+      const s0 = sureBul(ilk.sureNo)
+      liste.push({
+        tip: "besmele", sureNo: ilk.sureNo, ayetNo: 0,
+        arapca: "بِسْمِ اللّٰهِ الرَّحْمٰنِ الرَّح۪يمِ",
+        meal: null,
+        etiket: `${s0?.isim || ""} Sûresi`,
+      })
+    }
+    for (const c of ciftler) {
+      const s0 = sureBul(c.sureNo)
+      liste.push({
+        tip: "ayet", sureNo: c.sureNo, ayetNo: c.ayetNo,
+        arapca: ayetArapcasi(c.sureNo, c.ayetNo) || null,
+        meal: ayetMeal[c.sureNo]?.[c.ayetNo] || null,
+        etiket: `${s0?.isim || ""} Sûresi · ${c.ayetNo}`,
+      })
+    }
+    return { liste, sureAdi: sure.isim, toplamAyet, kirpildi }
+  }, [mushafData, ayetArapcasi, player.kariId])
+
+
   useEffect(() => { gorselAcRef.current = gorselAc }, [gorselAc])
+
+  // Panel proplarını MEMO'la: her render'da yeni nesne göndermek panelde gereksiz
+  // yeniden hesaplamaya yol açıyordu.
+  const gorselAyetProp = useMemo(
+    () => (gorselVeri?.sureNo ? { sureNo: gorselVeri.sureNo, ayetNo: gorselVeri.ayetNo } : null),
+    [gorselVeri?.sureNo, gorselVeri?.ayetNo]
+  )
+  const gorselSureBilgiProp = useMemo(() => {
+    if (!gorselVeri?.sureNo) return null
+    const sr = mushafData.find(x => x.id === gorselVeri.sureNo)
+    return { ayetSayisi: (sr?.ayetler || []).length, sureAdi: sr?.isim || "" }
+  }, [gorselVeri?.sureNo, mushafData])
 
   const ayetTikla = useCallback((sure, ayetNo, e) => {
     if (gorselModuRef.current) { gorselAcRef.current?.(sure, ayetNo); return }
@@ -2851,12 +2924,16 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
         arapcaFont={aktifArapcaFont.style}
         theme={theme}
         isMobile={isMobile}
-        // Video: âyeti kâri okusun
-        ayet={gorselVeri?.sureNo ? { sureNo: gorselVeri.sureNo, ayetNo: gorselVeri.ayetNo } : null}
+        // Video: âyeti kâri okusun. Nesneler MEMO'lu — her render'da yeni kimlik üretilirse
+        // paneldeki hesaplamalar boşuna tekrarlanıyor.
+        ayet={gorselAyetProp}
         kariler={player.KARILAR || []}
         kariId={player.kariId}
         onKari={(id) => player.setKariId && player.setKariId(id)}
         sesUrlAl={ayetSesUrl}
+        ayetListesiAl={videoAyetListesi}
+        sureBilgi={gorselSureBilgiProp}
+        azamiAyet={VIDEO_AZAMI_AYET}
       />
 
       {/* TEKRAR / DÖNGÜ AYAR PANELİ */}
@@ -3138,8 +3215,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
       }}
     />
     <div 
-      className="sure-menusu"
-      className="vukuf-panel"
+      className="sure-menusu vukuf-panel"
       style={menuStil}
     >
       <div style={{ 

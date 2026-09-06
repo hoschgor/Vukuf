@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
 import {
   X, Download, Share2, Plus, Check, Loader2,
   Square, RectangleHorizontal, RectangleVertical, Image as ImageIcon, Pipette,
-  ImagePlay, Film, Volume2, VolumeX, CircleStop,
+  ImagePlay, Film, Volume2, VolumeX, CircleStop, Smartphone, Monitor,
 } from "lucide-react"
 import { DESENLER, GORSELLER } from "../data/arkaplanlar"
 
@@ -29,6 +29,28 @@ const ORANLAR = [
   { id: "16:9", ad: "Yatay",    w: 1920, h: 1080, Ikon: RectangleHorizontal },
   { id: "3:4",  ad: "Klasik",   w: 1080, h: 1440, Ikon: RectangleVertical },
 ]
+
+// ── TAM EKRAN ────────────────────────────────────────────────────────────────
+// Cihazın GERÇEK ekran çözünürlüğü: CSS ölçüsü × piksel yoğunluğu (dpr).
+// `screen.width/height` mobilde döndürmede değişmediği için cihazın doğal yönü korunur.
+// Uzun kenar 3000 px ile sınırlanır (çok büyük canvas telefonda çizilemiyor/çok yavaş).
+export function ekranOlcusuAl() {
+  const yedek = { id: "ekran", ad: "Tam Ekran", w: 1080, h: 1920, Ikon: Smartphone, etiket: "1080×1920" }
+  try {
+    const dpr = Math.min(Math.max(window.devicePixelRatio || 1, 1), 3)
+    let w = Math.round((window.screen && window.screen.width ? window.screen.width : window.innerWidth) * dpr)
+    let h = Math.round((window.screen && window.screen.height ? window.screen.height : window.innerHeight) * dpr)
+    if (!(w > 0) || !(h > 0)) return yedek
+    let uzun = Math.max(w, h)
+    const SINIR = 3000, EN_AZ = 1280
+    if (uzun > SINIR) { const k = SINIR / uzun; w = Math.round(w * k); h = Math.round(h * k); uzun = SINIR }
+    // Çok küçük ekranlarda (eski cihaz / dpr okunamadı) çıktı kullanışsız kalmasın
+    if (uzun < EN_AZ) { const k = EN_AZ / uzun; w = Math.round(w * k); h = Math.round(h * k) }
+    w = Math.max(2, Math.round(w / 2) * 2)
+    h = Math.max(2, Math.round(h / 2) * 2)
+    return { id: "ekran", ad: "Tam Ekran", w, h, Ikon: h >= w ? Smartphone : Monitor, etiket: `${w}×${h}` }
+  } catch { return yedek }
+}
 
 const CERCEVELER = [
   { id: "yok",    ad: "Çerçevesiz" },
@@ -67,6 +89,18 @@ const ONERILEN_RENKLER = [
   { id: "kahve",    ad: "Kahve",       renk: "#5a4632" },
   { id: "koyu",     ad: "Koyu",        renk: "#1d1a14" },
 ]
+// Yatay seçenek şeritlerindeki kaydırma çubuğu GİZLENİR (kaydırma çalışmaya devam eder).
+// Satır içi stil sözde-öğe alamadığı için tek seferlik bir <style> enjekte edilir.
+const SERIT_STIL_ID = "vukuf-serit-stil"
+function seritStiliKur() {
+  if (typeof document === "undefined" || document.getElementById(SERIT_STIL_ID)) return
+  const el = document.createElement("style")
+  el.id = SERIT_STIL_ID
+  el.textContent = `.vukuf-serit{scrollbar-width:none;-ms-overflow-style:none}
+.vukuf-serit::-webkit-scrollbar{width:0;height:0;display:none}`
+  document.head.appendChild(el)
+}
+
 const SON_RENK_ANAHTAR = "vukuf-gorsel-son-renkler"
 const sonRenkleriOku = () => {
   try {
@@ -384,7 +418,10 @@ export async function gorselCiz(ctx, ayar) {
     return { bloklar, toplam }
   }
 
-  let alt = 0.45, ust = 1.35, olcek = 0.45
+  // Üst sınır: çok uzun ekranlarda (tam ekran 9:19.5 gibi) yazı kutuda küçük kalmasın
+  const enBoy = Math.max(W, H) / Math.min(W, H)
+  const enBuyukOlcek = 1.35 + Math.min(0.35, Math.max(0, enBoy - 1.8) * 0.5)
+  let alt = 0.45, ust = enBuyukOlcek, olcek = 0.45
   for (let i = 0; i < 26; i++) {
     const orta = (alt + ust) / 2
     if (duzen(orta).toplam <= kutuH) { olcek = orta; alt = orta } else ust = orta
@@ -450,7 +487,7 @@ function videoMime() {
 export default function GorselOlustur({
   acik, kapat, arapca, meal, kaynak, arapcaFont, theme, isMobile,
   // Video için (KuranOkuma doldurur; yoksa video sessiz kaydedilir)
-  kariler, kariId, onKari, sesUrlAl, ayet,
+  kariler, kariId, onKari, sesUrlAl, ayet, ayetListesiAl, azamiAyet = 25, sureBilgi,
 }) {
   const canvasRef = useRef(null)
   const dosyaRef = useRef(null)
@@ -470,12 +507,25 @@ export default function GorselOlustur({
   const [yaziRengi, setYaziRengi] = useState(null)          // null = otomatik
   // ── VİDEO
   const [mod, setMod] = useState("foto")                     // "foto" | "video"
-  const [videoSure, setVideoSure] = useState(10)
+  const [videoSure, setVideoSure] = useState(6)
   const [efekt, setEfekt] = useState("yok")
   const [hareket, setHareket] = useState("yakinlas")
   const [sesAcik, setSesAcik] = useState(true)
+  const [kapsam, setKapsam] = useState("tek")                // "tek"|3|5|10|"sayfa"|"sure"|"ozel"
+  const [ozelBas, setOzelBas] = useState(1)                  // Özel kapsam: başlangıç âyeti
+  const [ozelSon, setOzelSon] = useState(1)                  // Özel kapsam: bitiş âyeti
+  // Video çözünürlüğü: 720 (hızlı, varsayılan) veya 1080. Telefonda 1080×1920'yi 30 fps
+  // çizmek zorlanabildiği için kısa kenar varsayılan 720.
+  const [videoKalite, setVideoKalite] = useState(720)
+  const iptalRef = useRef(null)                              // ses indirmelerini kesmek için
+  const kayitDurumRef = useRef("hazir")
+  const parcaCvRef = useRef(null)                            // parça (âyet) yazı katmanı
+  const parcaIdxRef = useRef(-1)                             // o an çizili parça
+  const cizelgeRef = useRef([])                              // [{bas, sure}] saniye
+  const tamponRef = useRef([])                               // AudioBuffer | null
   const [kayitDurum, setKayitDurum] = useState("hazir")      // hazir | kayit | isleniyor
   const [ilerleme, setIlerleme] = useState(0)
+  const [kalanSn, setKalanSn] = useState(0)
   const arkaCvRef = useRef(null)                             // ön-çizilmiş arka plan
   const onCvRef = useRef(null)                               // ön-çizilmiş yazı katmanı
   const rafRef = useRef(null)
@@ -483,19 +533,42 @@ export default function GorselOlustur({
   const sesRef = useRef(null)
   const kayitIptalRef = useRef(false)
   const toplamSureRef = useRef(0)                            // sesli kayıtta gerçek süre
+  useEffect(() => { kayitDurumRef.current = kayitDurum }, [kayitDurum])
   const mimeTuru = useMemo(() => videoMime(), [])
   const videoDestekli = !!mimeTuru && typeof HTMLCanvasElement !== "undefined"
     && typeof HTMLCanvasElement.prototype.captureStream === "function"
   const [sonRenkler, setSonRenkler] = useState(() => sonRenkleriOku())
   const ozelRenkMi = !!yaziRengi && !ONERILEN_RENKLER.some(r => r.renk === yaziRengi)
 
-  // Panel her açılışta içeriğe göre mantıklı başlasın
+  // Panel her AÇILIŞTA içeriğe göre mantıklı başlasın.
+  // KRİTİK: sıfırlama yalnızca KAPALI→AÇIK geçişinde yapılır. Daha önce bağımlılıklar
+  // (arapca/meal gibi) proplardan geldiği için, üst bileşen bu propları yeni kimlikle
+  // ürettiğinde effect tekrar çalışıp KULLANICININ AYARLARINI VARSAYILANA DÖNDÜRÜYORDU
+  // (renk seçiliyor geri dönüyor, Video sekmesi Fotoğraf'a atıyordu). Artık açılış kenarı
+  // bir ref ile izleniyor; panel açık kaldığı sürece hiçbir prop değişimi ayarları bozmaz.
+  const acikOncekiRef = useRef(false)
   useEffect(() => {
-    if (!acik) return
+    if (!acik) { acikOncekiRef.current = false; return }
+    if (acikOncekiRef.current) return        // zaten açıktı → sıfırlama YOK
+    acikOncekiRef.current = true
+    seritStiliKur()
     setArapcaAcik(!!arapca); setMealAcik(!!meal); setUyari(""); setDurum("")
     setYaziRengi(null); setSonRenkler(sonRenkleriOku())
     setMod("foto"); setKayitDurum("hazir"); setIlerleme(0); kayitIptalRef.current = false
-  }, [acik, arapca, meal])
+    setKapsam("tek"); tamponRef.current = []; cizelgeRef.current = []
+    if (ayet) { setOzelBas(ayet.ayetNo); setOzelSon(ayet.ayetNo) }
+  }, [acik, arapca, meal, ayet])
+
+  // Panel kapanınca / fotoğraf moduna dönünce ön-çizilmiş canvas'ları bırak.
+  // iOS'ta canvas belleği sınırlı; tam çözünürlükte 2-3 offscreen canvas açık kalmasın.
+  useEffect(() => {
+    if (acik && mod === "video") return
+    arkaCvRef.current = null
+    parcaCvRef.current = null
+    parcaIdxRef.current = -1
+    tamponRef.current = []
+    cizelgeRef.current = []
+  }, [acik, mod])
 
   // Hangi hazır fotoğraflar GERÇEKTEN var? (dosya yoksa listede hiç görünmesin)
   useEffect(() => {
@@ -518,7 +591,18 @@ export default function GorselOlustur({
     return { ...d, tip: "desen" }
   }, [arkaId, ozelGorsel, gecerliGorseller])
 
-  const olcu = ORANLAR.find(o => o.id === oran) || ORANLAR[0]
+  // Hazır oranlar + cihazın tam ekranı
+  const oranListesi = useMemo(() => [...ORANLAR, ekranOlcusuAl()], [])
+  const olcuTam = oranListesi.find(o => o.id === oran) || oranListesi[0]
+  // Videoda kısa kenar `videoKalite` olacak şekilde ölçeklenir (oran korunur, çift sayı)
+  const olcu = useMemo(() => {
+    if (mod !== "video") return olcuTam
+    const kisa = Math.min(olcuTam.w, olcuTam.h)
+    const k = videoKalite / kisa
+    if (k >= 1) return olcuTam
+    const cift = (n) => Math.round(n * k / 2) * 2
+    return { ...olcuTam, w: cift(olcuTam.w), h: cift(olcuTam.h) }
+  }, [olcuTam, mod, videoKalite])
 
   // ── ÇİZİM ───────────────────────────────────────────────────
   // Ortak ayar paketi (foto ve video aynı görünümü kullansın)
@@ -535,45 +619,130 @@ export default function GorselOlustur({
     ...ek,
   }), [olcu, secili, cerceve, karartma, arapca, meal, kaynak, arapcaAcik, mealAcik, kaynakAcik, imzaAcik, arapcaFont, yaziRengi])
 
+  // ÇİZİM SIRA NUMARASI — `gorselCiz` asenkron (arka plan fotoğrafını bekliyor). Art arda
+  // ayar değiştirilince ESKİ çizim SONRA bitip canvas'a basabiliyordu: kullanıcı ayarı
+  // uygulanmış görüp bir an sonra ESKİ hâle dönmüş görüyordu. Çözüm: her çizim önce
+  // GİZLİ bir canvas'a yapılır; bitince hâlâ en güncel çizim ise ekrana kopyalanır.
+  const cizNoRef = useRef(0)
   const ciz = useCallback(async () => {
     const cv = canvasRef.current
     if (!cv) return
-    cv.width = olcu.w; cv.height = olcu.h
-    const ctx = cv.getContext("2d")
-    const { olcek } = await gorselCiz(ctx, cizAyari())
+    const benim = ++cizNoRef.current
+    const W = olcu.w, H = olcu.h
+    const gizli = document.createElement("canvas")
+    gizli.width = W; gizli.height = H
+    const { olcek } = await gorselCiz(gizli.getContext("2d"), cizAyari())
+    if (benim !== cizNoRef.current || !canvasRef.current) return   // eskimiş çizim → basma
+    cv.width = W; cv.height = H
+    cv.getContext("2d").drawImage(gizli, 0, 0)
     setUyari(olcek <= 0.46
       ? "Metin uzun olduğu için yazı en küçük okunur boyuta indi. Daha kısa bir bölüm seçerseniz daha güzel görünecektir."
       : "")
   }, [olcu, cizAyari])
 
-  // ── VİDEO: katmanları ÖN-ÇİZ (her karede yeniden çizmek pahalı) ──────────
+  // ── VİDEO PARÇALARI ────────────────────────────────────────────
+  // Tek âyet → tek parça. Çoklu seçimde KuranOkuma'nın listesi kullanılır
+  // (gerekirse başa besmele eklenmiş, uzun sûrelerde kırpılmış hâlde).
+  const videoParcalari = useMemo(() => {
+    const tek = [{ tip: "ayet", arapca, meal, etiket: kaynak }]
+    if (mod !== "video" || !ayet || !ayetListesiAl || kapsam === "tek") return tek
+    try {
+      const adet = kapsam === "sure" ? "hepsi" : kapsam    // "sayfa" ve "ozel" aynen geçer
+      const bas = kapsam === "ozel" ? ozelBas : ayet.ayetNo
+      const { liste } = ayetListesiAl(ayet.sureNo, bas, adet, ozelSon)
+      return liste && liste.length ? liste : tek
+    } catch { return tek }
+  }, [mod, ayet, ayetListesiAl, kapsam, ozelBas, ozelSon, arapca, meal, kaynak])
+
+  // Bir parçanın YAZI katmanını çizer. katman:"on" görsel yüklemediği için gorselCiz
+  // gövdesi baştan sona SENKRON çalışır → beklemeye gerek yok (rAF içinde kullanılabilir).
+  const parcaCiz = useCallback((idx) => {
+    const p = videoParcalari[idx]
+    if (!p) return
+    let cv = parcaCvRef.current
+    if (!cv || cv.width !== olcu.w || cv.height !== olcu.h) {
+      cv = document.createElement("canvas"); cv.width = olcu.w; cv.height = olcu.h
+      parcaCvRef.current = cv
+    }
+    gorselCiz(cv.getContext("2d"), cizAyari({
+      katman: "on",
+      arapca: arapcaAcik ? p.arapca : null,
+      meal:   mealAcik   ? p.meal   : null,
+      kaynak: kaynakAcik ? p.etiket : null,
+    }))
+    parcaIdxRef.current = idx
+  }, [videoParcalari, olcu, cizAyari, arapcaAcik, mealAcik, kaynakAcik])
+
+  // Zaman çizelgesi: ses yüklüyse gerçek süreler, değilse eşit paylaştırma
+  const cizelgeKur = useCallback(() => {
+    const n = videoParcalari.length
+    const tamponlar = tamponRef.current
+    const cizelge = []
+    let t = 0
+    for (let i = 0; i < n; i++) {
+      const b = tamponlar[i]
+      const sr = b && b.duration > 0
+        ? b.duration + 0.35                                   // âyetler arası küçük nefes
+        : Math.max(2.4, (n > 1 ? Math.max(videoSure, n * 3) : videoSure) / n)
+      cizelge.push({ bas: t, sure: sr })
+      t += sr
+    }
+    cizelgeRef.current = cizelge
+    return t
+  }, [videoParcalari, videoSure])
+
+  // ── VİDEO: arka plan katmanını ÖN-ÇİZ (her karede yeniden çizmek pahalı) ──────
   const katmanlariHazirla = useCallback(async () => {
+    const benim = ++cizNoRef.current
     const W = olcu.w, H = olcu.h
     const arkaCv = document.createElement("canvas"); arkaCv.width = W; arkaCv.height = H
-    const onCv = document.createElement("canvas"); onCv.width = W; onCv.height = H
     await gorselCiz(arkaCv.getContext("2d"), cizAyari({ katman: "arka" }))
-    const sonuc = await gorselCiz(onCv.getContext("2d"), cizAyari({ katman: "on" }))
+    if (benim !== cizNoRef.current) return toplamSureRef.current || videoSure   // eskimiş
     arkaCvRef.current = arkaCv
-    onCvRef.current = onCv
     parcacikRef.current = parcacikUret(efekt, W, H)
-    return sonuc
-  }, [olcu, cizAyari, efekt])
+    parcaIdxRef.current = -1
+    parcaCiz(0)
+    const toplam = cizelgeKur()
+    return toplam
+  }, [olcu, cizAyari, efekt, parcaCiz, cizelgeKur, videoSure])
 
-  // Tek kare: arka plan (hareketli) → parçacıklar → yazı katmanı (yumuşak giriş)
-  const videoKare = useCallback((ctx, t, sure) => {
+  // Tek kare: arka plan (hareketli) → parçacıklar → o anki âyetin yazı katmanı
+  const videoKare = useCallback((ctx, t, toplam) => {
     const W = olcu.w, H = olcu.h
-    const arkaCv = arkaCvRef.current, onCv = onCvRef.current
-    if (!arkaCv || !onCv) return
+    const arkaCv = arkaCvRef.current
+    if (!arkaCv) return
     ctx.clearRect(0, 0, W, H)
-    const k = hareketKutusu(hareket, W, H, t, sure)
+    const k = hareketKutusu(hareket, W, H, t, toplam)
     ctx.drawImage(arkaCv, k.sx, k.sy, k.sw, k.sh, 0, 0, W, H)
     parcacikCiz(ctx, efekt, parcacikRef.current, W, H, t)
-    // Yazı 0,15 sn sonra 0,9 sn içinde belirir, sonda 0,5 sn içinde hafifçe soluklaşmaz
-    const gir = Math.min(1, Math.max(0, (t - 0.15) / 0.9))
-    ctx.globalAlpha = gir
-    ctx.drawImage(onCv, 0, 0)
+
+    // Hangi âyetteyiz?
+    const cizelge = cizelgeRef.current
+    let idx = 0
+    for (let i = 0; i < cizelge.length; i++) { if (t >= cizelge[i].bas) idx = i; else break }
+    if (idx !== parcaIdxRef.current) parcaCiz(idx)
+    const cv = parcaCvRef.current
+    if (!cv) return
+
+    // Geçiş: her âyet 0,45 sn içinde belirir, bitmeden 0,3 sn önce soluklaşır
+    const c = cizelge[idx] || { bas: 0, sure: toplam }
+    const yerel = t - c.bas
+    const gir = Math.min(1, yerel / 0.45)
+    const cik = Math.min(1, Math.max(0, (c.sure - yerel) / 0.3))
+    ctx.globalAlpha = Math.max(0, Math.min(1, gir * cik))
+    ctx.drawImage(cv, 0, 0)
     ctx.globalAlpha = 1
-  }, [olcu, hareket, efekt])
+  }, [olcu, hareket, efekt, parcaCiz])
+
+  // Döngünün kullandığı GÜNCEL işlevler — bağımlılık kirlenmesin diye ref üzerinden okunur
+  const hazirlaRef = useRef(null)
+  const kareRef = useRef(null)
+  hazirlaRef.current = katmanlariHazirla
+  kareRef.current = videoKare
+  // Önizlemenin yeniden kurulmasını gerektiren AYAR imzası (ilkel değerlerden)
+  const icerikImza = `${arapcaAcik ? 1 : 0}${mealAcik ? 1 : 0}${kaynakAcik ? 1 : 0}${imzaAcik ? 1 : 0}`
+    + `|${kapsam}|${(arapca || "").length}|${(meal || "").length}|${kaynak || ""}`
+    + `|${secili.id}|${cerceve}|${karartma}|${yaziRengi || "oto"}|${arapcaFont || ""}|${videoParcalari.length}`
 
   // Fontlar yüklenmeden çizersek canvas yedek fontla çizer → önce fonts.ready bekle
   useEffect(() => {
@@ -582,12 +751,16 @@ export default function GorselOlustur({
     const calistir = () => { if (!iptal) ciz() }
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(calistir).catch(calistir)
     else calistir()
-    return () => { iptal = true }
+    // Moddan/ayardan çıkarken uçuşan çizimi GEÇERSİZ kıl (video karesinin üstüne basmasın)
+    return () => { iptal = true; cizNoRef.current++ }
   }, [acik, mod, ciz])
 
   // ── VİDEO ÖNİZLEME DÖNGÜSÜ ──────────────────────────────────
-  // Kayıt SIRASINDA da aynı döngü çalışır (canvas'tan akış alınır) → önizleme ile
-  // kaydedilen video birebir aynıdır.
+  // ÖNEMLİ: bağımlılıkları SADE ve İLKEL tutulur. Önceki sürüm `katmanlariHazirla` /
+  // `videoKare` / `videoParcalari` gibi her render'da kimliği değişebilen değerlere
+  // bağlıydı; üst bileşen sık render ettiği için döngü sürekli yeniden kuruluyor ve
+  // animasyon baştan başlıyordu → önizleme "sürekli açılıp kapanıyor" görünüyordu.
+  // Artık işlevler REF üzerinden okunur; effect yalnızca gerçekten değişen ayarlarda kurulur.
   useEffect(() => {
     if (!acik || mod !== "video") return
     let iptal = false
@@ -597,17 +770,17 @@ export default function GorselOlustur({
     cv.width = olcu.w; cv.height = olcu.h
     const ctx = cv.getContext("2d")
     const baslat = async () => {
-      const sonuc = await katmanlariHazirla()
+      const toplam = await hazirlaRef.current()
       if (iptal) return
-      setUyari(sonuc && sonuc.olcek <= 0.46
-        ? "Metin uzun olduğu için yazı en küçük okunur boyuta indi. Daha kısa bir bölüm seçerseniz daha güzel görünecektir."
-        : "")
+      toplamSureRef.current = toplam
       const dongu = (zaman) => {
         if (iptal) return
+        // Kayıt sırasında çizimi KAYIT döngüsü yapar; önizleme döngüsü karışmaz
+        if (kayitDurumRef.current === "kayit") { rafRef.current = requestAnimationFrame(dongu); return }
         if (!baslangic) baslangic = zaman
         const t = (zaman - baslangic) / 1000
-        const sure = toplamSureRef.current || videoSure
-        videoKare(ctx, t % (sure + 0.6), sure)
+        const sure = toplamSureRef.current || 8
+        kareRef.current(ctx, t % (sure + 0.6), sure)
         rafRef.current = requestAnimationFrame(dongu)
       }
       rafRef.current = requestAnimationFrame(dongu)
@@ -619,7 +792,7 @@ export default function GorselOlustur({
       if (rafRef.current) cancelAnimationFrame(rafRef.current)
       rafRef.current = null
     }
-  }, [acik, mod, olcu, katmanlariHazirla, videoKare, videoSure])
+  }, [acik, mod, olcu.w, olcu.h, efekt, hareket, videoSure, icerikImza])
 
   // ── İNDİR / PAYLAŞ ──────────────────────────────────────────
   const dosyaAdi = useMemo(() => {
@@ -630,49 +803,86 @@ export default function GorselOlustur({
   }, [kaynak])
 
   // ── VİDEO KAYDI ─────────────────────────────────────────────
-  // Gerçek zamanlı kayıt: canvas akışı + (varsa) kâri sesi tek MediaStream'de birleşir.
-  // Ses uzaktan geldiği için CORS başlığı yoksa ses kanalı kurulamaz → SESSİZ kaydedilir
-  // ve kullanıcıya bildirilir; video yine de üretilir.
+  // SES: <audio> + createMediaElementSource yolu CORS'a çok duyarlıydı ve sessiz kalıyordu.
+  // Artık ses DOSYA OLARAK indirilip (fetch) çözülüyor (decodeAudioData) ve AudioContext'te
+  // ZAMANLANARAK çalınıyor. Böylece (a) gerçek süreler baştan bilinir → âyet-meal senkronu
+  // birebir olur, (b) çoklu âyet kesintisiz sıralanır, (c) kaydedilen akışa doğrudan bağlanır.
+  const sesleriYukle = useCallback(async (sesCtx) => {
+    const n = videoParcalari.length
+    const tamponlar = new Array(n).fill(null)
+    if (!sesAcik || !sesUrlAl || !ayet) { tamponRef.current = tamponlar; return { yuklenen: 0, hata: false } }
+    // PARALEL indirme + İPTAL EDİLEBİLİR (AbortController) + 15 sn zaman aşımı.
+    // Sırayla indirmek çoklu âyette çok yavaştı; ayrıca tek bir yavaş istek "Durdur"u
+    // etkisiz bırakıyordu — abort ile artık anında kesiliyor.
+    const kontrol = new AbortController()
+    iptalRef.current = kontrol
+    const zamanAsimi = setTimeout(() => { try { kontrol.abort() } catch { /* yoksay */ } }, 8000)
+    let bitmis = 0, yuklenen = 0, hata = false
+    const isler = videoParcalari.map(async (p, i) => {
+      // Besmele için Fâtiha 1 kaydı kullanılır (besmelenin kendisidir)
+      const sn = p.tip === "besmele" ? 1 : (p.sureNo || ayet.sureNo)
+      const an = p.tip === "besmele" ? 1 : (p.ayetNo || ayet.ayetNo)
+      const url = sesUrlAl(sn, an)
+      if (!url) { hata = true; return }
+      try {
+        const c = await fetch(url, { mode: "cors", credentials: "omit", signal: kontrol.signal })
+        if (!c.ok) throw new Error(String(c.status))
+        const ab = await c.arrayBuffer()
+        tamponlar[i] = await sesCtx.decodeAudioData(ab)
+        yuklenen++
+      } catch { hata = true }
+      bitmis++
+      setIlerleme(bitmis / n)
+      setDurum(`Ses hazırlanıyor… ${bitmis}/${n}`)
+    })
+    await Promise.all(isler)
+    clearTimeout(zamanAsimi)
+    iptalRef.current = null
+    tamponRef.current = tamponlar
+    return { yuklenen, hata }
+  }, [videoParcalari, sesAcik, sesUrlAl, ayet])
+
   const videoKaydet = async () => {
     const cv = canvasRef.current
     if (!cv || !videoDestekli) return
     kayitIptalRef.current = false
     setDurum(""); setIlerleme(0); setKayitDurum("isleniyor")
 
-    let ses = null, sesCtx = null, sesUyari = false
-    const url = sesAcik && sesUrlAl && ayet ? sesUrlAl(ayet.sureNo, ayet.ayetNo, kariId) : null
-    if (url) {
+    // 1) Ses (varsa) indirilip çözülür → gerçek süreler
+    let sesCtx = null, sesUyari = false
+    const AC = window.AudioContext || window.webkitAudioContext
+    if (sesAcik && sesUrlAl && ayet && AC) {
       try {
-        ses = new Audio()
-        ses.crossOrigin = "anonymous"
-        ses.preload = "auto"
-        ses.src = url
-        await new Promise((cz, hata) => {
-          const t = setTimeout(() => hata(new Error("zaman aşımı")), 12000)
-          ses.onloadedmetadata = () => { clearTimeout(t); cz() }
-          ses.onerror = () => { clearTimeout(t); hata(new Error("ses yüklenemedi")) }
-        })
-      } catch { ses = null; sesUyari = true }
-    }
-
-    // Toplam süre: ses varsa sesin süresi + kısa kuyruk, yoksa seçilen süre
-    const sure = ses && isFinite(ses.duration) && ses.duration > 0
-      ? Math.min(ses.duration + 1.2, 180)
-      : videoSure
-    toplamSureRef.current = sure
-
-    const akis = cv.captureStream(30)
-    if (ses) {
-      try {
-        const AC = window.AudioContext || window.webkitAudioContext
         sesCtx = new AC()
         if (sesCtx.state === "suspended") await sesCtx.resume()
-        const kaynakDugum = sesCtx.createMediaElementSource(ses)
-        const hedef = sesCtx.createMediaStreamDestination()
-        kaynakDugum.connect(hedef)
-        kaynakDugum.connect(sesCtx.destination)     // kullanıcı da duysun
+        const { yuklenen, hata } = await sesleriYukle(sesCtx)
+        if (!yuklenen) { sesUyari = true; try { sesCtx.close() } catch { /* yoksay */ } sesCtx = null }
+        else if (hata) sesUyari = true
+      } catch { sesUyari = true; sesCtx = null }
+    } else {
+      tamponRef.current = new Array(videoParcalari.length).fill(null)
+    }
+    if (kayitIptalRef.current) {
+      setKayitDurum("hazir"); kayitDurumRef.current = "hazir"
+      setIlerleme(0); setKalanSn(0); setDurum("Kayıt durduruldu.")
+      try { sesCtx && sesCtx.close() } catch { /* yoksay */ }
+      return
+    }
+
+    // 2) Çizelge (ses süreleriyle) + katmanlar
+    await katmanlariHazirla()
+    const toplam = cizelgeKur()
+    toplamSureRef.current = toplam
+    setDurum(""); setIlerleme(0)
+
+    // 3) Akış: canvas + (varsa) ses
+    const akis = cv.captureStream(30)
+    let hedef = null
+    if (sesCtx) {
+      try {
+        hedef = sesCtx.createMediaStreamDestination()
         hedef.stream.getAudioTracks().forEach(t => akis.addTrack(t))
-      } catch { sesUyari = true; try { sesCtx && sesCtx.close() } catch { /* yoksay */ } sesCtx = null }
+      } catch { sesUyari = true; hedef = null }
     }
 
     const parcalar = []
@@ -684,40 +894,58 @@ export default function GorselOlustur({
       return
     }
     kaydedici.ondataavailable = (e) => { if (e.data && e.data.size) parcalar.push(e.data) }
-
     const bitti = new Promise(cz => { kaydedici.onstop = cz })
-    // Kayıt, önizleme döngüsünün BAŞTAN başlaması için kısa bir an bekletilir
-    sesRef.current = ses
+
+    // 4) Kaydı ve sesi AYNI ANDA başlat; çizim döngüsü sıfırdan saysın
     setKayitDurum("kayit")
+    kayitDurumRef.current = "kayit"
+    setKalanSn(Math.ceil(toplam))
+    const ctx2 = cv.getContext("2d")
+    if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null }
     kaydedici.start(200)
-    if (ses) { try { ses.currentTime = 0; await ses.play() } catch { sesUyari = true } }
-
-    const bas = performance.now()
+    const kaynaklar = []
+    const t0 = sesCtx ? sesCtx.currentTime + 0.12 : 0
+    if (sesCtx && hedef) {
+      cizelgeRef.current.forEach((c, i) => {
+        const b = tamponRef.current[i]
+        if (!b) return
+        const src = sesCtx.createBufferSource()
+        src.buffer = b
+        src.connect(hedef)
+        src.connect(sesCtx.destination)         // kullanıcı da duysun
+        src.start(t0 + c.bas)
+        kaynaklar.push(src)
+      })
+    }
+    const bas = performance.now() + (sesCtx ? 120 : 0)
     await new Promise(cz => {
-      const bak = () => {
-        const gecen = (performance.now() - bas) / 1000
-        setIlerleme(Math.min(1, gecen / sure))
-        if (kayitIptalRef.current || gecen >= sure) { cz(); return }
-        setTimeout(bak, 120)
+      const dongu = (zaman) => {
+        const t = (zaman - bas) / 1000
+        if (kayitIptalRef.current || t >= toplam) { cz(); return }
+        if (t >= 0) videoKare(ctx2, t, toplam)
+        setIlerleme(Math.min(1, Math.max(0, t / toplam)))
+        setKalanSn(Math.max(0, Math.ceil(toplam - Math.max(0, t))))
+        rafRef.current = requestAnimationFrame(dongu)
       }
-      bak()
+      rafRef.current = requestAnimationFrame(dongu)
     })
+    if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null }
 
+    // 5) Bitir
     try { kaydedici.stop() } catch { /* yoksay */ }
-    try { if (ses) { ses.pause(); ses.currentTime = 0 } } catch { /* yoksay */ }
+    kaynaklar.forEach(sr => { try { sr.stop() } catch { /* yoksay */ } })
     await bitti
     try { akis.getTracks().forEach(t => t.stop()) } catch { /* yoksay */ }
     try { sesCtx && sesCtx.close() } catch { /* yoksay */ }
-    sesRef.current = null
     setKayitDurum("isleniyor")
 
     const blob = new Blob(parcalar, { type: mimeTuru })
-    setIlerleme(0); setKayitDurum("hazir")
+    setIlerleme(0); setKalanSn(0); setKayitDurum("hazir"); kayitDurumRef.current = "hazir"
     if (kayitIptalRef.current) { setDurum("Kayıt durduruldu."); return }
     if (!blob.size) { setDurum("Video oluşturulamadı, lütfen tekrar deneyiniz."); return }
     const uzanti = mimeTuru.includes("mp4") ? "mp4" : "webm"
     await dosyayiVer(blob, dosyaAdi.replace(/\.png$/, "." + uzanti), `video/${uzanti}`)
-    if (sesUyari) setDurum("Video kaydedildi (kâri sesi eklenemedi).")
+    if (sesUyari) setDurum("Video kaydedildi — kâri sesi alınamadı (ses sunucusu izin vermiyor olabilir).")
   }
 
   // Blob'u paylaş / indir (foto ve video ortak)
@@ -856,7 +1084,15 @@ export default function GorselOlustur({
 
         <div style={{ overflowY: "auto", overscrollBehavior: "contain", flex: 1, padding: isMobile ? "10px 12px 14px" : "14px 18px 18px" }}>
           {/* ÖNİZLEME */}
-          <div style={{ display: "flex", justifyContent: "center", marginBottom: "12px" }}>
+          {/* Önizleme YAPIŞKAN: seçenekleri kaydırırken üstte sabit kalır */}
+          <div style={{
+            position: "sticky", top: 0, zIndex: 3,
+            background: theme.background,
+            display: "flex", justifyContent: "center",
+            margin: isMobile ? "-10px -12px 12px" : "-14px -18px 12px",
+            padding: isMobile ? "10px 12px" : "14px 18px",
+            borderBottom: `1px solid ${theme.border}`,
+          }}>
             <canvas
               ref={canvasRef}
               style={{
@@ -879,12 +1115,12 @@ export default function GorselOlustur({
 
           {/* ORAN */}
           <p style={kucukBaslik}>Boyut</p>
-          <div style={{ ...seritStil, marginBottom: "12px" }}>
-            {ORANLAR.map(o => {
+          <div className="vukuf-serit" style={{ ...seritStil, marginBottom: "12px" }}>
+            {oranListesi.map(o => {
               const I = o.Ikon
               return (
                 <button key={o.id} onClick={() => setOran(o.id)} style={cipStil(oran === o.id)}>
-                  <I size={12} /> {o.ad} <span style={{ opacity: 0.6 }}>{o.id}</span>
+                  <I size={12} /> {o.ad} <span style={{ opacity: 0.6 }}>{o.etiket || o.id}</span>
                 </button>
               )
             })}
@@ -892,7 +1128,7 @@ export default function GorselOlustur({
 
           {/* İÇERİK ANAHTARLARI */}
           <p style={kucukBaslik}>İçerik</p>
-          <div style={{ ...seritStil, marginBottom: "12px" }}>
+          <div className="vukuf-serit" style={{ ...seritStil, marginBottom: "12px" }}>
             {anahtar("Âyet (Arapça)", arapcaAcik, setArapcaAcik, !arapca)}
             {anahtar("Meal / Metin", mealAcik, setMealAcik, !meal)}
             {anahtar("Kaynak", kaynakAcik, setKaynakAcik, !kaynak)}
@@ -901,7 +1137,7 @@ export default function GorselOlustur({
 
           {/* ARKA PLAN */}
           <p style={kucukBaslik}>Arka Plan</p>
-          <div style={{ ...seritStil, marginBottom: "12px" }}>
+          <div className="vukuf-serit" style={{ ...seritStil, marginBottom: "12px" }}>
             <button onClick={() => dosyaRef.current?.click()} style={cipStil(arkaId === "ozel")} title="Galeriden seç">
               <Plus size={13} /> Galeriden
             </button>
@@ -916,7 +1152,7 @@ export default function GorselOlustur({
 
           {/* ÇERÇEVE */}
           <p style={kucukBaslik}>Çerçeve</p>
-          <div style={{ ...seritStil, marginBottom: "12px" }}>
+          <div className="vukuf-serit" style={{ ...seritStil, marginBottom: "12px" }}>
             {CERCEVELER.map(c => (
               <button key={c.id} onClick={() => setCerceve(c.id)} style={cipStil(cerceve === c.id)}>{c.ad}</button>
             ))}
@@ -924,7 +1160,7 @@ export default function GorselOlustur({
 
           {/* KARARTMA */}
           <p style={kucukBaslik}>Karartma <span style={{ textTransform: "none", letterSpacing: 0 }}>(yazının okunurluğu)</span></p>
-          <div style={{ ...seritStil, marginBottom: "12px" }}>
+          <div className="vukuf-serit" style={{ ...seritStil, marginBottom: "12px" }}>
             {KARARTMALAR.map(k => (
               <button key={k.id} onClick={() => setKarartma(k.id)} style={cipStil(karartma === k.id)}>{k.ad}</button>
             ))}
@@ -932,7 +1168,7 @@ export default function GorselOlustur({
 
           {/* YAZI RENGİ — otomatik + öneriler + son 5 renk + özel renk */}
           <p style={kucukBaslik}>Yazı Rengi</p>
-          <div style={{ ...seritStil, marginBottom: "4px", alignItems: "center" }}>
+          <div className="vukuf-serit" style={{ ...seritStil, marginBottom: "4px", alignItems: "center" }}>
             <button onClick={() => setYaziRengi(null)} style={cipStil(yaziRengi === null)}>Otomatik</button>
 
             {/* ÖZEL RENK — input'un KENDİSİ düğme; tıklanınca tarayıcının renk paleti açılır.
@@ -983,15 +1219,81 @@ export default function GorselOlustur({
           {/* ── VİDEO SEÇENEKLERİ ───────────────────────────── */}
           {mod === "video" && (
             <>
-              <p style={{ ...kucukBaslik, marginTop: "14px" }}>Hareket</p>
-              <div style={{ ...seritStil, marginBottom: "12px" }}>
+              {/* KAPSAM — birden fazla âyet ya da sûrenin tamamı */}
+              {ayet && ayetListesiAl && (
+                <>
+                  <p style={{ ...kucukBaslik, marginTop: "14px" }}>Kapsam</p>
+                  <div className="vukuf-serit" style={{ ...seritStil, marginBottom: "6px" }}>
+                    {[{ id: "tek", ad: "Tek âyet" }, { id: 3, ad: "3 âyet" }, { id: 5, ad: "5 âyet" },
+                      { id: 10, ad: "10 âyet" }, { id: "sayfa", ad: "Tek sayfa" },
+                      { id: "sure", ad: "Sûrenin tamamı" }, { id: "ozel", ad: "Özel…" }].map(k => (
+                      <button key={String(k.id)} onClick={() => setKapsam(k.id)} style={cipStil(kapsam === k.id)}>{k.ad}</button>
+                    ))}
+                  </div>
+
+                  {/* ÖZEL ARALIK — başlangıç / bitiş âyeti (en fazla azamiAyet âyet) */}
+                  {kapsam === "ozel" && (() => {
+                    const enCok = sureBilgi?.ayetSayisi || 286
+                    const sinirla = (v) => Math.min(Math.max(1, Math.round(Number(v) || 1)), enCok)
+                    const kutu = {
+                      width: "62px", padding: "7px 8px", borderRadius: "8px", textAlign: "center",
+                      border: `1px solid ${theme.border}`, background: theme.background,
+                      color: theme.text, fontSize: "13px", outline: "none", fontFamily: "inherit",
+                    }
+                    const secili = ozelSon - ozelBas + 1
+                    return (
+                      <div style={{ marginBottom: "10px" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+                          <span style={{ fontSize: "12px", color: theme.textSecondary }}>Başlangıç</span>
+                          <input
+                            type="number" inputMode="numeric" min={1} max={enCok} value={ozelBas}
+                            onChange={e => {
+                              const v = sinirla(e.target.value)
+                              setOzelBas(v)
+                              if (ozelSon < v) setOzelSon(v)
+                            }}
+                            style={kutu}
+                          />
+                          <span style={{ fontSize: "12px", color: theme.textSecondary }}>Bitiş</span>
+                          <input
+                            type="number" inputMode="numeric" min={ozelBas} max={enCok} value={ozelSon}
+                            onChange={e => {
+                              const v = sinirla(e.target.value)
+                              setOzelSon(Math.min(Math.max(v, ozelBas), ozelBas + azamiAyet - 1))
+                            }}
+                            style={kutu}
+                          />
+                          <span style={{ fontSize: "11px", color: secili > azamiAyet ? "#c0392b" : theme.accent, fontWeight: 600 }}>
+                            {Math.min(Math.max(secili, 1), azamiAyet)} âyet
+                          </span>
+                        </div>
+                        <div style={{ fontSize: "10px", color: theme.textSecondary, opacity: 0.75, marginTop: "5px", lineHeight: 1.45 }}>
+                          {sureBilgi?.sureAdi ? `${sureBilgi.sureAdi} sûresi 1–${enCok} arası. ` : ""}
+                          En fazla {azamiAyet} âyet seçebilirsiniz.
+                        </div>
+                      </div>
+                    )
+                  })()}
+                  <div style={{ fontSize: "10px", color: theme.textSecondary, opacity: 0.75, marginBottom: "12px", lineHeight: 1.45 }}>
+                    {videoParcalari.length > 1
+                      ? `Ekranda ${videoParcalari.length} bölüm sırayla görünür; her âyetin meali altında eş zamanlı geçer.`
+                      : "Tek âyet gösterilir."}
+                    {(kapsam === "sure" || kapsam === "sayfa") && ` En fazla ${azamiAyet} âyet alınır.`}
+                    {kapsam === "sayfa" && " Sayfa iki sûreye taşıyorsa her âyet kendi sûresinin adıyla gösterilir."}
+                    {videoParcalari.some(p => p.tip === "besmele") && " Sûre başından başlandığı için besmele ile açılır."}
+                  </div>
+                </>
+              )}
+
+              <p style={{ ...kucukBaslik, marginTop: ayet && ayetListesiAl ? 0 : "14px" }}>Hareket</p>
+              <div className="vukuf-serit" style={{ ...seritStil, marginBottom: "12px" }}>
                 {HAREKETLER.map(h => (
                   <button key={h.id} onClick={() => setHareket(h.id)} style={cipStil(hareket === h.id)}>{h.ad}</button>
                 ))}
               </div>
 
               <p style={kucukBaslik}>Efekt</p>
-              <div style={{ ...seritStil, marginBottom: "12px" }}>
+              <div className="vukuf-serit" style={{ ...seritStil, marginBottom: "12px" }}>
                 {EFEKTLER.map(e => (
                   <button key={e.id} onClick={() => setEfekt(e.id)} style={cipStil(efekt === e.id)}>{e.ad}</button>
                 ))}
@@ -1001,7 +1303,7 @@ export default function GorselOlustur({
               {ayet && sesUrlAl && (
                 <>
                   <p style={kucukBaslik}>Âyeti Okusun</p>
-                  <div style={{ ...seritStil, marginBottom: kariler && kariler.length && sesAcik ? "8px" : "12px" }}>
+                  <div className="vukuf-serit" style={{ ...seritStil, marginBottom: kariler && kariler.length && sesAcik ? "8px" : "12px" }}>
                     <button onClick={() => setSesAcik(true)} style={cipStil(sesAcik)}>
                       <Volume2 size={12} /> Kâri okusun
                     </button>
@@ -1010,7 +1312,7 @@ export default function GorselOlustur({
                     </button>
                   </div>
                   {sesAcik && kariler && kariler.length > 0 && (
-                    <div style={{ ...seritStil, marginBottom: "12px" }}>
+                    <div className="vukuf-serit" style={{ ...seritStil, marginBottom: "12px" }}>
                       {kariler.map(k => (
                         <button
                           key={k.id}
@@ -1028,11 +1330,22 @@ export default function GorselOlustur({
                 </>
               )}
 
-              {/* Ses yoksa süre seçilir */}
-              {(!ayet || !sesUrlAl || !sesAcik) && (
+              <p style={kucukBaslik}>Çözünürlük</p>
+              <div className="vukuf-serit" style={{ ...seritStil, marginBottom: "6px" }}>
+                {[{ id: 720, ad: "720p · hızlı" }, { id: 1080, ad: "1080p · net" }].map(k => (
+                  <button key={k.id} onClick={() => setVideoKalite(k.id)} style={cipStil(videoKalite === k.id)}>{k.ad}</button>
+                ))}
+              </div>
+              <div style={{ fontSize: "10px", color: theme.textSecondary, opacity: 0.75, marginBottom: "12px", lineHeight: 1.45 }}>
+                Kayıt gerçek zamanlıdır: video ne kadar sürüyorsa hazırlanması da o kadar sürer.
+                720p telefonlarda gözle görülür biçimde daha akıcı kaydeder.
+              </div>
+
+              {/* Ses yoksa süre seçilir (çoklu âyette süre seslerden gelir) */}
+              {(!ayet || !sesUrlAl || !sesAcik) && videoParcalari.length === 1 && (
                 <>
                   <p style={kucukBaslik}>Süre</p>
-                  <div style={{ ...seritStil, marginBottom: "4px" }}>
+                  <div className="vukuf-serit" style={{ ...seritStil, marginBottom: "4px" }}>
                     {SURELER.map(sr => (
                       <button key={sr.id} onClick={() => setVideoSure(sr.id)} style={cipStil(videoSure === sr.id)}>{sr.ad}</button>
                     ))}
@@ -1050,7 +1363,9 @@ export default function GorselOlustur({
         }}>
           <span style={{ flex: 1, fontSize: "11px", color: theme.textSecondary, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
             {durum || (mod === "video"
-              ? `${olcu.w}×${olcu.h} · ${mimeTuru && mimeTuru.includes("mp4") ? "MP4" : "WEBM"} · 30 fps`
+              ? (kayitDurum === "kayit"
+                  ? `Kaydediliyor… ${kalanSn} sn kaldı`
+                  : `${olcu.w}×${olcu.h} · ${mimeTuru && mimeTuru.includes("mp4") ? "MP4" : "WEBM"} · ~${Math.ceil(toplamSureRef.current || videoSure)} sn`)
               : `${olcu.w}×${olcu.h} px · PNG`)}
           </span>
 
@@ -1067,7 +1382,11 @@ export default function GorselOlustur({
                 }} />
               </span>
               <button
-                onClick={() => { kayitIptalRef.current = true }}
+                onClick={() => {
+                  kayitIptalRef.current = true
+                  try { iptalRef.current && iptalRef.current.abort() } catch { /* yoksay */ }
+                  setDurum("Durduruluyor…")
+                }}
                 style={{
                   display: "flex", alignItems: "center", gap: "6px",
                   padding: isMobile ? "10px 14px" : "11px 18px", borderRadius: "10px",

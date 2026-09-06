@@ -16,9 +16,10 @@ import {
   Bookmark, X, Type, StickyNote, Palette,
   Search, Highlighter, ChevronDown, Clock, Settings,
   ChevronUp, ChevronRight, Edit2, Pencil, Circle, Feather, List, Check, Shuffle, Asterisk, ArrowRight,
-  GripVertical, Eye as EyeIkon, UnfoldHorizontal, Camera, FoldHorizontal,
+  GripVertical, Eye as EyeIkon, UnfoldHorizontal, Camera, FoldHorizontal, ImagePlay,
 } from "lucide-react"
 import { useMediaQuery } from '../data/hooks/useMediaQuery'
+import usePanelKilidi from "../data/hooks/usePanelKilidi"
 import BarSiraPaneli, { barSatirOlc } from '../components/BarSiraPaneli'
 import GorselOlustur from '../components/GorselOlustur'
 
@@ -98,7 +99,7 @@ const BAR_OGELERI = [
   { key: "kayit", label: "Kayıtlar",          sadeVarsayilan: true },
   { key: "arama", label: "Arama",             sadeVarsayilan: true },
   { key: "oto",   label: "Otomatik Kaydırma", sadeVarsayilan: true },
-  { key: "gorsel", label: "Görsel Oluştur",   sadeVarsayilan: true },
+  { key: "gorsel", label: "Görsel / Video",   sadeVarsayilan: true },
   { key: "sure",  label: "Okuma Süresi",      sadeVarsayilan: true },
   { key: "kisim", label: "Kısım Bilgisi",     sadeVarsayilan: true },
   { key: "sade",  label: "Sade Mod",          sadeVarsayilan: false },
@@ -117,7 +118,7 @@ const BAR_SIRA_OGELERI = [
   { key: "kayit",   label: "Kayıtlar",          Ikon: Bookmark,    taraf: "sol" },
   { key: "arama",   label: "Arama",             Ikon: Search,      taraf: "sol" },
   { key: "oto",     label: "Otomatik Kaydırma", Ikon: Play,        taraf: "sol" },
-  { key: "gorsel",  label: "Görsel Oluştur",    Ikon: Camera,      taraf: "sol" },
+  { key: "gorsel",  label: "Görsel / Video",    Ikon: ImagePlay,   taraf: "sol" },
   { key: "sade",    label: "Sade Mod",          Ikon: Circle,      taraf: "sag" },
   { key: "tema",    label: "Tema",              Ikon: Palette,     taraf: "sag" },
   { key: "ayarlar", label: "Ayarlar",           Ikon: Settings,    taraf: "sag" },
@@ -1001,11 +1002,26 @@ const pwaAltBosluk = 8
 const [barKonum, setBarKonum] = useState(() => localStorage.getItem("vukuf-bar-konum") || "alt")
 const [barUiOlcegi, setBarUiOlcegi] = useState(() => parseFloat(localStorage.getItem("vukuf-bar-ui-olcegi") || "1"))
 const [bilgiOlcegi, setBilgiOlcegi] = useState(() => parseFloat(localStorage.getItem("vukuf-bilgi-olcegi") || "1"))
+// Menü/panel açıkken arka sayfa HİÇ kaymasın; onun yerine panel kısa bir sarsıntı yapsın
+usePanelKilidi()
 const [yaziTipiAcik, setYaziTipiAcik] = useState(false)   // Aa panelindeki yazı tipi listesi açık mı
 const yaziTipiBtnRef = useRef(null)
 const [gorselVeri, setGorselVeri] = useState(null)   // görsel oluşturucuya gidecek metin
 const [gorselIpucu, setGorselIpucu] = useState(null)  // görsel düğmesi uyarı metni (null = yok)
 const gorselIpucuTimerRef = useRef(null)
+const sonSecimRef = useRef("")                        // en SON boş olmayan metin seçimi
+// Seçim yapıldığı ANDA sakla. Mobilde düğmeye dokunmak seçimi kaldırdığı için
+// düğme anındaki getSelection() boş dönüyordu; kayıtlı seçim bu boşluğu kapatır.
+useEffect(() => {
+  const yakala = () => {
+    try {
+      const m = String(window.getSelection ? window.getSelection().toString() : "").replace(/\s+/g, " ").trim()
+      if (m) sonSecimRef.current = m
+    } catch { /* yoksay */ }
+  }
+  document.addEventListener("selectionchange", yakala)
+  return () => document.removeEventListener("selectionchange", yakala)
+}, [])
 const [ogeGorunur, setOgeGorunur] = useState(() => {
   try { return JSON.parse(localStorage.getItem("vukuf-bar-gorunur")) || {} } catch { return {} }
 })
@@ -2088,19 +2104,23 @@ const mevcutKisim = mevcutKisimYolu.length ? mevcutKisimYolu[mevcutKisimYolu.len
 // Görsele girecek metnin AZAMİ uzunluğu. Bunun üstünde yazı okunmaz hâle geldiği için
 // KIRPMA YAPILMAZ, panel AÇILMAZ: kullanıcıya daha kısa bir bölüm seçmesi söylenir.
 const GORSEL_AZAMI = 900
-// Uyarıyı göster ve 3,5 sn sonra kaldır (üst üste basılırsa sayaç sıfırlanır)
+// Uyarıyı göster ve 4 sn sonra kaldır (üst üste basılırsa sayaç sıfırlanır)
 const gorselUyar = (tip, uzunluk) => {
   const mesaj = tip === "uzun"
-    ? `Seçim çok uzun (${uzunluk} karakter). Görselde okunabilmesi için en fazla ${GORSEL_AZAMI} karakterlik bir bölüm seç.`
-    : "Önce görsele koymak istediğin bölümü veya cümleyi seç, sonra bu düğmeye dokun."
+    ? `Seçtiğiniz bölüm biraz uzun (${uzunluk} karakter). Görselde rahat okunabilmesi için lütfen en fazla ${GORSEL_AZAMI} karakterlik bir bölüm seçiniz.`
+    : "Lütfen önce görselde kullanmak istediğiniz bölümü veya cümleyi seçiniz, sonra bu düğmeye dokununuz."
   setGorselIpucu(mesaj)
   if (gorselIpucuTimerRef.current) clearTimeout(gorselIpucuTimerRef.current)
-  gorselIpucuTimerRef.current = setTimeout(() => setGorselIpucu(null), 3500)
+  gorselIpucuTimerRef.current = setTimeout(() => setGorselIpucu(null), 4000)
 }
 const gorselYap = () => {
+  // MOBİLDE ÖNEMLİ: düğmeye dokunulduğu anda tarayıcı metin seçimini kaldırıyor, bu yüzden
+  // burada getSelection() BOŞ dönüyordu ("seçtim ama çalışmıyor"). Bu yüzden seçim, olduğu
+  // anda `sonSecimRef`e yazılıyor; düğme onu okuyor. Canlı seçim varsa o önceliklidir.
   let sec = ""
   try { sec = String(window.getSelection ? window.getSelection().toString() : "") } catch { sec = "" }
   sec = sec.replace(/\s+/g, " ").trim()
+  if (!sec) sec = (sonSecimRef.current || "").trim()
   if (!sec) { gorselUyar("yok"); return }
   if (sec.length > GORSEL_AZAMI) { gorselUyar("uzun", sec.length); return }
   const yol = mevcutKisimYolu.map(b => b.baslik).join(" · ")
@@ -2108,6 +2128,7 @@ const gorselYap = () => {
     metin: sec,
     kaynak: [kitap?.baslik || kitap?.isim, yol, `s. ${mevcutSayfa}`].filter(Boolean).join(" · "),
   })
+  sonSecimRef.current = ""
   try { window.getSelection()?.removeAllRanges() } catch { /* yoksay */ }
 }
 
@@ -2123,6 +2144,8 @@ const panelStil = (konum = "center") => ({
   padding: "16px",
   zIndex: 100,
   boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
+  // Panel kendi sonuna gelince kaydırma ARKA SAYFAYA zincirlenmesin
+  overscrollBehavior: "contain",
 })
 
 // ════════════════════════════════════════════════════════════════
@@ -3235,8 +3258,14 @@ const Bar = (
     )}
 
     {gorunurMu("gorsel") && (
-      <button onClick={gorselYap} style={{ ...barButonStil(!!gorselVeri), ...barOge("gorsel") }} title="Seçili metinden görsel oluştur">
-        <Camera size={bIkon(15)} />
+      <button
+        onClick={gorselYap}
+        // Düğmeye basmak metin seçimini kaldırmasın (masaüstü); mobilde de zararsız
+        onMouseDown={(e) => e.preventDefault()}
+        style={{ ...barButonStil(!!gorselVeri), ...barOge("gorsel") }}
+        title="Seçili metinden görsel veya video oluştur"
+      >
+        <ImagePlay size={bIkon(15)} />
       </button>
     )}
 

@@ -217,6 +217,7 @@ export default function BarSiraPaneli({
       }}
     >
       <div
+        className="vukuf-panel"
         onClick={(e) => e.stopPropagation()}
         style={{
           width: "100%", maxWidth: isMobile ? "340px" : "410px",
@@ -265,7 +266,7 @@ export default function BarSiraPaneli({
         </div>
 
         {/* Sürüklenebilir liste */}
-        <div style={{ overflowY: "auto", padding: "10px 14px", flex: 1 }}>
+        <div data-panel-surukle="1" style={{ overflowY: "auto", overscrollBehavior: "contain", padding: "10px 14px", flex: 1 }}>
           <DndContext
             sensors={sensors}
             collisionDetection={closestCenter}

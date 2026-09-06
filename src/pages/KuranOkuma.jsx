@@ -23,6 +23,7 @@ import GorselOlustur from "../components/GorselOlustur"
 import { useMushaf, sureBaslangicSayfasi, ayetSayfasi } from "../data/hooks/useMushaf"
 import useAudioPlayer, { BESMELE_OKUYANLAR } from "../data/hooks/useAudioPlayer"
 import { useMediaQuery } from "../data/hooks/useMediaQuery"
+import usePanelKilidi from "../data/hooks/usePanelKilidi"
 import { flushSync } from "react-dom"
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, TouchSensor, useSensor, useSensors } from "@dnd-kit/core"
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable"
@@ -33,7 +34,7 @@ import {
   Settings, Circle, Clock, ChevronsUp, ChevronsDown,
   Pencil, ChevronLeft, Bookmark, BookOpen, Feather,
   Layers, Check, Shuffle, Mic, Repeat, Gem, UnfoldHorizontal, GripVertical, RotateCcw, Save, AlignLeft, AlignRight,
-  Camera, FoldHorizontal, ChevronUp,
+  Camera, FoldHorizontal, ChevronUp, ImagePlay,
 } from "lucide-react"
 
 // ── Arapça font listesi
@@ -133,7 +134,7 @@ const SADE_OGELERI = [
   { key: "cuzBilgisi",  label: "Cüz Bilgisi" },
   { key: "hizbBilgisi", label: "Hizb Bilgisi" },
   { key: "bilgi",       label: "Bilgi (İşaretler)" },
-  { key: "gorsel",      label: "Görsel Oluştur" },
+  { key: "gorsel",      label: "Görsel / Video" },
 ]
 
 // Alt bardaki SIRALANABİLİR butonlar (varsayılan sıra). Geri tuşu ve sağdaki
@@ -145,7 +146,7 @@ const SIRALANABILIR = [
   { key: "sayfaGit",    label: "Sayfaya Gitme",      Ikon: BookOpen,  taraf: "sol" },
   { key: "tekrar",      label: "Tekrar (Döngü)",     Ikon: Repeat,    taraf: "sol" },
   { key: "bilgi",       label: "Bilgi (İşaretler)",  Ikon: Gem,  taraf: "sol" },
-  { key: "gorsel",      label: "Görsel Oluştur",     Ikon: Camera,    taraf: "sol" },
+  { key: "gorsel",      label: "Görsel / Video",     Ikon: ImagePlay, taraf: "sol" },
   { key: "yaziTipi",    label: "Yazı Tipi",          Ikon: Feather,   taraf: "sol" },
   { key: "otoOynat",    label: "Otomatik Kaydırma",  Ikon: Play,      taraf: "sol" },
   { key: "sadeMod",     label: "Sade Mod",           Ikon: Circle,    taraf: "sag" },
@@ -385,6 +386,8 @@ export default function KuranOkuma({ kitap }) {
   const [scrollKilitli, setScrollKilitli] = useState(false)
 
   // ── Popup
+  // Menü/panel açıkken arka sayfa HİÇ kaymasın; onun yerine panel kısa bir sarsıntı yapsın
+  usePanelKilidi()
   const [popup, setPopup] = useState(null)
 
   // ── Sayfa navigasyonu
@@ -1709,9 +1712,34 @@ function sureGit(sureId, ayetNo) {
       arapca: ayetArapcasi(sure.id, ayetNo) || null,
       meal,
       kaynak: `${sure.isim} sûresi, ${ayetNo}. âyet`,
+      sureNo: sure.id,
+      ayetNo,
     })
     setGorselModu(false)
   }, [ayetArapcasi])
+
+  // VİDEO SESİ — âyetin kâri kaydının adresi. useAudioPlayer'ın adresi nasıl kurduğunu
+  // dışarıdan bilmediğimiz için sırayla denenir: (1) kancanın kendi yardımcısı,
+  // (2) kâri kaydındaki taban adres alanı, (3) yaygın everyayah düzeni.
+  // Hiçbiri tutmazsa null döner → video SESSİZ kaydedilir (panel bunu bildirir).
+  const ayetSesUrl = useCallback((sureNo, ayetNo, kId) => {
+    try {
+      for (const ad of ["ayetSesUrl", "sesUrl", "ayetUrl", "urlUret"]) {
+        if (typeof player[ad] === "function") {
+          const u = player[ad](sureNo, ayetNo, kId)
+          if (u) return u
+        }
+      }
+      const kari = (player.KARILAR || []).find(k => k.id === (kId || player.kariId))
+      if (!kari) return null
+      const no = `${String(sureNo).padStart(3, "0")}${String(ayetNo).padStart(3, "0")}.mp3`
+      for (const ad of ["base", "taban", "url", "klasor", "folder", "path"]) {
+        const t = kari[ad]
+        if (typeof t === "string" && t) return t.endsWith("/") ? t + no : `${t}/${no}`
+      }
+      return null
+    } catch { return null }
+  }, [player])
   useEffect(() => { gorselAcRef.current = gorselAc }, [gorselAc])
 
   const ayetTikla = useCallback((sure, ayetNo, e) => {
@@ -1821,6 +1849,8 @@ function sureGit(sureId, ayetNo) {
     padding: "12px",
     zIndex: 200,
     boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
+    // Panel kendi sonuna gelince kaydırma ARKA SAYFAYA zincirlenmesin
+    overscrollBehavior: "contain",
   })
 
   const barButonStil = (aktif = false) => ({
@@ -1869,7 +1899,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
   const SayfaGitPopup = sayfaGitAcik && (
   <>
     <div onClick={() => setSayfaGitAcik(false)} style={{ position: "fixed", inset: 0, zIndex: 95 }} />
-    <div style={{ ...panelStil("center"), width: "280px", zIndex: 96 }}>
+    <div className="vukuf-panel" style={{ ...panelStil("center"), width: "280px", zIndex: 96 }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px" }}>
         <div style={{ fontSize: "12px", color: theme.textSecondary }}>SAYFAYA GİT (1 – {toplamSayfa})</div>
         <button onClick={() => setSayfaGosterimAcik(v => !v)} title="Bardaki görünüm tipi"
@@ -1957,7 +1987,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
  const AaPanel = aaAcik && (
     <>
       <div onClick={() => setAaAcik(false)} style={{ position: "fixed", inset: 0, zIndex: 195 }} />
-      <div style={{ ...panelStil("center"), width: "300px", maxHeight: "80vh", overflowY: "auto", zIndex: 200 }}>
+      <div className="vukuf-panel" style={{ ...panelStil("center"), width: "300px", maxHeight: "80vh", overflowY: "auto", zIndex: 200 }}>
 
         {/* TEK ÖNİZLEME — panelin üstünde sabit durur, aşağıdaki BÜTÜN ayarlar
             (boyut, satır aralığı, harf aralığı, yazı tipi) bunu anında değiştirir.
@@ -2158,7 +2188,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
   const TemaPanel = temaAcik && (
     <>
       <div onClick={() => setTemaAcik(false)} style={{ position: "fixed", inset: 0, zIndex: 195 }} />
-      <div style={{ ...panelStil("right"), width: "240px", zIndex: 200 }}>
+      <div className="vukuf-panel" style={{ ...panelStil("right"), width: "240px", zIndex: 200 }}>
         <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "10px", letterSpacing: "1px" }}>TEMA</div>
         {[
           { id: "sepia",  label: "Sepya",  renk: "#f4ecd8", aciklama: "Göz yormayan sıcak ton" },
@@ -2207,11 +2237,11 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
     <>
       <div onClick={() => setOzelTemaPanelAcik(false)}
         style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 300 }} />
-      <div style={{
+      <div className="vukuf-panel" style={{
         position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)",
         background: theme.surface, border: `1px solid ${theme.border}`,
         borderRadius: "24px", padding: "24px", zIndex: 400,
-        width: "320px", maxHeight: "90vh", overflowY: "auto",
+        width: "320px", maxHeight: "90vh", overflowY: "auto", overscrollBehavior: "contain",
         boxShadow: "0 8px 32px rgba(0,0,0,0.2)",
       }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "20px" }}>
@@ -2299,7 +2329,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
   const AyarlarPanel = ayarlarAcik && (
     <>
       <div onClick={() => setAyarlarAcik(false)} style={{ position: "fixed", inset: 0, zIndex: 195 }} />
-      <div style={{ 
+      <div className="vukuf-panel" style={{ 
         ...panelStil("right"), 
         width: "270px", 
         display: "flex", 
@@ -2415,7 +2445,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
             <AyarToggle etiket="Sayfaya Gitme" aktif={sayfaGitGoster} onToggle={() => setSayfaGitGoster(v => !v)} {...{theme, isMobile, barUiOlcegi}} />
             <AyarToggle etiket="Tekrar (Döngü)" aktif={tekrarBtnGoster} onToggle={() => setTekrarBtnGoster(v => !v)} {...{theme, isMobile, barUiOlcegi}} />
             <AyarToggle etiket="Bilgi (İşaretler)" aktif={bilgiGoster} onToggle={() => setBilgiGoster(v => !v)} {...{theme, isMobile, barUiOlcegi}} />
-            <AyarToggle etiket="Görsel Oluştur" aktif={gorselGoster} onToggle={() => setGorselGoster(v => !v)} {...{theme, isMobile, barUiOlcegi}} />
+            <AyarToggle etiket="Görsel / Video" aktif={gorselGoster} onToggle={() => setGorselGoster(v => !v)} {...{theme, isMobile, barUiOlcegi}} />
 
 
             <AyarToggle etiket="Yazı Tipi"         aktif={yaziTipiGoster} onToggle={() => setYaziTipiGoster(v => !v)} {...{theme, isMobile, barUiOlcegi}} />
@@ -2609,9 +2639,9 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
         <button
           onClick={() => { setPopup(null); setGorselModu(v => !v) }}
           style={{ ...barButonStil(gorselModu), flexShrink: 0, ...barOge("gorsel") }}
-          title="Âyet görseli oluştur"
+          title="Âyetten görsel veya video oluştur"
         >
-          <Camera size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />
+          <ImagePlay size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />
         </button>
       )}
 
@@ -2821,6 +2851,12 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
         arapcaFont={aktifArapcaFont.style}
         theme={theme}
         isMobile={isMobile}
+        // Video: âyeti kâri okusun
+        ayet={gorselVeri?.sureNo ? { sureNo: gorselVeri.sureNo, ayetNo: gorselVeri.ayetNo } : null}
+        kariler={player.KARILAR || []}
+        kariId={player.kariId}
+        onKari={(id) => player.setKariId && player.setKariId(id)}
+        sesUrlAl={ayetSesUrl}
       />
 
       {/* TEKRAR / DÖNGÜ AYAR PANELİ */}
@@ -2894,9 +2930,9 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
         return (
           <>
             <div onClick={() => setDonguAyarAcik(false)} style={{ position: "fixed", inset: 0, zIndex: 199, background: "rgba(0,0,0,0.35)" }} />
-            <div style={{ position: "fixed", left: "50%", top: "50%", transform: "translate(-50%,-50%)", zIndex: 200,
+            <div className="vukuf-panel" style={{ position: "fixed", left: "50%", top: "50%", transform: "translate(-50%,-50%)", zIndex: 200,
               width: "min(92vw, 360px)", background: theme.surface, border: `1px solid ${theme.border}`, borderRadius: "16px",
-              boxShadow: "0 12px 40px rgba(0,0,0,0.3)", padding: "18px", maxHeight: "82vh", overflowY: "auto" }}>
+              boxShadow: "0 12px 40px rgba(0,0,0,0.3)", padding: "18px", maxHeight: "82vh", overflowY: "auto", overscrollBehavior: "contain" }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "14px" }}>
                 <span style={{ fontSize: "15px", fontWeight: 700, color: theme.accent }}>Tekrar (Döngü)</span>
                 <button onClick={() => setDonguAyarAcik(false)} style={{ background: "none", border: "none", cursor: "pointer", color: theme.textSecondary, display: "flex" }}><X size={16} /></button>
@@ -3080,7 +3116,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
           maxWidth: "92vw",
         }}>
           <Camera size={14} color={theme.accent} />
-          <span>Görsel için bir âyet numarasına dokunun</span>
+          <span>Lütfen görselde kullanmak istediğiniz âyetin numarasına dokununuz.</span>
           <button
             onClick={() => setGorselModu(false)}
             style={{ background: "transparent", border: "none", color: theme.textSecondary, cursor: "pointer", padding: "2px", display: "flex" }}
@@ -3103,6 +3139,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
     />
     <div 
       className="sure-menusu"
+      className="vukuf-panel"
       style={menuStil}
     >
       <div style={{ 
@@ -3780,7 +3817,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
               </div>
 
               {/* Sürüklenebilir liste */}
-              <div style={{ overflowY: "auto", padding: "10px 14px", flex: 1 }}>
+              <div data-panel-surukle="1" style={{ overflowY: "auto", overscrollBehavior: "contain", padding: "10px 14px", flex: 1 }}>
                 <DndContext
                   sensors={siraSensors}
                   collisionDetection={closestCenter}
@@ -3855,6 +3892,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
           >
             <style>{`@keyframes vukufBilgiFade{from{opacity:0}to{opacity:1}}`}</style>
             <div
+              className="vukuf-panel"
               onClick={(e) => e.stopPropagation()}
               style={{
                 width: "100%", maxWidth: isMobile ? "340px" : "420px",

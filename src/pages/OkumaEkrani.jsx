@@ -55,9 +55,8 @@ const FONT_GRUPLARI = {
       // Yedek zincirine 'me_quran' eklendi: kfgqpc/Indopak'ta OLMAYAN işaretler (waqf/durak,
       // küçük üst işaretler vb.) sistem serifine düşüp yanlış glyph + harf-bağ kopması yapıyordu.
       // MeQuran bu işaretleri kapsadığından yedek olarak ondan alınır (gövde harfleri kfgqpc kalır).
-      { id: "kfgqpc",            label: "KFGQPC Uthmanic (Önerilen)", style: "'KFGQPC Uthmanic', 'me_quran', serif", google: null },
+      { id: "kfgqpc",            label: "KFGQPC Uthmanic (Önerilen)", style: "'KFGQPC Uthmanic', serif", google: null },
       { id: "me-quran",          label: "Me Quran",                   style: "'me_quran', serif",            google: null },
-      { id: "Indopak",           label: "Indopak",                    style: "'Indopak', 'me_quran', serif", google: null },
       { id: "IndopakNastaleeq",  label: "Indopak Nastaleeq",          style: "'IndopakNastaleeq', 'me_quran', serif", google: null },
     ],
   },
@@ -298,32 +297,28 @@ function OtoFit({ children, maxFont, minFont = 16, as: Tag = "div", style, ...re
 // METİN PARCASI
 // ════════════════════════════════════════════════════════════════
 const ARAP_RE = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/
-// \u2500\u2500 kfgqpc UYUMSUZLUK TABLOSU (kfgqpc\u2194MeQuran \u00E7ifti; ger\u00E7ek font render'\u0131yla \u00E7\u0131kar\u0131ld\u0131) \u2500\u2500
-// kfgqpc harf/rakamda g\u00FCzel ama baz\u0131 i\u015Faretleri \u25C9 \u00E7iziyor, baz\u0131 Fars/Osmanl\u0131 harflerini de
-// (glyph var ama \u25C9 placeholder). MeQuran bunlar\u0131 do\u011Fru \u00E7iziyor. Yeni bozuk karakter \u00E7\u0131karsa
-// a\u015Fa\u011F\u0131daki listelere tek kod eklemek yeterli.
-//   \u0130\u015EARETLER (birle\u015Fik/ayr\u0131k \u2014 tek tek MeQuran span'i ba\u011F\u0131 BOZMAZ):
-//     \u060C U+060C virg\u00FCl \u00B7 \u06DF U+06DF \u00B7 \u06E3 U+06E3 \u00B7 \u06EA U+06EA \u00B7 \u06EB U+06EB \u00B7 \u06ED U+06ED \u00B7 \u0658 U+0658
-//     \uFD3E U+FD3E \u00B7 \uFD3F U+FD3F s\u00FCsl\u00FC ayet parantezleri
-const MQ_ISARET = /([\u060C\u06DF\u06E3\u06EA\u06EB\u06ED\u0658\uFD3E\uFD3F])/
-//   FARS/OSMANLI HARFLER\u0130 (BA\u011ELANAN taban harf \u2014 tek harfi ayr\u0131 fonta al\u0131nca ba\u011F kopar \u2192
-//     Persli harf i\u00E7eren KEL\u0130MEN\u0130N TAMAMI MeQuran'dan \u00E7izilir):
-//     \u067E \u0679 \u0686 \u0698 \u06A9 \u06AF \u06CC \u06BE \u06C1 \u06D2 \u0688 \u0691
-const KF_FARS = new Set([0x067E,0x0679,0x0686,0x0698,0x06A9,0x06AF,0x06CC,0x06BE,0x06C1,0x06D2,0x0688,0x0691])
+// ── kfgqpc UYUMSUZLUK TABLOSU (ARTIK NEREDEYSE BOŞ) ──────────────────────────────
+// Eskiden kfgqpc bazı işaretleri ve Fars/Osmanlı harflerini ◉ placeholder çiziyordu; bu yüzden
+// o karakterleri — hatta Persli harf içeren KELİMENİN TAMAMINI — MeQuran span'ine almak
+// gerekiyordu. Kelime ortasında font değiştirmek harf bağını bozduğu için bu çözüm göze batıyordu.
+// FONT ONARILDI: kfgqpc'ye پ چ گ ژ ڭ ک ی harfleri (baş/orta/son/tek dört biçimiyle ve
+// init/medi/fina kurallarıyla) ve ◉'ye düşen işaretler (060C ، · 0615 ط · 0658 · 06DF ·
+// 06E3 · 06EA · 06EB · 06ED) fontun KENDİ bileşenlerinden inşa edilip eklendi.
+// Artık metin TEK FONTLA çizilir; span bölme yok.
+// Geriye yalnız Urduca'ya özgü, Osmanlıca metinde geçmeyen birkaç harf kaldı; nadiren çıkarsa
+// yine yedek fonta düşsünler diye listede bırakıldı.
+const KF_FARS = new Set([0x0679, 0x0688, 0x0691, 0x06BE, 0x06C1, 0x06D2])
 const MQ_STIL = { fontFamily: "'me_quran', serif" }
 const farsHarfVar = (s) => { for (const ch of s) if (KF_FARS.has(ch.codePointAt(0))) return true; return false }
-// Bir d\u00FCz metin par\u00E7as\u0131n\u0131 kelime baz\u0131nda i\u015Fler: Persli kelime \u2192 t\u00FCm kelime MeQuran; de\u011Filse
-// yaln\u0131z bozuk i\u015Faretler MeQuran span'ine al\u0131n\u0131r. Bo\u015Fluklar korunur.
+// Düz Arapça metin parçası: normalde olduğu gibi tek parça döner. Yalnız yukarıdaki nadir
+// Urduca harflerden biri geçiyorsa o kelime yedek fonta alınır.
 function arapParcaRender(p, anahtar) {
+  if (!farsHarfVar(p)) return <span key={anahtar}>{p}</span>
   const tokenlar = p.split(/(\s+)/)
   return <span key={anahtar}>{tokenlar.map((tk, j) => {
     if (!tk) return null
     if (/^\s+$/.test(tk)) return tk
     if (farsHarfVar(tk)) return <span key={j} style={MQ_STIL}>{tk}</span>
-    if (MQ_ISARET.test(tk)) {
-      const alt = tk.split(MQ_ISARET)
-      return <span key={j}>{alt.map((ap, z) => (ap && MQ_ISARET.test(ap)) ? <span key={z} style={MQ_STIL}>{ap}</span> : ap)}</span>
-    }
     return tk
   })}</span>
 }
@@ -744,7 +739,7 @@ function renderMarkerli(text, dipnotMap, onDipnotTikla, theme, hasiyeMap = {}) {
         : null
     }
     // kfgqpc'nin ◉ çizdiği işaretleri ve Fars/Osmanlı harfli kelimeleri MeQuran'dan çiz
-    // (harfler/rakamlar kfgqpc kalır; detay: MQ_ISARET / KF_FARS / arapParcaRender).
+    // (font onarıldı; metin tek fontla çizilir. Detay: KF_FARS / arapParcaRender).
     return arapParcaRender(p, i)
   })
 }

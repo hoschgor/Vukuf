@@ -156,9 +156,13 @@ function MushafSayfa({
           }}>
             <span style={{ flex: 1, maxWidth: "34%", height: "1px", background: `linear-gradient(to right, transparent, ${theme.accent}55)` }} />
             <span style={{
-              fontFamily: arapcaFont,
-              fontSize: `${Math.round(fontSize * 0.9)}px`,
-              lineHeight: 1.1,
+              // Cüz/Hizb başlığı SABİT güvenilir fontta çizilir: me_quran/Indopak/Nastaleeq
+              // dikey metrikleri çok yüksek olduğundan lineHeight 1.1'de "الجزء" ve rakam
+              // kırpılıp GÖRÜNMÜYORDU. Scheherazade normal metrikli (vakıf işaretlerinde de
+              // kullandığımız güvenli font) → her okuma fontunda düzgün görünür.
+              fontFamily: "'Scheherazade New', 'me_quran', serif",
+              fontSize: `${Math.round(fontSize * 0.95)}px`,
+              lineHeight: 1.35,
               direction: "rtl", whiteSpace: "nowrap",
               opacity: 0.92,
               display: "inline-flex", alignItems: "baseline", gap: "0.3em",

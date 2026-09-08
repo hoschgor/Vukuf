@@ -1,26 +1,73 @@
 import { useState } from "react"
 import { useMediaQuery } from "../data/hooks/useMediaQuery"
 
+// ══════════════════════════════════════════════════════════════════════════════════════════
+// VAKIF (durak) ve TECVİD işaretleri — REFERANS
+// ------------------------------------------------------------------------------------------
+// ÖNEMLİ UYARI: Aşağıdaki kod noktaları Unicode'un STANDART anlamlarıdır. Bu uygulamanın
+// mushaf/kitap verisi bazı kodları standart dışı kullanıyor — ikisi ölçümle ispatlandı:
+//   • U+06EA (std: "empty centre low stop")  → BU VERİDE: uzun "î" çekme işareti (uzatma)
+//   • U+06DC (std: "small high seen" = sekte) → BU VERİDE: ط (vakf-ı mutlak) durağı
+// Yeni bir işaret eklemeden önce verideki gerçek kullanımını doğrula; ada güvenme.
+//
+// VAKIF (durak) İŞARETLERİ — durup durmama hükmü:
+//   مـ  U+06D8  vakf-ı LÂZIM     → durmak VÂCİP; geçilirse mânâ bozulur
+//   ط   U+0615  vakf-ı MUTLAK    → durmak evlâ (mutlak durak)
+//   ج   U+06DA  vakf-ı CÂİZ      → durmak da geçmek de câiz, eşit
+//   ز   —       vakf-ı MÜCEVVEZ  → câiz ama GEÇMEK evlâ
+//   ص   —       vakf-ı MURAHHAS  → (uzun âyette) durmaya ruhsat; geçmek evlâ
+//   صلى U+06D6  el-VASLU EVLÂ    → geçmek daha iyi
+//   قلى U+06D7  el-VAKFU EVLÂ    → durmak daha iyi
+//   لا  U+06D9  LÂ VAKF          → DURMA (durulduysa geri alıp tekrarla)
+//   ∴∴  U+06DB  MUÂNAKA          → iki noktadan YALNIZ BİRİNDE durulur, ikisinde birden değil
+//   س   U+06DC  SEKTE            → nefes almadan kısa duruş (Hafs'ta 4 yer)
+//   قف  U+08DE  KIF              → "dur" (durulmayacak sanılan yerde uyarı)
+//   ق   U+08D7  KÎLE aleyhi'l-vakf → "burada durulur denmiştir"
+//
+// TECVİD / KIRAAT işaretleri (aşağıdaki TECVID_ISARET tablosunda çizilenler):
+//   U+06E3 küçük ALT sîn   → Bakara 2:245 يبصط · A'râf 7:69 بصطة — sîn ile okunuş
+//   U+08D5 küçük ÜST sâd   → aynı kelimelerde sâd ile okunuş (kıraat farkı)
+//   U+06EB boş merkezli üst durak → Yûsuf 12:11 تأمنا — İŞMÂM
+//   U+06ED küçük ALT mîm   → Hûd 11:42 اركب معنا — idgâm-ı mütecâniseyn (bâ → mîm)
+//   U+06DF üst yuvarlak sıfır      → harf ZÂİD: hiçbir hâlde okunmaz
+//   U+06E0 üst dikdörtgen sıfır    → VASILDA okunmaz, VAKFEDİLİRSE okunur
+//   (İmâle Hafs'ta tek yerdedir: Hûd 11:41 مجراها — bu veride ayrı bir kodla işaretlenmiyor.)
+// ══════════════════════════════════════════════════════════════════════════════════════════
 const VAKIF_CPS = new Set([0x615, 0x617, 0x06D8, 0x06D9, 0x08D6, 0x08D7, 0x08DE])
 // ── TECVİD / KIRAAT İŞARETLERİ (font-bağımsız, kendi çizimimiz) ────────────────────────────
-// KFGQPC bu işaretlerin HEPSİNİ tek bir bozuk ◉ (noktalı-daire) glifine düşürüyor (fonttools ile
-// KFGQPC cmap'inden tespit edildi). Başka fonta (me_quran) düşmek kelimenin görüntüsünü bozuyor.
-// ÇÖZÜM: işareti string'den ÇIKAR (kelime TEK span'de, aktif fontta, bitişmesi bozulmadan kalır) ve
-// kuralı belirten KÜÇÜK RENKLİ SİMGEYİ mutlak-konumlu overlay olarak çiz. Overlay akışa girmediği
-// için ne satır kırılımını ne de sayfa yüksekliğini etkiler.
-// Simgeler mushaf geleneğindeki kısa gösterimlerdir (alt/üst küçük harf, imâle elması, işmâm halkası).
+// KFGQPC bu işaretleri bozuk ◉ (noktalı-daire) glifine düşürüyordu. İşaret string'den ÇIKARILIR
+// (kelime TEK span'de, aktif fontta, bitişmesi bozulmadan kalır) ve kuralı belirten KÜÇÜK RENKLİ
+// SİMGE mutlak-konumlu overlay olarak çizilir. Overlay akışa girmez: ne satır kırılımını ne de
+// sayfa yüksekliğini etkiler. Simgeler mushaf geleneğindeki kısa gösterimlerdir.
 const TECVID_ISARET = {
   // Bakara 2:245 يبصط — kıraat farkı: sîn ile de okunur (altta küçük س), sâd ile de (üstte küçük ص)
   0x06E3: { sembol: 'س', yer: 'alt', renk: '#c0392b', ad: 'Kıraat farkı: sîn ile okunuş' },
   0x08D5: { sembol: 'ص', yer: 'ust', renk: '#c0392b', ad: 'Kıraat farkı: sâd ile okunuş' },
-  // Hûd 11:41 مجرىها — Hafs'ta tek imâle yeri. Mushaf işareti: harfin altında küçük elmas (معين).
-  0x06EA: { sembol: '◆', yer: 'alt', renk: '#8e44ad', ad: 'İmâle' },
   // Yûsuf 12:11 تأمنا — işmâm. Mushaf işareti: üstte küçük halka.
   0x06EB: { sembol: '○', yer: 'ust', renk: '#16a085', ad: 'İşmâm' },
   // Hûd 11:42 اركب معنا — idgâm-ı mütecâniseyn (bâ, mîm'e idgâm olur): altta küçük م
   0x06ED: { sembol: 'م', yer: 'alt', renk: '#2980b9', ad: 'İdgâm-ı mütecâniseyn' },
-  // Vasl hâlinde okunmayan harf: üstte küçük halka-sıfır
-  0x06DF: { sembol: '٥', yer: 'ust', renk: '#7f8c8d', ad: 'Vasılda okunmaz' },
+  // Zâid harf: hiçbir hâlde okunmaz (üstte yuvarlak sıfır)
+  0x06DF: { sembol: '٥', yer: 'ust', renk: '#7f8c8d', ad: 'Zâid harf: okunmaz' },
+  // Vasılda okunmaz, vakfedilirse okunur (üstte dikdörtgen sıfır)
+  0x06E0: { sembol: '▯', yer: 'ust', renk: '#7f8c8d', ad: 'Vasılda okunmaz, vakıfta okunur' },
+  // NOT: U+06EA burada YOK. Standartta "low stop" olsa da bu verinin imlâsında uzun "î" ÇEKME
+  // işaretidir; fontta doğru çizildiği için overlay'e alınmaz (alınırsa her uzun î'ye simge basardı).
+  // İmâle ise AŞAĞIDA, karakterle değil KELİMEYLE tespit edilir (bkz. imaleMi).
+}
+// ── İMÂLE ─────────────────────────────────────────────────────────────────────────────────
+// Hafs kıraatinde imâle TEK bir yerdedir: Hûd 11:41 "مَجْر۪ىهَا". Bu veride U+06EA her yerde
+// uzun "î" çekmesi olarak kullanıldığı için imâleyi KARAKTERDEN tespit etmek imkânsız — yapılırsa
+// bütün uzun î'lere imâle simgesi basar (önceki hata buydu). Doğru tetikleyici kelimenin kendisi:
+// sûre 11, âyet 41 ve taban harfleri "مجرىها". Yalnız orada U+06EA metinden çıkarılıp
+// mushaf geleneğindeki küçük elmas (معين) simgesi çizilir.
+const IMALE_ISARET = { sembol: '◆', yer: 'alt', renk: '#8e44ad', ad: 'İmâle (Hûd 11:41)' }
+const IMALE_KELIMELER = new Set(['مجرىها', 'مجريها'])
+const tabanHarfleri = (s) => [...String(s || '')].filter(c => !BIRLESIK_RE.test(c)).join('')
+function imaleMi(kelime) {
+  const [sure, ayet] = String(kelime?.id || '').split(':').map(Number)
+  if (sure !== 11 || ayet !== 41) return false
+  return IMALE_KELIMELER.has(tabanHarfleri(kelime.arabic))
 }
 const TECVID_CPS = new Set(Object.keys(TECVID_ISARET).map(Number))
 // Birleşik (harekeler/işaretler) — taban harf saymak için: bunlar harf DEĞİL.
@@ -29,19 +76,16 @@ const OZEL_CPS = new Set([0x08D1, 0x08D2, 0x08D9])
 const CIM_CPS = new Set([0x06DA])
 const TUM_OZEL_CPS = new Set([...VAKIF_CPS, ...OZEL_CPS, ...CIM_CPS])
 // ── PAYLAŞIM GÖRSELİ İÇİN TEMİZLEME ────────────────────────────────────────────────────────
-// Aşağıdaki işaretlerin HİÇBİRİ sayfada aktif fontla akış içinde çizilmiyor: hepsi ya string'den
-// çıkarılıp mutlak-konumlu overlay olarak (kendi rengi/fontuyla) çiziliyor, ya da ayrı bir span'e
-// alınıyor. Canvas'a (Görsel Oluştur) ham metin verilince bu işaretler fontun bozuk glifine
-// düşüyordu: KFGQPC'de ◉ halkası, başka fontlarda boş kutu (□) veya kopuk boşluk.
-// Bu yüzden görsel üretirken metinden ÇIKARILIRLAR. Harflere ve harekelere dokunulmaz,
-// hiçbir renk/biçim değişikliği yapılmaz — sadece bu işaretler atılır.
-export const GORSEL_CIKAR_CPS = new Set([...TECVID_CPS, ...VAKIF_CPS, ...OZEL_CPS, ...CIM_CPS, 0x06DB])
+// ARTIK SABİT BİR ÇIKARMA LİSTESİ YOK. Fontlar onarıldığı için (KFGQPC'de uni0656 konturu
+// düzeltildi; me_quran'a U+0615 ve U+08D1..08DE Osmanlı işaretleri eklendi) bu işaretlerin
+// hemen hepsi çıktıda DOĞRU ve RENKSİZ çiziliyor. Sabit liste tutmak, font her güncellendiğinde
+// yeniden elden geçirmeyi gerektiriyordu ve fazladan işaret siliyordu (ör. ط durağı,
+// me_quran'da U+0615 olmadığı için atılıyor ve çıktıda hiç görünmüyordu).
+// Bunun yerine GorselOlustur'daki `eksikGlifAt` süzgeci kullanılır: o, SEÇİLİ FONTU ölçerek
+// yalnızca gerçekten çizilemeyen (notdef/□) işaretleri atar. Yani kural fonta göre kendini
+// ayarlar; burada elle bakım gerekmez. Harflere ve harekelere hiç dokunulmaz.
 export function gorselIcinTemizle(metin) {
-  return [...String(metin || "")]
-    .filter(c => !GORSEL_CIKAR_CPS.has(c.codePointAt(0)))
-    .join("")
-    .replace(/\s+/g, " ")
-    .trim()
+  return String(metin || "").replace(/\s+/g, " ").trim()
 }
 
 const CIM_RENK = '#f39c12'
@@ -58,6 +102,11 @@ const VAKIF_RENK = {
   0x08DE: '#3498db',
   0x08D5: '#c0392b',
 }
+// kelime.vakif ALANINDAKİ harfe göre renk. Harflerin hükmü (yukarıdaki referansın özeti):
+//   ط  mutlak: durmak evlâ      · م  lâzım: durmak vâcip     · ج  câiz: ikisi de olur
+//   ص  murahhas: ruhsat var     · مع muânaka: yalnız birinde · ق  "durulur denmiştir"
+//   س  sekte: nefessiz kısa duruş                            · لا DURMA
+// Renkler hükmün ağırlığını sezdirir; kırmızı = en bağlayıcı (lâzım / lâ vakf).
 const VAKIF_RENKLERI = {
   'ط': '#e67e22',
   'م': '#e74c3c',
@@ -68,20 +117,22 @@ const VAKIF_RENKLERI = {
   'س': '#1abc9c',
   'لا': '#e67e22',
 }
+// ÖZEL OKUYUŞ etiketleri — yalnız OZEL_CPS'teki (08D1/08D2/08D9) kodlar için çizilir.
+//   U+08D1 قصر (kasr) → medd yerine KISA okuma seçeneği
+//   U+08D2 مد  (medd) → uzun okuma seçeneği
+//   U+08D9 ن          → nûn-i sağîre / gunne uyarısı
+// NOT: 06DC, 08D5 ve 06EB buradan ÇIKARILDI. 06DC bu veride ط durağıdır (sekte değil) ve fontun
+// kendisi çizer; 08D5 ile 06EB zaten TECVID_ISARET'te ele alınıyor — burada durmaları ölü
+// yapılandırmaydı ve yanlış yönlendiriyordu.
 const OZEL_SEMBOL = {
   0x08D1: 'قصر',
   0x08D2: 'مد',
   0x08D9: 'ن',
-  0x06DC: 'سكته',
-  0x08D5: 'ص',
-  0x06EB: 'اشمام',  // işmam
 }
 const OZEL_RENK = {
   0x08D1: '#c0392b',
   0x08D2: '#c0392b',
   0x08D9: '#c0392b',
-  0x06DC: '#8e44ad',
-  0x06EB: '#16a085',
 }
 
 function besmeleMi(kelimeId) {
@@ -131,23 +182,23 @@ export default function MushafKelime({
   // İşaret, string'de BAĞLI OLDUĞU HARFTEN SONRA geldiği için o ana kadar sayılan TABAN harf
   // sayısıyla yatay konumu bulunur → simge kelimenin ortasına değil, ait olduğu harfin üzerine/
   // altına gelir (ör. Bakara 2:245'te üstteki ص "tı" harfinin, alttaki س "sad"ın hizasında).
-  // U+0656 (subscript alef) = harfin ALTINA küçük dik çizgi (kasra uzatması / uzun "î").
-  // KFGQPC bu glifi ÇİFT ESRE (kasratan) gibi çiziyor → hatalı görünüyor. me_quran/Indopak
-  // doğru (tek dik çizgi) çiziyor. Bu yüzden YALNIZ KFGQPC'de bu işaret string'den çıkarılıp
-  // altta dik çizgi olarak overlay çizilir; diğer fontlarda dokunulmaz (onlar doğru çiziyor).
-  const kfgqpcMi = arapcaFont.toLowerCase().includes('kfgqpc')
+  // U+0656 (uzatma / alt elif) ARTIK OVERLAY DEĞİL: fontun kendisi çiziyor.
+  // KFGQPC bu glifi ÇİFT ESRE gibi çiziyordu; fontun uni0656 konturu onarıldı (U+0670 hançer
+  // elif konturu taban çizgisinin altına indirildi). İşareti fontun GPOS'u yerleştirdiği için
+  // konum HER KELİMEDE doğru — harf sayarak tahmin etmeye gerek kalmadı.
   const tecvidler = []
-  const uzatmalar = []          // U+0656 konumları (yalnız KFGQPC'de)
   let temizArabic = kelime.arabic
-  const uzatmaVar = kfgqpcMi && kelime.arabic.includes('ٖ')
-  if ([...kelime.arabic].some(c => TECVID_CPS.has(c.codePointAt(0))) || uzatmaVar) {
+  // İmâle YALNIZ Hûd 11:41 "مجرىها" kelimesinde geçerlidir (Hafs'ta tek yer). Orada U+06EA
+  // uzatma değil imâle demektir; başka her yerde uzatmadır ve fonta bırakılır.
+  const imale = imaleMi(kelime)
+  if (imale || [...kelime.arabic].some(c => TECVID_CPS.has(c.codePointAt(0)))) {
     const kalan = []
     let taban = 0
     for (const c of kelime.arabic) {
       const cp = c.codePointAt(0)
       const t = TECVID_ISARET[cp]
       if (t) { tecvidler.push({ ...t, taban }); continue }   // işaret metinden çıkar
-      if (uzatmaVar && cp === 0x0656) { uzatmalar.push({ taban }); continue }  // dik çizgi overlay olacak
+      if (imale && cp === 0x06EA) { tecvidler.push({ ...IMALE_ISARET, taban }); continue }
       kalan.push(c)
       if (!BIRLESIK_RE.test(c)) taban++                       // yalnız taban (harf) say
     }
@@ -158,13 +209,7 @@ export default function MushafKelime({
       const oran = Math.min(1, Math.max(0, (tv.taban - 0.5) / toplam))
       tv.sol = (1 - oran) * 100
     }
-    for (const uz of uzatmalar) {
-      const oran = Math.min(1, Math.max(0, (uz.taban - 0.5) / toplam))
-      uz.sol = (1 - oran) * 100
-    }
   }
-  const uzatmaRengi = (lafzatullahMi(kelime.arabic) || besmeleMi(kelime.id))
-    ? (theme.lugatHighlight || theme.accent) : theme.text
   const efektifLineHeight = arapcaFont.toLowerCase().includes('me_quran') || arapcaFont.toLowerCase().includes('mequran')
   
   ? Math.max(lineHeight, 5.2)
@@ -279,28 +324,6 @@ export default function MushafKelime({
         >
           {t.sembol}
         </span>
-      ))}
-
-      {/* U+0656 uzatma çizgisi (yalnız KFGQPC) — harfin ALTINA küçük, hafif eğik dik çizgi.
-          Metin renginde (tecvid kuralı değil, olağan imlâ). Tecvid simgeleriyle aynı mantıkla
-          kutunun DİKEY MERKEZİNE göre konumlanır → satır aralığı değişse de harfe aynı uzaklıkta. */}
-      {uzatmalar.map((uz, ui) => (
-        <span
-          key={`uz-${ui}`}
-          style={{
-            position: "absolute",
-            left: `${uz.sol ?? 50}%`,
-            top: "50%",
-            transform: `translate(-50%, -50%) translateY(${yaziBoyutu * 0.46}px) rotate(6deg)`,
-            width: `${Math.max(1.4, yaziBoyutu * 0.05)}px`,
-            height: `${yaziBoyutu * 0.27}px`,
-            borderRadius: `${yaziBoyutu * 0.05}px`,
-            background: uzatmaRengi,
-            opacity: aktif ? 1 : 0.95,
-            pointerEvents: "none",
-            zIndex: 3,
-          }}
-        />
       ))}
 
       {/* Arapça metin */}

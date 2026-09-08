@@ -6,6 +6,59 @@ import {
 } from "lucide-react"
 import { DESENLER, GORSELLER } from "../data/arkaplanlar"
 
+// ── ÂYET SONU ROZETİ — MushafAyetRozeti.jsx'in canvas sürümü ─────────────────────────────
+// Süsleme (rakam HARİÇ) tek renk (#000) rasterize edilir; çizerken 'source-in' ile metnin
+// rengine boyanır → senkron çalışır (video karesinde görüntü beklemesi olmaz). Rakam ayrıca
+// Scheherazade ile canvas'a yazılır. viewBox, süslemenin taşan uçları kırpılmasın diye geniş.
+const ROZET_GRUP = (t) => `<g transform="${t}">`
+  + `<path d="M0 -19 C-11 -18.5 -17 -10 -17 0 C-17 10 -11 18.5 0 19 C-6 13 -6.5 -13 0 -19 Z" opacity=".92"/>`
+  + `<path d="M-2 -14 C-7 -13.5 -12 -6.5 -12 0 C-12 6.5 -7 13.5 -2 14" fill="none" stroke="#000" stroke-width=".6" opacity=".45"/>`
+  + `<path d="M-8 -24 C-9.5 -17 -8 -8.5 -7 0 C-8 8.5 -9.5 17 -8 24" fill="none" stroke="#000" stroke-width=".8" opacity=".5"/>`
+  + `<path d="M-2 -19 C1 -22 3 -26 2 -31 C-2 -30 -6 -24 -1 -18.5 Z"/>`
+  + `<path d="M-2 19 C1 22 3 26 2 31 C-2 30 -6 24 -1 18.5 Z"/>`
+  + `<path d="M-8 -17 C-12 -18 -15.5 -16.5 -17 -13.5 C-14.5 -13 -12 -14 -10.5 -16 C-11 -13.5 -12.5 -11.5 -15.5 -11 C-12.5 -10 -9 -12 -7.5 -15 Z" opacity=".85"/>`
+  + `<path d="M-8 17 C-12 18 -15.5 16.5 -17 13.5 C-14.5 13 -12 14 -10.5 16 C-11 13.5 -12.5 11.5 -15.5 11 C-12.5 10 -9 12 -7.5 15 Z" opacity=".85"/>`
+  + `<path d="M-16.5 -1.8 L-15 0 L-16.5 1.8 L-18 0 Z" opacity=".55"/>`
+  + `<path d="M-5.5 -7.5 C-7.5 -8.5 -10 -8 -11 -6 C-9 -5.5 -7 -6 -5.5 -7.5 Z" opacity=".7"/>`
+  + `<path d="M-5.5 7.5 C-7.5 8.5 -10 8 -11 6 C-9 5.5 -7 6 -5.5 7.5 Z" opacity=".7"/>`
+  + `<circle cx="-12" cy="-22" r="0.9" opacity=".5"/><circle cx="-14.5" cy="-20.5" r="0.5" opacity=".35"/>`
+  + `<circle cx="-12" cy="22" r="0.9" opacity=".5"/><circle cx="-14.5" cy="20.5" r="0.5" opacity=".35"/>`
+  + `<circle cx="-9" cy="-3.5" r="0.7" opacity=".55"/><circle cx="-9" cy="3.5" r="0.7" opacity=".55"/>`
+  + `<path d="M-4 -19 C-6 -24 -9 -27 -14 -27 C-11 -24 -8 -21 -4 -19 Z" opacity=".7"/>`
+  + `<path d="M-1 -19 C1 -24 3 -27 8 -27 C5 -24 2 -21 -1 -19 Z" opacity=".5"/>`
+  + `<path d="M-4 19 C-6 24 -9 27 -14 27 C-11 24 -8 21 -4 19 Z" opacity=".7"/>`
+  + `<path d="M-1 19 C1 24 3 27 8 27 C5 24 2 21 -1 19 Z" opacity=".5"/>`
+  + `</g>`
+// NOT: Safari, canvas'a çizilecek SVG görselinde AÇIK width/height ister (yalnız viewBox
+// varsa iOS'ta 0×0 çizip hiçbir şey göstermez) → width/height açıkça verilir.
+const ROZET_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="140" height="68" viewBox="-70 -34 140 68" fill="#000">`
+  + ROZET_GRUP("translate(-50 0)") + ROZET_GRUP("translate(50 0) scale(-1 1)") + `</svg>`
+const ROZET_ORAN = 140 / 68          // rozet genişlik/yükseklik oranı (viewBox)
+const rozetGorseliUret = () => {
+  const im = new Image()
+  im.src = "data:image/svg+xml;utf8," + encodeURIComponent(ROZET_SVG)
+  return im
+}
+const arapcaRakamGorsel = (sayi) => {
+  const r = "٠١٢٣٤٥٦٧٨٩"
+  return String(sayi).split("").map(d => r[+d] ?? d).join("")
+}
+// Küçük 8 köşeli yıldız (secde rozeti) — verilen renkte dolu çizer.
+const yildizCiz = (ctx, cx, cy, r, renk) => {
+  ctx.save()
+  ctx.beginPath()
+  for (let i = 0; i < 16; i++) {
+    const ang = -Math.PI / 2 + (i * Math.PI) / 8
+    const rr = i % 2 ? r * 0.46 : r
+    const x = cx + Math.cos(ang) * rr, yy = cy + Math.sin(ang) * rr
+    if (i) ctx.lineTo(x, yy); else ctx.moveTo(x, yy)
+  }
+  ctx.closePath()
+  ctx.fillStyle = renk
+  ctx.fill()
+  ctx.restore()
+}
+
 // ════════════════════════════════════════════════════════════════
 // GÖRSEL OLUŞTUR — âyet / metin paylaşım görseli üretici (ortak bileşen)
 //
@@ -126,18 +179,38 @@ const ISARET_ARALIK = [
   [0x06D6, 0x06ED], [0x08D3, 0x08FF], [0xFBB2, 0xFBC1],
 ]
 const isaretMi = (cp) => ISARET_ARALIK.some(([a, b]) => cp >= a && cp <= b)
-function eksikGlifAt(ctx, metin, fontStr) {
+// Yukaridaki araliklar icinde kalan ama BIRLESEN OLMAYAN kodlar. Bunlarin ilerleme
+// genisligi TASARIM GEREGI sifir degildir (Unicode kategorisi Mn disi: Lm/So/Cf/Sk),
+// bu yuzden asagidaki genislik testinden MUAF tutulurlar. Muaf tutulmazsa gercek
+// Kur'an isaretleri atilir: olcumde U+06E5/06E6 (kucuk vav/ya) Yusuf 12:75'ten
+// dusuyordu. Liste Unicode kategorilerinden uretildi, elle yazilmadi.
+const GENIS_ISARET = new Set([
+  0x06DD, 0x06DE, 0x06E5, 0x06E6, 0x06E9, 0x08E2,
+  0xFBB2, 0xFBB3, 0xFBB4, 0xFBB5, 0xFBB6, 0xFBB7, 0xFBB8, 0xFBB9, 0xFBBA, 0xFBBB,
+  0xFBBC, 0xFBBD, 0xFBBE, 0xFBBF, 0xFBC0, 0xFBC1,
+])
+function eksikGlifAt(ctx, metin, fontStr, pxBoy) {
   if (!metin) return metin
   const eski = ctx.font
   ctx.font = fontStr
-  const tofu = ctx.measureText("\uFFFF").width
-  const bas = ctx.measureText("ا").width
+  const bas = ctx.measureText("\u0627").width
+  // GENISLIK KURALI - iki ayri arizayi tek testle yakalar:
+  //   1) notdef kutusu: font o isareti hic tanimiyor.
+  //   2) YER TUTUCU (daire): font isareti taniyor ama hepsini ayni daire glifiyle ciziyor.
+  //      KFGQPC v4'te 13 kod (U+0610-0614, 0616, 0618, 0619, 0659-065B, 065D, 065F)
+  //      TEK bir konturu paylasiyor (fontTools ile olculdu). Bu gercek bir kontur
+  //      oldugu icin "bos mu" testi onu YAKALAMAZ; eski kod bu yuzden caresiz kalip
+  //      ciktiyi zorla me_quran'a ceviriyordu.
+  // Ayrim net: gercek birlesen isaretin ilerleme genisligi 0'dir, arizalilar em'in
+  // dortte birinden genistir. Tarayicida 60px ile olculdu:
+  //   gercek isaretler = 0 | yer tutucu = 42.2 | notdef = 30 (KF) / 44.4 (MQ)
+  const esik = (pxBoy || 60) * 0.25
   let cikti = ""
   for (const c of metin) {
     const cp = c.codePointAt(0)
-    if (!isaretMi(cp)) { cikti += c; continue }
-    const ek = ctx.measureText("ا" + c).width - bas
-    if (tofu > 0.5 && Math.abs(ek - tofu) < 0.6) continue   // notdef kutusu → çıkar
+    if (!isaretMi(cp) || GENIS_ISARET.has(cp)) { cikti += c; continue }
+    const ek = ctx.measureText("\u0627" + c).width - bas
+    if (ek > esik) continue                     // notdef VEYA yer tutucu -> at
     cikti += c
   }
   ctx.font = eski
@@ -265,6 +338,13 @@ function satirlaraBol(ctx, metin, maxW) {
 // ════════════════════════════════════════════════════════════════
 export async function gorselCiz(ctx, ayar) {
   const { W, H, arka, cerceve, karartma, arapca, meal, kaynak, imza, arapcaFont, yaziRengi } = ayar
+  // rozetNo: âyet numarası (varsa MushafAyetRozeti çizilir). secde: secde âyeti rozeti.
+  // rozetImg: ön-yüklenmiş süsleme görseli (source-in ile boyanır). logoImg: Vukuf logosu.
+  const rozetNo = ayar.rozetNo || null
+  const secde = !!ayar.secde
+  const rozetImg = ayar.rozetImg || null
+  const logoImg = ayar.logoImg || null
+  const rozetVar = !!(rozetNo && rozetImg && rozetImg.complete && rozetImg.naturalWidth > 0)
   // katman: "hepsi" (fotoğraf) | "arka" (yalnız arka plan) | "on" (karartma+çerçeve+yazı).
   // Videoda arka plan hareket ettiği için iki katman AYRI ön-çizilir, her karede birleştirilir.
   const katman = ayar.katman || "hepsi"
@@ -372,16 +452,50 @@ export async function gorselCiz(ctx, ayar) {
   const icPayUst = icPay + (cerceve === "kemer" ? S * 0.075 : 0)
   const kutuW = (W - icPay * 2) * (cerceve === "kemer" ? 0.9 : 1)
   const kutuH = H - icPayUst - icPay
-  const arapcaVar = !!arapca
   const mealVar   = !!meal
   const kaynakVar = !!kaynak
 
-  const arapcaFontYap = (b) => `${Math.round(b)}px ${arapcaFont || "'KFGQPC Uthmanic', serif"}`
+  // İŞARETLERİ FONT ÇİZER — overlay yok. Fontlar onarıldı: KFGQPC'de uni0656 konturu düzeltildi,
+  // me_quran'a U+0615 (ط durağı) ve U+08D1..08DE Osmanlı işaretleri eklendi. Böylece vakıf,
+  // uzatma ve tecvid işaretleri metnin İÇİNDE kalır; konumlarını fontun kendi GPOS'u yerleştirir
+  // (harf sayarak tahmin etme ve kelimeden kelimeye kayma sorunu ortadan kalktı).
+  // ÇIKTI, KULLANICININ SEÇTİĞİ FONTU KULLANIR.
+  // Eskiden KFGQPC seçiliyken çıktı zorla me_quran'a çevriliyordu; gerekçe "KFGQPC
+  // tecvid işaretlerini ◉ çiziyor" idi ve v4 onarımından SONRA geçerliliğini yitirdi.
+  // Ölçüldü (fontTools, v4 dosyaları): iki fontta da işaretlerin BOŞ ya da paylaşılan
+  // placeholder konturu yok; üstelik KFGQPC, me_quran'ın üst kümesi — me_quran'ın
+  // olup KFGQPC'de olmayan TEK bir işaret bile yok, tersine KFGQPC'de 13 işaret fazla
+  // (U+0610–0614 hürmet işaretleri, U+0618–061A küçük hareke, U+065C–065E).
+  // Yani zorlama, kullanıcının seçimini ezmenin yanı sıra işaret KAYBETTİRİYORDU.
+  // me_quran yalnızca YEDEK olarak kalıyor: seçili fontun çizemediği bir işaret varsa
+  // (ör. Indopak Nastaleeq) tarayıcı o karakteri yedekten alır.
+  // DİKKAT: yedek, jenerik aileden ÖNCE gelmeli. "X, serif, 'me_quran'" yazılırsa
+  // `serif` her karakteri yakalar ve me_quran'a hiç sıra gelmez.
+  const arapcaFontGorsel = (() => {
+    const secili = String(arapcaFont || "").trim().replace(/,\s*(serif|sans-serif|monospace)\s*$/i, "")
+    if (!secili) return "'me_quran', serif"
+    if (/me_quran/i.test(secili)) return `${secili}, serif`
+    return `${secili}, 'me_quran', serif`
+  })()
+  const arapcaFontYap = (b) => `${Math.round(b)}px ${arapcaFontGorsel}`
   const mealFontYap   = (b) => `${Math.round(b)}px Georgia, 'Times New Roman', serif`
   const kucukFontYap  = (b) => `600 ${Math.round(b)}px system-ui, -apple-system, sans-serif`
 
-  // Fontun çizemediği işaretleri at (□ kutusu çıkmasın). Metin bir kez süzülür.
-  const arapcaGuvenli = arapcaVar ? eksikGlifAt(ctx, arapca, arapcaFontYap(S * 0.078)) : arapca
+  // `arapca` iki biçimde gelebilir: DÜZ METİN (bugünkü KuranOkuma / OkumaEkrani) veya
+  // KELİME DİZİSİ ({ar,...} nesneleri — eski sürüm). String()'e vermek diziyi
+  // "[object Object],[object Object]" yaptığı için her iki biçim de burada metne çevrilir.
+  const arapcaMetne = (a) => {
+    if (typeof a === "string") return a
+    if (Array.isArray(a)) {
+      return a.map(k => (typeof k === "string" ? k : (k && (k.ar || k.metin || k.text)) || "")).filter(Boolean).join(" ")
+    }
+    if (a && typeof a === "object") return String(a.ar || a.metin || a.text || "")
+    return ""
+  }
+  const arapcaHam = arapcaMetne(arapca).replace(/\s+/g, " ").trim()
+  // Son süzgeç: SEÇİLİ FONTUN çizemediği (notdef/□) işaretleri at. Fonta göre kendini ayarlar.
+  const arapcaVar = !!arapcaHam
+  const arapcaGuvenli = arapcaVar ? eksikGlifAt(ctx, arapcaHam, arapcaFontYap(S * 0.078), S * 0.078) : ""
 
   const duzen = (olcek) => {
     const bloklar = []
@@ -393,6 +507,16 @@ export async function gorselCiz(ctx, ayar) {
       const satirYuk = b * 1.95
       bloklar.push({ tip: "arapca", boy: b, satirlar: sat, yuk: sat.length * satirYuk, satirYuk })
       toplam += sat.length * satirYuk
+    }
+    // ÂYET SONU ROZETİ — Arapça'nın hemen altında, ortalı KÜÇÜK madalyon (+ secde âyeti rozeti)
+    if (arapcaVar && rozetVar) {
+      const ab = S * 0.078 * olcek
+      const rh = ab * 0.82                // âyet rozeti: harf boyunun altında, küçük madalyon
+      const gapUst = ab * 0.40
+      const secdeYuk = secde ? ab * 0.62 : 0
+      const yuk = gapUst + rh + secdeYuk
+      bloklar.push({ tip: "rozet", yuk, rh, gapUst, secdeYuk, ab })
+      toplam += yuk
     }
     if (arapcaVar && mealVar) { const bo = S * 0.045 * olcek; bloklar.push({ tip: "ayrac", yuk: bo }); toplam += bo }
     if (mealVar) {
@@ -433,8 +557,11 @@ export async function gorselCiz(ctx, ayar) {
   ctx.textBaseline = "top"
   for (const b of sonuc.bloklar) {
     if (b.tip === "arapca") {
+      // Satır TEK PARÇA çizilir; vakıf/uzatma/tecvid işaretleri metnin içindedir ve
+      // konumlarını fontun kendi şekillendirmesi belirler (bizim hesabımız yok).
       ctx.font = arapcaFontYap(b.boy)
       ctx.fillStyle = yaziRenk
+      ctx.textAlign = "center"; ctx.textBaseline = "top"
       try { ctx.direction = "rtl" } catch { /* eski tarayıcı */ }
       for (const st of b.satirlar) { ctx.fillText(st, W / 2, y + (b.satirYuk - b.boy) / 2); y += b.satirYuk }
       try { ctx.direction = "ltr" } catch { /* yoksay */ }
@@ -454,17 +581,60 @@ export async function gorselCiz(ctx, ayar) {
       ctx.font = kucukFontYap(b.boy)
       ctx.fillStyle = vurguRenk
       for (const st of b.satirlar) { ctx.fillText(st, W / 2, y + (b.satirYuk - b.boy) / 2); y += b.satirYuk }
+    } else if (b.tip === "rozet") {
+      // Süslemeyi metin rengine boya (source-in) ve ortala; rakamı Scheherazade ile yaz.
+      const rh = b.rh
+      const rw = rh * ROZET_ORAN
+      const rTop = y + b.gapUst
+      try {
+        const tmp = document.createElement("canvas")
+        tmp.width = Math.max(1, Math.ceil(rw)); tmp.height = Math.max(1, Math.ceil(rh))
+        const tctx = tmp.getContext("2d")
+        tctx.drawImage(rozetImg, 0, 0, rw, rh)
+        tctx.globalCompositeOperation = "source-in"
+        tctx.fillStyle = yaziRenk
+        tctx.fillRect(0, 0, rw, rh)
+        ctx.drawImage(tmp, W / 2 - rw / 2, rTop)
+      } catch { /* rozet çizilemedi → yalnız rakam */ }
+      ctx.fillStyle = yaziRenk
+      ctx.font = `900 ${Math.round(rh * 0.5)}px 'Scheherazade New', 'me_quran', serif`
+      ctx.textAlign = "center"; ctx.textBaseline = "middle"
+      try { ctx.direction = "rtl" } catch { /* yoksay */ }
+      ctx.fillText(arapcaRakamGorsel(rozetNo), W / 2, rTop + rh / 2 + rh * 0.02)
+      try { ctx.direction = "ltr" } catch { /* yoksay */ }
+      ctx.textBaseline = "top"
+      // SECDE ÂYETİ rozeti — küçük yıldız + "Secde âyeti" (renksiz)
+      if (b.secdeYuk > 0) {
+        const sf = Math.round(b.secdeYuk * 0.5)
+        ctx.font = `600 ${sf}px system-ui, -apple-system, sans-serif`
+        const etiket = "Secde âyeti"
+        const tw = ctx.measureText(etiket).width
+        const yr = sf * 0.62
+        const ara = sf * 0.42
+        const cy = rTop + rh + b.secdeYuk * 0.45
+        const toplamW = yr * 2 + ara + tw
+        const xBas = W / 2 - toplamW / 2
+        yildizCiz(ctx, xBas + yr, cy, yr, yaziRenk)
+        ctx.fillStyle = solukRenk
+        ctx.textAlign = "left"; ctx.textBaseline = "middle"
+        ctx.fillText(etiket, xBas + yr * 2 + ara, cy)
+        ctx.textAlign = "center"; ctx.textBaseline = "top"
+      }
+      y += b.yuk
     } else {
       y += b.yuk
     }
   }
 
-  // 5) İMZA
+  // 5) İMZA — YALNIZ LOGO (ortalı). "Vukuf" yazısı kaldırıldı; logo tek başına imza görevi görür.
+  // Logo yüklenemezse imza hiç çizilmez (yazıya geri dönülmez).
   if (imza) {
-    ctx.font = `500 ${Math.round(S * 0.021)}px system-ui, -apple-system, sans-serif`
-    ctx.fillStyle = solukRenk
-    ctx.textAlign = "center"
-    ctx.fillText("Vukuf", W / 2, H - S * 0.045)
+    const logoVar = !!(logoImg && logoImg.complete && logoImg.naturalWidth > 0)
+    if (logoVar) {
+      const lb = Math.round(S * 0.040)              // logo kenarı (biraz büyütüldü)
+      const tabanY = H - S * 0.032                  // biraz daha AŞAĞI alındı
+      try { ctx.drawImage(logoImg, W / 2 - lb / 2, tabanY - lb * 0.78, lb, lb) } catch { /* logo çizilemedi */ }
+    }
   }
   return { olcek }
 }
@@ -485,12 +655,16 @@ function videoMime() {
 }
 
 export default function GorselOlustur({
-  acik, kapat, arapca, meal, kaynak, arapcaFont, theme, isMobile,
+  acik, kapat, arapca, meal, kaynak, secde = false, arapcaFont, theme, isMobile,
   // Video için (KuranOkuma doldurur; yoksa video sessiz kaydedilir)
   kariler, kariId, onKari, sesUrlAl, ayet, ayetListesiAl, azamiAyet = 25, sureBilgi,
 }) {
   const canvasRef = useRef(null)
   const dosyaRef = useRef(null)
+  // Âyet sonu rozeti süslemesi + Vukuf logosu — bir kez yüklenir, canvas'a senkron çizilir.
+  const rozetImgRef = useRef(null)
+  const logoImgRef = useRef(null)
+  const [varliklarSurum, setVarliklarSurum] = useState(0)   // görseller yüklenince yeniden çiz
   const [oran, setOran] = useState("4:5")
   const [arkaId, setArkaId] = useState("zumrut")
   const [ozelGorsel, setOzelGorsel] = useState(null)     // kullanıcının galeriden seçtiği (dataURL)
@@ -510,7 +684,20 @@ export default function GorselOlustur({
   const [videoSure, setVideoSure] = useState(6)
   const [efekt, setEfekt] = useState("yok")
   const [hareket, setHareket] = useState("yakinlas")
-  const [sesAcik, setSesAcik] = useState(true)
+  // Video VARSAYILAN SESSİZ üretilir; kullanıcı isterse önizlemedeki ses ikonundan açar.
+  const [sesAcik, setSesAcik] = useState(false)
+  // DİNLEME (monitör): kayıt SIRASINDA sesin hoparlörden duyulup duyulmayacağı. Kapalı başlar —
+  // çıktı alırken kullanıcıya zorla ses çalmaz. Kâri sesinin videoya KAYDEDİLMESİ ayrı ayardır
+  // (yukarıdaki `sesAcik`); dinlemeyi kapatmak kaydı sessizleştirmez.
+  const [dinle, setDinle] = useState(false)
+  const dinleRef = useRef(false)
+  const monitorRef = useRef(null)
+  useEffect(() => {
+    dinleRef.current = dinle
+    if (monitorRef.current) {
+      try { monitorRef.current.gain.value = dinle ? 1 : 0 } catch { /* düğüm kapanmış */ }
+    }
+  }, [dinle])
   const [kapsam, setKapsam] = useState("tek")                // "tek"|3|5|10|"sayfa"|"sure"|"ozel"
   const [ozelBas, setOzelBas] = useState(1)                  // Özel kapsam: başlangıç âyeti
   const [ozelSon, setOzelSon] = useState(1)                  // Özel kapsam: bitiş âyeti
@@ -555,6 +742,8 @@ export default function GorselOlustur({
     setArapcaAcik(!!arapca); setMealAcik(!!meal); setUyari(""); setDurum("")
     setYaziRengi(null); setSonRenkler(sonRenkleriOku())
     setMod("foto"); setKayitDurum("hazir"); setIlerleme(0); kayitIptalRef.current = false
+    setSesAcik(false)                          // her açılışta sessiz başla
+    setDinle(false); dinleRef.current = false  // kayıt sırasında dinleme de kapalı başlar
     setKapsam("tek"); tamponRef.current = []; cizelgeRef.current = []
     if (ayet) { setOzelBas(ayet.ayetNo); setOzelSon(ayet.ayetNo) }
   }, [acik, arapca, meal, ayet])
@@ -569,6 +758,27 @@ export default function GorselOlustur({
     tamponRef.current = []
     cizelgeRef.current = []
   }, [acik, mod])
+
+  // Âyet rozeti süslemesi + Vukuf logosu — bir kez yüklenir (canvas'a senkron çizmek için).
+  // Yüklenince `varliklarSurum` artar → foto önizlemesi ve video katmanı yeniden çizilir.
+  useEffect(() => {
+    if (rozetImgRef.current && logoImgRef.current) return
+    let iptal = false
+    const yuklendi = () => { if (!iptal) setVarliklarSurum(v => v + 1) }
+    if (!rozetImgRef.current) {
+      const rim = rozetGorseliUret()
+      rim.onload = () => { rozetImgRef.current = rim; yuklendi() }
+      rim.onerror = () => {}
+      if (rim.complete && rim.naturalWidth > 0) rozetImgRef.current = rim
+    }
+    if (!logoImgRef.current) {
+      const lim = new Image()
+      lim.onload = () => { logoImgRef.current = lim; yuklendi() }
+      lim.onerror = () => {}
+      lim.src = "/icon-512.png"
+    }
+    return () => { iptal = true }
+  }, [])
 
   // Hangi hazır fotoğraflar GERÇEKTEN var? (dosya yoksa listede hiç görünmesin)
   useEffect(() => {
@@ -616,8 +826,13 @@ export default function GorselOlustur({
     imza: imzaAcik,
     arapcaFont,
     yaziRengi,
+    // Âyet sonu rozeti (foto: prop'tan; video: parça kendi rozetNo'sunu ek ile geçer) + logo
+    rozetNo: arapcaAcik ? (ayet?.ayetNo || null) : null,
+    secde: arapcaAcik ? secde : false,
+    rozetImg: rozetImgRef.current,
+    logoImg: logoImgRef.current,
     ...ek,
-  }), [olcu, secili, cerceve, karartma, arapca, meal, kaynak, arapcaAcik, mealAcik, kaynakAcik, imzaAcik, arapcaFont, yaziRengi])
+  }), [olcu, secili, cerceve, karartma, arapca, meal, kaynak, arapcaAcik, mealAcik, kaynakAcik, imzaAcik, arapcaFont, yaziRengi, ayet, secde, varliklarSurum])
 
   // ÇİZİM SIRA NUMARASI — `gorselCiz` asenkron (arka plan fotoğrafını bekliyor). Art arda
   // ayar değiştirilince ESKİ çizim SONRA bitip canvas'a basabiliyordu: kullanıcı ayarı
@@ -644,7 +859,7 @@ export default function GorselOlustur({
   // Tek âyet → tek parça. Çoklu seçimde KuranOkuma'nın listesi kullanılır
   // (gerekirse başa besmele eklenmiş, uzun sûrelerde kırpılmış hâlde).
   const videoParcalari = useMemo(() => {
-    const tek = [{ tip: "ayet", arapca, meal, etiket: kaynak }]
+    const tek = [{ tip: "ayet", arapca, meal, etiket: kaynak, ayetNo: ayet?.ayetNo || null, secde }]
     if (mod !== "video" || !ayet || !ayetListesiAl || kapsam === "tek") return tek
     try {
       const adet = kapsam === "sure" ? "hepsi" : kapsam    // "sayfa" ve "ozel" aynen geçer
@@ -652,7 +867,7 @@ export default function GorselOlustur({
       const { liste } = ayetListesiAl(ayet.sureNo, bas, adet, ozelSon)
       return liste && liste.length ? liste : tek
     } catch { return tek }
-  }, [mod, ayet, ayetListesiAl, kapsam, ozelBas, ozelSon, arapca, meal, kaynak])
+  }, [mod, ayet, ayetListesiAl, kapsam, ozelBas, ozelSon, arapca, meal, kaynak, secde])
 
   // Bir parçanın YAZI katmanını çizer. katman:"on" görsel yüklemediği için gorselCiz
   // gövdesi baştan sona SENKRON çalışır → beklemeye gerek yok (rAF içinde kullanılabilir).
@@ -669,6 +884,8 @@ export default function GorselOlustur({
       arapca: arapcaAcik ? p.arapca : null,
       meal:   mealAcik   ? p.meal   : null,
       kaynak: kaynakAcik ? p.etiket : null,
+      rozetNo: arapcaAcik ? (p.ayetNo || null) : null,
+      secde: arapcaAcik ? !!p.secde : false,
     }))
     parcaIdxRef.current = idx
   }, [videoParcalari, olcu, cizAyari, arapcaAcik, mealAcik, kaynakAcik])
@@ -742,7 +959,7 @@ export default function GorselOlustur({
   // Önizlemenin yeniden kurulmasını gerektiren AYAR imzası (ilkel değerlerden)
   const icerikImza = `${arapcaAcik ? 1 : 0}${mealAcik ? 1 : 0}${kaynakAcik ? 1 : 0}${imzaAcik ? 1 : 0}`
     + `|${kapsam}|${(arapca || "").length}|${(meal || "").length}|${kaynak || ""}`
-    + `|${secili.id}|${cerceve}|${karartma}|${yaziRengi || "oto"}|${arapcaFont || ""}|${videoParcalari.length}`
+    + `|${secili.id}|${cerceve}|${karartma}|${yaziRengi || "oto"}|${arapcaFont || ""}|${videoParcalari.length}|${varliklarSurum}`
 
   // Fontlar yüklenmeden çizersek canvas yedek fontla çizer → önce fonts.ready bekle
   useEffect(() => {
@@ -906,13 +1123,23 @@ export default function GorselOlustur({
     const kaynaklar = []
     const t0 = sesCtx ? sesCtx.currentTime + 0.12 : 0
     if (sesCtx && hedef) {
+      // DİNLEME (monitör) yolu: ses KAYDA her hâlükârda gider, HOPARLÖRE ise ayrı bir kazanç
+      // düğümü üzerinden. Kazanç 0 başlar → kayıt alırken kullanıcıya zorla ses çalmaz.
+      // Kullanıcı isterse kayıt SÜRERKEN "Dinle" düğmesiyle canlı açıp kapatabilir.
+      let monitor = null
+      try {
+        monitor = sesCtx.createGain()
+        monitor.gain.value = dinleRef.current ? 1 : 0
+        monitor.connect(sesCtx.destination)
+        monitorRef.current = monitor
+      } catch { monitor = null }
       cizelgeRef.current.forEach((c, i) => {
         const b = tamponRef.current[i]
         if (!b) return
         const src = sesCtx.createBufferSource()
         src.buffer = b
-        src.connect(hedef)
-        src.connect(sesCtx.destination)         // kullanıcı da duysun
+        src.connect(hedef)                       // → videoya kaydedilir
+        if (monitor) src.connect(monitor)        // → yalnız "Dinle" açıksa duyulur
         src.start(t0 + c.bas)
         kaynaklar.push(src)
       })
@@ -936,6 +1163,7 @@ export default function GorselOlustur({
     kaynaklar.forEach(sr => { try { sr.stop() } catch { /* yoksay */ } })
     await bitti
     try { akis.getTracks().forEach(t => t.stop()) } catch { /* yoksay */ }
+    monitorRef.current = null                    // dinleme düğümü kayıtla birlikte biter
     try { sesCtx && sesCtx.close() } catch { /* yoksay */ }
     setKayitDurum("isleniyor")
 
@@ -1093,17 +1321,37 @@ export default function GorselOlustur({
             padding: isMobile ? "10px 12px" : "14px 18px",
             borderBottom: `1px solid ${theme.border}`,
           }}>
-            <canvas
-              ref={canvasRef}
-              style={{
-                maxWidth: "100%",
-                maxHeight: isMobile ? "42vh" : "46vh",
-                width: "auto", height: "auto",
-                borderRadius: "10px",
-                boxShadow: "0 6px 22px rgba(0,0,0,0.28)",
-                background: theme.surface,
-              }}
-            />
+            <div style={{ position: "relative", display: "inline-flex" }}>
+              <canvas
+                ref={canvasRef}
+                style={{
+                  maxWidth: "100%",
+                  maxHeight: isMobile ? "42vh" : "46vh",
+                  width: "auto", height: "auto",
+                  borderRadius: "10px",
+                  boxShadow: "0 6px 22px rgba(0,0,0,0.28)",
+                  background: theme.surface,
+                }}
+              />
+              {/* Video: sessiz üretilir. Önizlemedeki ikon ile kullanıcı kâri sesini açar. */}
+              {mod === "video" && ayet && sesUrlAl && (
+                <button
+                  onClick={() => setSesAcik(v => !v)}
+                  title={sesAcik ? "Kâri sesi açık — kapatmak için dokunun" : "Sessiz — kâri sesini açmak için dokunun"}
+                  style={{
+                    position: "absolute", top: "8px", right: "8px",
+                    width: "34px", height: "34px", borderRadius: "999px",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    border: "none", cursor: "pointer",
+                    background: sesAcik ? theme.accent : "rgba(0,0,0,0.55)",
+                    color: "#fff", boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
+                    backdropFilter: "blur(2px)",
+                  }}
+                >
+                  {sesAcik ? <Volume2 size={17} /> : <VolumeX size={17} />}
+                </button>
+              )}
+            </div>
           </div>
 
           {uyari && (
@@ -1381,6 +1629,24 @@ export default function GorselOlustur({
                   background: theme.accent, transition: "width .12s linear",
                 }} />
               </span>
+              {/* DİNLE — kayıt sürerken sesi hoparlörden duymak isteyen için. Kapalı başlar;
+                  kapalı olması kâri sesinin videoya KAYDEDİLMESİNİ engellemez. */}
+              {sesAcik && (
+                <button
+                  onClick={() => setDinle(v => !v)}
+                  title={dinle ? "Dinlemeyi kapat (kayda etkisi yok)" : "Kayıt sürerken sesi dinle"}
+                  style={{
+                    display: "flex", alignItems: "center", gap: "5px",
+                    padding: isMobile ? "9px 11px" : "10px 13px", borderRadius: "10px",
+                    border: `1px solid ${dinle ? theme.accent : theme.border}`,
+                    background: dinle ? `${theme.accent}1e` : "transparent",
+                    color: dinle ? theme.accent : theme.textSecondary, cursor: "pointer",
+                    fontSize: isMobile ? "12px" : "13px", fontWeight: 600, whiteSpace: "nowrap",
+                  }}
+                >
+                  {dinle ? <Volume2 size={14} /> : <VolumeX size={14} />} Dinle
+                </button>
+              )}
               <button
                 onClick={() => {
                   kayitIptalRef.current = true

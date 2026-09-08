@@ -9,7 +9,6 @@ import sayfaHaritaJson from "../data/sayfa-harita.json"
 import SureBasligi from "../components/SureBasligi"
 import Besmele from "../components/Besmele"
 import MushafSayfa from "../components/MushafSayfa"
-import MushafAyetRozeti from "../components/MushafAyetRozeti"
 import { gorselIcinTemizle } from "../components/MushafKelime"
 import PlayerBar from "../components/PlayerBar"
 import KitapAyraci from "../components/KitapAyraci"
@@ -42,8 +41,7 @@ import {
 const ARAPCA_FONTLAR = [
   { id: "kfgqpc",            label: "KFGQPC Uthmanic (Önerilen)", style: "'KFGQPC Uthmanic', serif",    google: null },
   { id: "me-quran",          label: "Me Quran",                   style: "'me_quran', serif",            google: null },
-  // NOT: Düz "Indopak" fontu projeden kaldırıldı (yalnız Nastaleeq sürümü duruyor).
-  // Kayıtlı tercihi "Indopak" olan kullanıcılar aşağıdaki doğrulama ile kfgqpc'ye döner.
+  { id: "Indopak",           label: "Indopak",                    style: "'Indopak', serif",             google: null },
   { id: "IndopakNastaleeq",  label: "Indopak Nastaleeq",          style: "'IndopakNastaleeq', serif",    google: null },
 ]
 
@@ -80,15 +78,6 @@ function normalize(k) {
   k = k.replace(/[\u0671\u0622\u0623\u0625]/g, "\u0627")
   k = k.replace(/^\u0627\u0644/, "\u0644")
   return k.trim()
-}
-
-// <input type="color"> YALNIZ #rrggbb kabul eder; başka bir biçim (#fff, rgb(),
-// isimli renk) verilirse sessizce siyaha düşer ve kutu yanlış renk gösterir.
-function hexGuvenli(renk, yedek = "#000000") {
-  const s = String(renk || "").trim()
-  if (/^#[0-9a-fA-F]{6}$/.test(s)) return s
-  if (/^#[0-9a-fA-F]{3}$/.test(s)) return "#" + [...s.slice(1)].map(c => c + c).join("")
-  return yedek
 }
 
 function dakikaFormatla(saniye) {
@@ -347,9 +336,7 @@ function SayfaBlok({ minHeight, margin, gorunur0 = false, zorla = false, cocuk, 
 // ════════════════════════════════════════════════════════════════
 export default function KuranOkuma({ kitap }) {
   const {
-    // temaTaban: seçili temanın HAM hâli. Kullanıcının "Yazı Rengi" / "Âyet No Rengi"
-    // tercihleri bunun üstüne bindirilerek aşağıda `theme` üretilir.
-    theme: temaTaban, currentTheme, setCurrentTheme,
+    theme, currentTheme, setCurrentTheme,
     customTheme, ozelTemaKaydet: ozelTemaKaydetFromContext,
   } = useApp()
   const navigate  = useNavigate()
@@ -664,13 +651,9 @@ const maxWidth = useMemo(() =>
   `${Math.round((isMobile ? 480 : 720) * (yaziBoyutu / 20))}px`
 , [isMobile, yaziBoyutu])
 
-  // ── Scrollbar (natif değil; kendi çizdiğimiz kaplama tutamak)
+  // ── Scrollbar
   const [scrollbarGorunur, setScrollbarGorunur] = useState(false)
   const scrollbarTimeoutRef = useRef(null)
-  const sbTutamakRef = useRef(null)     // kaplama tutamağın DOM düğümü
-  const sbSurukleRef = useRef(null)     // fare ile sürükleme durumu
-  const sbCerceveRef = useRef(0)        // rAF kimliği (kare başına tek yazma)
-  const sbIcerikRef = useRef(null)      // kaydırılan içerik sarmalayıcısı (boy değişimi izlenir)
 
 
   // ── Paneller
@@ -698,31 +681,10 @@ const maxWidth = useMemo(() =>
   // ── Arapça font
   const [yaziTipiAcik, setYaziTipiAcik] = useState(false)   // Aa panelindeki yazı tipi listesi açık mı
   const yaziTipiBtnRef = useRef(null)
-  const [arapcaFontId, setArapcaFontId] = useState(() => {
-    // Listeden kalkmış bir font kayıtlıysa (ör. artık bulunmayan "Indopak")
-    // varsayılana dön — yoksa hiçbir satır seçili görünmez.
-    const k = localStorage.getItem("vukuf-kuran-arapca-font")
-    return ARAPCA_FONTLAR.some(f => f.id === k) ? k : "kfgqpc"
-  })
+  const [arapcaFontId, setArapcaFontId] = useState(() =>
+    localStorage.getItem("vukuf-kuran-arapca-font") || "kfgqpc"
+  )
   const aktifArapcaFont = ARAPCA_FONTLAR.find(f => f.id === arapcaFontId) || ARAPCA_FONTLAR[0]
-
-  // ── Kullanıcı renk tercihleri (OkumaEkrani'ndaki "Sıfırla"lı yapının aynısı)
-  // Boş dize = "tercih yok, temanın rengi geçerli". Özel Tema panelinden farkı:
-  // burası seçili temayı DEĞİŞTİRMEZ, yalnız üstüne biner; tek tıkla sıfırlanır.
-  const [yaziRengi, setYaziRengi] = useState(() => localStorage.getItem("vukuf-kuran-yazi-renk") || "")
-  const [ayetNoRengi, setAyetNoRengi] = useState(() => localStorage.getItem("vukuf-kuran-ayetno-renk") || "")
-  useEffect(() => { localStorage.setItem("vukuf-kuran-yazi-renk", yaziRengi || "") }, [yaziRengi])
-  useEffect(() => { localStorage.setItem("vukuf-kuran-ayetno-renk", ayetNoRengi || "") }, [ayetNoRengi])
-
-  // Tema + tercihler. Hiç tercih yoksa HAM nesnenin KİMLİĞİ korunur; böylece
-  // MushafSayfa'nın `a.theme !== b.theme` memo karşılaştırması boşa bozulmaz.
-  const theme = useMemo(() => {
-    if (!yaziRengi && !ayetNoRengi) return temaTaban
-    const t = { ...temaTaban }
-    if (yaziRengi) t.text = yaziRengi
-    if (ayetNoRengi) t.ayetNoRengi = ayetNoRengi
-    return t
-  }, [temaTaban, yaziRengi, ayetNoRengi])
 
   // ── Okuma süresi
   const [bugunSure, setBugunSure] = useState(() =>
@@ -1027,36 +989,9 @@ const cokSatir = wrapAktif && barYuksekligi > tekSatirYuksekligi * 1.0
       clearTimeout(scrollbarTimeoutRef.current)
     }
     scrollbarTimeoutRef.current = setTimeout(() => {
-      // Sürükleme sürerken tutamak kaybolmasın
-      if (sbSurukleRef.current) return
       setScrollbarGorunur(false)
     }, 2000)
   }, [])
-
-  // Kaplama tutamağın boyu/konumu. React state'ine YAZMAZ — her scroll karesinde
-  // yeniden render tetiklerse momentum kaydırma tökezler; doğrudan DOM'a yazılır.
-  const sbTutamakYerlestir = useCallback(() => {
-    sbCerceveRef.current = 0
-    const el = scrollRef.current
-    const tut = sbTutamakRef.current
-    if (!el || !tut) return
-    const gorunen = el.clientHeight
-    const toplam = el.scrollHeight
-    if (toplam <= gorunen + 1) { tut.style.height = "0px"; return }   // kaydırılacak şey yok
-    const boy = Math.max(40, Math.round(gorunen * (gorunen / toplam)))
-    const gezinme = gorunen - boy
-    const oran = el.scrollTop / (toplam - gorunen)
-    // Ray, kaydırma kutusunun kendi kutusudur. Kutu `position:relative` sarmalayıcının
-    // içindedir; bar/player yüksekliği değişince offsetTop da değişir, sabit sayı yazmıyoruz.
-    tut.style.top = `${el.offsetTop}px`
-    tut.style.height = `${boy}px`
-    tut.style.transform = `translateY(${Math.round(Math.min(1, Math.max(0, oran)) * gezinme)}px)`
-  }, [])
-
-  const sbTutamakTazele = useCallback(() => {
-    if (sbCerceveRef.current) return
-    sbCerceveRef.current = requestAnimationFrame(sbTutamakYerlestir)
-  }, [sbTutamakYerlestir])
 
   // ── Scroll hızını algıla
   const scrollHiziAlgila = useCallback(() => {
@@ -1103,16 +1038,10 @@ const cokSatir = wrapAktif && barYuksekligi > tekSatirYuksekligi * 1.0
   // ════════════════════════════════════════════════════════════════
 
   const handleScroll = useCallback(() => {
-    scrollHiziAlgila()    // ← hız algılama ayrı devam eder (scroll oranı + kayıt)
-    sbTutamakTazele()     // ← kaplama tutamağı konumla (rAF ile, kare başına bir kez)
-    // Scrollbar HER kaydırmada belirir. Önceden yalnız scrollHiziAlgila içindeki
-    // "hızlı kaydırma" eşiği (tek olayda >30px) tetikliyordu; yumuşak kaydırma ve
-    // touchpad'de olay başına delta ~10-20px olduğu için eşik hiç geçilmiyor,
-    // scrollbar hiç görünmüyordu. Tarayıcıda ölçülerek doğrulandı.
-    scrollbarGoster()
+    scrollHiziAlgila()    // ← hız algılama ayrı devam eder
     // Aa paneli açıkken kaydırılırsa font-ankorunu tazele
     if (aaAcikRef.current && ustSatirYakalaRef.current) fontAnkorRef.current = ustSatirYakalaRef.current()
-  }, [scrollHiziAlgila, sbTutamakTazele, scrollbarGoster])
+  }, [scrollbarGoster, scrollHiziAlgila])
 
   // ════════════════════════════════════════════════════════════════
   // DOKUNMA FONKSİYONLARI
@@ -1133,26 +1062,13 @@ const cokSatir = wrapAktif && barYuksekligi > tekSatirYuksekligi * 1.0
 
     scrollElement.addEventListener('scroll', handleScroll, { passive: true })
 
-    // Tembel sayfalar mount oldukça scrollHeight değişiyor → tutamağın boyu da
-    // değişmeli. Sayfa boyu ölçüsü scroll olayı üretmediği için ayrıca izlenir.
-    let ro = null
-    try {
-      ro = new ResizeObserver(() => sbTutamakTazele())
-      ro.observe(scrollElement)
-      // İçerik sarmalayıcısı: tembel sayfalar açıldıkça BOYU büyür, tutamak kısalmalı.
-      if (sbIcerikRef.current) ro.observe(sbIcerikRef.current)
-    } catch { ro = null }
-    sbTutamakTazele()
-
     return () => {
       scrollElement.removeEventListener('scroll', handleScroll)
-      try { ro && ro.disconnect() } catch { /* yoksay */ }
-      if (sbCerceveRef.current) { cancelAnimationFrame(sbCerceveRef.current); sbCerceveRef.current = 0 }
       if (scrollbarTimeoutRef.current) {
         clearTimeout(scrollbarTimeoutRef.current)
       }
     }
-  }, [handleScroll, sbTutamakTazele])
+  }, [handleScroll])
 
   // Zoom Out
   useEffect(() => {
@@ -2365,11 +2281,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
   const TemaPanel = temaAcik && (
     <>
       <div onClick={() => setTemaAcik(false)} style={{ position: "fixed", inset: 0, zIndex: 195 }} />
-      {/* Renk bölümleri eklendiği için panel uzayabilir → kısa ekranlarda kaydırılabilsin */}
-      <div className="vukuf-panel" style={{
-        ...panelStil("right"), width: "240px", zIndex: 200,
-        maxHeight: "80vh", overflowY: "auto", overscrollBehavior: "contain",
-      }}>
+      <div className="vukuf-panel" style={{ ...panelStil("right"), width: "240px", zIndex: 200 }}>
         <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "10px", letterSpacing: "1px" }}>TEMA</div>
         {[
           { id: "sepia",  label: "Sepya",  renk: "#f4ecd8", aciklama: "Göz yormayan sıcak ton" },
@@ -2406,50 +2318,6 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
             {t.id === "custom" && <Pencil size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} color={theme.textSecondary} />}
           </button>
         ))}
-
-        {/* ── YAZI RENGİ — seçili temanın metin rengini ezer, temayı değiştirmez */}
-        <div style={{ borderTop: `1px solid ${theme.border}`, marginTop: "10px", paddingTop: "10px" }}>
-          <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px" }}>YAZI RENGİ</div>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <input
-              type="color"
-              value={hexGuvenli(yaziRengi || temaTaban.text)}
-              onChange={e => setYaziRengi(e.target.value)}
-              style={{ width: "40px", height: "28px", border: `1px solid ${theme.border}`, borderRadius: "6px", background: theme.background, cursor: "pointer", padding: "2px", flexShrink: 0 }}
-            />
-            <span style={{
-              flex: 1, minWidth: 0, fontSize: "15px", color: theme.text,
-              fontFamily: aktifArapcaFont.style, direction: "rtl",
-              whiteSpace: "nowrap", overflow: "hidden", textOverflow: "clip",
-            }}>بِسْمِ ٱللَّهِ</span>
-            {yaziRengi && (
-              <button onClick={() => setYaziRengi("")} title="Temaya sıfırla"
-                style={{ fontSize: "11px", color: theme.textSecondary, background: "none", border: "none", cursor: "pointer", flexShrink: 0 }}>Sıfırla</button>
-            )}
-          </div>
-        </div>
-
-        {/* ── ÂYET NO RENGİ — rozet rakamı ve âyet numarası vurguları */}
-        <div style={{ marginTop: "10px" }}>
-          <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px" }}>ÂYET NO RENGİ</div>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <input
-              type="color"
-              value={hexGuvenli(ayetNoRengi || temaTaban.ayetNoRengi || temaTaban.accent)}
-              onChange={e => setAyetNoRengi(e.target.value)}
-              style={{ width: "40px", height: "28px", border: `1px solid ${theme.border}`, borderRadius: "6px", background: theme.background, cursor: "pointer", padding: "2px", flexShrink: 0 }}
-            />
-            {/* Önizleme, okuma ekranındaki ROZETİN TA KENDİSİ olmalı — ham ﴿﴾
-                karakterleri farklı görünür ve yönü bidi'ye göre değişir. */}
-            <span style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center" }}>
-              <MushafAyetRozeti sayi={255} size={26} ac={theme.ayetNoRengi || theme.accent} />
-            </span>
-            {ayetNoRengi && (
-              <button onClick={() => setAyetNoRengi("")} title="Temaya sıfırla"
-                style={{ fontSize: "11px", color: theme.textSecondary, background: "none", border: "none", cursor: "pointer", flexShrink: 0 }}>Sıfırla</button>
-            )}
-          </div>
-        </div>
       </div>
     </>
   )
@@ -2531,11 +2399,6 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
         <button
           onClick={() => {
             ozelTemaKaydetFromContext(ozelRenkler)
-            // Tema panelindeki tek tek renk ezmeleri TEMANIN ÜSTÜNE biner. Burada
-            // paletten seçilen yazı/âyet-no renkleri görünmezse kullanıcı sebebini
-            // anlayamaz → özel tema kaydedilirken ezmeler temizlenir.
-            setYaziRengi("")
-            setAyetNoRengi("")
             setAktifRenk(null)
             setOzelTemaPanelAcik(false)
             setCurrentTheme("custom")
@@ -3804,13 +3667,9 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
             paddingBottom: barKonum === "alt" 
               ? `${barYuksekligi + (player.durum !== "kapali" ? playerBarYuksekligi : 0) + 8}px` 
               : "16px",
-            // Scrollbar YERİ HER ZAMAN AYRILIR. Daha önce genişlik 0px↔6px arası
-            // değişiyordu; bu, içerik kutusunun genişliğini değiştirdiği için
-            // kaydırma bitince yazılar yana kayıyordu. Artık yalnız TUTAMAĞIN RENGİ
-            // solup beliriyor, ölçüler sabit kalıyor. (Kısa sayfalarda da aynı
-            // hizalama olsun diye gutter "stable".)
-            // Natif scrollbar gizli (aşağıdaki <style>); yerine kendi tutamağımız
-            // çiziliyor. Böylece kaydırma sırasında hiçbir ölçü değişmiyor.
+            scrollbarWidth: scrollbarGorunur ? "thin" : "none",
+            msOverflowStyle: scrollbarGorunur ? "auto" : "none",
+            transition: "scrollbar-width 0.3s ease",
             cursor: kayitKonumModu ? "crosshair" : "default",
             // Akış modeli: içerik hep görünür. İlk konumlandırma boyamadan ÖNCE (useLayoutEffect)
             // yapıldığından gizleme/spinner GEREKMEZ — sıçrama zaten görünmez.
@@ -3906,22 +3765,30 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
             // Scroll'un bar'ı etkilemesini engelle
           }}
         >
-          {/* NATİF SCROLLBAR TAMAMEN GİZLİ.
-              Sebep: natif scrollbar'ın genişliği değiştiği anda içerik kutusu daralıp
-              genişliyor, ortalanmış metin yana kayıyordu. Genişliği sabitleyip yalnız
-              rengi soldurmak ise tarayıcıya bağımlı (Chrome, `scrollbar-width`/`-color`
-              verildiğinde ::-webkit-scrollbar kurallarını yok sayıyor; `scrollbar-color`
-              geçişleri de her yerde güvenilir boyanmıyor).
-              Onun yerine AŞAĞIDA kendi tutamağımızı çiziyoruz: position:absolute olduğu
-              için düzeni tanım gereği hiç etkilemez, görünürlüğü `opacity` ile
-              animasyonlanır — bu her tarayıcıda aynı çalışır. */}
+          {/* Scrollbar için CSS - WebKit tarayıcılar için */}
           <style>{`
-            .kuran-scroll-container::-webkit-scrollbar { width: 0; height: 0; }
-            .kuran-scroll-container { scrollbar-width: none; -ms-overflow-style: none; }
+            .kuran-scroll-container::-webkit-scrollbar {
+              width: ${scrollbarGorunur ? '6px' : '0px'};
+              transition: width 0.3s ease;
+            }
+            .kuran-scroll-container::-webkit-scrollbar-track {
+              background: transparent;
+            }
+            .kuran-scroll-container::-webkit-scrollbar-thumb {
+              background: ${theme.accent}70;
+              border-radius: 10px;
+              min-height: 40px;
+            }
+            .kuran-scroll-container::-webkit-scrollbar-thumb:hover {
+              background: ${theme.accent}90;
+            }
+            .kuran-scroll-container {
+              scrollbar-width: ${scrollbarGorunur ? 'thin' : 'none'};
+              scrollbar-color: ${theme.accent}70 transparent;
+            }
           `}</style>
-
+          
           <div
-            ref={sbIcerikRef}
             style={{
               position: "relative",
               maxWidth: tamGenislik ? "100%"
@@ -3986,62 +3853,6 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
             ))}
           </div>
         </div>
-
-        {/* ── KAPLAMA SCROLLBAR ──
-            Kaydırma kutusunun ÜSTÜNDE, position:absolute ile duruyor; bu yüzden
-            hiçbir öğenin genişliğini/konumunu değiştirmiyor. Görünürlüğü `opacity`
-            ile soluyor (natif scrollbar'ın aksine her tarayıcıda aynı davranır).
-            Yüksekliği/konumu React state'i değil, doğrudan DOM yazımıyla güncelleniyor. */}
-        <div
-          ref={sbTutamakRef}
-          onPointerDown={(e) => {
-            const el = scrollRef.current
-            if (!el) return
-            e.preventDefault()
-            e.stopPropagation()
-            const gorunen = el.clientHeight
-            const boy = e.currentTarget.offsetHeight || 40
-            sbSurukleRef.current = {
-              basY: e.clientY,
-              basScroll: el.scrollTop,
-              // 1px tutamak hareketi kaç px içerik demek
-              carpan: (el.scrollHeight - gorunen) / Math.max(1, gorunen - boy),
-            }
-            try { e.currentTarget.setPointerCapture(e.pointerId) } catch { /* yoksay */ }
-            scrollbarGoster()
-          }}
-          onPointerMove={(e) => {
-            const s = sbSurukleRef.current
-            const el = scrollRef.current
-            if (!s || !el) return
-            el.scrollTop = s.basScroll + (e.clientY - s.basY) * s.carpan
-          }}
-          onPointerUp={(e) => {
-            sbSurukleRef.current = null
-            try { e.currentTarget.releasePointerCapture(e.pointerId) } catch { /* yoksay */ }
-            scrollbarGoster()   // sürükleme bitti → 2 sn sonra sönme sayacı yeniden başlasın
-          }}
-          onPointerCancel={() => { sbSurukleRef.current = null }}
-          style={{
-            position: "absolute",
-            // DİKKAT: `top`, `height` ve `transform` BİLEREK burada yok — onları
-            // sbTutamakYerlestir doğrudan DOM'a yazıyor. Buraya da yazılsalardı
-            // React her yeniden render'da kendi değerini geri koyup tutamağı sıfırlardı.
-            // Ölçüm yapılana kadar yükseklik doğal olarak 0'dır → görünmez.
-            right: "3px",
-            width: "6px",
-            borderRadius: "10px",
-            background: `${theme.accent}70`,
-            opacity: scrollbarGorunur ? 1 : 0,
-            transition: "opacity 0.3s ease",
-            // Sönükken tıklamaları yutmasın; görünürken sürüklenebilsin.
-            pointerEvents: scrollbarGorunur && !isMobile ? "auto" : "none",
-            cursor: "grab",
-            touchAction: "none",
-            zIndex: 60,
-            willChange: "transform",
-          }}
-        />
 
         {/* ── BUTON SIRALAMASI PANELİ: sürükle-bırak + sol/sağ yaslama + canlı önizleme ── */}
         {siraAcik && (

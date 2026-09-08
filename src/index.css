@@ -43,7 +43,7 @@
 /* KFGQPC Uthmanic - Resmi Medine Mushafı */
 @font-face {
   font-family: 'KFGQPC Uthmanic';
-  src: url('/fonts/KFGQPC Uthmanic Script HAFS Regular.otf') format('opentype');
+  src: url('/fonts/KFGQPC Uthmanic.ttf') format('opentype');
   font-weight: normal;
   font-style: normal;
   font-display: swap;
@@ -63,7 +63,7 @@
 /*  Kalın ve güzel bir font (görüntüleme hatası giderilmek için düzenleme yapıldı) */
 @font-face {
   font-family: 'me_quran';
-  src: url('/fonts/me_quran-fixed.ttf') format('truetype');
+  src: url('/fonts/Me_Quran.ttf') format('truetype');
 }
 /*  Alternatif */
 @font-face {

@@ -55,8 +55,9 @@ const FONT_GRUPLARI = {
       // Yedek zincirine 'me_quran' eklendi: kfgqpc/Indopak'ta OLMAYAN işaretler (waqf/durak,
       // küçük üst işaretler vb.) sistem serifine düşüp yanlış glyph + harf-bağ kopması yapıyordu.
       // MeQuran bu işaretleri kapsadığından yedek olarak ondan alınır (gövde harfleri kfgqpc kalır).
-      { id: "kfgqpc",            label: "KFGQPC Uthmanic (Önerilen)", style: "'KFGQPC Uthmanic', serif", google: null },
+      { id: "kfgqpc",            label: "KFGQPC Uthmanic (Önerilen)", style: "'KFGQPC Uthmanic', 'me_quran', serif", google: null },
       { id: "me-quran",          label: "Me Quran",                   style: "'me_quran', serif",            google: null },
+      { id: "Indopak",           label: "Indopak",                    style: "'Indopak', 'me_quran', serif", google: null },
       { id: "IndopakNastaleeq",  label: "Indopak Nastaleeq",          style: "'IndopakNastaleeq', 'me_quran', serif", google: null },
     ],
   },
@@ -1026,7 +1027,10 @@ const [ogeSade, setOgeSade] = useState(() => {
   const d = {}; BAR_OGELERI.forEach(o => { if (o.sadeVarsayilan) d[o.key] = true }); return d
 })
 const [sadeMode, setSadeMode]               = useState(() => localStorage.getItem("vukuf-sade-mode") === "true")
-const [otomatikGizleme, setOtomatikGizleme] = useState(() => localStorage.getItem("vukuf-otomatik-gizleme") !== "false")
+// Varsayılan KAPALI. Not: bu anahtar KuranOkuma ile ORTAK. Eskiden burada varsayılan
+// AÇIK'tı (!== "false"); aşağıdaki kaydetme efekti mount'ta "true" yazdığı için
+// KuranOkuma varsayılanı kapalı olmasına rağmen orada da açık geliyordu.
+const [otomatikGizleme, setOtomatikGizleme] = useState(() => localStorage.getItem("vukuf-otomatik-gizleme") === "true")
 const [gizlemeSuresi, setGizlemeSuresi] = useState(() => parseInt(localStorage.getItem("vukuf-gizleme-suresi") || "5"))
 const [sureGoster, setSureGoster]           = useState(true)
 const isMobile = useMediaQuery('(max-width: 768px)')
@@ -1571,7 +1575,13 @@ useLayoutEffect(() => {
     zaman = setTimeout(gecisiAc, 400)
   }
   return () => { try { ro && ro.disconnect() } catch {}; window.removeEventListener("resize", olc); window.removeEventListener("orientationchange", olc); if (zaman) clearTimeout(zaman) }
-}, [barKonum, isMobile, barUiOlcegi])
+  // `yukleniyor` BAĞIMLILIKTA OLMAK ZORUNDA: kitap yüklenirken bileşen daha yukarıda
+  // `if (yukleniyor) return <YuklemeEkrani/>` ile erken dönüyor, yani bar HENÜZ DOM'da yok.
+  // Bu efekt o anda çalışıp `if (!el) return` ile çıkıyor ve barOlcRef hiç kurulmuyordu;
+  // bağımlılıklar değişmediği için yükleme bitince BİR DAHA ÇALIŞMIYORDU. Sonuç: ilk
+  // açılışta bar düzeni uygulanmıyor, ancak kullanıcı bar boyutunu değiştirince
+  // (barUiOlcegi değişir → efekt yeniden kurulur) devreye giriyordu. Tarayıcıda doğrulandı.
+}, [barKonum, isMobile, barUiOlcegi, yukleniyor])
 
 // Bar yüksekliği DEĞİŞMEDEN buton seti/sırası/metni değişebilir (sade mod, kısım adı,
 // süre...). ResizeObserver bunu görmez. KuranOkuma ile AYNI yapı: bağımlılıksız layout
@@ -1596,7 +1606,7 @@ useEffect(() => {
   return () => { window.removeEventListener("orientationchange", donunce); clearTimeout(zaman) }
   // eslint-disable-next-line react-hooks/exhaustive-deps
 }, [])
-useEffect(() => { localStorage.setItem("vukuf-otomatik-gizleme", otomatikGizleme) }, [otomatikGizleme])
+useEffect(() => { localStorage.setItem("vukuf-otomatik-gizleme", String(otomatikGizleme)) }, [otomatikGizleme])
 useEffect(() => { localStorage.setItem("vukuf-gizleme-suresi", gizlemeSuresi) }, [gizlemeSuresi])
 useEffect(() => { localStorage.setItem("vukuf-sade-mode", sadeMode) }, [sadeMode])
 useEffect(() => { localStorage.setItem("vukuf-bar-ui-olcegi", String(barUiOlcegi)) }, [barUiOlcegi])

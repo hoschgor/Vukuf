@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from "react"
 import { useNavigate } from "react-router-dom"
-import { Search, X, BookOpen, ChevronRight, Loader, SlidersHorizontal, Asterisk } from "lucide-react"
+import { Search, X, BookOpen, ChevronRight, ChevronLeft, Loader, SlidersHorizontal, Asterisk } from "lucide-react"
 import { useApp } from "../AppContext"
 import { useMediaQuery } from "../data/hooks/useMediaQuery"
 import { normHarf } from "../data/okumaKayit"
@@ -46,8 +46,12 @@ async function kitapYukle(dosya) {
   return metinCache.get(dosya)
 }
 
-const KITAP_BASI_LIMIT = 6     // bir kitaptan en çok kaç önizleme
-const TOPLAM_LIMIT = 80        // toplam kitap-içi sonuç
+// ARAMA SINIRI YOK: her kitap baştan sona taranır ve TÜM eşleşmeler toplanır.
+// (Eskiden kitap başına 6, toplamda 80 sonuçta kesiliyordu.)
+// Sınır yalnız ÇİZİMDE var: bir kitabın binlerce sonucu olabilir, hepsini birden
+// DOM'a basmak sayfayı kilitler. Bu yüzden seçilen kitabın sonuçları sayfa sayfa
+// açılır — arama sonucu eksilmez, sadece görünen kısım artarak gelir.
+const SAYFA_ADIM = 50          // "Daha fazla" her basışta kaç sonuç daha gösterir
 
 export default function Arama() {
   const { theme } = useApp()
@@ -67,7 +71,11 @@ export default function Arama() {
   const [sorgu, setSorgu] = useState(ilk?.sorgu || "")
   const [tamArama, setTamArama] = useState(false)  // * : birebir (tam) arama — normalize yok
   const [yukleniyor, setYukleniyor] = useState(false)
-  const [kitapSonuc, setKitapSonuc] = useState([])
+  const [kitapGruplar, setKitapGruplar] = useState([])   // [{ kitapId, kitapAd, yazar, sonuclar: [...] }]
+  // "Aramaya dön" ile gelindiyse acik kitap da geri yuklenir; yoksa kullanici sonuca
+  // tikladiktan sonra geri donunce kitap listesine dusuyor ve yerini kaybediyor.
+  const [secilenKitap, setSecilenKitap] = useState(ilk?.acikKitap || null)
+  const [gosterilen, setGosterilen] = useState(SAYFA_ADIM)
   const [sureSonuc, setSureSonuc] = useState([])
   const aramaIdRef = useRef(0)
 
@@ -85,12 +93,12 @@ export default function Arama() {
 
   // Bir sonuca giderken o anki arama durumunu anlık kaydet (dönünce devam etsin)
   function durumKaydet() {
-    try { localStorage.setItem("vukuf-arama-durum", JSON.stringify({ sorgu, secimler: scope.secimler })) } catch {}
+    try { localStorage.setItem("vukuf-arama-durum", JSON.stringify({ sorgu, secimler: scope.secimler, acikKitap: secilenKitap })) } catch {}
   }
 
   useEffect(() => {
     const q = sorgu.trim()
-    if (q.length < 2) { setKitapSonuc([]); setSureSonuc([]); setYukleniyor(false); return }
+    if (q.length < 2) { setKitapGruplar([]); setSureSonuc([]); setYukleniyor(false); return }
     const benimId = ++aramaIdRef.current
     const kucult = (s) => (tamArama ? s : trLower(s))   // tamArama: birebir; değilse normalize
     const norm = kucult(q)
@@ -114,9 +122,10 @@ export default function Arama() {
       )
       if (benimId !== aramaIdRef.current) return   // yeni arama başladı
 
-      const bulunan = []
-      dis: for (const { k, d } of yuklu) {
-        let kitapSay = 0
+      // Sonuclar KITAP KITAP toplanir; hicbir yerde kesilmez.
+      const gruplar = []
+      for (const { k, d } of yuklu) {
+        const sonuclar = []
         for (const sayfa of d) {
           const satirlar = (sayfa.metin || "").split("\n")
           for (let si = 0; si < satirlar.length; si++) {
@@ -127,20 +136,32 @@ export default function Arama() {
             const bas = Math.max(0, idx - 30)
             const son = idx + norm.length + 55
             const onizleme = (bas > 0 ? "…" : "") + satir.slice(bas, son).trim() + (satir.length > son ? "…" : "")
-            bulunan.push({ kitapId: k.id, kitapAd: k.baslik, yazar: k.yazar, sayfaNo: sayfa.sayfa, satirIdx: si, onizleme })
-            if (++kitapSay >= KITAP_BASI_LIMIT) break
-            if (bulunan.length >= TOPLAM_LIMIT) break dis
+            sonuclar.push({ kitapId: k.id, kitapAd: k.baslik, yazar: k.yazar, sayfaNo: sayfa.sayfa, satirIdx: si, onizleme })
           }
-          if (kitapSay >= KITAP_BASI_LIMIT) break
         }
+        if (sonuclar.length) gruplar.push({ kitapId: k.id, kitapAd: k.baslik, yazar: k.yazar, sonuclar })
       }
       if (benimId !== aramaIdRef.current) return
-      setKitapSonuc(bulunan)
+      gruplar.sort((a, b) => b.sonuclar.length - a.sonuclar.length)   // cok sonuclu kitap once
+      setKitapGruplar(gruplar)
       setYukleniyor(false)
     }, 320)
 
     return () => clearTimeout(t)
   }, [sorgu, kapsam, filtreAktif, tamArama])
+
+  // Sorgu/kapsam degisince acik kitaptan cik ve sayfalamayi bastan basla —
+  // yoksa artik var olmayan bir kitabin icinde kalinabiliyor.
+  // ILK CALISMA ATLANIR: mount'ta da tetiklenir ve yukarida geri yuklenen
+  // `acikKitap` aninda silinirdi.
+  const ilkResetRef = useRef(true)
+  useEffect(() => {
+    if (ilkResetRef.current) { ilkResetRef.current = false; return }
+    setSecilenKitap(null); setGosterilen(SAYFA_ADIM)
+  }, [sorgu, kapsam, filtreAktif, tamArama])
+
+  const acikGrup = kitapGruplar.find(g => g.kitapId === secilenKitap) || null
+  const toplamSonuc = kitapGruplar.reduce((t, g) => t + g.sonuclar.length, 0)
 
   // Kitap içi sonuca git: hedefi belleğe yaz, kitabı aç (OkumaEkrani açılışta okur)
   function kitabaGit(r) {
@@ -167,7 +188,7 @@ export default function Arama() {
 
   const q = sorgu.trim()
   const sonucVar = q.length >= 2
-  const hicYok = sonucVar && !yukleniyor && sureSonuc.length === 0 && kitapSonuc.length === 0
+  const hicYok = sonucVar && !yukleniyor && sureSonuc.length === 0 && kitapGruplar.length === 0
 
   return (
     <div style={{ maxWidth: "760px", margin: "0 auto", padding: isMobile ? "20px 16px 60px" : "36px 24px 80px" }}>
@@ -276,11 +297,55 @@ export default function Arama() {
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "11px", letterSpacing: "1.5px", color: theme.textSecondary, marginBottom: "8px" }}>
             KİTAPLARDA
+            {!yukleniyor && toplamSonuc > 0 && (
+              <span style={{ letterSpacing: 0 }}>· {toplamSonuc} sonuç / {kitapGruplar.length} kitap</span>
+            )}
             {yukleniyor && <Loader size={13} className="arama-spin" style={{ color: theme.accent }} />}
           </div>
-          {!yukleniyor && kitapSonuc.length > 0 && (
+
+          {/* 1. KADEME — KİTAP LİSTESİ: ad + o kitaptaki sonuç sayısı */}
+          {!yukleniyor && !acikGrup && kitapGruplar.length > 0 && (
             <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-              {kitapSonuc.map((r, i) => (
+              {kitapGruplar.map(g => (
+                <button key={g.kitapId}
+                  onClick={() => { setSecilenKitap(g.kitapId); setGosterilen(SAYFA_ADIM) }}
+                  style={{
+                    display: "flex", alignItems: "center", gap: "10px", textAlign: "left",
+                    padding: "13px 14px", borderRadius: "10px", cursor: "pointer",
+                    background: theme.surface, border: `1px solid ${theme.border}`, color: theme.text,
+                  }}>
+                  <BookOpen size={15} style={{ color: theme.accent, flexShrink: 0 }} />
+                  <span style={{ flex: 1, minWidth: 0 }}>
+                    <span style={{ display: "block", fontSize: "14px", fontWeight: 600 }}>{g.kitapAd}</span>
+                    {g.yazar && (
+                      <span style={{ display: "block", fontSize: "11px", color: theme.textSecondary, marginTop: "2px" }}>{g.yazar}</span>
+                    )}
+                  </span>
+                  <span style={{
+                    flexShrink: 0, fontSize: "12px", fontWeight: 600, color: theme.accent,
+                    background: `${theme.accent}18`, borderRadius: "999px", padding: "3px 9px",
+                  }}>{g.sonuclar.length}</span>
+                  <ChevronRight size={15} style={{ color: theme.textSecondary, flexShrink: 0 }} />
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* 2. KADEME — SEÇİLEN KİTABIN SONUÇLARI (aynı sayfada, eski görünümle) */}
+          {!yukleniyor && acikGrup && (
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+              <button onClick={() => setSecilenKitap(null)}
+                style={{
+                  display: "flex", alignItems: "center", gap: "8px", textAlign: "left",
+                  padding: "9px 12px", borderRadius: "10px", cursor: "pointer",
+                  background: "transparent", border: `1px solid ${theme.border}`, color: theme.text,
+                }}>
+                <ChevronLeft size={15} style={{ color: theme.accent, flexShrink: 0 }} />
+                <span style={{ flex: 1, minWidth: 0, fontSize: "13px", fontWeight: 600 }}>{acikGrup.kitapAd}</span>
+                <span style={{ fontSize: "12px", color: theme.textSecondary }}>{acikGrup.sonuclar.length} sonuç</span>
+              </button>
+
+              {acikGrup.sonuclar.slice(0, gosterilen).map((r, i) => (
                 <button key={i} onClick={() => kitabaGit(r)}
                   style={{
                     display: "flex", flexDirection: "column", gap: "4px", textAlign: "left",
@@ -295,12 +360,23 @@ export default function Arama() {
                   <div style={{ fontSize: "13px", color: theme.textSecondary, lineHeight: 1.5 }}>{r.onizleme}</div>
                 </button>
               ))}
+
+              {acikGrup.sonuclar.length > gosterilen && (
+                <button onClick={() => setGosterilen(n => n + SAYFA_ADIM)}
+                  style={{
+                    padding: "11px 14px", borderRadius: "10px", cursor: "pointer",
+                    background: "transparent", border: `1px dashed ${theme.border}`,
+                    color: theme.accent, fontSize: "13px", fontWeight: 600,
+                  }}>
+                  Daha fazla göster ({acikGrup.sonuclar.length - gosterilen} kaldı)
+                </button>
+              )}
             </div>
           )}
           {yukleniyor && (
             <div style={{ fontSize: "13px", color: theme.textSecondary, padding: "8px 2px" }}>Kitaplarda aranıyor…</div>
           )}
-          {!yukleniyor && sonucVar && kitapSonuc.length === 0 && sureSonuc.length > 0 && (
+          {!yukleniyor && sonucVar && kitapGruplar.length === 0 && sureSonuc.length > 0 && (
             <div style={{ fontSize: "13px", color: theme.textSecondary, padding: "8px 2px" }}>Kitaplarda eşleşme yok.</div>
           )}
         </div>

@@ -94,10 +94,14 @@ function imaleMi(kelime) {
 const TECVID_CPS = new Set(Object.keys(TECVID_ISARET).map(Number))
 // Birleşik (harekeler/işaretler) — taban harf saymak için: bunlar harf DEĞİL.
 const BIRLESIK_RE = /[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06ED\u08D3-\u08FF]/
-// U+08D1 ve U+08D2 BURADAN ÇIKARILDI: bu mushafta hiç geçmiyorlar (tarandı, 0 kez) ve
-// Unicode'da adları da qasr/medd değil (LARGE CIRCLE BELOW / LARGE ROUND DOT INSIDE
-// CIRCLE BELOW). Yani hem ölü hem yanlış bir eşlemeydi.
-const OZEL_CPS = new Set([0x08D9])
+// U+08D1 ve U+08D2 bir ara "veride hiç geçmiyor" denip çıkarılmıştı — O ÖLÇÜM
+// HATALIYDI (tarayıcı aralığı 0x08D3'ten başlıyordu, bu iki kodu göremiyordu).
+// Gerçek: U+08D1 = 484 kez, U+08D2 = 247 kez. Anlamları da mushaftan doğrulandı:
+//   U+08D1 → KASR  (Bakara 5/16/27/39 "اُو۟لٰٓئِكَ")
+//   U+08D2 → MED   (Bakara 14 "مُسْتَهْزِؤُ۫نَ", Bakara 40 "اُو۫فِ")
+// Unicode adları (LARGE CIRCLE BELOW / ROUND DOT INSIDE CIRCLE BELOW) bu veride
+// YANILTICI; dosyanın başındaki kural burada da geçerli: ada değil, kullanıma bak.
+const OZEL_CPS = new Set([0x08D1, 0x08D2, 0x08D9])
 const CIM_CPS = new Set([0x06DA])
 const TUM_OZEL_CPS = new Set([...VAKIF_CPS, ...OZEL_CPS, ...CIM_CPS])
 // ── PAYLAŞIM GÖRSELİ İÇİN TEMİZLEME ────────────────────────────────────────────────────────
@@ -153,9 +157,13 @@ const VAKIF_HARF_KOD = {
 // kendisi çizer; 08D5 ile 06EB zaten TECVID_ISARET'te ele alınıyor — burada durmaları ölü
 // yapılandırmaydı ve yanlış yönlendiriyordu.
 const OZEL_SEMBOL = {
+  0x08D1: 'قصر',
+  0x08D2: 'مد',
   0x08D9: 'ن',
 }
 const OZEL_RENK = {
+  0x08D1: '#c0392b',
+  0x08D2: '#c0392b',
   0x08D9: '#c0392b',
 }
 

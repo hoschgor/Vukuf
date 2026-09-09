@@ -4,36 +4,55 @@ import { useMediaQuery } from "../data/hooks/useMediaQuery"
 // ══════════════════════════════════════════════════════════════════════════════════════════
 // VAKIF (durak) ve TECVİD işaretleri — REFERANS
 // ------------------------------------------------------------------------------------------
-// ÖNEMLİ UYARI: Aşağıdaki kod noktaları Unicode'un STANDART anlamlarıdır. Bu uygulamanın
-// mushaf/kitap verisi bazı kodları standart dışı kullanıyor — ikisi ölçümle ispatlandı:
-//   • U+06EA (std: "empty centre low stop")  → BU VERİDE: uzun "î" çekme işareti (uzatma)
-//   • U+06DC (std: "small high seen" = sekte) → BU VERİDE: ط (vakf-ı mutlak) durağı
-// Yeni bir işaret eklemeden önce verideki gerçek kullanımını doğrula; ada güvenme.
+// KAYNAK: kuran-mushaf.json'ın TAMAMI tarandı (isaret_dok.py). Aşağıdaki hükümler
+// tahmin değil, o sayımın sonucudur. Sayılar sıklık; parantezdeki yer örnek.
+//
+// ÖNCEKİ İKİ HATA — ikisi de bu sayımla ortaya çıktı, tekrar edilmesin:
+//   • U+06DC "BU VERİDE ط durağıdır" YAZIYORDU → YANLIŞ. Veride tam 4 kez geçiyor ve
+//     dördü de Hafs'ın sekte yerleri (Kehf 18:1, Yâsîn 36:52, Kıyâme 75:27,
+//     Mutaffifîn 83:14). Yani standart anlamı (SEKTE) doğruymuş. Karışıklığın sebebi
+//     FONT: onarılmış fontlarda U+06DC ile U+0615 aynı glife düşüyor, ekranda ط görünüyordu.
+//   • U+08D5 "kıraat farkı: sâd ile okunuş" SAYILIYORDU → YANLIŞ. Veride 156 kez geçiyor;
+//     bu sıklık nadir bir kıraat farkı olamaz. SMALL HIGH SAD = ص = vakf-ı MURAHHAS.
+//     Yanılgının sebebi: Bakara 2:245 يَبْصُۣطُࣕ kelimesinde gerçek kıraat işareti (U+06E3)
+//     ile ص durağı yan yana duruyor; ikisi bir kural sanılmıştı.
+//
+// Kural: yeni bir işaret eklemeden önce isaret_dok.py ile SAY. Unicode adına da,
+// tek bir âyetteki görüntüye de güvenme.
 //
 // VAKIF (durak) İŞARETLERİ — durup durmama hükmü:
 //   مـ  U+06D8  vakf-ı LÂZIM     → durmak VÂCİP; geçilirse mânâ bozulur
 //   ط   U+0615  vakf-ı MUTLAK    → durmak evlâ (mutlak durak)
 //   ج   U+06DA  vakf-ı CÂİZ      → durmak da geçmek de câiz, eşit
-//   ز   —       vakf-ı MÜCEVVEZ  → câiz ama GEÇMEK evlâ
-//   ص   —       vakf-ı MURAHHAS  → (uzun âyette) durmaya ruhsat; geçmek evlâ
-//   صلى U+06D6  el-VASLU EVLÂ    → geçmek daha iyi
-//   قلى U+06D7  el-VAKFU EVLÂ    → durmak daha iyi
+//   ز   U+0617  vakf-ı MÜCEVVEZ  → câiz ama GEÇMEK evlâ   (Bakara 2:41 قليلا — doğrulandı)
+//   صلى U+06D6  el-VASLU EVLÂ (1) → geçmek daha iyi   (Kehf 18:58)
 //   لا  U+06D9  LÂ VAKF          → DURMA (durulduysa geri alıp tekrarla)
 //   ∴∴  U+06DB  MUÂNAKA          → iki noktadan YALNIZ BİRİNDE durulur, ikisinde birden değil
-//   س   U+06DC  SEKTE            → nefes almadan kısa duruş (Hafs'ta 4 yer)
+//   ع   U+08D6  RUKÛ' SONU (445) → durak hükmü DEĞİL; bölüm (rukû) sonunu gösterir
+//   ص   U+08D5  vakf-ı MURAHHAS (156) → uzun âyette nefes için ruhsat; geçmek evlâ
 //   قف  U+08DE  KIF              → "dur" (durulmayacak sanılan yerde uyarı)
 //   ق   U+08D7  KÎLE aleyhi'l-vakf → "burada durulur denmiştir"
 //
 // TECVİD / KIRAAT işaretleri (aşağıdaki TECVID_ISARET tablosunda çizilenler):
-//   U+06E3 küçük ALT sîn   → Bakara 2:245 يبصط · A'râf 7:69 بصطة — sîn ile okunuş
-//   U+08D5 küçük ÜST sâd   → aynı kelimelerde sâd ile okunuş (kıraat farkı)
-//   U+06EB boş merkezli üst durak → Yûsuf 12:11 تأمنا — İŞMÂM
-//   U+06ED küçük ALT mîm   → Hûd 11:42 اركب معنا — idgâm-ı mütecâniseyn (bâ → mîm)
-//   U+06DF üst yuvarlak sıfır      → harf ZÂİD: hiçbir hâlde okunmaz
-//   U+06E0 üst dikdörtgen sıfır    → VASILDA okunmaz, VAKFEDİLİRSE okunur
+//   U+06E3 küçük ALT sîn (2)  → Bakara 2:245 يبصط · A'râf 7:69 بصطة — sîn ile okunuş
+//   U+06EB boş merkezli üst durak (1) → Yûsuf 12:11 تأمنا — İŞMÂM
+//   U+06ED küçük ALT mîm (1)  → Hûd 11:42 اركب معنا — idgâm-ı mütecâniseyn (bâ → mîm)
+//   U+06DC küçük ÜST sîn (4)  → SEKTE (yukarıdaki nota bak; overlay ile çiziliyor)
+//   U+06EC dolu merkezli üst durak (1) → Fussilet 41:44 ءَاَ۬عْجَمِيٌّ — TESHÎL
+//     (fontlar bu ikisini doğru çiziyor; yalnız panelde açıklanır)
+//
+// VERİDE GEÇEN AMA DURAK/TECVİD OLMAYANLAR (bilerek ele alınmıyor):
+//   U+06E1 (31) → sükûn; imlâsı farklı bir kaynaktan gelen kelimelerde (ٱ / ۡ üslubu)
+//   U+06E4 (5)  → medd; yalnız SÛRE ADLARINDA (isimArapca), âyet metninde değil
+//
+// VERİDE HİÇ GEÇMEYENLER (tabloya konmadı): U+06D7 (قلى), U+06DF, U+06E0, U+08D1, U+08D2
 //   (İmâle Hafs'ta tek yerdedir: Hûd 11:41 مجراها — bu veride ayrı bir kodla işaretlenmiyor.)
 // ══════════════════════════════════════════════════════════════════════════════════════════
-const VAKIF_CPS = new Set([0x615, 0x617, 0x06D8, 0x06D9, 0x08D6, 0x08D7, 0x08DE])
+// 0x06D6 (صلى) ve 0x06DB (muânaka) BURAYA SONRADAN EKLENDİ: veride geçiyorlar
+// (46 ve 1 kez) ama bu kümede olmadıkları için `vakifMi` onları vakıf saymıyor,
+// dolayısıyla RENKLENDİRİLMİYORLARDI — muânaka gibi kritik bir işaret düz metin
+// gibi görünüyordu. Sayım olmadan fark edilmesi güç bir eksikti.
+const VAKIF_CPS = new Set([0x615, 0x617, 0x06D6, 0x06D8, 0x06D9, 0x06DB, 0x08D5, 0x08D6, 0x08D7, 0x08DE])
 // ── TECVİD / KIRAAT İŞARETLERİ (font-bağımsız, kendi çizimimiz) ────────────────────────────
 // KFGQPC bu işaretleri bozuk ◉ (noktalı-daire) glifine düşürüyordu. İşaret string'den ÇIKARILIR
 // (kelime TEK span'de, aktif fontta, bitişmesi bozulmadan kalır) ve kuralı belirten KÜÇÜK RENKLİ
@@ -42,15 +61,18 @@ const VAKIF_CPS = new Set([0x615, 0x617, 0x06D8, 0x06D9, 0x08D6, 0x08D7, 0x08DE]
 const TECVID_ISARET = {
   // Bakara 2:245 يبصط — kıraat farkı: sîn ile de okunur (altta küçük س), sâd ile de (üstte küçük ص)
   0x06E3: { sembol: 'س', yer: 'alt', renk: '#c0392b', ad: 'Kıraat farkı: sîn ile okunuş' },
-  0x08D5: { sembol: 'ص', yer: 'ust', renk: '#c0392b', ad: 'Kıraat farkı: sâd ile okunuş' },
   // Yûsuf 12:11 تأمنا — işmâm. Mushaf işareti: üstte küçük halka.
   0x06EB: { sembol: '○', yer: 'ust', renk: '#16a085', ad: 'İşmâm' },
   // Hûd 11:42 اركب معنا — idgâm-ı mütecâniseyn (bâ, mîm'e idgâm olur): altta küçük م
   0x06ED: { sembol: 'م', yer: 'alt', renk: '#2980b9', ad: 'İdgâm-ı mütecâniseyn' },
-  // Zâid harf: hiçbir hâlde okunmaz (üstte yuvarlak sıfır)
-  0x06DF: { sembol: '٥', yer: 'ust', renk: '#7f8c8d', ad: 'Zâid harf: okunmaz' },
-  // Vasılda okunmaz, vakfedilirse okunur (üstte dikdörtgen sıfır)
-  0x06E0: { sembol: '▯', yer: 'ust', renk: '#7f8c8d', ad: 'Vasılda okunmaz, vakıfta okunur' },
+  // SEKTE — Hafs'ta tam DÖRT yer: Kehf 18:1, Yâsîn 36:52, Kıyâme 75:27, Mutaffifîn 83:14.
+  // Veride U+06DC ile işaretli ve sayım bunu doğruluyor (tam 4 kez, tam bu âyetlerde).
+  // Overlay'e alınmasının sebebi FONT: onarılmış KFGQPC/me_quran'da U+06DC ile U+0615
+  // AYNI glife (uni0615x) düşüyor, yani sekte ekranda ط durağı gibi çiziliyordu.
+  // Kendimiz çizerek fonttan bağımsız hâle getiriyoruz.
+  0x06DC: { sembol: 'س', yer: 'ust', renk: '#1abc9c', ad: 'Sekte' },
+  // NOT: U+06DF (yuvarlak sıfır) ve U+06E0 (dikdörtgen sıfır) BU MUSHAFTA HİÇ GEÇMİYOR
+  // (kuran-mushaf.json tarandı, 0 kez). Ölü yapılandırma bırakmamak için kaldırıldılar.
   // NOT: U+06EA burada YOK. Standartta "low stop" olsa da bu verinin imlâsında uzun "î" ÇEKME
   // işaretidir; fontta doğru çizildiği için overlay'e alınmaz (alınırsa her uzun î'ye simge basardı).
   // İmâle ise AŞAĞIDA, karakterle değil KELİMEYLE tespit edilir (bkz. imaleMi).
@@ -72,7 +94,10 @@ function imaleMi(kelime) {
 const TECVID_CPS = new Set(Object.keys(TECVID_ISARET).map(Number))
 // Birleşik (harekeler/işaretler) — taban harf saymak için: bunlar harf DEĞİL.
 const BIRLESIK_RE = /[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06ED\u08D3-\u08FF]/
-const OZEL_CPS = new Set([0x08D1, 0x08D2, 0x08D9])
+// U+08D1 ve U+08D2 BURADAN ÇIKARILDI: bu mushafta hiç geçmiyorlar (tarandı, 0 kez) ve
+// Unicode'da adları da qasr/medd değil (LARGE CIRCLE BELOW / LARGE ROUND DOT INSIDE
+// CIRCLE BELOW). Yani hem ölü hem yanlış bir eşlemeydi.
+const OZEL_CPS = new Set([0x08D9])
 const CIM_CPS = new Set([0x06DA])
 const TUM_OZEL_CPS = new Set([...VAKIF_CPS, ...OZEL_CPS, ...CIM_CPS])
 // ── PAYLAŞIM GÖRSELİ İÇİN TEMİZLEME ────────────────────────────────────────────────────────
@@ -91,31 +116,34 @@ export function gorselIcinTemizle(metin) {
 const CIM_RENK = '#f39c12'
 const VAKIF_RENK = {
   0x615:  '#e67e22',
-  0x617:  '#e74c3c',
-  0x06D8: '#3498db',
-  0x06D9: '#f39c12',
-  0x06DA: '#2ecc71',
+  0x06D6: '#95a5a6',   // صلى el-vaslu evlâ (Kehf 18:58 — veride tek yer)
+  // U+0617 = küçük üst ZÂY (ز) → VAKF-I MÜCEVVEZ. Bakara 2:41 "قَلِيلࣰا" üzerinde
+  // doğrulandı (mushaf görüntüsünden glif okundu: tek noktalı zây kancası).
+  // Hükmü İZİN VERİCİDİR: durmak câiz, GEÇMEK evlâ. Eskiden kırmızıydı; kırmızı bu
+  // palette en bağlayıcı hükmü (vakf-ı lâzım) gösteriyor ve tam tersini sezdiriyordu.
+  0x617:  '#d4ac0d',
+  0x06D8: '#e74c3c',   // م vakf-ı LÂZIM — en bağlayıcı hüküm, kırmızı olmalı (mavi ق ile çakışıyordu)
+  0x06D9: '#e67e22',   // لا LÂ VAKF — durma yasağı
+  0x06DA: '#f39c12',   // ج vakf-ı CÂİZ (yeşil ص murahhas ile çakışıyordu)
   0x06DB: '#9b59b6',
-  0x06DC: '#1abc9c',
-  0x08D6: '#95a5a6',
+  // 0x06DC (sekte) artık TECVID_ISARET'te overlay olarak çiziliyor — burada renk gerekmez.
+  0x08D5: '#2ecc71',   // ص vakf-ı MURAHHAS (veride 156 kez — kıraat farkı değil)
+  0x08D6: '#95a5a6',   // ع RUKÛ' sonu (veride 445 kez) — durak hükmü değil, bölüm işareti
   0x08D7: '#3498db',
   0x08DE: '#3498db',
-  0x08D5: '#c0392b',
 }
-// kelime.vakif ALANINDAKİ harfe göre renk. Harflerin hükmü (yukarıdaki referansın özeti):
-//   ط  mutlak: durmak evlâ      · م  lâzım: durmak vâcip     · ج  câiz: ikisi de olur
-//   ص  murahhas: ruhsat var     · مع muânaka: yalnız birinde · ق  "durulur denmiştir"
-//   س  sekte: nefessiz kısa duruş                            · لا DURMA
-// Renkler hükmün ağırlığını sezdirir; kırmızı = en bağlayıcı (lâzım / lâ vakf).
-const VAKIF_RENKLERI = {
-  'ط': '#e67e22',
-  'م': '#e74c3c',
-  'ج': '#f39c12',
-  'ص': '#2ecc71',
-  'مع': '#9b59b6',
-  'ق': '#3498db',
-  'س': '#1abc9c',
-  'لا': '#e67e22',
+// HARF → KOD NOKTASI. `kelime.vakif` alanı (varsa) harf tutar; renk yine YUKARIDAKİ
+// tek tablodan okunur. Önceden ayrı bir VAKIF_RENKLERI tablosu vardı ve iki tablo
+// birbirinden SESSİZCE ayrışmıştı: م kod tablosunda mavi, harf tablosunda kırmızıydı;
+// ج yeşil/turuncu, لا turuncu/sarı. Ekranda kod tablosu kullanıldığı için bilgi paneli
+// gerçekte görülen renkten farklı şey söylüyordu. Tek kaynak bırakıldı.
+//   ط mutlak: durmak evlâ   · م lâzım: durmak vâcip   · ج câiz: ikisi de olur
+//   ص murahhas: ruhsat var  · مع muânaka: yalnız birinde · ق "durulur denmiştir"
+//   ز mücevvez: geçmek evlâ · لا DURMA
+// (س sekte harfi burada YOK — o artık TECVID_ISARET'te overlay olarak çiziliyor.)
+const VAKIF_HARF_KOD = {
+  'ط': 0x615, 'م': 0x06D8, 'ج': 0x06DA, 'ص': 0x08D5,
+  'مع': 0x06DB, 'ق': 0x08D7, 'لا': 0x06D9, 'ز': 0x617,
 }
 // ÖZEL OKUYUŞ etiketleri — yalnız OZEL_CPS'teki (08D1/08D2/08D9) kodlar için çizilir.
 //   U+08D1 قصر (kasr) → medd yerine KISA okuma seçeneği
@@ -125,13 +153,9 @@ const VAKIF_RENKLERI = {
 // kendisi çizer; 08D5 ile 06EB zaten TECVID_ISARET'te ele alınıyor — burada durmaları ölü
 // yapılandırmaydı ve yanlış yönlendiriyordu.
 const OZEL_SEMBOL = {
-  0x08D1: 'قصر',
-  0x08D2: 'مد',
   0x08D9: 'ن',
 }
 const OZEL_RENK = {
-  0x08D1: '#c0392b',
-  0x08D2: '#c0392b',
   0x08D9: '#c0392b',
 }
 
@@ -147,7 +171,13 @@ function vakifMi(seg) {
 }
 
 function vakifRengiAl(vakifStr) {
-  const cp = [...vakifStr][0]?.codePointAt(0)
+  // İki gösterim de aynı tabloya düşer: harf ('ط', 'مع'…) önce kod noktasına
+  // çevrilir, sonra renk VAKIF_RENK'ten okunur. Böylece panel, ekran ve çıktı
+  // birbirinden ayrışamaz.
+  const harf = String(vakifStr || '').trim()
+  const kod = VAKIF_HARF_KOD[harf]
+  if (kod && VAKIF_RENK[kod]) return VAKIF_RENK[kod]
+  const cp = [...harf][0]?.codePointAt(0)
   return VAKIF_RENK[cp] || '#e67e22'
 }
 

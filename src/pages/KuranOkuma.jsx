@@ -235,40 +235,55 @@ function SiraSatiri({ k, taraf, onTaraf, theme, isMobile }) {
 }
 
 // ── BİLGİ PANELİ İÇERİĞİ ──────────────────────────────────────────────────────
-// Renkler MushafKelime'deki çizim renkleriyle BİREBİR aynı tutulmalı (VAKIF_RENKLERI / TECVID_ISARET).
+// Renkler MushafKelime'deki çizim renkleriyle BİREBİR aynı tutulmalı (VAKIF_RENK / TECVID_ISARET).
 const BILGI_BOLUMLERI = [
   {
     baslik: "Sayfa İşaretleri",
     satirlar: [
-      { secde: true, renk: "#2e7d4f", ad: "Secde âyeti",     aciklama: "Okununca tilâvet secdesi gerekir. Sayfa kenarında bu rozetle gösterilir.", ornek: "A'râf 206" },
-      { cuz: true,   renk: "#b8860b", ad: "Cüz başlangıcı",  aciklama: "Cüz başlangıcında, cüz numarasını gösterir." },
+      { secde: true, renk: "#2e7d4f", ad: "Secde âyeti", aciklama: "Okunduğunda tilâvet secdesi gerekir. Kur'ân'da 14 yerdedir; sayfa kenarında bu rozetle gösterilir.", ornek: "A'râf 206" },
+      { blok: "الجزء", ad: "Cüz başlangıcı", aciklama: "Kur'ân 30 cüze bölünmüştür. Yeni cüzün başladığı sayfada, cüz numarasıyla birlikte çıkar." },
+      { rozet: true, ad: "Âyet sonu rozeti", aciklama: "Âyetin bittiği yeri ve numarasını gösterir. Durak işareti değildir; nefes almak burada câizdir." },
     ],
   },
   {
+    // KAYNAK: kuran-mushaf.json tamamı tarandı (isaret_dok.py). Buradaki her satır
+    // veride GERÇEKTEN geçen bir işarettir; parantezdeki sayı sıklığıdır. Hiç geçmeyen
+    // işaretler (قلى, yuvarlak/dikdörtgen sıfır, قصر, مد) bilerek listelenmiyor —
+    // okuyucuya mushafta hiç görmeyeceği bir işareti öğretmenin anlamı yok.
+    // Hüküm ağırlığı renkle sezdirilir: kırmızı = en bağlayıcı.
+    // Renkler MushafKelime'deki VAKIF_RENK tablosuyla BİREBİR aynıdır (tek kaynak).
     baslik: "Vakıf (Durak) İşaretleri",
     satirlar: [
-      { sembol: "م",  renk: "#e74c3c", ad: "Vakf-ı lâzım",      aciklama: "Durmak gerekir; geçilirse mânâ bozulur." },
-      { sembol: "ط",  renk: "#e67e22", ad: "Vakf-ı mutlak",     aciklama: "Durmak evlâdır." },
-      { sembol: "ج",  renk: "#f39c12", ad: "Vakf-ı câiz",       aciklama: "Durmak da geçmek de câizdir." },
-      { sembol: "ص",  renk: "#2ecc71", ad: "Vakf-ı murahhas",   aciklama: "Nefes yetmezse durulur; geçmek evlâdır." },
-      { sembol: "ق",  renk: "#3498db", ad: "Kîle aleyhi'l-vakf", aciklama: "Durulur denmiştir; geçmek evlâdır." },
-      { sembol: "لا", renk: "#e67e22", ad: "Lâ vakfe",          aciklama: "Burada durulmaz; âyet sonu değilse geçilir." },
-      { sembol: "مع", renk: "#9b59b6", ad: "Muânaka (sarmaşık)", aciklama: "Yan yana iki noktadan YALNIZ birinde durulur." },
-      { sembol: "س",  renk: "#1abc9c", ad: "Sekte",             aciklama: "Nefes almadan kısa bir duruş yapılır." },
+      { sembol: "م",  renk: "#e74c3c", ad: "Vakf-ı lâzım",        aciklama: "DURMAK VÂCİPTİR. Geçilirse mânâ bozulur, hatta bozuk mânâ doğar." },
+      { sembol: "لا", renk: "#e67e22", ad: "Lâ vakfe",            aciklama: "BURADA DURULMAZ. Yanlışlıkla durulduysa geri alıp önceki kelimeden tekrarlanır. Âyet sonundaysa durmak câizdir." },
+      { sembol: "ط",  renk: "#e67e22", ad: "Vakf-ı mutlak",       aciklama: "Durmak evlâdır; mânâ burada tamamlanır. Bu mushafta en sık görülen duraktır." },
+      { sembol: "ج",  renk: "#f39c12", ad: "Vakf-ı câiz",         aciklama: "Durmak da geçmek de eşit derecede câizdir." },
+      { sembol: "ص",  renk: "#2ecc71", ad: "Vakf-ı murahhas",     aciklama: "Mânâ tamam değildir; sırf nefes yetmediği için durmaya ruhsat verilmiştir. Geçmek evlâdır." },
+      { sembol: "ز",  renk: "#d4ac0d", ad: "Vakf-ı mücevvez",     aciklama: "Durmak câizdir fakat GEÇMEK evlâdır.", ornek: "Bakara 41" },
+      { sembol: "ق",  renk: "#3498db", ad: "Kîle aleyhi'l-vakf",  aciklama: "\"Burada durulur\" denmiştir; tercih edilen ise geçmektir." },
+      { sembol: "قف", renk: "#3498db", ad: "Kıf (dur)",           aciklama: "Okuyanın geçip gideceği sanılan yerde \"dur\" uyarısıdır." },
+      { sembol: "صلى", renk: "#95a5a6", ad: "el-Vaslu evlâ",      aciklama: "Geçmek (vasl) daha iyidir; durmak da câizdir.", ornek: "Kehf 58" },
+      { sembol: "مع", renk: "#9b59b6", ad: "Muânaka (sarmaşık)",  aciklama: "Daima ÇİFT gelir. İki noktadan YALNIZ BİRİNDE durulur; ikisinde birden durmak da hiçbirinde durmamak da doğru değildir." },
+      { sembol: "ع",  renk: "#95a5a6", ad: "Rukû' sonu",          aciklama: "Durak hükmü değildir. Konu bütünlüğü olan bölümün (rukû) bittiğini gösterir; namazda okumayı burada bitirmek uygundur." },
     ],
   },
   {
+    // Bu simgeleri font değil UYGULAMA çizer (MushafKelime → TECVID_ISARET),
+    // çünkü fontlar bir kısmını yanlış glife düşürüyor.
     baslik: "Tecvid / Kıraat İşaretleri",
     satirlar: [
-      { sembol: "س",  renk: "#c0392b", ad: "Kıraat farkı: sîn",  aciklama: "Harfin ALTINDA. Sîn ile de okunabileceğini gösterir.", ornek: "Bakara 245" },
-      { sembol: "ص",  renk: "#c0392b", ad: "Kıraat farkı: sâd",  aciklama: "Harfin ÜSTÜNDE. Sâd ile de okunabileceğini gösterir.", ornek: "Bakara 245" },
-      { sembol: "◆",  renk: "#8e44ad", ad: "İmâle",              aciklama: "Elifi \"e\"ye meylettirerek okumak.", ornek: "Hûd 41" },
-      { sembol: "○",  renk: "#16a085", ad: "İşmâm",              aciklama: "Ötreyi dudak yumarak sessizce göstermek.", ornek: "Yûsuf 11" },
-      { sembol: "م",  renk: "#2980b9", ad: "İdgâm-ı mütecâniseyn", aciklama: "Mahreçleri bir, sıfatları ayrı iki harfin birleşmesi.", ornek: "Hûd 42" },
-      { sembol: "ن",  renk: "#c0392b", ad: "Küçük nûn (sıla)",   aciklama: "Vasıl hâlinde okunan ince nûn.", ornek: "Hûd 42" },
-      { sembol: "٥",  renk: "#7f8c8d", ad: "Vasılda okunmaz",    aciklama: "Geçerek okunduğunda bu harf okunmaz." },
-      { sembol: "مد", renk: "#c0392b", ad: "Medd",               aciklama: "Uzatarak okuma işareti." },
-      { sembol: "قصر", renk: "#c0392b", ad: "Kasr",              aciklama: "Uzatmadan, kısa okuma işareti." },
+      { sembol: "س", renk: "#1abc9c", ad: "Sekte",                aciklama: "Nefes ALMADAN kısa bir duruş. Hafs rivâyetinde tam dört yerdedir.", ornek: "Kehf 1 · Yâsîn 52 · Kıyâme 27 · Mutaffifîn 14" },
+      { sembol: "س", renk: "#c0392b", ad: "Kıraat farkı: sîn",    aciklama: "Harfin ALTINDA. Kelimenin sîn ile de okunabileceğini gösterir.", ornek: "Bakara 245 · A'râf 69" },
+      { sembol: "○", renk: "#16a085", ad: "İşmâm",                aciklama: "Ses çıkarmadan, yalnız dudakları ötre şeklinde yumarak harekeyi göstermek. Kulak duymaz, göz görür.", ornek: "Yûsuf 11" },
+      { sembol: "م", renk: "#2980b9", ad: "İdgâm-ı mütecâniseyn", aciklama: "Mahreçleri aynı, sıfatları ayrı iki harften birincisinin ikincisine katılması. Burada bâ, mîm'e idgâm olur.", ornek: "Hûd 42" },
+      { sembol: "◆", renk: "#8e44ad", ad: "İmâle",                aciklama: "Elifi \"e\" sesine meylettirerek okumak. Hafs rivâyetinde TEK bir yerdedir.", ornek: "Hûd 41" },
+      { sembol: "●", renk: "#7f8c8d", ad: "Teshîl",               aciklama: "Harfin üstünde içi dolu küçük daire. İki hemzeden ikincisini hemze ile elif arası bir sesle, kolaylaştırarak okumak. Bu işareti fontun kendisi çizer, renklendirilmez.", ornek: "Fussilet 44" },
+    ],
+  },
+  {
+    baslik: "Özel Okuyuş İşaretleri",
+    satirlar: [
+      { sembol: "ن", renk: "#c0392b", ad: "Nûn-i sağîre", aciklama: "Küçük nûn. Yalnız geçerek okunduğunda (vasl) telaffuz edilen ince nûn; durulursa okunmaz." },
     ],
   },
 ]
@@ -4219,7 +4234,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
                         padding: "6px 0", borderBottom: `1px solid ${theme.border}22`,
                       }}>
                         <span style={{
-                          minWidth: "30px", textAlign: "center", flexShrink: 0,
+                          minWidth: "34px", textAlign: "center", flexShrink: 0,
                           fontFamily: "'Scheherazade New', serif",
                           fontSize: isMobile ? "17px" : "19px", fontWeight: 700,
                           color: s.renk, lineHeight: 1.25,
@@ -4238,14 +4253,17 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
                               </svg>
                               <span style={{ fontSize: "8px", color: "#2e7d4f", lineHeight: 1, fontFamily: aktifArapcaFont.style }}>سَجْدَة</span>
                             </>
-                          ) : s.cuz ? (
-                            /* Sayfa içindeki cüz işaretinin aynısı: "الجزء" + rakam yeri BOŞ
-                               (gerçek sayfada burada cüz numarası çıkar). */
+                          ) : s.rozet ? (
+                            /* Sayfadaki âyet sonu rozetinin aynısı */
+                            <MushafAyetRozeti sayi={1} size={20} ac={theme.ayetNoRengi || theme.accent} />
+                          ) : s.blok ? (
+                            /* Sayfa içindeki cüz/hizb işaretinin aynısı: "الجزء" veya "الحزب"
+                               + rakam yeri BOŞ (gerçek sayfada oraya numara gelir). */
                             <span style={{
                               display: "inline-flex", alignItems: "center", gap: "3px",
                               fontFamily: aktifArapcaFont.style, direction: "rtl", whiteSpace: "nowrap",
                             }}>
-                              <span style={{ color: theme.accent, fontSize: isMobile ? "15px" : "17px", lineHeight: 1.1 }}>الجزء</span>
+                              <span style={{ color: theme.accent, fontSize: isMobile ? "15px" : "17px", lineHeight: 1.1 }}>{s.blok}</span>
                               <span style={{
                                 display: "inline-block", width: "12px", height: "12px",
                                 border: `1.5px dashed ${theme.ayetNoRengi || theme.accent}`,

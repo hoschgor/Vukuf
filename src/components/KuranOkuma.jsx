@@ -4,6 +4,10 @@ import { useNavigate } from "react-router-dom"
 import { useApp } from "../AppContext"
 import { okumaKaydet, KURAN_ID, normHarf } from "../data/okumaKayit"
 import arapcaLugat from "../data/arapca-lugat.json"
+// KONUMA BAĞLI kelime anlamları (quran.com word-by-word, Türkçe) — wbw.py üretir.
+// Kelime kimliğine göre değil, kelimenin ÂYETTEKİ YERİNE göre anlam verir.
+import kelimeAnlam from "../data/kelime-anlam.json"
+import kelimeGrup from "../data/kelime-grup.json"
 import ayetMeal from "../data/ayet-meal.json"
 import sayfaHaritaJson from "../data/sayfa-harita.json"
 import SureBasligi from "../components/SureBasligi"
@@ -79,7 +83,9 @@ const HAZIR_RENKLER = [
 // Buradaki her satır TAHMİN DEĞİL, ölçümle seçildi (src/py/lugat_denetim.py,
 // 77.429 kelime × 11.600 kayıtlık sözlük üzerinde):
 //
-//   • 08D5/08D7/08D9/08DE temizliğe EKLENDİ  → +279 kelime, kayıp 0.
+//   • 08D2/08D5/08D7/08D9/08DE temizliğe EKLENDİ → +279 kelime, kayıp 0.
+//     (08D2 ilk turda ATLANMIŞTI: 08D1 eklenip 08D2 unutulmuştu, bu yüzden
+//      "اُو۫تُوا" gibi 247 yerde anahtarın sonunda ࣒ takılı kalıyordu.)
 //     Bunlar veride 376 kez geçiyor ama listede olmadıkları için anahtarın
 //     sonunda takılı kalıyor ve eşleşmeyi kesin olarak bozuyorlardı.
 //   • Kelime SONUNDAKİ ي → ى                 → +3161 kelime, KAYIP 0.
@@ -95,7 +101,7 @@ const HAZIR_RENKLER = [
 //
 // Toplam eşleşme: %79,5 → %84,0
 function normalize(k) {
-  k = k.replace(/[\u0610-\u061A\u064B-\u065F\u0640\u0670\u06D6-\u06DC\u06DF-\u06E4\u06E7\u06E8\u06EA-\u06ED\u08D1\u08D5\u08D6\u08D7\u08D9\u08DE]/g, "")
+  k = k.replace(/[\u0610-\u061A\u064B-\u065F\u0640\u0670\u06D6-\u06DC\u06DF-\u06E4\u06E7\u06E8\u06EA-\u06ED\u08D1\u08D2\u08D5\u08D6\u08D7\u08D9\u08DE]/g, "")
   k = k.replace(/[\u0671\u0622\u0623\u0625]/g, "\u0627")
   k = k.replace(/^\u0627\u0644/, "\u0644")
   k = k.trim()
@@ -1832,14 +1838,27 @@ function sureGit(sureId, ayetNo) {
   // ════════════════════════════════════════════════════════════════
 
   const kelimeTikla = useCallback((kelime, sure, ayet, e) => {
-    const lugatSonuc = lugat(kelime.arabic)
+    // 1) ÖNCE konuma bağlı anlam (quran.com hizalaması). Doğru olan bu:
+    //    sözlükteki "من → 710 anlam" gibi yığılmalar burada yaşanmaz, çünkü
+    //    anlam kelimenin O YERİNE aittir. Bizim bölünmemiz quran.com'unkinden
+    //    farklıysa (ör. Bakara 40'ta bizde "يَا" + "بَنٖي", onlarda tek kelime)
+    //    ikisi de aynı anlamı gösterir; `kelimeGrup` birleşik yazımı verir.
+    // 2) Yoksa eski sözlüğe düşülür — hiçbir kelime anlamsız kalmasın diye.
+    // Değer TEK METİN ya da METİN DİZİSİ olabilir. İkisi de kabul ediliyor ki
+    // ileride ikinci bir kaynak eklenip aynı konum için birden çok muhtemel
+    // anlam tutulduğunda burada değişiklik gerekmesin.
+    const ham = kelime.id ? kelimeAnlam[kelime.id] : null
+    const yerAnlami = Array.isArray(ham)
+      ? ham.filter(Boolean).map(String)
+      : (ham ? [String(ham)] : null)
+    const lugatSonuc = yerAnlami && yerAnlami.length ? null : lugat(kelime.arabic)
     const position = kelime.id ? parseInt(kelime.id.split(":")[2]) : 0
     setPopup({
       tip: "kelime",
       kelime: {
-        ham:      kelime.arabic,
+        ham:      (kelime.id && kelimeGrup[kelime.id]) || kelime.arabic,
         okunus:   lugatSonuc?.okunuş || "",
-        anlamlar: lugatSonuc?.anlamlar || [],
+        anlamlar: (yerAnlami && yerAnlami.length) ? yerAnlami : (lugatSonuc?.anlamlar || []),
         position,
       },
       sureNo: sure.id,

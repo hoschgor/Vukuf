@@ -4,6 +4,10 @@ import { useNavigate } from "react-router-dom"
 import { useApp } from "../AppContext"
 import { okumaKaydet, KURAN_ID, normHarf } from "../data/okumaKayit"
 import arapcaLugat from "../data/arapca-lugat.json"
+// KONUMA BAĞLI kelime anlamları (quran.com word-by-word, Türkçe) — wbw.py üretir.
+// Kelime kimliğine göre değil, kelimenin ÂYETTEKİ YERİNE göre anlam verir.
+import kelimeAnlam from "../data/kelime-anlam.json"
+import kelimeGrup from "../data/kelime-grup.json"
 import ayetMeal from "../data/ayet-meal.json"
 import sayfaHaritaJson from "../data/sayfa-harita.json"
 import SureBasligi from "../components/SureBasligi"
@@ -75,11 +79,33 @@ const HAZIR_RENKLER = [
 ]
 
 // ── Yardımcı fonksiyonlar
+// LÜGAT ANAHTARI — kelime.arabic'i sözlükteki biçime indirger.
+// Buradaki her satır TAHMİN DEĞİL, ölçümle seçildi (src/py/lugat_denetim.py,
+// 77.429 kelime × 11.600 kayıtlık sözlük üzerinde):
+//
+//   • 08D2/08D5/08D7/08D9/08DE temizliğe EKLENDİ → +279 kelime, kayıp 0.
+//     (08D2 ilk turda ATLANMIŞTI: 08D1 eklenip 08D2 unutulmuştu, bu yüzden
+//      "اُو۫تُوا" gibi 247 yerde anahtarın sonunda ࣒ takılı kalıyordu.)
+//     Bunlar veride 376 kez geçiyor ama listede olmadıkları için anahtarın
+//     sonunda takılı kalıyor ve eşleşmeyi kesin olarak bozuyorlardı.
+//   • Kelime SONUNDAKİ ي → ى                 → +3161 kelime, KAYIP 0.
+//     Sözlük Osmanî imlâda ("فى", "لذى"), mushaf ise "فِي" yazıyor.
+//
+// DENENİP REDDEDİLENLER (ölçüm negatif çıktı, eklemeyin):
+//   ا→ءا (-4408) · ى→ي (-2407) · her yerde ي→ى (-9869) · ة→ه (-1771)
+//   وا→و (-2856) · baştaki ل→ال (-13584) · ءا→ا (+9 ama 15 kelime KAYBETTİRİYOR)
+//
+// SİLİNMEMESİ GEREKENLER: U+06E5, U+06E6, U+06DE, U+06E9 — sözlüğün KENDİ
+// anahtarlarında geçiyorlar (294/153/64/11 kayıt). Temizliğe eklenirlerse
+// hâlihazırda tutan eşleşmeler bozulur.
+//
+// Toplam eşleşme: %79,5 → %84,0
 function normalize(k) {
-  k = k.replace(/[\u0610-\u061A\u064B-\u065F\u0640\u0670\u06D6-\u06DC\u06DF-\u06E4\u06E7\u06E8\u06EA-\u06ED\u06E1\u08D1\u08D6]/g, "")
+  k = k.replace(/[\u0610-\u061A\u064B-\u065F\u0640\u0670\u06D6-\u06DC\u06DF-\u06E4\u06E7\u06E8\u06EA-\u06ED\u08D1\u08D2\u08D5\u08D6\u08D7\u08D9\u08DE]/g, "")
   k = k.replace(/[\u0671\u0622\u0623\u0625]/g, "\u0627")
   k = k.replace(/^\u0627\u0644/, "\u0644")
-  return k.trim()
+  k = k.trim()
+  return k.replace(/\u064A$/, "\u0649")   // kelime sonu ي → ى
 }
 
 // <input type="color"> YALNIZ #rrggbb kabul eder; başka bir biçim (#fff, rgb(),
@@ -111,10 +137,39 @@ function popupKonum(e) {
   return { x, y }
 }
 
+// ── ELİFSİZ YEDEK İNDEKS ───────────────────────────────────────────────────
+// Sözlük OSMANÎ imlâda: uzun â'yı elifsiz yazıp üstüne küçük elif koyuyor.
+// normalize o küçük elifi (U+0670) sildiği için sözlük anahtarı elifsiz kalıyor,
+// bizim metinde ise tam elif var — aynı kelime iki farklı biçimde:
+//     لكتاب ↔ لكتب · لعالمين ↔ لعلمين · جنات ↔ جنت · خالدين ↔ خلدين
+// Çözüm: tam eşleşme tutmazsa elifsiz biçimle BİR KEZ daha ara.
+// ÖLÇÜLDÜ (lugat_denetim.py): 4142 kelime kurtuluyor, oran %84,0 → %89,3.
+//
+// GÜVENLİK: elif düşürmek iki farklı kelimeyi aynı biçime indirebilir. Sözlükte
+// 722 böyle çakışma var ve bunlar indekse HİÇ ALINMIYOR — o kelimelerde (852 yer)
+// anlam gösterilmez. Yanlış anlam göstermektense boş bırakmak evlâdır; nitekim
+// "kelimeyi sonrakiyle birleştir" denemesi ölçülünce 17 eşleşmenin çoğunun
+// tesadüfi ve YANLIŞ olduğu görülmüş ve o fikir bu yüzden uygulanmamıştı.
+const elifsiz = (t) => (t ? t.slice(0, 1) + t.slice(1).replace(/\u0627/g, "") : t)
+
+const ELIFSIZ_YEDEK = (() => {
+  const grup = new Map()
+  for (const anah of Object.keys(arapcaLugat)) {
+    const e = elifsiz(anah)
+    grup.set(e, grup.has(e) ? null : anah)   // ikinci kez görülen biçim → çakışma
+  }
+  const m = new Map()
+  for (const [e, anah] of grup) if (anah) m.set(e, anah)
+  return m
+})()
+
 // ── Lugat arama
 function lugat(kelimeHam) {
   const temiz = normalize(kelimeHam)
-  return arapcaLugat[temiz] || null
+  const tam = arapcaLugat[temiz]
+  if (tam) return tam
+  const hedef = ELIFSIZ_YEDEK.get(elifsiz(temiz))
+  return hedef ? arapcaLugat[hedef] : null
 }
 function AyarToggle({ etiket, aktif, onToggle, theme, isMobile, barUiOlcegi }) {
   return (
@@ -284,6 +339,11 @@ const BILGI_BOLUMLERI = [
     baslik: "Özel Okuyuş İşaretleri",
     satirlar: [
       { sembol: "ن", renk: "#c0392b", ad: "Nûn-i sağîre", aciklama: "Küçük nûn. Yalnız geçerek okunduğunda (vasl) telaffuz edilen ince nûn; durulursa okunmaz." },
+      // U+08D1 / U+08D2 — anlamları MUSHAFTAN doğrulandı (Bakara 5, 14, 16, 27, 39, 40).
+      // Bir ara "zâid harf / okunmayan harf" diye açıklanmışlardı; YANLIŞTI.
+      // Unicode adları (daire / noktalı daire) bu veride yanıltıcı: kasr ve medd'dirler.
+      { sembol: "قصر", renk: "#c0392b", ad: "Kasr", aciklama: "Uzatmadan, KISA okuma. Harfin altında sade daire ile gösterilir.", ornek: "Bakara 5 · 16 · 27 · 39 — اُو۟لٰٓئِكَ" },
+      { sembol: "مد",  renk: "#c0392b", ad: "Medd", aciklama: "UZATARAK okuma. Harfin altında içi noktalı daire ile gösterilir.", ornek: "Bakara 14 · 40 — مُسْتَهْزِؤُ۫نَ · اُو۫فِ" },
     ],
   },
 ]
@@ -1778,14 +1838,36 @@ function sureGit(sureId, ayetNo) {
   // ════════════════════════════════════════════════════════════════
 
   const kelimeTikla = useCallback((kelime, sure, ayet, e) => {
-    const lugatSonuc = lugat(kelime.arabic)
+    // 1) ÖNCE konuma bağlı anlam (quran.com hizalaması). Doğru olan bu:
+    //    sözlükteki "من → 710 anlam" gibi yığılmalar burada yaşanmaz, çünkü
+    //    anlam kelimenin O YERİNE aittir. Bizim bölünmemiz quran.com'unkinden
+    //    farklıysa (ör. Bakara 40'ta bizde "يَا" + "بَنٖي", onlarda tek kelime)
+    //    ikisi de aynı anlamı gösterir; `kelimeGrup` birleşik yazımı verir.
+    // 2) Yoksa eski sözlüğe düşülür — hiçbir kelime anlamsız kalmasın diye.
+    // Değer TEK METİN ya da METİN DİZİSİ olabilir. İkisi de kabul ediliyor ki
+    // ileride ikinci bir kaynak eklenip aynı konum için birden çok muhtemel
+    // anlam tutulduğunda burada değişiklik gerekmesin.
+    const ham = kelime.id ? kelimeAnlam[kelime.id] : null
+    const yerAnlami = Array.isArray(ham)
+      ? ham.filter(Boolean).map(String)
+      : (ham ? [String(ham)] : null)
+    const lugatSonuc = yerAnlami && yerAnlami.length ? null : lugat(kelime.arabic)
+    // BİRLEŞİK KELİME: quran.com'un tek kelime saydığı yeri biz iki kelimeye
+    // bölmüşsek (174 yer, ör. "يَا" + "بَنٖي"), baloncuk bunları TEK BİRİM
+    // göstermeli. Aksi hâlde iki ayrı kelimede aynı anlam çıkıyor ve kelime
+    // kelime ilerlerken tekrar/atlama hissi veriyor.
+    const grup = kelime.id ? kelimeGrup[kelime.id] : null
+    const uyeler = grup?.uyeler || null
     const position = kelime.id ? parseInt(kelime.id.split(":")[2]) : 0
     setPopup({
       tip: "kelime",
       kelime: {
-        ham:      kelime.arabic,
+        ham:      grup?.ar || kelime.arabic,
+        // Baloncuk ve kelime kelime ilerleme bunu kullanır: grup üyeleri tek
+        // adım sayılır, ikinci üyeye ayrıca durulmaz.
+        grupUyeleri: uyeler,
         okunus:   lugatSonuc?.okunuş || "",
-        anlamlar: lugatSonuc?.anlamlar || [],
+        anlamlar: (yerAnlami && yerAnlami.length) ? yerAnlami : (lugatSonuc?.anlamlar || []),
         position,
       },
       sureNo: sure.id,

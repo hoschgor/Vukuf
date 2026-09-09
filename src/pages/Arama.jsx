@@ -1,10 +1,11 @@
-import { useState, useEffect, useRef, useMemo } from "react"
+import { useState, useEffect, useLayoutEffect, useRef, useMemo } from "react"
 import { useNavigate } from "react-router-dom"
 import { Search, X, BookOpen, ChevronRight, ChevronLeft, Loader, SlidersHorizontal, Asterisk } from "lucide-react"
 import { useApp } from "../AppContext"
 import { useMediaQuery } from "../data/hooks/useMediaQuery"
 import { normHarf } from "../data/okumaKayit"
 import KapsamSecici from "../components/KapsamSecici"
+import { kategoriler } from "../data/kitaplar"
 
 // ════════════════════════════════════════════════════════════════
 // Kur'an sure adları (Türkçe) — arama sadece isim üzerinden; gidiş no ile
@@ -31,6 +32,102 @@ const SURELER = [
 // Arama eşleştirmesi: şapka/aksan + büyük-küçük duyarsız (â→a, ş→s, ...).
 // normHarf precomposed harflerde uzunluğu korur → önizleme dilimlemesi hizalı kalır.
 const trLower = normHarf
+
+// ════════════════════════════════════════════════════════════════
+// KİTAP → KATALOGDAKİ YERİ  (yalnızca SIRALAMA için; arayüzde gösterilmez)
+//
+// İki gerçek, katalog okunarak doğrulandı:
+//  1) `altKategoriler` hiç kullanılmıyor. "Büyük Eserler" / "Küçük Eserler"
+//     ayrımı ALİM GİRİŞİ olarak duruyor (risale/buyuk-eserler gibi).
+//  2) AYNI ÂLİM BİRDEN ÇOK GİRİŞTE olabiliyor: İmam Gazâlî hem tasavvuf/imam-gazali
+//     hem kelam/imam-gazali-kelam altında. Bu yüzden âlim girişinin ID'sine göre
+//     gruplamak YETMİYOR — "Kıyâmet ve Âhiret" ile "İlcâmü'l-Avâm" ayrı düşüyordu.
+//     Kimlik olarak kitabın `yazar`ı, yoksa âlimin `isim`i kullanılır; böylece aynı
+//     zat hangi kısımda geçerse geçsin tek blok olur.
+// ════════════════════════════════════════════════════════════════
+const trAnahtar = (x) => String(x || "").trim().toLocaleLowerCase("tr")
+
+// KATALOG SIRASI KORUNACAK KÜME(LER) — "kısımId/âlimId".
+// Risale-i Nûr Büyük Eserleri kütüphanedeki diziliş dışında bir sırayla
+// gösterilmemeli (Sözler → Mektubat → Lem'alar → Şuâlar …); sonuç sayısına göre
+// dizilince karışık görünüyor. Başka bir küme de sabitlenecekse buraya eklenir.
+// Bunun DIŞINDA kalan her yerde sıra serbesttir → sonuç sayısı belirler.
+const SABIT_SIRALI = new Set(["risale/buyuk-eserler"])
+
+const KITAP_YERI = (() => {
+  const m = new Map()
+  let sira = 0
+  for (const kisim of kategoriler || []) {
+    for (const alim of kisim.alimler || []) {
+      const kume = `${kisim.id}/${alim.id}`
+      const sabit = SABIT_SIRALI.has(kume)
+      // altKategoriler bugün kullanılmıyor; ileride eklenirse diye destekleniyor.
+      const altlar = (alim.altKategoriler && alim.altKategoriler.length)
+        ? alim.altKategoriler
+        : [{ kitaplar: alim.kitaplar || [] }]
+      for (const alt of altlar) {
+        for (const b of alt.kitaplar || []) {
+          // Aynı kitap birden çok rafta geçebilir; İLK görüldüğü yer esas alınır.
+          if (b && b.id && !m.has(b.id)) {
+            m.set(b.id, {
+              // Zatın kimliği: önce kitabın yazarı, yoksa âlim başlığı.
+              // (Âlim ID'si YETMEZ: İmam Gazâlî hem tasavvuf hem kelam altında geçiyor.)
+              zat: trAnahtar(b.yazar) || trAnahtar(alim.isim) || "?",
+              kume, sabit,
+              sira: sira++,        // katalogdaki (kütüphanedeki) sıra
+            })
+          }
+        }
+      }
+    }
+  }
+  return m
+})()
+
+// Katalogda bulunamayan kitap (ör. kullanıcının özel rafı) için yedek: yazar adı.
+const kitapYeri = (g) =>
+  KITAP_YERI.get(g.kitapId) || { zat: trAnahtar(g.yazar) || "?", kume: "", sabit: false, sira: Number.MAX_SAFE_INTEGER }
+
+// Bir kümeye sıra numarası ver: önce en çok sonuç veren küme, eşitlikte katalog sırası.
+function kumeSiralari(gruplar, anahtarAl) {
+  const kume = new Map()
+  for (const g of gruplar) {
+    const a = anahtarAl(g)
+    const y = kitapYeri(g)
+    const v = kume.get(a)
+    if (!v) kume.set(a, { say: g.sonuclar.length, sira: y.sira })
+    else {
+      if (g.sonuclar.length > v.say) v.say = g.sonuclar.length
+      if (y.sira < v.sira) v.sira = y.sira
+    }
+  }
+  return new Map(
+    [...kume.entries()]
+      .sort((a, b) => (b[1].say - a[1].say) || (a[1].sira - b[1].sira))
+      .map(([ad], i) => [ad, i])
+  )
+}
+
+// Sıralama üç kademe:
+//   1) ZAT bloğu   — aynı zatın eserleri asla birbirinden ayrılmaz.
+//   2) ALT KÜME    — blok içinde "sabit sıralı" küme (Risale Büyük Eserler) kendi
+//                    kesintisiz öbeğini kurar; kalanlar ayrı öbek.
+//   3) ÖBEK İÇİ    — sabit öbekte KATALOG SIRASI, diğer her yerde SONUÇ SAYISI.
+// Blokların ve öbeklerin kendi arasındaki sırayı en çok sonuç veren kitap belirler;
+// sabit bir öncelik listesi yoktur.
+function kitaplariSirala(gruplar) {
+  const zatAl = (g) => kitapYeri(g).zat
+  const obekAl = (g) => { const y = kitapYeri(g); return `${y.zat}\u0000${y.sabit ? y.kume : ""}` }
+  const blokSira = kumeSiralari(gruplar, zatAl)
+  const obekSira = kumeSiralari(gruplar, obekAl)
+  return [...gruplar].sort((x, y) => {
+    const a = blokSira.get(zatAl(x)) - blokSira.get(zatAl(y)); if (a) return a
+    const b = obekSira.get(obekAl(x)) - obekSira.get(obekAl(y)); if (b) return b
+    const yx = kitapYeri(x), yy = kitapYeri(y)
+    if (yx.sabit && yy.sabit) return yx.sira - yy.sira                     // katalog sırası
+    return (y.sonuclar.length - x.sonuclar.length) || (yx.sira - yy.sira)  // sonuç sayısı
+  })
+}
 
 // Kitap metinleri önbelleği (dosya -> sayfalar[])
 const metinCache = new Map()
@@ -142,8 +239,10 @@ export default function Arama() {
         if (sonuclar.length) gruplar.push({ kitapId: k.id, kitapAd: k.baslik, yazar: k.yazar, sonuclar })
       }
       if (benimId !== aramaIdRef.current) return
-      gruplar.sort((a, b) => b.sonuclar.length - a.sonuclar.length)   // cok sonuclu kitap once
-      setKitapGruplar(gruplar)
+      // Sadece sonuç sayısına göre sıralamak aynı âlimin kitaplarını birbirinden
+      // ayırıyordu (Lemalar … başka bir eser … Mektubat). Artık âlim/tür blokları
+      // bölünmüyor; blokların kendi arasındaki sırayı yine sonuç sayısı belirliyor.
+      setKitapGruplar(kitaplariSirala(gruplar))
       setYukleniyor(false)
     }, 320)
 
@@ -188,6 +287,38 @@ export default function Arama() {
 
   const q = sorgu.trim()
   const sonucVar = q.length >= 2
+
+  // Sonuç çekmecesi açılırken max-height ile animasyon yapılıyor. O SINIR AÇIK
+  // KALIRSA uzun listeler kırpılıyor: ölçüldü — 50 kart 3425px tutuyor, çekmece
+  // 2000px'te kesiliyordu ve sayfa 31. karttan sonrasına kaydırılamıyordu.
+  // Bu yüzden açılış animasyonu bitince sınır TAMAMEN kaldırılır.
+  // NOT: `sonucVar` bu satırın ÜSTÜNDE tanımlı olmak zorunda — bu blok daha yukarıda
+  // durduğu için "Cannot access 'sonucVar' before initialization" hatası veriyordu.
+  // Üst sabit bloğun yüksekliği ÖLÇÜLÜR. Kitap başlığı onun hemen altına
+  // yapışacak; yüksekliği elle yazmak kırılgan olurdu (arama kutusu, "Özel arama"
+  // satırı, mobil/masaüstü dolgular ve tema fontu hepsi değiştiriyor).
+  const ustRef = useRef(null)
+  const [ustYuk, setUstYuk] = useState(0)
+  useLayoutEffect(() => {
+    const el = ustRef.current
+    if (!el) return
+    const olc = () => setUstYuk(h => {
+      const y = Math.round(el.getBoundingClientRect().height)
+      return Math.abs(h - y) > 1 ? y : h
+    })
+    olc()
+    let ro = null
+    try { ro = new ResizeObserver(olc); ro.observe(el) } catch { ro = null }
+    window.addEventListener("resize", olc)
+    return () => { try { ro && ro.disconnect() } catch { /* yoksay */ }; window.removeEventListener("resize", olc) }
+  }, [])
+
+  const [cekmeceSerbest, setCekmeceSerbest] = useState(false)
+  useEffect(() => {
+    if (!sonucVar) { setCekmeceSerbest(false); return }
+    const t = setTimeout(() => setCekmeceSerbest(true), 380)   // geçiş 0.35s
+    return () => clearTimeout(t)
+  }, [sonucVar])
   const hicYok = sonucVar && !yukleniyor && sureSonuc.length === 0 && kitapGruplar.length === 0
 
   return (
@@ -199,6 +330,20 @@ export default function Arama() {
         Kitaplarda her şeyi, Kur'an'da sure adlarını arayabilirsiniz.
       </p>
 
+      {/* ÜST BLOK — kaydırırken yerinde kalır.
+          Navbar da sticky ve 42px yüksekliğinde, o yüzden top=42px; z-index
+          Navbar'ın 100'ünün ALTINDA kalmalı ki menüleri bunun üstüne açılsın.
+          Sayfanın yatay dolgusu negatif kenar boşluğuyla telafi edilir; yoksa
+          altından geçen kartlar sticky bloğun iki yanından görünür. */}
+      <div ref={ustRef} style={{
+        position: "sticky", top: "42px", zIndex: 50,
+        background: theme.background,
+        marginLeft: isMobile ? "-16px" : "-24px",
+        marginRight: isMobile ? "-16px" : "-24px",
+        paddingLeft: isMobile ? "16px" : "24px",
+        paddingRight: isMobile ? "16px" : "24px",
+        paddingTop: "8px", paddingBottom: "10px",
+      }}>
       {/* Arama kutusu */}
       <div style={{
         display: "flex", alignItems: "center", gap: "10px",
@@ -250,6 +395,7 @@ export default function Arama() {
           </>
         )}
       </div>
+      </div>
 
       {/* Filtre çekmecesi: Kısım → Alim → (Eserler) → Kitap */}
       <div style={{
@@ -264,9 +410,10 @@ export default function Arama() {
 
       {/* Çekmece — sonuçlar */}
       <div style={{
-        overflow: "hidden",
+        // Açıldıktan sonra sınır YOK — yoksa uzun sonuç listesi kırpılıyor.
+        overflow: cekmeceSerbest ? "visible" : "hidden",
         transition: "max-height 0.35s ease, opacity 0.3s ease, margin 0.3s ease",
-        maxHeight: sonucVar ? "2000px" : "0px",
+        maxHeight: cekmeceSerbest ? "none" : (sonucVar ? "2000px" : "0px"),
         opacity: sonucVar ? 1 : 0,
         marginTop: sonucVar ? "18px" : "0px",
       }}>
@@ -334,11 +481,18 @@ export default function Arama() {
           {/* 2. KADEME — SEÇİLEN KİTABIN SONUÇLARI (aynı sayfada, eski görünümle) */}
           {!yukleniyor && acikGrup && (
             <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+              {/* Kitap başlığı da SABİT: aranan şey bu eserde yoksa kullanıcı
+                  listeye dönüp bir sonraki esere bakabilsin diye aşağı kaydırınca
+                  kaybolmamalı. Üst bloğun ÖLÇÜLEN yüksekliğinin altına oturur;
+                  z-index üst bloğun (50) altında kalır ki onun altına girsin.
+                  Arka planı saydam OLAMAZ — altından geçen kartlar okunur hâle gelir. */}
               <button onClick={() => setSecilenKitap(null)}
                 style={{
+                  position: "sticky", top: `${42 + ustYuk}px`, zIndex: 40,
                   display: "flex", alignItems: "center", gap: "8px", textAlign: "left",
                   padding: "9px 12px", borderRadius: "10px", cursor: "pointer",
-                  background: "transparent", border: `1px solid ${theme.border}`, color: theme.text,
+                  background: theme.surface, border: `1px solid ${theme.border}`, color: theme.text,
+                  boxShadow: "0 2px 10px rgba(0,0,0,0.06)",
                 }}>
                 <ChevronLeft size={15} style={{ color: theme.accent, flexShrink: 0 }} />
                 <span style={{ flex: 1, minWidth: 0, fontSize: "13px", fontWeight: 600 }}>{acikGrup.kitapAd}</span>

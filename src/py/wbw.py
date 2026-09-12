@@ -29,6 +29,9 @@ Bu yüzden konumdan konuma eşleme yapılamaz; kayar. Çözüm: HİZALAMA tablos
   3) BİRLEŞTİR python3 wbw.py --birlestir
      Hizalamayı uygulayıp BİZİM id'lerimize göre kelime-anlam.json üretir.
 
+  8) İNGİLİZCE python3 wbw.py --ingilizce
+     quran.com'un Türkçe veremediği kelimeleri listeler, dosyaya yazar.
+
   7) KARŞILAŞTIR  python3 wbw.py --karsilastir A.json B.json
      İki mushaf kopyası aynı mı? (src/data ile public/ ayrışmış olabilir.)
 
@@ -139,12 +142,71 @@ def yol_coz(verilen, sessiz=False):
     sys.exit(1)
 
 
+# ── VERİ DOSYASI BULMA / ÇIKTI YERİ ───────────────────────────────────────
+# ESKİ HATA: yalnız mushaf yolu yol_coz'dan geçiyordu; wbw_tr.json ve
+# kelime_hizalama.json doğrudan açılıyordu. Bu yüzden betik ancak bu dosyaların
+# BULUNDUĞU dizinden çalıştırılınca işliyordu:
+#     cd ~/Projeler/vukuf && python3 src/py/wbw.py --ingilizce
+#       → FileNotFoundError: 'wbw_tr.json'
+# Artık bütün girdiler aynı aramadan geçiyor (betiğin dizini ve çalışma dizini,
+# yukarı doğru 5 kat; her katta ./, ./data/, ./src/data/). Çıktılar da girdilerin
+# bulunduğu dizine yazılır → dosyalar src/data dışına dağılmaz.
+_VERI_DIZIN = [None]
+
+
+def veri_ara(ad):
+    """yol_coz ile aynı arama, ama sessiz ve bulamazsa None döner (çıkmaz)."""
+    if os.path.isfile(ad):
+        return os.path.realpath(ad)
+    taban = os.path.basename(ad)
+    for kok in (os.path.dirname(os.path.abspath(__file__)), os.path.abspath(os.getcwd())):
+        for _ in range(5):
+            for a in (os.path.join(kok, ad), os.path.join(kok, taban),
+                      os.path.join(kok, "data", taban), os.path.join(kok, "src", "data", taban)):
+                if os.path.isfile(a):
+                    return os.path.realpath(a)
+            kok = os.path.dirname(kok)
+    return None
+
+
+def girdi(ad, ipucu=""):
+    """Var olması GEREKEN bir veri dosyası. Bulunduğu dizin çıktılar için hatırlanır."""
+    y = veri_ara(ad)
+    if not y:
+        print(f"HATA: '{ad}' bulunamadı." + (f"\n      {ipucu}" if ipucu else ""))
+        sys.exit(1)
+    if _VERI_DIZIN[0] is None:
+        _VERI_DIZIN[0] = os.path.dirname(y)
+    if os.path.abspath(ad) != y:
+        print(f"  · {ad} → {y}")
+    return y
+
+
+def cikti_yolu(ad):
+    """Çıktı dosyasının tam yolu: girdilerin okunduğu dizin (yoksa çalışma dizini)."""
+    if os.path.isabs(ad) or os.path.dirname(ad):
+        return ad
+    kok = _VERI_DIZIN[0]
+    if kok is None:
+        b = veri_ara("wbw_tr.json") or veri_ara("kuran-mushaf.json")
+        kok = os.path.dirname(b) if b else os.path.abspath(os.getcwd())
+    return os.path.join(kok, ad)
+
+
 # ══════════════════════════════════════════════════════════════════════════
 def cek(hedef="wbw_tr.json", bekleme=0.34):
     veri = {}
-    if os.path.isfile(hedef):
+    # Yarım kalmış çekme HER YERDEN devam edebilsin: mevcut dosya aranır.
+    # Yoksa veri dizinine (src/data) yazılır — çalışma dizinine dağılmaz.
+    varolan = veri_ara(hedef)
+    if varolan:
+        _VERI_DIZIN[0] = os.path.dirname(varolan)
+        hedef = varolan
         veri = json.load(open(hedef, encoding="utf-8"))
-        print(f"mevcut dosya okundu: {len(veri)} kelime")
+        print(f"mevcut dosya okundu: {hedef} — {len(veri)} kelime")
+    else:
+        hedef = cikti_yolu(hedef)
+        print(f"yeni dosya: {hedef}")
     bitmis = {k.split(":")[0] for k in veri}
     for sure in range(1, 115):
         if str(sure) in bitmis:
@@ -274,9 +336,8 @@ def ayet_hizala(bizde, onlarda, en_az=0.62, pencere=3, esik=0.5):
 
 def hizala(mushaf_yolu, wbw_yolu="wbw_tr.json", cikti="kelime_hizalama.json"):
     mushaf = json.load(open(yol_coz(mushaf_yolu), encoding="utf-8"))
-    if not os.path.isfile(wbw_yolu):
-        print(f"HATA: {wbw_yolu} yok. Önce:  python3 wbw.py --cek")
-        sys.exit(1)
+    wbw_yolu = girdi(wbw_yolu, "Önce:  python3 src/py/wbw.py --cek")
+    cikti = cikti_yolu(cikti)
     wbw = json.load(open(wbw_yolu, encoding="utf-8"))
 
     biz = {}
@@ -336,10 +397,11 @@ def hizala(mushaf_yolu, wbw_yolu="wbw_tr.json", cikti="kelime_hizalama.json"):
             print(f"       api : {' | '.join(s['onlarin'][:10])}")
 
     json.dump(harita, open(cikti, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
-    json.dump(sorunlu, open("hizalama_sorunlu.json", "w", encoding="utf-8"),
+    sorunlu_yolu = cikti_yolu("hizalama_sorunlu.json")
+    json.dump(sorunlu, open(sorunlu_yolu, "w", encoding="utf-8"),
               ensure_ascii=False, indent=1)
     print(f"\n  yazıldı: {cikti} ({os.path.getsize(cikti)//1024} KB)")
-    print(f"  yazıldı: hizalama_sorunlu.json ({len(sorunlu)} âyet)")
+    print(f"  yazıldı: {sorunlu_yolu} ({len(sorunlu)} âyet)")
 
 
 def birlestir(wbw_yolu="wbw_tr.json", harita_yolu="kelime_hizalama.json",
@@ -351,10 +413,9 @@ def birlestir(wbw_yolu="wbw_tr.json", harita_yolu="kelime_hizalama.json",
     diyebilir. Anlam KONUMA ait olduğu için "من kelimesinin 710 anlamı"
     sorunu ortadan kalkar: her yerde o yerin anlamı gösterilir.
     """
-    for y in (wbw_yolu, harita_yolu):
-        if not os.path.isfile(y):
-            print(f"HATA: {y} yok. Önce --cek ve --hizala çalıştır.")
-            sys.exit(1)
+    wbw_yolu = girdi(wbw_yolu, "Önce --cek ve --hizala çalıştır.")
+    harita_yolu = girdi(harita_yolu, "Önce --cek ve --hizala çalıştır.")
+    cikti, grup_cikti = cikti_yolu(cikti), cikti_yolu(grup_cikti)
     wbw = json.load(open(wbw_yolu, encoding="utf-8"))
     harita = json.load(open(harita_yolu, encoding="utf-8"))
 
@@ -401,7 +462,7 @@ def birlestir(wbw_yolu="wbw_tr.json", harita_yolu="kelime_hizalama.json",
         print(f"    {d:<12} {n}")
     for f in (cikti, grup_cikti):
         print(f"\n  yazıldı: {f}  ({os.path.getsize(f)//1024} KB)")
-    print("\n  Bu iki dosyayı src/data/ altına koy; KuranOkuma bunları okuyacak.")
+    print("\n  KuranOkuma bu iki dosyayı src/data/ altından import eder.")
 
 
 def rapor(mushaf_yolu, wbw_yolu="wbw_tr.json", harita_yolu="kelime_hizalama.json",
@@ -413,8 +474,8 @@ def rapor(mushaf_yolu, wbw_yolu="wbw_tr.json", harita_yolu="kelime_hizalama.json
     "şurada birleşmemiş" şüphesi tek tek doğrulanabilir.
     """
     mushaf = json.load(open(yol_coz(mushaf_yolu), encoding="utf-8"))
-    wbw = json.load(open(wbw_yolu, encoding="utf-8"))
-    harita = json.load(open(harita_yolu, encoding="utf-8"))
+    wbw = json.load(open(girdi(wbw_yolu), encoding="utf-8"))
+    harita = json.load(open(girdi(harita_yolu), encoding="utf-8"))
 
     biz = {kid: ar for kid, ar in bizim_kelimeler(mushaf)}
     ters = {}
@@ -514,8 +575,9 @@ def ayet_bak(mushaf_yolu, ayet, wbw_yolu="wbw_tr.json", harita_yolu="kelime_hiza
     """Tek âyeti İKİ TARAFTAN yan yana döker — hizalama neden öyle karar verdi,
     gözle görülsün. Şüpheli bir yer çıktığında ilk bakılacak yer burası."""
     mushaf = json.load(open(yol_coz(mushaf_yolu), encoding="utf-8"))
-    wbw = json.load(open(wbw_yolu, encoding="utf-8"))
-    harita = json.load(open(harita_yolu, encoding="utf-8")) if os.path.isfile(harita_yolu) else {}
+    wbw = json.load(open(girdi(wbw_yolu), encoding="utf-8"))
+    hy = veri_ara(harita_yolu)
+    harita = json.load(open(hy, encoding="utf-8")) if hy else {}
 
     bl = [(k, a) for k, a in bizim_kelimeler(mushaf)
           if ":".join(k.split(":")[:2]) == ayet]
@@ -568,10 +630,12 @@ def tekrar_temizle(mushaf_yolu, harita_yolu="kelime_hizalama.json",
     Hangisi silinecek: Osmanî imlâ kodu (ٱ / ۡ) taşıyan nüsha. Eşitse, ÜZERİNDE
     DAHA ÇOK İŞARET olan tutulur — vakıf/tecvid işareti kaybolmasın diye.
     """
-    ham = json.load(open(yol_coz(mushaf_yolu), encoding="utf-8"))
-    if not os.path.isfile(harita_yolu):
-        print(f"HATA: {harita_yolu} yok. Önce --cek ve --hizala çalıştır.")
-        sys.exit(1)
+    mushaf_tam = yol_coz(mushaf_yolu)
+    ham = json.load(open(mushaf_tam, encoding="utf-8"))
+    harita_yolu = girdi(harita_yolu, "Önce --cek ve --hizala çalıştır.")
+    # Temiz kopya HER ZAMAN kaynak mushafın yanına yazılır (yanlış dizine düşmesin).
+    if not os.path.isabs(cikti) and not os.path.dirname(cikti):
+        cikti = os.path.join(os.path.dirname(mushaf_tam), cikti)
     harita = json.load(open(harita_yolu, encoding="utf-8"))
 
     ters = {}
@@ -720,6 +784,51 @@ def karsilastir(a_yolu, b_yolu):
         print("\n  ⚠ Kopyalar ayrışmış. Uygulamanın okuduğu WEB KÖKÜNDEKİ dosyadır.")
 
 
+def ingilizce_kalanlar(wbw_yolu="wbw_tr.json", harita_yolu="kelime_hizalama.json",
+                       cikti="ingilizce_kalanlar.json"):
+    """quran.com'un TÜRKÇE çeviri veremediği yerler.
+
+    `language=tr` istememize rağmen bazı kelimelerde çeviri İngilizce dönüyor
+    (ör. 18:94 "O Dhul-qarnain", 63:10 "the righteous"). Bunlar eksik kayıt;
+    Türkçesi olmadığı için İngilizceye düşülmüş. Burada hepsi listelenir ki
+    başka bir kaynaktan ya da elle doldurulabilsin.
+    """
+    wbw = json.load(open(girdi(wbw_yolu, "Önce:  python3 src/py/wbw.py --cek"), encoding="utf-8"))
+    hy = veri_ara(harita_yolu)
+    harita = json.load(open(hy, encoding="utf-8")) if hy else {}
+    cikti = cikti_yolu(cikti)
+    ters = {}
+    for bizim, o in harita.items():
+        hedef = o[0] if isinstance(o, list) else o
+        ters.setdefault(hedef, []).append(bizim)
+
+    diller = Counter()
+    kalan = []
+    for yer, v in wbw.items():
+        if v.get("tip") == "end":
+            continue
+        d = (v.get("dil") or "?").lower()
+        diller[d] += 1
+        if d != "turkish":
+            kalan.append({"quran_yeri": yer, "arapca": v.get("ar", ""),
+                          "ceviri": v.get("tr", ""), "dil": v.get("dil", ""),
+                          "bizim_yerlerimiz": sorted(ters.get(yer, []),
+                                                     key=lambda x: [int(t) for t in x.split(":")]),
+                          "turkce": ""})
+    print("=" * 74)
+    print("TÜRKÇE OLMAYAN ÇEVİRİLER")
+    print("=" * 74)
+    for d, n in diller.most_common():
+        print(f"  {d:<12} {n}")
+    print(f"\n  Türkçe olmayan: {len(kalan)} kelime\n")
+    for k in sorted(kalan, key=lambda x: [int(t) for t in x["quran_yeri"].split(":")])[:40]:
+        print(f"  {k['quran_yeri']:<12} {k['arapca']:<20} {k['ceviri']}")
+    if len(kalan) > 40:
+        print(f"  … ve {len(kalan)-40} tane daha")
+    json.dump(kalan, open(cikti, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+    print(f"\n  yazıldı: {cikti}  ('turkce' alanları BOŞ, doldurulmaya hazır)")
+
+
 def test():
     """Tek âyet çekip başlığın/erişimin çalıştığını gösterir."""
     url = ("https://api.quran.com/api/v4/verses/by_key/2:40"
@@ -739,6 +848,8 @@ if __name__ == "__main__":
         test()
     elif "--birlestir" in sys.argv:
         birlestir()
+    elif "--ingilizce" in sys.argv:
+        ingilizce_kalanlar()
     elif "--karsilastir" in sys.argv:
         arg = [a for a in sys.argv[1:] if not a.startswith("--")]
         karsilastir(arg[0], arg[1])

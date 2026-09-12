@@ -677,6 +677,10 @@ export default function GorselOlustur({
   const [gecerliGorseller, setGecerliGorseller] = useState([])   // dosyası GERÇEKTEN olanlar
   const [durum, setDurum] = useState("")                          // kullanıcıya kısa bilgi
   const [calisiyor, setCalisiyor] = useState(false)
+  // Hazırlanan dosya (foto/video). Paylaşım ya da indirme kendiliğinden çalışmazsa
+  // kullanıcı buradaki düğmeye basar → TAZE bir kullanıcı hareketiyle tekrar denenir.
+  const [hazirDosya, setHazirDosya] = useState(null)   // {url, ad, tur, blob} | null
+  const kaydirRef = useRef(null)                       // panelin dikey kaydırma kutusu
   const [uyari, setUyari] = useState("")
   const [yaziRengi, setYaziRengi] = useState(null)          // null = otomatik
   // ── VİDEO
@@ -701,6 +705,13 @@ export default function GorselOlustur({
   const [kapsam, setKapsam] = useState("tek")                // "tek"|3|5|10|"sayfa"|"sure"|"ozel"
   const [ozelBas, setOzelBas] = useState(1)                  // Özel kapsam: başlangıç âyeti
   const [ozelSon, setOzelSon] = useState(1)                  // Özel kapsam: bitiş âyeti
+  // Özel kapsam kutularının YAZILAN metni ayrı tutulur. Eskiden her tuş vuruşunda sayı
+  // kırpılıyordu (boş alan → 1, aralık dışı → ânında sınıra çekiliyor) ve kutuya yeni bir
+  // âyet numarası YAZILAMIYORDU. Artık yazarken serbest; sınırlar odaktan çıkınca uygulanır.
+  const [ozelBasMetin, setOzelBasMetin] = useState("1")
+  const [ozelSonMetin, setOzelSonMetin] = useState("1")
+  const ozelBasYaz = useCallback((n) => { setOzelBas(n); setOzelBasMetin(String(n)) }, [])
+  const ozelSonYaz = useCallback((n) => { setOzelSon(n); setOzelSonMetin(String(n)) }, [])
   // Video çözünürlüğü: 720 (hızlı, varsayılan) veya 1080. Telefonda 1080×1920'yi 30 fps
   // çizmek zorlanabildiği için kısa kenar varsayılan 720.
   const [videoKalite, setVideoKalite] = useState(720)
@@ -745,8 +756,45 @@ export default function GorselOlustur({
     setSesAcik(false)                          // her açılışta sessiz başla
     setDinle(false); dinleRef.current = false  // kayıt sırasında dinleme de kapalı başlar
     setKapsam("tek"); tamponRef.current = []; cizelgeRef.current = []
-    if (ayet) { setOzelBas(ayet.ayetNo); setOzelSon(ayet.ayetNo) }
-  }, [acik, arapca, meal, ayet])
+    setHazirDosya(null)
+    if (ayet) { ozelBasYaz(ayet.ayetNo); ozelSonYaz(ayet.ayetNo) }
+  }, [acik, arapca, meal, ayet, ozelBasYaz, ozelSonYaz])
+
+  // ── PANELİN HER YERİNDEN KAYDIRMA ──────────────────────────────
+  // Sorun: tekerlek yalnız düz yazı üstündeyken çalışıyordu. Sebebi iki katmanlı:
+  //  1) Yatay seçenek şeritleri (`overflow-x:auto`) CSS gereği dikeyde de kaydırma kutusu
+  //     sayılır (bir eksen `visible` değilse diğeri `auto`ya döner) → tekerlek orada "yutulur".
+  //  2) Panel kilidi `.vukuf-panel *{overscroll-behavior:contain}` verdiği için bu yutulan
+  //     kaydırma ÜST kutuya zincirlenemiyor.
+  // Çözüm: kaydırma kutusuna pasif olmayan tek bir `wheel` dinleyicisi. Olayın geldiği yerden
+  // yukarı yürünür; gerçekten dikey kaydırabilen bir iç kutu varsa karışılmaz, yoksa
+  // kaydırma paneli kaydırır. Böylece tuval/önizleme, şeritler, düğmeler — her yer kaydırır.
+  useEffect(() => {
+    if (!acik) return
+    const k = kaydirRef.current
+    if (!k) return
+    const tekerlek = (e) => {
+      if (e.ctrlKey) return                                  // yakınlaştırma jesti
+      const dy = e.deltaMode === 1 ? e.deltaY * 16
+        : e.deltaMode === 2 ? e.deltaY * k.clientHeight : e.deltaY
+      if (!dy) return
+      let n = e.target
+      while (n && n !== k) {
+        if (n.nodeType === 1 && n.scrollHeight > n.clientHeight + 1) {
+          const ov = getComputedStyle(n).overflowY
+          const ustSinir = n.scrollHeight - n.clientHeight - 1
+          if ((ov === "auto" || ov === "scroll") &&
+              ((dy < 0 && n.scrollTop > 0) || (dy > 0 && n.scrollTop < ustSinir))) return
+        }
+        n = n.parentElement
+      }
+      const once = k.scrollTop
+      k.scrollTop = Math.max(0, Math.min(k.scrollHeight - k.clientHeight, once + dy))
+      if (k.scrollTop !== once && e.cancelable) e.preventDefault()
+    }
+    k.addEventListener("wheel", tekerlek, { passive: false })
+    return () => k.removeEventListener("wheel", tekerlek)
+  }, [acik])
 
   // Panel kapanınca / fotoğraf moduna dönünce ön-çizilmiş canvas'ları bırak.
   // iOS'ta canvas belleği sınırlı; tam çözünürlükte 2-3 offscreen canvas açık kalmasın.
@@ -863,11 +911,17 @@ export default function GorselOlustur({
     if (mod !== "video" || !ayet || !ayetListesiAl || kapsam === "tek") return tek
     try {
       const adet = kapsam === "sure" ? "hepsi" : kapsam    // "sayfa" ve "ozel" aynen geçer
-      const bas = kapsam === "ozel" ? ozelBas : ayet.ayetNo
-      const { liste } = ayetListesiAl(ayet.sureNo, bas, adet, ozelSon)
+      // Kutular serbest yazılabildiği için buradaki değerler geçici olarak aralık dışı
+      // olabilir; önizleme hiçbir durumda geçersiz aralık istemesin diye burada kırpılır.
+      const enCokAyet = sureBilgi?.ayetSayisi || 286
+      const bas = kapsam === "ozel" ? Math.min(Math.max(1, ozelBas || 1), enCokAyet) : ayet.ayetNo
+      const son = kapsam === "ozel"
+        ? Math.min(Math.max(bas, ozelSon || bas), Math.min(enCokAyet, bas + azamiAyet - 1))
+        : ozelSon
+      const { liste } = ayetListesiAl(ayet.sureNo, bas, adet, son)
       return liste && liste.length ? liste : tek
     } catch { return tek }
-  }, [mod, ayet, ayetListesiAl, kapsam, ozelBas, ozelSon, arapca, meal, kaynak, secde])
+  }, [mod, ayet, ayetListesiAl, kapsam, ozelBas, ozelSon, arapca, meal, kaynak, secde, sureBilgi, azamiAyet])
 
   // Bir parçanın YAZI katmanını çizer. katman:"on" görsel yüklemediği için gorselCiz
   // gövdesi baştan sona SENKRON çalışır → beklemeye gerek yok (rAF içinde kullanılabilir).
@@ -1063,7 +1117,7 @@ export default function GorselOlustur({
     const cv = canvasRef.current
     if (!cv || !videoDestekli) return
     kayitIptalRef.current = false
-    setDurum(""); setIlerleme(0); setKayitDurum("isleniyor")
+    setDurum(""); setIlerleme(0); setKayitDurum("isleniyor"); setHazirDosya(null)
 
     // 1) Ses (varsa) indirilip çözülür → gerçek süreler
     let sesCtx = null, sesUyari = false
@@ -1176,25 +1230,70 @@ export default function GorselOlustur({
     if (sesUyari) setDurum("Video kaydedildi — kâri sesi alınamadı (ses sunucusu izin vermiyor olabilir).")
   }
 
-  // Blob'u paylaş / indir (foto ve video ortak)
-  const dosyayiVer = async (blob, ad, tur) => {
+  // Hazır dosyanın nesne adresi, yenisi geldiğinde / panel kapanınca bırakılır.
+  useEffect(() => () => { if (hazirDosya?.url) { try { URL.revokeObjectURL(hazirDosya.url) } catch { /* yoksay */ } } }, [hazirDosya])
+
+  // ── DOSYAYI VER (foto ve video ortak) ───────────────────────────
+  // ESKİ HATA: video kaydı gerçek zamanlıdır (onlarca saniye). Bitince navigator.share
+  // çağrılıyordu; ama paylaşım API'si "taze kullanıcı hareketi" ister ve o hareket çoktan
+  // sona ermiş olduğu için NotAllowedError atıyordu → "Kaydedilemedi — dosyaya basılı
+  // tutarak kaydedebilirsiniz." Oysa dosya hazırdı.
+  // YENİ: (1) paylaşım yalnız kullanıcı hareketi HÂLÂ geçerliyken denenir, (2) paylaşım
+  // olmazsa sessizce indirmeye düşer, (3) her hâlükârda dosya `hazirDosya`ya konur →
+  // alt çubukta "Videoyu kaydet" düğmesi çıkar; ona basmak taze bir hareket üretir.
+  const hareketTaze = () => {
     try {
-      const dosya = new File([blob], ad, { type: tur })
-      if (navigator.canShare && navigator.canShare({ files: [dosya] })) {
+      if (navigator.userActivation && typeof navigator.userActivation.isActive === "boolean")
+        return navigator.userActivation.isActive
+    } catch { /* yoksay */ }
+    return true   // bilgi yoksa denemeye değer
+  }
+
+  const indirmeyiDene = (blob, ad) => {
+    const u = URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = u; a.download = ad; a.rel = "noopener"
+    document.body.appendChild(a); a.click(); a.remove()
+    setTimeout(() => { try { URL.revokeObjectURL(u) } catch { /* yoksay */ } }, 60000)
+  }
+
+  const dosyayiVer = async (blob, ad, tur, { paylasimDene = true } = {}) => {
+    // Dosya her durumda elde tutulur: otomatik adım tutmazsa kullanıcı düğmeyle alır.
+    setHazirDosya({ url: URL.createObjectURL(blob), ad, tur, blob })
+    const dosya = new File([blob], ad, { type: tur })
+    const paylasilabilir = !!(navigator.canShare && navigator.share && navigator.canShare({ files: [dosya] }))
+
+    if (paylasimDene && paylasilabilir && hareketTaze()) {
+      try {
         await navigator.share({ files: [dosya] })
         setDurum("Paylaşıldı")
-      } else {
-        const u = URL.createObjectURL(blob)
-        const a = document.createElement("a")
-        a.href = u; a.download = ad
-        document.body.appendChild(a); a.click(); a.remove()
-        setTimeout(() => URL.revokeObjectURL(u), 6000)
-        setDurum("İndirildi")
+        setHazirDosya(null)          // paylaşım tuttu → yedek düğmeye gerek yok
+        return true
+      } catch (e) {
+        if (e && e.name === "AbortError") { setDurum(""); return true }   // kullanıcı vazgeçti
+        /* NotAllowedError / NotSupportedError → indirmeye düş */
       }
-    } catch (e) {
-      if (e && e.name === "AbortError") setDurum("")
-      else setDurum("Kaydedilemedi — dosyaya basılı tutarak kaydedebilirsiniz.")
     }
+    try {
+      indirmeyiDene(blob, ad)
+      setDurum(paylasilabilir ? "Hazır — kaydetmek için aşağıdaki düğmeye dokunun." : "İndirildi")
+      return true
+    } catch {
+      setDurum("Hazır — kaydetmek için aşağıdaki düğmeye dokunun.")
+      return false
+    }
+  }
+
+  // Alt çubuktaki "Kaydet/Paylaş" düğmesi: TAZE kullanıcı hareketiyle çalışır.
+  const hazirDosyayiAl = async () => {
+    if (!hazirDosya) return
+    const dosya = new File([hazirDosya.blob], hazirDosya.ad, { type: hazirDosya.tur })
+    if (navigator.canShare && navigator.share && navigator.canShare({ files: [dosya] })) {
+      try { await navigator.share({ files: [dosya] }); setDurum("Paylaşıldı"); return }
+      catch (e) { if (e && e.name === "AbortError") { setDurum(""); return } }
+    }
+    try { indirmeyiDene(hazirDosya.blob, hazirDosya.ad); setDurum("İndirildi") }
+    catch { setDurum("Kaydedilemedi — aşağıdaki bağlantıya basılı tutup kaydedebilirsiniz.") }
   }
 
   const indir = async () => {
@@ -1203,7 +1302,7 @@ export default function GorselOlustur({
     // Kaydedilen görselde kullanılan özel rengi "son kullanılanlar"a yaz (onBlur mobilde
     // her zaman tetiklenmiyor; kaydetme anı kesin bir işaret).
     if (yaziRengi) setSonRenkler(sonRenkEkle(yaziRengi))
-    setCalisiyor(true); setDurum("")
+    setCalisiyor(true); setDurum(""); setHazirDosya(null)
     try {
       const blob = await new Promise(cz => cv.toBlob(cz, "image/png"))
       if (!blob) throw new Error("boş")
@@ -1236,7 +1335,15 @@ export default function GorselOlustur({
     color: aktif ? theme.accent : theme.textSecondary,
     fontSize: isMobile ? "11px" : "12px", fontWeight: 600, whiteSpace: "nowrap", flexShrink: 0,
   })
-  const seritStil = { display: "flex", gap: "6px", overflowX: "auto", paddingBottom: "3px", WebkitOverflowScrolling: "touch" }
+  // overscrollBehaviorY:"auto" → panel kilidinin `.vukuf-panel *{overscroll-behavior:contain}`
+  // kuralını satır içi olarak ezer; şeritte yutulan dikey kaydırma üst kutuya zincirlenebilir.
+  // touchAction:"pan-x pan-y" → parmakla şerit üzerinden dikey kaydırma da mümkün.
+  const seritStil = {
+    display: "flex", gap: "6px", overflowX: "auto", paddingBottom: "3px",
+    WebkitOverflowScrolling: "touch",
+    overscrollBehaviorX: "contain", overscrollBehaviorY: "auto",
+    touchAction: "pan-x pan-y",
+  }
   const renkKutu = (renk, aktif) => ({
     width: isMobile ? "26px" : "28px", height: isMobile ? "26px" : "28px",
     borderRadius: "50%", flexShrink: 0, cursor: "pointer", background: renk,
@@ -1310,16 +1417,30 @@ export default function GorselOlustur({
           </button>
         </div>
 
-        <div style={{ overflowY: "auto", overscrollBehavior: "contain", flex: 1, padding: isMobile ? "10px 12px 14px" : "14px 18px 18px" }}>
+        <div
+          ref={kaydirRef}
+          style={{
+            overflowY: "auto", overscrollBehavior: "contain", flex: 1,
+            // ÜST BOŞLUK YOK: yapışkan önizlemenin kendi üst dolgusu var. Kutunun üst
+            // dolgusu bırakılırsa (eskiden 10/14px) önizleme negatif üst boşlukla yukarı
+            // çekilmek zorunda kalıyordu; yapışkan konumlandırma negatif üst boşluğu da
+            // hesaba kattığı için kaydırınca üstte bir şerit açılıyor ve panelin devamı
+            // oradan görünüyordu. Artık üst dolgu 0, negatif üst boşluk yok.
+            padding: isMobile ? "0 12px 14px" : "0 18px 18px",
+            touchAction: "pan-y",
+          }}
+        >
           {/* ÖNİZLEME */}
           {/* Önizleme YAPIŞKAN: seçenekleri kaydırırken üstte sabit kalır */}
           <div style={{
-            position: "sticky", top: 0, zIndex: 3,
+            position: "sticky", top: 0, zIndex: 6,
             background: theme.background,
             display: "flex", justifyContent: "center",
-            margin: isMobile ? "-10px -12px 12px" : "-14px -18px 12px",
+            // yalnız YATAY negatif boşluk (kenarlara taşsın); dikeyde sıfır → yapışkan tam otursun
+            margin: isMobile ? "0 -12px 12px" : "0 -18px 12px",
             padding: isMobile ? "10px 12px" : "14px 18px",
             borderBottom: `1px solid ${theme.border}`,
+            boxShadow: `0 6px 12px -8px ${theme.border}`,
           }}>
             <div style={{ position: "relative", display: "inline-flex" }}>
               <canvas
@@ -1482,42 +1603,69 @@ export default function GorselOlustur({
                   {/* ÖZEL ARALIK — başlangıç / bitiş âyeti (en fazla azamiAyet âyet) */}
                   {kapsam === "ozel" && (() => {
                     const enCok = sureBilgi?.ayetSayisi || 286
-                    const sinirla = (v) => Math.min(Math.max(1, Math.round(Number(v) || 1)), enCok)
                     const kutu = {
-                      width: "62px", padding: "7px 8px", borderRadius: "8px", textAlign: "center",
+                      width: "66px", padding: "7px 8px", borderRadius: "8px", textAlign: "center",
                       border: `1px solid ${theme.border}`, background: theme.background,
                       color: theme.text, fontSize: "13px", outline: "none", fontFamily: "inherit",
                     }
-                    const secili = ozelSon - ozelBas + 1
+                    // Geçerli (kırpılmış) aralık — önizleme bunu kullanır.
+                    const bas = Math.min(Math.max(1, ozelBas || 1), enCok)
+                    const son = Math.min(Math.max(bas, ozelSon || bas), Math.min(enCok, bas + azamiAyet - 1))
+                    const secili = son - bas + 1
+                    // Yazarken KIRPMA YOK: yalnız rakam süzülür, sayı büyükse üst sınıra çekilir.
+                    // Asıl sınırlar (bitiş ≥ başlangıç, en fazla azamiAyet) odaktan çıkınca uygulanır.
+                    const yazildi = (ham, metinAyarla, sayiAyarla) => {
+                      const t = String(ham).replace(/\D/g, "").slice(0, 4)
+                      metinAyarla(t)
+                      const n = parseInt(t, 10)
+                      if (Number.isFinite(n) && n >= 1) sayiAyarla(Math.min(n, enCok))
+                    }
+                    const basBitti = () => {
+                      const n = Math.min(Math.max(1, parseInt(ozelBasMetin, 10) || 1), enCok)
+                      ozelBasYaz(n)
+                      const ustSinir = Math.min(enCok, n + azamiAyet - 1)
+                      if (ozelSon < n) ozelSonYaz(n)
+                      else if (ozelSon > ustSinir) ozelSonYaz(ustSinir)
+                      else ozelSonYaz(ozelSon)
+                    }
+                    const sonBitti = () => {
+                      const b = Math.min(Math.max(1, ozelBas || 1), enCok)
+                      const n = parseInt(ozelSonMetin, 10)
+                      const g = Number.isFinite(n) && n >= 1 ? n : b
+                      ozelSonYaz(Math.min(Math.max(g, b), Math.min(enCok, b + azamiAyet - 1)))
+                    }
+                    const kirpildi = (parseInt(ozelSonMetin, 10) || son) !== son || (parseInt(ozelBasMetin, 10) || bas) !== bas
                     return (
                       <div style={{ marginBottom: "10px" }}>
                         <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
                           <span style={{ fontSize: "12px", color: theme.textSecondary }}>Başlangıç</span>
                           <input
-                            type="number" inputMode="numeric" min={1} max={enCok} value={ozelBas}
-                            onChange={e => {
-                              const v = sinirla(e.target.value)
-                              setOzelBas(v)
-                              if (ozelSon < v) setOzelSon(v)
-                            }}
+                            type="text" inputMode="numeric" pattern="[0-9]*"
+                            value={ozelBasMetin}
+                            onChange={e => yazildi(e.target.value, setOzelBasMetin, setOzelBas)}
+                            onFocus={e => e.target.select()}
+                            onBlur={basBitti}
+                            onKeyDown={e => { if (e.key === "Enter") e.currentTarget.blur() }}
                             style={kutu}
                           />
                           <span style={{ fontSize: "12px", color: theme.textSecondary }}>Bitiş</span>
                           <input
-                            type="number" inputMode="numeric" min={ozelBas} max={enCok} value={ozelSon}
-                            onChange={e => {
-                              const v = sinirla(e.target.value)
-                              setOzelSon(Math.min(Math.max(v, ozelBas), ozelBas + azamiAyet - 1))
-                            }}
+                            type="text" inputMode="numeric" pattern="[0-9]*"
+                            value={ozelSonMetin}
+                            onChange={e => yazildi(e.target.value, setOzelSonMetin, setOzelSon)}
+                            onFocus={e => e.target.select()}
+                            onBlur={sonBitti}
+                            onKeyDown={e => { if (e.key === "Enter") e.currentTarget.blur() }}
                             style={kutu}
                           />
-                          <span style={{ fontSize: "11px", color: secili > azamiAyet ? "#c0392b" : theme.accent, fontWeight: 600 }}>
-                            {Math.min(Math.max(secili, 1), azamiAyet)} âyet
+                          <span style={{ fontSize: "11px", color: theme.accent, fontWeight: 600 }}>
+                            {secili} âyet
                           </span>
                         </div>
                         <div style={{ fontSize: "10px", color: theme.textSecondary, opacity: 0.75, marginTop: "5px", lineHeight: 1.45 }}>
                           {sureBilgi?.sureAdi ? `${sureBilgi.sureAdi} sûresi 1–${enCok} arası. ` : ""}
                           En fazla {azamiAyet} âyet seçebilirsiniz.
+                          {kirpildi ? ` Kullanılan aralık: ${bas}–${son}.` : ""}
                         </div>
                       </div>
                     )
@@ -1662,7 +1810,25 @@ export default function GorselOlustur({
                 }}
               ><CircleStop size={15} /> Durdur</button>
             </>
-          ) : (
+          ) : (<>
+            {/* HAZIR DOSYA — paylaşım/indirme kendiliğinden çalışmazsa (uzun video kaydından
+                sonra tarayıcı "taze kullanıcı hareketi" ister) kullanıcı buradan alır. */}
+            {hazirDosya && (
+              <a
+                href={hazirDosya.url}
+                download={hazirDosya.ad}
+                onClick={e => { e.preventDefault(); hazirDosyayiAl() }}
+                style={{
+                  display: "flex", alignItems: "center", gap: "6px", flexShrink: 0,
+                  padding: isMobile ? "10px 13px" : "11px 16px", borderRadius: "10px",
+                  border: `1px solid ${theme.accent}`, background: `${theme.accent}1e`,
+                  color: theme.accent, cursor: "pointer", textDecoration: "none",
+                  fontSize: isMobile ? "12px" : "13px", fontWeight: 600, whiteSpace: "nowrap",
+                }}
+              >
+                <Download size={15} /> {hazirDosya.tur.startsWith("video") ? "Videoyu al" : "Görseli al"}
+              </a>
+            )}
             <button
               onClick={mod === "video" ? videoKaydet : indir}
               disabled={calisiyor}
@@ -1678,7 +1844,7 @@ export default function GorselOlustur({
                 : (navigator.canShare ? <Share2 size={15} /> : <Download size={15} />)}
               {mod === "video" ? "Videoyu Kaydet" : "Kaydet"}
             </button>
-          )}
+          </>)}
         </div>
       </div>
     </div>

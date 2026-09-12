@@ -84,6 +84,107 @@ export default function useAudioPlayer() {
   }, [hiz])
   const hizAyarla = useCallback((h) => setHiz(h), [])
 
+  // ── SES SEVİYESİ ────────────────────────────────────────────────
+  // 0…1 arası, localStorage'da saklanır, HER İKİ tampona da uygulanır (çift tamponda
+  // âyet geçişinde seviye düşmesin diye yeni elemana da yazılır).
+  //
+  // MOBİL (iOS) SORUNU: iOS'ta <audio>.volume TASARIM GEREĞİ salt okunur — yazmak
+  // hiçbir şey yapmaz, okumak her zaman 1 döner; ses yalnız cihazın fizikî tuşlarına
+  // bırakılmıştır. Bu yüzden kaydırıcı webde çalışıp telefonda çalışmıyordu.
+  // ÇÖZÜM: o cihazlarda ses, Web Audio kazanç (GainNode) düğümünden geçirilir.
+  //   • Kazanç düğümü TEMBEL kurulur: yalnız kullanıcı seviyeyi ilk kez 1'in altına
+  //     çektiğinde. Sesi hiç kısmayan kullanıcıda <audio> yolu hiç değişmez — arka
+  //     plan/kilit ekranı oynatması olduğu gibi kalır.
+  //   • AudioContext yalnız kullanıcı hareketiyle (kaydırıcı) doğar, yoksa askıda
+  //     kalıp sesi tamamen keserdi. Her oynatmada ve öne dönüşte tekrar uyandırılır.
+  //   • SUSTURMA her cihazda `muted` ile yapılır — `muted` iOS'ta da çalışır.
+  const [ses, setSes] = useState(() => {
+    const d = parseFloat(localStorage.getItem("vukuf-ses-seviyesi") || "1")
+    return Number.isFinite(d) ? Math.min(Math.max(d, 0), 1) : 1
+  })
+  const sesRef = useRef(ses)
+  const sesCtxRef = useRef(null)
+  const kazancRef = useRef(null)
+  // Zincir YALNIZ kullanıcı hareketinden kurulabilir. Sayfa açılışında (kayıtlı
+  // seviye 1'in altındaysa) kurulsaydı AudioContext askıda doğar ve ses TAMAMEN
+  // kesilirdi — kısık sesten beter. Bayrak: kaydırıcıya dokunuldu mu / oynat'a
+  // basıldı mı (ikisi de gerçek hareket).
+  const hareketVarRef = useRef(false)
+
+  // Bu tarayıcıda volume gerçekten yazılabiliyor mu? (iOS'ta hayır.) Bir kez ölçülür.
+  const volumeYazilabilirRef = useRef(null)
+  const volumeYazilabilir = useCallback(() => {
+    if (volumeYazilabilirRef.current !== null) return volumeYazilabilirRef.current
+    let sonuc = true
+    try {
+      const t = new Audio()
+      t.volume = 0.37
+      sonuc = Math.abs(t.volume - 0.37) < 0.01
+    } catch { sonuc = true }
+    volumeYazilabilirRef.current = sonuc
+    return sonuc
+  }, [])
+
+  // Askıya alınmış bağlamı uyandır (iOS arka plandan dönünce askıya alır).
+  const sesCtxUyandir = useCallback(() => {
+    const c = sesCtxRef.current
+    if (c && c.state === "suspended") { try { c.resume() } catch { /* yoksay */ } }
+  }, [])
+
+  // Kazanç zincirini kur (yalnız gerektiğinde, yalnız bir kez).
+  const kazancKur = useCallback(() => {
+    if (kazancRef.current) return kazancRef.current
+    const AC = window.AudioContext || window.webkitAudioContext
+    if (!AC) return null
+    try {
+      const ctx = new AC()
+      const g = ctx.createGain()
+      g.connect(ctx.destination)
+      sesCtxRef.current = ctx
+      kazancRef.current = g
+      // createMediaElementSource bir eleman için YALNIZ BİR KEZ çağrılabilir.
+      for (const a of elsRef.current) {
+        if (!a) continue
+        try { ctx.createMediaElementSource(a).connect(g) } catch { /* zaten bağlı */ }
+      }
+      try { if (ctx.state === "suspended") ctx.resume() } catch { /* yoksay */ }
+      return g
+    } catch {
+      kazancRef.current = null
+      sesCtxRef.current = null
+      return null
+    }
+  }, [])
+
+  useEffect(() => {
+    sesRef.current = ses
+    try { localStorage.setItem("vukuf-ses-seviyesi", String(ses)) } catch { /* yoksay */ }
+    // Susturma her yerde çalışır; seviye yalnız volume yazılabilen cihazlarda.
+    for (const a of elsRef.current) { if (a) { a.volume = ses; a.muted = ses === 0 } }
+    if (kazancRef.current) {
+      sesCtxUyandir()
+      try { kazancRef.current.gain.value = ses } catch { /* düğüm kapanmış */ }
+    } else if (!volumeYazilabilir() && hareketVarRef.current && ses < 1 && ses > 0) {
+      // iOS: seviye ilk kez kısıldı → zinciri şimdi kur (bu çağrı kullanıcı
+      // hareketinden geliyor, bağlam askıda kalmaz).
+      const g = kazancKur()
+      if (g) { try { g.gain.value = ses } catch { /* yoksay */ } }
+    }
+  }, [ses, kazancKur, sesCtxUyandir, volumeYazilabilir])
+
+  // Bileşen ölünce bağlamı kapat (mobilde açık bağlam pil yakar).
+  useEffect(() => () => {
+    const c = sesCtxRef.current
+    sesCtxRef.current = null; kazancRef.current = null
+    try { c && c.close() } catch { /* yoksay */ }
+  }, [])
+
+  const sesAyarla = useCallback((v) => {
+    hareketVarRef.current = true          // kaydırıcı = kullanıcı hareketi
+    const d = Number(v)
+    setSes(Number.isFinite(d) ? Math.min(Math.max(d, 0), 1) : 1)
+  }, [])
+
   useEffect(() => {
     kariIdRef.current = kariId
     localStorage.setItem("vukuf-kari", kariId)
@@ -125,7 +226,12 @@ export default function useAudioPlayer() {
     if (!it) return
     try {
       const url = mp3Url(kariIdRef.current, it.sureNo, it.ayetNo)
-      if (b.dataset.url !== url) { b.dataset.url = url; b.src = url; b.playbackRate = hizRef.current; b.load() }
+      if (b.dataset.url !== url) {
+        b.dataset.url = url; b.src = url
+        b.playbackRate = hizRef.current
+        b.volume = sesRef.current
+        b.load()
+      }
     } catch {}
   }, [aktifEl, bostaEl, sonrakiIndeks])
 
@@ -138,9 +244,10 @@ export default function useAudioPlayer() {
       try {
         a.muted = true
         const p = a.play()
-        if (p && p.then) p.then(() => { a.pause(); try { a.currentTime = 0 } catch {}; a.muted = false }).catch(() => { a.muted = false })
-        else { a.pause(); a.muted = false }
-      } catch { a.muted = false }
+        const geriAl = () => { a.volume = sesRef.current; a.muted = sesRef.current === 0 }
+        if (p && p.then) p.then(() => { a.pause(); try { a.currentTime = 0 } catch {}; geriAl() }).catch(geriAl)
+        else { a.pause(); geriAl() }
+      } catch { a.volume = sesRef.current; a.muted = sesRef.current === 0 }
     }
   }, [aktifEl])
 
@@ -167,7 +274,16 @@ export default function useAudioPlayer() {
     if (a.dataset.url !== url) { a.dataset.url = url; a.src = url }
     try { if (a.currentTime !== 0) a.currentTime = 0 } catch {}
     a.playbackRate = hizRef.current
-    a.muted = false
+    a.volume = sesRef.current
+    a.muted = sesRef.current === 0
+    // Oynatma bir kullanıcı hareketinden gelir: kayıtlı seviye kısıksa zincir
+    // burada kurulabilir (açılışta kurulamıyordu, bkz. hareketVarRef).
+    hareketVarRef.current = true
+    if (!volumeYazilabilir() && !kazancRef.current && sesRef.current < 1 && sesRef.current > 0) {
+      const g = kazancKur()
+      if (g) { try { g.gain.value = sesRef.current } catch { /* yoksay */ } }
+    }
+    sesCtxUyandir()            // iOS: kazanç zinciri varsa askıdan çıkar
     a.play()
       .then(() => {
         a.playbackRate = hizRef.current
@@ -177,7 +293,7 @@ export default function useAudioPlayer() {
         sonrakiOnyukle()   // bir sonrakini hazırla
       })
       .catch(() => { setHata("Oynatma başlatılamadı"); setDurum("kapali") })
-  }, [aktifEl, bostaEl, mediaMeta, sonrakiOnyukle])
+  }, [aktifEl, bostaEl, mediaMeta, sonrakiOnyukle, sesCtxUyandir, kazancKur, volumeYazilabilir])
 
   const sonrakiAyetCal = useCallback(() => {
     // Çift ilerleme koruması: 250ms içinde ikinci "sonraki" çağrısını yok say
@@ -218,6 +334,7 @@ export default function useAudioPlayer() {
     const yap = () => {
       const a = new Audio()
       a.preload = "auto"
+      a.volume = sesRef.current
       try { a.setAttribute("playsinline", "") } catch {}
       a.dataset.url = ""
       a.addEventListener("ended", (e) => { if (e.target === aktifEl()) sonrakiAyetCalRef.current() })
@@ -259,6 +376,7 @@ export default function useAudioPlayer() {
   useEffect(() => {
     const senkronla = () => {
       if (document.visibilityState !== "visible") return
+      sesCtxUyandir()                       // askıya alınmış kazanç zinciri geri gelsin
       if (durumRef.current === "kapali") return
       const a = aktifEl(); if (!a) return
       const b = bostaEl()
@@ -269,7 +387,7 @@ export default function useAudioPlayer() {
     document.addEventListener("visibilitychange", senkronla)
     window.addEventListener("focus", senkronla)
     return () => { document.removeEventListener("visibilitychange", senkronla); window.removeEventListener("focus", senkronla) }
-  }, [aktifEl, bostaEl])
+  }, [aktifEl, bostaEl, sesCtxUyandir])
 
   // Kâri değişince: çalıyorsa durdur, tamponları temizle
   useEffect(() => {
@@ -342,10 +460,11 @@ export default function useAudioPlayer() {
       return
     }
     const b = bostaEl(); if (b && b !== a && !b.paused) { try { b.pause() } catch {} }   // çift ses guard
+    sesCtxUyandir()            // iOS: kazanç zinciri askıdaysa uyandır
     a.play()
       .then(() => { setDurum("caliyor"); try { if ("mediaSession" in navigator) navigator.mediaSession.playbackState = "playing" } catch {} })
       .catch(() => setDurum("kapali"))
-  }, [durum, aktifEl, bostaEl, aktifAyet, _ayetOynat])
+  }, [durum, aktifEl, bostaEl, aktifAyet, _ayetOynat, sesCtxUyandir])
 
   const durdur = useCallback(() => {
     for (const a of elsRef.current) { try { a.pause(); a.src = ""; a.dataset.url = "" } catch {} }
@@ -368,6 +487,7 @@ export default function useAudioPlayer() {
     duraklat, devamEt, durdur,
     oncekiAyet, sonrakiAyet,
     hiz, hizAyarla,
+    ses, sesAyarla,
     setKariId, mp3Url, besmeleUrl, KARILAR,
   }
 }

@@ -6,7 +6,28 @@ import SureBasligi from "./SureBasligi"
 import Besmele from "./Besmele"
 import SureSonu from "./SureSonu"
 import { useMediaQuery } from "../data/hooks/useMediaQuery"
-import { useRef, useEffect, memo } from "react"
+import { useRef, useEffect, useState, memo } from "react"
+import kelimeGrup from "../data/kelime-grup.json"
+
+// ── BİRLEŞİK KELİME GRUPLARI ───────────────────────────────────────────────
+// quran.com'un TEK kelime saydığı yeri biz İKİ kelimeye bölmüşüz (176 grup,
+// ör. Bakara 40'ta "يَا" + "بَنٖي"). İkisi de aynı anlamı taşır ve kelime kelime
+// okuyucu onları tek birim sayar. Sayfada ayrı ayrı durdukları için kullanıcı
+// "aynı anlam iki kez çıktı" sanıyordu. Çözüm: grubu GÖRSEL OLARAK tek birim
+// göstermek — aralarındaki boşluk kapanır, altlarına ortak ince bir bağ çizilir,
+// birine dokununca ikisi birden vurgulanır.
+// kelime-grup.json her ÜYE id'si için aynı `uyeler` listesini tutar.
+function grupBilgisi(kelimeId) {
+  const g = kelimeId ? kelimeGrup[kelimeId] : null
+  const uyeler = g?.uyeler
+  if (!uyeler || uyeler.length < 2) return null
+  const i = uyeler.indexOf(kelimeId)
+  if (i < 0) return null
+  return {
+    anahtar: uyeler.join("|"),
+    konum: i === 0 ? "bas" : i === uyeler.length - 1 ? "son" : "orta",
+  }
+}
 
 function arapcaRakamla(sayi) {
   const rakamlar = '٠١٢٣٤٥٦٧٨٩'
@@ -77,6 +98,8 @@ function MushafSayfa({
 
   const sayfaRef = useRef(null)
   const sonYukRef = useRef(0)
+  // Hangi birleşik grubun üzerindeyiz — üyelerden birine değince ikisi de vurgulanır.
+  const [hoverGrup, setHoverGrup] = useState(null)
 
   // Yükseklik ölçümünü yalnız GERÇEKTEN değişince bildir (her render'da değil).
   useEffect(() => {
@@ -279,6 +302,7 @@ function MushafSayfa({
             >
               {grup.elemanlar.map((el, index) => {
                 if (el.tip === "kelime") {
+                  const grup_ = grupBilgisi(el.kelime.id)
                   const aktif =
                     aktifAyet?.sureNo === el.sure.id &&
                     aktifAyet?.ayetNo === el.ayet.no &&
@@ -301,6 +325,10 @@ function MushafSayfa({
                         lineHeight={lineHeight}
                         harfAraligi={harfAraligi}
                         kayitKonumModu={kayitKonumModu}
+                        grupKonum={grup_?.konum || null}
+                        grupVurgu={!!grup_ && hoverGrup === grup_.anahtar}
+                        onGrupHover={(icinde) =>
+                          setHoverGrup(icinde ? (grup_?.anahtar || null) : null)}
                         onTikla={(kelime, e) => {
                           if (kayitKonumModu) return
                           onKelimeTikla?.(kelime, el.sure, el.ayet, e)

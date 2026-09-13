@@ -32,6 +32,42 @@ Bu yüzden konumdan konuma eşleme yapılamaz; kayar. Çözüm: HİZALAMA tablos
   8) İNGİLİZCE python3 wbw.py --ingilizce
      quran.com'un Türkçe veremediği kelimeleri listeler, dosyaya yazar.
 
+ 18) SARF       python3 wbw.py --sarf
+     Fiillerin şahıs/cins/sayı/kip bilgisini kelime id'lerimize bağlar,
+     kelime-sarf.json üretir. Tanımadığı etiketleri ayrıca listeler.
+
+ 17) SARF KEŞİF python3 wbw.py --sarf-kesif [dosya]
+     Morfoloji dosyasını tanır, şahıs/cins/sayı etiketi var mı bakar ve
+     BİZİM kelime id'lerimizle hizalamanın tutup tutmadığını ölçer. Yazmaz.
+
+ 16) UYGULA    python3 wbw.py --ing-uygula
+     İngilizce kalanları sırayla Türkçeleştirir (oybirliği → meal → iskelet →
+     çeviri), her kayda KAYNAĞINI yazar, wbw_tr_tam.json üretir. Kalanları
+     ing_kalan_ifadeler.json'a iş listesi olarak çıkarır. Orijinale dokunmaz.
+
+ 15) QUL       python3 wbw.py --qul [turkish-wbw-translation.json]
+     Tarteel QUL Türkçe kelime-kelime dosyası boşlukların kaçını kapatıyor?
+     Ayrıca bizimkiyle aynı kaynak mı, bağımsız çeviri mi, onu da ölçer.
+
+ 14) MEAL KOPYALA python3 wbw.py --meal-kopyala 52:20=52:19 [--yaz]
+     Birleşik verilmiş âyetin mealini komşusundan kopyalar + not düşer.
+
+ 13) ÖRNEKLEM  python3 wbw.py --meal-orneklem 120
+     Kabul edilen kararlardan rastgele örnek basar (gözle tasnif için).
+
+ 12) MEAL BAK  python3 wbw.py --meal-bak 52:17-22
+     Âyetlerin mealini tam olarak döker (eksik mi, birleşmiş mi görmek için).
+
+ 11) MEAL DENETİM python3 wbw.py --meal-denetle
+     Meal dosyasında hangi âyet eksik/fazla/boş? Sûre bazında sayı karşılaştırır.
+
+ 10) MEAL SEÇİM python3 wbw.py --meal-secim
+     Ayrışan adaylar arasından, âyetin MEALİNDE geçeni seçer. Ölçer, yazmaz.
+
+  9) ANALİZ    python3 wbw.py --ing-analiz
+     İngilizce kalanların ne kadarı KENDİ Türkçe kayıtlarımızdan doldurulabilir?
+     Ölçer, güven derecesine ayırır, iş listesi çıkarır. Dosya DEĞİŞTİRMEZ.
+
   7) KARŞILAŞTIR  python3 wbw.py --karsilastir A.json B.json
      İki mushaf kopyası aynı mı? (src/data ile public/ ayrışmış olabilir.)
 
@@ -118,6 +154,33 @@ def iskelet(t):
     return "".join(c for c in t if "ء" <= c <= "ي")
 
 
+# ── ANLAM METNİ İNGİLİZCE Mİ? (lugat_kalite.py ile aynı ölçüt) ────────────
+# Sözlüğümüzde (arapca-lugat.json) İngilizce kalıntılar var. Onları "Türkçe
+# karşılık" diye önermek, İngilizce'yi İngilizce ile doldurmak olur.
+EN_KELIME = {
+    "the", "of", "and", "to", "in", "is", "was", "are", "were", "for", "with",
+    "that", "this", "these", "those", "it", "its", "his", "her", "their", "them",
+    "they", "he", "she", "you", "we", "us", "our", "from", "by", "as", "at", "on",
+    "or", "but", "not", "be", "been", "being", "have", "has", "had", "will",
+    "would", "shall", "should", "can", "could", "may", "might", "who", "whom",
+    "which", "what", "when", "where", "why", "how", "all", "any", "some", "one",
+    "more", "most", "other", "than", "then", "there", "such", "nor", "so", "if",
+    "upon", "unto", "whoever", "indeed", "verily", "did", "does", "do", "made",
+    "make", "said", "say", "says", "your", "my", "mine", "him", "himself",
+    "a", "an", "about", "into", "over", "under", "before", "after", "against",
+}
+KELIME_AYIR = re.compile(r"[^A-Za-zÇĞİIÖŞÜçğıöşüÂÎÛâîû]+")
+TR_HARF = re.compile(r"[çğıİöşüÇĞÖŞÜâîûÂÎÛ]")
+
+
+def ingilizce_mi(metin):
+    """Türkçe'ye özgü harf varsa asla İngilizce sayma; yoksa işlev kelimesi ara."""
+    if TR_HARF.search(metin):
+        return False
+    parcalar = [p.lower() for p in KELIME_AYIR.split(metin) if p]
+    return any(p in EN_KELIME for p in parcalar)
+
+
 def yol_coz(verilen, sessiz=False):
     """Yol yoksa makul yerlerde arar.
 
@@ -132,7 +195,8 @@ def yol_coz(verilen, sessiz=False):
     for kok in (os.path.dirname(os.path.abspath(__file__)), os.path.abspath(os.getcwd())):
         for _ in range(5):
             for a in (os.path.join(kok, verilen), os.path.join(kok, adi),
-                      os.path.join(kok, "data", adi), os.path.join(kok, "src", "data", adi)):
+                      os.path.join(kok, "data", adi), os.path.join(kok, "src", "data", adi),
+                      os.path.join(kok, "public", adi)):
                 if os.path.isfile(a):
                     if not sessiz:
                         print(f"  ⚠ '{verilen}' yok — şuna düşüldü: {os.path.realpath(a)}")
@@ -162,7 +226,8 @@ def veri_ara(ad):
     for kok in (os.path.dirname(os.path.abspath(__file__)), os.path.abspath(os.getcwd())):
         for _ in range(5):
             for a in (os.path.join(kok, ad), os.path.join(kok, taban),
-                      os.path.join(kok, "data", taban), os.path.join(kok, "src", "data", taban)):
+                      os.path.join(kok, "data", taban), os.path.join(kok, "src", "data", taban),
+                      os.path.join(kok, "public", taban)):
                 if os.path.isfile(a):
                     return os.path.realpath(a)
             kok = os.path.dirname(kok)
@@ -419,9 +484,10 @@ def birlestir(wbw_yolu="wbw_tr.json", harita_yolu="kelime_hizalama.json",
     wbw = json.load(open(wbw_yolu, encoding="utf-8"))
     harita = json.load(open(harita_yolu, encoding="utf-8"))
 
-    anlamlar, gruplar = {}, {}
+    anlamlar, gruplar, kaynaklar = {}, {}, {}
     bos = 0
     diller = Counter()
+    kaynak_sayac = Counter()
     # Bir quran.com kelimesine BİRDEN ÇOK kelimemiz düşüyorsa (يا + بني gibi),
     # o kelimelerin birleşik Arapça hâli ayrı dosyada tutulur ki açılan
     # baloncuk "hangi iki kelimenin anlamı" olduğunu gösterebilsin.
@@ -438,6 +504,11 @@ def birlestir(wbw_yolu="wbw_tr.json", harita_yolu="kelime_hizalama.json",
             continue
         anlamlar[bizim] = k["tr"]
         diller[k.get("dil") or "?"] += 1
+        kyn = k.get("kaynak")
+        if kyn:
+            kaynak_sayac[kyn] += 1
+            if kyn != "quran":          # quran.com aslı varsayılan; yalnız ötekiler yazılır
+                kaynaklar[bizim] = kyn
         kardes = ters.get(hedef, [])
         if len(kardes) > 1:
             # UI'ın bu kelimeleri TEK BİRİM gibi davranması için üye listesi de
@@ -448,6 +519,9 @@ def birlestir(wbw_yolu="wbw_tr.json", harita_yolu="kelime_hizalama.json",
 
     json.dump(anlamlar, open(cikti, "w", encoding="utf-8"), ensure_ascii=False)
     json.dump(gruplar, open(grup_cikti, "w", encoding="utf-8"), ensure_ascii=False)
+    kaynak_cikti = cikti_yolu("kelime-kaynak.json")
+    if kaynaklar:
+        json.dump(kaynaklar, open(kaynak_cikti, "w", encoding="utf-8"), ensure_ascii=False)
 
     print("=" * 74)
     print("BİRLEŞTİRME SONUCU")
@@ -460,7 +534,12 @@ def birlestir(wbw_yolu="wbw_tr.json", harita_yolu="kelime_hizalama.json",
     print("\n  çeviri dili dağılımı:")
     for d, n in diller.most_common():
         print(f"    {d:<12} {n}")
-    for f in (cikti, grup_cikti):
+    if kaynak_sayac:
+        print("\n  kaynak dağılımı:")
+        for d, n in kaynak_sayac.most_common():
+            print(f"    {d:<20} {n}")
+    dosyalar = [cikti, grup_cikti] + ([kaynak_cikti] if kaynaklar else [])
+    for f in dosyalar:
         print(f"\n  yazıldı: {f}  ({os.path.getsize(f)//1024} KB)")
     print("\n  KuranOkuma bu iki dosyayı src/data/ altından import eder.")
 
@@ -829,6 +908,1555 @@ def ingilizce_kalanlar(wbw_yolu="wbw_tr.json", harita_yolu="kelime_hizalama.json
     print(f"\n  yazıldı: {cikti}  ('turkce' alanları BOŞ, doldurulmaya hazır)")
 
 
+# ══════════════════════════════════════════════════════════════════════════
+def ingilizce_analiz(wbw_yolu="wbw_tr.json", lugat_yolu="arapca-lugat.json",
+                     cikti="ingilizce_is_listesi.json"):
+    """İngilizce kalan kelimelerin ne kadarı KENDİ verimizden GÜVENLE doldurulur?
+
+    ÖLÇÜLDÜ, İKİ KEZ DARALTILDI:
+     1) İskelet eşleşmesi yetmedi: ٱلْأَرْضِ için 34 farklı Türkçe karşılık çıktı,
+        en sıkı %20. Bunlar ayrı manalar değil, aynı mananın ÇEKİMLİ hâlleri
+        ("yeri / yere / yerde…") — quran.com Türkçesi bağlama göre çekimli.
+     2) Birebir Arapça eşleşme de tek başına yetmedi: aynı Arapça metnin Türkçe
+        karşılığı da yerine göre değişiyor (TAM? kutusu, 3179 kayıt).
+    KALAN TEK GÜVENLİ ÖLÇÜT — OYBİRLİĞİ: o Arapça metnin (ya da iskeletin) geçtiği
+    BÜTÜN Türkçe kayıtlar TEK ve AYNI karşılığı veriyorsa, taşımak güvenlidir.
+    Ayrışan her şey çeviriye gider; "en sık olanı seç" 4000+ yerde yanlış çekim
+    üretirdi.
+
+    LÜGAT KUTUSU KULLANILMIYOR: sözlüğümüzdeki İngilizce kalıntıları ayıklamak
+    için kullandığımız süzgeç (işlev kelimesi + Türkçe harf vetosu) TEK KELİMELİK
+    İngilizce'yi yakalayamıyor — "fruit → fruit", "mix → mix", "reach → reach"
+    diye öneriler geldi. Bu kutu da çeviriye yönlendirilir.
+
+    HİÇBİR DOSYAYI DEĞİŞTİRMEZ; ölçer ve iki iş listesi yazar.
+    """
+    wbw = json.load(open(girdi(wbw_yolu, "Önce:  python3 src/py/wbw.py --cek"), encoding="utf-8"))
+    cikti = cikti_yolu(cikti)
+
+    tr_tam, tr_iskelet = {}, {}
+    ing_kayit = []
+    for yer, v in wbw.items():
+        if v.get("tip") == "end":
+            continue
+        metin = (v.get("tr") or "").strip()
+        dil = (v.get("dil") or "").lower()
+        ar = (v.get("ar") or "").strip()
+        sk = iskelet(ar)
+        if not sk:
+            continue
+        if dil == "turkish" and metin:
+            tr_tam.setdefault(ar, Counter())[metin] += 1
+            tr_iskelet.setdefault(sk, Counter())[metin] += 1
+        elif dil != "turkish":
+            ing_kayit.append((yer, ar, metin, sk))
+
+    # ── Sınıflandırma ────────────────────────────────────────────────
+    sayac = Counter()
+    is_listesi = []
+    ornek = {k: [] for k in ("tam-oybirligi", "iskelet-oybirligi", "ayrisiyor", "yok")}
+    cevrilecek = {}                     # ingilizce → {adet, arapca, yerler}
+    supheli_ve = []                     # "ve …" ile başlayan öneriler (komşu kelime sızmış)
+
+    for yer, ar, ing, sk in ing_kayit:
+        tam = tr_tam.get(ar)
+        isk = tr_iskelet.get(sk)
+        kayit = {"yer": yer, "arapca": ar, "ingilizce": ing, "iskelet": sk,
+                 "oneri": "", "kaynak": "", "guven": "", "secenekler": []}
+        if tam and len(tam) == 1:
+            one, adet = tam.most_common(1)[0]
+            kayit.update(oneri=one, kaynak="mushaf-tam", guven="tam-oybirligi")
+            sayac["tam-oybirligi"] += 1
+            if one.startswith("ve ") and "و" not in ar:
+                supheli_ve.append((yer, ar, ing, one))
+            if len(ornek["tam-oybirligi"]) < 10:
+                ornek["tam-oybirligi"].append((yer, ar, ing, one, f"{adet} yerde"))
+        elif isk and len(isk) == 1:
+            one, adet = isk.most_common(1)[0]
+            kayit.update(oneri=one, kaynak="mushaf-iskelet", guven="iskelet-oybirligi",
+                         secenekler=[f"{one} ×{adet}"])
+            sayac["iskelet-oybirligi"] += 1
+            if one.startswith("ve ") and "و" not in ar:
+                supheli_ve.append((yer, ar, ing, one))
+            if len(ornek["iskelet-oybirligi"]) < 10:
+                ornek["iskelet-oybirligi"].append((yer, ar, ing, one, f"{adet} yerde"))
+        else:
+            if tam or isk:
+                kaynak = tam or isk
+                kayit.update(guven="ayrisiyor", kaynak="cok-aday",
+                             secenekler=[f"{a} ×{n}" for a, n in kaynak.most_common(5)])
+                sayac["ayrisiyor"] += 1
+                if len(ornek["ayrisiyor"]) < 10:
+                    ornek["ayrisiyor"].append((yer, ar, ing, "—", f"{len(kaynak)} farklı aday"))
+            else:
+                kayit["guven"] = "yok"
+                sayac["yok"] += 1
+                if len(ornek["yok"]) < 10:
+                    ornek["yok"].append((yer, ar, ing, "—", ""))
+            d = cevrilecek.setdefault(ing, {"ingilizce": ing, "arapca": ar, "adet": 0,
+                                            "ornek_yerler": [], "turkce": ""})
+            d["adet"] += 1
+            if len(d["ornek_yerler"]) < 3:
+                d["ornek_yerler"].append(yer)
+        is_listesi.append(kayit)
+
+    toplam = len(ing_kayit)
+    yuzde = lambda n: round(100 * n / toplam, 1) if toplam else 0
+    guvenli = sayac["tam-oybirligi"] + sayac["iskelet-oybirligi"]
+    print("=" * 74)
+    print("İNGİLİZCE KALANLAR — OYBİRLİĞİ ÖLÇÜTÜ")
+    print("=" * 74)
+    print(f"  İngilizce kelime kaydı      : {toplam}")
+    print(f"  farklı İngilizce ifade      : {len({k[2] for k in ing_kayit})}")
+    print()
+    print(f"  TAM OYBİRLİĞİ     (birebir Arapça, tek karşılık) {sayac['tam-oybirligi']:>6}  (%{yuzde(sayac['tam-oybirligi'])})")
+    print(f"  İSKELET OYBİRLİĞİ (iskelet aynı, tek karşılık)   {sayac['iskelet-oybirligi']:>6}  (%{yuzde(sayac['iskelet-oybirligi'])})")
+    print(f"  ─ güvenle doldurulabilir                         {guvenli:>6}  (%{yuzde(guvenli)})")
+    print()
+    print(f"  AYRIŞIYOR (aday var ama uyuşmuyor → çeviri)      {sayac['ayrisiyor']:>6}  (%{yuzde(sayac['ayrisiyor'])})")
+    print(f"  YOK       (hiç aday yok → çeviri)                {sayac['yok']:>6}  (%{yuzde(sayac['yok'])})")
+    print(f"  ─ çeviri gerekiyor                               {sayac['ayrisiyor']+sayac['yok']:>6}  (%{yuzde(sayac['ayrisiyor']+sayac['yok'])})")
+    print()
+    for ad, baslik in (("tam-oybirligi", "TAM OYBİRLİĞİ"), ("iskelet-oybirligi", "İSKELET OYBİRLİĞİ"),
+                       ("ayrisiyor", "AYRIŞIYOR"), ("yok", "YOK")):
+        if not ornek[ad]:
+            continue
+        print(f"  ── {baslik} örnekleri " + "─" * max(0, 50 - len(baslik)))
+        for yer, ar, ing, one, not_ in ornek[ad]:
+            print(f"    {yer:<11} {ar:<18} {ing:<26} → {one}  {not_}")
+        print()
+
+    # Komşu kelime sızması denetimi — öneri "ve " ile başlıyor ama Arapça'da و yok
+    print(f"  ── DENETİM: 've …' ile başlayan öneri (Arapça'da و yok): {len(supheli_ve)}")
+    for yer, ar, ing, one in supheli_ve[:10]:
+        print(f"    {yer:<11} {ar:<18} {ing:<26} → {one}")
+    if len(supheli_ve) > 10:
+        print(f"    … ve {len(supheli_ve)-10} tane daha")
+    print()
+
+    json.dump(is_listesi, open(cikti, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+    print(f"  yazıldı: {cikti}")
+
+    liste = sorted(cevrilecek.values(), key=lambda d: -d["adet"])
+    sozluk_yolu = cikti_yolu("cevrilecek_ifadeler.json")
+    json.dump(liste, open(sozluk_yolu, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+    print(f"  yazıldı: {sozluk_yolu}")
+    print(f"           {len(liste)} farklı ifade  →  {sum(d['adet'] for d in liste)} kelime kaydını kapatır")
+    print("  (hiçbir mevcut dosya değiştirilmedi — bu yalnız ölçüm)")
+
+
+# ══════════════════════════════════════════════════════════════════════════
+# ══════════════════════════════════════════════════════════════════════════
+def meal_yukle(meal_yolu="ayet-meal.json", mushaf=None):
+    """Âyet meallerini {"2:11": "metin"} biçiminde döndürür.
+
+    Meal AYRI bir dosyada (src/data/ayet-meal.json) ve yapısını bilmiyoruz;
+    o yüzden birkaç makul biçim denenir. Hiçbiri tutmazsa yapı ekrana dökülür —
+    körlemesine varsayım yapıp yanlış alanı meal sanmaktansa görüp düzeltmek iyi.
+    Dosya yoksa, mushafın İÇİNDE gömülü meal alanı aranır (eski davranış).
+    """
+    TRH = re.compile(r"[çğıöşüÇĞİÖŞÜ]")
+    AY_ANAH = re.compile(r"^(\d{1,3})\s*[:._-]\s*(\d{1,3})$")
+    METIN_AD = ("meal", "metin", "turkce", "türkçe", "ceviri", "çeviri", "tr", "text", "aciklama")
+
+    def metin_bul(d):
+        """Sözlükten meal metnini çıkar: ada bakarak, olmazsa en uzun Türkçe metin."""
+        if isinstance(d, str):
+            return d
+        if not isinstance(d, dict):
+            return None
+        for ad in METIN_AD:
+            for k, v in d.items():
+                if isinstance(v, str) and k.lower() == ad:
+                    return v
+        aday = [v for v in d.values() if isinstance(v, str) and len(v) > 15 and TRH.search(v)]
+        return max(aday, key=len) if aday else None
+
+    def sayi(d, *adlar):
+        for a in adlar:
+            v = d.get(a)
+            if isinstance(v, int):
+                return v
+            if isinstance(v, str) and v.isdigit():
+                return int(v)
+        return None
+
+    yol = veri_ara(meal_yolu)
+    if yol:
+        veri = json.load(open(yol, encoding="utf-8"))
+        mealler = {}
+        # A) {"2:11": "metin"} ya da {"2:11": {...}}
+        if isinstance(veri, dict) and any(AY_ANAH.match(str(k)) for k in list(veri)[:50]):
+            for k, v in veri.items():
+                m = AY_ANAH.match(str(k))
+                t = metin_bul(v)
+                if m and t is not None:
+                    mealler[f"{int(m.group(1))}:{int(m.group(2))}"] = t
+        # B) {"2": {"11": "metin"}} ya da {"2": ["1. ayet", "2. ayet", …]}
+        elif isinstance(veri, dict) and any(str(k).isdigit() for k in list(veri)[:50]):
+            for sk, sv in veri.items():
+                if not str(sk).isdigit():
+                    continue
+                if isinstance(sv, dict):
+                    for ak, av in sv.items():
+                        t = metin_bul(av)
+                        if str(ak).isdigit() and t is not None:
+                            mealler[f"{int(sk)}:{int(ak)}"] = t
+                elif isinstance(sv, list):
+                    for i, av in enumerate(sv, 1):
+                        t = metin_bul(av)
+                        if t is not None:
+                            mealler[f"{int(sk)}:{i}"] = t
+        # C) [{"sure":2,"ayet":11,"meal":"…"}, …]  (ya da dict içinde böyle bir liste)
+        if not mealler:
+            listeler = []
+            if isinstance(veri, list):
+                listeler.append(veri)
+            elif isinstance(veri, dict):
+                listeler.extend(v for v in veri.values() if isinstance(v, list))
+            for lst in listeler:
+                for o in lst:
+                    if not isinstance(o, dict):
+                        continue
+                    sn = sayi(o, "sureNo", "sure", "surah", "s")
+                    an = sayi(o, "ayetNo", "ayet", "verse", "a", "no")
+                    t = metin_bul(o)
+                    if sn and an and t is not None:
+                        mealler[f"{sn}:{an}"] = t
+        if mealler:
+            print(f"  meal dosyası: {yol}  ({len(mealler)} âyet)")
+            ilk = list(mealler.items())[:2]
+            for k, v in ilk:
+                print(f"    örnek {k}: {v[:70]}…")
+            return mealler
+        # Çözemedik → yapıyı dök
+        print(f"  meal dosyası bulundu ama yapısı çözülemedi: {yol}")
+        print(f"    en üst tür: {type(veri).__name__}")
+        if isinstance(veri, dict):
+            anahtarlar = list(veri)[:5]
+            print(f"    ilk anahtarlar: {anahtarlar}")
+            for k in anahtarlar[:2]:
+                v = veri[k]
+                print(f"    veri[{k!r}] türü {type(v).__name__}: {str(v)[:160]}")
+        elif isinstance(veri, list) and veri:
+            print(f"    uzunluk {len(veri)}, ilk öğe: {str(veri[0])[:200]}")
+        print("    → bu çıktıyı bana gönderin, okuyucuyu buna göre yazayım.")
+        return {}
+
+    # Dosya yok → mushafın içinde gömülü meal ara
+    if mushaf is None:
+        print(f"  '{meal_yolu}' bulunamadı ve mushaf verilmedi.")
+        return {}
+    alan_sayac, ayet_alanlar = Counter(), {}
+
+    def gez(d, sure=None, ayet=None):
+        if isinstance(d, dict):
+            s2 = d.get("sureNo", d.get("sure", sure))
+            a2 = d.get("ayetNo", d.get("ayet", ayet))
+            kelimeli = any(isinstance(v, list) and v and isinstance(v[0], dict)
+                           and "arabic" in v[0] for v in d.values())
+            if kelimeli:
+                for k, v in d.items():
+                    if isinstance(v, str) and len(v) > 25 and TRH.search(v):
+                        alan_sayac[k] += 1
+                        if s2 and a2:
+                            ayet_alanlar.setdefault(f"{s2}:{a2}", {})[k] = v
+            for v in d.values():
+                gez(v, s2, a2)
+        elif isinstance(d, list):
+            for v in d:
+                gez(v, sure, ayet)
+
+    gez(mushaf)
+    if not alan_sayac:
+        print("  mushaf içinde de meal metni yok.")
+        return {}
+    alan = alan_sayac.most_common(1)[0][0]
+    print(f"  meal, mushaf içinde '{alan}' alanından alındı ({alan_sayac[alan]} âyet)")
+    return {y: d.get(alan, "") for y, d in ayet_alanlar.items()}
+
+
+# ══════════════════════════════════════════════════════════════════════════
+def meal_denetle(mushaf_yolu="kuran-mushaf.json", meal_yolu="ayet-meal.json"):
+    """Meal dosyasında hangi âyetler EKSİK / FAZLA? Mushaf verisi ölçüt alınır.
+
+    Sayı tutmuyorsa (6235 ↔ 6236) tahmin yürütmek yerine hangi âyet olduğunu
+    görmek gerekir: gerçekten eksik mi, yoksa anahtarı bozuk da okunamadı mı.
+    """
+    ham = json.load(open(yol_coz(mushaf_yolu), encoding="utf-8"))
+    mealler = meal_yukle(meal_yolu, ham)
+    if not mealler:
+        return
+    # Mushaftaki âyetler: kelime id'leri "sure:ayet:kelime" biçiminde
+    mushaf_ayet = {}
+    for kid, _ar in bizim_kelimeler(ham):
+        p = str(kid).split(":")
+        if len(p) >= 2 and p[0].isdigit() and p[1].isdigit():
+            mushaf_ayet.setdefault(int(p[0]), set()).add(int(p[1]))
+    mushaf_kume = {f"{s}:{a}" for s, ayetler in mushaf_ayet.items() for a in ayetler}
+    meal_kume = set(mealler)
+    sirala = lambda k: sorted(k, key=lambda x: [int(t) for t in x.split(":")])
+
+    eksik = sirala(mushaf_kume - meal_kume)
+    fazla = sirala(meal_kume - mushaf_kume)
+    bos = sirala({k for k, v in mealler.items() if not str(v).strip()})
+
+    print("=" * 74)
+    print("MEAL DENETİMİ")
+    print("=" * 74)
+    print(f"  mushaftaki âyet : {len(mushaf_kume)}")
+    print(f"  mealdeki âyet   : {len(meal_kume)}")
+    print(f"  mealde EKSİK    : {len(eksik)}")
+    print(f"  mealde FAZLA    : {len(fazla)}  (mushafta karşılığı yok)")
+    print(f"  metni BOŞ       : {len(bos)}")
+    for ad, kume in (("EKSİK", eksik), ("FAZLA", fazla), ("BOŞ", bos)):
+        if not kume:
+            continue
+        print(f"\n  ── {ad} ({len(kume)}) " + "─" * 50)
+        for k in kume[:40]:
+            ek = ""
+            if ad == "FAZLA":
+                ek = f"   {str(mealler.get(k,''))[:50]}"
+            print(f"    {k}{ek}")
+        if len(kume) > 40:
+            print(f"    … ve {len(kume)-40} tane daha")
+    # Sûre bazında sayı karşılaştırması — toplu kayma varsa buradan görünür
+    fark = []
+    for sn in sorted(mushaf_ayet):
+        m = len(mushaf_ayet[sn])
+        e = sum(1 for k in meal_kume if k.startswith(f"{sn}:"))
+        if m != e:
+            fark.append((sn, m, e))
+    if fark:
+        print(f"\n  ── sûre bazında sayı farkı ({len(fark)} sûre) " + "─" * 30)
+        for sn, m, e in fark[:30]:
+            print(f"    sûre {sn:>3}: mushaf {m:>3}  meal {e:>3}  (fark {e-m:+d})")
+    else:
+        print("\n  ✓ sûre bazında bütün sayılar tutuyor.")
+    print("\n  (hiçbir dosya değiştirilmedi)")
+
+
+
+# ══════════════════════════════════════════════════════════════════════════
+# MEALDEN KARŞILIK ÇEKME MOTORU — hem ölçüm hem örneklem hem uygulama kullanır.
+# Tek yerde durması şart: eşik/edat kuralları iki kopyaya ayrılırsa, ölçtüğümüz
+# şey ile uyguladığımız şey sessizce ayrışır.
+# ══════════════════════════════════════════════════════════════════════════
+_AYIR = re.compile(r"[^a-zçğıöşüâîû]+")
+
+def _kucuk(t):
+    return t.replace("İ", "i").replace("I", "ı").lower()
+
+def _sade(t):
+    return " ".join(p for p in _AYIR.split(_kucuk(t)) if p)
+
+def _kelimeler(t):
+    return [p for p in _AYIR.split(_kucuk(t)) if len(p) > 1]
+
+def _benzer(a, b):
+    if a == b:
+        return 1.0
+    u, v = len(a), len(b)
+    if u and v and min(u, v) / max(u, v) < 0.55:
+        return 0.0
+    sm = SequenceMatcher(None, a, b)
+    return sm.ratio() if sm.quick_ratio() >= 0.55 else 0.0
+
+def _esik(n):
+    """Uzunluğa göre benzerlik eşiği: kısa kelimede neredeyse birebir, uzunda gevşek."""
+    return 1.0 if n <= 3 else 0.85 if n <= 5 else 0.78
+
+# Tek başına anlam taşımayan bağlaç/edatlar SONUÇ olarak seçilmesin
+_BOS = {"ve", "ile", "de", "da", "ki", "bir", "o", "bu", "şu", "için", "gibi",
+        "ise", "ama", "fakat", "ya", "hem", "mi", "mı", "mu", "mü", "daha", "en"}
+
+# ── EDAT / KISA GÖVDE SÜZGECİ ─────────────────────────────────────────────
+# ÖLÇÜLDÜ: yöntemin hataları buraya toplanıyor (كُنَّا "idik" → "biz",
+# مَا "şey den" → "ne"). Sebebi: Türkçe bu kelimeleri EKLE karşılıyor, mealde
+# ayrı bir karşılıkları yok; çapa zayıf kalınca komşu kelimeyi kapıyorlar.
+# Ölçümde bu grubun hata oranı %30 çıktı, içerik kelimelerinde ise çok daha az.
+_EDAT_ISKELET = {
+    # temel edat/bağlaç
+    "ما", "لا", "ان", "الا", "من", "في", "علي", "عن", "الي", "مع", "قد", "لم",
+    "لن", "بل", "ثم", "او", "ام", "اي", "كل", "غير", "بين", "عند", "لو", "اذا",
+    "اذ", "حتي", "لما", "كما", "بما", "مما", "عما", "لدن", "لدنا", "بعض", "سوي",
+    # كون fiilinin çekimleri — Türkçe bunları EKLE karşılıyor, mealde ayrı yok
+    "كان", "كانت", "كانوا", "كنا", "كنت", "كنتم", "كنتن", "كونوا", "يكون",
+    "تكون", "يكونوا", "تكونوا", "نكون", "ليس", "ليست", "لست", "لستم",
+    # zamirler
+    "هو", "هي", "هم", "هن", "انت", "انتم", "انتن", "انا", "نحن", "هما",
+    "ذلك", "هذا", "هذه", "هولاء", "التي", "الذي", "الذين", "اللاتي", "ها", "يا",
+    # edat + zamir birleşmeleri (ölçümde hata bunlarda yoğunlaştı)
+    "به", "بها", "بهم", "بكم", "بك", "بنا", "بي",
+    "له", "لها", "لهم", "لكم", "لك", "لنا", "لي", "لهن",
+    "فيه", "فيها", "فيهم", "فيكم", "فينا",
+    "منه", "منها", "منهم", "منكم", "منا", "مني",
+    "عليه", "عليها", "عليهم", "عليكم", "علينا", "عليك",
+    "اليه", "اليها", "اليهم", "اليكم", "الينا", "اليك",
+    "عنه", "عنها", "عنهم", "عنكم", "عنا",
+    "معه", "معها", "معهم", "معكم", "معنا",
+    "دونه", "دونها", "دونهم", "دونكم",
+}
+
+def _edat_mi(sk):
+    # DİKKAT: "3 harften kısa ise edattır" YANLIŞ olurdu — نوح (Nuh), يوم (gün),
+    # نار (ateş) hep 3 harf ve içerik kelimesi. Ölçüldü, 2 harfe indirildi.
+    if len(sk) <= 2 or sk in _EDAT_ISKELET:
+        return True
+    # 150 kararlık gözle tasnifte kalan İKİ hatanın ikisi de buradan sızmıştı:
+    #   وَلَا  (ve+lâ)   "helal değildir" → "yoktur"
+    #   فَلَهُمْ (fe+lehum) "onlar"        → "vardır"
+    # Sebep: لا ve لهم listede, ama başlarındaki bağlaç (و/ف) yüzünden iskelet
+    # listeye uymuyordu. Bağlaç soyulup bir kez daha bakılır.
+    if len(sk) > 2 and sk[0] in "وف" and sk[1:] in _EDAT_ISKELET:
+        return True
+    if len(sk) > 3 and sk[0] in "وف" and sk[1] in "وف" and sk[2:] in _EDAT_ISKELET:
+        return True
+    return False
+
+_JETON = re.compile(r"[A-Za-zÇĞİIÖŞÜçğıöşüÂÎÛâîû'\u2019]+")
+
+def _meal_parcalari(meal):
+    """Mealin 1 ve 2 kelimelik pencereleri: [(bas, bit, sade, HAM)]
+
+    HAM = mealin KENDİ yazımı (büyük harf, kesme işareti dâhil). Karşılaştırma
+    sadeleştirilmiş metinle yapılır ama SONUÇ ham metindir — yoksa "sûr'a" → "sûr a",
+    "Allah'ın" → "allah ın" diye bozulur."""
+    jeton = [(m.start(), m.end(), meal[m.start():m.end()]) for m in _JETON.finditer(meal)]
+    jeton = [(a, b, t) for a, b, t in jeton if len(t) > 1 or _sade(t)]
+    parca = []
+    for i, (a, b, t) in enumerate(jeton):
+        sade = _sade(t)
+        if sade:
+            parca.append((i, i + 1, sade, meal[a:b]))
+        if i + 1 < len(jeton):
+            a2, b2, t2 = jeton[i + 1]
+            sade2 = _sade(t + " " + t2)
+            if sade2:
+                parca.append((i, i + 2, sade2, meal[a:b2]))
+    return parca
+
+def _puanla(adaylar_sade, parcalar, kullanilmis):
+    """(puan, ikinci_puan, bas, bit, sade, HAM) | None.  adaylar_sade: sadeleştirilmiş.
+    Eşikler ayrı uygulanır ki puanlar bir kez hesaplanıp farklı eşikler ucuza denensin."""
+    en = None
+    for bas, bit, sade, ham in parcalar:
+        if any(i in kullanilmis for i in range(bas, bit)):
+            continue
+        if bit - bas == 1 and sade in _BOS:
+            continue
+        p = max(_benzer(a, sade) for a in adaylar_sade)
+        if en is None or p > en[0]:
+            en = (p, bas, bit, sade, ham)
+    if en is None:
+        return None
+    ikinci = 0.0
+    for bas, bit, sade, ham in parcalar:
+        if bit <= en[1] or bas >= en[2]:                 # örtüşmüyor
+            if bit - bas == 1 and sade in _BOS:
+                continue
+            ikinci = max(ikinci, max(_benzer(a, sade) for a in adaylar_sade))
+    return (en[0], ikinci, en[1], en[2], en[3], en[4])
+
+def _gecer(p, ek=0.0, fark=0.10):
+    return p is not None and p[0] >= min(1.0, _esik(len(p[4])) + ek) and (p[0] - p[1]) >= fark
+
+def _sec(adaylar_sade, parcalar, kullanilmis, ek=0.0, fark=0.10):
+    """Döner: (puan, bas, bit, HAM_metin) — mealin kendi yazımıyla."""
+    p = _puanla(adaylar_sade, parcalar, kullanilmis)
+    return (p[0], p[2], p[3], p[5]) if _gecer(p, ek, fark) else None
+
+def _govde_ortak(a, b):
+    """İki karşılık 'aynı şeyi mi söylüyor'? tam | kismi | yanlis.
+    DİKKAT: eşanlamı bilemez ('yetimler' ↔ 'öksüzler' yanlis çıkar). Bu yüzden
+    'yanlis' sayısı gerçek hatadan YÜKSEKTİR; --meal-orneklem gözle tasnif içindir."""
+    if _benzer(a, b) >= 0.80:
+        return "tam"
+    if a in b or b in a:
+        return "kismi"
+    for x in a.split():
+        for y in b.split():
+            n = 0
+            for u, v in zip(x, y):
+                if u != v:
+                    break
+                n += 1
+            if n >= 4 or (n >= 3 and n == min(len(x), len(y))):
+                return "kismi"
+    return "yanlis"
+
+def _havuzlar(wbw):
+    """wbw verisinden aday dizinleri ve kayıt listesi."""
+    tr_tam, tr_iskelet, tum = {}, {}, []
+    for yer, v in wbw.items():
+        if v.get("tip") == "end":
+            continue
+        metin = (v.get("tr") or "").strip()
+        dil = (v.get("dil") or "").lower()
+        ar = (v.get("ar") or "").strip()
+        sk = iskelet(ar)
+        if not sk:
+            continue
+        if dil == "turkish" and metin:
+            # ÖZGÜN metin saklanır (büyük harf/kesme işareti korunsun); karşılaştırma
+            # anında sadeleştirilir. Eskiden sadeleştirilmiş hâli saklanıyordu ve
+            # taşınan karşılık "sûr'a" yerine "sûr a" oluyordu.
+            tr_tam.setdefault(ar, Counter())[metin] += 1
+            tr_iskelet.setdefault(sk, Counter())[metin] += 1
+        tum.append((yer, ar, sk, metin, dil))
+    return tr_tam, tr_iskelet, tum
+
+def _havuz(tr_tam, tr_iskelet, ar, sk, kendi_sade=None, en_cok=8):
+    """Aday karşılıklar — ÖZGÜN yazımlarıyla. kendi_sade: kendi cevabını havuzdan çıkar."""
+    h = Counter(tr_tam.get(ar) or tr_iskelet.get(sk) or {})
+    if kendi_sade is not None:
+        for a in [a for a in h if _sade(a) == kendi_sade]:
+            h[a] -= 1
+            if h[a] <= 0:
+                del h[a]
+    return [a for a, _ in h.most_common(en_cok)]
+
+def _tek_karsilik(sayac):
+    """Havuzdaki BÜTÜN kayıtlar aynı karşılığı mı veriyor? Evetse özgün metni döner."""
+    if not sayac:
+        return None
+    ayri = {_sade(a) for a in sayac}
+    return sayac.most_common(1)[0][0] if len(ayri) == 1 else None
+
+def _meal_kararlari(wbw_yolu, mealler, ek=0.05, fark=0.20, adet_sinir=None):
+    """BİLİNEN Türkçe karşılıklı kelimelerde yöntemi çalıştır → kabul edilen kararlar.
+    Döner: [(yer, arapca, gercek_karsilik, mealden_cekilen)]  (kelimenin kendi
+    karşılığı aday havuzundan çıkarılır — kopya olmasın)."""
+    import random
+    wbw = json.load(open(girdi(wbw_yolu), encoding="utf-8"))
+    tr_tam, tr_iskelet, tum = _havuzlar(wbw)
+    tr_kayit = [t for t in tum if t[4] == "turkish" and t[3] and not _edat_mi(t[2])]
+    random.seed(11)
+    if adet_sinir:
+        tr_kayit = random.sample(tr_kayit, min(adet_sinir, len(tr_kayit)))
+    sonuc = []
+    for yer, ar, sk, gercek, _d in tr_kayit:
+        g = _sade(gercek)
+        ad = _havuz(tr_tam, tr_iskelet, ar, sk, kendi_sade=g)
+        if not ad:
+            continue
+        p = yer.split(":")
+        meal = mealler.get(f"{p[0]}:{p[1]}", "")
+        if not meal:
+            continue
+        r = _sec([_sade(a) for a in ad], _meal_parcalari(meal), set(), ek, fark)
+        if r:
+            sonuc.append((yer, ar, g, r[3]))
+    return sonuc
+
+
+# ══════════════════════════════════════════════════════════════════════════
+def ing_uygula(mushaf_yolu="kuran-mushaf.json", wbw_yolu="wbw_tr.json",
+               meal_yolu="ayet-meal.json", cikti="wbw_tr_tam.json",
+               ek=0.05, fark=0.20):
+    """İngilizce kalan kelimeleri, ölçülmüş SIRAYLA Türkçeleştirir.
+
+    KAYNAK SIRASI — güveni yüksek olan önce, her kayda KAYNAĞI yazılır:
+      1) oybirligi   : o Arapça metnin geçtiği BÜTÜN Türkçe kayıtlar tek ve aynı
+                       karşılığı veriyor. Metin birebir aynı olduğu için çekim de
+                       aynıdır → doğrudan taşınır. (Ölçüm: 935 kayıt.)
+      2) meal        : karşılık O ÂYETİN MEALİNDEN çekilir; çekim bu âyete ait olur.
+                       (Ölçüm: 2×150 karar gözle tasnif edildi, gerçek hata ~%1.3.
+                       Edatlar ve 2 harflik gövdeler bu yola HİÇ sokulmaz.)
+      3) oybirligi-iskelet : iskelet aynı ve bütün Türkçe kayıtlar hemfikir; ama
+                       hareke/i'râb farkı olabildiği için mealden SONRA gelir.
+      4) ceviri      : elle çevrilen ifade listesi (cevrilecek_ifadeler_DOLU.json
+                       ve/veya ing_kalan_DOLU.json).
+    Kalanlar İngilizce bırakılır ve ing_kalan_ifadeler.json'a iş listesi olarak yazılır.
+
+    ORİJİNALE DOKUNMAZ: yeni dosya yazar (wbw_tr_tam.json). Sonra:
+        python3 wbw.py --birlestir wbw_tr_tam.json
+    """
+    ham = json.load(open(yol_coz(mushaf_yolu), encoding="utf-8"))
+    mealler = meal_yukle(meal_yolu, ham)
+    wbw_tam = girdi(wbw_yolu)
+    wbw = json.load(open(wbw_tam, encoding="utf-8"))
+    cikti = cikti_yolu(cikti)
+
+    # ── Çeviri listeleri (varsa) ──
+    ceviri = {}
+    ceviri_dosya = []
+    for ad in ("cevrilecek_ifadeler_DOLU.json", "ing_kalan_DOLU.json"):
+        y = veri_ara(ad)
+        if not y:
+            continue
+        try:
+            for x in json.load(open(y, encoding="utf-8")):
+                t = str(x.get("turkce") or "").strip()
+                if t:
+                    ceviri[str(x.get("ingilizce") or "")] = t
+            ceviri_dosya.append(y)
+        except Exception as e:
+            print(f"  ⚠ çeviri dosyası okunamadı ({y}): {e}")
+    if ceviri_dosya:
+        for y in ceviri_dosya:
+            print(f"  çeviri dosyası: {y}")
+        print(f"  çeviri ifadesi : {len(ceviri)}")
+    else:
+        print("  ⚠ çeviri dosyası bulunamadı (cevrilecek_ifadeler_DOLU.json) — o adım atlanacak")
+
+    tr_tam, tr_iskelet, tum = _havuzlar(wbw)
+    ing = [t for t in tum if t[4] != "turkish"]
+
+    # ── Âyet âyet: önce oybirliği, sonra meal (bir meal kelimesi tek Arapça kelimeye) ──
+    sonuc = {}                      # yer -> (metin, kaynak)
+    ayet_grup = {}
+    for yer, ar, sk, metin, _d in ing:
+        p = yer.split(":")
+        ayet_grup.setdefault(f"{p[0]}:{p[1]}", []).append((yer, ar, sk, metin))
+
+    sayac = Counter()
+    for ay, kelimeler_ in ayet_grup.items():
+        kalanlar = []
+        for yer, ar, sk, ingm in kelimeler_:
+            tek = _tek_karsilik(tr_tam.get(ar))
+            if tek:                                       # 1) oybirliği (birebir)
+                sonuc[yer] = (tek, "oybirligi")
+                sayac["oybirligi"] += 1
+            else:
+                kalanlar.append((yer, ar, sk, ingm))
+        meal = mealler.get(ay, "")
+        if meal and kalanlar:
+            parcalar = _meal_parcalari(meal)
+            kullanilmis = set()
+            puanli = []
+            for yer, ar, sk, ingm in kalanlar:
+                if _edat_mi(sk):
+                    continue                              # edatlar mealden çekilmez
+                ad = [_sade(a) for a in _havuz(tr_tam, tr_iskelet, ar, sk)]
+                if not ad:
+                    continue
+                r = _sec(ad, parcalar, set(), ek, fark)
+                puanli.append((r[0] if r else 0, yer, ar, sk, ingm, ad))
+            puanli.sort(key=lambda x: -x[0])
+            for _p, yer, ar, sk, ingm, ad in puanli:
+                r = _sec(ad, parcalar, kullanilmis, ek, fark)
+                if not r:
+                    continue
+                kullanilmis.update(range(r[1], r[2]))
+                sonuc[yer] = (r[3], "meal")               # 2) mealden
+                sayac["meal"] += 1
+        for yer, ar, sk, ingm in kalanlar:
+            if yer in sonuc:
+                continue
+            tek_i = _tek_karsilik(tr_iskelet.get(sk))
+            if tek_i:                                     # 3) oybirliği (iskelet)
+                sonuc[yer] = (tek_i, "oybirligi-iskelet")
+                sayac["oybirligi-iskelet"] += 1
+            elif ingm in ceviri:                          # 4) çeviri
+                sonuc[yer] = (ceviri[ingm], "ceviri")
+                sayac["ceviri"] += 1
+            else:
+                sayac["kalan"] += 1
+
+    # ── Yeni dosyayı yaz ──
+    yeni = {}
+    for yer, v in wbw.items():
+        k = dict(v)
+        if yer in sonuc:
+            metin, kaynak = sonuc[yer]
+            k["ing"] = v.get("tr", "")                    # İngilizcesi izlenebilsin diye durur
+            k["tr"] = metin
+            k["dil"] = "turkish"
+            k["kaynak"] = kaynak
+        elif (v.get("dil") or "").lower() == "turkish":
+            k["kaynak"] = "quran"
+        yeni[yer] = k
+    json.dump(yeni, open(cikti, "w", encoding="utf-8"), ensure_ascii=False)
+
+    # ── Kalan iş listesi ──
+    kalan = {}
+    for yer, ar, sk, ingm, _d in ((t[0], t[1], t[2], t[3], t[4]) for t in ing):
+        if yer in sonuc:
+            continue
+        d = kalan.setdefault(ingm, {"ingilizce": ingm, "arapca": ar, "adet": 0,
+                                    "edat": _edat_mi(sk), "ornek_yerler": [], "turkce": ""})
+        d["adet"] += 1
+        if len(d["ornek_yerler"]) < 3:
+            d["ornek_yerler"].append(yer)
+    kalan_yolu = cikti_yolu("ing_kalan_ifadeler.json")
+    json.dump(sorted(kalan.values(), key=lambda d: -d["adet"]),
+              open(kalan_yolu, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+
+    toplam = len(ing)
+    yuz = lambda n: f"%{100*n/toplam:.1f}" if toplam else "%0"
+    print()
+    print("=" * 74)
+    print("İNGİLİZCE KALANLARIN TÜRKÇELEŞTİRİLMESİ")
+    print("=" * 74)
+    print(f"  İngilizce kelime kaydı     : {toplam}")
+    for ad, etiket in (("oybirligi", "1) oybirliği (birebir Arapça)"),
+                       ("meal", "2) mealden çekilen"),
+                       ("oybirligi-iskelet", "3) oybirliği (iskelet)"),
+                       ("ceviri", "4) çeviri listesinden")):
+        print(f"  {etiket:<32} {sayac[ad]:>6}  ({yuz(sayac[ad])})")
+    kapanan = toplam - sayac["kalan"]
+    print(f"  {'─ Türkçeleşen':<32} {kapanan:>6}  ({yuz(kapanan)})")
+    print(f"  {'HÂLÂ İNGİLİZCE':<32} {sayac['kalan']:>6}  ({yuz(sayac['kalan'])})")
+    print()
+    ornekler = {}
+    for yer, (metin, kaynak) in sonuc.items():
+        ornekler.setdefault(kaynak, []).append((yer, wbw[yer].get("ar", ""),
+                                                wbw[yer].get("tr", ""), metin))
+    for kaynak in ("oybirligi", "meal", "oybirligi-iskelet", "ceviri"):
+        liste = ornekler.get(kaynak, [])[:6]
+        if not liste:
+            continue
+        print(f"  ── {kaynak} örnekleri " + "─" * (52 - len(kaynak)))
+        for yer, ar, ingm, metin in liste:
+            print(f"    {yer:<11} {ar:<18} {ingm:<26} → {metin}")
+        print()
+    print(f"  yazıldı: {cikti}")
+    if sayac["kalan"]:
+        edat_sayisi = sum(1 for d in kalan.values() if d["edat"])
+        print(f"  yazıldı: {kalan_yolu}")
+        print(f"           {len(kalan)} farklı ifade ({edat_sayisi} tanesi edat/kısa gövde),")
+        print(f"           {sayac['kalan']} kelime kaydı — çevrilip ing_kalan_DOLU.json olarak")
+        print("           src/data altına konursa bu kip onları da yerleştirir.")
+    else:
+        print("  ✓ İngilizce kalmadı.")
+    print("\n  SIRADAKİ ADIM:  python3 src/py/wbw.py --birlestir wbw_tr_tam.json")
+    print("  (kelime-anlam.json + kelime-grup.json + kelime-kaynak.json üretir)")
+
+
+# ══════════════════════════════════════════════════════════════════════════
+def sarf_kesif(sarf_yolu="quran-morphology.txt", mushaf_yolu="kuran-mushaf.json",
+               harita_yolu="kelime_hizalama.json"):
+    """Sarf (morfoloji) dosyasını TANI ve hizalamanın tutup tutmadığını ÖLÇ.
+
+    NEDEN AYRI BİR DOSYA GEREKİYOR: fiilin şahıs/cins/sayı bilgisini kelimenin
+    yazılışına bakarak çıkarmak GÜVENİLİR DEĞİL. İki sebep ölçülebilir:
+      1) Fiil mi isim mi, yüzeyden bilinmiyor: تَقْوَىٰ (takvâ) isim ama تَ ile
+         başlıyor; تَقْوِيم de öyle. Etiketsiz veriyle isimlere fiil etiketi basarız.
+      2) تَ ön eki İKİ ANLAMLI: تَقُولُ hem "o (kadın) der" hem "sen dersin".
+         Cümle dizimine bakmadan ayrılamaz.
+    Bu yüzden etiketli bir kaynak şart. Quranic Arabic Corpus her kelimeye
+    kelime türü + şahıs/cins/sayı (3MS, 2MP…) etiketi veriyor.
+
+    Bu kip HİÇBİR ŞEY ÜRETMEZ; yalnız şunları söyler:
+      • dosyanın biçimi ne (ayraç, sütunlar, örnek satırlar),
+      • konum anahtarı var mı, kaç kelimeyi kapsıyor,
+      • şahıs/cins/sayı etiketleri var mı, dağılımı ne,
+      • BİZİM kelime id'lerimizle hizalama TUTUYOR MU (Arapça iskelet karşılaştırması).
+    Son madde kritik: quran.com'un kelime numaralarının bu korpustan türediği
+    söyleniyor ama VARSAYMAYALIM, ölçelim.
+    """
+    yol = veri_ara(sarf_yolu)
+    if not yol:
+        print(f"HATA: '{sarf_yolu}' bulunamadı. Dosyayı src/data altına koyun.")
+        print("      (Quranic Arabic Corpus morfoloji dosyası ya da benzeri)")
+        return
+    print(f"  sarf dosyası: {yol}  ({os.path.getsize(yol)//1024} KB)")
+
+    satirlar = []
+    with open(yol, encoding="utf-8", errors="replace") as f:
+        for i, satir in enumerate(f):
+            satirlar.append(satir.rstrip("\n"))
+            if i > 200000:
+                break
+    print(f"  satır sayısı : {len(satirlar)}")
+    print("\n  ── İLK 12 SATIR (ham) " + "─" * 48)
+    for satir in satirlar[:12]:
+        print(f"    {satir[:150]}")
+
+    # ── Ayraç tespiti ──
+    ornek = [x for x in satirlar[:500] if x.strip() and not x.lstrip().startswith("#")]
+    ayraclar = {"\t": "TAB", ",": "virgül", "|": "boru", ";": "noktalı virgül"}
+    en_iyi, en_iyi_ad, en_iyi_n = None, None, 0
+    for a, ad in ayraclar.items():
+        n = sum(x.count(a) for x in ornek) / max(1, len(ornek))
+        if n > en_iyi_n:
+            en_iyi, en_iyi_ad, en_iyi_n = a, ad, n
+    print(f"\n  ayraç tahmini: {en_iyi_ad}  (satır başına ~{en_iyi_n:.1f} adet)")
+
+    # ── Konum anahtarı ──
+    KONUM = re.compile(r"\(?(\d{1,3})[:\s]+(\d{1,3})[:\s]+(\d{1,3})(?:[:\s]+(\d{1,2}))?\)?")
+    kayit = {}                      # "s:a:k" -> [ (segment, ham_satir) ]
+    for satir in satirlar:
+        if not satir.strip() or satir.lstrip().startswith("#"):
+            continue
+        ilk = satir.split(en_iyi)[0] if en_iyi else satir.split()[0]
+        m = KONUM.match(ilk.strip())
+        if not m:
+            continue
+        anah = f"{int(m.group(1))}:{int(m.group(2))}:{int(m.group(3))}"
+        kayit.setdefault(anah, []).append(satir)
+    print(f"  konum anahtarı olan kelime: {len(kayit)}")
+    if not kayit:
+        print("  → konum anahtarı çözülemedi; yukarıdaki ham satırları bana gönderin.")
+        return
+
+    # ── Şahıs/cins/sayı etiketleri ──
+    PGN = re.compile(r"\b([123])(M|F)(S|D|P)\b")
+    pgn_sayac, pos_sayac = Counter(), Counter()
+    POS = re.compile(r"POS:([A-Z]+)")
+    for satirlar_k in kayit.values():
+        for satir in satirlar_k:
+            for m in PGN.finditer(satir):
+                pgn_sayac["".join(m.groups())] += 1
+            for m in POS.finditer(satir):
+                pos_sayac[m.group(1)] += 1
+    print(f"\n  şahıs/cins/sayı etiketi (3MS gibi): {sum(pgn_sayac.values())}")
+    if pgn_sayac:
+        print("    " + ", ".join(f"{k}:{v}" for k, v in pgn_sayac.most_common(12)))
+    else:
+        print("    ⚠ bulunamadı — bu dosyada çekim bilgisi olmayabilir.")
+    if pos_sayac:
+        print(f"  kelime türü etiketi (POS:)         : {sum(pos_sayac.values())}")
+        print("    " + ", ".join(f"{k}:{v}" for k, v in pos_sayac.most_common(10)))
+
+    # ── HİZALAMA SINAMASI: bizim id → quran.com konumu → sarf konumu ──
+    ham = json.load(open(yol_coz(mushaf_yolu), encoding="utf-8"))
+    hy = veri_ara(harita_yolu)
+    if not hy:
+        print("\n  ⚠ kelime_hizalama.json yok; hizalama sınanamadı.")
+        return
+    harita = json.load(open(hy, encoding="utf-8"))
+    biz = {kid: ar for kid, ar in bizim_kelimeler(ham)}
+
+    def sarf_arapca(satirlar_k, ayrac):
+        """Kaydın FORM sütunlarını birleştir (bir kelime birkaç segmente bölünmüş olabilir).
+
+        ESKİ HATA: satırdaki BÜTÜN Arapça toplanıyordu. Bu dosyada ROOT ve LEM
+        alanları da Arapça yazılı (ROOT:حمد|LEM:حَمْد) → kelimeye kök ve sözlük
+        biçimi de yapışıyordu ve hizalama tutmuyormuş gibi görünüyordu:
+            ٱلْحَمْدُ  ->  ٱلْالحَمْدُحمدحَمْد
+        Doğrusu YALNIZ ikinci sütunu (FORM) almak."""
+        parca = []
+        for satir in satirlar_k:
+            alan = satir.split(ayrac) if ayrac else satir.split()
+            if len(alan) > 1:
+                parca.append(alan[1].strip())
+        return "".join(parca)
+
+    import random
+    random.seed(4)
+    ornekler = random.sample(list(harita.items()), min(1500, len(harita)))
+    tam = yakin = farkli = yok = 0
+    farkli_ornek = []
+    for bizim_id, onlarinki in ornekler:
+        hedef = onlarinki[0] if isinstance(onlarinki, list) else onlarinki
+        satirlar_k = kayit.get(hedef)
+        bizim_ar = biz.get(bizim_id)
+        if not satirlar_k or not bizim_ar:
+            yok += 1
+            continue
+        a, b = iskelet(bizim_ar), iskelet(sarf_arapca(satirlar_k, en_iyi))
+        if not b:
+            yok += 1
+            continue
+        if a == b:
+            tam += 1
+        elif benzerlik(a, b) >= 0.7:
+            yakin += 1
+        else:
+            farkli += 1
+            if len(farkli_ornek) < 10:
+                farkli_ornek.append((bizim_id, hedef, bizim_ar, sarf_arapca(satirlar_k, en_iyi)))
+    kar = tam + yakin + farkli
+    print("\n  ── HİZALAMA SINAMASI (bizim id → sarf konumu) " + "─" * 22)
+    print(f"    denenen        : {len(ornekler)}   (sarfta konum yok: {yok})")
+    if kar:
+        print(f"    iskelet AYNI   : {tam}  (%{round(100*tam/kar,1)})")
+        print(f"    çok yakın      : {yakin}  (%{round(100*yakin/kar,1)})")
+        print(f"    FARKLI         : {farkli}  (%{round(100*farkli/kar,1)})")
+        if (tam + yakin) / kar > 0.95:
+            print("    → HİZALAMA TUTUYOR. Mevcut kelime_hizalama.json doğrudan kullanılabilir.")
+        else:
+            print("    → hizalama tutmuyor; ayrı bir eşleme gerekir (yeni bir --hizala turu).")
+    for bizim_id, hedef, a, b in farkli_ornek:
+        print(f"      {bizim_id:<11} → {hedef:<11} bizde: {a:<18} sarfta: {b}")
+    print("\n  (hiçbir dosya değiştirilmedi — bu yalnız keşif)")
+
+
+# ══════════════════════════════════════════════════════════════════════════
+# SARF ETİKETLERİNİN TÜRKÇESİ
+# Korpus etiketleri kısa kodlar: 3MP = 3. şahıs / eril (Masculine) / çoğul (Plural).
+# D = ikil (dual) — Arapça'da tesniye; Türkçe'de karşılığı olmadığı için "ikil" denir.
+_SAHIS = {"1": "1.", "2": "2.", "3": "3."}
+_CINS  = {"M": "eril", "F": "dişil"}
+_SAYI  = {"S": "tekil", "D": "ikil", "P": "çoğul"}
+# Kip/çatı etiketleri — dosyada hangi adlarla geçtiği ÖLÇÜLÜP raporlanır, körlemesine
+# varsayılmaz; tanınmayan etiketler ayrıca listelenir.
+_KIP = {
+    "PERF": "geçmiş", "IMPF": "geniş", "IMPV": "emir",
+    "PASS": "edilgen", "ACT": "etken",
+}
+_TUR = {
+    "V": "fiil", "N": "isim", "PN": "özel isim", "ADJ": "sıfat", "PRON": "zamir",
+    "P": "edat", "CONJ": "bağlaç", "DET": "harf-i tarif", "NEG": "olumsuzluk",
+    "INTG": "soru", "PRP": "ta'lil", "ACC": "nasb", "COND": "şart",
+}
+
+
+def sarf_uret(sarf_yolu="quran-morphology.txt", mushaf_yolu="kuran-mushaf.json",
+              harita_yolu="kelime_hizalama.json", cikti="kelime-sarf.json"):
+    """Fiillerin ŞAHIS/CİNS/SAYI/KİP bilgisini bizim kelime id'lerimize bağlar.
+
+    NEDEN ETİKETLİ KAYNAK: yazılıştan çıkarmak güvenilir değil — تَقْوَىٰ isim ama
+    تَ ile başlıyor; تَقُولُ hem "o (kadın) der" hem "sen dersin" olabilir. Korpus
+    bunları zaten etiketlemiş, biz yalnız BAĞLIYORUZ.
+
+    ÖNCE ÖLÇER: fiil satırlarındaki etiket dağarcığını döker, tanıdıklarını eşler,
+    TANIMADIKLARINI AYRICA LİSTELER — sessizce atlamaz.
+    Çıktı: id -> {tur, kip, sahis, cins, sayi, etiket, zamir}  (yalnız bilgi olanlar)
+    """
+    yol = girdi(sarf_yolu, "Morfoloji dosyasını src/data altına koyun.")
+    ham = json.load(open(yol_coz(mushaf_yolu), encoding="utf-8"))
+    harita = json.load(open(girdi(harita_yolu), encoding="utf-8"))
+    cikti = cikti_yolu(cikti)
+
+    # ── Oku: konum -> segment satırları ──
+    kayit = {}
+    KONUM = re.compile(r"^(\d{1,3}):(\d{1,3}):(\d{1,3}):(\d{1,3})$")
+    with open(yol, encoding="utf-8", errors="replace") as f:
+        for satir in f:
+            alan = satir.rstrip("\n").split("\t")
+            if len(alan) < 3:
+                continue
+            m = KONUM.match(alan[0].strip())
+            if not m:
+                continue
+            anah = f"{int(m.group(1))}:{int(m.group(2))}:{int(m.group(3))}"
+            kayit.setdefault(anah, []).append(
+                (int(m.group(4)), alan[1].strip(), alan[2].strip(),
+                 alan[3].strip() if len(alan) > 3 else ""))
+    print(f"  sarf konumu: {len(kayit)}")
+
+    # ── Etiket dağarcığı ölçümü (fiil satırları) ──
+    PGN = re.compile(r"^([123])(M|F)(S|D|P)$")
+    fiil_etiket, taninmayan = Counter(), Counter()
+    for segler in kayit.values():
+        for _sg, _form, tag, ozl in segler:
+            if tag != "V":
+                continue
+            for t in re.split(r"[|]", ozl):
+                t = t.strip()
+                if not t or ":" in t:
+                    continue
+                fiil_etiket[t] += 1
+                if t not in _KIP and not PGN.match(t) and t not in _TUR:
+                    taninmayan[t] += 1
+    print("\n  ── FİİL satırlarındaki etiketler (en sık 24) " + "─" * 24)
+    print("    " + ", ".join(f"{k}:{v}" for k, v in fiil_etiket.most_common(24)))
+    if taninmayan:
+        print(f"\n  ⚠ TANINMAYAN etiket ({len(taninmayan)} çeşit) — eşlenmedi, gözden geçirin:")
+        print("    " + ", ".join(f"{k}:{v}" for k, v in taninmayan.most_common(20)))
+
+    # ── Bizim id'lere bağla ──
+    biz = {kid: ar for kid, ar in bizim_kelimeler(ham)}
+    sonuc, sayac = {}, Counter()
+    for bizim_id, onlarinki in harita.items():
+        hedef = onlarinki[0] if isinstance(onlarinki, list) else onlarinki
+        segler = kayit.get(hedef)
+        if not segler or bizim_id not in biz:
+            sayac["konum-yok"] += 1
+            continue
+        segler = sorted(segler)
+        bilgi = {}
+        for _sg, _form, tag, ozl in segler:
+            parca = [t.strip() for t in re.split(r"[|]", ozl) if t.strip()]
+            if tag == "V":
+                bilgi["tur"] = "fiil"
+                for t in parca:
+                    if t in _KIP:
+                        if t in ("PASS", "ACT"):
+                            bilgi["cati"] = _KIP[t]
+                        else:
+                            bilgi["kip"] = _KIP[t]
+                    m = PGN.match(t)
+                    if m:
+                        bilgi["sahis"] = _SAHIS[m.group(1)]
+                        bilgi["cins"] = _CINS[m.group(2)]
+                        bilgi["sayi"] = _SAYI[m.group(3)]
+            elif tag == "PRON":
+                for t in parca:
+                    m = PGN.match(t.split(":")[-1])
+                    if m:
+                        bilgi["zamir"] = f"{_SAHIS[m.group(1)]} {_SAYI[m.group(2+1)]} {_CINS[m.group(2)]}"
+        if bilgi.get("tur") == "fiil" and "sahis" in bilgi:
+            parcalar = [f"{bilgi['sahis']} {bilgi['sayi']} {bilgi['cins']}"]
+            if bilgi.get("kip"):
+                parcalar.append(bilgi["kip"])
+            if bilgi.get("cati") == "edilgen":
+                parcalar.append("edilgen")
+            bilgi["etiket"] = " · ".join(parcalar)
+            sayac["fiil-cekimli"] += 1
+        elif bilgi.get("tur") == "fiil":
+            sayac["fiil-cekimsiz"] += 1
+        if bilgi:
+            sonuc[bizim_id] = bilgi
+    json.dump(sonuc, open(cikti, "w", encoding="utf-8"), ensure_ascii=False)
+
+    print("\n" + "=" * 74)
+    print("SARF BİLGİSİ")
+    print("=" * 74)
+    print(f"  haritadaki kelime      : {len(harita)}")
+    print(f"  çekimi çıkarılan FİİL  : {sayac['fiil-cekimli']}")
+    print(f"  fiil ama çekim yok     : {sayac['fiil-cekimsiz']}")
+    print(f"  sarfta konum yok       : {sayac['konum-yok']}")
+    print(f"  dosyaya yazılan kayıt  : {len(sonuc)}")
+    ornek = [(k, v) for k, v in sonuc.items() if v.get("etiket")][:14]
+    print("\n  ── örnekler " + "─" * 58)
+    for k, v in ornek:
+        print(f"    {k:<12} {biz.get(k,''):<18} {v['etiket']}")
+    print(f"\n  yazıldı: {cikti}  ({os.path.getsize(cikti)//1024} KB)")
+    print("  (mevcut hiçbir dosya değiştirilmedi)")
+
+
+# ══════════════════════════════════════════════════════════════════════════
+def qul_olc(qul_yolu="turkish-wbw-translation.json", wbw_yolu="wbw_tr.json"):
+    """QUL (Tarteel) Türkçe kelime-kelime dosyası bizdeki boşlukların kaçını kapatır?
+
+    quran.com ile aynı ekosistemden geldiği için AYNI boşlukları taşıyor olabilir;
+    ama farklı/daha yeni bir sürüm olma ihtimali de var. Ölçmeden karar vermeyelim.
+
+    Üç şey ölçülür:
+      1) KAPSAM  : bizim İngilizce kalan 6890 konumun kaçında QUL'da Türkçe var.
+      2) TUTARLILIK: zaten Türkçemiz olan konumlarda QUL ne diyor — aynı mı?
+         (Aynıysa aynı kaynaktır; çok farklıysa bağımsız bir çeviridir.)
+      3) İngilizce kalıntı: QUL'un kendi metinleri de İngilizce olabilir, sayılır.
+    HİÇBİR DOSYAYI DEĞİŞTİRMEZ.
+    """
+    yol = veri_ara(qul_yolu)
+    if not yol:
+        print(f"HATA: '{qul_yolu}' bulunamadı.")
+        return
+    veri = json.load(open(yol, encoding="utf-8"))
+    KONUM = re.compile(r"^(\d{1,3})[:._-](\d{1,3})[:._-](\d{1,3})$")
+
+    # ── Yapıyı çöz: konum → Türkçe metin ──
+    qul = {}
+    def metin_al(v):
+        if isinstance(v, str):
+            return v
+        if isinstance(v, dict):
+            for ad in ("translation", "text", "tr", "turkish", "meal", "ceviri"):
+                for k, x in v.items():
+                    if isinstance(x, str) and k.lower() == ad and x.strip():
+                        return x
+            aday = [x for x in v.values() if isinstance(x, str) and x.strip()]
+            return aday[0] if aday else None
+        return None
+
+    if isinstance(veri, dict):
+        for k, v in veri.items():
+            m = KONUM.match(str(k))
+            if m:
+                t = metin_al(v)
+                if t:
+                    qul[f"{int(m.group(1))}:{int(m.group(2))}:{int(m.group(3))}"] = t.strip()
+    if not qul:
+        listeler = [veri] if isinstance(veri, list) else \
+                   [v for v in veri.values() if isinstance(v, list)] if isinstance(veri, dict) else []
+        for lst in listeler:
+            for o in lst:
+                if not isinstance(o, dict):
+                    continue
+                anah = None
+                for ad in ("word_key", "location", "key", "id", "word"):
+                    v = o.get(ad)
+                    if isinstance(v, str) and KONUM.match(v):
+                        anah = v
+                        break
+                if not anah:
+                    sn, an, wn = (o.get("surah", o.get("sure", o.get("chapter"))),
+                                  o.get("ayah", o.get("ayet", o.get("verse"))),
+                                  o.get("word", o.get("word_number", o.get("position"))))
+                    try:
+                        anah = f"{int(sn)}:{int(an)}:{int(wn)}"
+                    except (TypeError, ValueError):
+                        continue
+                t = metin_al({k: v for k, v in o.items()
+                              if k not in ("word_key", "location", "key", "id")})
+                if t:
+                    m = KONUM.match(anah)
+                    qul[f"{int(m.group(1))}:{int(m.group(2))}:{int(m.group(3))}"] = t.strip()
+    if not qul:
+        print(f"  QUL dosyası okundu ama yapısı çözülemedi: {yol}")
+        print(f"    en üst tür: {type(veri).__name__}")
+        if isinstance(veri, dict):
+            ks = list(veri)[:5]
+            print(f"    ilk anahtarlar: {ks}")
+            for k in ks[:2]:
+                print(f"    veri[{k!r}] = {str(veri[k])[:200]}")
+        elif isinstance(veri, list) and veri:
+            print(f"    uzunluk {len(veri)}, ilk öğe: {str(veri[0])[:250]}")
+        print("    → bu çıktıyı gönderin, okuyucuyu ona göre yazayım.")
+        return
+    print(f"  QUL dosyası: {yol}")
+    print(f"  okunan kelime kaydı: {len(qul)}")
+    for k in list(qul)[:3]:
+        print(f"    örnek {k}: {qul[k]}")
+
+    wbw = json.load(open(girdi(wbw_yolu), encoding="utf-8"))
+    ing_konum, tr_konum = [], []
+    for yer, v in wbw.items():
+        if v.get("tip") == "end":
+            continue
+        (tr_konum if (v.get("dil") or "").lower() == "turkish" else ing_konum).append(
+            (yer, v.get("ar", ""), (v.get("tr") or "").strip()))
+
+    # 1) Kapsam
+    kapanan, bos, ing_kalan, yok = [], 0, [], 0
+    for yer, ar, ingm in ing_konum:
+        t = qul.get(yer)
+        if not t:
+            yok += 1
+        elif not t.strip():
+            bos += 1
+        elif ingilizce_mi(t):
+            ing_kalan.append((yer, ar, ingm, t))
+        else:
+            kapanan.append((yer, ar, ingm, t))
+    n = len(ing_konum)
+    print()
+    print("=" * 74)
+    print("QUL TÜRKÇE KELİME-KELİME — ÖLÇÜM")
+    print("=" * 74)
+    print(f"  bizdeki İngilizce konum   : {n}")
+    print(f"  QUL'da TÜRKÇE karşılık var: {len(kapanan)}  (%{round(100*len(kapanan)/n,1) if n else 0})")
+    print(f"  QUL'da da İngilizce        : {len(ing_kalan)}")
+    print(f"  QUL'da boş                 : {bos}")
+    print(f"  QUL'da konum yok           : {yok}")
+    print()
+    if kapanan:
+        print("  ── KAPANAN örnekleri " + "─" * 50)
+        for yer, ar, ingm, t in kapanan[:16]:
+            print(f"    {yer:<11} {ar:<18} {ingm:<26} → {t}")
+        print()
+    if ing_kalan:
+        print("  ── QUL'da da İNGİLİZCE kalanlar " + "─" * 39)
+        for yer, ar, ingm, t in ing_kalan[:8]:
+            print(f"    {yer:<11} {ar:<18} {ingm:<26} → {t}")
+        print()
+
+    # 2) Tutarlılık: aynı kaynak mı, bağımsız çeviri mi?
+    import random
+    random.seed(5)
+    ornek = random.sample(tr_konum, min(1500, len(tr_konum)))
+    ayni = yakin = farkli = qul_yok = 0
+    farkli_ornek = []
+    for yer, ar, bizim in ornek:
+        t = qul.get(yer)
+        if not t:
+            qul_yok += 1
+            continue
+        a, b = _sade(bizim), _sade(t)
+        if a == b:
+            ayni += 1
+        elif _benzer(a, b) >= 0.80:
+            yakin += 1
+        else:
+            farkli += 1
+            if len(farkli_ornek) < 10:
+                farkli_ornek.append((yer, ar, bizim, t))
+    kar = ayni + yakin + farkli
+    print("  ── TUTARLILIK (zaten Türkçemiz olan konumlarda) " + "─" * 23)
+    print(f"    karşılaştırılan : {kar}  (QUL'da olmayan {qul_yok})")
+    if kar:
+        print(f"    birebir aynı    : {ayni}  (%{round(100*ayni/kar,1)})")
+        print(f"    çok yakın       : {yakin}  (%{round(100*yakin/kar,1)})")
+        print(f"    farklı          : {farkli}  (%{round(100*farkli/kar,1)})")
+        if ayni / kar > 0.9:
+            print("    → AYNI KAYNAK. Boşlukları da aynı olması beklenir.")
+        elif (ayni + yakin) / kar < 0.5:
+            print("    → BAĞIMSIZ bir çeviri. İkinci görüş olarak değerli.")
+        else:
+            print("    → akraba ama birebir değil; kısmen düzeltilmiş bir sürüm olabilir.")
+    if farkli_ornek:
+        print("\n  ── farklı örnekleri " + "─" * 50)
+        for yer, ar, bizim, t in farkli_ornek:
+            print(f"    {yer:<11} {ar:<16} bizde: {bizim:<24} QUL: {t}")
+    print("\n  (hiçbir dosya değiştirilmedi — bu yalnız ölçüm)")
+
+
+# ══════════════════════════════════════════════════════════════════════════
+def meal_bak(aralik, meal_yolu="ayet-meal.json", mushaf_yolu="kuran-mushaf.json"):
+    """Belirtilen âyetlerin mealini TAM olarak döker.  ör: --meal-bak 52:17-22
+
+    Eksik bir meal gördüğümüzde ilk bakılacak yer burası: gerçekten yok mu,
+    yoksa komşu âyetin içine BİRLEŞTİRİLMİŞ mi? Türkçe meallerde 52:19-20 gibi
+    âyet çiftleri çoğu zaman tek paragrafta verilir; o zaman "eksik" değildir,
+    yalnız ayrı anahtarı yoktur. Bunu görmeden bir şey yazmak yanlış olur.
+    """
+    ham = None
+    try:
+        ham = json.load(open(yol_coz(mushaf_yolu, sessiz=True), encoding="utf-8"))
+    except SystemExit:
+        pass
+    mealler = meal_yukle(meal_yolu, ham)
+    if not mealler:
+        return
+    m = re.match(r"^(\d+):(\d+)(?:\s*-\s*(\d+))?$", str(aralik).strip())
+    if not m:
+        print("Kullanım:  --meal-bak 52:17-22   ya da  --meal-bak 52:20")
+        return
+    sure = int(m.group(1)); bas = int(m.group(2)); son = int(m.group(3) or bas)
+    print("=" * 74)
+    for a in range(bas, son + 1):
+        anah = f"{sure}:{a}"
+        metin = mealler.get(anah)
+        if metin is None:
+            print(f"  {anah:<9} ✗ MEAL YOK")
+        else:
+            print(f"  {anah:<9} {metin}")
+        print()
+
+
+# ══════════════════════════════════════════════════════════════════════════
+def meal_kopyala(eslesme, meal_yolu="ayet-meal.json", yaz=False, not_metni=None):
+    """Birleşik verilmiş âyetin mealini komşusundan kopyalar.  ör: 52:20=52:19
+
+    Türkçe meallerde bazı âyet çiftleri (52:19-20 gibi) tek paragrafta verilir;
+    ikinci âyetin ayrı anahtarı olmaz. Metni UYDURMAK yerine, birlikte verildiği
+    âyetin metni aynen kopyalanır ve sonuna bunun böyle olduğunu söyleyen not eklenir.
+
+    ESKİ HATA: bu kip dosyanın düz {"52:19": "…"} sözlüğü olduğunu varsayıyordu;
+    oysa meal dosyası başka biçimde. Artık biçim ÖNCE tespit ediliyor ve kayıt
+    aynı biçimde geri yazılıyor.
+    ORİJİNALE DOKUNMAZ: yeni dosya yazar. --yaz denirse yerine yazar, önce .bak alır.
+    """
+    m = re.match(r"^(\d+):(\d+)\s*=\s*(\d+):(\d+)$", str(eslesme).strip())
+    if not m:
+        print("Kullanım:  --meal-kopyala 52:20=52:19  [--yaz]")
+        return
+    hs, ha, ks, ka = (int(x) for x in m.groups())
+    hedef, kaynak = f"{hs}:{ha}", f"{ks}:{ka}"
+    yol = veri_ara(meal_yolu)
+    if not yol:
+        print(f"HATA: '{meal_yolu}' bulunamadı.")
+        return
+    veri = json.load(open(yol, encoding="utf-8"))
+    AY_ANAH = re.compile(r"^(\d{1,3})\s*[:._-]\s*(\d{1,3})$")
+
+    # ── Biçim tespiti ───────────────────────────────────────────────
+    bicim = kap = None
+    if isinstance(veri, dict) and any(AY_ANAH.match(str(k)) for k in list(veri)[:50]):
+        bicim = "duz"
+    elif isinstance(veri, dict) and any(str(k).isdigit() for k in list(veri)[:50]):
+        ilk = veri.get(str(ks)) if str(ks) in veri else next(
+            (v for k, v in veri.items() if str(k).isdigit()), None)
+        bicim = "ic-sozluk" if isinstance(ilk, dict) else "ic-liste" if isinstance(ilk, list) else None
+    if bicim is None:
+        # liste biçimi: ya en üstte ya bir anahtarın altında
+        if isinstance(veri, list):
+            bicim, kap = "liste", None
+        elif isinstance(veri, dict):
+            for k, v in veri.items():
+                if isinstance(v, list) and v and isinstance(v[0], dict):
+                    bicim, kap = "liste", k
+                    break
+    if bicim is None:
+        print("HATA: meal dosyasının biçimi çözülemedi.")
+        print(f"    en üst tür: {type(veri).__name__}; ilk anahtarlar: {list(veri)[:5] if isinstance(veri, dict) else len(veri)}")
+        return
+    print(f"  meal biçimi: {bicim}" + (f" (kap: '{kap}')" if kap else ""))
+
+    def oku(sn, an):
+        if bicim == "duz":
+            for k, v in veri.items():
+                mm = AY_ANAH.match(str(k))
+                if mm and int(mm.group(1)) == sn and int(mm.group(2)) == an:
+                    return k, v
+        elif bicim == "ic-sozluk":
+            d = veri.get(str(sn)) or {}
+            for k, v in d.items():
+                if str(k).isdigit() and int(k) == an:
+                    return k, v
+        elif bicim == "ic-liste":
+            d = veri.get(str(sn)) or []
+            return (an - 1, d[an - 1]) if 0 < an <= len(d) else (None, None)
+        else:
+            lst = veri if kap is None else veri[kap]
+            for i, o in enumerate(lst):
+                if not isinstance(o, dict):
+                    continue
+                sv = o.get("sureNo", o.get("sure", o.get("surah")))
+                av = o.get("ayetNo", o.get("ayet", o.get("verse", o.get("no"))))
+                try:
+                    if int(sv) == sn and int(av) == an:
+                        return i, o
+                except (TypeError, ValueError):
+                    continue
+        return None, None
+
+    def metni_al(v):
+        if isinstance(v, str):
+            return v
+        if isinstance(v, dict):
+            for ad in ("meal", "metin", "turkce", "ceviri", "text"):
+                for k, x in v.items():
+                    if isinstance(x, str) and k.lower() == ad:
+                        return x
+            aday = [x for x in v.values() if isinstance(x, str) and len(x) > 15]
+            return max(aday, key=len) if aday else None
+        return None
+
+    k_anah, k_deger = oku(ks, ka)
+    if k_deger is None:
+        print(f"HATA: kaynak âyet '{kaynak}' dosyada bulunamadı (biçim: {bicim}).")
+        return
+    h_anah, h_deger = oku(hs, ha)
+    if h_deger is not None and str(metni_al(h_deger) or "").strip():
+        print(f"'{hedef}' zaten DOLU, dokunulmadı:\n  {str(metni_al(h_deger))[:110]}")
+        return
+    if h_deger is not None:
+        # ÇELİŞKİNİN SEBEBİ BUYDU: anahtar var ama metni boş. --meal-denetle onu
+        # "eksik", --meal-kopyala ise "zaten var" sayıyordu. Boş = doldurulacak.
+        print(f"  '{hedef}' anahtarı var ama metni BOŞ → dolduruluyor")
+    k_metin = metni_al(k_deger)
+    if not k_metin:
+        print(f"HATA: kaynak âyetin metni okunamadı: {k_deger!r}")
+        return
+    notu = not_metni if not_metni is not None else f" ({ka}-{ha}. âyetler mealde birlikte verilmiştir.)"
+    yeni_metin = k_metin + notu
+
+    # ── Aynı biçimde geri yaz ───────────────────────────────────────
+    if bicim == "duz":
+        veri[hedef] = yeni_metin
+        def anah(k):
+            mm = AY_ANAH.match(str(k))
+            return (int(mm.group(1)), int(mm.group(2))) if mm else (999, 999)
+        veri = {k: veri[k] for k in sorted(veri, key=anah)}
+    elif bicim == "ic-sozluk":
+        veri.setdefault(str(hs), {})[str(ha)] = yeni_metin
+        veri[str(hs)] = {k: veri[str(hs)][k] for k in
+                         sorted(veri[str(hs)], key=lambda x: int(x) if str(x).isdigit() else 999)}
+    elif bicim == "ic-liste":
+        print("HATA: 'ic-liste' biçiminde araya ekleme âyet numaralarını KAYDIRIR.")
+        print("      Bu biçimde elle eklemek gerekir; kaydırma riskini almıyorum.")
+        return
+    else:
+        lst = veri if kap is None else veri[kap]
+        ornek = dict(k_deger)
+        for ad, deger in (("sureNo", hs), ("sure", hs), ("surah", hs)):
+            if ad in ornek:
+                ornek[ad] = deger
+        for ad, deger in (("ayetNo", ha), ("ayet", ha), ("verse", ha), ("no", ha)):
+            if ad in ornek:
+                ornek[ad] = deger
+        for ad in ("meal", "metin", "turkce", "ceviri", "text"):
+            for k in list(ornek):
+                if k.lower() == ad and isinstance(ornek[k], str):
+                    ornek[k] = yeni_metin
+        lst.insert((k_anah if isinstance(k_anah, int) else len(lst)) + 1, ornek)
+
+    if yaz:
+        yedek = yol + ".bak"
+        if not os.path.exists(yedek):
+            shutil_kopya(yol, yedek)
+            print(f"  yedek alındı: {yedek}")
+        cikti = yol
+    else:
+        cikti = cikti_yolu("ayet-meal-yeni.json")
+    json.dump(veri, open(cikti, "w", encoding="utf-8"), ensure_ascii=False)
+    print(f"  {hedef} eklendi:")
+    print(f"    {yeni_metin[:130]}")
+    print(f"\n  yazıldı: {cikti}")
+    if not yaz:
+        print("  (orijinale dokunulmadı; yerine yazmak için --yaz ekleyin)")
+
+
+def shutil_kopya(a, b):
+    with open(a, "rb") as f1, open(b, "wb") as f2:
+        f2.write(f1.read())
+
+
+# ══════════════════════════════════════════════════════════════════════════
+def meal_orneklem(mushaf_yolu="kuran-mushaf.json", wbw_yolu="wbw_tr.json",
+                  meal_yolu="ayet-meal.json", adet=120, ek=0.05, fark=0.20):
+    """Kabul edilen kararlardan RASTGELE örneklem — gözle değerlendirmek için.
+
+    NEDEN: otomatik ölçüm tıkandı. "✗ farklı" sayılanların çoğu aslında doğru:
+      inanan lara / iman edenlere · umursamaz / gafil · akraba / yakınları
+      arzın / yer · sürekli / ebediyen · إنما: şüphesiz / ancak
+    Bunlar eşanlamlı; dizgi karşılaştırması eşanlamı bilemez. Yani artık ölçen
+    alet yöntemden daha kusurlu. Gerçek hata oranını bilmenin tek yolu, kabul
+    edilen kararlardan rastgele bir örneklemi İNSAN GÖZÜYLE tasnif etmek.
+    Bu kip o örneklemi basar; "gerçek" sütunu quran.com'un bilinen karşılığı,
+    "çekilen" sütunu yöntemin mealden aldığı karşılıktır.
+    """
+    import random
+    ham = json.load(open(yol_coz(mushaf_yolu), encoding="utf-8"))
+    mealler = meal_yukle(meal_yolu, ham)
+    if not mealler:
+        return
+    kayit = _meal_kararlari(wbw_yolu, mealler, ek, fark)
+    random.seed(3)
+    ornek = random.sample(kayit, min(adet, len(kayit)))
+    print("=" * 74)
+    print(f"KABUL EDİLEN KARARLARDAN RASTGELE {len(ornek)} ÖRNEK")
+    print("(gerçek = quran.com'un bilinen karşılığı · çekilen = mealden alınan)")
+    print("=" * 74)
+    for i, (yer, ar, gercek, cekilen) in enumerate(ornek, 1):
+        print(f"{i:>3}. {yer:<11} {ar:<18} {gercek:<28} | {cekilen}")
+    print(f"\n  toplam kabul edilen karar: {len(kayit)}   (çalışma noktası: +{ek}, fark {fark})")
+
+
+def meal_secim(mushaf_yolu="kuran-mushaf.json", wbw_yolu="wbw_tr.json",
+               meal_yolu="ayet-meal.json", deneme_adedi=2000):
+    """Kelimenin karşılığını O ÂYETİN MEALİNDEN çeker; önce yöntemi ÖLÇER.
+
+    Aday havuzu (quran.com'un aynı kelimeye başka yerlerde verdiği karşılıklar)
+    "mealin neresine bakacağımızı" söyler; cevabı meal verir — böylece çekim
+    bu âyete ait olur. Edatlar ve 2 harflik gövdeler yönteme sokulmaz.
+
+    Rapor üç bölüm: eşik taraması (kapsam↔hata), seçilen eşikte hata örnekleri,
+    İngilizce kalanlara uygulama ölçümü. HİÇBİR DOSYAYI DEĞİŞTİRMEZ.
+    """
+    import random
+    ham = json.load(open(yol_coz(mushaf_yolu), encoding="utf-8"))
+    mealler = meal_yukle(meal_yolu, ham)
+    if not mealler:
+        return
+    print(f"  meali olan âyet: {sum(1 for v in mealler.values() if v)}")
+
+    wbw = json.load(open(girdi(wbw_yolu), encoding="utf-8"))
+    tr_tam, tr_iskelet, tum = _havuzlar(wbw)
+
+    # ── 1) Puanları BİR KEZ hesapla (eşikten bağımsız) ──
+    tr_kayit = [t for t in tum if t[4] == "turkish" and t[3]]
+    random.seed(1)
+    deneme = random.sample(tr_kayit, min(deneme_adedi, len(tr_kayit)))
+    olcum, d_adaysiz, d_karar_yok = [], 0, 0
+    for i, (yer, ar, sk, gercek, _d) in enumerate(deneme, 1):
+        if i % 500 == 0:
+            print(f"    … {i}/{len(deneme)}")
+        g = _sade(gercek)
+        ad = _havuz(tr_tam, tr_iskelet, ar, sk, kendi_sade=g)
+        if not ad:
+            d_adaysiz += 1
+            continue
+        p = yer.split(":")
+        meal = mealler.get(f"{p[0]}:{p[1]}", "")
+        if not meal:
+            d_karar_yok += 1
+            continue
+        pk = _puanla([_sade(a) for a in ad], _meal_parcalari(meal), set())
+        if pk is None:
+            d_karar_yok += 1
+            continue
+        olcum.append((pk, g, _edat_mi(sk), yer, ar, meal))
+
+    print()
+    print("=" * 74)
+    print("1) DOĞRULUK SINAMASI + EŞİK TARAMASI")
+    print("=" * 74)
+    print(f"  denenen {len(deneme)} · adayı yok {d_adaysiz} · meal/puan yok {d_karar_yok}")
+    print("  UYARI: '✗farklı' sütunu gerçek hatadan YÜKSEKTİR — dizgi karşılaştırması")
+    print("  eşanlamı bilemiyor (yetimler↔öksüzler, gafil↔umursamaz doğru olduğu hâlde")
+    print("  yanlış sayılıyor). Gerçek oran için: --meal-orneklem")
+    print()
+    print("   benzerlik  fark |  karar   birebir   ~gövde   ✗farklı  | kullanılabilir")
+    print("   " + "─" * 70)
+    icerik = [o for o in olcum if not o[2]]
+    en_iyi = None
+    for ek in (0.0, 0.05, 0.10):
+        for fark in (0.10, 0.20, 0.30):
+            t = k = f = 0
+            for pk, g, _e, *_r in icerik:
+                if not _gecer(pk, ek, fark):
+                    continue
+                d = _govde_ortak(pk[4], g)
+                t, k, f = (t + 1, k, f) if d == "tam" else (t, k + 1, f) if d == "kismi" else (t, k, f + 1)
+            kar = t + k + f
+            if not kar:
+                continue
+            hata, kul = 100 * f / kar, 100 * (t + k) / kar
+            isaret = ""
+            # NOT: buradaki "hata" sütunu gerçek hatadan yüksek (eşanlam sorunu).
+            # 150 kararlık gözle tasnifte +0.00/0.10 noktasında GERÇEK hata %1.3
+            # çıktı; o yüzden kapsamı en geniş nokta tercih ediliyor.
+            # ÖLÇÜLDÜ (2×150 karar gözle tasnif edildi):
+            #   +0.05 / fark 0.20 → gerçek hata %1.3   (1841 kelime)
+            #   +0.00 / fark 0.10 → gerçek hata %3.3   (2566 kelime)
+            # Gevşek noktada MANA TERSİNE DÖNEN bir hata görüldü (6:104
+            # فَلِنَفْسِهِۦ "yararı kendisinedir" → "zararı kendinedir"), o yüzden
+            # 725 kelime fazlası için hatayı üçe katlamak kabul edilmiyor.
+            if hata <= 14 and (en_iyi is None or kar > en_iyi[0]):
+                en_iyi = (kar, ek, fark, hata, kul)
+                isaret = " ←"
+            print(f"   +{ek:<9.2f}{fark:<5.2f}| {kar:>6}  {t:>7}  {k:>7}  {f:>8}  |  %{kul:.1f} (hata %{hata:.1f}){isaret}")
+    EK, FARK = (en_iyi[1], en_iyi[2]) if en_iyi else (0.05, 0.20)
+    print(f"\n  → uygulama bu noktayla ölçülecek: benzerlik +{EK}, fark {FARK}")
+
+    edatlar = [o for o in olcum if o[2]]
+    e_kar = sum(1 for o in edatlar if _gecer(o[0], EK, FARK))
+    e_hata = sum(1 for o in edatlar if _gecer(o[0], EK, FARK) and _govde_ortak(o[0][4], o[1]) == "yanlis")
+    if e_kar:
+        print(f"  → EDAT grubu (yönteme SOKULMUYOR): karar {e_kar}, ham hata %{round(100*e_hata/e_kar,1)}")
+        print("     içerik kelimelerinden belirgin yüksek → dışarıda tutulması doğrulandı")
+    print()
+    yanlis = [(o[3], o[4], o[1], o[0][5], o[5]) for o in icerik
+              if _gecer(o[0], EK, FARK) and _govde_ortak(o[0][4], o[1]) == "yanlis"][:14]
+    if yanlis:
+        print("  ── ✗ FARKLI örnekleri (eşanlamlılar da burada görünür) " + "─" * 16)
+        for yer, ar, g, c, meal in yanlis:
+            print(f"    {yer:<11} {ar:<16} gerçek: {g:<22} çekilen: {c}")
+            print(f"                meal: …{meal[:60]}…")
+        print()
+
+    # ── 2) İngilizce kalanlara uygulama ──
+    ing = [t for t in tum if t[4] != "turkish"]
+    ayet_grup = {}
+    for yer, ar, sk, metin, _d in ing:
+        p = yer.split(":")
+        ayet_grup.setdefault(f"{p[0]}:{p[1]}", []).append((yer, ar, sk, metin))
+    u_cekildi = u_adaysiz = u_kararsiz = u_mealsiz = u_edat = 0
+    u_ornek = []
+    for ay, kelimeler_ in ayet_grup.items():
+        meal = mealler.get(ay, "")
+        if not meal:
+            u_mealsiz += len(kelimeler_)
+            continue
+        parcalar = _meal_parcalari(meal)
+        kullanilmis, puanli = set(), []
+        for yer, ar, sk, ingm in kelimeler_:
+            if _edat_mi(sk):
+                u_edat += 1
+                continue
+            ad = _havuz(tr_tam, tr_iskelet, ar, sk)
+            if not ad:
+                u_adaysiz += 1
+                continue
+            puanli.append((yer, ar, ingm, [_sade(a) for a in ad]))
+        sirali = []
+        for yer, ar, ingm, ad in puanli:
+            r = _sec(ad, parcalar, set(), EK, FARK)
+            sirali.append((r[0] if r else 0, yer, ar, ingm, ad))
+        sirali.sort(key=lambda x: -x[0])
+        for _p, yer, ar, ingm, ad in sirali:
+            r = _sec(ad, parcalar, kullanilmis, EK, FARK)
+            if not r:
+                u_kararsiz += 1
+                continue
+            kullanilmis.update(range(r[1], r[2]))
+            u_cekildi += 1
+            if len(u_ornek) < 14:
+                u_ornek.append((yer, ar, ingm, r[3], meal))
+    n = len(ing)
+    print("=" * 74)
+    print("2) İNGİLİZCE KALANLARA UYGULAMA")
+    print("=" * 74)
+    print(f"  İngilizce kelime kaydı    : {n}")
+    print(f"  MEALDEN ÇEKİLDİ           : {u_cekildi}  (%{round(100*u_cekildi/n,1) if n else 0})")
+    print(f"  edat/kısa gövde (atlandı) : {u_edat}")
+    print(f"  aday yok (çapa yok)       : {u_adaysiz}")
+    print(f"  karar verilemedi          : {u_kararsiz}")
+    print(f"  âyetin meali yok          : {u_mealsiz}")
+    print()
+    for yer, ar, ingm, c, meal in u_ornek:
+        print(f"    {yer:<11} {ar:<16} {ingm:<24} → {c}")
+        print(f"                meal: …{meal[:60]}…")
+    print("\n  (hiçbir dosya değiştirilmedi — bu yalnız ölçüm)")
+
+
 def test():
     """Tek âyet çekip başlığın/erişimin çalıştığını gösterir."""
     url = ("https://api.quran.com/api/v4/verses/by_key/2:40"
@@ -847,7 +2475,39 @@ if __name__ == "__main__":
     if "--test" in sys.argv:
         test()
     elif "--birlestir" in sys.argv:
-        birlestir()
+        arg = [a for a in sys.argv[1:] if not a.startswith("--")]
+        birlestir(arg[0] if arg else "wbw_tr.json")
+    elif "--ing-analiz" in sys.argv:
+        ingilizce_analiz()
+    elif "--sarf" in sys.argv and "--sarf-kesif" not in sys.argv:
+        arg = [a for a in sys.argv[1:] if not a.startswith("--")]
+        sarf_uret(arg[0] if arg else "quran-morphology.txt")
+    elif "--sarf-kesif" in sys.argv:
+        arg = [a for a in sys.argv[1:] if not a.startswith("--")]
+        sarf_kesif(arg[0] if arg else "quran-morphology.txt")
+    elif "--ing-uygula" in sys.argv:
+        ing_uygula()
+    elif "--qul" in sys.argv:
+        arg = [a for a in sys.argv[1:] if not a.startswith("--")]
+        qul_olc(arg[0] if arg else "turkish-wbw-translation.json")
+    elif "--meal-kopyala" in sys.argv:
+        meal_kopyala(sys.argv[sys.argv.index("--meal-kopyala") + 1], yaz="--yaz" in sys.argv)
+    elif "--meal-orneklem" in sys.argv:
+        i = sys.argv.index("--meal-orneklem")
+        n = int(sys.argv[i + 1]) if len(sys.argv) > i + 1 and sys.argv[i + 1].isdigit() else 120
+        ek = float(sys.argv[sys.argv.index("--ek") + 1]) if "--ek" in sys.argv else 0.05
+        fk = float(sys.argv[sys.argv.index("--fark") + 1]) if "--fark" in sys.argv else 0.20
+        meal_orneklem(adet=n, ek=ek, fark=fk)
+    elif "--meal-bak" in sys.argv:
+        meal_bak(sys.argv[sys.argv.index("--meal-bak") + 1])
+    elif "--meal-denetle" in sys.argv:
+        arg = [a for a in sys.argv[1:] if not a.startswith("--")]
+        meal_denetle(arg[0] if arg else "kuran-mushaf.json",
+                     arg[1] if len(arg) > 1 else "ayet-meal.json")
+    elif "--meal-secim" in sys.argv:
+        arg = [a for a in sys.argv[1:] if not a.startswith("--")]
+        meal_secim(arg[0] if arg else "kuran-mushaf.json",
+                   meal_yolu=(arg[1] if len(arg) > 1 else "ayet-meal.json"))
     elif "--ingilizce" in sys.argv:
         ingilizce_kalanlar()
     elif "--karsilastir" in sys.argv:

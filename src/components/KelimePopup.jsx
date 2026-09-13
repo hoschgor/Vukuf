@@ -1,11 +1,19 @@
 import { useState, useRef } from "react"
-import { Play, Pause, X } from "lucide-react"
+import { Play, Pause, X, Link2 } from "lucide-react"
 import kelimeMapping from "../data/kelime-mapping.json"
 
-function mappedPosition(kelimeId) {
-  const mapped = kelimeMapping[kelimeId]
-  if (!mapped) return null
-  return parseInt(mapped.split(':')[2])
+// Bizim kelime id'miz → quran.com kelime sırası.
+// NEDEN GEREKLİ: kelime sesleri (WBW mp3) quran.com'un kelime numaralarına göre
+// dosyalanmış. Bizim bölünmemiz bazı yerlerde farklı (ör. Bakara 40'ta bizde
+// "يَا" + "بَنٖي" iki kelime, onlarda tek), dolayısıyla BİZİM sıramızla dosya
+// istemek o âyette yanlış kelimeyi çaldırır. Eşleme varsa ondan okunur.
+function eslenenSira(kelimeId) {
+  if (!kelimeId) return null
+  const eslenen = kelimeMapping[kelimeId]
+  if (!eslenen) return null
+  const p = String(eslenen).split(":")
+  const n = parseInt(p[2], 10)
+  return Number.isFinite(n) && n > 0 ? n : null
 }
 
 const WBW_BASE = "https://audio.qurancdn.com/wbw"
@@ -14,15 +22,28 @@ function kelimeMp3(sureNo, ayetNo, position) {
   const pos = position && position > 0 ? position : 1
   const s = String(sureNo).padStart(3, "0")
   const a = String(ayetNo).padStart(3, "0")
-  const k = String(position).padStart(3, "0")
+  const k = String(pos).padStart(3, "0")
   return `${WBW_BASE}/${s}_${a}_${k}.mp3`
 }
 
 export default function KelimePopup({ kelime, konum, player, sureNo, ayetNo, theme, onKapat }) {
-  if (!kelime) return null
-
   const [kelimeCaliyor, setKelimeCaliyor] = useState(false)
   const kelimeAudioRef = useRef(null)
+
+  if (!kelime) return null
+
+  // ── BİRLEŞİK KELİME ─────────────────────────────────────────────
+  // quran.com'un TEK kelime saydığı yeri biz iki kelimeye bölmüşsek (176 grup),
+  // baloncuk bunları tek birim gösterir: Arapça zaten birleşik geliyor (kelime.ham),
+  // burada bir de kaç parçadan oluştuğu söylenir ve SES doğru sıradan çalınır.
+  const uyeler = Array.isArray(kelime.grupUyeleri) ? kelime.grupUyeleri : null
+  const birlesik = !!(uyeler && uyeler.length > 1)
+  // Ses sırası: önce eşleme tablosu (doğrusu bu), yoksa gelen konum.
+  const sesSirasi =
+    eslenenSira(kelime.id) ||
+    (birlesik ? eslenenSira(uyeler[0]) : null) ||
+    kelime.position ||
+    null
 
   const ayetCaliniyor =
     player?.durum === "caliyor" &&
@@ -35,7 +56,7 @@ export default function KelimePopup({ kelime, konum, player, sureNo, ayetNo, the
     player?.aktifAyet?.ayetNo === ayetNo
 
   function kelimeTikla() {
-    if (!kelime.position) return
+    if (!sesSirasi) return
 
     if (kelimeCaliyor) {
       kelimeAudioRef.current?.pause()
@@ -46,7 +67,7 @@ export default function KelimePopup({ kelime, konum, player, sureNo, ayetNo, the
     // Ana player'ı duraklat
     if (player?.durum === "caliyor") player.duraklat()
 
-    const audio = new Audio(kelimeMp3(sureNo, ayetNo, kelime.position))
+    const audio = new Audio(kelimeMp3(sureNo, ayetNo, sesSirasi))
     kelimeAudioRef.current = audio
     setKelimeCaliyor(true)
 
@@ -80,6 +101,8 @@ export default function KelimePopup({ kelime, konum, player, sureNo, ayetNo, the
     fontSize: "11px", fontWeight: "500",
     transition: "all 0.15s",
   })
+
+  const anlamlar = kelime.anlamlar?.length ? kelime.anlamlar : null
 
   return (
     <>
@@ -125,6 +148,22 @@ export default function KelimePopup({ kelime, konum, player, sureNo, ayetNo, the
           </button>
         </div>
 
+        {/* Birleşik kelime rozeti — iki kelime tek anlam taşıyor, okuyucu da
+            bunları tek birim sayar; kullanıcı "aynı anlam iki kez çıktı" sanmasın. */}
+        {birlesik && (
+          <div style={{
+            display: "inline-flex", alignItems: "center", gap: "4px",
+            fontSize: "10px", color: theme.accent,
+            background: `${theme.accent}14`,
+            border: `1px solid ${theme.accent}30`,
+            borderRadius: "999px", padding: "2px 7px",
+            marginBottom: "8px",
+          }}>
+            <Link2 size={10} />
+            {uyeler.length} kelime birlikte
+          </div>
+        )}
+
         {/* Okunuş */}
         {kelime.okunus && (
           <div style={{
@@ -135,17 +174,30 @@ export default function KelimePopup({ kelime, konum, player, sureNo, ayetNo, the
           </div>
         )}
 
-        {/* Anlamlar */}
+        {/* Anlamlar — madde işareti olarak "1." yerine içi dolu sağ ok.
+            Satır başı hizalı kalsın diye her madde flex satırı; ok sabit
+            genişlikte, metin sarınca ok hizasının altına kaymaz. */}
         <div style={{
           fontSize: "13px", color: theme.text,
           lineHeight: "1.7", marginBottom: "12px",
         }}>
-          {kelime.anlamlar?.length > 0
-            ? kelime.anlamlar.map((a, i) => (
-                <span key={i}>
-                  {i + 1}. {a}
-                  {i < kelime.anlamlar.length - 1 && <br />}
-                </span>
+          {anlamlar
+            ? anlamlar.map((a, i) => (
+                <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: "6px" }}>
+                  <span
+                    aria-hidden="true"
+                    style={{
+                      color: theme.accent,
+                      fontSize: "11px",
+                      lineHeight: "1.7",
+                      flexShrink: 0,
+                      userSelect: "none",
+                    }}
+                  >
+                    ▸
+                  </span>
+                  <span style={{ flex: 1, minWidth: 0 }}>{a}</span>
+                </div>
               ))
             : <span style={{ color: theme.textSecondary, fontSize: "12px" }}>
                 Anlam bulunamadı

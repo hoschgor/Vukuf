@@ -209,6 +209,13 @@ export default function MushafKelime({
   harfAraligi = 0,
   onTikla,
   kayitKonumModu = false,
+  // ── BİRLEŞİK KELİME ──────────────────────────────────────────────────
+  // quran.com'un tek kelime saydığı yeri biz ikiye bölmüşsek (176 grup, ör.
+  // "يَا" + "بَنٖي") ikisi aynı anlamı taşır ve okuyucu tek birim sayar.
+  // grupKonum: "bas" | "orta" | "son" | null(tek)
+  grupKonum = null,
+  grupVurgu = false,
+  onGrupHover,
 }) {
   const [hover, setHover] = useState(false)
   const isMobile = useMediaQuery("(max-width: 768px)")
@@ -248,6 +255,16 @@ export default function MushafKelime({
       tv.sol = (1 - oran) * 100
     }
   }
+  // Grup üyeleri TEK BİRİM görünsün: aralarındaki dolgu kapanır, köşe yuvarlaması
+  // yalnız dış kenarlarda kalır. Yazı RTL aktığı için "bas" üye SAĞDA durur →
+  // mantıksal (start/end) köşe özellikleri kullanılır, sağ/sol sabitlenmez.
+  const grupta = grupKonum != null
+  const disBas = !grupta || grupKonum === "bas"      // birimin başlangıç kenarı
+  const disSon = !grupta || grupKonum === "son"      // birimin bitiş kenarı
+  const kose = `${disBas ? 3 : 0}px`
+  const koseSon = `${disSon ? 3 : 0}px`
+  const yanDolgu = isMobile ? 2 + harfAraligi * 3 : 3
+
   const efektifLineHeight = arapcaFont.toLowerCase().includes('me_quran') || arapcaFont.toLowerCase().includes('mequran')
   
   ? Math.max(lineHeight, 5.2)
@@ -258,23 +275,33 @@ export default function MushafKelime({
     <span
       className="mushaf-kelime"
       onClick={(e) => onTikla?.(kelime, e)}
-      onMouseEnter={() => { if (!kayitKonumModu) setHover(true) }}
-      onMouseLeave={() => setHover(false)}
+      onMouseEnter={() => { if (!kayitKonumModu) { setHover(true); onGrupHover?.(true) } }}
+      onMouseLeave={() => { setHover(false); onGrupHover?.(false) }}
       style={{
         position: "relative",
         display: "inline-block",
         cursor: kayitKonumModu ? "crosshair" : "pointer",
         marginTop: hasUpperIndicator ? `${yaziBoyutu * 0.35}px` : "0",
-        paddingLeft: isMobile ? `${2 + harfAraligi * 3}px` : "3px",
-        paddingRight: isMobile ? `${2 + harfAraligi * 3}px` : "3px",
+        // Grubun İÇ kenarındaki dolgu sıfırlanır → iki kelime bitişik görünür,
+        // dış kenarlardaki dolgu korunur (kelime aralığı bozulmaz).
+        paddingInlineStart: `${disBas ? yanDolgu : 0}px`,
+        paddingInlineEnd: `${disSon ? yanDolgu : 0}px`,
         paddingBottom: "2px",
-        borderRadius: "3px",
+        borderStartStartRadius: kose,
+        borderEndStartRadius: kose,
+        borderStartEndRadius: koseSon,
+        borderEndEndRadius: koseSon,
         background: kayitKonumModu
           ? "transparent"
           : aktif
             ? `${theme.accent}22`
-            : hover ? `${theme.accent}0a` : "transparent",
+            : (hover || grupVurgu) ? `${theme.accent}0a` : "transparent",
         boxShadow: kayitKonumModu ? "none" : aktif ? `inset 0 -2px 0 ${theme.accent}` : "none",
+        // Birleşik kelimenin ortak bağı: grup boyunca kesintisiz ince nokta çizgi.
+        // Kesintisiz olması için İÇ kenarlarda dolgu zaten sıfırlandı.
+        borderBottom: (grupta && !kayitKonumModu)
+          ? `1px dotted ${theme.accent}${grupVurgu ? "88" : "44"}`
+          : undefined,
         transition: "background 0.15s",
         whiteSpace: "nowrap",
         verticalAlign: "middle",

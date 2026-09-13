@@ -1,6 +1,7 @@
 import { useState, useRef } from "react"
 import { Play, Pause, X, Link2 } from "lucide-react"
 import kelimeMapping from "../data/kelime-mapping.json"
+import { tecvidAyikla } from "./MushafKelime"
 
 // Bizim kelime id'miz → quran.com kelime sırası.
 // NEDEN GEREKLİ: kelime sesleri (WBW mp3) quran.com'un kelime numaralarına göre
@@ -26,7 +27,19 @@ function kelimeMp3(sureNo, ayetNo, position) {
   return `${WBW_BASE}/${s}_${a}_${k}.mp3`
 }
 
-export default function KelimePopup({ kelime, konum, player, sureNo, ayetNo, theme, onKapat }) {
+// Baloncuktaki Arapça yazı boyutu. Tecvid simgelerinin konumu buna oranlıdır
+// (mushaf sayfasındaki formülün aynısı), bu yüzden tek yerde tutuluyor.
+const ARAPCA_BOYUT = 26
+
+export default function KelimePopup({
+  kelime, konum, player, sureNo, ayetNo, theme, onKapat,
+  // MUSHAFTA SEÇİLİ FONTUN AYNISI. Eskiden burada "'KFGQPC Uthmanic Script HAFS'"
+  // yazılıydı — projede BÖYLE BİR AİLE YÜKLENMİYOR (yüklenen ad 'KFGQPC Uthmanic').
+  // Yani baloncuk sessizce jenerik `serif`e düşüyordu; onarılmış fontun bütün
+  // kazanımları (uni0656 alt-elif konturu, Osmanlı işaretleri) baloncukta yoktu:
+  // aşağı uzatmalar bozuk, işaretler noktalı-daire ◌ olarak çiziliyordu.
+  arapcaFont = "'KFGQPC Uthmanic', serif",
+}) {
   const [kelimeCaliyor, setKelimeCaliyor] = useState(false)
   const kelimeAudioRef = useRef(null)
 
@@ -44,6 +57,16 @@ export default function KelimePopup({ kelime, konum, player, sureNo, ayetNo, the
     (birlesik ? eslenenSira(uyeler[0]) : null) ||
     kelime.position ||
     null
+
+  // ── TECVİD / KIRAAT İŞARETLERİ ──────────────────────────────────
+  // Mushaf sayfasıyla AYNI işlev (MushafKelime'den geliyor): işaret metinden
+  // çıkarılır, kuralı belirten küçük renkli simge overlay olarak çizilir.
+  // Çıkarılmazsa fontlar bu kodları bozuk ◌ (noktalı daire) glifine düşürüyor —
+  // baloncukta görülen "minik yuvarlak" tam olarak buydu.
+  const { metin: arapcaMetin, tecvidler } = tecvidAyikla({
+    id: kelime.id,
+    arabic: kelime.ham,
+  })
 
   const ayetCaliniyor =
     player?.durum === "caliyor" &&
@@ -126,19 +149,82 @@ export default function KelimePopup({ kelime, konum, player, sureNo, ayetNo, the
         boxShadow: "0 4px 24px rgba(0,0,0,0.15)",
       }}>
 
-        {/* Üst: Arapça + kapat */}
+        {/* ── Üst: Arapça + okunuş + kapat ─────────────────────────────
+            Okunuş Arapçanın ALTINA, aynı blokta duruyor: ayrı bir satır gibi
+            değil, başlığın parçası gibi okunsun diye. */}
         <div style={{
-          display: "flex", alignItems: "center",
+          display: "flex", alignItems: "flex-start",
           justifyContent: "space-between",
-          marginBottom: "6px", gap: "8px",
+          marginBottom: "8px", gap: "8px",
         }}>
-          <span style={{
-            fontSize: "22px", color: theme.accent,
-            fontFamily: "'KFGQPC Uthmanic Script HAFS', serif",
-            direction: "rtl", lineHeight: 1.4,
-          }}>
-            {kelime.ham}
-          </span>
+          <div style={{ minWidth: 0, flex: 1 }}>
+            {/* Arapça kutusu — tecvid simgeleri buna göre konumlanır.
+                ALT DOLGU ŞART: alt-elif (U+0656), kasr/med halkaları (U+08D1/08D2)
+                ve bazı harflerin kuyruğu taban çizgisinin ALTINA taşıyor. Baloncuk
+                `overflowY:auto` olduğu için dolgu olmadan bunlar kırpılıyordu —
+                mushaf sayfasındaki aşağı-uzatma düzeltmesinin baloncuktaki karşılığı. */}
+            <div style={{
+              position: "relative",
+              display: "inline-block",
+              paddingTop: `${ARAPCA_BOYUT * 0.30}px`,
+              paddingBottom: `${ARAPCA_BOYUT * 0.34}px`,
+              lineHeight: 1,
+            }}>
+              <span style={{
+                fontFamily: arapcaFont,
+                fontSize: `${ARAPCA_BOYUT}px`,
+                color: theme.accent,
+                direction: "rtl",
+                lineHeight: 1.05,
+                display: "inline-block",
+                whiteSpace: "nowrap",
+              }}>
+                {arapcaMetin}
+              </span>
+
+              {/* Tecvid simgeleri — mushaf sayfasındaki konum formülünün aynısı:
+                  kutunun DİKEY MERKEZİNE göre, ait olduğu harfin hizasında. */}
+              {tecvidler.map((t, ti) => (
+                <span
+                  key={`tv-${ti}`}
+                  title={t.ad}
+                  style={{
+                    position: "absolute",
+                    left: `${t.sol ?? 50}%`,
+                    top: "50%",
+                    transform: `translate(-50%, -50%) translateY(${t.yer === "ust" ? "-" : ""}${ARAPCA_BOYUT * (t.yer === "ust" ? 0.66 : 0.56)}px)`,
+                    fontSize: `${ARAPCA_BOYUT * 0.34}px`,
+                    lineHeight: 1,
+                    color: t.renk,
+                    fontFamily: "'Scheherazade New', serif",
+                    fontWeight: 700,
+                    pointerEvents: "none",
+                    whiteSpace: "nowrap",
+                    zIndex: 3,
+                  }}
+                >
+                  {t.sembol}
+                </span>
+              ))}
+            </div>
+
+            {/* Okunuş — Arapçanın hemen altında, soluk ve küçük: bilgi olarak var
+                ama gözü anlamdan çalmıyor. Sözlükte okunuş yoksa satır hiç çizilmez. */}
+            {kelime.okunus && (
+              <div style={{
+                fontSize: "11.5px",
+                color: theme.textSecondary,
+                fontStyle: "italic",
+                letterSpacing: "0.2px",
+                lineHeight: 1.3,
+                marginTop: "1px",
+                wordBreak: "break-word",
+              }}>
+                {kelime.okunus}
+              </div>
+            )}
+          </div>
+
           <button onClick={onKapat} style={{
             background: "none", border: "none",
             cursor: "pointer", color: theme.textSecondary,
@@ -164,16 +250,6 @@ export default function KelimePopup({ kelime, konum, player, sureNo, ayetNo, the
           </div>
         )}
 
-        {/* Okunuş */}
-        {kelime.okunus && (
-          <div style={{
-            fontSize: "12px", color: theme.textSecondary,
-            fontStyle: "italic", marginBottom: "8px",
-          }}>
-            {kelime.okunus}
-          </div>
-        )}
-
         {/* Anlamlar — madde işareti olarak "1." yerine içi dolu sağ ok.
             Satır başı hizalı kalsın diye her madde flex satırı; ok sabit
             genişlikte, metin sarınca ok hizasının altına kaymaz. */}
@@ -183,18 +259,27 @@ export default function KelimePopup({ kelime, konum, player, sureNo, ayetNo, the
         }}>
           {anlamlar
             ? anlamlar.map((a, i) => (
-                <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: "6px" }}>
+                <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: "7px" }}>
+                  {/* Ok METİN GLİFİ DEĞİL, SVG. Sebebi ölçüldü: ▸ / ▶ gibi glifler
+                      fonttan fonta hem boyut hem taban çizgisi bakımından çok
+                      değişiyor; ok ya küçük kalıyor ya satırın ortasına oturmuyordu.
+                      SVG'de boyut kesin, dikey ortalama da kutuyu ilk satırın
+                      yüksekliğine (1.7em) sabitleyip içinde ortalayarak yapılıyor. */}
                   <span
                     aria-hidden="true"
                     style={{
-                      color: theme.accent,
-                      fontSize: "11px",
-                      lineHeight: "1.7",
                       flexShrink: 0,
+                      width: "10px",
+                      height: "1.7em",          // ilk satırın kutu yüksekliği
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
                       userSelect: "none",
                     }}
                   >
-                    ▸
+                    <svg width="10" height="12" viewBox="0 0 10 12">
+                      <polygon points="0,0 10,6 0,12" fill={theme.accent} />
+                    </svg>
                   </span>
                   <span style={{ flex: 1, minWidth: 0 }}>{a}</span>
                 </div>

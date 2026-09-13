@@ -92,6 +92,38 @@ function imaleMi(kelime) {
   return IMALE_KELIMELER.has(tabanHarfleri(kelime.arabic))
 }
 const TECVID_CPS = new Set(Object.keys(TECVID_ISARET).map(Number))
+
+// ── TECVİD AYIKLAMA — TEK KAYNAK ──────────────────────────────────────────────────────────
+// Aynı iş İKİ yerde gerekiyor: mushaf sayfası ve kelime baloncuğu. İkinci bir kopya
+// yazılmıyor, çünkü bu dosyanın başındaki iki hata da tam olarak "aynı bilginin iki
+// tabloda tutulup sessizce ayrışması"ndan çıkmıştı (renk tablosu ↔ harf tablosu).
+// Dönüş: { metin, tecvidler } — `metin` işaretler çıkarılmış hâli (font kelimeyi tek
+// parça, bitişmesi bozulmadan çizsin diye), `tecvidler` ise overlay çizilecek simgeler.
+// `sol` alanı: işaretin ait olduğu TABAN harfin soldan yüzde konumu.
+export function tecvidAyikla(kelime) {
+  const kaynak = String(kelime?.arabic ?? "")
+  const imale = imaleMi(kelime)
+  if (!imale && ![...kaynak].some(c => TECVID_CPS.has(c.codePointAt(0)))) {
+    return { metin: kaynak, tecvidler: [] }
+  }
+  const tecvidler = []
+  const kalan = []
+  let taban = 0
+  for (const c of kaynak) {
+    const cp = c.codePointAt(0)
+    const t = TECVID_ISARET[cp]
+    if (t) { tecvidler.push({ ...t, taban }); continue }     // işaret metinden çıkar
+    if (imale && cp === 0x06EA) { tecvidler.push({ ...IMALE_ISARET, taban }); continue }
+    kalan.push(c)
+    if (!BIRLESIK_RE.test(c)) taban++                        // yalnız taban (harf) say
+  }
+  const toplam = Math.max(1, taban)
+  for (const tv of tecvidler) {
+    const oran = Math.min(1, Math.max(0, (tv.taban - 0.5) / toplam))
+    tv.sol = (1 - oran) * 100
+  }
+  return { metin: kalan.join(""), tecvidler }
+}
 // Birleşik (harekeler/işaretler) — taban harf saymak için: bunlar harf DEĞİL.
 const BIRLESIK_RE = /[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06ED\u08D3-\u08FF]/
 // U+08D1 ve U+08D2 bir ara "veride hiç geçmiyor" denip çıkarılmıştı — O ÖLÇÜM
@@ -231,30 +263,10 @@ export default function MushafKelime({
   // KFGQPC bu glifi ÇİFT ESRE gibi çiziyordu; fontun uni0656 konturu onarıldı (U+0670 hançer
   // elif konturu taban çizgisinin altına indirildi). İşareti fontun GPOS'u yerleştirdiği için
   // konum HER KELİMEDE doğru — harf sayarak tahmin etmeye gerek kalmadı.
-  const tecvidler = []
-  let temizArabic = kelime.arabic
   // İmâle YALNIZ Hûd 11:41 "مجرىها" kelimesinde geçerlidir (Hafs'ta tek yer). Orada U+06EA
   // uzatma değil imâle demektir; başka her yerde uzatmadır ve fonta bırakılır.
-  const imale = imaleMi(kelime)
-  if (imale || [...kelime.arabic].some(c => TECVID_CPS.has(c.codePointAt(0)))) {
-    const kalan = []
-    let taban = 0
-    for (const c of kelime.arabic) {
-      const cp = c.codePointAt(0)
-      const t = TECVID_ISARET[cp]
-      if (t) { tecvidler.push({ ...t, taban }); continue }   // işaret metinden çıkar
-      if (imale && cp === 0x06EA) { tecvidler.push({ ...IMALE_ISARET, taban }); continue }
-      kalan.push(c)
-      if (!BIRLESIK_RE.test(c)) taban++                       // yalnız taban (harf) say
-    }
-    temizArabic = kalan.join('')
-    const toplam = Math.max(1, taban)
-    // oran: sağdan (RTL başlangıcı) itibaren harfin merkezi → soldan yüzde konumu
-    for (const tv of tecvidler) {
-      const oran = Math.min(1, Math.max(0, (tv.taban - 0.5) / toplam))
-      tv.sol = (1 - oran) * 100
-    }
-  }
+  // Ayıklama yukarıdaki paylaşılan `tecvidAyikla`da — baloncuk da aynı işlevi kullanıyor.
+  const { metin: temizArabic, tecvidler } = tecvidAyikla(kelime)
   // Grup üyeleri TEK BİRİM görünsün: aralarındaki dolgu kapanır, köşe yuvarlaması
   // yalnız dış kenarlarda kalır. Yazı RTL aktığı için "bas" üye SAĞDA durur →
   // mantıksal (start/end) köşe özellikleri kullanılır, sağ/sol sabitlenmez.

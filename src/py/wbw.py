@@ -32,6 +32,10 @@ Bu yüzden konumdan konuma eşleme yapılamaz; kayar. Çözüm: HİZALAMA tablos
   8) İNGİLİZCE python3 wbw.py --ingilizce
      quran.com'un Türkçe veremediği kelimeleri listeler, dosyaya yazar.
 
+ 19) BÖLÜNME   python3 wbw.py --bolunme [--ayrinti 40]
+     Bizim kelime bölünmemiz quran.com'unkiyle aynı mı? Âyet âyet karşılaştırır,
+     birleştirilecek ve bölünecek yerleri listeler. Yazmaz.
+
  18) SARF       python3 wbw.py --sarf
      Fiillerin şahıs/cins/sayı/kip bilgisini kelime id'lerimize bağlar,
      kelime-sarf.json üretir. Tanımadığı etiketleri ayrıca listeler.
@@ -1830,6 +1834,13 @@ def sarf_uret(sarf_yolu="quran-morphology.txt", mushaf_yolu="kuran-mushaf.json",
 
     # ── Etiket dağarcığı ölçümü (fiil satırları) ──
     PGN = re.compile(r"^([123])(M|F)(S|D|P)$")
+    # CİNSİYETSİZ ÇEKİMLER — eksik veri DEĞİL, Arapça'nın kendi yapısı:
+    #   1S / 1P → 1. şahısta (ben / biz) eril-dişil ayrımı YOKTUR
+    #   2D      → 2. şahıs İKİLDE de ayrım yoktur (antumâ tek biçim)
+    # Bunlar önce "tanınmayan etiket" diye raporlanıyor ve 2487 fiil çekimsiz
+    # kalıyordu (1P:1860 + 1S:573 + 2D:54). Cinsiyet alanı BOŞ bırakılır;
+    # uydurulmaz — "1. çoğul eril" demek yanlış olurdu.
+    PGN_CINSSIZ = re.compile(r"^([123])(S|D|P)$")
     fiil_etiket, taninmayan = Counter(), Counter()
     for segler in kayit.values():
         for _sg, _form, tag, ozl in segler:
@@ -1840,7 +1851,8 @@ def sarf_uret(sarf_yolu="quran-morphology.txt", mushaf_yolu="kuran-mushaf.json",
                 if not t or ":" in t:
                     continue
                 fiil_etiket[t] += 1
-                if t not in _KIP and not PGN.match(t) and t not in _TUR:
+                if (t not in _KIP and not PGN.match(t)
+                        and not PGN_CINSSIZ.match(t) and t not in _TUR):
                     taninmayan[t] += 1
     print("\n  ── FİİL satırlarındaki etiketler (en sık 24) " + "─" * 24)
     print("    " + ", ".join(f"{k}:{v}" for k, v in fiil_etiket.most_common(24)))
@@ -1874,13 +1886,28 @@ def sarf_uret(sarf_yolu="quran-morphology.txt", mushaf_yolu="kuran-mushaf.json",
                         bilgi["sahis"] = _SAHIS[m.group(1)]
                         bilgi["cins"] = _CINS[m.group(2)]
                         bilgi["sayi"] = _SAYI[m.group(3)]
+                        continue
+                    m = PGN_CINSSIZ.match(t)
+                    if m:
+                        # cins KONMAZ (1. şahısta / 2. ikilde Arapça'da yok)
+                        bilgi["sahis"] = _SAHIS[m.group(1)]
+                        bilgi["sayi"] = _SAYI[m.group(2)]
             elif tag == "PRON":
                 for t in parca:
-                    m = PGN.match(t.split(":")[-1])
+                    son = t.split(":")[-1]
+                    m = PGN.match(son)
                     if m:
-                        bilgi["zamir"] = f"{_SAHIS[m.group(1)]} {_SAYI[m.group(2+1)]} {_CINS[m.group(2)]}"
+                        bilgi["zamir"] = f"{_SAHIS[m.group(1)]} {_SAYI[m.group(3)]} {_CINS[m.group(2)]}"
+                        continue
+                    m = PGN_CINSSIZ.match(son)
+                    if m:
+                        bilgi["zamir"] = f"{_SAHIS[m.group(1)]} {_SAYI[m.group(2)]}"
         if bilgi.get("tur") == "fiil" and "sahis" in bilgi:
-            parcalar = [f"{bilgi['sahis']} {bilgi['sayi']} {bilgi['cins']}"]
+            # Cinsiyet varsa eklenir, yoksa hiç yazılmaz: "1. çoğul", "2. ikil".
+            cekim = [bilgi["sahis"], bilgi["sayi"]]
+            if bilgi.get("cins"):
+                cekim.append(bilgi["cins"])
+            parcalar = [" ".join(cekim)]
             if bilgi.get("kip"):
                 parcalar.append(bilgi["kip"])
             if bilgi.get("cati") == "edilgen":
@@ -1907,6 +1934,141 @@ def sarf_uret(sarf_yolu="quran-morphology.txt", mushaf_yolu="kuran-mushaf.json",
         print(f"    {k:<12} {biz.get(k,''):<18} {v['etiket']}")
     print(f"\n  yazıldı: {cikti}  ({os.path.getsize(cikti)//1024} KB)")
     print("  (mevcut hiçbir dosya değiştirilmedi)")
+
+
+# ══════════════════════════════════════════════════════════════════════════
+def bolunme_denetle(mushaf_yolu="kuran-mushaf.json", wbw_yolu="wbw_tr.json",
+                    cikti="bolunme_farklari.json", ayrinti=25):
+    """Bizim kelime bölünmemiz quran.com'unkiyle AYNI MI? Âyet âyet karşılaştırır.
+
+    HEDEF: quran.com hangi kelimeyi bölmüşse biz de aynı yerde bölelim.
+    Çünkü kelime kelime okuma, kelime sesi (WBW mp3) ve anlam eşlemesi hep
+    o bölünmeye göre. Ayrışınca "يَٰبُنَىَّ" gibi kalıplar bizde iki kelime,
+    onlarda tek oluyor; okuyucu aynı anlamı iki kez gösteriyor.
+
+    İKİ YÖNLÜ FARK VAR, ikisi de raporlanır:
+      • BİZDE FAZLA : biz bölmüşüz, onlar bölmemiş  (birleştirilmeli)
+      • ONLARDA FAZLA: onlar bölmüş, biz bölmemişiz (bölünmeli)
+    Ayrıca âyet metni İKİ TARAFTA AYNI MI diye iskelet karşılaştırması yapılır —
+    sayı farkı bölünmeden mi geliyor yoksa metin gerçekten farklı mı, ayrılsın.
+
+    HİÇBİR DOSYAYI DEĞİŞTİRMEZ; iş listesi yazar.
+    """
+    ham = json.load(open(yol_coz(mushaf_yolu), encoding="utf-8"))
+    wbw = json.load(open(girdi(wbw_yolu), encoding="utf-8"))
+    cikti = cikti_yolu(cikti)
+
+    # ── Bizim kelimeler: âyet -> [(id, arapca)] ──
+    biz = {}
+    for kid, ar in bizim_kelimeler(ham):
+        p = str(kid).split(":")
+        if len(p) >= 3 and all(x.isdigit() for x in p[:3]):
+            biz.setdefault(f"{p[0]}:{p[1]}", []).append((int(p[2]), kid, ar))
+    for v in biz.values():
+        v.sort()
+
+    # ── Onların kelimeleri: âyet -> [(sira, yer, arapca)] ("end" jetonu kelime değil) ──
+    onlar = {}
+    for yer, v in wbw.items():
+        if v.get("tip") == "end":
+            continue
+        p = yer.split(":")
+        if len(p) < 3 or not all(x.isdigit() for x in p):
+            continue
+        onlar.setdefault(f"{p[0]}:{p[1]}", []).append((int(p[2]), yer, v.get("ar", "")))
+    for v in onlar.values():
+        v.sort()
+
+    ayni = bizde_fazla = onlarda_fazla = yok = 0
+    metin_farkli = 0
+    kayitlar = []
+    for ay in sorted(set(biz) | set(onlar), key=lambda x: [int(t) for t in x.split(":")]):
+        b, o = biz.get(ay), onlar.get(ay)
+        if not b or not o:
+            yok += 1
+            continue
+        if len(b) == len(o):
+            ayni += 1
+            continue
+        # Metin gerçekten aynı mı? (bölünme farkı ↔ metin farkı ayrımı)
+        #
+        # SABİT ORAN KULLANILMIYOR, ÖLÇÜLDÜ: iki kaynağın imlâsı birebir aynı
+        # değil (bizde "يَا"+dagger elif, onlarda "يَٰ"; إسرائيل'in ي'si vb.),
+        # bu yüzden salt bölünme farkı olan âyetlerde bile 1-2 harf oynuyor.
+        # Kısa âyette 1 harf oranı %96'ya düşürüyor — 0.97 gibi sabit bir eşik
+        # o âyetleri yanlışlıkla "metin farklı" diye işaretliyordu. Onun için
+        # izin UZUNLUĞA bağlı: kısa âyette 2 harf, uzunda %6.
+        # Gerçek metin farkı bu bandın çok altında kalıyor (ölçüm: imlâ farkı
+        # 0.96 · gerçekten başka âyet 0.33), yani ayrım güvenli.
+        bi = iskelet("".join(x[2] for x in b))
+        oi = iskelet("".join(x[2] for x in o))
+        oran = benzerlik(bi, oi)
+        uzun = max(1, len(bi), len(oi))
+        metin_ayni = oran >= 1 - max(2.0, 0.06 * uzun) / uzun
+        if not metin_ayni:
+            metin_farkli += 1
+        if len(b) > len(o):
+            bizde_fazla += 1
+            yon = "birlestir"     # biz bölmüşüz → birleştirilmeli
+        else:
+            onlarda_fazla += 1
+            yon = "bol"           # onlar bölmüş → bölünmeli
+        kayitlar.append({
+            "ayet": ay, "yon": yon,
+            "bizde": len(b), "onlarda": len(o), "fark": len(b) - len(o),
+            "metin_ayni": metin_ayni,
+            "benzerlik": round(oran, 3),
+            "bizim_kelimeler": [x[2] for x in b],
+            "onlarin_kelimeleri": [x[2] for x in o],
+            "bizim_idler": [x[1] for x in b],
+        })
+
+    toplam = ayni + bizde_fazla + onlarda_fazla
+    y = lambda n: f"%{100*n/toplam:.1f}" if toplam else "%0"
+    print("=" * 74)
+    print("KELİME BÖLÜNMESİ — BİZ ↔ QURAN.COM")
+    print("=" * 74)
+    print(f"  karşılaştırılan âyet    : {toplam}   (tek tarafta olan: {yok})")
+    print(f"  kelime sayısı AYNI      : {ayni}  ({y(ayni)})")
+    print(f"  BİZDE fazla (birleştir) : {bizde_fazla}  ({y(bizde_fazla)})")
+    print(f"  ONLARDA fazla (böl)     : {onlarda_fazla}  ({y(onlarda_fazla)})")
+    print(f"  ⚠ metni de farklı olan  : {metin_farkli}  (bölünme değil, METİN farkı — ayrı iş)")
+    print(f"  toplam kelime  bizde {sum(len(v) for v in biz.values())}  ·  onlarda {sum(len(v) for v in onlar.values())}")
+    print()
+
+    def dok(baslik, yon, n):
+        liste = [k for k in kayitlar if k["yon"] == yon]
+        if not liste:
+            return
+        print(f"  ── {baslik} ({len(liste)} âyet) " + "─" * max(0, 40 - len(baslik)))
+        for k in liste[:n]:
+            im = "" if k["metin_ayni"] else f"  ⚠METİN FARKLI (benzerlik {k['benzerlik']})"
+            print(f"    {k['ayet']:<9} bizde {k['bizde']} / onlarda {k['onlarda']}{im}")
+            # yalnız ayrışan bölgeyi göster: baştan ve sondan ortak kısmı at
+            b, o = k["bizim_kelimeler"], k["onlarin_kelimeleri"]
+            i = 0
+            while i < min(len(b), len(o)) and iskelet(b[i]) == iskelet(o[i]):
+                i += 1
+            j = 0
+            while (j < min(len(b), len(o)) - i
+                   and iskelet(b[len(b)-1-j]) == iskelet(o[len(o)-1-j])):
+                j += 1
+            print(f"      bizde  : {' | '.join(b[i:len(b)-j]) or '—'}")
+            print(f"      onlarda: {' | '.join(o[i:len(o)-j]) or '—'}")
+        if len(liste) > n:
+            print(f"    … ve {len(liste)-n} âyet daha")
+        print()
+
+    dok("BİZDE FAZLA — birleştirilecek", "birlestir", ayrinti)
+    dok("ONLARDA FAZLA — bölünecek", "bol", ayrinti)
+
+    json.dump(kayitlar, open(cikti, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+    print(f"  yazıldı: {cikti}  ({len(kayitlar)} âyet)")
+    print("  (hiçbir dosya değiştirilmedi — bu yalnız ölçüm)")
+    print()
+    print("  NOT: bu farkları düzeltmek kelime NUMARALARINI kaydırır. Düzeltme")
+    print("  yapılırsa kelime-anlam / kelime-grup / kelime-sarf / kelime_hizalama")
+    print("  dosyalarının HEPSİ yeniden üretilmelidir.")
 
 
 # ══════════════════════════════════════════════════════════════════════════
@@ -2479,6 +2641,26 @@ if __name__ == "__main__":
         birlestir(arg[0] if arg else "wbw_tr.json")
     elif "--ing-analiz" in sys.argv:
         ingilizce_analiz()
+    elif "--bolunme" in sys.argv:
+        # --ayrinti N'in DEĞERİ konumsal argüman sanılmasın (o yüzden atlanıyor).
+        n = 25
+        arg = []
+        atla = False
+        for a in sys.argv[1:]:
+            if atla:
+                atla = False
+                continue
+            if a == "--ayrinti":
+                atla = True
+                continue
+            if not a.startswith("--"):
+                arg.append(a)
+        if "--ayrinti" in sys.argv:
+            try:
+                n = int(sys.argv[sys.argv.index("--ayrinti") + 1])
+            except (IndexError, ValueError):
+                print("UYARI: --ayrinti sayısı okunamadı, 25 kullanılıyor.")
+        bolunme_denetle(arg[0] if arg else "kuran-mushaf.json", ayrinti=n)
     elif "--sarf" in sys.argv and "--sarf-kesif" not in sys.argv:
         arg = [a for a in sys.argv[1:] if not a.startswith("--")]
         sarf_uret(arg[0] if arg else "quran-morphology.txt")

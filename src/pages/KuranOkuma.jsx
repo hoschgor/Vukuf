@@ -1852,6 +1852,12 @@ function sureGit(sureId, ayetNo) {
       ? ham.filter(Boolean).map(String)
       : (ham ? [String(ham)] : null)
     const lugatSonuc = yerAnlami && yerAnlami.length ? null : lugat(kelime.arabic)
+    // OKUNUŞ ANLAMDAN BAĞIMSIZ ARANIR. Önceden okunuş yalnız `lugatSonuc`tan
+    // okunuyordu; o da SADECE konum anlamı bulunamadığında dolduruluyor. Konum
+    // anlamı %100'e çıktığından `lugatSonuc` artık hep null kalıyor ve baloncukta
+    // okunuş satırı HİÇ görünmüyordu. Sözlük ayrıca sorulur: okunuş kelimenin
+    // biçimine bağlı, anlamın nereden geldiğiyle ilgisi yok.
+    const okunusKaydi = lugatSonuc || lugat(kelime.arabic)
     // BİRLEŞİK KELİME: quran.com'un tek kelime saydığı yeri biz iki kelimeye
     // bölmüşsek (174 yer, ör. "يَا" + "بَنٖي"), baloncuk bunları TEK BİRİM
     // göstermeli. Aksi hâlde iki ayrı kelimede aynı anlam çıkıyor ve kelime
@@ -1862,11 +1868,17 @@ function sureGit(sureId, ayetNo) {
     setPopup({
       tip: "kelime",
       kelime: {
+        // KELİME KİMLİĞİ — baloncuk WBW ses dosyasını bununla buluyor
+        // (kelime-mapping: bizim id → quran.com sırası). Eskiden buraya
+        // KONMUYORDU, dolayısıyla eşleme tablosu yalnız grup üyelerinde
+        // devreye giriyor, tek kelimelerde ham `position`a düşülüyordu —
+        // bölünmenin ayrıştığı âyetlerde yanlış kelime çalıyordu.
+        id:       kelime.id,
         ham:      grup?.ar || kelime.arabic,
         // Baloncuk ve kelime kelime ilerleme bunu kullanır: grup üyeleri tek
         // adım sayılır, ikinci üyeye ayrıca durulmaz.
         grupUyeleri: uyeler,
-        okunus:   lugatSonuc?.okunuş || "",
+        okunus:   okunusKaydi?.okunuş || "",
         anlamlar: (yerAnlami && yerAnlami.length) ? yerAnlami : (lugatSonuc?.anlamlar || []),
         position,
       },
@@ -3152,6 +3164,9 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
           sureNo={popup.sureNo}
           ayetNo={popup.ayetNo}
           theme={theme}
+          // Baloncuk mushafta SEÇİLİ fontu kullanmalı: onarılmış font olmadan
+          // alt-elif ve Osmanlı işaretleri bozuk çiziliyor (bkz. KelimePopup).
+          arapcaFont={aktifArapcaFont.style}
           onKapat={() => setPopup(null)}
         />
       )}

@@ -135,7 +135,10 @@ const BIRLESIK_RE = /[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06ED\u08D3-\u08FF
 // YANILTICI; dosyanın başındaki kural burada da geçerli: ada değil, kullanıma bak.
 const OZEL_CPS = new Set([0x08D1, 0x08D2, 0x08D9])
 const CIM_CPS = new Set([0x06DA])
-const TUM_OZEL_CPS = new Set([...VAKIF_CPS, ...OZEL_CPS, ...CIM_CPS])
+// OZEL_CPS artık BU KÜMEDE DEĞİL: o işaretler metne hiç girmeden `ozelOkuyusAyikla`
+// tarafından ayrılıyor, etiketleri dış overlay olarak çiziliyor. Bu küme yalnız
+// Arapça span'i parçalara bölmenin gerekip gerekmediğini söyler.
+const TUM_OZEL_CPS = new Set([...VAKIF_CPS, ...CIM_CPS])
 // ── PAYLAŞIM GÖRSELİ İÇİN TEMİZLEME ────────────────────────────────────────────────────────
 // ARTIK SABİT BİR ÇIKARMA LİSTESİ YOK. Fontlar onarıldığı için (KFGQPC'de uni0656 konturu
 // düzeltildi; me_quran'a U+0615 ve U+08D1..08DE Osmanlı işaretleri eklendi) bu işaretlerin
@@ -145,6 +148,10 @@ const TUM_OZEL_CPS = new Set([...VAKIF_CPS, ...OZEL_CPS, ...CIM_CPS])
 // Bunun yerine GorselOlustur'daki `eksikGlifAt` süzgeci kullanılır: o, SEÇİLİ FONTU ölçerek
 // yalnızca gerçekten çizilemeyen (notdef/□) işaretleri atar. Yani kural fonta göre kendini
 // ayarlar; burada elle bakım gerekmez. Harflere ve harekelere hiç dokunulmaz.
+// ÖZEL OKUYUŞ İŞARETLERİ (U+08D1/08D2/08D9) BURADA ÇIKARILMAZ. Bir ara çıkarılmıştı
+// ama o zaman görselde işaret bütünüyle kayboluyordu. Doğrusu: metinde kalsınlar,
+// GorselOlustur satırı çizerken `ozelOkuyusAyikla` ile ayırıp yerine قصر / مد / ن
+// etiketini KENDİ çizsin — konum hesabı ancak satır genişliği bilinen yerde yapılabilir.
 export function gorselIcinTemizle(metin) {
   return String(metin || "").replace(/\s+/g, " ").trim()
 }
@@ -197,6 +204,53 @@ const OZEL_RENK = {
   0x08D1: '#c0392b',
   0x08D2: '#c0392b',
   0x08D9: '#c0392b',
+}
+const OZEL_AD = {
+  0x08D1: 'Kasr — kısa okuma seçeneği',
+  0x08D2: 'Medd — uzun okuma seçeneği',
+  0x08D9: 'Nûn-i sağîre (gunne)',
+}
+
+// ── ÖZEL OKUYUŞ İŞARETLERİNİ AYIR — TEK KAYNAK ────────────────────────────────────────────
+// NEDEN GEREKLİ: bu üç kodun Unicode glifi GERÇEKTEN BİR DAİREDİR
+//   U+08D1 ARABIC LARGE CIRCLE BELOW · U+08D2 ARABIC LARGE ROUND DOT INSIDE CIRCLE BELOW
+// Yani font bozuk çizmiyor, "doğru" çiziyor; ekranda anlamsız bir yuvarlak olarak görünen
+// şey bu. Mushaf sayfası zaten bunları metinden çıkarıp yerine قصر / مد / ن etiketini
+// koyuyor. Aynı dönüşüm baloncukta ve paylaşım görselinde de gerekiyordu — üç ayrı kopya
+// yazmamak için ayırma işi burada, tabloların yanında duruyor.
+//
+// UYARI: GorselOlustur'daki `eksikGlifAt` süzgeci bunları YAKALAYAMAZ. O süzgeç ilerleme
+// genişliğine bakar; buradaki glifler gerçek birleşen işaretler (kategori Mn, genişlik 0),
+// yani "çizilemiyor" testinden geçiyorlar. Ayıklama bu yüzden kod listesiyle yapılmalı.
+// Dönüş: { metin, ozeller } — `sol` alanı ait olduğu taban harfin soldan yüzde konumu.
+export function ozelOkuyusAyikla(metin) {
+  const kaynak = String(metin ?? '')
+  if (![...kaynak].some(c => OZEL_CPS.has(c.codePointAt(0)))) {
+    return { metin: kaynak, ozeller: [] }
+  }
+  const ozeller = []
+  const kalan = []
+  let taban = 0
+  for (const c of kaynak) {
+    const cp = c.codePointAt(0)
+    if (OZEL_CPS.has(cp)) {
+      ozeller.push({
+        cp, taban,
+        sembol: OZEL_SEMBOL[cp] || c,
+        renk: OZEL_RENK[cp] || '#c0392b',
+        ad: OZEL_AD[cp] || '',
+      })
+      continue
+    }
+    kalan.push(c)
+    if (!BIRLESIK_RE.test(c)) taban++
+  }
+  const toplam = Math.max(1, taban)
+  for (const oz of ozeller) {
+    const oran = Math.min(1, Math.max(0, (oz.taban - 0.5) / toplam))
+    oz.sol = (1 - oran) * 100
+  }
+  return { metin: kalan.join(''), ozeller }
 }
 
 function besmeleMi(kelimeId) {
@@ -266,7 +320,14 @@ export default function MushafKelime({
   // İmâle YALNIZ Hûd 11:41 "مجرىها" kelimesinde geçerlidir (Hafs'ta tek yer). Orada U+06EA
   // uzatma değil imâle demektir; başka her yerde uzatmadır ve fonta bırakılır.
   // Ayıklama yukarıdaki paylaşılan `tecvidAyikla`da — baloncuk da aynı işlevi kullanıyor.
-  const { metin: temizArabic, tecvidler } = tecvidAyikla(kelime)
+  const { metin: tecvidsizArabic, tecvidler } = tecvidAyikla(kelime)
+  // ÖZEL OKUYUŞ (kasr/medd/nûn-i sağîre) artık BURADA ayrılıyor ve etiketi aşağıdaki
+  // overlay listesiyle, AİT OLDUĞU HARFİN HİZASINDA çiziliyor.
+  // ÖNCEKİ HATA: etiket, Arapça span'inin içinde `right: 0` ile çiziliyordu — yani
+  // hangi harfe ait olursa olsun HEP kelimenin başına (RTL'de sağ uca) yapışıyordu.
+  // Bakara 2:14 مُسْتَهْزِؤُ۫نَ'de "مد" ؤ'nin altında olmalıyken kelimenin ucunda duruyordu.
+  // Yatay konum artık tecvid işaretleriyle aynı taban-harf sayımından geliyor (`sol`).
+  const { metin: temizArabic, ozeller } = ozelOkuyusAyikla(tecvidsizArabic)
   // Grup üyeleri TEK BİRİM görünsün: aralarındaki dolgu kapanır, köşe yuvarlaması
   // yalnız dış kenarlarda kalır. Yazı RTL aktığı için "bas" üye SAĞDA durur →
   // mantıksal (start/end) köşe özellikleri kullanılır, sağ/sol sabitlenmez.
@@ -403,6 +464,32 @@ export default function MushafKelime({
         </span>
       ))}
 
+      {/* Özel okuyuş etiketleri (قصر / مد / ن) — tecvid simgeleriyle AYNI konum
+          mantığı: kutunun dikey merkezine göre alta, yatayda ait olduğu harfin
+          hizasına. Tecvid simgelerinden biraz daha aşağıda ve büyük duruyorlar,
+          çünkü bunlar tek karakter değil iki-üç harfli kısaltmalar. */}
+      {ozeller.map((oz, oi) => (
+        <span
+          key={`oz-${oi}`}
+          title={oz.ad}
+          style={{
+            position: "absolute",
+            left: `${oz.sol ?? 50}%`,
+            top: "50%",
+            transform: `translate(-50%, -50%) translateY(${yaziBoyutu * 0.66}px)`,
+            fontSize: `${yaziBoyutu * 0.42}px`,
+            lineHeight: 1,
+            color: oz.renk,
+            fontFamily: "'Scheherazade New', serif",
+            pointerEvents: "none",
+            whiteSpace: "nowrap",
+            zIndex: 3,
+          }}
+        >
+          {oz.sembol}
+        </span>
+      ))}
+
       {/* Arapça metin */}
       <span
         style={{
@@ -491,16 +578,10 @@ export default function MushafKelime({
                 fontFamily: vakifFontFamily,
                 whiteSpace: 'nowrap',
               }}>{c}</span>)
-            } else if (OZEL_CPS.has(cp)) {
-              if (normalBuf) { spans.push(<span key={`n-${i}`}>{normalBuf}</span>); normalBuf = '' }
-              spans.push(<span key={i} style={{
-                position: 'absolute',
-                bottom: `-${yaziBoyutu * 0.25}px`,
-                right: 0,
-                color: OZEL_RENK[cp] || '#c0392b',
-                fontSize: `${yaziBoyutu * 0.45}px`,
-                fontFamily: "'Scheherazade New', serif",
-              }}>{OZEL_SEMBOL[cp] || c}</span>)
+            // NOT: OZEL_CPS dalı BURADAN KALDIRILDI. O işaretler artık metne hiç
+            // girmiyor (yukarıda `ozelOkuyusAyikla` ayırıyor) ve etiketleri dış
+            // overlay olarak, ait oldukları harfin hizasında çiziliyor. Burada
+            // kalsaydı ölü kod olurdu ve `right: 0` hatasını diri tutardı.
             } else {
               normalBuf += c
             }

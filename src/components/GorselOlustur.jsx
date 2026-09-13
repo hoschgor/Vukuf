@@ -5,6 +5,9 @@ import {
   ImagePlay, Film, Volume2, VolumeX, CircleStop, Smartphone, Monitor,
 } from "lucide-react"
 import { DESENLER, GORSELLER } from "../data/arkaplanlar"
+// Özel okuyuş işaretlerinin (kasr/medd/nûn-i sağîre) kuralı TEK YERDE, mushaf
+// sayfasıyla aynı tabloda duruyor. Burada yalnız ÇİZİM var, kural yok.
+import { ozelOkuyusAyikla } from "./MushafKelime"
 
 // ── ÂYET SONU ROZETİ — MushafAyetRozeti.jsx'in canvas sürümü ─────────────────────────────
 // Süsleme (rakam HARİÇ) tek renk (#000) rasterize edilir; çizerken 'source-in' ile metnin
@@ -559,12 +562,47 @@ export async function gorselCiz(ctx, ayar) {
     if (b.tip === "arapca") {
       // Satır TEK PARÇA çizilir; vakıf/uzatma/tecvid işaretleri metnin içindedir ve
       // konumlarını fontun kendi şekillendirmesi belirler (bizim hesabımız yok).
+      // TEK İSTİSNA özel okuyuş işaretleri (U+08D1 kasr / U+08D2 medd / U+08D9 nûn-i
+      // sağîre): bunların font glifi GERÇEKTEN bir daire (Unicode adları LARGE CIRCLE
+      // BELOW / LARGE ROUND DOT INSIDE CIRCLE BELOW), yani olduğu gibi bırakılırsa
+      // görselde anlamsız bir yuvarlak çıkıyor. Mushaf sayfasında olduğu gibi metinden
+      // ayrılıp yerine قصر / مد / ن kısaltması yazılıyor — konumu, sayfadakiyle AYNI
+      // hesapla (taban harf sayımı → satır içinde yüzde) bulunuyor.
       ctx.font = arapcaFontYap(b.boy)
       ctx.fillStyle = yaziRenk
       ctx.textAlign = "center"; ctx.textBaseline = "top"
       try { ctx.direction = "rtl" } catch { /* eski tarayıcı */ }
-      for (const st of b.satirlar) { ctx.fillText(st, W / 2, y + (b.satirYuk - b.boy) / 2); y += b.satirYuk }
+      const ozelEtiketler = []            // {x, y, sembol} — satırlar çizildikten sonra basılır
+      for (const st of b.satirlar) {
+        const { metin: sade, ozeller } = ozelOkuyusAyikla(st)
+        const ty = y + (b.satirYuk - b.boy) / 2
+        ctx.fillText(sade, W / 2, ty)
+        if (ozeller.length) {
+          // Satır ortalanmış çizildiği için sol kenar = merkez − genişlik/2.
+          // `sol` yüzdesi soldan ölçülüyor (taban harf sayımı), doğrudan uygulanır.
+          const gen = ctx.measureText(sade).width
+          const solKenar = W / 2 - gen / 2
+          for (const oz of ozeller) {
+            ozelEtiketler.push({
+              x: solKenar + ((oz.sol ?? 50) / 100) * gen,
+              y: ty + b.boy * 1.02,       // harflerin hemen altı
+              sembol: oz.sembol,
+            })
+          }
+        }
+        y += b.satirYuk
+      }
       try { ctx.direction = "ltr" } catch { /* yoksay */ }
+      if (ozelEtiketler.length) {
+        // Renk: sayfadaki kırmızı yerine kartın VURGU rengi. Sebebi okunurluk —
+        // kart arka planı koyu/renkli olabiliyor, sabit kırmızı orada kayboluyor.
+        ctx.font = `${Math.round(b.boy * 0.34)}px 'Scheherazade New', 'me_quran', serif`
+        ctx.fillStyle = vurguRenk
+        ctx.textAlign = "center"; ctx.textBaseline = "top"
+        try { ctx.direction = "rtl" } catch { /* yoksay */ }
+        for (const e of ozelEtiketler) ctx.fillText(e.sembol, e.x, e.y)
+        try { ctx.direction = "ltr" } catch { /* yoksay */ }
+      }
     } else if (b.tip === "meal") {
       ctx.font = mealFontYap(b.boy)
       ctx.fillStyle = yaziRenk

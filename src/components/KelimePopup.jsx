@@ -1,7 +1,7 @@
 import { useState, useRef } from "react"
-import { Play, Pause, X, Link2 } from "lucide-react"
+import { Play, Pause, X, Link2, Type } from "lucide-react"
 import kelimeMapping from "../data/kelime-mapping.json"
-import { tecvidAyikla } from "./MushafKelime"
+import { tecvidAyikla, ozelOkuyusAyikla } from "./MushafKelime"
 
 // Bizim kelime id'miz → quran.com kelime sırası.
 // NEDEN GEREKLİ: kelime sesleri (WBW mp3) quran.com'un kelime numaralarına göre
@@ -39,6 +39,11 @@ export default function KelimePopup({
   // kazanımları (uni0656 alt-elif konturu, Osmanlı işaretleri) baloncukta yoktu:
   // aşağı uzatmalar bozuk, işaretler noktalı-daire ◌ olarak çiziliyordu.
   arapcaFont = "'KFGQPC Uthmanic', serif",
+  // SARF — kelime-sarf.json kaydı: { tur, kip, cati, sahis, cins, sayi, etiket, zamir }
+  // Kaynak Quranic Arabic Corpus morfolojisi; yazılıştan ÇIKARILMIYOR, etiketli
+  // kaynaktan bağlanıyor (تَقُولُ hem "o (kadın) der" hem "sen dersin" olabilir —
+  // tahminle ayrılamaz). Yoksa satır hiç çizilmez.
+  sarf = null,
 }) {
   const [kelimeCaliyor, setKelimeCaliyor] = useState(false)
   const kelimeAudioRef = useRef(null)
@@ -63,10 +68,18 @@ export default function KelimePopup({
   // çıkarılır, kuralı belirten küçük renkli simge overlay olarak çizilir.
   // Çıkarılmazsa fontlar bu kodları bozuk ◌ (noktalı daire) glifine düşürüyor —
   // baloncukta görülen "minik yuvarlak" tam olarak buydu.
-  const { metin: arapcaMetin, tecvidler } = tecvidAyikla({
+  const { metin: tecvidsiz, tecvidler } = tecvidAyikla({
     id: kelime.id,
     arabic: kelime.ham,
   })
+  // ── ÖZEL OKUYUŞ (kasr / medd / nûn-i sağîre) ────────────────────
+  // U+08D1 ve U+08D2'nin Unicode glifi GERÇEKTEN daire (LARGE CIRCLE BELOW).
+  // Yani font bozuk çizmiyor; baloncukta görünen yuvarlak buydu. Sayfadaki gibi
+  // metinden çıkarılıp yerine قصر / مد / ن etiketi çiziliyor. Ayırma işlevi
+  // MushafKelime'de, tablolarla aynı yerde — üç ayrı kopya tutulmuyor.
+  const { metin: arapcaMetin, ozeller } = ozelOkuyusAyikla(tecvidsiz)
+  // Etiketler alta yazılıyor; kutunun alt dolgusu ona göre büyür.
+  const altEtiketVar = ozeller.length > 0
 
   const ayetCaliniyor =
     player?.durum === "caliyor" &&
@@ -127,6 +140,11 @@ export default function KelimePopup({
 
   const anlamlar = kelime.anlamlar?.length ? kelime.anlamlar : null
 
+  // Çekim etiketi YALNIZ fiillerde ve YALNIZ tam çıkarılmışsa gösterilir.
+  // (Fiil olup şahıs bilgisi olmayan kayıtlarda `etiket` üretilmiyor —
+  // yarım bilgi göstermektense hiç göstermemek evlâ.)
+  const sarfEtiket = sarf?.tur === "fiil" && sarf?.etiket ? sarf.etiket : null
+
   return (
     <>
       {/* Backdrop */}
@@ -167,7 +185,7 @@ export default function KelimePopup({
               position: "relative",
               display: "inline-block",
               paddingTop: `${ARAPCA_BOYUT * 0.30}px`,
-              paddingBottom: `${ARAPCA_BOYUT * 0.34}px`,
+              paddingBottom: `${ARAPCA_BOYUT * (altEtiketVar ? 0.72 : 0.34)}px`,
               lineHeight: 1,
             }}>
               <span style={{
@@ -206,6 +224,30 @@ export default function KelimePopup({
                   {t.sembol}
                 </span>
               ))}
+
+              {/* Özel okuyuş etiketleri — kelimenin ALTINDA, ait olduğu harfin
+                  hizasında. Sayfadaki ile aynı renk ve aynı kısaltmalar. */}
+              {ozeller.map((oz, oi) => (
+                <span
+                  key={`oz-${oi}`}
+                  title={oz.ad}
+                  style={{
+                    position: "absolute",
+                    left: `${oz.sol ?? 50}%`,
+                    bottom: `${ARAPCA_BOYUT * 0.06}px`,
+                    transform: "translateX(-50%)",
+                    fontSize: `${ARAPCA_BOYUT * 0.42}px`,
+                    lineHeight: 1,
+                    color: oz.renk,
+                    fontFamily: "'Scheherazade New', serif",
+                    pointerEvents: "none",
+                    whiteSpace: "nowrap",
+                    zIndex: 3,
+                  }}
+                >
+                  {oz.sembol}
+                </span>
+              ))}
             </div>
 
             {/* Okunuş — Arapçanın hemen altında, soluk ve küçük: bilgi olarak var
@@ -234,19 +276,44 @@ export default function KelimePopup({
           </button>
         </div>
 
-        {/* Birleşik kelime rozeti — iki kelime tek anlam taşıyor, okuyucu da
-            bunları tek birim sayar; kullanıcı "aynı anlam iki kez çıktı" sanmasın. */}
-        {birlesik && (
+        {/* Rozetler: birleşik kelime + fiil çekimi. Aynı satırda, sarabilir. */}
+        {(birlesik || sarfEtiket) && (
           <div style={{
-            display: "inline-flex", alignItems: "center", gap: "4px",
-            fontSize: "10px", color: theme.accent,
-            background: `${theme.accent}14`,
-            border: `1px solid ${theme.accent}30`,
-            borderRadius: "999px", padding: "2px 7px",
-            marginBottom: "8px",
+            display: "flex", flexWrap: "wrap", gap: "5px", marginBottom: "8px",
           }}>
-            <Link2 size={10} />
-            {uyeler.length} kelime birlikte
+            {/* Birleşik kelime — iki kelime tek anlam taşıyor, okuyucu da bunları
+                tek birim sayar; kullanıcı "aynı anlam iki kez çıktı" sanmasın. */}
+            {birlesik && (
+              <span style={{
+                display: "inline-flex", alignItems: "center", gap: "4px",
+                fontSize: "10px", color: theme.accent,
+                background: `${theme.accent}14`,
+                border: `1px solid ${theme.accent}30`,
+                borderRadius: "999px", padding: "2px 7px",
+              }}>
+                <Link2 size={10} />
+                {uyeler.length} kelime birlikte
+              </span>
+            )}
+
+            {/* FİİL ÇEKİMİ — "De ki" ile "Dediler ki"yi, eril ile dişili ayırt
+                ettiren satır. Vurgu renginde DEĞİL, soluk: asıl iş anlamda,
+                bu yardımcı bilgi. */}
+            {sarfEtiket && (
+              <span
+                title="Fiil çekimi (şahıs · sayı · cins · kip)"
+                style={{
+                  display: "inline-flex", alignItems: "center", gap: "4px",
+                  fontSize: "10px", color: theme.textSecondary,
+                  background: `${theme.textSecondary}12`,
+                  border: `1px solid ${theme.border}`,
+                  borderRadius: "999px", padding: "2px 7px",
+                }}
+              >
+                <Type size={10} />
+                {sarfEtiket}
+              </span>
+            )}
           </div>
         )}
 

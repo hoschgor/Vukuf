@@ -1837,7 +1837,23 @@ function sureGit(sureId, ayetNo) {
   // POPUP YÖNETİMİ
   // ════════════════════════════════════════════════════════════════
 
+  // ── SARF (fiil çekimi) — TEMBEL YÜKLENİR ────────────────────────
+  // kelime-sarf.json ~2,5 MB. Statik `import` ile getirilirse mushaf AÇILIRKEN
+  // indiriliyor; oysa bilgi yalnız kelime baloncuğunda lâzım. Onun için ilk
+  // kelimeye tıklandığında bir kez istenir, sonra bellekte kalır. Geldiğinde
+  // state değiştiği için açık baloncuk da kendiliğinden tazelenir.
+  const [sarfSozluk, setSarfSozluk] = useState(null)
+  const sarfIstendiRef = useRef(false)
+  const sarfIste = useCallback(() => {
+    if (sarfIstendiRef.current) return
+    sarfIstendiRef.current = true
+    import("../data/kelime-sarf.json")
+      .then((m) => setSarfSozluk(m.default || m))
+      .catch(() => { sarfIstendiRef.current = false })   // ağ hatası → bir daha denenebilsin
+  }, [])
+
   const kelimeTikla = useCallback((kelime, sure, ayet, e) => {
+    sarfIste()
     // 1) ÖNCE konuma bağlı anlam (quran.com hizalaması). Doğru olan bu:
     //    sözlükteki "من → 710 anlam" gibi yığılmalar burada yaşanmaz, çünkü
     //    anlam kelimenin O YERİNE aittir. Bizim bölünmemiz quran.com'unkinden
@@ -1886,7 +1902,7 @@ function sureGit(sureId, ayetNo) {
       ayetNo: ayet.no,
       konum:  popupKonum(e),
     })
-  }, [])
+  }, [sarfIste])
 
   // Bir âyetin ARAPÇA metnini SAYFA ELEMANLARINDAN toplar — sayfayı çizen kaynağın aynısı,
   // böylece veri şekli ne olursa olsun ekranda görünenle birebir aynı metni alırız.
@@ -3167,6 +3183,9 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
           // Baloncuk mushafta SEÇİLİ fontu kullanmalı: onarılmış font olmadan
           // alt-elif ve Osmanlı işaretleri bozuk çiziliyor (bkz. KelimePopup).
           arapcaFont={aktifArapcaFont.style}
+          // Fiil çekimi (şahıs/cins/sayı · kip). Tembel yüklendiği için ilk
+          // tıklamada bir an null gelebilir; geldiğinde bu satır tazelenir.
+          sarf={popup.kelime?.id ? (sarfSozluk?.[popup.kelime.id] || null) : null}
           onKapat={() => setPopup(null)}
         />
       )}

@@ -62,6 +62,14 @@ export default function BildirimPaneli({ acik, kapat, theme }) {
   // iOS'ta ana ekrana eklenmemişse bildirim API'si hiç yok; kullanıcıya
   // "izin ver" demek boşuna, yapması gereken şey farklı.
   const iosKurulumGerek = bd.ortam.ios && !bd.ortam.standalone
+  // GÜVENSİZ BAĞLAM EN ÖNCE GELİR. http:// üzerinden (ör. `vite dev` ile
+  // 192.168.x.x:5173) açıldığında service worker API'si hiç YOKTUR, Push API
+  // yoktur ve `Notification.requestPermission()` SORMADAN "denied" döner.
+  // Yani "denied" burada kullanıcının verdiği bir karar DEĞİL, tarayıcının
+  // peşin reddi. Bu ayrım önemli: aksi hâlde kullanıcıyı boş yere ana ekran
+  // simgesini silip yeniden eklemeye gönderiyorduk. Adres https olunca o
+  // origin'in izni de sıfırdan sorulur.
+  const guvensiz = !bd.ortam.guvenliBaglam
 
   function formuAc(b) {
     if (b) {
@@ -184,7 +192,7 @@ export default function BildirimPaneli({ acik, kapat, theme }) {
         </div>
 
         {/* ── İZİN / ORTAM UYARISI ──────────────────────────────────────── */}
-        {gorunum === "liste" && (izinYok || iosKurulumGerek) && (
+        {gorunum === "liste" && (izinYok || iosKurulumGerek || guvensiz) && (
           <div style={{
             display: "flex", gap: "9px", alignItems: "flex-start",
             background: `${theme.accent}10`, border: `1px solid ${theme.accent}30`,
@@ -192,7 +200,19 @@ export default function BildirimPaneli({ acik, kapat, theme }) {
           }}>
             <AlertTriangle size={16} style={{ color: theme.accent, flexShrink: 0, marginTop: "1px" }} />
             <div style={{ fontSize: "12.5px", color: theme.text, lineHeight: 1.5, flex: 1 }}>
-              {iosKurulumGerek ? (
+              {guvensiz ? (
+                <>
+                  <b>Adres https değil.</b> Bildirim, service worker ve push yalnız
+                  güvenli bağlamda çalışır; tarayıcı burada izni <i>sormadan</i> reddediyor.
+                  Aşağıdaki “İzin: denied” bunun sonucu, sizin verdiğiniz bir karar değil.
+                  <div style={{ marginTop: "6px", lineHeight: 1.6 }}>
+                    Denemek için siteyi <b>https</b> bir adresten açın: yayındaki
+                    sürüm, ya da yerel sunucuyu bir tünelle (cloudflared / ngrok)
+                    dışarı verin. <code>localhost</code> güvenli sayılır ama telefondan
+                    girilen <code>192.168.x.x</code> sayılmaz.
+                  </div>
+                </>
+              ) : iosKurulumGerek ? (
                 <>iPhone/iPad'de bildirim için uygulamanın <b>Ana Ekrana Eklenmiş</b> olması
                   şart. Safari'de Paylaş → “Ana Ekrana Ekle” yapıp uygulamayı oradan açın.</>
               ) : !bd.ortam.bildirimVar ? (
@@ -331,6 +351,8 @@ export default function BildirimPaneli({ acik, kapat, theme }) {
                   ["Push API", t.pushVar ? "var" : "yok"],
                   ["Zamanlanmış bildirim API'si", t.tetikleyiciVar ? "var" : "yok (hiçbir tarayıcıda yok)"],
                   ["Saat dilimi", t.saatDilimi],
+                  // Adres satırı: "https değil" teşhisini tartışmasız hâle getiriyor.
+                  ["Adres", t.adres],
                   ["Son hata", t.sonHata],
                 ]
                 const dokum = satirlar.map(([a, b]) => `${a}: ${b}`).join("\n")
@@ -342,7 +364,8 @@ export default function BildirimPaneli({ acik, kapat, theme }) {
                     userSelect: "text", WebkitUserSelect: "text",
                   }}>
                     {satirlar.map(([ad, deger]) => {
-                      const kotu = ["YOK", "HAYIR", "denied", "kayıt başarısız"].includes(String(deger))
+                      const kotu = ["YOK", "HAYIR", "denied", "API yok", "kayıt başarısız"].includes(String(deger))
+                        || String(deger).startsWith("http://")
                       return (
                         <div key={ad} style={{
                           display: "flex", justifyContent: "space-between", gap: "10px",

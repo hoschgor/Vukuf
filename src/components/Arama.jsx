@@ -497,17 +497,13 @@ export default function Arama() {
                   //
                   // RENK NİÇİN GRADIENT KATMANIYLA VERİLİYOR: sticky başlığın arka
                   // planı SAYDAM OLAMAZ — altından geçen kartlar okunur hâle gelir.
-                  // `${theme.accent}38` doğrudan arka plan yapılırsa saydam olur.
+                  // `${theme.accent}1f` doğrudan arka plan yapılırsa saydam olur.
                   // Onun yerine opak `theme.surface` tabanın ÜSTÜNE aynı renk düz
                   // bir gradient katmanı olarak konuyor: sonuç opak ama vurgu
                   // renginde. Tema ne olursa olsun kendini ayarlar.
-                  //
-                  // YÜZDE: önce %12 (`1f`) denendi, sonuç kartlardan neredeyse
-                  // ayırt edilemiyordu. %22 (`38`) hem "bu satır farklı" diyecek
-                  // kadar belirgin hem de metni bastırmayacak kadar hafif.
                   backgroundColor: theme.surface,
-                  backgroundImage: `linear-gradient(${theme.accent}38, ${theme.accent}38)`,
-                  border: `1px solid ${theme.accent}80`,
+                  backgroundImage: `linear-gradient(${theme.accent}1f, ${theme.accent}1f)`,
+                  border: `1px solid ${theme.accent}55`,
                   color: theme.text,
                   boxShadow: "0 2px 10px rgba(0,0,0,0.06)",
                 }}>

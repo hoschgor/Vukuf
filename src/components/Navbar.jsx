@@ -4,6 +4,7 @@ import { BookOpen, Search, Shuffle, Menu, X, Palette, Pencil, Info, Type, Sparkl
 import { useApp } from "../AppContext"
 import { useMediaQuery } from "../data/hooks/useMediaQuery"
 import IosSwitch from "./IosSwitch"
+import AltSayfa from "./AltSayfa"
 
 const temaAciklamalari = {
   sepia: "Göz yormayan sıcak ton",
@@ -250,43 +251,31 @@ export default function Navbar() {
         </div>
       </nav>
 
-      {/* Görünüm ayarları — alttan açılır panel (Dinamik Mod + Giriş Animasyonu) */}
+      {/* Görünüm ayarları — alttan açılır panel (Dinamik Mod + Giriş Animasyonu).
+          Panel gövdesi artık AltSayfa'da: üstteki tutamaktan aşağı sürükleyerek
+          kapanıyor, Esc de kapatıyor. Perde ve giriş/çıkış geçişi orada. */}
       {dinamikPanelAcik && (
-        <>
-          <div
-            onClick={() => setDinamikPanelAcik(false)}
-            style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.35)", zIndex: 300 }}
+        <AltSayfa
+          kapat={() => setDinamikPanelAcik(false)}
+          theme={theme}
+          baslik="GÖRÜNÜM"
+        >
+          <AyarSatiri
+            baslik="Dinamik Mod"
+            aciklama="Kitaplıkta akan (coverflow) kapak görünümü"
+            acik={dinamik}
+            onToggle={toggleDinamik}
+            theme={theme}
           />
-          <div style={{
-            position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 301,
-            background: theme.surface,
-            borderTop: `1px solid ${theme.border}`,
-            borderRadius: "20px 20px 0 0",
-            padding: "8px 20px calc(18px + env(safe-area-inset-bottom))",
-            boxShadow: "0 -8px 30px rgba(0,0,0,0.22)",
-            animation: "vukufSheetUp 0.28s cubic-bezier(.22,.61,.36,1)",
-            maxWidth: "520px", margin: "0 auto",
-          }}>
-            <style>{`@keyframes vukufSheetUp { from { transform: translateY(100%) } to { transform: translateY(0) } }`}</style>
-            <div style={{ width: "40px", height: "4px", borderRadius: "2px", background: theme.border, margin: "6px auto 10px" }} />
-            <div style={{ fontSize: "12px", color: theme.textSecondary, letterSpacing: "1px", padding: "2px 4px 6px" }}>GÖRÜNÜM</div>
-            <AyarSatiri
-              baslik="Dinamik Mod"
-              aciklama="Kitaplıkta akan (coverflow) kapak görünümü"
-              acik={dinamik}
-              onToggle={toggleDinamik}
-              theme={theme}
-            />
-            <div style={{ height: "1px", background: theme.border, opacity: 0.6, margin: "2px 0" }} />
-            <AyarSatiri
-              baslik="Giriş Animasyonu"
-              aciklama="Açılışta tezhipli giriş ekranı (sonraki açılışta geçerli)"
-              acik={girisAnim}
-              onToggle={toggleGirisAnim}
-              theme={theme}
-            />
-          </div>
-        </>
+          <div style={{ height: "1px", background: theme.border, opacity: 0.6, margin: "2px 0" }} />
+          <AyarSatiri
+            baslik="Giriş Animasyonu"
+            aciklama="Açılışta tezhipli giriş ekranı (sonraki açılışta geçerli)"
+            acik={girisAnim}
+            onToggle={toggleGirisAnim}
+            theme={theme}
+          />
+        </AltSayfa>
       )}
 
       {/* Özel tema paneli */}

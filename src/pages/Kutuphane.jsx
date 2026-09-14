@@ -1310,15 +1310,30 @@ function OzelKategori({ raf, havuz, theme, dinamikMod, duzenlemeMode, gizlemeMod
 }
 
 // ── Otomatik raf (Son / Sık Okunanlar)
-function OtomatikKategori({ rafId, baslik, Ikon, kitaplar: liste, theme, dinamikMod, duzenlemeMode, gizlemeMod, gizli, onGizle }) {
+//
+// AÇIKLIK DURUMU ARTIK KENDİNE AİT DEĞİL, `acikKategori` ORTAK DURUMUNDA.
+// Eskiden bu iki raf kendi `acik` bayrağını tutuyor ve varsayılanı `true` idi;
+// sonuç olarak (1) kütüphane ikisi birden açık açılıyor, (2) içlerindeki
+// DinamikRaf mount olunca kendini `scrollIntoView` ile ortaya çekiyor, yani
+// sayfa kullanıcı istemeden bu raflara odaklanıyor, (3) bir Kısım rafı zaten
+// açıkken bunlar da açık kalabiliyordu. Kısım rafları tek bir `acikKategori`
+// üzerinden çalıştığı için "aynı anda tek raf" kuralı onlarda zaten vardı;
+// Son/Sık de aynı duruma bağlanınca üç sorun da kendiliğinden bitiyor:
+// başlangıçta kapalı (kayıtlı değer yoksa null), ikisi aynı anda açılamaz,
+// bir Kısım açıkken de açılamaz. Eski `vukuf-otom-acik-*` anahtarları artık
+// okunmuyor (kullanıcıda `true` kalmış olabilir, onu da böylece yok sayıyoruz).
+function OtomatikKategori({ rafId, baslik, Ikon, kitaplar: liste, theme, dinamikMod, duzenlemeMode, gizlemeMod, gizli, onGizle, acikKategori, setAcikKategori }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: rafId })
   const sstyle = { transform: CSS.Transform.toString(transform), transition }
-  const [acik, setAcik] = useState(() => {
-    try { const v = localStorage.getItem(`vukuf-otom-acik-${rafId}`); return v ? JSON.parse(v) : true } catch { return true }
-  })
+  const acik = acikKategori === rafId
   const [aramaAcik, setAramaAcik] = useState(false)
   const [arama, setArama] = useState("")
-  const toggle = () => { const y = !acik; setAcik(y); try { localStorage.setItem(`vukuf-otom-acik-${rafId}`, JSON.stringify(y)) } catch {} }
+  const toggle = () => {
+    const yeni = acik ? null : rafId
+    setAcikKategori(yeni)
+    try { localStorage.setItem("vukuf-acik-kategori", JSON.stringify(yeni)) } catch {}
+    if (acik) { setAramaAcik(false); setArama("") }   // kapanınca arama da sıfırlansın
+  }
   const q = aramaAcik && arama.trim() ? normHarf(arama) : ""
   const gosterilen = q ? liste.filter(k => normHarf(k.baslik).includes(q)) : liste
 
@@ -2057,6 +2072,7 @@ export default function Kutuphane() {
                   key={id} rafId="son-okunanlar" baslik="Son Okunanlar" Ikon={Clock} kitaplar={sonListe}
                   theme={theme} dinamikMod={dinamikMod} duzenlemeMode={duzenlemeMode}
                   gizlemeMod={gizlemeMod} gizli={gizli} onGizle={gizleToggle}
+                  acikKategori={acikKategori} setAcikKategori={setAcikKategori}
                 />
               )
             }
@@ -2066,6 +2082,7 @@ export default function Kutuphane() {
                   key={id} rafId="sik-okunanlar" baslik="Sık Okunanlar" Ikon={Star} kitaplar={sikListe}
                   theme={theme} dinamikMod={dinamikMod} duzenlemeMode={duzenlemeMode}
                   gizlemeMod={gizlemeMod} gizli={gizli} onGizle={gizleToggle}
+                  acikKategori={acikKategori} setAcikKategori={setAcikKategori}
                 />
               )
             }

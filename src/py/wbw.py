@@ -501,6 +501,23 @@ def birlestir(wbw_yolu="wbw_tr.json", harita_yolu="kelime_hizalama.json",
     diyebilir. Anlam KONUMA ait olduğu için "من kelimesinin 710 anlamı"
     sorunu ortadan kalkar: her yerde o yerin anlamı gösterilir.
     """
+    # ── YANLIŞ KAYNAK EMNİYETİ ────────────────────────────────────────────
+    # `wbw_tr.json` quran.com'dan geldiği HÂLİYLE durur; içinde Türkçesi
+    # olmayan ~6900 kayıt vardır. Türkçeleştirilmiş sürüm `wbw_tr_tam.json`.
+    # Argümansız `--birlestir` çağrılırsa ham dosya okunur ve okuyucuya
+    # İngilizce anlamlar düşer — bu sessizce olur, sayılar normal görünür.
+    # BİR KEZ BAŞIMIZA GELDİ: mushaf düzeltmesinden sonra türetilmiş dosyalar
+    # yenilenirken argüman unutuldu ve 6886 kelime İngilizceye döndü.
+    if os.path.basename(str(wbw_yolu)) == "wbw_tr.json":
+        tam = veri_ara("wbw_tr_tam.json")
+        if tam:
+            print("  ⚠ DUR: 'wbw_tr_tam.json' (Türkçeleştirilmiş sürüm) mevcut ama")
+            print("    ham 'wbw_tr.json' okunuyor. Doğrusu:")
+            print("        python3 src/py/wbw.py --birlestir wbw_tr_tam.json")
+            print("    Yine de ham dosyayla üretmek istiyorsanız --ham ekleyin.")
+            if "--ham" not in sys.argv:
+                return
+
     wbw_yolu = girdi(wbw_yolu, "Önce --cek ve --hizala çalıştır.")
     harita_yolu = girdi(harita_yolu, "Önce --cek ve --hizala çalıştır.")
     cikti, grup_cikti = cikti_yolu(cikti), cikti_yolu(grup_cikti)
@@ -2730,8 +2747,8 @@ def kusur_gider(is_listesi="metin_farklari.json", mushaf_yolu="kuran-mushaf.json
 
 
 # ══════════════════════════════════════════════════════════════════════════
-def hizalama_bak(yer, mushaf_yolu="kuran-mushaf.json", wbw_yolu="wbw_tr.json",
-                 harita_yolu="kelime_hizalama.json"):
+def hizalama_bak(yer, mushaf_yolu="kuran-mushaf.json", wbw_yolu=None,
+                 harita_yolu="kelime_hizalama.json", anlam_yolu="kelime-anlam.json"):
     """Bir âyetin kelime kelime RÖNTGENİ: bizim kelime → eşlendiği quran.com
     kelimesi → anlam → grup üyeliği. Hiçbir şey yazmaz.
 
@@ -2743,10 +2760,23 @@ def hizalama_bak(yer, mushaf_yolu="kuran-mushaf.json", wbw_yolu="wbw_tr.json",
     ⚠ işareti: aynı quran.com kelimesine birden çok kelimemiz düşmüş demektir
     (grup). Bu BAZEN doğrudur (يَا + بَنٖي), ama yanlış yerde oluşmuşsa o
     âyette bir kelime "atlanıyor" gibi görünür.
+
+    ANLAM NEREDEN OKUNUYOR: uygulamanın gerçekten gösterdiği dosyadan,
+    `kelime-anlam.json`'dan. İLK SÜRÜMÜ HAM `wbw_tr.json`'u okuyordu ve bu
+    yanıltıcıydı: okuyucuda Türkçe duran bir kelimeyi burada İngilizce
+    gösteriyordu (ya da tersi). Teşhis aleti, teşhis ettiği şeyle aynı kaynağa
+    bakmalı. Kaynak dosyadaki karşılık farklıysa o da ayrıca yazılır.
     """
     ham = json.load(open(yol_coz(mushaf_yolu), encoding="utf-8"))
+    # Kaynak: Türkçeleştirilmiş sürüm varsa O okunur.
+    if wbw_yolu is None:
+        wbw_yolu = "wbw_tr_tam.json" if veri_ara("wbw_tr_tam.json") else "wbw_tr.json"
     wbw = json.load(open(girdi(wbw_yolu), encoding="utf-8"))
     harita = json.load(open(girdi(harita_yolu), encoding="utf-8"))
+    anlam_dosya = veri_ara(anlam_yolu)
+    anlamlar = json.load(open(anlam_dosya, encoding="utf-8")) if anlam_dosya else {}
+    if not anlamlar:
+        print("  ⚠ kelime-anlam.json bulunamadı — anlamlar kaynak dosyadan gösteriliyor.")
     hedef_ayet = str(yer).strip()
 
     bizim = [(int(str(kid).split(":")[2]), str(kid), ar)
@@ -2771,14 +2801,24 @@ def hizalama_bak(yer, mushaf_yolu="kuran-mushaf.json", wbw_yolu="wbw_tr.json",
 
     print("=" * 74)
     print(f"HİZALAMA RÖNTGENİ — {hedef_ayet}   (bizde {len(bizim)}, onlarda {len(onlarin)})")
+    print(f"  anlam kaynağı: {os.path.basename(anlam_dosya) if anlam_dosya else '(yok)'}"
+          f"   ·   metin kaynağı: {os.path.basename(str(wbw_yolu))}")
     print("=" * 74)
     for _s, kid, ar in bizim:
         h = harita.get(kid)
         h = h[0] if isinstance(h, list) else h
         k = wbw.get(h) or {}
         im = "  ⚠GRUP" if h and dusen[h] > 1 else ""
+        # UYGULAMANIN GÖSTERDİĞİ anlam (kelime-anlam.json). Liste de olabilir.
+        uyg = anlamlar.get(kid)
+        if isinstance(uyg, list):
+            uyg = " / ".join(str(x) for x in uyg if x)
+        kaynak_tr = (k.get("tr") or "").strip()
+        gosterilen = (str(uyg).strip() if uyg else "") or "—"
         print(f"  {kid:<12} {ar}")
-        print(f"      → {str(h):<12} {k.get('ar','—')}   «{(k.get('tr') or '—')}»{im}")
+        print(f"      → {str(h):<12} {k.get('ar','—')}   «{gosterilen}»{im}")
+        if kaynak_tr and kaynak_tr != gosterilen:
+            print(f"        (kaynak dosyada: «{kaynak_tr}»)")
     kullanilan = {h for h in dusen}
     bos = [(s, k, ar) for s, k, ar, _tr in onlarin if k not in kullanilan]
     if bos:

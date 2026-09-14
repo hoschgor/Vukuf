@@ -1,9 +1,10 @@
 import { useState } from "react"
 import { Link, useLocation } from "react-router-dom"
-import { BookOpen, Search, Shuffle, Menu, X, Palette, Pencil, Info, Type, Sparkles } from "lucide-react"
+import { BookOpen, Search, Shuffle, Menu, X, Palette, Pencil, Info, Type, Sparkles, Bell } from "lucide-react"
 import { useApp } from "../AppContext"
 import { useMediaQuery } from "../data/hooks/useMediaQuery"
 import IosSwitch from "./IosSwitch"
+import BildirimPaneli from "./BildirimPaneli"
 
 const temaAciklamalari = {
   sepia: "Göz yormayan sıcak ton",
@@ -58,6 +59,9 @@ export default function Navbar() {
     try { return localStorage.getItem("vukuf-giris-animasyonu") !== "0" } catch { return true }  // varsayılan AÇIK
   })
   const [dinamikPanelAcik, setDinamikPanelAcik] = useState(false)
+  // Bildirim paneli. Dinamik mod düğmesinin AKSİNE her sayfada duruyor:
+  // hatırlatmalar uygulamanın tamamına ait, Kitaplık'a değil.
+  const [bildirimPanelAcik, setBildirimPanelAcik] = useState(false)
 
   // Dinamik mod düğmesi yalnızca Kitaplık sayfasında görünür
   const dinamikGoster = location.pathname === "/"
@@ -149,8 +153,25 @@ export default function Navbar() {
           VUKUF
         </Link>
 
-        {/* Sağ grup: Dinamik + Tema */}
+        {/* Sağ grup: Bildirim + Dinamik + Tema */}
         <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+        {/* Bildirim modu — dinamik modun SOLUNDA */}
+        <button
+          onClick={() => { setBildirimPanelAcik(true); setMenuAcik(false); setTemaAcik(false); setDinamikPanelAcik(false) }}
+          title="Bildirimler"
+          aria-label="Bildirimler"
+          style={{
+            color: bildirimPanelAcik ? theme.accent : theme.textSecondary,
+            padding: "6px",
+            borderRadius: "8px",
+            display: "flex",
+            alignItems: "center",
+            background: bildirimPanelAcik ? `${theme.accent}15` : "transparent",
+          }}
+        >
+          <Bell size={18} />
+        </button>
+
         {/* Dinamik mod (yalnızca Kitaplık sayfasında) */}
         {dinamikGoster && (
           <button
@@ -249,6 +270,13 @@ export default function Navbar() {
         </div>
         </div>
       </nav>
+
+      {/* Bildirim paneli — liste / yeni / düzenle-sil */}
+      <BildirimPaneli
+        acik={bildirimPanelAcik}
+        kapat={() => setBildirimPanelAcik(false)}
+        theme={theme}
+      />
 
       {/* Görünüm ayarları — alttan açılır panel (Dinamik Mod + Giriş Animasyonu) */}
       {dinamikPanelAcik && (

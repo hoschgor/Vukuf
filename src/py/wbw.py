@@ -32,6 +32,20 @@ Bu yüzden konumdan konuma eşleme yapılamaz; kayar. Çözüm: HİZALAMA tablos
   8) İNGİLİZCE python3 wbw.py --ingilizce
      quran.com'un Türkçe veremediği kelimeleri listeler, dosyaya yazar.
 
+ 22) METİN DENETİM python3 wbw.py --metin-denetle [--ayrinti 40]
+     6236 âyetin METNİNİ quran.com'unkiyle karşılaştırır (kelime sayısına DEĞİL,
+     metnin kendisine bakar). Fazladan/eksik kelimeyi ve tekrar şüphesini
+     bulur. Yazmaz; metin_farklari.json üretir.
+
+ 20) ÂYET KODU python3 wbw.py --ayet-kod 37:130
+     Bir âyetin kelimelerini kod noktalarıyla döker; aynı/kısmî tekrar eden
+     kelimeleri işaretler. Yazmaz — kesmeden önce bakılacak yer.
+
+ 21) KELİME SİL python3 wbw.py --kelime-sil 37:130:4 [--yaz]
+     Mushaftan tek kelime siler, sonrakileri yeniden numaralar. --yaz yoksa
+     KURU ÇALIŞMA; yazarken .yedek alır ve hangi türetilmiş dosyaların
+     yenilenmesi gerektiğini söyler.
+
  19) BÖLÜNME   python3 wbw.py --bolunme [--ayrinti 40]
      Bizim kelime bölünmemiz quran.com'unkiyle aynı mı? Âyet âyet karşılaştırır,
      birleştirilecek ve bölünecek yerleri listeler. Yazmaz.
@@ -2072,6 +2086,369 @@ def bolunme_denetle(mushaf_yolu="kuran-mushaf.json", wbw_yolu="wbw_tr.json",
 
 
 # ══════════════════════════════════════════════════════════════════════════
+def _kelime_listeleri(d, out=None):
+    """Kelime nesnelerini TUTAN listeleri bulur.
+
+    `bizim_kelimeler` kelimeleri okur ama silmek için onları BARINDIRAN listeye
+    erişmek gerekiyor; bu yüzden ayrı bir gezinti. Bir liste, içinde `arabic`
+    alanlı en az bir sözlük varsa "kelime listesi" sayılır.
+    """
+    if out is None:
+        out = []
+    if isinstance(d, list):
+        if any(isinstance(x, dict) and isinstance(x.get("arabic"), str) for x in d):
+            out.append(d)
+        for x in d:
+            _kelime_listeleri(x, out)
+    elif isinstance(d, dict):
+        for v in d.values():
+            _kelime_listeleri(v, out)
+    return out
+
+
+def ayet_kod(yer, mushaf_yolu="kuran-mushaf.json"):
+    """Bir âyetin kelimelerini KOD NOKTASI KOD NOKTASI döker. Hiçbir şey yazmaz.
+
+    NEDEN: "şu kelime fazla" demek için gözle bakmak yetmiyor — iki kelime
+    ekranda aynı görünüp farklı kodlardan oluşabiliyor (ör. uzun î: U+0656 alt
+    elifle mi yazılmış yoksa tam ي ile mi). İmlâ farkı, o kelimenin BAŞKA BİR
+    KAYNAKTAN sızdığının en sağlam delili. Kesmeden önce burası okunur.
+    """
+    ham = json.load(open(yol_coz(mushaf_yolu), encoding="utf-8"))
+    hedef = str(yer).strip()
+    bulunan = [(kid, ar) for kid, ar in bizim_kelimeler(ham)
+               if str(kid).startswith(hedef + ":")]
+    if not bulunan:
+        print(f"HATA: '{hedef}' âyetinde kelime bulunamadı.")
+        return
+    bulunan.sort(key=lambda x: int(str(x[0]).split(":")[2]))
+    print("=" * 74)
+    print(f"ÂYET {hedef} — {len(bulunan)} kelime")
+    print("=" * 74)
+    for kid, ar in bulunan:
+        kodlar = " ".join(f"U+{ord(c):04X}" for c in ar)
+        print(f"  {kid:<12} {ar}")
+        print(f"               iskelet: {iskelet(ar)}")
+        print(f"               {kodlar}")
+        print()
+    # Aynı iskelete sahip İKİ kelime varsa tekrar şüphesi doğar — söylenir.
+    sayac = Counter(iskelet(ar) for _kid, ar in bulunan)
+    tekrar = [sk for sk, n in sayac.items() if n > 1 and sk]
+    if tekrar:
+        print("  ⚠ AYNI İSKELETTE BİRDEN ÇOK KELİME (tekrar olabilir):")
+        for sk in tekrar:
+            esler = [kid for kid, ar in bulunan if iskelet(ar) == sk]
+            print(f"    {sk} → {', '.join(esler)}")
+    # Kısmî tekrar: bir kelimenin iskeleti diğerinin SONUNDA geçiyorsa
+    # (ör. "الياسين" içinde "ياسين") o ikinci kelime fazladan yazılmış olabilir.
+    for kid, ar in bulunan:
+        sk = iskelet(ar)
+        if not sk:
+            continue
+        for kid2, ar2 in bulunan:
+            if kid2 == kid:
+                continue
+            sk2 = iskelet(ar2)
+            if sk2 and sk2 != sk and sk.endswith(sk2) and len(sk2) >= 3:
+                print(f"  ⚠ {kid2} ({ar2}) → {kid} ({ar}) kelimesinin SONUNDA zaten var.")
+
+
+# ══════════════════════════════════════════════════════════════════════════
+def kelime_sil(hedef_id, mushaf_yolu="kuran-mushaf.json", yaz=False):
+    """Mushaftan TEK bir kelimeyi siler; kendinden sonrakileri yeniden numaralar.
+
+    KUR'AN METNİNE DOKUNAN TEK KİP BU. Onun için:
+      • varsayılan KURU ÇALIŞMA — `--yaz` verilmeden hiçbir dosya değişmez,
+      • yazarken önce `.yedek` alınır,
+      • türetilmiş dosyalardan hangilerinin elden geçmesi gerektiği söylenir.
+
+    Silinen kelime âyetin SONUNDA değilse arkasındaki bütün kelimelerin id'si
+    kayar; o zaman kelime-anlam / kelime-grup / kelime-sarf / kelime_hizalama /
+    kelime-mapping dosyalarının O ÂYETE ait anahtarları da kaymış olur ve
+    yeniden üretilmeleri gerekir. Sonuncuysa yalnız o anahtar düşer.
+    """
+    yol = yol_coz(mushaf_yolu)
+    ham = json.load(open(yol, encoding="utf-8"))
+    hedef_id = str(hedef_id).strip()
+    p = hedef_id.split(":")
+    if len(p) != 3 or not all(x.isdigit() for x in p):
+        print("HATA: kelime id'si 'SURE:AYET:SIRA' biçiminde olmalı (ör. 37:130:4).")
+        return
+    ayet_on = f"{p[0]}:{p[1]}:"
+    sira = int(p[2])
+
+    liste = None
+    indeks = None
+    for lst in _kelime_listeleri(ham):
+        for i, k in enumerate(lst):
+            if isinstance(k, dict) and str(k.get("id")) == hedef_id:
+                liste, indeks = lst, i
+                break
+        if liste is not None:
+            break
+    if liste is None:
+        print(f"HATA: '{hedef_id}' mushafta bulunamadı.")
+        return
+
+    silinen = liste[indeks]
+    # Aynı âyetin, silinenden SONRAKİ kelimeleri (numarası kayacak olanlar)
+    sonrakiler = [k for k in liste
+                  if isinstance(k, dict) and str(k.get("id", "")).startswith(ayet_on)
+                  and int(str(k["id"]).split(":")[2]) > sira]
+
+    print("=" * 74)
+    print("KELİME SİLME" + ("" if yaz else "  —  KURU ÇALIŞMA (hiçbir dosya değişmiyor)"))
+    print("=" * 74)
+    print(f"  dosya      : {yol}")
+    print(f"  silinecek  : {hedef_id}   {silinen.get('arabic','')}")
+    print(f"               {' '.join(f'U+{ord(c):04X}' for c in silinen.get('arabic',''))}")
+    print(f"  ardından kayacak kelime sayısı: {len(sonrakiler)}")
+    print()
+    if sonrakiler:
+        print("  ⚠ SON KELİME DEĞİL → numaralar kayacak. Silme sonrası şu dosyaların")
+        print("    bu âyete ait kayıtları GEÇERSİZ olur, yeniden üretilmeli:")
+        print("      kelime-anlam.json · kelime-grup.json · kelime-sarf.json")
+        print("      kelime_hizalama.json · kelime-mapping.json")
+    else:
+        print("  ✓ Âyetin SON kelimesi → başka hiçbir numara kaymıyor.")
+        print("    Türetilmiş dosyalardan yalnız bu anahtar düşürülmeli:")
+        print(f"      {hedef_id}")
+    print()
+
+    if not yaz:
+        print("  Uygulamak için aynı komuta --yaz ekleyin.")
+        return
+
+    yedek = yol + ".yedek"
+    shutil_kopya(yol, yedek)
+    liste.pop(indeks)
+    for k in sonrakiler:
+        eski = str(k["id"])
+        n = int(eski.split(":")[2]) - 1
+        k["id"] = f"{ayet_on}{n}"
+    json.dump(ham, open(yol, "w", encoding="utf-8"), ensure_ascii=False)
+    print(f"  yedek alındı : {yedek}")
+    print(f"  YAZILDI      : {yol}")
+    if sonrakiler:
+        print(f"  {len(sonrakiler)} kelimenin numarası bir geri kaydırıldı.")
+
+
+# ══════════════════════════════════════════════════════════════════════════
+# GEVŞEK İSKELET — YALNIZ BU DENETİM İÇİN
+# `iskelet()` hizalama motorunun ölçü aleti; ona DOKUNULMUYOR. Burada ondan
+# daha gevşek bir ölçü gerekiyor, çünkü iki kaynağın imlâsı iki yerde SİSTEMLİ
+# ayrışıyor ve bu, gerçek kusurları 358 satırlık gürültünün altına gömüyordu:
+#   • uzun â: bizde tam elif (اٰمَنُوا), onlarda hemze+elif (ءَامَنُوٓا۟)
+#   • dagger elif: bizde tam elif (الْمُؤْمِنَاتُ), onlarda U+0670 (ٱلْمُؤْمِنَـٰتُ)
+# İkisi de elif/hemze oynaması. Onun için karşılaştırmada ZAYIF HARFLER (ا ve ء)
+# tamamen düşürülüyor; geriye iki kaynakta da aynı olan ünsüz iskeleti kalıyor.
+# ÖLÇÜLDÜ: "امنوا"/"ءامنوا" → ikisi de "منو"; "المءمنات"/"المءمنت" → ikisi de "لممنت".
+#
+# İLK DENEMEDE YALNIZ ا ve ء düşürülmüştü; yetmedi. Kalan 164 "DİĞER" satırının
+# tamamı da imlâ oynamasıydı ve hepsi و / ي üzerindeydi:
+#   مُسْتَهْزِؤُ࣒نَ ↔ مُسْتَهْزِءُونَ   (bizde ؤ + medd işareti, onlarda ءُو)
+#   اِبْرٰهٖيمَ    ↔ إِبْرَٰهِـۧمَ      (bizde tam ي, onlarda üst ي U+06E7)
+# Onun için DÖRT zayıf harf de düşürülüyor; geriye salt ünsüz iskeleti kalıyor.
+# BEDELİ VAR, saklamıyoruz: yalnız zayıf harften ibaret bir fazlalık/eksiklik
+# artık görünmez. Karşılığında 164 sahte satır kapanıyor ve gerçek kusurlar
+# (fazladan kelime, yapışık kelime) olduğu gibi duruyor — ölçüldü.
+_ZAYIF = str.maketrans({"ء": "", "ا": "", "و": "", "ي": ""})
+# Daha SIKI ölçü (yalnız ا/ء düşer): bir bulgunun delili ne kadar güçlü,
+# onu söylemek için kullanılıyor.
+_ZAYIF_SIKI = str.maketrans({"ء": "", "ا": ""})
+# YABANCI İMLÂ: bizim mushafımız bu iki kodu KULLANMIYOR. Fazladan kelimelerin
+# hepsi bunlarla yazılmış — yani başka bir kaynaktan sızdıklarının işareti.
+#   U+06E1 (ۡ) sükûn varyantı · U+0671 (ٱ) vasl elifi
+_YABANCI = ("\u06E1", "\u0671")
+
+
+def gevsek(t):
+    return iskelet(t).translate(_ZAYIF)
+
+
+def gevsek_siki(t):
+    return iskelet(t).translate(_ZAYIF_SIKI)
+
+
+def yabanci_imla(t):
+    return any(c in str(t or "") for c in _YABANCI)
+
+
+def metin_denetle(mushaf_yolu="kuran-mushaf.json", wbw_yolu="wbw_tr.json",
+                  cikti="metin_farklari.json", ayrinti=25):
+    """Âyet metnini quran.com'unkiyle karşılaştırır ve kusurları SINIFLANDIRIR.
+
+    Üç sınıf ayrı ayrı raporlanır, çünkü düzeltmeleri farklı:
+      TEKRAR  : bizde fazladan kelime var, çoğu komşusunun tekrarı
+                (37:130'daki `يَاسِينَ` ve `ذُوالْعَرْشِ` + `ٱلۡعَرۡشِ` ailesi).
+                Düzeltmesi: fazladan kelimeyi SİL (--kelime-sil).
+      YAPIŞIK : bizim TEK kelimemiz, onların ARDIŞIK 2+ kelimesine eşit
+                (19:12 `الْحُكْمَصَبِيًّا`). Düzeltmesi: kelimeyi BÖL.
+                Bu sınıf kelime SAYISINA bakan denetimlerden kaçıyor, çünkü
+                aynı âyette başka bir yerde fazladan bölme varsa sayı tutuyor.
+      DİĞER   : kalan metin farkları — elle bakılacak.
+
+    Karşılaştırma `gevsek()` ile; hiçbir dosya değiştirilmez.
+    """
+    ham = json.load(open(yol_coz(mushaf_yolu), encoding="utf-8"))
+    wbw = json.load(open(girdi(wbw_yolu), encoding="utf-8"))
+    cikti = cikti_yolu(cikti)
+
+    biz = {}
+    for kid, ar in bizim_kelimeler(ham):
+        p = str(kid).split(":")
+        if len(p) >= 3 and all(x.isdigit() for x in p[:3]):
+            biz.setdefault(f"{p[0]}:{p[1]}", []).append((int(p[2]), kid, ar))
+    for v in biz.values():
+        v.sort()
+
+    onlar = {}
+    for yer, v in wbw.items():
+        if v.get("tip") == "end":
+            continue
+        p = yer.split(":")
+        if len(p) < 3 or not all(x.isdigit() for x in p):
+            continue
+        onlar.setdefault(f"{p[0]}:{p[1]}", []).append((int(p[2]), v.get("ar", "")))
+    for v in onlar.values():
+        v.sort()
+
+    ortak = sorted(set(biz) & set(onlar), key=lambda x: [int(t) for t in x.split(":")])
+    tam = 0
+    kayitlar = []
+    for ay in ortak:
+        bkl = biz[ay]                       # [(sira, id, arapca)]
+        okl = [x[1] for x in onlar[ay]]
+        b_g = [gevsek(x[2]) for x in bkl]
+        o_g = [gevsek(w) for w in okl]
+        b_hep, o_hep = "".join(b_g), "".join(o_g)
+
+        # ── YAPIŞIK — HER ÂYETTE aranır, metin toplamı tutsa bile ────────
+        # ÖNEMLİ: yapışık kelime metnin TOPLAMINI değiştirmez ("الحكم"+"صبيا"
+        # ile "الحكمصبيا" aynı harfler), bu yüzden ne kelime sayısı ne de
+        # metin karşılaştırması onu yakalar. 19:12 böyle kaçıyordu. Tek yolu
+        # kelime kelime bakmak.
+        yapisik = []
+        for i, sk in enumerate(b_g):
+            if len(sk) < 4:
+                continue
+            for j in range(len(o_g)):
+                birikim = ""
+                for k in range(j, min(j + 5, len(o_g))):
+                    birikim += o_g[k]
+                    if k > j and birikim == sk:
+                        yapisik.append({"id": bkl[i][1], "bizim": bkl[i][2],
+                                        "onlarin": " + ".join(okl[j:k + 1])})
+                        break
+                    if len(birikim) > len(sk):
+                        break
+
+        # ── TEKRAR — KESİN TEST ─────────────────────────────────────────
+        # "Şu kelimeyi atınca metin onlarınkiyle BİREBİR tutuyor mu?" Tutuyorsa
+        # o kelimenin fazla olduğu tartışmasızdır. Önceki deneme hizalayıcının
+        # (SequenceMatcher) hangi kelimeyi fazla saydığına bakıyordu; 85:15'te
+        # hizalayıcı `ذُوالْعَرْشِ`yi işaretledi, oysa fazla olan ikinci
+        # `ٱلۡعَرۡشِ` idi — ikisi de sayıya uyduğu için ayırt edemiyordu.
+        tekrar = []
+        if b_hep != o_hep and len(b_hep) > len(o_hep):
+            b_s = [gevsek_siki(x[2]) for x in bkl]
+            o_s = "".join(gevsek_siki(w) for w in okl)
+            for i in range(len(b_g)):
+                if not b_g[i]:
+                    continue
+                if "".join(b_g[:i] + b_g[i + 1:]) != o_hep:
+                    continue
+                komsu = ""
+                for k in (i - 1, i + 1):
+                    if 0 <= k < len(b_g) and b_g[k] and b_g[k].endswith(b_g[i]):
+                        komsu = bkl[k][2]
+                # Delil gücü: sıkı ölçüde de tutuyorsa şüphe yok. Ayrıca kelime
+                # bizim mushafın kullanmadığı imlâyla yazılmışsa (ٱ / ۡ) dışarıdan
+                # sızdığı ayrıca belli olur. 55:27'de iki aday çıkıyor ve doğru
+                # olanı ancak bu ayırt ediyor.
+                tekrar.append({
+                    "id": bkl[i][1], "ar": bkl[i][2], "komsu": komsu,
+                    "yabanci_imla": yabanci_imla(bkl[i][2]),
+                    "siki_de_tutuyor": "".join(b_s[:i] + b_s[i + 1:]) == o_s,
+                })
+            # Birden çok aday varsa yabancı imlâlı olan öne alınır.
+            tekrar.sort(key=lambda t: (not t["yabanci_imla"], not t["siki_de_tutuyor"]))
+
+        if b_hep == o_hep and not yapisik:
+            tam += 1
+            continue
+
+        fazla, eksik = [], []
+        for et, i1, i2, j1, j2 in SequenceMatcher(None, b_g, o_g).get_opcodes():
+            if et in ("delete", "replace"):
+                fazla.extend(x[2] for x in bkl[i1:i2])
+            if et in ("insert", "replace"):
+                eksik.extend(okl[j1:j2])
+
+        sinif = "tekrar" if tekrar else ("yapisik" if yapisik else "diger")
+        kayitlar.append({
+            "ayet": ay, "sinif": sinif,
+            "bizde_kelime": len(bkl), "onlarda_kelime": len(okl),
+            "tekrar": tekrar, "yapisik": yapisik,
+            "bizde_fazla": fazla,
+            "onlarda_var": eksik,
+            "bizim": " ".join(x[2] for x in bkl),
+            "onlarin": " ".join(okl),
+        })
+
+    say = Counter(k["sinif"] for k in kayitlar)
+    print("=" * 74)
+    print("ÂYET METNİ — BİZ ↔ QURAN.COM  (zayıf harfler düşürülmüş iskelet)")
+    print("=" * 74)
+    print(f"  karşılaştırılan âyet : {len(ortak)}")
+    print(f"  metni AYNI           : {tam}   (%{100*tam/max(1,len(ortak)):.1f})")
+    print(f"  ⚠ farklı olan        : {len(kayitlar)}")
+    print(f"      TEKRAR (sil)     : {say['tekrar']}")
+    print(f"      YAPIŞIK (böl)    : {say['yapisik']}")
+    print(f"      DİĞER (incele)   : {say['diger']}")
+    print()
+
+    def dok(baslik, sinif, n):
+        liste = [k for k in kayitlar if k["sinif"] == sinif]
+        if not liste:
+            return
+        print(f"  ── {baslik} ({len(liste)} âyet) " + "─" * max(0, 42 - len(baslik)))
+        for k in liste[:n]:
+            print(f"    {k['ayet']:<9} kelime {k['bizde_kelime']}/{k['onlarda_kelime']}")
+            for n, t in enumerate(k["tekrar"]):
+                etiket = "SİL" if n == 0 else " ya da"
+                delil = []
+                if t["yabanci_imla"]:
+                    delil.append("yabancı imlâ")
+                if t["siki_de_tutuyor"]:
+                    delil.append("sıkı ölçüde de tutuyor")
+                d = ("  [" + ", ".join(delil) + "]") if delil else ""
+                print(f"      {etiket} {t['id']:<12} {t['ar']}      (komşusu: {t['komsu']}){d}")
+            for y in k["yapisik"]:
+                print(f"      BÖL {y['id']:<12} {y['bizim']}   →   {y['onlarin']}")
+            if sinif == "diger":
+                if k["bizde_fazla"]:
+                    print(f"      BİZDE fazla : {' | '.join(k['bizde_fazla'][:5])}")
+                if k["onlarda_var"]:
+                    print(f"      ONLARDA var : {' | '.join(k['onlarda_var'][:5])}")
+        if len(liste) > n:
+            print(f"    … ve {len(liste)-n} âyet daha (tamamı dosyada)")
+        print()
+
+    dok("TEKRAR — fazladan kelime, SİLİNECEK", "tekrar", ayrinti)
+    dok("YAPIŞIK — iki kelime bitişik yazılmış, BÖLÜNECEK", "yapisik", ayrinti)
+    dok("DİĞER — elle incelenecek", "diger", ayrinti)
+
+    json.dump(kayitlar, open(cikti, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+    print(f"  yazıldı: {cikti}  ({len(kayitlar)} âyet)")
+    print("  (hiçbir dosya değiştirilmedi — bu yalnız ölçüm)")
+    if say["tekrar"]:
+        print()
+        print("  Silme komutu (önce --yaz'sız çalıştırıp bakın):")
+        print("    python3 src/py/wbw.py --kelime-sil <id> --yaz")
+
+
+# ══════════════════════════════════════════════════════════════════════════
 def qul_olc(qul_yolu="turkish-wbw-translation.json", wbw_yolu="wbw_tr.json"):
     """QUL (Tarteel) Türkçe kelime-kelime dosyası bizdeki boşlukların kaçını kapatır?
 
@@ -2641,6 +3018,24 @@ if __name__ == "__main__":
         birlestir(arg[0] if arg else "wbw_tr.json")
     elif "--ing-analiz" in sys.argv:
         ingilizce_analiz()
+    elif "--metin-denetle" in sys.argv:
+        n = 25
+        if "--ayrinti" in sys.argv:
+            try: n = int(sys.argv[sys.argv.index("--ayrinti") + 1])
+            except (IndexError, ValueError): print("UYARI: --ayrinti okunamadı, 25 kullanılıyor.")
+        metin_denetle(ayrinti=n)
+    elif "--ayet-kod" in sys.argv:
+        i = sys.argv.index("--ayet-kod")
+        if i + 1 >= len(sys.argv):
+            print("KULLANIM: --ayet-kod SURE:AYET   (ör. --ayet-kod 37:130)")
+        else:
+            ayet_kod(sys.argv[i + 1])
+    elif "--kelime-sil" in sys.argv:
+        i = sys.argv.index("--kelime-sil")
+        if i + 1 >= len(sys.argv):
+            print("KULLANIM: --kelime-sil SURE:AYET:SIRA [--yaz]")
+        else:
+            kelime_sil(sys.argv[i + 1], yaz=("--yaz" in sys.argv))
     elif "--bolunme" in sys.argv:
         # --ayrinti N'in DEĞERİ konumsal argüman sanılmasın (o yüzden atlanıyor).
         n = 25

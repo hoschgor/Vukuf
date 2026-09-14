@@ -1,5 +1,5 @@
 import { useState, useRef } from "react"
-import { Play, Pause, X, Link2, Type } from "lucide-react"
+import { Play, Pause, X, Link2, Type, Brackets } from "lucide-react"
 import kelimeMapping from "../data/kelime-mapping.json"
 import { tecvidAyikla, ozelOkuyusAyikla } from "./MushafKelime"
 
@@ -277,7 +277,7 @@ export default function KelimePopup({
         </div>
 
         {/* Rozetler: birleşik kelime + fiil çekimi. Aynı satırda, sarabilir. */}
-        {(birlesik || sarfEtiket) && (
+        {(birlesik || sarfEtiket || kelime.obek) && (
           <div style={{
             display: "flex", flexWrap: "wrap", gap: "5px", marginBottom: "8px",
           }}>
@@ -293,6 +293,27 @@ export default function KelimePopup({
               }}>
                 <Link2 size={10} />
                 {uyeler.length} kelime birlikte
+              </span>
+            )}
+
+            {/* ÖBEK ANLAMI — komşu kelimeyle PAYLAŞILAN anlam.
+                quran.com öbeğin karşılığını öbeğin ilk kelimesine yazıyor
+                (`فِي` → «yeryüzünde»); bu yüzden aynı anlam komşu kelimede de
+                görünüyor. Anlamı değiştirmek yerine (ölçüldü: aynı edat başka
+                yerde bambaşka işlevde) durumu AÇIKLIYORUZ. */}
+            {kelime.obek && (
+              <span
+                title={`Bu anlam ${kelime.obek.uyeSayisi} kelimenin tamamına ait: ${kelime.obek.ar}`}
+                style={{
+                  display: "inline-flex", alignItems: "center", gap: "4px",
+                  fontSize: "10px", color: theme.textSecondary,
+                  background: `${theme.textSecondary}12`,
+                  border: `1px solid ${theme.border}`,
+                  borderRadius: "999px", padding: "2px 7px",
+                }}
+              >
+                <Brackets size={10} />
+                {kelime.obek.uyeSayisi} kelimelik öbeğin anlamı
               </span>
             )}
 

@@ -8,6 +8,9 @@ import arapcaLugat from "../data/arapca-lugat.json"
 // Kelime kimliğine göre değil, kelimenin ÂYETTEKİ YERİNE göre anlam verir.
 import kelimeAnlam from "../data/kelime-anlam.json"
 import kelimeGrup from "../data/kelime-grup.json"
+// ÖBEK: komşu ama AYRI iki kelimenin aynı anlamı paylaştığı yerler. Anlam
+// dosyasına dokunmadan yalnız GÖSTERİM için üretildi (wbw.py --obek-uret).
+import kelimeObek from "../data/kelime-obek.json"
 import ayetMeal from "../data/ayet-meal.json"
 import sayfaHaritaJson from "../data/sayfa-harita.json"
 import SureBasligi from "../components/SureBasligi"
@@ -1880,6 +1883,8 @@ function sureGit(sureId, ayetNo) {
     // kelime ilerlerken tekrar/atlama hissi veriyor.
     const grup = kelime.id ? kelimeGrup[kelime.id] : null
     const uyeler = grup?.uyeler || null
+    // Öbek yalnız grup DEĞİLSE bakılır (bir kelime ikisine birden girmesin).
+    const obek = (!grup && kelime.id) ? kelimeObek[kelime.id] : null
     const position = kelime.id ? parseInt(kelime.id.split(":")[2]) : 0
     setPopup({
       tip: "kelime",
@@ -1895,6 +1900,9 @@ function sureGit(sureId, ayetNo) {
         // adım sayılır, ikinci üyeye ayrıca durulmaz.
         grupUyeleri: uyeler,
         okunus:   okunusKaydi?.okunuş || "",
+        // Baloncuk bunu "bu anlam şu kelimelerin tamamına ait" diye söyler;
+        // kullanıcı aynı anlamı iki kelimede görünce kusur sanmasın.
+        obek:     obek ? { uyeSayisi: obek.uyeler.length, ar: obek.ar } : null,
         anlamlar: (yerAnlami && yerAnlami.length) ? yerAnlami : (lugatSonuc?.anlamlar || []),
         position,
       },

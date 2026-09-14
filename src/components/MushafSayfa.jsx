@@ -8,6 +8,7 @@ import SureSonu from "./SureSonu"
 import { useMediaQuery } from "../data/hooks/useMediaQuery"
 import { useRef, useEffect, useState, memo } from "react"
 import kelimeGrup from "../data/kelime-grup.json"
+import kelimeObek from "../data/kelime-obek.json"
 
 // ── BİRLEŞİK KELİME GRUPLARI ───────────────────────────────────────────────
 // quran.com'un TEK kelime saydığı yeri biz İKİ kelimeye bölmüşüz (176 grup,
@@ -20,6 +21,29 @@ import kelimeGrup from "../data/kelime-grup.json"
 function grupBilgisi(kelimeId) {
   const g = kelimeId ? kelimeGrup[kelimeId] : null
   const uyeler = g?.uyeler
+  if (!uyeler || uyeler.length < 2) return null
+  const i = uyeler.indexOf(kelimeId)
+  if (i < 0) return null
+  return {
+    anahtar: uyeler.join("|"),
+    konum: i === 0 ? "bas" : i === uyeler.length - 1 ? "son" : "orta",
+  }
+}
+
+// ── ÖBEK (aynı anlamı paylaşan KOMŞU kelimeler) ────────────────────────────
+// GRUPTAN FARKI: grup, quran.com'un tek kelimesini bizim ikiye böldüğümüz yer —
+// orada boşluk kapanır, çünkü aslında tek kelime. ÖBEK ise gerçekten AYRI iki
+// kelime; quran.com öbeğin anlamını ilk kelimeye yazdığı için (`فِي` →
+// «yeryüzünde») ikisinde aynı anlam görünüyor. Anlamı değiştirmek denendi ve
+// ölçümde çöktü (aynı edat başka yerde bambaşka işlevde), o yüzden ANLAMA
+// DOKUNULMUYOR; yalnız ikisinin BİR ANLAMI PAYLAŞTIĞI belli ediliyor.
+//
+// BU YÜZDEN BOŞLUK KAPANMAZ, köşe yuvarlaması değişmez: kelimeler mushafta
+// ayrı yazılıdır, bitiştirmek metni yanlış gösterir. Yalnız altlarına ortak
+// ince bir bağ çizilir ve birine dokununca ikisi birden vurgulanır.
+function obekBilgisi(kelimeId) {
+  const o = kelimeId ? kelimeObek[kelimeId] : null
+  const uyeler = o?.uyeler
   if (!uyeler || uyeler.length < 2) return null
   const i = uyeler.indexOf(kelimeId)
   if (i < 0) return null
@@ -303,6 +327,9 @@ function MushafSayfa({
               {grup.elemanlar.map((el, index) => {
                 if (el.tip === "kelime") {
                   const grup_ = grupBilgisi(el.kelime.id)
+                  // Öbek YALNIZ grup olmayan kelimelerde aranır: bir kelime
+                  // ikisine birden girerse iki bağ çizgisi üst üste biner.
+                  const obek_ = grup_ ? null : obekBilgisi(el.kelime.id)
                   const aktif =
                     aktifAyet?.sureNo === el.sure.id &&
                     aktifAyet?.ayetNo === el.ayet.no &&
@@ -327,8 +354,12 @@ function MushafSayfa({
                         kayitKonumModu={kayitKonumModu}
                         grupKonum={grup_?.konum || null}
                         grupVurgu={!!grup_ && hoverGrup === grup_.anahtar}
+                        obekKonum={obek_?.konum || null}
+                        obekVurgu={!!obek_ && hoverGrup === obek_.anahtar}
                         onGrupHover={(icinde) =>
-                          setHoverGrup(icinde ? (grup_?.anahtar || null) : null)}
+                          setHoverGrup(icinde
+                            ? (grup_?.anahtar || obek_?.anahtar || null)
+                            : null)}
                         onTikla={(kelime, e) => {
                           if (kayitKonumModu) return
                           onKelimeTikla?.(kelime, el.sure, el.ayet, e)

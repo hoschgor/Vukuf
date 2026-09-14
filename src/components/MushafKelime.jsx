@@ -302,6 +302,14 @@ export default function MushafKelime({
   grupKonum = null,
   grupVurgu = false,
   onGrupHover,
+  // ── ÖBEK ─────────────────────────────────────────────────────────────
+  // Komşu ama AYRI iki kelime aynı anlamı paylaşıyor (quran.com öbek anlamını
+  // ilk kelimeye yazıyor: `فِي` → «yeryüzünde»). GRUPTAN AYRI TUTULUYOR ve
+  // KASITLI OLARAK boşluğu kapatmıyor, köşeleri birleştirmiyor: bunlar mushafta
+  // ayrı yazılı kelimeler, bitiştirmek metni yanlış gösterir. Yalnız altlarına
+  // ortak bağ çizgisi çiziliyor.
+  obekKonum = null,
+  obekVurgu = false,
 }) {
   const [hover, setHover] = useState(false)
   const isMobile = useMediaQuery("(max-width: 768px)")
@@ -368,13 +376,21 @@ export default function MushafKelime({
           ? "transparent"
           : aktif
             ? `${theme.accent}22`
-            : (hover || grupVurgu) ? `${theme.accent}0a` : "transparent",
+            : (hover || grupVurgu || obekVurgu) ? `${theme.accent}0a` : "transparent",
         boxShadow: kayitKonumModu ? "none" : aktif ? `inset 0 -2px 0 ${theme.accent}` : "none",
         // Birleşik kelimenin ortak bağı: grup boyunca kesintisiz ince nokta çizgi.
         // Kesintisiz olması için İÇ kenarlarda dolgu zaten sıfırlandı.
-        borderBottom: (grupta && !kayitKonumModu)
-          ? `1px dotted ${theme.accent}${grupVurgu ? "88" : "44"}`
-          : undefined,
+        // Bağ çizgisi: grupta KESİNTİSİZ (iç dolgu zaten sıfırlandı), öbekte
+        // kelimeler arası boşluk durduğu için çizgi de kelime kelime kesilir —
+        // bu doğru: "aynı anlamı paylaşıyorlar" der, "tek kelimedir" demez.
+        // Öbek çizgisi daha SOLUK, karışmasın diye.
+        borderBottom: kayitKonumModu
+          ? undefined
+          : grupta
+            ? `1px dotted ${theme.accent}${grupVurgu ? "88" : "44"}`
+            : (obekKonum != null)
+              ? `1px dotted ${theme.accent}${obekVurgu ? "66" : "2a"}`
+              : undefined,
         transition: "background 0.15s",
         whiteSpace: "nowrap",
         verticalAlign: "middle",

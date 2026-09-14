@@ -37,6 +37,14 @@ Bu yüzden konumdan konuma eşleme yapılamaz; kayar. Çözüm: HİZALAMA tablos
      metnin kendisine bakar). Fazladan/eksik kelimeyi ve tekrar şüphesini
      bulur. Yazmaz; metin_farklari.json üretir.
 
+ 25) ÖBEK ÜRET python3 wbw.py --obek-uret [--yaz]
+     Ardışık aynı anlamlı kelimeleri kelime-obek.json'a yazar (YALNIZ GÖSTERİM;
+     anlam ve kelime sesi değişmez).
+
+ 24) İKİLİ ANLAM python3 wbw.py --ikili-anlam [--ayrinti 40]
+     Ardışık iki kelimeye AYNI anlamın yazıldığı yerleri bulur, kaynağıyla
+     birlikte raporlar. Yazmaz; ikili_anlam.json üretir.
+
  23) HİZALAMA RÖNTGENİ python3 wbw.py --hizalama-bak 37:102
      Âyetin her kelimesini, eşlendiği quran.com kelimesini ve anlamını gösterir;
      grup oluşan ve hiç bağlanmayan yerleri işaretler. Yazmaz.
@@ -2830,6 +2838,261 @@ def hizalama_bak(yer, mushaf_yolu="kuran-mushaf.json", wbw_yolu=None,
 
 
 # ══════════════════════════════════════════════════════════════════════════
+def _anlam_sade(t):
+    """Karşılaştırma için anlam metnini sadeleştirir: parantez içi açıklamalar,
+    noktalama ve büyük/küçük fark atılır. «(İbrahim ona) dedi» ile «dedi» aynı
+    sayılmasın diye parantez İÇERİĞİ atılıyor, parantezli kısım zaten
+    açıklama."""
+    t = re.sub(r"\([^)]*\)", " ", str(t or ""))
+    t = re.sub(r"[^\w\sçğıöşüÇĞİÖŞÜâîû]", " ", t, flags=re.UNICODE)
+    return " ".join(t.lower().split())
+
+
+def ikili_anlam(mushaf_yolu="kuran-mushaf.json", anlam_yolu="kelime-anlam.json",
+                kaynak_yolu="kelime-kaynak.json", grup_yolu="kelime-grup.json",
+                cikti="ikili_anlam.json", ayrinti=30):
+    """ARDIŞIK İKİ KELİMEYE AYNI ANLAM yazılmış yerleri bulur. Yazmaz (ölçüm).
+
+    NEDEN OLUYOR: quran.com'un kelime kelime verisi öbeğin anlamını çoğu zaman
+    ÖBEĞİN İLK KELİMESİNE yazıyor (`مِنَ` → «sabredenlerden»). Biz İngilizce
+    kalan kayıtları Türkçeleştirirken ikinci kelimeye de aynı karşılığı vermiş
+    olabiliyoruz. Sonuç: okuyucuda aynı anlam üst üste iki kez.
+
+    ÖNCE ÖLÇÜLÜYOR, sonra düzeltme kararı veriliyor: kaç yer, hangi kalıp,
+    hangi kaynaktan. Kaynak önemli — tekrar BİZİM ürettiğimiz bir karşılıktan
+    geliyorsa düzeltmesi güvenli, quran.com'un kendi verisindeyse dokunmadan
+    önce iki kez düşünmek gerekir.
+    """
+    ham = json.load(open(yol_coz(mushaf_yolu), encoding="utf-8"))
+    anlam_dosya = girdi(anlam_yolu, "Önce --birlestir çalıştır.")
+    anlamlar = json.load(open(anlam_dosya, encoding="utf-8"))
+    kd = veri_ara(kaynak_yolu)
+    kaynaklar = json.load(open(kd, encoding="utf-8")) if kd else {}
+    gd = veri_ara(grup_yolu)
+    gruplar = json.load(open(gd, encoding="utf-8")) if gd else {}
+    cikti = cikti_yolu(cikti)
+
+    def ayni_grup(a, b):
+        """İki kelime AYNI BİRLEŞİK GRUBUN üyesi mi? Öyleyse aynı anlamı
+        taşımaları KUSUR DEĞİL, tasarım: `يَا`+`بَنٖي` quran.com'da tek kelime,
+        ekranda da tek birim gösteriliyor. Bunları tekrar saymak ölçümü şişirir
+        (ilk ölçümde 2307 içinde ~200 böyle kayıt vardı)."""
+        ga = (gruplar.get(a) or {}).get("uyeler")
+        return bool(ga) and b in ga
+
+    # âyet -> sıralı [(sira, id, arapca)]
+    ayetler = {}
+    for kid, ar in bizim_kelimeler(ham):
+        p = str(kid).split(":")
+        if len(p) >= 3 and all(x.isdigit() for x in p[:3]):
+            ayetler.setdefault(f"{p[0]}:{p[1]}", []).append((int(p[2]), str(kid), ar))
+    for v in ayetler.values():
+        v.sort()
+
+    def metin(kid):
+        a = anlamlar.get(kid)
+        if isinstance(a, list):
+            a = " / ".join(str(x) for x in a if x)
+        return str(a or "").strip()
+
+    def kaynak(kid):
+        k = kaynaklar.get(kid)
+        if isinstance(k, dict):
+            return str(k.get("kaynak") or "?")
+        return str(k or "?")
+
+    kayitlar = []
+    for ay in sorted(ayetler, key=lambda x: [int(t) for t in x.split(":")]):
+        dizi = ayetler[ay]
+        for i in range(len(dizi) - 1):
+            a1, a2 = metin(dizi[i][1]), metin(dizi[i + 1][1])
+            if not a1 or not a2:
+                continue
+            s1, s2 = _anlam_sade(a1), _anlam_sade(a2)
+            if not s1 or s1 != s2:
+                continue
+            if ayni_grup(dizi[i][1], dizi[i + 1][1]):
+                continue                      # birleşik kelime — kusur değil
+            kayitlar.append({
+                "ayet": ay,
+                "ilk_id": dizi[i][1], "ilk_ar": dizi[i][2], "ilk_kaynak": kaynak(dizi[i][1]),
+                "son_id": dizi[i + 1][1], "son_ar": dizi[i + 1][2], "son_kaynak": kaynak(dizi[i + 1][1]),
+                "anlam": a1,
+                # İlk kelime EDAT mı? Öyleyse düzeltme kalıbı bellidir: edata
+                # işlevsel karşılık (-den, ile, üzerine…), asıl anlam ikinci
+                # kelimeye. Ölçüt uydurulmuyor, dosyadaki `_edat_mi` kullanılıyor
+                # (uzunluk sanmak yetmiyordu: `قَالَ` 3 harf ama fiil).
+                "ilk_edat": _edat_mi(iskelet(dizi[i][2])),
+            })
+
+    print("=" * 74)
+    print("ARDIŞIK AYNI ANLAM — ölçüm")
+    print("=" * 74)
+    print(f"  taranan âyet          : {len(ayetler)}")
+    print(f"  ardışık tekrar sayısı : {len(kayitlar)}")
+    edatli = [k for k in kayitlar if k["ilk_edat"]]
+    print(f"    ilki KISA/edat olan : {len(edatli)}   (düzeltmesi kalıplı)")
+    print(f"    ikisi de uzun       : {len(kayitlar) - len(edatli)}   (elle bakılacak)")
+    print()
+    ks = Counter(f'{k["ilk_kaynak"]} → {k["son_kaynak"]}' for k in kayitlar)
+    print("  ── KAYNAK ÇİFTİ (ilk kelime → ikinci kelime) ──")
+    for ad, n in ks.most_common(12):
+        print(f"    {ad:<34} {n}")
+    print()
+    kalip = Counter(f'{k["ilk_ar"]}' for k in edatli)
+    print("  ── EN SIK TEKRARLANAN İLK KELİME ──")
+    for ad, n in kalip.most_common(15):
+        print(f"    {ad:<20} {n}")
+    # ── DÜZELTME KARŞILIKLARI, VERİDEN ─────────────────────────────────
+    # Edata ne yazacağımızı UYDURMUYORUZ. Aynı edat mushafın başka yerlerinde,
+    # komşusuyla tekrar ETMEDEN, quran.com'un kendi verdiği karşılıkla geçiyor.
+    # O karşılıkların en sık olanı alınıyor — yani edatın kendi sözlüğü kendi
+    # verimizden çıkıyor. Böylece `مِنْ` için ne yazılacağını ben değil, veri
+    # söylüyor.
+    tekrar_idler = {k["ilk_id"] for k in kayitlar}
+    edat_sayac = {}
+    for ay, dizi in ayetler.items():
+        for _s, kid, ar in dizi:
+            sk = iskelet(ar)
+            if not _edat_mi(sk) or kid in tekrar_idler:
+                continue
+            m = metin(kid)
+            if not m:
+                continue
+            edat_sayac.setdefault(ar, Counter())[m] += 1
+    print()
+    print("  ── EDATIN KENDİ KARŞILIĞI (tekrar ETMEYEN yerlerden, en sık 3) ──")
+    print("     Düzeltme: ilk kelimeye bu karşılık, öbek anlamı ikinciye kalır.")
+    for ad, n in kalip.most_common(15):
+        sec = edat_sayac.get(ad)
+        if not sec:
+            print(f"    {ad:<20} {n:>5}   → (başka yerde karşılığı yok)")
+            continue
+        ilk3 = " · ".join(f"«{m}»×{c}" for m, c in sec.most_common(3))
+        print(f"    {ad:<20} {n:>5}   → {ilk3}")
+    print()
+    print("  ── ÖRNEKLER ──")
+    for k in kayitlar[:ayrinti]:
+        print(f"    {k['ayet']:<9} {k['ilk_ar']} + {k['son_ar']}")
+        print(f"      ikisi de: «{k['anlam']}»   [{k['ilk_kaynak']} / {k['son_kaynak']}]")
+    if len(kayitlar) > ayrinti:
+        print(f"    … ve {len(kayitlar)-ayrinti} kayıt daha (tamamı dosyada)")
+    print()
+    json.dump(kayitlar, open(cikti, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+    print(f"  yazıldı: {cikti}  ({len(kayitlar)} kayıt)")
+    print("  (hiçbir dosya değiştirilmedi — bu yalnız ölçüm)")
+
+
+# ══════════════════════════════════════════════════════════════════════════
+def obek_uret(mushaf_yolu="kuran-mushaf.json", anlam_yolu="kelime-anlam.json",
+              grup_yolu="kelime-grup.json", cikti="kelime-obek.json",
+              yaz=False, ayrinti=20):
+    """ARDIŞIK aynı anlamlı kelimeleri ÖBEK olarak işaretler (yalnız GÖSTERİM).
+
+    NİÇİN ANLAMA DOKUNMUYORUZ: quran.com öbeğin anlamını öbeğin ilk kelimesine
+    yazıyor (`فِي` → «yeryüzünde»). Biz İngilizce kalan ikinci kelimeyi
+    doldururken aynı karşılığı tekrarlamışız; okuyucuda anlam iki kez görünüyor.
+    Edata "kendi" karşılığını yazmak DENENDİ ve ÖLÇÜMDE ÇÖKTÜ: aynı edat
+    `مِنْ دُونِ`ta «başka», `مِنْ اَحَدٍ`te «hiç kimseye», `مِنْ رَبِّهٖ`de
+    «Rabbinden» oluyor — tek karşılık 563 yere oturmuyor. Veriden çıkarmak da
+    işe yaramadı, çünkü veri aynı alışkanlıkla kirli (`مِنْ` için en sık karşılık
+    «hiçbir» çıkıyordu). Anlam uydurmaktansa GÖSTERİMİ düzeltiyoruz: iki kelime
+    ekranda bağlı görünür, anlam bir kez yazılır.
+
+    `kelime-grup.json`'dan AYRI DOSYA, çünkü o dosya "iki kelime tek SES adımı"
+    demek (quran.com'un tek kelimeyi bizim ikiye böldüğümüz yerler). Buradaki
+    kelimelerin AYRI sesi var; adımlama bozulmamalı. Bu dosya yalnız görünüm.
+    """
+    ham = json.load(open(yol_coz(mushaf_yolu), encoding="utf-8"))
+    anlamlar = json.load(open(girdi(anlam_yolu, "Önce --birlestir çalıştır."), encoding="utf-8"))
+    gd = veri_ara(grup_yolu)
+    gruplar = json.load(open(gd, encoding="utf-8")) if gd else {}
+    cikti = cikti_yolu(cikti)
+
+    ayetler = {}
+    for kid, ar in bizim_kelimeler(ham):
+        p = str(kid).split(":")
+        if len(p) >= 3 and all(x.isdigit() for x in p[:3]):
+            ayetler.setdefault(f"{p[0]}:{p[1]}", []).append((int(p[2]), str(kid), ar))
+    for v in ayetler.values():
+        v.sort()
+
+    def metin(kid):
+        a = anlamlar.get(kid)
+        if isinstance(a, list):
+            a = " / ".join(str(x) for x in a if x)
+        return str(a or "").strip()
+
+    def ayni_grup(a, b):
+        ga = (gruplar.get(a) or {}).get("uyeler")
+        return bool(ga) and b in ga
+
+    obekler = {}
+    zincir_say = Counter()
+    for ay in sorted(ayetler, key=lambda x: [int(t) for t in x.split(":")]):
+        dizi = ayetler[ay]
+        i = 0
+        while i < len(dizi) - 1:
+            a1 = metin(dizi[i][1])
+            s1 = _anlam_sade(a1)
+            if not s1:
+                i += 1
+                continue
+            # ZİNCİR: ikiden fazla ardışık kelime aynı anlamı taşıyabiliyor.
+            j = i + 1
+            while (j < len(dizi) and _anlam_sade(metin(dizi[j][1])) == s1
+                   and not ayni_grup(dizi[j - 1][1], dizi[j][1])):
+                j += 1
+            if j - i >= 2:
+                uyeler = [dizi[k][1] for k in range(i, j)]
+                birlesik = " ".join(dizi[k][2] for k in range(i, j))
+                for u in uyeler:
+                    obekler[u] = {"uyeler": uyeler, "anlam": a1, "ar": birlesik}
+                zincir_say[j - i] += 1
+                i = j
+            else:
+                i += 1
+
+    print("=" * 74)
+    print("ÖBEK ÜRETİMİ" + ("" if yaz else "  —  KURU ÇALIŞMA (dosya yazılmıyor)"))
+    print("=" * 74)
+    print(f"  öbek sayısı      : {sum(zincir_say.values())}")
+    print(f"  işaretlenen kelime: {len(obekler)}")
+    for n in sorted(zincir_say):
+        print(f"    {n} kelimelik   : {zincir_say[n]}")
+    print()
+    ornek = []
+    for u, o in obekler.items():
+        if o["uyeler"][0] == u:
+            ornek.append(o)
+    # 3+ KELİMELİK ÖBEKLERİN TAMAMI AYRICA YAZILIR. Bunlar nadir (ikili
+    # öbeklerin yanında parmakla sayılacak kadar) ama şüpheli olmaya da en
+    # yatkın olanlar: üç kelimenin gerçekten tek anlamı paylaşması mümkün,
+    # ama bir hizalama/doldurma kusurunun izi de olabilir. Örneklem değil,
+    # HEPSİ gösterilir ki gözden geçirilebilsin.
+    uzunlar = [o for o in ornek if len(o["uyeler"]) >= 3]
+    if uzunlar:
+        print(f"  ── 3+ KELİMELİK ÖBEKLER (tamamı, {len(uzunlar)} adet) " + "─" * 22)
+        for o in uzunlar:
+            ay = ":".join(str(o["uyeler"][0]).split(":")[:2])
+            print(f"    {ay:<9} {o['ar']}")
+            print(f"              «{o['anlam']}»   ({' , '.join(o['uyeler'])})")
+        print()
+    for o in ornek[:ayrinti]:
+        print(f"    {o['ar']}   →   «{o['anlam']}»")
+    if len(ornek) > ayrinti:
+        print(f"    … ve {len(ornek)-ayrinti} öbek daha")
+    print()
+    if not yaz:
+        print("  Yazmak için: --obek-uret --yaz")
+        return
+    json.dump(obekler, open(cikti, "w", encoding="utf-8"), ensure_ascii=False)
+    print(f"  yazıldı: {cikti}  ({len(obekler)} kelime)")
+    print("  MushafSayfa/KuranOkuma bu dosyayı GÖRÜNÜM için okur; anlam dosyası")
+    print("  ve kelime sesi değişmedi.")
+
+
+# ══════════════════════════════════════════════════════════════════════════
 def qul_olc(qul_yolu="turkish-wbw-translation.json", wbw_yolu="wbw_tr.json"):
     """QUL (Tarteel) Türkçe kelime-kelime dosyası bizdeki boşlukların kaçını kapatır?
 
@@ -3412,6 +3675,18 @@ if __name__ == "__main__":
             try: n = int(sys.argv[sys.argv.index("--ayrinti") + 1])
             except (IndexError, ValueError): print("UYARI: --ayrinti okunamadı, 25 kullanılıyor.")
         metin_denetle(ayrinti=n)
+    elif "--obek-uret" in sys.argv:
+        n = 20
+        if "--ayrinti" in sys.argv:
+            try: n = int(sys.argv[sys.argv.index("--ayrinti") + 1])
+            except (IndexError, ValueError): pass
+        obek_uret(yaz=("--yaz" in sys.argv), ayrinti=n)
+    elif "--ikili-anlam" in sys.argv:
+        n = 30
+        if "--ayrinti" in sys.argv:
+            try: n = int(sys.argv[sys.argv.index("--ayrinti") + 1])
+            except (IndexError, ValueError): pass
+        ikili_anlam(ayrinti=n)
     elif "--hizalama-bak" in sys.argv:
         i = sys.argv.index("--hizalama-bak")
         if i + 1 >= len(sys.argv):

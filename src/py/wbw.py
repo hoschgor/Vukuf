@@ -37,6 +37,10 @@ Bu yüzden konumdan konuma eşleme yapılamaz; kayar. Çözüm: HİZALAMA tablos
      metnin kendisine bakar). Fazladan/eksik kelimeyi ve tekrar şüphesini
      bulur. Yazmaz; metin_farklari.json üretir.
 
+ 23) HİZALAMA RÖNTGENİ python3 wbw.py --hizalama-bak 37:102
+     Âyetin her kelimesini, eşlendiği quran.com kelimesini ve anlamını gösterir;
+     grup oluşan ve hiç bağlanmayan yerleri işaretler. Yazmaz.
+
  20) ÂYET KODU python3 wbw.py --ayet-kod 37:130
      Bir âyetin kelimelerini kod noktalarıyla döker; aynı/kısmî tekrar eden
      kelimeleri işaretler. Yazmaz — kesmeden önce bakılacak yer.
@@ -488,7 +492,8 @@ def hizala(mushaf_yolu, wbw_yolu="wbw_tr.json", cikti="kelime_hizalama.json"):
 
 
 def birlestir(wbw_yolu="wbw_tr.json", harita_yolu="kelime_hizalama.json",
-              cikti="kelime-anlam.json", grup_cikti="kelime-grup.json"):
+              cikti="kelime-anlam.json", grup_cikti="kelime-grup.json",
+              eslem_cikti="kelime-mapping.json"):
     """Hizalamayı kullanarak BİZİM kelime id'lerine göre anlam dosyası üretir.
 
     Uygulama artık sözlükte kelime aramak yerine doğrudan
@@ -537,6 +542,17 @@ def birlestir(wbw_yolu="wbw_tr.json", harita_yolu="kelime_hizalama.json",
 
     json.dump(anlamlar, open(cikti, "w", encoding="utf-8"), ensure_ascii=False)
     json.dump(gruplar, open(grup_cikti, "w", encoding="utf-8"), ensure_ascii=False)
+    # ── kelime-mapping.json ───────────────────────────────────────────────
+    # BU DOSYA BİR ARA ÜRETİLMİYORDU ve bayat kalıyordu. KelimePopup kelime
+    # SESİNİ bununla buluyor (bizim id → quran.com sırası); mushafta kelime
+    # numaraları kaydığında (bölme/silme sonrası) eski eşleme yanlış kelimeyi
+    # çaldırıyor, kullanıcıya "kelime atlanıyor" gibi görünüyor. Artık
+    # hizalamayla BİRLİKTE, aynı kaynaktan üretiliyor — ayrışması imkânsız.
+    eslem_cikti = cikti_yolu(eslem_cikti)
+    eslem = {}
+    for bizim, onlarinki in harita.items():
+        eslem[bizim] = onlarinki[0] if isinstance(onlarinki, list) else onlarinki
+    json.dump(eslem, open(eslem_cikti, "w", encoding="utf-8"), ensure_ascii=False)
     kaynak_cikti = cikti_yolu("kelime-kaynak.json")
     if kaynaklar:
         json.dump(kaynaklar, open(kaynak_cikti, "w", encoding="utf-8"), ensure_ascii=False)
@@ -559,7 +575,8 @@ def birlestir(wbw_yolu="wbw_tr.json", harita_yolu="kelime_hizalama.json",
     dosyalar = [cikti, grup_cikti] + ([kaynak_cikti] if kaynaklar else [])
     for f in dosyalar:
         print(f"\n  yazıldı: {f}  ({os.path.getsize(f)//1024} KB)")
-    print("\n  KuranOkuma bu iki dosyayı src/data/ altından import eder.")
+    print(f"\n  yazıldı: {eslem_cikti}  ({len(eslem)} eşleme)")
+    print("\n  KuranOkuma/KelimePopup bu ÜÇ dosyayı src/data/ altından import eder.")
 
 
 def rapor(mushaf_yolu, wbw_yolu="wbw_tr.json", harita_yolu="kelime_hizalama.json",
@@ -2270,6 +2287,15 @@ def gevsek_siki(t):
     return iskelet(t).translate(_ZAYIF_SIKI)
 
 
+def elif_sayisi(t):
+    """İskeletteki tam elif sayısı. YAPIŞIK testinin emniyet supabı:
+    bizim imlâmız tam elif yazar, onlarınki aynı yerde dagger elif (U+0670)
+    kullanır ve o iskelette DÜŞER. Dolayısıyla bizim elif sayımız onlarınkinden
+    AZ OLAMAZ. Az çıkıyorsa eşleşme uydurmadır — ör. bizim `وَعَلَى` ("ve alâ")
+    onların `أَوْ` + `عَلَىٰ` ("ev alâ") ikilisine denk sanılıyordu."""
+    return iskelet(t).count("ا")
+
+
 def yabanci_imla(t):
     return any(c in str(t or "") for c in _YABANCI)
 
@@ -2328,15 +2354,25 @@ def metin_denetle(mushaf_yolu="kuran-mushaf.json", wbw_yolu="wbw_tr.json",
         # ile "الحكمصبيا" aynı harfler), bu yüzden ne kelime sayısı ne de
         # metin karşılaştırması onu yakalar. 19:12 böyle kaçıyordu. Tek yolu
         # kelime kelime bakmak.
+        # YAPIŞIK testi SIKI ölçüyle (yalnız ا/ء düşer). Gevşek ölçüyle (و, ي de
+        # düşünce) bir sürü sahte eşleşme çıkıyordu: `الْعَلٖيمُ` → `لَا`+`عِلْمَ`,
+        # `النَّصَارٰى` → `وَلَا`+`نَصٖيرٍ` gibi. 18 etiketli vakada ölçüldü:
+        # sıkı ölçü + en az 3 harf + elif kuralı → 9/9 gerçek tutuluyor, 9/9 sahte
+        # eleniyor. Meşru Osmanlı kaynaşmaları da (مِمَّا = مِن+مَا) doğru biçimde
+        # ELENİYOR, çünkü kaynaşmada harfler değişir, birebir birleşme olmaz.
+        b_s2 = [gevsek_siki(x[2]) for x in bkl]
+        o_s2 = [gevsek_siki(w) for w in okl]
+        b_e = [elif_sayisi(x[2]) for x in bkl]
+        o_e = [elif_sayisi(w) for w in okl]
         yapisik = []
-        for i, sk in enumerate(b_g):
-            if len(sk) < 4:
+        for i, sk in enumerate(b_s2):
+            if len(sk) < 3:
                 continue
-            for j in range(len(o_g)):
+            for j in range(len(o_s2)):
                 birikim = ""
-                for k in range(j, min(j + 5, len(o_g))):
-                    birikim += o_g[k]
-                    if k > j and birikim == sk:
+                for k in range(j, min(j + 5, len(o_s2))):
+                    birikim += o_s2[k]
+                    if k > j and birikim == sk and b_e[i] >= sum(o_e[j:k + 1]):
                         yapisik.append({"id": bkl[i][1], "bizim": bkl[i][2],
                                         "onlarin": " + ".join(okl[j:k + 1])})
                         break
@@ -2371,6 +2407,11 @@ def metin_denetle(mushaf_yolu="kuran-mushaf.json", wbw_yolu="wbw_tr.json",
                     "yabanci_imla": yabanci_imla(bkl[i][2]),
                     "siki_de_tutuyor": "".join(b_s[:i] + b_s[i + 1:]) == o_s,
                 })
+            # DELİLSİZ ADAY ATILIR. Yalnız gevşek ölçüde tutuyorsa (ne yabancı
+            # imlâsı var ne de sıkı ölçüde tutuyor) bu, zayıf harf elemesinin
+            # ürettiği bir tesadüf olabilir — 72:16'daki `وَاَنْ` böyleydi.
+            # Böyleleri "sil" denmeden DİĞER'e bırakılır.
+            tekrar = [t for t in tekrar if t["yabanci_imla"] or t["siki_de_tutuyor"]]
             # Birden çok aday varsa yabancı imlâlı olan öne alınır.
             tekrar.sort(key=lambda t: (not t["yabanci_imla"], not t["siki_de_tutuyor"]))
 
@@ -2446,6 +2487,306 @@ def metin_denetle(mushaf_yolu="kuran-mushaf.json", wbw_yolu="wbw_tr.json",
         print()
         print("  Silme komutu (önce --yaz'sız çalıştırıp bakın):")
         print("    python3 src/py/wbw.py --kelime-sil <id> --yaz")
+
+
+# ══════════════════════════════════════════════════════════════════════════
+def _taban_mi(c):
+    """Taban harf mi? (hareke/işaret değil.) iskelet() ile aynı ölçüt."""
+    return "ء" <= c <= "ي"
+
+
+def _harf_say(t):
+    return sum(1 for c in str(t or "") if _taban_mi(c))
+
+
+def _kelimeyi_bol(metin, onlarin):
+    """Yapışık kelimeyi ONLARIN kelimelerine göre böler. Dönüş: parça listesi
+    (birleştirince metnin AYNISI çıkar), bölünemezse None.
+
+    NEDEN HARF SAYISI YETMEDİ: ilk deneme "onların ilk kelimesi kaç harf ise
+    bizimkinden o kadar harf al" diyordu. İmlâ yüzünden tutmuyor — onlarda
+    `ٱلْعَـٰلَمِينَ` 7 harf (dagger elif iskelette düşer), bizde
+    `الْعَالَمٖينَ` 8 harf (tam elif). 9 vakanın 3'ü bu yüzden atlanıyordu.
+
+    DOĞRU ÖLÇÜT: kesim, İKİ PARÇANIN DA karşılığını tutturduğu yer. Elif
+    duyarsız (gevşek) iskelet üzerinden hem soldaki parça onların o kelimesine,
+    hem de kalan bütün sağ taraf onların kalan kelimelerine uymalı.
+
+    SINIRDAKİ ELİF iki tarafa da uyabiliyor, yani birden çok aday kesim çıkıyor.
+    Yalnız "en erken"i almak YANLIŞ sonuç veriyordu: `لَايُؤْمِنُونَ` →
+    `لَ | ايُؤْمِنُونَ`, `فَوْزًاعَظٖيمًا` → `فَوْزً | اعَظٖيمًا` (11 vakanın 4'ü).
+    Ek kural: PARÇAMIZIN ELİF SAYISI onların o kelimesininkinden AZ OLAMAZ
+    (biz tam elif yazarız, onlar dagger elif — bizimki hep ≥ olur). Bu kural
+    elifi doğru tarafa bırakıyor: `لَا` kendi elifini alıyor, `عَلَى` almıyor
+    çünkü oradaki elif zaten `ٱلْعَـٰلَمِينَ`e ait.
+
+    İşaretler kesime katılmaz: kesim noktaları yalnız TABAN HARF başlarıdır,
+    dolayısıyla bir harfin harekesi/sükûnu kendi harfiyle kalır.
+    """
+    hedef = [gevsek_siki(o) for o in onlarin]
+    hedef_elif = [iskelet(o).count("ا") for o in onlarin]
+    hedef_hemze = [iskelet(o).count("ء") for o in onlarin]
+    n = len(hedef)
+    parcalar = []
+    bas = 0
+    for t in range(n - 1):
+        kalan_hedef = "".join(hedef[t + 1:])
+        # Aday kesimler arasından, ELİF ve HEMZE sayıları onların kelimesine EN
+        # ÇOK UYANI seçilir. Sert "en erken" kuralı üçünü yanlış bölüyordu —
+        # hepsinde hemze sağa kaçmıştı: `نِسَٓا|ءِالْعَالَمٖينَ`,
+        # `لَشَيْ|ءٌعَجٖيبٌ`, `مَٓا|ءًغَدَقًاۙ`. Elif ile hemze gevşek ölçüde
+        # düştüğü için sınırda iki tarafa da uyuyorlar; hangisine ait olduklarını
+        # ancak SAYILARI söylüyor. Eşitlikte en erken kesim alınır.
+        secilen, en_iyi = None, None
+        for i in range(bas + 1, len(metin) + 1):
+            if i < len(metin) and not _taban_mi(metin[i]):
+                continue                      # yalnız taban harf başlarında kes
+            if gevsek_siki(metin[bas:i]) != hedef[t]:
+                continue
+            if gevsek_siki(metin[i:]) != kalan_hedef:
+                continue
+            sk = iskelet(metin[bas:i])
+            ceza = abs(sk.count("ا") - hedef_elif[t]) + abs(sk.count("ء") - hedef_hemze[t])
+            if en_iyi is None or ceza < en_iyi:
+                secilen, en_iyi = i, ceza
+                if ceza == 0:
+                    break
+        if secilen is None:
+            return None
+        parcalar.append(metin[bas:secilen])
+        bas = secilen
+    parcalar.append(metin[bas:])
+    if "".join(parcalar) != metin or any(not x.strip() for x in parcalar):
+        return None
+    return parcalar
+
+
+def kusur_gider(is_listesi="metin_farklari.json", mushaf_yolu="kuran-mushaf.json",
+                yaz=False, ayrinti=20, kararsizi_bol=False):
+    """`--metin-denetle` iş listesini uygular: fazladan kelimeyi SİLER, yapışık
+    kelimeyi BÖLER, sonra her âyetin kelimelerini 1'den yeniden numaralar.
+
+    KUR'AN METNİNE DOKUNAN KİP. Onun için:
+      • varsayılan KURU ÇALIŞMA — `--yaz` yoksa hiçbir dosya değişmez,
+      • yazmadan önce `.yedek` alınır,
+      • YALNIZ DELİLLİ kayıt uygulanır: TEKRAR'da birden çok aday varsa
+        (55:27 gibi) ve tam olarak biri yabancı imlâlı değilse O KAYIT ATLANIR.
+        Hangi kelimenin fazla olduğu belirsizken silmek metni bozar.
+      • BÖLMEDE harf sayısı tutmuyorsa o kayıt da atlanır — kesim noktası
+        güvenilmez demektir.
+      • sonunda hangi türetilmiş dosyaların yeniden üretileceği yazılır.
+    """
+    liste = json.load(open(girdi(is_listesi), encoding="utf-8"))
+    yol = yol_coz(mushaf_yolu)
+    ham = json.load(open(yol, encoding="utf-8"))
+
+    def harita():
+        h = {}
+        for lst in _kelime_listeleri(ham):
+            for i, k in enumerate(lst):
+                if isinstance(k, dict) and isinstance(k.get("id"), str):
+                    h.setdefault(k["id"], (lst, i))
+        return h
+
+    yer = harita()
+    silinecek, bolunecek, atlanan, kararsiz = [], [], [], []
+    for kayit in liste:
+        sinif = kayit.get("sinif")
+        if sinif == "tekrar":
+            adaylar = kayit.get("tekrar") or []
+            yabanci = [t for t in adaylar if t.get("yabanci_imla")]
+            if len(adaylar) > 1 and len(yabanci) != 1:
+                atlanan.append((kayit["ayet"], f"{len(adaylar)} silme adayı, hangisi belirsiz"))
+                continue
+            if not adaylar:
+                continue
+            sec = yabanci[0] if yabanci else adaylar[0]
+            if sec["id"] in yer:
+                silinecek.append((kayit["ayet"], sec["id"], sec["ar"]))
+        elif sinif == "yapisik":
+            for y in kayit.get("yapisik") or []:
+                if y["id"] not in yer:
+                    continue
+                lst, i = yer[y["id"]]
+                bizim = lst[i].get("arabic", "")
+                onlar = [x.strip() for x in y["onlarin"].split("+")]
+                parcalar = _kelimeyi_bol(bizim, onlar)
+                if not parcalar:
+                    atlanan.append((kayit["ayet"], f"{y['id']} kesim noktası bulunamadı"))
+                    continue
+                # OSMANLI KAYNAŞMASI ŞÜPHESİ — OTOMATİK BÖLÜNMEZ.
+                # Bütün parçalar ÇOK KISAysa (≤3 taban harf) bu, iki edatın kaynaştığı
+                # meşru bir yazım olabilir: `لَوْمَا`, `مَالِيَ`, `وَمَامِنَّٓا`…
+                # Bizim mushaf bunları bitişik yazıyor, quran.com ayırıyor; ikisi de
+                # kendi içinde tutarlı. Gerçek kusurlarda ikinci parça hep uzun
+                # (`عَلَى`+`الْعَالَمٖينَ`, `لَا`+`يُؤْمِنُونَ`). Bunları ayrı
+                # listeye koyup KARARI KULLANICIYA bırakıyoruz — yanlış bölmek
+                # sayfada olmayan bir boşluk açar.
+                # EŞİK ÖLÇÜLDÜ: 4 denendi, `حَظٍّ`+`عَظٖيمٍ` [2,4] gibi GERÇEK
+                # yapışıklıkları da kararsıza atıyordu; 3'te şüpheliler (hepsi
+                # edat çifti) kalıyor, içerik kelimeleri bölünmeye geçiyor.
+                if all(len(iskelet(x)) <= 3 for x in parcalar) and not kararsizi_bol:
+                    kararsiz.append((kayit["ayet"], y["id"], bizim, parcalar))
+                    continue
+                bolunecek.append((kayit["ayet"], y["id"], bizim, parcalar))
+
+    print("=" * 74)
+    print("KUSUR GİDERME" + ("" if yaz else "  —  KURU ÇALIŞMA (hiçbir dosya değişmiyor)"))
+    print("=" * 74)
+    print(f"  dosya            : {yol}")
+    print(f"  silinecek kelime : {len(silinecek)}")
+    print(f"  bölünecek kelime : {len(bolunecek)}")
+    print(f"  atlanan kayıt    : {len(atlanan)}")
+    if kararsizi_bol:
+        print("  (--kararsizi-bol açık: kısa-parça şüphelileri de bölünüyor)")
+    else:
+        print(f"  KARARSIZ (elle)  : {len(kararsiz)}   — Osmanlı kaynaşması olabilir, bölünmüyor")
+    print()
+    if silinecek:
+        print("  ── SİLİNECEK " + "─" * 55)
+        for _ay, kid, ar in silinecek[:ayrinti]:
+            print(f"    {kid:<12} {ar}")
+        if len(silinecek) > ayrinti:
+            print(f"    … ve {len(silinecek)-ayrinti} silme daha")
+        print()
+    if bolunecek:
+        print("  ── BÖLÜNECEK " + "─" * 55)
+        for _ay, kid, ar, parcalar in bolunecek[:ayrinti]:
+            print(f"    {kid:<12} {ar}   →   {'  |  '.join(parcalar)}")
+        if len(bolunecek) > ayrinti:
+            print(f"    … ve {len(bolunecek)-ayrinti} bölme daha")
+        print()
+    if kararsiz:
+        print("  ── KARARSIZ — BÖLÜNMEYECEK, kararı siz verin " + "─" * 23)
+        print("     (iki parça da kısa: meşru kaynaşma da olabilir, veri kusuru da)")
+        print("     Bölünmesini istiyorsanız: --kusur-gider --kararsizi-bol --yaz")
+        for _ay, kid, ar, parcalar in kararsiz:
+            print(f"    {kid:<12} {ar}   →   {'  |  '.join(parcalar)}")
+        print()
+    if atlanan:
+        print("  ── ATLANAN (elle bakılacak) " + "─" * 40)
+        for ay, sebep in atlanan[:ayrinti]:
+            print(f"    {ay:<9} {sebep}")
+        if len(atlanan) > ayrinti:
+            print(f"    … ve {len(atlanan)-ayrinti} kayıt daha")
+        print()
+
+    if not yaz:
+        print("  Uygulamak için aynı komuta --yaz ekleyin.")
+        return
+
+    shutil_kopya(yol, yol + ".yedek")
+    # ÖNCE BÖLME, SONRA SİLME. İkisi aynı âyette olabiliyor (ذُو ailesinde hem
+    # fazladan kelime var hem de ذُو bitişik). Numaralama en SONDA, topluca
+    # yapılıyor — ara adımlarda id'lere güvenilmiyor, konum haritası her
+    # değişiklikten sonra yenileniyor.
+    for _ay, kid, _ar, parcalar in bolunecek:
+        yer = harita()
+        if kid not in yer:
+            continue
+        lst, i = yer[kid]
+        temel = lst[i]
+        yeniler = []
+        for pz in parcalar:
+            k = dict(temel)
+            k["arabic"] = pz
+            yeniler.append(k)
+        lst[i:i + 1] = yeniler
+
+    for _ay, kid, _ar in silinecek:
+        yer = harita()
+        if kid not in yer:
+            continue
+        lst, i = yer[kid]
+        lst.pop(i)
+
+    # ── Her âyeti 1'den yeniden numarala ──
+    degisen = 0
+    for lst in _kelime_listeleri(ham):
+        say = Counter()
+        for k in lst:
+            if not (isinstance(k, dict) and isinstance(k.get("id"), str)):
+                continue
+            p = k["id"].split(":")
+            if len(p) < 3:
+                continue
+            on = f"{p[0]}:{p[1]}"
+            say[on] += 1
+            yeni_id = f"{on}:{say[on]}"
+            if yeni_id != k["id"]:
+                degisen += 1
+            k["id"] = yeni_id
+
+    json.dump(ham, open(yol, "w", encoding="utf-8"), ensure_ascii=False)
+    print(f"  yedek alındı : {yol}.yedek")
+    print(f"  YAZILDI      : {yol}")
+    print(f"  numarası değişen kelime: {degisen}")
+    print()
+    print("  ⚠ TÜRETİLMİŞ DOSYALARIN HEPSİ YENİDEN ÜRETİLMELİ (bu sırayla):")
+    print("      python3 src/py/wbw.py --hizala public/kuran-mushaf.json")
+    print("      python3 src/py/wbw.py --birlestir")
+    print("      python3 src/py/wbw.py --sarf")
+    print("  Sonra doğrulama: --metin-denetle ve --bolunme yeniden çalıştırılmalı.")
+
+
+# ══════════════════════════════════════════════════════════════════════════
+def hizalama_bak(yer, mushaf_yolu="kuran-mushaf.json", wbw_yolu="wbw_tr.json",
+                 harita_yolu="kelime_hizalama.json"):
+    """Bir âyetin kelime kelime RÖNTGENİ: bizim kelime → eşlendiği quran.com
+    kelimesi → anlam → grup üyeliği. Hiçbir şey yazmaz.
+
+    NEDEN: "şu kelime atlanıyor" şikâyetinin sebebi üç yerden biri olabilir —
+    hizalama yanlış hedefe bağlamış, iki kelimemiz aynı hedefe düşüp grup
+    olmuş, ya da eşleme dosyası bayat. Üçünü ayırt etmenin tek yolu âyeti
+    olduğu gibi görmek. Tahmin yerine bakılacak yer burası.
+
+    ⚠ işareti: aynı quran.com kelimesine birden çok kelimemiz düşmüş demektir
+    (grup). Bu BAZEN doğrudur (يَا + بَنٖي), ama yanlış yerde oluşmuşsa o
+    âyette bir kelime "atlanıyor" gibi görünür.
+    """
+    ham = json.load(open(yol_coz(mushaf_yolu), encoding="utf-8"))
+    wbw = json.load(open(girdi(wbw_yolu), encoding="utf-8"))
+    harita = json.load(open(girdi(harita_yolu), encoding="utf-8"))
+    hedef_ayet = str(yer).strip()
+
+    bizim = [(int(str(kid).split(":")[2]), str(kid), ar)
+             for kid, ar in bizim_kelimeler(ham)
+             if str(kid).startswith(hedef_ayet + ":")]
+    bizim.sort()
+    onlarin = sorted(
+        [(int(k.split(":")[2]), k, v.get("ar", ""), (v.get("tr") or ""))
+         for k, v in wbw.items()
+         if k.startswith(hedef_ayet + ":") and v.get("tip") != "end"])
+    if not bizim:
+        print(f"HATA: '{hedef_ayet}' âyetinde kelimemiz yok.")
+        return
+
+    # Hangi hedefe kaç kelimemiz düşüyor?
+    dusen = Counter()
+    for _s, kid, _ar in bizim:
+        h = harita.get(kid)
+        h = h[0] if isinstance(h, list) else h
+        if h:
+            dusen[h] += 1
+
+    print("=" * 74)
+    print(f"HİZALAMA RÖNTGENİ — {hedef_ayet}   (bizde {len(bizim)}, onlarda {len(onlarin)})")
+    print("=" * 74)
+    for _s, kid, ar in bizim:
+        h = harita.get(kid)
+        h = h[0] if isinstance(h, list) else h
+        k = wbw.get(h) or {}
+        im = "  ⚠GRUP" if h and dusen[h] > 1 else ""
+        print(f"  {kid:<12} {ar}")
+        print(f"      → {str(h):<12} {k.get('ar','—')}   «{(k.get('tr') or '—')}»{im}")
+    kullanilan = {h for h in dusen}
+    bos = [(s, k, ar) for s, k, ar, _tr in onlarin if k not in kullanilan]
+    if bos:
+        print()
+        print("  ⚠ HİÇBİR KELİMEMİZİN BAĞLANMADIĞI quran.com kelimeleri:")
+        for _s, k, ar in bos:
+            print(f"    {k:<12} {ar}")
+        print("    (bu kelimelerin anlamı ekranda hiç görünmez — hizalama kusuru)")
 
 
 # ══════════════════════════════════════════════════════════════════════════
@@ -3018,12 +3359,25 @@ if __name__ == "__main__":
         birlestir(arg[0] if arg else "wbw_tr.json")
     elif "--ing-analiz" in sys.argv:
         ingilizce_analiz()
+    elif "--kusur-gider" in sys.argv:
+        n = 20
+        if "--ayrinti" in sys.argv:
+            try: n = int(sys.argv[sys.argv.index("--ayrinti") + 1])
+            except (IndexError, ValueError): pass
+        kusur_gider(yaz=("--yaz" in sys.argv), ayrinti=n,
+                    kararsizi_bol=("--kararsizi-bol" in sys.argv))
     elif "--metin-denetle" in sys.argv:
         n = 25
         if "--ayrinti" in sys.argv:
             try: n = int(sys.argv[sys.argv.index("--ayrinti") + 1])
             except (IndexError, ValueError): print("UYARI: --ayrinti okunamadı, 25 kullanılıyor.")
         metin_denetle(ayrinti=n)
+    elif "--hizalama-bak" in sys.argv:
+        i = sys.argv.index("--hizalama-bak")
+        if i + 1 >= len(sys.argv):
+            print("KULLANIM: --hizalama-bak SURE:AYET   (ör. --hizalama-bak 37:102)")
+        else:
+            hizalama_bak(sys.argv[i + 1])
     elif "--ayet-kod" in sys.argv:
         i = sys.argv.index("--ayet-kod")
         if i + 1 >= len(sys.argv):

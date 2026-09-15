@@ -1820,7 +1820,15 @@ export default function Kutuphane() {
 
       <div style={{ marginBottom: "32px" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px", flexWrap: "wrap", gap: "10px" }}>
-          <h1 style={{ fontSize: "28px", color: theme.textSecondary, letterSpacing: "1px", fontFamily: "PlayfairDisplay, serif" }}>
+          <h1 style={{ fontSize: "28px", color: theme.textSecondary, letterSpacing: "1px", fontFamily: "PlayfairDisplay, serif", display: "flex", alignItems: "center", gap: "10px" }}>
+            <svg width="1.15em" height="1.15em" viewBox="0 0 24 26" fill="none" stroke={theme.textSecondary} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+              <line x1="2.5" y1="3" x2="21.5" y2="3" />
+              <line x1="2.5" y1="23" x2="21.5" y2="23" />
+              <line x1="2.5" y1="3" x2="2.5" y2="23" />
+              <rect x="5" y="6" width="3" height="14" rx="0.6" />
+              <rect x="10" y="6" width="3" height="14" rx="0.6" />
+              <rect x="15" y="6" width="3" height="14" rx="0.6" />
+            </svg>
             Kitaplık
           </h1>
           <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>

@@ -330,10 +330,22 @@ function MushafSayfa({
                   // Öbek YALNIZ grup olmayan kelimelerde aranır: bir kelime
                   // ikisine birden girerse iki bağ çizgisi üst üste biner.
                   const obek_ = grup_ ? null : obekBilgisi(el.kelime.id)
-                  const aktif =
+                  const okunuyor =
                     aktifAyet?.sureNo === el.sure.id &&
                     aktifAyet?.ayetNo === el.ayet.no &&
                     !aktifAyet?.besmeleIcin
+                  // GİDİLEN ÂYET DE OKUNAN ÂYET GİBİ İŞARETLENİR.
+                  // Önce yalnız âyet sonu rozeti yanıp sönüyordu; sayfada bir yere
+                  // "gittim" hissi vermek için bu yetmiyordu, çünkü rozet âyetin
+                  // SONUNDA duruyor — göz âyetin kendisini değil bittiği yeri
+                  // buluyordu. Vurgu okuma modununkiyle aynı (MushafKelime `aktif`):
+                  // ayrı bir görünüm uydurmak yerine kullanıcının zaten tanıdığı
+                  // işaret kullanılıyor. `odakAyet` ~2,2 sn sonra temizlendiği için
+                  // vurgu da kendiliğinden sönüyor (background geçişi var).
+                  const odakta =
+                    odakAyet?.sureNo === el.sure.id &&
+                    odakAyet?.ayetNo === el.ayet.no
+                  const aktif = okunuyor || odakta
 
                   return (
                     // data-kelime SARMALAYICI span → okuma alanı tık koruması kelimeyi tanısın

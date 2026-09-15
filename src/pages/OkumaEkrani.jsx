@@ -55,10 +55,11 @@ const FONT_GRUPLARI = {
       // Yedek zincirine 'me_quran' eklendi: kfgqpc/Indopak'ta OLMAYAN işaretler (waqf/durak,
       // küçük üst işaretler vb.) sistem serifine düşüp yanlış glyph + harf-bağ kopması yapıyordu.
       // MeQuran bu işaretleri kapsadığından yedek olarak ondan alınır (gövde harfleri kfgqpc kalır).
-      { id: "kfgqpc",            label: "KFGQPC Uthmanic (Önerilen)", style: "'KFGQPC Uthmanic', 'me_quran', serif", google: null },
-      { id: "me-quran",          label: "Me Quran",                   style: "'me_quran', serif",            google: null },
-      { id: "Indopak",           label: "Indopak",                    style: "'Indopak', 'me_quran', serif", google: null },
-      { id: "IndopakNastaleeq",  label: "Indopak Nastaleeq",          style: "'IndopakNastaleeq', 'me_quran', serif", google: null },
+      { id: "kfgqpc",            label: "KFGQPC Uthmanic (Önerilen)", style: "'KFGQPC Uthmanic', 'me_quran', serif",      google: null },
+      { id: "uc_ondokuz",        label: "Üç Ondokuz",                 style: "'uc_ondokuz', serif",                       google: null },
+      { id: "me-quran",          label: "Me Quran",                   style: "'me_quran', serif",                         google: null },
+      { id: "Indopak",           label: "Indopak",                    style: "'Indopak', 'me_quran', serif",              google: null },
+      { id: "IndopakNastaleeq",  label: "Indopak Nastaleeq",          style: "'IndopakNastaleeq', 'me_quran', serif",     google: null },
     ],
   },
 }

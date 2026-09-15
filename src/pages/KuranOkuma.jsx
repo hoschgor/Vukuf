@@ -48,7 +48,8 @@ import {
 // ── Arapça font listesi
 const ARAPCA_FONTLAR = [
   { id: "kfgqpc",            label: "KFGQPC Uthmanic (Önerilen)", style: "'KFGQPC Uthmanic', serif",    google: null },
-  { id: "me-quran",          label: "Me Quran",                   style: "'me_quran', serif",            google: null },
+  { id: "uc_ondokuz",        label: "Üç Ondokuz",                 style: "'uc_ondokuz', serif",         google: null },
+  { id: "me-quran",          label: "Me Quran",                   style: "'me_quran', serif",           google: null },
   // NOT: Düz "Indopak" fontu projeden kaldırıldı (yalnız Nastaleeq sürümü duruyor).
   // Kayıtlı tercihi "Indopak" olan kullanıcılar aşağıdaki doğrulama ile kfgqpc'ye döner.
   { id: "IndopakNastaleeq",  label: "Indopak Nastaleeq",          style: "'IndopakNastaleeq', serif",    google: null },

@@ -71,6 +71,11 @@
     src: url('https://fonts.quran.ws/assets/fonts/digital-khatt-indopak.otf') format('opentype');
     font-display: swap;
 }
+/*  Alternatif */
+@font-face {
+  font-family: 'uc_ondokuz';
+  src: url('/fonts/uc_ondokuz.ttf') format('truetype');
+}
 /*  Sure Başlık Fontu */
 @font-face {
     font-family: 'surah-name-v2-icon';

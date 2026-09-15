@@ -327,7 +327,7 @@ export default function Arama() {
         Arama
       </h1>
       <p style={{ fontSize: "13px", color: theme.textSecondary, marginBottom: "20px" }}>
-        Kitaplarda her şeyi, Kur'an'da sure adlarını arayabilirsiniz.
+        Kitaplarda her şeyi, Kur'an-ı Kerîm' de sûre adlarını arayabilirsiniz.
       </p>
 
       {/* ÜST BLOK — kaydırırken yerinde kalır.

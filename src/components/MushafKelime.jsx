@@ -184,9 +184,19 @@ const VAKIF_RENK = {
 //   ص murahhas: ruhsat var  · مع muânaka: yalnız birinde · ق "durulur denmiştir"
 //   ز mücevvez: geçmek evlâ · لا DURMA
 // (س sekte harfi burada YOK — o artık TECVID_ISARET'te overlay olarak çiziliyor.)
-const VAKIF_HARF_KOD = {
+// DIŞA AÇIK: bilgi paneli ("İşaretler ve Tecvid") örnek âyetleri MUSHAFTAN tarayarak
+// buluyor ve bir kelimenin vakfını hem `arabic` içindeki koddan hem de `kelime.vakif`
+// harfinden yakalamak zorunda. İkinci bir kopya yazmak yerine tablo buradan veriliyor —
+// bu dosyanın başındaki iki hata da zaten "aynı bilgi iki tabloda" yüzünden çıkmıştı.
+export const VAKIF_HARF_KOD = {
   'ط': 0x615, 'م': 0x06D8, 'ج': 0x06DA, 'ص': 0x08D5,
   'مع': 0x06DB, 'ق': 0x08D7, 'لا': 0x06D9, 'ز': 0x617,
+  // Bu üçü sonradan eklendi. Sebep: bilgi panelinde "el-Vaslu evlâ" satırı hiç örnek
+  // bulamıyordu; oysa U+06D6 veride geçiyor. Demek ki o işaret bazı kayıtlarda
+  // `arabic` metninde değil, `vakif` alanında HARF olarak duruyor ve tablo bu üç
+  // harfi tanımadığı için eşleşme olmuyordu. Renk aramasında zaten bir yedek yol
+  // vardı, o yüzden bu eksik ekranda görünmüyordu — panel görünür kıldı.
+  'صلى': 0x06D6, 'قف': 0x08DE, 'ع': 0x08D6,
 }
 // ÖZEL OKUYUŞ etiketleri — yalnız OZEL_CPS'teki (08D1/08D2/08D9) kodlar için çizilir.
 //   U+08D1 قصر (kasr) → medd yerine KISA okuma seçeneği

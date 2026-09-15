@@ -3218,8 +3218,12 @@ const Bar = (
     )}
 
     {gorunurMu("lugat") && (
-      <button onClick={() => setLugatActive(!lugatActive)} style={{ ...barButonStil(lugatActive), ...barOge("lugat") }}>
-        {lugatActive ? <Eye size={bIkon(15)} /> : <Circle size={bIkon(15)} />} Lügat
+      <button onClick={() => setLugatActive(!lugatActive)} style={{ ...barButonStil(lugatActive), ...barOge("lugat") }} title="Lügat">
+        <svg width={bIkon(15)} height={bIkon(15)} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M2 12 C4.5 7 8 5 12 5 C16 5 19.5 7 22 12 C19.5 17 16 19 12 19 C8 19 4.5 17 2 12 Z" />
+          <circle cx="12" cy="12" r="3" />
+          {!lugatActive && <line x1="3" y1="3" x2="21" y2="21" />}
+        </svg>
       </button>
     )}
 

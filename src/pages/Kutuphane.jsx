@@ -156,6 +156,13 @@ function SortableKitap({ kitap, duzenlemeMode, theme, alimId }) {
 
 // 80×128 küçük kapak + başlık (grid görünümü)
 function KucukKapak({ kitap, theme, alimId, duzenlemeMode }) {
+  // IZGARA GÖRÜNÜMÜNDE SABİT ÇERÇEVE YOK — burada `contain` kalıyor.
+  // Bir ara karma raflarda `cover` yapılmıştı (dinamik moddaki gibi); NETLİK BOZULDU.
+  // Sebep ölçek yönü: kutu burada yalnız 80×128 ve `cover`, görseli kutuyu DOLDURACAK
+  // kadar BÜYÜTMEK zorunda kalabiliyor — Tesbihat gibi küçük kapaklarda bu, yukarı
+  // ölçekleme yani yumuşama demek. `contain` ise hep küçülterek sığdırır, küçültme
+  // keskin kalır. Dinamik modda kutu 242-312px olduğu için orada aynı sorun yok.
+  // Kullanıcı kararı: ızgarada küçük eserin küçük görünmesi zaten sorun değil.
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "80px" }}>
       {kitap.gorsel ? (
@@ -259,6 +266,18 @@ function KitapKart({ kitap, theme, alimId, onSil }) {
 // DİNAMİK RAF — coverflow
 // ─────────────────────────────────────────────────────────────
 function DinamikKapak({ kitap, alimId, coverW, coverH }) {
+  // KARMA RAFTA SABİT ÇERÇEVE (YALNIZ DİNAMİK MOD). `alimId` yalnızca bir âlimin/
+  // külliyatın KENDİ rafında doludur; Son/Sık Okunanlar ve özel raflar farklı eserleri
+  // bir araya getirdiği için orada boştur. O rafların kapak PNG'leri farklı en-boy
+  // oranlarında (ve kimi saydam kenarlı) olduğundan `contain` her kapağı KENDİ oranına
+  // göre küçültüyor, akan raf dalgalı görünüyordu. Karma rafta `cover`: her kapak
+  // çerçeveyi doldurur, hepsi aynı boyda durur. Kendi rafında `contain` KALIYOR —
+  // oradaki kapaklar zaten aynı dizinin parçası ve kırpılmamaları önemli (saydam
+  // kenarlı kapaklarda drop-shadow alfayı takip ediyor).
+  // IZGARA GÖRÜNÜMÜ BU KURALIN DIŞINDA: orada kutu 80×128 ve `cover` küçük kapakları
+  // büyütüp yumuşatıyordu (bkz. KucukKapak notu). Burada kutu 242-312px, görseller
+  // her hâlükârda küçültülerek yerleşiyor, netlik bozulmuyor.
+  const sabitCerceve = !alimId
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", pointerEvents: "none" }}>
       {kitap.gorsel ? (
@@ -269,7 +288,8 @@ function DinamikKapak({ kitap, alimId, coverW, coverH }) {
           style={{
             width: `${coverW}px`,
             height: `${coverH}px`,
-            objectFit: "contain",
+            objectFit: sabitCerceve ? "cover" : "contain",
+            objectPosition: "center",
             borderRadius: "3px 9px 9px 3px",
             filter: "drop-shadow(4px 9px 16px rgba(0,0,0,0.45))",
             display: "block",
@@ -473,7 +493,12 @@ function DinamikRaf({ kitaplar: liste, rafId, theme, alimId, kitapSiralama }) {
                 transformOrigin: "center top",
                 filter: blur ? `blur(${blur}px)` : "none",
                 opacity,
-                zIndex: 100 - Math.round(abs * 10),
+                // NAVBAR'IN ALTINDA KALMALI. Burası 100'dü; Navbar da sticky ve
+                // zIndex 100. Eşit z-index'te DOM'da SONRA gelen kazandığı için
+                // kaydırırken kapaklar barın üstüne biniyordu. Taban 40'a çekildi:
+                // kapakların kendi aralarındaki sıralama (ortadaki en üstte) aynen
+                // korunuyor, 40→14 aralığında; raf içeriğinin üstünde, barın altında.
+                zIndex: 40 - Math.round(abs * 10),
                 transition: suruk ? "none" : "transform 0.34s cubic-bezier(.22,.61,.36,1), filter 0.34s, opacity 0.34s",
                 cursor: "pointer",
                 pointerEvents: abs > 1.7 ? "none" : "auto",

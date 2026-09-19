@@ -8,13 +8,16 @@ import arapcaLugat from "../data/arapca-lugat.json"
 // Kelime kimliğine göre değil, kelimenin ÂYETTEKİ YERİNE göre anlam verir.
 import kelimeAnlam from "../data/kelime-anlam.json"
 import kelimeGrup from "../data/kelime-grup.json"
+// ÖBEK: komşu ama AYRI iki kelimenin aynı anlamı paylaştığı yerler. Anlam
+// dosyasına dokunmadan yalnız GÖSTERİM için üretildi (wbw.py --obek-uret).
+import kelimeObek from "../data/kelime-obek.json"
 import ayetMeal from "../data/ayet-meal.json"
 import sayfaHaritaJson from "../data/sayfa-harita.json"
 import SureBasligi from "../components/SureBasligi"
 import Besmele from "../components/Besmele"
 import MushafSayfa from "../components/MushafSayfa"
 import MushafAyetRozeti from "../components/MushafAyetRozeti"
-import { gorselIcinTemizle } from "../components/MushafKelime"
+import { gorselIcinTemizle, tecvidAyikla, ozelOkuyusAyikla, VAKIF_HARF_KOD } from "../components/MushafKelime"
 import PlayerBar from "../components/PlayerBar"
 import KitapAyraci from "../components/KitapAyraci"
 import KayitPaneli from "../components/KayitPaneli"
@@ -22,6 +25,7 @@ import KariSecici from "../components/KariSecici"
 import KelimePopup from "../components/KelimePopup"
 import YuklemeEkrani from "../components/YuklemeEkrani"
 import IosSwitch from "../components/IosSwitch"
+import PanelAyirac, { PanelAcilir, panelBolumeHizala } from "../components/PanelAyirac"
 import AyetPopup from "../components/AyetPopup"
 import { barSatirOlc } from "../components/BarSiraPaneli"
 import GorselOlustur from "../components/GorselOlustur"
@@ -45,7 +49,8 @@ import {
 // ── Arapça font listesi
 const ARAPCA_FONTLAR = [
   { id: "kfgqpc",            label: "KFGQPC Uthmanic (Önerilen)", style: "'KFGQPC Uthmanic', serif",    google: null },
-  { id: "me-quran",          label: "Me Quran",                   style: "'me_quran', serif",            google: null },
+  { id: "uc_ondokuz",        label: "Üç Ondokuz",                 style: "'uc_ondokuz', serif",         google: null },
+  { id: "me-quran",          label: "Me Quran",                   style: "'me_quran', serif",           google: null },
   // NOT: Düz "Indopak" fontu projeden kaldırıldı (yalnız Nastaleeq sürümü duruyor).
   // Kayıtlı tercihi "Indopak" olan kullanıcılar aşağıdaki doğrulama ile kfgqpc'ye döner.
   { id: "IndopakNastaleeq",  label: "Indopak Nastaleeq",          style: "'IndopakNastaleeq', serif",    google: null },
@@ -291,11 +296,25 @@ function SiraSatiri({ k, taraf, onTaraf, theme, isMobile }) {
 
 // ── BİLGİ PANELİ İÇERİĞİ ──────────────────────────────────────────────────────
 // Renkler MushafKelime'deki çizim renkleriyle BİREBİR aynı tutulmalı (VAKIF_RENK / TECVID_ISARET).
+//
+// ÖRNEK ÂYETLER ARTIK ELLE YAZILMIYOR — MUSHAFTAN TARANIYOR (bkz. isaretOrnekleri).
+// Eskiden her satırda `ornek: "Bakara 41"` gibi elle girilmiş bir metin vardı ve
+// Kasr/Medd satırlarında örneğin yanına elle yazılmış Arapça kelime de konuyordu.
+// O kelimeler YANLIŞ KOD NOKTALARIYLA yazılmıştı (U+06DF / U+06EB), oysa bu veride
+// kasr ve medd U+08D1 / U+08D2'dir; sonuç ekranda "tofu" kutusuydu — kullanıcının
+// gördüğü hata buydu. Elle girilen referans, veri değiştiğinde de sessizce eskiyor.
+// Bunun yerine her satıra bir `kod` (Unicode kod noktası) veriliyor; panel açılınca
+// mushafın tamamı bir kez taranıp o kodun GERÇEKTEN geçtiği âyetler bulunuyor.
+// Böylece: yanlış referans imkânsız, kelime doğru kodlarla ve mushaf fontuyla çizilir,
+// veride hiç geçmeyen bir işaret için de hiç örnek gösterilmez.
+// `ornek` alanı YEDEKTİR (veri henüz yüklenmemişse ya da işaret taramada
+// bulunamazsa) ve artık serbest metin değil [sûreNo, âyetNo] çiftleridir — böylece
+// yedek örnek de tıklanabilir bir köprü olarak çizilir, sûre adı veriden okunur.
 const BILGI_BOLUMLERI = [
   {
     baslik: "Sayfa İşaretleri",
     satirlar: [
-      { secde: true, renk: "#2e7d4f", ad: "Secde âyeti", aciklama: "Okunduğunda tilâvet secdesi gerekir. Kur'ân'da 14 yerdedir; sayfa kenarında bu rozetle gösterilir.", ornek: "A'râf 206" },
+      { secde: true, kod: "secde", renk: "#2e7d4f", ad: "Secde âyeti", aciklama: "Okunduğunda tilâvet secdesi gerekir. Kur'ân'da 14 yerdedir; sayfa kenarında bu rozetle gösterilir.", ornek: [[7, 206]] },
       { blok: "الجزء", ad: "Cüz başlangıcı", aciklama: "Kur'ân 30 cüze bölünmüştür. Yeni cüzün başladığı sayfada, cüz numarasıyla birlikte çıkar." },
       { rozet: true, ad: "Âyet sonu rozeti", aciklama: "Âyetin bittiği yeri ve numarasını gösterir. Durak işareti değildir; nefes almak burada câizdir." },
     ],
@@ -309,17 +328,17 @@ const BILGI_BOLUMLERI = [
     // Renkler MushafKelime'deki VAKIF_RENK tablosuyla BİREBİR aynıdır (tek kaynak).
     baslik: "Vakıf (Durak) İşaretleri",
     satirlar: [
-      { sembol: "م",  renk: "#e74c3c", ad: "Vakf-ı lâzım",        aciklama: "DURMAK VÂCİPTİR. Geçilirse mânâ bozulur, hatta bozuk mânâ doğar." },
-      { sembol: "لا", renk: "#e67e22", ad: "Lâ vakfe",            aciklama: "BURADA DURULMAZ. Yanlışlıkla durulduysa geri alıp önceki kelimeden tekrarlanır. Âyet sonundaysa durmak câizdir." },
-      { sembol: "ط",  renk: "#e67e22", ad: "Vakf-ı mutlak",       aciklama: "Durmak evlâdır; mânâ burada tamamlanır. Bu mushafta en sık görülen duraktır." },
-      { sembol: "ج",  renk: "#f39c12", ad: "Vakf-ı câiz",         aciklama: "Durmak da geçmek de eşit derecede câizdir." },
-      { sembol: "ص",  renk: "#2ecc71", ad: "Vakf-ı murahhas",     aciklama: "Mânâ tamam değildir; sırf nefes yetmediği için durmaya ruhsat verilmiştir. Geçmek evlâdır." },
-      { sembol: "ز",  renk: "#d4ac0d", ad: "Vakf-ı mücevvez",     aciklama: "Durmak câizdir fakat GEÇMEK evlâdır.", ornek: "Bakara 41" },
-      { sembol: "ق",  renk: "#3498db", ad: "Kîle aleyhi'l-vakf",  aciklama: "\"Burada durulur\" denmiştir; tercih edilen ise geçmektir." },
-      { sembol: "قف", renk: "#3498db", ad: "Kıf (dur)",           aciklama: "Okuyanın geçip gideceği sanılan yerde \"dur\" uyarısıdır." },
-      { sembol: "صلى", renk: "#95a5a6", ad: "el-Vaslu evlâ",      aciklama: "Geçmek (vasl) daha iyidir; durmak da câizdir.", ornek: "Kehf 58" },
-      { sembol: "مع", renk: "#9b59b6", ad: "Muânaka (sarmaşık)",  aciklama: "Daima ÇİFT gelir. İki noktadan YALNIZ BİRİNDE durulur; ikisinde birden durmak da hiçbirinde durmamak da doğru değildir." },
-      { sembol: "ع",  renk: "#95a5a6", ad: "Rukû' sonu",          aciklama: "Durak hükmü değildir. Konu bütünlüğü olan bölümün (rukû) bittiğini gösterir; namazda okumayı burada bitirmek uygundur." },
+      { sembol: "م",  kod: 0x06D8, renk: "#e74c3c", ad: "Vakf-ı lâzım",        aciklama: "DURMAK VÂCİPTİR. Geçilirse mânâ bozulur, hatta bozuk mânâ doğar." },
+      { sembol: "لا", kod: 0x06D9, renk: "#e67e22", ad: "Lâ vakfe",            aciklama: "BURADA DURULMAZ. Yanlışlıkla durulduysa geri alıp önceki kelimeden tekrarlanır. Âyet sonundaysa durmak câizdir." },
+      { sembol: "ط",  kod: 0x0615, renk: "#e67e22", ad: "Vakf-ı mutlak",       aciklama: "Durmak evlâdır; mânâ burada tamamlanır. Bu mushafta en sık görülen duraktır." },
+      { sembol: "ج",  kod: 0x06DA, renk: "#f39c12", ad: "Vakf-ı câiz",         aciklama: "Durmak da geçmek de eşit derecede câizdir." },
+      { sembol: "ص",  kod: 0x08D5, renk: "#2ecc71", ad: "Vakf-ı murahhas",     aciklama: "Mânâ tamam değildir; sırf nefes yetmediği için durmaya ruhsat verilmiştir. Geçmek evlâdır." },
+      { sembol: "ز",  kod: 0x0617, renk: "#d4ac0d", ad: "Vakf-ı mücevvez",     aciklama: "Durmak câizdir fakat GEÇMEK evlâdır.", ornek: [[2, 41]] },
+      { sembol: "ق",  kod: 0x08D7, renk: "#3498db", ad: "Kîle aleyhi'l-vakf",  aciklama: "\"Burada durulur\" denmiştir; tercih edilen ise geçmektir." },
+      { sembol: "قف", kod: 0x08DE, renk: "#3498db", ad: "Kıf (dur)",           aciklama: "Okuyanın geçip gideceği sanılan yerde \"dur\" uyarısıdır." },
+      { sembol: "صلى", kod: 0x06D6, renk: "#95a5a6", ad: "el-Vaslu evlâ",      aciklama: "Geçmek (vasl) daha iyidir; durmak da câizdir.", ornek: [[18, 58]] },
+      { sembol: "مع", kod: 0x06DB, renk: "#9b59b6", ad: "Muânaka (sarmaşık)",  aciklama: "Daima ÇİFT gelir. İki noktadan YALNIZ BİRİNDE durulur; ikisinde birden durmak da hiçbirinde durmamak da doğru değildir." },
+      { sembol: "ع",  kod: 0x08D6, renk: "#95a5a6", ad: "Rukû' sonu",          aciklama: "Durak hükmü değildir. Konu bütünlüğü olan bölümün (rukû) bittiğini gösterir; namazda okumayı burada bitirmek uygundur." },
     ],
   },
   {
@@ -327,26 +346,164 @@ const BILGI_BOLUMLERI = [
     // çünkü fontlar bir kısmını yanlış glife düşürüyor.
     baslik: "Tecvid / Kıraat İşaretleri",
     satirlar: [
-      { sembol: "س", renk: "#1abc9c", ad: "Sekte",                aciklama: "Nefes ALMADAN kısa bir duruş. Hafs rivâyetinde tam dört yerdedir.", ornek: "Kehf 1 · Yâsîn 52 · Kıyâme 27 · Mutaffifîn 14" },
-      { sembol: "س", renk: "#c0392b", ad: "Kıraat farkı: sîn",    aciklama: "Harfin ALTINDA. Kelimenin sîn ile de okunabileceğini gösterir.", ornek: "Bakara 245 · A'râf 69" },
-      { sembol: "○", renk: "#16a085", ad: "İşmâm",                aciklama: "Ses çıkarmadan, yalnız dudakları ötre şeklinde yumarak harekeyi göstermek. Kulak duymaz, göz görür.", ornek: "Yûsuf 11" },
-      { sembol: "م", renk: "#2980b9", ad: "İdgâm-ı mütecâniseyn", aciklama: "Mahreçleri aynı, sıfatları ayrı iki harften birincisinin ikincisine katılması. Burada bâ, mîm'e idgâm olur.", ornek: "Hûd 42" },
-      { sembol: "◆", renk: "#8e44ad", ad: "İmâle",                aciklama: "Elifi \"e\" sesine meylettirerek okumak. Hafs rivâyetinde TEK bir yerdedir.", ornek: "Hûd 41" },
-      { sembol: "●", renk: "#7f8c8d", ad: "Teshîl",               aciklama: "Harfin üstünde içi dolu küçük daire. İki hemzeden ikincisini hemze ile elif arası bir sesle, kolaylaştırarak okumak. Bu işareti fontun kendisi çizer, renklendirilmez.", ornek: "Fussilet 44" },
+      { sembol: "س", kod: 0x06DC, renk: "#1abc9c", ad: "Sekte",                aciklama: "Nefes ALMADAN kısa bir duruş. Hafs rivâyetinde tam dört yerdedir.", ornek: [[18, 1], [36, 52], [75, 27], [83, 14]] },
+      { sembol: "س", kod: 0x06E3, renk: "#c0392b", ad: "Kıraat farkı: sîn",    aciklama: "Harfin ALTINDA. Kelimenin sîn ile de okunabileceğini gösterir.", ornek: [[2, 245], [7, 69]] },
+      { sembol: "○", kod: 0x06EB, renk: "#16a085", ad: "İşmâm",                aciklama: "Ses çıkarmadan, yalnız dudakları ötre şeklinde yumarak harekeyi göstermek. Kulak duymaz, göz görür.", ornek: [[12, 11]] },
+      { sembol: "م", kod: 0x06ED, renk: "#2980b9", ad: "İdgâm-ı mütecâniseyn", aciklama: "Mahreçleri aynı, sıfatları ayrı iki harften birincisinin ikincisine katılması. Burada bâ, mîm'e idgâm olur.", ornek: [[11, 42]] },
+      { sembol: "◆", kod: "imale", renk: "#8e44ad", ad: "İmâle",               aciklama: "Elifi \"e\" sesine meylettirerek okumak. Hafs rivâyetinde TEK bir yerdedir.", ornek: [[11, 41]] },
+      { sembol: "●", kod: 0x06EC, renk: "#7f8c8d", ad: "Teshîl",               aciklama: "Harfin üstünde içi dolu küçük daire. İki hemzeden ikincisini hemze ile elif arası bir sesle, kolaylaştırarak okumak. Bu işareti fontun kendisi çizer, renklendirilmez.", ornek: [[41, 44]] },
     ],
   },
   {
     baslik: "Özel Okuyuş İşaretleri",
     satirlar: [
-      { sembol: "ن", renk: "#c0392b", ad: "Nûn-i sağîre", aciklama: "Küçük nûn. Yalnız geçerek okunduğunda (vasl) telaffuz edilen ince nûn; durulursa okunmaz." },
+      { sembol: "ن", kod: 0x08D9, renk: "#c0392b", ad: "Nûn-i sağîre", aciklama: "Küçük nûn. Yalnız geçerek okunduğunda (vasl) telaffuz edilen ince nûn; durulursa okunmaz." },
       // U+08D1 / U+08D2 — anlamları MUSHAFTAN doğrulandı (Bakara 5, 14, 16, 27, 39, 40).
       // Bir ara "zâid harf / okunmayan harf" diye açıklanmışlardı; YANLIŞTI.
       // Unicode adları (daire / noktalı daire) bu veride yanıltıcı: kasr ve medd'dirler.
-      { sembol: "قصر", renk: "#c0392b", ad: "Kasr", aciklama: "Uzatmadan, KISA okuma. Harfin altında sade daire ile gösterilir.", ornek: "Bakara 5 · 16 · 27 · 39 — اُو۟لٰٓئِكَ" },
-      { sembol: "مد",  renk: "#c0392b", ad: "Medd", aciklama: "UZATARAK okuma. Harfin altında içi noktalı daire ile gösterilir.", ornek: "Bakara 14 · 40 — مُسْتَهْزِؤُ۫نَ · اُو۫فِ" },
+      // Örnek kelimeler artık ELLE YAZILMIYOR: eskiden buraya yazılan اُو۟لٰٓئِكَ / مُسْتَهْزِؤُ۫نَ
+      // yanlış kodlarla (U+06DF, U+06EB) girilmişti ve ekranda boş kutu çiziliyordu.
+      { sembol: "قصر", kod: 0x08D1, renk: "#c0392b", ad: "Kasr", aciklama: "Uzatmadan, KISA okuma. Harfin altında sade daire ile gösterilir.", ornek: [[2, 5], [2, 16], [2, 27], [2, 39]] },
+      { sembol: "مد",  kod: 0x08D2, renk: "#c0392b", ad: "Medd", aciklama: "UZATARAK okuma. Harfin altında içi noktalı daire ile gösterilir.", ornek: [[2, 14], [2, 40]] },
     ],
   },
 ]
+
+// ── ÖRNEK ÂYETLERİ MUSHAFTAN BUL ──────────────────────────────────────────────
+// Panel açılınca BİR KEZ çalışır (sonucu önbelleğe alınır). Kaynak `sayfaMap`:
+// sayfayı çizen yapının ta kendisi, yani burada bulduğumuz şey ekranda gerçekten
+// görünen şeydir. Elle yazılmış referans yok → yanlış örnek de olamaz; veride hiç
+// geçmeyen bir işaret için hiç örnek çıkmaz (sessizce yanlış bilgi vermek yerine).
+// BİR İŞARET İÇİN EN ÇOK 5 ÖRNEK. Önce "ilk 24 yer · toplam N" yazılıyordu; toplam
+// sayı okuyucuya bir şey katmıyor, uzun liste de paneli şişiriyordu. Beş örnek bir
+// işareti tanımaya yeter. TEK İSTİSNA secde: 14 âyetin hepsi buradan kontrol
+// edilebilsin diye tam liste verilir.
+const ORNEK_SINIR = 5
+const TAM_LISTE = new Set(["secde"])
+const ILGILI_KODLAR = new Set(
+  BILGI_BOLUMLERI.flatMap(b => b.satirlar.map(s => s.kod)).filter(k => typeof k === "number")
+)
+// Ön eleme: kelimelerin büyük çoğunluğunda bu işaretlerden hiçbiri yok. Her kelimenin
+// her harfini tek tek dolaşmak yerine önce tek bir regex testi yapılıyor — tarama
+// süresi ölçümde 53 ms'den 19 ms'ye indi (54 bin kelime, masaüstü Chromium).
+const ILGILI_RE = new RegExp("[" + [...ILGILI_KODLAR].map(cp => "\\u" + cp.toString(16).padStart(4, "0")).join("") + "]")
+
+// Örnekte gösterilecek kelime: tecvid ve özel-okuyuş işaretleri ÇIKARILIR.
+// Sebep dosyanın başındaki nottur — U+08D1/08D2/08D9'un Unicode glifi gerçek bir
+// dairedir, sayfada bunları uygulama kendi etiketiyle (قصر/مد/ن) çiziyor. Panelde
+// o overlay düzeneği yok; işaret metinde bırakılırsa ya daire ya boş kutu çıkar.
+function ornekKelimeMetni(kel) {
+  try {
+    const { metin } = tecvidAyikla(kel)
+    return ozelOkuyusAyikla(metin).metin.replace(/\s+/g, " ").trim()
+  } catch { return "" }
+}
+
+function isaretOrnekleriTara(sayfaMap) {
+  const bulgu = new Map()
+  if (!sayfaMap || !sayfaMap.size) return bulgu
+  const ekle = (anahtar, sureId, sureAd, ayetNo, kel) => {
+    let k = bulgu.get(anahtar)
+    if (!k) { k = { yerler: [], gorulen: new Set(), sinir: TAM_LISTE.has(anahtar) ? Infinity : ORNEK_SINIR }; bulgu.set(anahtar, k) }
+    if (k.yerler.length >= k.sinir) return  // kota doldu — `gorulen` de büyümesin
+    const im = `${sureId}:${ayetNo}`
+    if (k.gorulen.has(im)) return           // aynı âyette birden çok geçerse tek say
+    k.gorulen.add(im)
+    k.yerler.push({ sureId, sureAd, ayetNo, kelime: ornekKelimeMetni(kel) })
+  }
+  for (const elemanlar of sayfaMap.values()) {
+    for (const el of elemanlar) {
+      if (el.tip !== "kelime" || !el.kelime) continue
+      const sureId = el.sure?.id
+      const sureAd = el.sure?.isim
+      const ayetNo = Number(el.ayet?.no)
+      if (!sureId || !ayetNo) continue
+      const kel = el.kelime
+      if (kel.secde) ekle("secde", sureId, sureAd, ayetNo, kel)
+      // İmâle kuralı MushafKelime'de: yalnız Hûd 11:41. Karakterden değil kelimeden
+      // anlaşıldığı için burada da aynı fonksiyona soruyoruz (ikinci kopya yazmadan).
+      if (sureId === 11 && ayetNo === 41) {
+        try {
+          if (tecvidAyikla(kel).tecvidler.some(t => t.sembol === "◆")) ekle("imale", sureId, sureAd, ayetNo, kel)
+        } catch { /* yoksay */ }
+      }
+      const metin = String(kel.arabic || "")
+      if (ILGILI_RE.test(metin)) {
+        for (const c of metin) {
+          const cp = c.codePointAt(0)
+          if (ILGILI_KODLAR.has(cp)) ekle(cp, sureId, sureAd, ayetNo, kel)
+        }
+      }
+      // Vakıf bazı kayıtlarda metnin içinde değil ayrı alanda (harf olarak) duruyor.
+      const vkod = kel.vakif && VAKIF_HARF_KOD[kel.vakif]
+      if (vkod && ILGILI_KODLAR.has(vkod)) ekle(vkod, sureId, sureAd, ayetNo, kel)
+    }
+  }
+  return bulgu
+}
+
+// Bir satırın örnek âyet bloğu: ilk örnek her zaman görünür, geri kalanı "▾ N âyet"
+// düğmesiyle AÇILIR. Her örnek tıklanabilir köprüdür — veriden gelen de, yedekten
+// gelen de (yedek artık [sûreNo, âyetNo] çifti olduğu için köprü kurulabiliyor;
+// serbest metinken "el-Vaslu evlâ" satırında köprü kurulamıyordu).
+function OrnekAyetler({ bulgu, yedek, theme, isMobile, arapcaFont, git, sureAdi }) {
+  const [acik, setAcik] = useState(false)
+  const boyut = isMobile ? "10px" : "11px"
+  const yerler = (bulgu && bulgu.yerler.length)
+    ? bulgu.yerler
+    : (yedek || []).map(([sureId, ayetNo]) => ({ sureId, ayetNo, sureAd: sureAdi(sureId), kelime: "" }))
+  if (!yerler.length) return null
+  const bag = (y, anahtar) => (
+    <button
+      key={anahtar}
+      onClick={() => git(y.sureId, y.ayetNo)}
+      title={`${y.sureAd} sûresi ${y.ayetNo}. âyete git`}
+      style={{
+        background: "none", border: "none", padding: 0, margin: 0,
+        font: "inherit", fontSize: boyut, color: theme.accent, cursor: "pointer",
+        textDecoration: "underline", textUnderlineOffset: "2px",
+        textDecorationColor: `${theme.accent}80`,
+      }}
+    >{y.sureAd} {y.ayetNo}</button>
+  )
+  const ilk = yerler[0]
+  const kalanlar = yerler.slice(1)
+
+  return (
+    <span style={{ display: "block", marginTop: "3px", fontSize: boyut, lineHeight: 1.5 }}>
+      <span style={{ color: theme.textSecondary, opacity: 0.9 }}>Örnek Âyet: </span>
+      {bag(ilk, "ilk")}
+      {ilk.kelime && (
+        <span style={{
+          fontFamily: arapcaFont, direction: "rtl", unicodeBidi: "isolate",
+          color: theme.text, fontSize: isMobile ? "14px" : "15px",
+          marginInlineStart: "6px", verticalAlign: "middle",
+        }}>{ilk.kelime}</span>
+      )}
+      {kalanlar.length > 0 && (
+        <>
+          <button
+            onClick={() => setAcik(a => !a)}
+            style={{
+              background: "none", border: "none", padding: "0 0 0 6px", margin: 0,
+              font: "inherit", fontSize: boyut, color: theme.textSecondary,
+              cursor: "pointer", opacity: 0.9,
+            }}
+          >{acik ? "▴" : "▾"} {yerler.length} âyet</button>
+          {acik && (
+            <span style={{
+              display: "flex", flexWrap: "wrap", gap: "4px 12px",
+              marginTop: "4px", paddingInlineStart: "8px",
+              borderInlineStart: `2px solid ${theme.accent}33`,
+            }}>
+              {kalanlar.map((y, i) => bag(y, i))}
+            </span>
+          )}
+        </>
+      )}
+    </span>
+  )
+}
 
 // Ayete odaklanırken kaydırma çıpası:
 //  - data-ayet ayet-sonu ROZETİNDE (ayet numarası). Ayetin BAŞI = önceki ayet
@@ -770,9 +927,31 @@ const maxWidth = useMemo(() =>
   })
   const [aktifRenk, setAktifRenk] = useState(null)
 
-  // ── Arapça font
-  const [yaziTipiAcik, setYaziTipiAcik] = useState(false)   // Aa panelindeki yazı tipi listesi açık mı
+  // ── Aa paneli: açılır bölümler
+  // TEK AÇIK BÖLÜM. Panel çok uzamıştı; kaydırıcıları "boyut" bölümünün altına
+  // alıp aynı anda tek bölüm açık tutmak paneli varsayılan hâlinde birkaç satıra
+  // indiriyor. İki ayrı bayrak yerine tek bir durum: hangisi açıksa o.
+  const [acikBolum, setAcikBolum] = useState(null)   // null | "boyut" | "font"
   const yaziTipiBtnRef = useRef(null)
+  const yaziTipiListeRef = useRef(null)
+  const boyutBtnRef = useRef(null)
+  const boyutIcerikRef = useRef(null)
+  const aaPanelRef = useRef(null)
+
+  const bolumDegis = useCallback((ad, yon) => {
+    setAcikBolum(o => (o === ad ? null : ad))
+    if (acikBolum === ad) return                      // kapanıyor → hizalama gerekmez
+    const icerikRef = ad === "font" ? yaziTipiListeRef : boyutIcerikRef
+    const dugmeRef = ad === "font" ? yaziTipiBtnRef : boyutBtnRef
+    // İçerik henüz boyanmadıysa (React flush'ı gecikirse) birkaç kare dene.
+    let deneme = 0
+    const hizala = () => {
+      if (!panelBolumeHizala(aaPanelRef.current, icerikRef.current, yon, dugmeRef.current) && deneme++ < 3) {
+        requestAnimationFrame(hizala)
+      }
+    }
+    requestAnimationFrame(hizala)
+  }, [acikBolum])
   const [arapcaFontId, setArapcaFontId] = useState(() => {
     // Listeden kalkmış bir font kayıtlıysa (ör. artık bulunmayan "Indopak")
     // varsayılana dön — yoksa hiçbir satır seçili görünmez.
@@ -1262,6 +1441,26 @@ const cokSatir = wrapAktif && barYuksekligi > tekSatirYuksekligi * 1.0
   //  callback kimlikleri değişip aşağı doğru gereksiz yeniden hesaplama zinciri kuruluyor.)
   const mushafRef = useRef(null)
   mushafRef.current = { sayfaMap, ayetSayfaLookup, mevcutSayfa }
+
+  // ── BİLGİ PANELİ ÖRNEKLERİ ──────────────────────────────────────────────────
+  // Tarama ~50 bin kelime dolaşır; mushaf açılırken yapılırsa ilk kareyi geciktirir.
+  // Bu yüzden YALNIZ panel ilk kez açıldığında çalışır ve sonucu ref'te durur;
+  // aynı oturumda panel tekrar açılınca yeniden taranmaz.
+  const isaretOrnekRef = useRef(null)
+  const isaretOrnekleri = useMemo(() => {
+    if (!bilgiAcik) return isaretOrnekRef.current
+    if (isaretOrnekRef.current) return isaretOrnekRef.current
+    if (!sayfaMap || !sayfaMap.size) return null
+    isaretOrnekRef.current = isaretOrnekleriTara(sayfaMap)
+    return isaretOrnekRef.current
+  }, [bilgiAcik, sayfaMap])
+
+  // Yedek örnekler [sûreNo, âyetNo] çifti olarak duruyor; sûre adı veriden okunur ki
+  // panelde yazan ad ile menüde yazan ad aynı olsun (ikinci bir ad listesi tutmadan).
+  const sureAdiVer = useCallback(
+    (id) => sureler.find(s => s.id === id)?.isim || `Sûre ${id}`,
+    [sureler]
+  )
 
   // Aa paneli açılınca üst ayeti yakala (ref senkronu + ilk ankor)
   useEffect(() => { aaAcikRef.current = aaAcik }, [aaAcik])
@@ -1837,7 +2036,23 @@ function sureGit(sureId, ayetNo) {
   // POPUP YÖNETİMİ
   // ════════════════════════════════════════════════════════════════
 
+  // ── SARF (fiil çekimi) — TEMBEL YÜKLENİR ────────────────────────
+  // kelime-sarf.json ~2,5 MB. Statik `import` ile getirilirse mushaf AÇILIRKEN
+  // indiriliyor; oysa bilgi yalnız kelime baloncuğunda lâzım. Onun için ilk
+  // kelimeye tıklandığında bir kez istenir, sonra bellekte kalır. Geldiğinde
+  // state değiştiği için açık baloncuk da kendiliğinden tazelenir.
+  const [sarfSozluk, setSarfSozluk] = useState(null)
+  const sarfIstendiRef = useRef(false)
+  const sarfIste = useCallback(() => {
+    if (sarfIstendiRef.current) return
+    sarfIstendiRef.current = true
+    import("../data/kelime-sarf.json")
+      .then((m) => setSarfSozluk(m.default || m))
+      .catch(() => { sarfIstendiRef.current = false })   // ağ hatası → bir daha denenebilsin
+  }, [])
+
   const kelimeTikla = useCallback((kelime, sure, ayet, e) => {
+    sarfIste()
     // 1) ÖNCE konuma bağlı anlam (quran.com hizalaması). Doğru olan bu:
     //    sözlükteki "من → 710 anlam" gibi yığılmalar burada yaşanmaz, çünkü
     //    anlam kelimenin O YERİNE aittir. Bizim bölünmemiz quran.com'unkinden
@@ -1852,12 +2067,38 @@ function sureGit(sureId, ayetNo) {
       ? ham.filter(Boolean).map(String)
       : (ham ? [String(ham)] : null)
     const lugatSonuc = yerAnlami && yerAnlami.length ? null : lugat(kelime.arabic)
+    // OKUNUŞ ANLAMDAN BAĞIMSIZ ARANIR. Önceden okunuş yalnız `lugatSonuc`tan
+    // okunuyordu; o da SADECE konum anlamı bulunamadığında dolduruluyor. Konum
+    // anlamı %100'e çıktığından `lugatSonuc` artık hep null kalıyor ve baloncukta
+    // okunuş satırı HİÇ görünmüyordu. Sözlük ayrıca sorulur: okunuş kelimenin
+    // biçimine bağlı, anlamın nereden geldiğiyle ilgisi yok.
+    const okunusKaydi = lugatSonuc || lugat(kelime.arabic)
+    // BİRLEŞİK KELİME: quran.com'un tek kelime saydığı yeri biz iki kelimeye
+    // bölmüşsek (174 yer, ör. "يَا" + "بَنٖي"), baloncuk bunları TEK BİRİM
+    // göstermeli. Aksi hâlde iki ayrı kelimede aynı anlam çıkıyor ve kelime
+    // kelime ilerlerken tekrar/atlama hissi veriyor.
+    const grup = kelime.id ? kelimeGrup[kelime.id] : null
+    const uyeler = grup?.uyeler || null
+    // Öbek yalnız grup DEĞİLSE bakılır (bir kelime ikisine birden girmesin).
+    const obek = (!grup && kelime.id) ? kelimeObek[kelime.id] : null
     const position = kelime.id ? parseInt(kelime.id.split(":")[2]) : 0
     setPopup({
       tip: "kelime",
       kelime: {
-        ham:      (kelime.id && kelimeGrup[kelime.id]) || kelime.arabic,
-        okunus:   lugatSonuc?.okunuş || "",
+        // KELİME KİMLİĞİ — baloncuk WBW ses dosyasını bununla buluyor
+        // (kelime-mapping: bizim id → quran.com sırası). Eskiden buraya
+        // KONMUYORDU, dolayısıyla eşleme tablosu yalnız grup üyelerinde
+        // devreye giriyor, tek kelimelerde ham `position`a düşülüyordu —
+        // bölünmenin ayrıştığı âyetlerde yanlış kelime çalıyordu.
+        id:       kelime.id,
+        ham:      grup?.ar || kelime.arabic,
+        // Baloncuk ve kelime kelime ilerleme bunu kullanır: grup üyeleri tek
+        // adım sayılır, ikinci üyeye ayrıca durulmaz.
+        grupUyeleri: uyeler,
+        okunus:   okunusKaydi?.okunuş || "",
+        // Baloncuk bunu "bu anlam şu kelimelerin tamamına ait" diye söyler;
+        // kullanıcı aynı anlamı iki kelimede görünce kusur sanmasın.
+        obek:     obek ? { uyeSayisi: obek.uyeler.length, ar: obek.ar } : null,
         anlamlar: (yerAnlami && yerAnlami.length) ? yerAnlami : (lugatSonuc?.anlamlar || []),
         position,
       },
@@ -1865,7 +2106,7 @@ function sureGit(sureId, ayetNo) {
       ayetNo: ayet.no,
       konum:  popupKonum(e),
     })
-  }, [])
+  }, [sarfIste])
 
   // Bir âyetin ARAPÇA metnini SAYFA ELEMANLARINDAN toplar — sayfayı çizen kaynağın aynısı,
   // böylece veri şekli ne olursa olsun ekranda görünenle birebir aynı metni alırız.
@@ -2252,22 +2493,27 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
  const AaPanel = aaAcik && (
     <>
       <div onClick={() => setAaAcik(false)} style={{ position: "fixed", inset: 0, zIndex: 195 }} />
-      <div className="vukuf-panel" style={{ ...panelStil("center"), width: "300px", maxHeight: "80vh", overflowY: "auto", zIndex: 200 }}>
+      {/* PANELİN ÜST DOLGUSU YOK (padding: "0 12px 12px").
+          Sebep: üstteki blok `position: sticky` ile duruyordu ama panelin 12px üst
+          dolgusu yüzünden `top: -12px` gibi bir negatif kaçış ve eşit bir iç dolgu
+          ile hizalanmak zorundaydı. O aritmetik, panelin giriş animasyonu ya da
+          tarayıcı yuvarlaması araya girdiğinde bir-iki piksellik bir şerit
+          bırakıyor, kaydırılan içerik oradan sızıyordu. Üst dolguyu bloğun KENDİ
+          dolgusuna taşıyınca sticky doğrudan `top: 0`a oturuyor — arada kaçacak
+          boşluk kalmıyor. */}
+      <div ref={aaPanelRef} className="vukuf-panel" style={{ ...panelStil("center"), padding: "0 12px 12px", width: "300px", maxHeight: "80vh", overflowY: "auto", zIndex: 200 }}>
 
         {/* TEK ÖNİZLEME — panelin üstünde sabit durur, aşağıdaki BÜTÜN ayarlar
             (boyut, satır aralığı, harf aralığı, yazı tipi) bunu anında değiştirir.
             Eskiden her ayarın altında ayrı bir önizleme vardı; menü kalabalıktı. */}
         <div style={{
-          // Panelin kendi 12px padding'i olduğu için negatif marj + eşit padding ile
-          // yapıştırılır; yoksa altından kayan yazı üst boşlukta görünüyordu.
-          position: "sticky", top: "-12px", zIndex: 2,
+          position: "sticky", top: 0, zIndex: 2,
           background: theme.surface,
-          margin: "-12px -12px 12px", padding: "12px 12px 10px",
+          margin: "0 -12px 12px", padding: "12px 12px 10px",
           borderBottom: `1px solid ${theme.border}`,
         }}>
-          <div style={{ fontSize: "10px", color: theme.textSecondary, letterSpacing: "1px", marginBottom: "6px", opacity: 0.8 }}>
-            ÖNİZLEME · {aktifArapcaFont.label}
-          </div>
+          <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "12px", letterSpacing: "1px", textAlign: "center" }}>YAZI TERCİHLERİ</div>
+
           <div style={{
             padding: "10px 12px", borderRadius: "9px",
             background: theme.background, border: `1px solid ${theme.border}`,
@@ -2281,67 +2527,109 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
           }}>
             بِسۡمِ ٱللَّهِ ٱلرَّحۡمَٰنِ ٱلرَّحِيمِ
           </div>
-        </div>
-
-        {/* YAZI BOYUTU */}
-        <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px" }}>YAZI BOYUTU</div>
-        <div style={{ marginBottom: "20px" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", color: theme.textSecondary, marginBottom: "6px" }}>
-            <span>Küçük</span>
-            <span style={{ color: theme.accent, fontWeight: "bold" }}>{yaziBoyutu}px</span>
-            <span>Büyük</span>
+          <div style={{ fontSize: "10px", color: theme.textSecondary, letterSpacing: "1px", marginTop: "6px", textAlign: "center", opacity: 0.8 }}>
+            {aktifArapcaFont.label}
           </div>
-          <input
-            type="range"
-            min="20"
-            max="100"
-            step="5"
-            value={yaziBoyutu}
-            onChange={e => setYaziBoyutu(parseInt(e.target.value))}
-            style={{ width: "100%", accentColor: theme.accent }}
-          />
         </div>
 
-  
-        {/* SATIR ARALIĞI */}
-        <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px" }}>SATIR ARALIĞI</div>
-        <div style={{ marginBottom: "20px" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", color: theme.textSecondary, marginBottom: "6px" }}>
-            <span>Sıkışık</span>
-            <span style={{ color: theme.accent, fontWeight: "bold" }}>{satirAraligi.toFixed(1)}</span>
-            <span>Geniş</span>
+        {/* BOYUT VE ARALIK — üç kaydırıcı tek çatı altında.
+            Düğme kapalıyken de o anki değerleri yazıyor: paneli kısaltmak için
+            ayarları saklamak değil, TOPLAMAK istiyoruz. */}
+        <PanelAcilir
+          theme={theme}
+          Ikon={Type}
+          etiket="BOYUT VE ARALIK"
+          ozet={`${yaziBoyutu}px · ${satirAraligi.toFixed(1)} · ${harfAraligi.toFixed(1)}`}
+          acik={acikBolum === "boyut"}
+          onDegis={() => bolumDegis("boyut", "asagi")}
+          dugmeRef={boyutBtnRef}
+          icerikRef={boyutIcerikRef}
+        >
+          {/* YAZI BOYUTU */}
+          <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px", textAlign: "center" }}>YAZI BOYUTU</div>
+          <div>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", color: theme.textSecondary, marginBottom: "6px" }}>
+              <span>Küçük</span>
+              <span style={{ color: theme.accent, fontWeight: "bold" }}>{yaziBoyutu}px</span>
+              <span>Büyük</span>
+            </div>
+            <input type="range" min="20" max="100" step="5" value={yaziBoyutu}
+              onChange={e => setYaziBoyutu(parseInt(e.target.value))}
+              style={{ width: "100%", accentColor: theme.accent }} />
           </div>
-          <input
-            type="range"
-            min="1.6"
-            max="3.5"
-            step="0.1"
-            value={satirAraligi}
-            onChange={e => setSatirAraligi(parseFloat(e.target.value))}
-            style={{ width: "100%", accentColor: theme.accent }}
-          />
-        </div>
 
-        {/* HARF ARALIĞI */}
-        <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px" }}>HARF ARALIĞI</div>
-        <div style={{ marginBottom: "20px" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", color: theme.textSecondary, marginBottom: "6px" }}>
-            <span>Normal</span>
-            <span style={{ color: theme.accent, fontWeight: "bold" }}>{harfAraligi.toFixed(1)}px</span>
-            <span>Geniş</span>
+          <PanelAyirac theme={theme} />
+
+          {/* SATIR ARALIĞI */}
+          <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px", textAlign: "center" }}>SATIR ARALIĞI</div>
+          <div>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", color: theme.textSecondary, marginBottom: "6px" }}>
+              <span>Sıkışık</span>
+              <span style={{ color: theme.accent, fontWeight: "bold" }}>{satirAraligi.toFixed(1)}</span>
+              <span>Geniş</span>
+            </div>
+            <input type="range" min="1.6" max="3.5" step="0.1" value={satirAraligi}
+              onChange={e => setSatirAraligi(parseFloat(e.target.value))}
+              style={{ width: "100%", accentColor: theme.accent }} />
           </div>
-          <input
-            type="range"
-            min="0"
-            max={isMobile ? "1" : "1.9"}
-            step="0.1"
-            value={harfAraligi}
-            onChange={e => setHarfAraligi(parseFloat(e.target.value))}
-            style={{ width: "100%", accentColor: theme.accent }}
-          />
+
+          <PanelAyirac theme={theme} />
+
+          {/* HARF ARALIĞI */}
+          <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px", textAlign: "center" }}>HARF ARALIĞI</div>
+          <div>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", color: theme.textSecondary, marginBottom: "6px" }}>
+              <span>Normal</span>
+              <span style={{ color: theme.accent, fontWeight: "bold" }}>{harfAraligi.toFixed(1)}px</span>
+              <span>Geniş</span>
+            </div>
+            <input type="range" min="0" max={isMobile ? "1" : "1.9"} step="0.1" value={harfAraligi}
+              onChange={e => setHarfAraligi(parseFloat(e.target.value))}
+              style={{ width: "100%", accentColor: theme.accent }} />
+          </div>
+        </PanelAcilir>
+
+        {/* YAZI TİPİ — liste düğmenin ÜSTÜNDE açılır; aşağı açılsa panelin
+            dibinde kalıp görünmüyordu. */}
+        <div style={{ marginTop: "8px" }}>
+          <PanelAcilir
+            theme={theme}
+            Ikon={Feather}
+            etiket="YAZI TİPİ"
+            ozet={aktifArapcaFont.label}
+            acik={acikBolum === "font"}
+            onDegis={() => bolumDegis("font", "yukari")}
+            yon="yukari"
+            dugmeRef={yaziTipiBtnRef}
+            icerikRef={yaziTipiListeRef}
+          >
+            <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+              {ARAPCA_FONTLAR.map(font => (
+                <button
+                  key={font.id}
+                  onClick={() => setArapcaFontId(font.id)}
+                  style={{
+                    display: "flex", alignItems: "center", justifyContent: "space-between",
+                    padding: "10px 12px", borderRadius: "8px",
+                    border: `1px solid ${arapcaFontId === font.id ? theme.accent : theme.border}`,
+                    background: arapcaFontId === font.id ? `${theme.accent}12` : theme.background,
+                    cursor: "pointer", transition: "all 0.15s",
+                  }}
+                >
+                  <span style={{ fontSize: "12px", color: theme.textSecondary }}>{font.label}</span>
+                  <span style={{
+                    fontFamily: font.style,
+                    fontSize: "18px",
+                    color: arapcaFontId === font.id ? theme.accent : theme.text,
+                  }}>
+                    بِسۡمِ
+                  </span>
+                </button>
+              ))}
+            </div>
+          </PanelAcilir>
         </div>
 
-        {/* YAZI TİPİ */}
       {/* TAM GENİŞLİK — web + mobil */}
         <div
           onClick={tamGenislikDegis}
@@ -2349,7 +2637,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
           aria-pressed={tamGenislik}
           style={{
             display: "flex", alignItems: "center", gap: "9px",
-            padding: "9px 10px", marginBottom: "8px", borderRadius: "9px",
+            padding: "9px 10px", marginTop: "12px", marginBottom: "8px", borderRadius: "9px",
             cursor: "pointer", color: theme.text,
             background: tamGenislik ? `${theme.accent}12` : "transparent",
             border: `1px solid ${tamGenislik ? `${theme.accent}44` : theme.border}`,
@@ -2372,7 +2660,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
           aria-pressed={kenarBosluk}
           style={{
             display: "flex", alignItems: "center", gap: "9px",
-            padding: "9px 10px", marginBottom: "20px", borderRadius: "9px",
+            padding: "9px 10px", borderRadius: "9px",
             cursor: "pointer", color: theme.text,
             background: kenarBosluk ? `${theme.accent}12` : "transparent",
             border: `1px solid ${kenarBosluk ? `${theme.accent}44` : theme.border}`,
@@ -2387,62 +2675,8 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
           </span>
           <IosSwitch acik={kenarBosluk} theme={theme} boyut={0.82} />
         </div>
+        </div>
 
-        {/* YAZI TİPİ — açılır kapanır. column-reverse: liste düğmenin ÜSTÜNDE açılır
-            (aşağı açılınca panelin altında kalıp görünmüyordu); açılışta da görünür
-            alana kaydırılır. */}
-        <div style={{ display: "flex", flexDirection: "column-reverse" }}>
-        <button
-          ref={yaziTipiBtnRef}
-          onClick={() => {
-            const yeni = !yaziTipiAcik
-            setYaziTipiAcik(yeni)
-            // Liste YUKARI açıldığı için düğme panelin dibinde kalıyordu; açılışta
-            // DÜĞMEYİ görünür alanın altına çek → hem liste hem "kapat" düğmesi görünsün.
-            if (yeni) requestAnimationFrame(() => {
-              try { yaziTipiBtnRef.current?.scrollIntoView({ block: "end", behavior: "smooth" }) } catch { /* yoksay */ }
-            })
-          }}
-          style={{
-            width: "100%", display: "flex", alignItems: "center", gap: "8px",
-            padding: "9px 10px", borderRadius: "9px", cursor: "pointer",
-            background: "transparent", border: `1px solid ${theme.border}`,
-            color: theme.text, marginTop: yaziTipiAcik ? "8px" : "0",
-          }}
-        >
-          <Feather size={15} color={theme.accent} style={{ flexShrink: 0 }} />
-          <span style={{ flex: 1, minWidth: 0, textAlign: "left" }}>
-            <span style={{ display: "block", fontSize: "10px", letterSpacing: "1px", color: theme.textSecondary }}>YAZI TİPİ</span>
-            <span style={{ display: "block", fontSize: "12px", fontWeight: 600 }}>{aktifArapcaFont.label}</span>
-          </span>
-          {yaziTipiAcik ? <ChevronDown size={16} color={theme.textSecondary} /> : <ChevronUp size={16} color={theme.textSecondary} />}
-        </button>
-        <div style={{ display: yaziTipiAcik ? "flex" : "none", flexDirection: "column", gap: "2px" }}>
-          {ARAPCA_FONTLAR.map(font => (
-            <button
-              key={font.id}
-              onClick={() => setArapcaFontId(font.id)}
-              style={{
-                display: "flex", alignItems: "center", justifyContent: "space-between",
-                padding: "10px 12px", borderRadius: "8px",
-                border: `1px solid ${arapcaFontId === font.id ? theme.accent : theme.border}`,
-                background: arapcaFontId === font.id ? `${theme.accent}12` : theme.background,
-                cursor: "pointer", transition: "all 0.15s",
-              }}
-            >
-              <span style={{ fontSize: "12px", color: theme.textSecondary }}>{font.label}</span>
-              <span style={{
-                fontFamily: font.style,
-                fontSize: "18px",
-                color: arapcaFontId === font.id ? theme.accent : theme.text,
-              }}>
-                بِسۡمِ
-              </span>
-            </button>
-          ))}
-        </div>
-        </div>
-      </div>
     </>
   )
 
@@ -3143,6 +3377,12 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
           sureNo={popup.sureNo}
           ayetNo={popup.ayetNo}
           theme={theme}
+          // Baloncuk mushafta SEÇİLİ fontu kullanmalı: onarılmış font olmadan
+          // alt-elif ve Osmanlı işaretleri bozuk çiziliyor (bkz. KelimePopup).
+          arapcaFont={aktifArapcaFont.style}
+          // Fiil çekimi (şahıs/cins/sayı · kip). Tembel yüklendiği için ilk
+          // tıklamada bir an null gelebilir; geldiğinde bu satır tazelenir.
+          sarf={popup.kelime?.id ? (sarfSozluk?.[popup.kelime.id] || null) : null}
           onKapat={() => setPopup(null)}
         />
       )}
@@ -4348,10 +4588,16 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
                         <span style={{ flex: 1, minWidth: 0 }}>
                           <span style={{ display: "block", color: theme.text, fontSize: isMobile ? "12px" : "13px", fontWeight: 600 }}>{s.ad}</span>
                           <span style={{ display: "block", color: theme.textSecondary, fontSize: isMobile ? "11px" : "12px", lineHeight: 1.4 }}>{s.aciklama}</span>
-                          {s.ornek && (
-                            <span style={{ display: "block", color: theme.accent, fontSize: isMobile ? "10px" : "11px", marginTop: "2px", opacity: 0.9 }}>
-                              Örnek Âyet: {s.ornek}
-                            </span>
+                          {(s.kod != null || s.ornek) && (
+                            <OrnekAyetler
+                              bulgu={s.kod != null ? isaretOrnekleri?.get(s.kod) : null}
+                              yedek={s.ornek}
+                              theme={theme}
+                              isMobile={isMobile}
+                              arapcaFont={aktifArapcaFont.style}
+                              sureAdi={sureAdiVer}
+                              git={(sureId, ayetNo) => { setBilgiAcik(false); sureGit(sureId, ayetNo) }}
+                            />
                           )}
                         </span>
                       </div>

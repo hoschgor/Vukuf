@@ -25,6 +25,7 @@ import KariSecici from "../components/KariSecici"
 import KelimePopup from "../components/KelimePopup"
 import YuklemeEkrani from "../components/YuklemeEkrani"
 import IosSwitch from "../components/IosSwitch"
+import PanelAyirac, { PanelAcilir, panelBolumeHizala } from "../components/PanelAyirac"
 import AyetPopup from "../components/AyetPopup"
 import { barSatirOlc } from "../components/BarSiraPaneli"
 import GorselOlustur from "../components/GorselOlustur"
@@ -926,9 +927,31 @@ const maxWidth = useMemo(() =>
   })
   const [aktifRenk, setAktifRenk] = useState(null)
 
-  // ── Arapça font
-  const [yaziTipiAcik, setYaziTipiAcik] = useState(false)   // Aa panelindeki yazı tipi listesi açık mı
+  // ── Aa paneli: açılır bölümler
+  // TEK AÇIK BÖLÜM. Panel çok uzamıştı; kaydırıcıları "boyut" bölümünün altına
+  // alıp aynı anda tek bölüm açık tutmak paneli varsayılan hâlinde birkaç satıra
+  // indiriyor. İki ayrı bayrak yerine tek bir durum: hangisi açıksa o.
+  const [acikBolum, setAcikBolum] = useState(null)   // null | "boyut" | "font"
   const yaziTipiBtnRef = useRef(null)
+  const yaziTipiListeRef = useRef(null)
+  const boyutBtnRef = useRef(null)
+  const boyutIcerikRef = useRef(null)
+  const aaPanelRef = useRef(null)
+
+  const bolumDegis = useCallback((ad, yon) => {
+    setAcikBolum(o => (o === ad ? null : ad))
+    if (acikBolum === ad) return                      // kapanıyor → hizalama gerekmez
+    const icerikRef = ad === "font" ? yaziTipiListeRef : boyutIcerikRef
+    const dugmeRef = ad === "font" ? yaziTipiBtnRef : boyutBtnRef
+    // İçerik henüz boyanmadıysa (React flush'ı gecikirse) birkaç kare dene.
+    let deneme = 0
+    const hizala = () => {
+      if (!panelBolumeHizala(aaPanelRef.current, icerikRef.current, yon, dugmeRef.current) && deneme++ < 3) {
+        requestAnimationFrame(hizala)
+      }
+    }
+    requestAnimationFrame(hizala)
+  }, [acikBolum])
   const [arapcaFontId, setArapcaFontId] = useState(() => {
     // Listeden kalkmış bir font kayıtlıysa (ör. artık bulunmayan "Indopak")
     // varsayılana dön — yoksa hiçbir satır seçili görünmez.
@@ -2470,22 +2493,27 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
  const AaPanel = aaAcik && (
     <>
       <div onClick={() => setAaAcik(false)} style={{ position: "fixed", inset: 0, zIndex: 195 }} />
-      <div className="vukuf-panel" style={{ ...panelStil("center"), width: "300px", maxHeight: "80vh", overflowY: "auto", zIndex: 200 }}>
+      {/* PANELİN ÜST DOLGUSU YOK (padding: "0 12px 12px").
+          Sebep: üstteki blok `position: sticky` ile duruyordu ama panelin 12px üst
+          dolgusu yüzünden `top: -12px` gibi bir negatif kaçış ve eşit bir iç dolgu
+          ile hizalanmak zorundaydı. O aritmetik, panelin giriş animasyonu ya da
+          tarayıcı yuvarlaması araya girdiğinde bir-iki piksellik bir şerit
+          bırakıyor, kaydırılan içerik oradan sızıyordu. Üst dolguyu bloğun KENDİ
+          dolgusuna taşıyınca sticky doğrudan `top: 0`a oturuyor — arada kaçacak
+          boşluk kalmıyor. */}
+      <div ref={aaPanelRef} className="vukuf-panel" style={{ ...panelStil("center"), padding: "0 12px 12px", width: "300px", maxHeight: "80vh", overflowY: "auto", zIndex: 200 }}>
 
         {/* TEK ÖNİZLEME — panelin üstünde sabit durur, aşağıdaki BÜTÜN ayarlar
             (boyut, satır aralığı, harf aralığı, yazı tipi) bunu anında değiştirir.
             Eskiden her ayarın altında ayrı bir önizleme vardı; menü kalabalıktı. */}
         <div style={{
-          // Panelin kendi 12px padding'i olduğu için negatif marj + eşit padding ile
-          // yapıştırılır; yoksa altından kayan yazı üst boşlukta görünüyordu.
-          position: "sticky", top: "-12px", zIndex: 2,
+          position: "sticky", top: 0, zIndex: 2,
           background: theme.surface,
-          margin: "-12px -12px 12px", padding: "12px 12px 10px",
+          margin: "0 -12px 12px", padding: "12px 12px 10px",
           borderBottom: `1px solid ${theme.border}`,
         }}>
-          <div style={{ fontSize: "10px", color: theme.textSecondary, letterSpacing: "1px", marginBottom: "6px", opacity: 0.8 }}>
-            ÖNİZLEME · {aktifArapcaFont.label}
-          </div>
+          <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "12px", letterSpacing: "1px", textAlign: "center" }}>YAZI TERCİHLERİ</div>
+
           <div style={{
             padding: "10px 12px", borderRadius: "9px",
             background: theme.background, border: `1px solid ${theme.border}`,
@@ -2499,67 +2527,109 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
           }}>
             بِسۡمِ ٱللَّهِ ٱلرَّحۡمَٰنِ ٱلرَّحِيمِ
           </div>
-        </div>
-
-        {/* YAZI BOYUTU */}
-        <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px" }}>YAZI BOYUTU</div>
-        <div style={{ marginBottom: "20px" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", color: theme.textSecondary, marginBottom: "6px" }}>
-            <span>Küçük</span>
-            <span style={{ color: theme.accent, fontWeight: "bold" }}>{yaziBoyutu}px</span>
-            <span>Büyük</span>
+          <div style={{ fontSize: "10px", color: theme.textSecondary, letterSpacing: "1px", marginTop: "6px", textAlign: "center", opacity: 0.8 }}>
+            {aktifArapcaFont.label}
           </div>
-          <input
-            type="range"
-            min="20"
-            max="100"
-            step="5"
-            value={yaziBoyutu}
-            onChange={e => setYaziBoyutu(parseInt(e.target.value))}
-            style={{ width: "100%", accentColor: theme.accent }}
-          />
         </div>
 
-  
-        {/* SATIR ARALIĞI */}
-        <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px" }}>SATIR ARALIĞI</div>
-        <div style={{ marginBottom: "20px" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", color: theme.textSecondary, marginBottom: "6px" }}>
-            <span>Sıkışık</span>
-            <span style={{ color: theme.accent, fontWeight: "bold" }}>{satirAraligi.toFixed(1)}</span>
-            <span>Geniş</span>
+        {/* BOYUT VE ARALIK — üç kaydırıcı tek çatı altında.
+            Düğme kapalıyken de o anki değerleri yazıyor: paneli kısaltmak için
+            ayarları saklamak değil, TOPLAMAK istiyoruz. */}
+        <PanelAcilir
+          theme={theme}
+          Ikon={Type}
+          etiket="BOYUT VE ARALIK"
+          ozet={`${yaziBoyutu}px · ${satirAraligi.toFixed(1)} · ${harfAraligi.toFixed(1)}`}
+          acik={acikBolum === "boyut"}
+          onDegis={() => bolumDegis("boyut", "asagi")}
+          dugmeRef={boyutBtnRef}
+          icerikRef={boyutIcerikRef}
+        >
+          {/* YAZI BOYUTU */}
+          <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px", textAlign: "center" }}>YAZI BOYUTU</div>
+          <div>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", color: theme.textSecondary, marginBottom: "6px" }}>
+              <span>Küçük</span>
+              <span style={{ color: theme.accent, fontWeight: "bold" }}>{yaziBoyutu}px</span>
+              <span>Büyük</span>
+            </div>
+            <input type="range" min="20" max="100" step="5" value={yaziBoyutu}
+              onChange={e => setYaziBoyutu(parseInt(e.target.value))}
+              style={{ width: "100%", accentColor: theme.accent }} />
           </div>
-          <input
-            type="range"
-            min="1.6"
-            max="3.5"
-            step="0.1"
-            value={satirAraligi}
-            onChange={e => setSatirAraligi(parseFloat(e.target.value))}
-            style={{ width: "100%", accentColor: theme.accent }}
-          />
-        </div>
 
-        {/* HARF ARALIĞI */}
-        <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px" }}>HARF ARALIĞI</div>
-        <div style={{ marginBottom: "20px" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", color: theme.textSecondary, marginBottom: "6px" }}>
-            <span>Normal</span>
-            <span style={{ color: theme.accent, fontWeight: "bold" }}>{harfAraligi.toFixed(1)}px</span>
-            <span>Geniş</span>
+          <PanelAyirac theme={theme} />
+
+          {/* SATIR ARALIĞI */}
+          <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px", textAlign: "center" }}>SATIR ARALIĞI</div>
+          <div>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", color: theme.textSecondary, marginBottom: "6px" }}>
+              <span>Sıkışık</span>
+              <span style={{ color: theme.accent, fontWeight: "bold" }}>{satirAraligi.toFixed(1)}</span>
+              <span>Geniş</span>
+            </div>
+            <input type="range" min="1.6" max="3.5" step="0.1" value={satirAraligi}
+              onChange={e => setSatirAraligi(parseFloat(e.target.value))}
+              style={{ width: "100%", accentColor: theme.accent }} />
           </div>
-          <input
-            type="range"
-            min="0"
-            max={isMobile ? "1" : "1.9"}
-            step="0.1"
-            value={harfAraligi}
-            onChange={e => setHarfAraligi(parseFloat(e.target.value))}
-            style={{ width: "100%", accentColor: theme.accent }}
-          />
+
+          <PanelAyirac theme={theme} />
+
+          {/* HARF ARALIĞI */}
+          <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px", textAlign: "center" }}>HARF ARALIĞI</div>
+          <div>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", color: theme.textSecondary, marginBottom: "6px" }}>
+              <span>Normal</span>
+              <span style={{ color: theme.accent, fontWeight: "bold" }}>{harfAraligi.toFixed(1)}px</span>
+              <span>Geniş</span>
+            </div>
+            <input type="range" min="0" max={isMobile ? "1" : "1.9"} step="0.1" value={harfAraligi}
+              onChange={e => setHarfAraligi(parseFloat(e.target.value))}
+              style={{ width: "100%", accentColor: theme.accent }} />
+          </div>
+        </PanelAcilir>
+
+        {/* YAZI TİPİ — liste düğmenin ÜSTÜNDE açılır; aşağı açılsa panelin
+            dibinde kalıp görünmüyordu. */}
+        <div style={{ marginTop: "8px" }}>
+          <PanelAcilir
+            theme={theme}
+            Ikon={Feather}
+            etiket="YAZI TİPİ"
+            ozet={aktifArapcaFont.label}
+            acik={acikBolum === "font"}
+            onDegis={() => bolumDegis("font", "yukari")}
+            yon="yukari"
+            dugmeRef={yaziTipiBtnRef}
+            icerikRef={yaziTipiListeRef}
+          >
+            <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+              {ARAPCA_FONTLAR.map(font => (
+                <button
+                  key={font.id}
+                  onClick={() => setArapcaFontId(font.id)}
+                  style={{
+                    display: "flex", alignItems: "center", justifyContent: "space-between",
+                    padding: "10px 12px", borderRadius: "8px",
+                    border: `1px solid ${arapcaFontId === font.id ? theme.accent : theme.border}`,
+                    background: arapcaFontId === font.id ? `${theme.accent}12` : theme.background,
+                    cursor: "pointer", transition: "all 0.15s",
+                  }}
+                >
+                  <span style={{ fontSize: "12px", color: theme.textSecondary }}>{font.label}</span>
+                  <span style={{
+                    fontFamily: font.style,
+                    fontSize: "18px",
+                    color: arapcaFontId === font.id ? theme.accent : theme.text,
+                  }}>
+                    بِسۡمِ
+                  </span>
+                </button>
+              ))}
+            </div>
+          </PanelAcilir>
         </div>
 
-        {/* YAZI TİPİ */}
       {/* TAM GENİŞLİK — web + mobil */}
         <div
           onClick={tamGenislikDegis}
@@ -2567,7 +2637,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
           aria-pressed={tamGenislik}
           style={{
             display: "flex", alignItems: "center", gap: "9px",
-            padding: "9px 10px", marginBottom: "8px", borderRadius: "9px",
+            padding: "9px 10px", marginTop: "12px", marginBottom: "8px", borderRadius: "9px",
             cursor: "pointer", color: theme.text,
             background: tamGenislik ? `${theme.accent}12` : "transparent",
             border: `1px solid ${tamGenislik ? `${theme.accent}44` : theme.border}`,
@@ -2590,7 +2660,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
           aria-pressed={kenarBosluk}
           style={{
             display: "flex", alignItems: "center", gap: "9px",
-            padding: "9px 10px", marginBottom: "20px", borderRadius: "9px",
+            padding: "9px 10px", borderRadius: "9px",
             cursor: "pointer", color: theme.text,
             background: kenarBosluk ? `${theme.accent}12` : "transparent",
             border: `1px solid ${kenarBosluk ? `${theme.accent}44` : theme.border}`,
@@ -2605,62 +2675,8 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
           </span>
           <IosSwitch acik={kenarBosluk} theme={theme} boyut={0.82} />
         </div>
+        </div>
 
-        {/* YAZI TİPİ — açılır kapanır. column-reverse: liste düğmenin ÜSTÜNDE açılır
-            (aşağı açılınca panelin altında kalıp görünmüyordu); açılışta da görünür
-            alana kaydırılır. */}
-        <div style={{ display: "flex", flexDirection: "column-reverse" }}>
-        <button
-          ref={yaziTipiBtnRef}
-          onClick={() => {
-            const yeni = !yaziTipiAcik
-            setYaziTipiAcik(yeni)
-            // Liste YUKARI açıldığı için düğme panelin dibinde kalıyordu; açılışta
-            // DÜĞMEYİ görünür alanın altına çek → hem liste hem "kapat" düğmesi görünsün.
-            if (yeni) requestAnimationFrame(() => {
-              try { yaziTipiBtnRef.current?.scrollIntoView({ block: "end", behavior: "smooth" }) } catch { /* yoksay */ }
-            })
-          }}
-          style={{
-            width: "100%", display: "flex", alignItems: "center", gap: "8px",
-            padding: "9px 10px", borderRadius: "9px", cursor: "pointer",
-            background: "transparent", border: `1px solid ${theme.border}`,
-            color: theme.text, marginTop: yaziTipiAcik ? "8px" : "0",
-          }}
-        >
-          <Feather size={15} color={theme.accent} style={{ flexShrink: 0 }} />
-          <span style={{ flex: 1, minWidth: 0, textAlign: "left" }}>
-            <span style={{ display: "block", fontSize: "10px", letterSpacing: "1px", color: theme.textSecondary }}>YAZI TİPİ</span>
-            <span style={{ display: "block", fontSize: "12px", fontWeight: 600 }}>{aktifArapcaFont.label}</span>
-          </span>
-          {yaziTipiAcik ? <ChevronDown size={16} color={theme.textSecondary} /> : <ChevronUp size={16} color={theme.textSecondary} />}
-        </button>
-        <div style={{ display: yaziTipiAcik ? "flex" : "none", flexDirection: "column", gap: "2px" }}>
-          {ARAPCA_FONTLAR.map(font => (
-            <button
-              key={font.id}
-              onClick={() => setArapcaFontId(font.id)}
-              style={{
-                display: "flex", alignItems: "center", justifyContent: "space-between",
-                padding: "10px 12px", borderRadius: "8px",
-                border: `1px solid ${arapcaFontId === font.id ? theme.accent : theme.border}`,
-                background: arapcaFontId === font.id ? `${theme.accent}12` : theme.background,
-                cursor: "pointer", transition: "all 0.15s",
-              }}
-            >
-              <span style={{ fontSize: "12px", color: theme.textSecondary }}>{font.label}</span>
-              <span style={{
-                fontFamily: font.style,
-                fontSize: "18px",
-                color: arapcaFontId === font.id ? theme.accent : theme.text,
-              }}>
-                بِسۡمِ
-              </span>
-            </button>
-          ))}
-        </div>
-        </div>
-      </div>
     </>
   )
 

@@ -4618,6 +4618,34 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
           </div>
         )}
 
+        {/* ÜST SOLMA PERDESİ — metin yukarıda kesilmek yerine eriyerek bitsin.
+        Bu etki iOS'ta ana ekrandan açınca zaten "bedava" oluyordu: bar altta
+        olduğu için metin durum çubuğunun altına kadar kayıyor ve sistem saatin
+        okunur kalması için altındaki içeriği soluklaştırıyordu. Ama o, ne bizim
+        denetimimizde ne de her yerde var — Android'de, tarayıcıda ve masaüstünde
+        hiç yok. Kendimiz çizince her yerde aynı oluyor.
+        NİÇİN MASKE, GRADYAN DEĞİL: perde arka plan renginden saydama geçmeli.
+        Rengi doğrudan gradyana yazmak için renge alfa eklemek gerekir; tema rengi
+        3 haneli hex ya da rgb() olursa o hesap sessizce bozulur (aynı tuzağa lügat
+        vurgusunda düşülmüştü). Onun yerine perde DÜZ arka plan rengi, solma da
+        perdenin KENDİ maskesiyle yapılıyor: renk biçimi ne olursa olsun çalışır.
+        MASKE KAYDIRMA KABINA DEĞİL PERDEYE: kabın üstüne maske koymak uzun
+        sayfalarda fazladan bir birleştirme katmanı doğurur ve kaydırmayı yorar;
+        burada maskelenen, sabit duran 30-60px'lik küçük bir kutu.
+        Bar ÜSTTEYSE perde barın altından başlar; bar zaten o bölgeyi örtüyor. */}
+        <div
+          aria-hidden="true"
+          style={{
+            position: "absolute", left: 0, right: 0,
+            top: barKonum === "ust" ? `${barYuksekligi}px` : 0,
+            height: `${Math.min(60, Math.max(24, Math.round(yaziBoyutu * satirAraligi * 0.9)))}px`,
+            background: theme.background,
+            maskImage: "linear-gradient(to bottom, #000, transparent)",
+            WebkitMaskImage: "linear-gradient(to bottom, #000, transparent)",
+            pointerEvents: "none", zIndex: 10,
+          }}
+        />
+
         {barKonum === "alt" && Bar}
 
         {donusTip && (

@@ -3259,7 +3259,16 @@ const MenuPanel = menuAcik && (
   <>
     <div onClick={() => setMenuAcik(false)} style={{ position: "fixed", inset: 0, zIndex: 149 }} />
     <div className="okuma-panel" style={{
-      position: "fixed", top: 0, bottom: 0, left: 0, width: `${Math.round(300 * barUiOlcegi)}px`, maxWidth: "85vw",
+      position: "fixed", left: 0, width: `${Math.round(300 * barUiOlcegi)}px`, maxWidth: "85vw",
+      // MENÜ BARIN ÜSTÜNE BİNMEZ — mushaf tarafındaki sûre menüsüyle aynı mantık.
+      // Eskiden `top: 0, bottom: 0` idi ve panel (zIndex 150) barı (zIndex 90)
+      // tamamen örtüyordu: menü açıkken bar görünmüyor, son öge de barın altında
+      // kalıyordu. Pay BARIN KONUMUNA göre veriliyor (üstteyse top, alttaysa
+      // bottom) ve bar otomatik gizlendiğinde (barGorunur false) pay sıfırlanıp
+      // menü tam boya uzuyor — mushaftaki `menuStil` ile birebir aynı kural.
+      top:    barKonum === "ust" ? `${barGorunur ? barYuk : 0}px` : 0,
+      bottom: barKonum === "alt" ? `${barGorunur ? barYuk : 0}px` : 0,
+      transition: "top 0.3s ease, bottom 0.3s ease",
       background: theme.surface, borderRight: `1px solid ${theme.border}`,
       zIndex: 150, display: "flex", flexDirection: "column",
       boxShadow: "4px 0 24px rgba(0,0,0,0.15)",

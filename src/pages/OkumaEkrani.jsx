@@ -11,6 +11,7 @@ import KitapAyraci from "../components/KitapAyraci"
 import YuklemeEkrani from "../components/YuklemeEkrani"
 import IosSwitch from "../components/IosSwitch"
 import PanelAyirac, { PanelAcilir, panelBolumeHizala } from "../components/PanelAyirac"
+import GeriIkonu from "../components/GeriIkonu"
 import {
   ArrowLeft, BookOpen, Eye, EyeOff, Play, Pause,
   Plus, Minus, AlignJustify, AlignLeft, AlignCenter, ChevronsUp, ChevronsDown,
@@ -111,7 +112,7 @@ const BAR_OGELERI = [
 // Alt bardaki SIRALANABİLİR öğeler: sıra + sol/sağ yaslama (BarSiraPaneli ile düzenlenir).
 // `taraf` = varsayılan yaslama (mevcut görünümü birebir korur).
 const BAR_SIRA_OGELERI = [
-  { key: "geri",    label: "Geri",              Ikon: ArrowLeft,   taraf: "sol" },
+  { key: "geri",    label: "Geri",              Ikon: GeriIkonu,   taraf: "sol" },
   { key: "menu",    label: "İçindekiler",       Ikon: List,        taraf: "sol" },
   { key: "sayfa",   label: "Sayfa Bilgisi",     Ikon: BookOpen,    taraf: "sol" },
   { key: "lugat",   label: "Lügat",             Ikon: EyeIkon,     taraf: "sol" },
@@ -2156,6 +2157,17 @@ const barButonStil = (aktif = false) => ({
   display: "flex", alignItems: "center", gap: "4px",
   fontSize: `${Math.round(13 * barUiOlcegi)}px`,
   padding: `${Math.round(6 * barUiOlcegi)}px ${Math.round(8 * barUiOlcegi)}px`,
+  // EŞİT KUTU: bardaki simgeler 11-17px arasında değişiyordu, dolayısıyla her
+  // düğme farklı genişlikteydi ve aralar düzensiz görünüyordu. Kutuyu sabitleyip
+  // içeriği ortalıyoruz; yazılı düğmeler (sayfa no, süre) doğal genişliğinde
+  // kalır çünkü bu bir TABAN değer.
+  // TABAN 33 DEĞİL 31: 33, bardaki EN BÜYÜK simgeye (geri, 17) göreydi ve bu,
+  // dar simgeli düğmelere fazladan 2px dolgu ekliyordu — simgeler arasındaki
+  // optik boşluk, özellikle iki dar simge yan yana geldiğinde, gereğinden fazla
+  // açılıyordu. 31 = barın OLAĞAN simgesi (15) + yatay dolgu (2×8).
+  minWidth: `${Math.round(31 * barUiOlcegi)}px`,
+  justifyContent: "center",
+  boxSizing: "border-box",
   borderRadius: "6px",
   background: aktif ? `${theme.accent}15` : "transparent",
   border: "none", cursor: "pointer",
@@ -3305,8 +3317,20 @@ const Bar = (
           ? `${pwaAltBosluk}px`
           : `max(${isMobile ? 5 : 3}px, env(safe-area-inset-bottom))`)
       : `${isMobile ? 5 : 3}px`,
-    paddingLeft:   `max(${isMobile ? 12 : 10}px, env(safe-area-inset-left))`,
-    paddingRight:  `max(${isMobile ? 12 : 10}px, env(safe-area-inset-right))`,
+    // YAN DOLGU — tek satırda uç düğmeler köşede kalmasın diye artırıldı (12→18→26).
+    // İKİNCİ ARTIŞIN SEBEBİ KAVİSLİ EKRANLAR: kenarları kıvrık telefonlarda parmak
+    // ekranın son birkaç milimetresine düz basamıyor, uç düğmeye isabet zorlaşıyor.
+    // `env(safe-area-inset-*)` bunu çözmüyor — dikey kullanımda o değer çoğu
+    // cihazda 0'dır, yalnız çentik/yatay kullanımda dolar. Bu yüzden sabit pay.
+    // Tek satırda ilk SAĞ öğe `marginLeft: auto` alıyor; bu, sol grubu tamamen sola,
+    // sağ grubu tamamen sağa itiyor ve uç düğmeler ekran köşesine yapışıyordu —
+    // parmakla, hele köşe jestlerinin olduğu telefonda, isabet ettirmek zordu.
+    // Dolgu `barCokSatir`a BAĞLANMADI bilerek: bağlansaydı "tek satır → dolgu ekle →
+    // sığmayıp iki satıra düş → dolgu küçül → yine tek satır" döngüsü kurulabilirdi.
+    // Sabit dolgu, satır genişliğinden mobilde toplam 12px götürüyor; OkumaEkrani'nde
+    // "Geri" yazısının kalkması bundan fazlasını geri kazandırıyor.
+    paddingLeft:   `max(${isMobile ? 26 : 20}px, env(safe-area-inset-left))`,
+    paddingRight:  `max(${isMobile ? 26 : 20}px, env(safe-area-inset-right))`,
     display: "flex", alignItems: "center", gap: `${Math.round(4 * barUiOlcegi)}px`,
     justifyContent: "center",
     zIndex: 90, flexWrap: "wrap",
@@ -3318,8 +3342,11 @@ const Bar = (
     pointerEvents: barGorunur ? "auto" : "none",
   }}>
 
-    <button onClick={() => navigate("/")} style={{ ...barButonStil(), ...barOge("geri") }}>
-      <ArrowLeft size={bIkon(16)} /> Geri
+    {/* GERİ — yazısız. "Geri" kelimesi kalktı: simge zaten kitaplığa dönmeyi
+        anlatıyor ve o yazı tek satırlık barda ~34px yer kaplıyordu. */}
+    <button onClick={() => navigate("/")} title="Kitaplığa dön" aria-label="Kitaplığa dön"
+      style={{ ...barButonStil(), ...barOge("geri") }}>
+      <GeriIkonu boyut={bIkon(16.7)} />
     </button>
 
     {gorunurMu("menu") && (

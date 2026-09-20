@@ -26,6 +26,7 @@ import KelimePopup from "../components/KelimePopup"
 import YuklemeEkrani from "../components/YuklemeEkrani"
 import IosSwitch from "../components/IosSwitch"
 import PanelAyirac, { PanelAcilir, panelBolumeHizala } from "../components/PanelAyirac"
+import GeriIkonu from "../components/GeriIkonu"
 import AyetPopup from "../components/AyetPopup"
 import { barSatirOlc } from "../components/BarSiraPaneli"
 import GorselOlustur from "../components/GorselOlustur"
@@ -214,7 +215,7 @@ const SADE_OGELERI = [
 // Alt bardaki SIRALANABİLİR butonlar (varsayılan sıra). Geri tuşu ve sağdaki
 // sade/tema/ayarlar kümesi sabittir.
 const SIRALANABILIR = [
-  { key: "geri",        label: "Geri",               Ikon: ArrowLeft, taraf: "sol" },
+  { key: "geri",        label: "Geri",               Ikon: GeriIkonu, taraf: "sol" },
   { key: "sureMenu",    label: "Sûre Menüsü",        Ikon: Menu,      taraf: "sol" },
   { key: "kayit",       label: "Kayıt",              Ikon: Bookmark,  taraf: "sol" },
   { key: "sayfaGit",    label: "Sayfaya Gitme",      Ikon: BookOpen,  taraf: "sol" },
@@ -2364,6 +2365,13 @@ function sureGit(sureId, ayetNo) {
   padding: isMobile 
     ? `${Math.round(3 * barUiOlcegi)}px ${Math.round(5 * barUiOlcegi)}px`
     : `${Math.round(6 * barUiOlcegi)}px ${Math.round(8 * barUiOlcegi)}px`,
+  // EŞİT KUTU: bardaki simgelerin çoğu 18px, dördü 16px çiziliyor; bu da o dört
+  // düğmeyi 2px dar bırakıp aralar düzensiz görünüyordu. Kutu en büyük simgeye
+  // (18 + 2×5 dolgu) göre sabitlendi, içerik ortalandı. Yazılı düğmeler (sayfa
+  // no, süre) doğal genişliğinde kalır — bu bir TABAN değer.
+  minWidth: `${Math.round((isMobile ? 28 : 37) * barUiOlcegi)}px`,
+  justifyContent: "center",
+  boxSizing: "border-box",
   borderRadius: "8px",
   fontSize: `${Math.round(12 * barUiOlcegi)}px`,
   background: aktif ? `${theme.accent}20` : "transparent",
@@ -3105,8 +3113,20 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
             ? `${pwaAltBosluk}px`
             : `max(${isMobile ? 5 : 3}px, env(safe-area-inset-bottom))`)
         : `${isMobile ? 5 : 3}px`,
-      paddingLeft:   `max(${isMobile ? 12 : 10}px, env(safe-area-inset-left))`,
-      paddingRight:  `max(${isMobile ? 12 : 10}px, env(safe-area-inset-right))`,
+      // YAN DOLGU — tek satırda uç düğmeler köşede kalmasın diye artırıldı (12→18→26).
+    // İKİNCİ ARTIŞIN SEBEBİ KAVİSLİ EKRANLAR: kenarları kıvrık telefonlarda parmak
+    // ekranın son birkaç milimetresine düz basamıyor, uç düğmeye isabet zorlaşıyor.
+    // `env(safe-area-inset-*)` bunu çözmüyor — dikey kullanımda o değer çoğu
+    // cihazda 0'dır, yalnız çentik/yatay kullanımda dolar. Bu yüzden sabit pay.
+    // Tek satırda ilk SAĞ öğe `marginLeft: auto` alıyor; bu, sol grubu tamamen sola,
+    // sağ grubu tamamen sağa itiyor ve uç düğmeler ekran köşesine yapışıyordu —
+    // parmakla, hele köşe jestlerinin olduğu telefonda, isabet ettirmek zordu.
+    // Dolgu `barCokSatir`a BAĞLANMADI bilerek: bağlansaydı "tek satır → dolgu ekle →
+    // sığmayıp iki satıra düş → dolgu küçül → yine tek satır" döngüsü kurulabilirdi.
+    // Sabit dolgu, satır genişliğinden mobilde toplam 12px götürüyor; OkumaEkrani'nde
+    // "Geri" yazısının kalkması bundan fazlasını geri kazandırıyor.
+    paddingLeft:   `max(${isMobile ? 26 : 20}px, env(safe-area-inset-left))`,
+      paddingRight:  `max(${isMobile ? 26 : 20}px, env(safe-area-inset-right))`,
       display: "flex", alignItems: "center", gap: `${Math.round(4 * barUiOlcegi)}px`,
       justifyContent: "center",
       zIndex: 90, flexWrap: "wrap",
@@ -3118,8 +3138,13 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
       pointerEvents: barGorunur ? "auto" : "none",
     }}
   >
-      <button onClick={() => navigate(-1)} style={{ ...barButonStil(), flexShrink: 0, ...barOge("geri") }}>
-        <ArrowLeft size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} /> {!isMobile && ""}
+      {/* GERİ — KİTAPLIĞA. Burada `navigate(-1)` (tarayıcı geçmişi) vardı; simge
+          artık "kitaplığa dön" dediği için hedef de kitaplık yapıldı. Geçmişe
+          dönmek, aramadan ya da tefeülden gelindiğinde başka bir yere götürüyor
+          ve simge yalan söylemiş oluyordu. */}
+      <button onClick={() => navigate("/")} title="Kitaplığa dön" aria-label="Kitaplığa dön"
+        style={{ ...barButonStil(), flexShrink: 0, ...barOge("geri") }}>
+        <GeriIkonu boyut={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />
       </button>
       
             {sureMenuGoster && sadeGorunur("sureMenu") && (

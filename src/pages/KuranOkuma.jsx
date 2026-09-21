@@ -2888,7 +2888,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
 
   const AyarlarPanel = ayarlarAcik && (
     <>
-      <div onClick={() => setAyarlarAcik(false)} style={{ position: "fixed", inset: 0, zIndex: 195 }} />
+      <div onClick={() => setAyarlarAcik(false)} style={{ position: "fixed", inset: 0, zIndex: 195 }}/>
       <div className="vukuf-panel" style={{ 
         ...panelStil("right"), 
         width: "270px", 
@@ -3148,7 +3148,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
       </button>
       
             {sureMenuGoster && sadeGorunur("sureMenu") && (
-        <button onClick={() => setMenuAcik(!menuAcik)} style={{ ...barButonStil(menuAcik), flexShrink: 0, ...barOge("sureMenu") }}>
+        <button onClick={() => setMenuAcik(!menuAcik)} style={{ ...barButonStil(menuAcik), flexShrink: 0, ...barOge("sureMenu") }}title="Sûre menüsü">
           <Menu size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />
         </button>
       )}
@@ -3163,7 +3163,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
               setKayitPaneliAcik(false)
             }
           }}
-          style={{ ...barOge("kayit") }}
+          style={{ ...barOge("kayit") }}title="Kayıt menüsü"
         >
           <Bookmark color={theme.accent}
             size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)}
@@ -3183,7 +3183,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
             justifyContent: "center",
             fontWeight: "500",
             color: theme.accent,
-          }}
+          }}title="Sayfa bilgisi ve sayfaya gitme"
         >
           <BookOpen size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />
           {sayfaGosterim === "ikon" ? null : (sayfaGosterim === "sayfa" ? mevcutSayfa : `${mevcutSayfa} / ${toplamSayfa}`)}
@@ -3223,7 +3223,8 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
       )}
 
     {yaziTipiGoster && sadeGorunur("yaziTipi") && (
-      <button onClick={() => togglePanel(setAaAcik, !aaAcik)} style={{ ...barButonStil(aaAcik), ...barOge("yaziTipi") }}>
+      <button onClick={() => togglePanel(setAaAcik, !aaAcik)} style={{ ...barButonStil(aaAcik), ...barOge("yaziTipi") }}
+          title="Yazı Tercihleri">
         <Feather size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />
       </button>
     )}
@@ -3276,18 +3277,20 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
     )}
 
       {sadeModGoster && (
-        <button onClick={() => setSadeMode(!sadeMode)} style={{ ...barButonStil(sadeMode), padding: isMobile ? "3px" : "4px", ...barOge("sadeMod") }}>
+        <button onClick={() => setSadeMode(!sadeMode)} style={{ ...barButonStil(sadeMode), padding: isMobile ? "3px" : "4px", ...barOge("sadeMod") }}
+            title="Sade mod">
           <Circle size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />
         </button>
       )}
 
       {temaGoster && sadeGorunur("tema") && (
-        <button onClick={() => togglePanel(setTemaAcik, !temaAcik)} style={{ ...barButonStil(temaAcik), padding: isMobile ? "3px" : "4px", ...barOge("tema") }}>
+        <button onClick={() => togglePanel(setTemaAcik, !temaAcik)} style={{ ...barButonStil(temaAcik), padding: isMobile ? "3px" : "4px", ...barOge("tema") }}
+            title="Tema paneli">
           <Palette size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />
         </button>
       )}
 
-      <button onClick={() => togglePanel(setAyarlarAcik, !ayarlarAcik)} style={{ ...barButonStil(ayarlarAcik), padding: isMobile ? "3px" : "4px", ...barOge("ayarlar") }}>
+      <button onClick={() => togglePanel(setAyarlarAcik, !ayarlarAcik)} style={{ ...barButonStil(ayarlarAcik), padding: isMobile ? "3px" : "4px", ...barOge("ayarlar") }}title="Ayarlar">
         <Settings size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />
       </button>
 

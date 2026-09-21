@@ -3434,7 +3434,7 @@ const Bar = (
     )}
 
     {gorunurMu("oto") && (
-      <button onClick={() => setOtomatikKaydirma(!otomatikKaydirma)} style={{ ...barButonStil(otomatikKaydirma), ...barOge("oto") }}>
+      <button onClick={() => setOtomatikKaydirma(!otomatikKaydirma)} style={{ ...barButonStil(otomatikKaydirma), ...barOge("oto") }} title="Otomatik kaydırma">
         {otomatikKaydirma ? <Pause size={bIkon(15)} /> : <Play size={bIkon(15)} />}
       </button>
     )}

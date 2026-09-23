@@ -941,17 +941,40 @@ function FontSecici({ grupId, grup, seciliFontId, onSecim, theme }) {
    Bu sayı bir kez 1.0 (tam kapatıyordu) ve 0.55 denendi, ikisi de fazla mat
    bulundu; sonra perde tümden kaldırıldı ve şimdi hafif hâliyle geri geliyor.
 
-   PERDE_KOYULUK : en üstteki örtme gücü. 0 = perde yok, 1 = tamamen kapatır.
-                   Yazı daha net olsun istersen KÜÇÜLT, daha çok solsun istersen büyüt.
-   PERDE_ORTA    : bandın ortasındaki (%45) güç — KOYULUK'tan küçük olmalı,
-                   solma ani kesilmesin diye var.
-   PERDE_YUKSEKLIK : bandın yüksekliği = satır yüksekliği × bu çarpan.
-                   Küçült = daha ince bant, yani daha az satır etkilenir.
+   NİÇİN DEĞERLER BİR KEZ DAHA DÜŞTÜ (kullanıcı: "blur çok fazla olmuş"):
+   0.34 ölçülürken içerik durum çubuğunun ALTINDAN başlıyordu, yani bant yalnız
+   tek satırlık ~34px'ti. `black-translucent` ile içerik artık saatin altına
+   uzanıyor ve banda `env(safe-area-inset-top)` (iPhone'da ~59px) EKLENİYOR →
+   aynı katsayılarla perde ~34px'ten ~93px'e, yani ÜÇ KATINA çıktı. Kapatılan
+   alan üçe katlanınca aynı koyuluk "çok fazla" göründü.
+
+   PERDE_KOYULUK : en üstteki (%0) örtme gücü. 0 = perde yok, 1 = tamamen kapatır.
+   PERDE_ORTA    : ara noktadaki güç — KOYULUK'tan küçük olmalı.
+   PERDE_ORTA_YERI : ara noktanın bandın neresinde olduğu (%). KÜÇÜLT = perde
+                   daha çabuk incelir, üst kısım daha çok görünür.
+   PERDE_BITIS   : perdenin tamamen bittiği nokta (%). 100 yerine küçük bir sayı,
+                   bandın ALT yarısını büsbütün temiz bırakır.
+   PERDE_YUKSEKLIK : bandın yüksekliği = satır yüksekliği × bu çarpan
+                   (+ bar alttayken çentik payı).
+   ⚠ İKİ DOSYADA AYNI OLMALI: KuranOkuma.jsx'te de aynı beş sabit var.
    ════════════════════════════════════════════════════════════════════════════ */
-const PERDE_KOYULUK   = 0.34
-const PERDE_ORTA      = 0.13
-const PERDE_YUKSEKLIK = 0.7
-const PERDE_MASKESI = `linear-gradient(to bottom, rgba(0,0,0,${PERDE_KOYULUK}) 0%, rgba(0,0,0,${PERDE_ORTA}) 45%, transparent 100%)`
+/* ⚠ ÖLÇÜMLE BULUNDU — PERDE VARSAYILAN OLARAK KAPALI (PERDE_YUKSEKLIK = 0).
+   Telefonda teşhis cetveliyle ölçüldü: iOS, ana ekrandan açılan uygulamada
+   ekranın üst ~90 CSS px'ine KENDİ soluklaştırma perdesini çiziyor ve bu perde
+   sayfanın çizebildiği HER ŞEYİN üstünde duruyor (zIndex 9998'lik teşhis
+   cetvelimiz bile onun altında kaldı). Aynı kırmızı çizgilerin ölçülen gücü:
+       css y=0..60 → %20-27 · y=80 → %58-64 · y=100+ → %100
+   Bar ÜSTTEYKEN (bizim perdemiz hiç çizilmiyor) ve bar ALTTAYKEN eğri BİREBİR
+   aynı çıktı → soluklaştıran şey bizim perdemiz DEĞİL, iOS.
+   Yani perdenin yapmak istediği işi iOS zaten fazlasıyla yapıyor; bizimki
+   üstüne binip "fazla soluk" şikâyetini doğuruyordu. İstenirse PERDE_YUKSEKLIK
+   0.5-0.7 arası bir değerle geri açılabilir. */
+const PERDE_KOYULUK    = 0.22
+const PERDE_ORTA       = 0.06
+const PERDE_ORTA_YERI  = 28
+const PERDE_BITIS      = 70
+const PERDE_YUKSEKLIK  = 0     // 0 = perde yok (yukarıdaki nota bak)
+const PERDE_MASKESI = `linear-gradient(to bottom, rgba(0,0,0,${PERDE_KOYULUK}) 0%, rgba(0,0,0,${PERDE_ORTA}) ${PERDE_ORTA_YERI}%, transparent ${PERDE_BITIS}%)`
 
 const KAYIT_PAYI = {
   pwaUstBar:   32,   // Pwa bölümü üst bar aktifken
@@ -3489,8 +3512,11 @@ const MenuPanel = menuAcik && (
       // kalıyordu. Pay BARIN KONUMUNA göre veriliyor (üstteyse top, alttaysa
       // bottom) ve bar otomatik gizlendiğinde (barGorunur false) pay sıfırlanıp
       // menü tam boya uzuyor — mushaftaki `menuStil` ile birebir aynı kural.
-      top:    barKonum === "ust" ? `${barGorunur ? barYuk : 0}px` : 0,
-      bottom: barKonum === "alt" ? `${barGorunur ? barYuk : 0}px` : 0,
+      // ÇENTİK PAYI: `black-translucent` durum çubuğuyla içerik saatin ALTINA uzanıyor;
+      // bar ÜSTTE DEĞİLKEN bu menü `top: 0` ile saatin altından başlayıp okunmaz
+      // oluyordu. Bar üstteyse barın ölçülen yüksekliği çentiği zaten içeriyor.
+      top:    barKonum === "ust" ? `${barGorunur ? barYuk : 0}px` : "env(safe-area-inset-top)",
+      bottom: barKonum === "alt" ? `${barGorunur ? barYuk : 0}px` : "env(safe-area-inset-bottom)",
       transition: "top 0.3s ease, bottom 0.3s ease",
       background: theme.surface, borderRight: `1px solid ${theme.border}`,
       zIndex: 150, display: "flex", flexDirection: "column",
@@ -3532,6 +3558,15 @@ const barOge = (k) => ({
   order: ((butonTaraf[k] === "sag" ? 50 : 0) + barSira(k)) * 10,
   ...(!barCokSatir && k === ilkSagKey ? { marginLeft: "auto" } : {}),
 })
+
+/* ÜST SOLMA PERDESİ — ölçüleri tek yerde (mushaf tarafıyla birebir aynı kural).
+   perdeBandi: YALNIZ satır payı; çentik payı EKLENMİYOR (çift sayım olurdu).
+   TABAN YOK → PERDE_YUKSEKLIK 0 gerçekten perdeyi kaldırır.
+   perdeVar: bar ÜSTTEYKEN perde hiç çizilmiyor; bar o bölgeyi zaten opak kaplıyor. */
+const perdeBandi = PERDE_YUKSEKLIK > 0
+  ? Math.min(60, Math.round(yaziBoyutu * satirAraligi * PERDE_YUKSEKLIK))
+  : 0
+const perdeVar = barKonum === "alt" && PERDE_KOYULUK > 0 && perdeBandi > 0
 
 const Bar = (
   <div ref={barRef} className="okuma-bar" style={{
@@ -4063,21 +4098,22 @@ return (
         Maske kullanılıyor (gradyan değil): perde DÜZ arka plan rengi, solma
         perdenin kendi maskesiyle → 3 haneli hex / rgb() temalarda da bozulmaz.
         İşaret/vurgu modu bandı kabın tepesine YAPIŞIYOR (sticky) ve perde kabın
-        kardeşi olduğu için onun üstünde kalırdı; o modlarda perde çizilmiyor. */}
-    {!kayitKonumModu && !vurguModu && (
+        kardeşi olduğu için onun üstünde kalırdı; o modlarda perde çizilmiyor.
+
+        ── ÇENTİK PAYI ÇIKARILDI, BAR ÜSTTEYKEN PERDE YOK — mushaf tarafıyla birebir
+        aynı gerekçe. Kısaca: `black-translucent` gerçekten devreye girdikten sonra
+        içeriğin üstü zaten ekranın tepesinde (y=0), `+ env(safe-area-inset-top)`
+        çift sayım oldu ve bandı ~34px'ten ~93px'e çıkardı; ayrıca `Math.max(24, …)`
+        tabanı PERDE_YUKSEKLIK 0 yapılsa bile bandı 24+59=83px'te tutuyordu, yani
+        ayar bağlı değilmiş gibi davranıyordu. Şimdi bant yalnız satır payı kadar
+        ve PERDE_YUKSEKLIK 0 = perde yok. Bar üstteyken bar o bölgeyi zaten opak
+        kapladığı için perde hiç çizilmiyor. */}
+    {perdeVar && !kayitKonumModu && !vurguModu && (
     <div
       aria-hidden="true"
       style={{
-        position: "absolute", left: 0, right: 0,
-        top: barKonum === "ust" ? `${barYuk}px` : 0,
-        // YÜKSEKLİK: bir satır payı + (bar ALTTAYSA) ÇENTİK PAYI. `viewport-fit=cover`
-        // ve black-translucent durum çubuğuyla içerik saatin altına uzanıyor; iOS'ta o
-        // pay ~47-59px, yani tek satırlık 34px'lik perde oraya YETMİYORDU. env() ile
-        // cihaz ne veriyorsa o ekleniyor; çentiksiz cihazlarda env 0 döner ve hiçbir şey
-        // değişmez. Bar ÜSTTEYSE perde zaten barın altından başlıyor, ek pay gerekmez.
-        height: barKonum === "ust"
-          ? `${Math.min(60, Math.max(24, Math.round(yaziBoyutu * satirAraligi * PERDE_YUKSEKLIK)))}px`
-          : `calc(${Math.min(60, Math.max(24, Math.round(yaziBoyutu * satirAraligi * PERDE_YUKSEKLIK)))}px + env(safe-area-inset-top))`,
+        position: "absolute", left: 0, right: 0, top: 0,
+        height: `${perdeBandi}px`,
         background: theme.background,
         maskImage: PERDE_MASKESI,
         WebkitMaskImage: PERDE_MASKESI,

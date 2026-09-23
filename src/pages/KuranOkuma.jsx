@@ -26,6 +26,7 @@ import KelimePopup from "../components/KelimePopup"
 import YuklemeEkrani from "../components/YuklemeEkrani"
 import IosSwitch from "../components/IosSwitch"
 import PanelAyirac, { PanelAcilir, panelBolumeHizala } from "../components/PanelAyirac"
+import GeriIkonu from "../components/GeriIkonu"
 import AyetPopup from "../components/AyetPopup"
 import { barSatirOlc } from "../components/BarSiraPaneli"
 import GorselOlustur from "../components/GorselOlustur"
@@ -214,7 +215,7 @@ const SADE_OGELERI = [
 // Alt bardaki SIRALANABİLİR butonlar (varsayılan sıra). Geri tuşu ve sağdaki
 // sade/tema/ayarlar kümesi sabittir.
 const SIRALANABILIR = [
-  { key: "geri",        label: "Geri",               Ikon: ArrowLeft, taraf: "sol" },
+  { key: "geri",        label: "Geri",               Ikon: GeriIkonu, taraf: "sol" },
   { key: "sureMenu",    label: "Sûre Menüsü",        Ikon: Menu,      taraf: "sol" },
   { key: "kayit",       label: "Kayıt",              Ikon: Bookmark,  taraf: "sol" },
   { key: "sayfaGit",    label: "Sayfaya Gitme",      Ikon: BookOpen,  taraf: "sol" },
@@ -544,7 +545,7 @@ const NOOP_OLCUM = () => {}
 // kaydırması sırasında IO geri-çağrıları kısılıyor → sayfa görünüme mount OLMADAN giriyordu
 // (boş kare) sonra dolup sıçrıyordu. Scroll dinleyicisi momentum'da da tetiklendiği için `zorla`
 // pencresi sayfaları görünüme GİRMEDEN ÖNCE mount eder → boş kare yok, sıçrama yok.
-function SayfaBlok({ minHeight, margin, gorunur0 = false, zorla = false, cocuk, scrollRef }) {
+function SayfaBlok({ minHeight, margin, gorunur0 = false, zorla = false, uzak = false, cocuk, scrollRef }) {
   const ref = useRef(null)
   const [ioGor, setIoGor] = useState(gorunur0)
   const goster = ioGor || zorla
@@ -567,12 +568,221 @@ function SayfaBlok({ minHeight, margin, gorunur0 = false, zorla = false, cocuk, 
   // scroll-anchoring'i tutuyor (konteynerde overflowAnchor:auto) — compositor'da çalışır, momentum'u
   // kesmez. Scroll-penceresi sayfaları önden mount ettiği için anchoring'in tutunacağı gerçek içerik
   // hazır olur (boş kare yok).
+  // ── YAN ÇEVİRME MALİYETİ: UZAK SAYFALARDA YERLEŞİMİ ATLA ──────────────────
+  // Ekran döndüğünde iOS, mount edilmiş BÜTÜN sayfaları yeniden yerleştiriyor —
+  // ve bunu bizim `orientationchange` dinleyicimiz çalışmadan ÖNCE yapıyor, yani
+  // JS'ten pencere daraltmak geç kalıyor (telefonda ölçüldü: SURE 316 ms ama
+  // BLOK ~5750 ms; iOS resize'ı anında gönderiyor, kilitlenen ana iş parçacığı).
+  // Tek gerçek çare yerleşimin KENDİSİNİ ucuzlatmak: `content-visibility: auto`
+  // ekranda olmayan alt ağacın yerleşimini tarayıcıya atlatıyor.
+  // Chromium ölçümü (604 sayfa DOM'da, 43'ü mount, sayfa başına ~130 kelime):
+  //   content-visibility yok → 8 ms · var → 1 ms (8x) · pencereyi 5 sayfaya
+  //   daraltmak ise yalnız 3 ms (2.7x) ve üstelik geç kalıyor.
+  // NİÇİN YALNIZ "UZAK" SAYFALAR: `sureGit`/`ayetGit` hedef sayfadaki bir ÂYET
+  // elemanının rect'ini okuyup hizalıyor; o sayfa yerleşimi atlanmış olsaydı
+  // ölçüm yanlış çıkabilirdi. Kullanıcı bu iki gidişin kusursuz çalıştığını
+  // söylüyor, riske atılmıyor: mevcut sayfanın yakınındakiler eskisi gibi tam
+  // yerleşiyor, uzaktakiler (asıl maliyet onlarda) atlanıyor.
+  // ── SIÇRAMA HATASI ve DÜZELTMESİ ──────────────────────────────────────────
+  // ŞİKÂYET: "yukarı doğru kaydırırken sayfa başlarına gelince sıçrama yapıyor".
+  // SEBEP (Chromium'da ÖLÇÜLDÜ): sayfa MOUNT edilirken zaten UZAK olduğu için
+  // içerik ile `content-visibility: auto` AYNI ANDA veriliyordu. Tarayıcı o
+  // sayfanın gerçek yerleşimini hiç yapmadığından `contain-intrinsic-size`daki
+  // TAHMİNİ kullanıyor; sayfa YAKIN_SAYFA sınırına girip atlama kalkınca
+  // yükseklik bir anda tahminden gerçeğe zıplıyor.
+  //   ÖLÇÜM (130 kelimelik sayfa, tahmin 500px): atlanmış 521px → gerçek 681px
+  //   = SAYFA BAŞINA 160 px. Yukarı kayarken bu sayfa görünümün ÜSTÜNDE olduğu
+  //   için altındaki her şey (yani okunan satır) 160px kayıyor → sıçrama.
+  //   Aşağı kayarken zıplayan sayfa görünümün ALTINDA kaldığından fark edilmiyor;
+  //   kullanıcının "yukarı doğru kaydırırken" demesi tam olarak bu yüzden.
+  // DÜZELTME İKİ PARÇA:
+  //   (1) `contain-intrinsic-size: auto <tahmin>` artık SÜREKLİ duruyor (yalnız
+  //       atlarken değil). `auto` anahtar sözcüğü ancak eleman GERÇEKTEN
+  //       çizilirken yazılıysa son gerçek ölçüyü kaydediyor.
+  //   (2) `olculdu` kapısı: sayfa mount edildikten sonra en az BİR kare gerçek
+  //       yerleşimle duruyor; atlama ancak ondan sonra açılıyor. Böylece tarayıcı
+  //       hatırlayacak gerçek bir ölçü ediniyor.
+  //   ÖLÇÜM (aynı düzenek, bu sırayla): atlanmış 681px → geri 681px = SIÇRAMA 0 px.
+  // Buna rağmen HIZLI_YERLESIM varsayılanı `false`: yukarıdaki düzeltme
+  // Chromium'da doğrulandı, iOS Safari'nin "son hatırlanan ölçü" desteği bu
+  // ortamda sınanamadı ve bu sıçrama kullanıcıya günler kaybettirmiş bir hataydı.
+  // Dönme hızını sağlayan şey zaten bu değil, MOBIL_CIHAZ düzeltmesiydi.
+  const [olculdu, setOlculdu] = useState(false)
+  useEffect(() => {
+    if (!goster || olculdu) return
+    let id2 = 0
+    const id1 = requestAnimationFrame(() => {
+      id2 = requestAnimationFrame(() => setOlculdu(true))
+    })
+    return () => { cancelAnimationFrame(id1); if (id2) cancelAnimationFrame(id2) }
+  }, [goster, olculdu])
+
+  const atla = uzak && goster && olculdu
   return (
-    <div ref={ref} style={{ minHeight: goster ? undefined : `${minHeight}px` }}>
+    <div
+      ref={ref}
+      style={{
+        minHeight: goster ? undefined : `${minHeight}px`,
+        ...(goster && uzak ? {
+          // SÜREKLİ duruyor — (1) numaralı düzeltme.
+          containIntrinsicSize: `auto ${minHeight}px`,
+        } : null),
+        ...(atla ? { contentVisibility: "auto" } : null),
+      }}
+    >
       {goster ? cocuk : null}
     </div>
   )
 }
+
+/* ════════════════════════════════════════════════════════════════════════════
+   KAYDA GİDİŞ PAYI — ORTAM ORTAM AYRI (ELLE AYARLANACAK TEK YER)
+   ════════════════════════════════════════════════════════════════════════════
+   "Pay" = kayda gidilince hedefin, kaydırma alanının ÜSTÜNDEN kaç piksel aşağıda
+   duracağı. SAYI BÜYÜRSE hedef ekranda AŞAĞI iner, küçülürse YUKARI çıkar.
+   Kullanıcının şikâyeti "mobilde çok yukarıda karşılıyor" → sayıyı BÜYÜT.
+
+   NİÇİN ORTAM ORTAM AYRI — üç ortamda ekranın üstü farklı şeyle doludur:
+     • PWA (ana ekrana eklenmiş): iOS'ta durum çubuğu (saat/pil) İÇERİĞİN ÜSTÜNE
+       biner. Bar ALTTAYSA üstte hiçbir şey yok demektir; oysa saat orada durur.
+       En çok pay bu duruma gerekir.
+     • Mobil tarayıcı (Safari/Chrome sekmesi): adres çubuğu zaten görüntü alanının
+       DIŞINDA, üstte. İçeriğin üstü temiz → daha az pay yeter.
+     • Web (masaüstü): tarayıcı çerçevesi zaten ayrı; en az pay.
+   Bar ÜSTTEYSE barın ÖLÇÜLEN yüksekliği ayrıca eklenir (aşağıdaki kayitGidisPayi),
+   yani buradaki sayı barın üstüne binen EK paydır; bar yüksekliğini tekrar yazma.
+
+   Denemek için: tek tek büyüt/küçült, uygulamayı yenile, kayda git.
+   ════════════════════════════════════════════════════════════════════════════ */
+// Değerler kullanıcının elle denediği son hâl.
+/* ════════════════════════════════════════════════════════════════════════════
+   YAN ÇEVİRME HIZI
+   ════════════════════════════════════════════════════════════════════════════
+   HIZLI_YERLESIM: mevcut sayfadan UZAK sayfalara `content-visibility: auto`
+   uygulanır; tarayıcı onların yerleşimini atlar ve ekran döndürme anındaki
+   donma kalkar. YAKIN_SAYFA kadar komşu her zaman tam yerleşir, çünkü
+   sûre/âyet gidişi o sayfalardaki elemanların ölçüsünü okuyor.
+   Kaydırmada ya da sûre/âyet gidişinde tuhaflık görürsen HIZLI_YERLESIM'i
+   false yap; her şey eski davranışına döner.
+   ════════════════════════════════════════════════════════════════════════════ */
+/* ── CİHAZ MOBİL Mİ — YÖNDEN BAĞIMSIZ ───────────────────────────────────────
+   Ekranın KISA kenarı ölçülüyor; bu değer telefon döndürülünce DEĞİŞMEZ.
+   (iOS zaten `screen` ölçüsünü her iki yönde de 440x956 diye bildiriyor.)
+   Modül düzeyinde bir kez hesaplanıyor → hiç abone yok, hiç yeniden çizim yok.
+   Bunu false'a sabitlemek istersen (eski davranış) değeri elle `false` yap;
+   o zaman telefon yatayken masaüstü düzenine geçer ve donma geri gelir.
+   ───────────────────────────────────────────────────────────────────────── */
+const MOBIL_CIHAZ = (() => {
+  try {
+    const s = window.screen
+    if (!s || !s.width || !s.height) return false
+    return Math.min(s.width, s.height) <= 768
+  } catch { return false }
+})()
+
+/* ════════════════════════════════════════════════════════════════════════════
+   ÜST SOLMA PERDESİ — TEK AYAR NOKTASI
+   ════════════════════════════════════════════════════════════════════════════
+   Ne işe yarıyor: yukarı kayan satır ekranın üst kenarında KESİLEREK bitmesin,
+   arka plana eriyerek bitsin. iOS'ta bar altta olduğunda metin durum çubuğunun
+   (saatin) altına kadar çıkıyor; perde oradaki çakışmayı yumuşatıyor.
+
+   ⚠ KULLANICI ŞARTI: "saatin orada dahi yazılar görülebilir" — yani perde
+   ÖRTMEYECEK, yalnız yumuşatacak. Bu yüzden değerler BİLEREK düşük.
+   Bu sayı bir kez 1.0 (tam kapatıyordu) ve 0.55 denendi, ikisi de fazla mat
+   bulundu; sonra perde tümden kaldırıldı ve şimdi hafif hâliyle geri geliyor.
+
+   NİÇİN DEĞERLER BİR KEZ DAHA DÜŞTÜ (kullanıcı: "blur çok fazla olmuş"):
+   0.34 ölçülürken içerik durum çubuğunun ALTINDAN başlıyordu, yani bandın
+   yüksekliği yalnız tek satırlık ~34px'ti. `black-translucent` ile içerik artık
+   saatin altına uzanıyor ve banda `env(safe-area-inset-top)` (iPhone'da ~59px)
+   EKLENİYOR → aynı katsayılarla perde bir anda ~34px'ten ~93px'e, yani üç katına
+   çıktı. Kapatılan alan üçe katlanınca aynı koyuluk "çok fazla" göründü. Çözüm
+   koyulukları düşürmek DEĞİL yalnız: solmanın NEREDE bittiği de öne çekildi.
+
+   PERDE_KOYULUK : en üstteki (%0) örtme gücü. 0 = perde yok, 1 = tamamen kapatır.
+                   Yazı daha net olsun istersen KÜÇÜLT.
+   PERDE_ORTA    : ara noktadaki güç — KOYULUK'tan küçük olmalı, solma ani
+                   kesilmesin diye var.
+   PERDE_ORTA_YERI : ara noktanın bandın neresinde olduğu (%). KÜÇÜLT = perde
+                   daha çabuk incelir, yani üst kısım daha çok görünür.
+   PERDE_BITIS   : perdenin tamamen bittiği nokta (%). 100 yerine daha küçük bir
+                   sayı vermek, bandın ALT yarısını büsbütün temiz bırakır —
+                   "üst kısım daha fazla görünmeli" isteğinin asıl karşılığı bu.
+   PERDE_YUKSEKLIK : bandın yüksekliği = satır yüksekliği × bu çarpan
+                   (+ bar alttayken çentik payı). Küçült = daha ince bant.
+   ════════════════════════════════════════════════════════════════════════════ */
+/* ⚠ ÖLÇÜMLE BULUNDU — PERDE VARSAYILAN OLARAK KAPALI (PERDE_YUKSEKLIK = 0).
+   Telefonda teşhis cetveliyle ölçüldü: iOS, ana ekrandan açılan uygulamada
+   ekranın üst ~90 CSS px'ine KENDİ soluklaştırma perdesini çiziyor ve bu perde
+   sayfanın çizebildiği HER ŞEYİN üstünde duruyor (zIndex 9998'lik teşhis
+   cetvelimiz bile onun altında kaldı). Aynı kırmızı çizgilerin ölçülen gücü:
+       css y=0..60 → %20-27 · y=80 → %58-64 · y=100+ → %100
+   Bar ÜSTTEYKEN (bizim perdemiz hiç çizilmiyor) ve bar ALTTAYKEN eğri BİREBİR
+   aynı çıktı → soluklaştıran şey bizim perdemiz DEĞİL, iOS.
+   Yani perdenin yapmak istediği işi iOS zaten fazlasıyla yapıyor; bizimki
+   üstüne binip "fazla soluk" şikâyetini doğuruyordu. İstenirse PERDE_YUKSEKLIK
+   0.5-0.7 arası bir değerle geri açılabilir. */
+const PERDE_KOYULUK    = 0.22
+const PERDE_ORTA       = 0.06
+const PERDE_ORTA_YERI  = 28
+const PERDE_BITIS      = 70
+const PERDE_YUKSEKLIK  = 0     // 0 = perde yok (yukarıdaki nota bak)
+const PERDE_MASKESI = `linear-gradient(to bottom, rgba(0,0,0,${PERDE_KOYULUK}) 0%, rgba(0,0,0,${PERDE_ORTA}) ${PERDE_ORTA_YERI}%, transparent ${PERDE_BITIS}%)`
+
+/* HIZLI_YERLESIM — ARTIK VARSAYILAN OLARAK KAPALI. Gerekçesi SayfaBlok'un
+   içindeki uzun notta; kısacası açıkken YUKARI kaydırmada sayfa başlarında
+   sıçrama üretiyordu (ölçüldü: sayfa başına 160 px). Uygulaması düzeltildi,
+   ama asıl dönme hızını sağlayan şey bu değil (o MOBIL_CIHAZ idi), o yüzden
+   varsayılan güvenli tarafta bırakıldı. */
+/* ════════════════════════════════════════════════════════════════════════════
+   GEÇİCİ TEŞHİS CETVELİ — İŞ BİTİNCE `false` YAP
+   ════════════════════════════════════════════════════════════════════════════
+   Niçin var: kullanıcı bar ÜSTTEYKEN de (perde artık hiç çizilmiyor) üst kısmı
+   soluk görüyor. Demek ki soluklaştıran şey bizim perdemiz DEĞİL. Elde kalan üç
+   ihtimali ayırt etmek için tahmin değil ÖLÇÜM gerekiyor:
+     (1) yeni paket telefona hiç ulaşmamış (eski JS çalışıyor),
+     (2) içerik ekranın tepesinden başlamıyor (çentik payı hâlâ bir yerden geliyor),
+     (3) ikisi de değil → soluklaştıran şey iOS'un kendisi, uygulama değil.
+   Cetvel SAYDAM: yalnız kırmızı çizgiler ve rakamlar çizer, altındaki yazı
+   görünmeye devam eder — "neyin solduğunu" görmeyi engellemez.
+   ════════════════════════════════════════════════════════════════════════════ */
+const TESHIS_UST = false
+const TESHIS_SURUM = "V166"
+
+const HIZLI_YERLESIM = false
+const YAKIN_SAYFA = 3
+
+/* ── MOUNT PENCERESİ — DENEY İÇİN TEK YERDE ─────────────────────────────────
+   Aynı anda DOM'da içeriği dolu duran mushaf sayfası sayısı:
+       PENCERE_UST + PENCERE_ALT + 1   (varsayılan 30 + 12 + 1 = 43 sayfa)
+   Bu tampon, hızlı kaydırmada (fling) yukarı doğru hazır sayfa bitmesin diye
+   geniş tutulmuştu. Ama ekran döndüğünde tarayıcı mount edilmiş HER sayfayı
+   yeni genişlikte yeniden yerleştiriyor — yani dönme maliyeti doğrudan bu
+   sayıya bağlı olabilir.
+   DENEY: `PENCERE_UST_SAYI = 8`, `PENCERE_ALT_SAYI = 6` yap (43 → 15 sayfa) ve
+   yan çevirip rozetteki BLOK değerine bak.
+     • BLOK belirgin düştüyse → suçlu mount edilen sayfa sayısı, pencereyi
+       kalıcı olarak küçültür ya da duruma göre ayarlarız.
+     • BLOK aynı kaldıysa → suçlu yerleşim değil, React'in yeniden çizimi;
+       o zaman rozetteki RND (dönme başına render sayısı) yol gösterir.
+   Küçültmenin bilinen bedeli: çok hızlı yukarı kaydırmada sayfa hazır
+   bitebilir; okuma akışında fark edilmezse küçük kalabilir.
+   ───────────────────────────────────────────────────────────────────────── */
+const PENCERE_UST_SAYI = 30   // kullanıcı isteği: kaydırma tamponu eski rahatlığında
+const PENCERE_ALT_SAYI = 12   // (deneyde 8/6 denendi, BLOK'a etkisi ÇIKMADI)
+
+const KAYIT_PAYI = {
+  pwaUstBar:   50,   // Pwa bölümü üst bar aktifken
+  mobilUstBar: 30,   // mobil üst bar aktifken
+  webUstBar:   30,   // web üst bar aktifken
+  pwaAltBar:   60,   // Pwa bölümü alt bar aktifken
+  mobilAltBar: 30,   // mobil alt bar aktifken
+  webAltBar:   30,   // web alt bar aktifken
+}
+
+
+
 
 // ════════════════════════════════════════════════════════════════
 // ANA BİLEŞEN
@@ -585,7 +795,18 @@ export default function KuranOkuma({ kitap }) {
     customTheme, ozelTemaKaydet: ozelTemaKaydetFromContext,
   } = useApp()
   const navigate  = useNavigate()
-  const isMobile  = useMediaQuery("(max-width: 768px)")
+  // ⚠ ÖNEMLİ: isMobile ARTIK DÖNMEDE DEĞİŞMİYOR. Eskiden yalnız
+  // `(max-width: 768px)` idi; telefon yan çevrilince genişlik 440 → 956 olup
+  // EŞİĞİ GEÇİYOR ve "mobil" değeri true → false dönüyordu. Bu tek bayrak
+  // mushafın her kelimesine kadar iniyor: MushafKelime içinde de aynı sorgu
+  // vardı, yani 43 sayfa × ~130 kelime = ~5590 AYRI abone birden tetikleniyor
+  // ve 5590 kelime bileşeni yeniden çiziliyordu. Telefonda ölçülen 8-9 sn'lik
+  // donmanın kaynağı buydu: RND'ye yansımıyordu (o yalnız bu bileşeni sayıyor)
+  // ve MushafSayfa'nın memo'suna da takılmıyordu (güncelleme çocuklardan başlar).
+  // ÇÖZÜM: cihazın KISA KENARINA bak — dönmeyle değişmez. Telefon yatayken de
+  // telefondur. Masaüstünde (kısa kenar > 768) eski davranış korunuyor, yani
+  // pencere daraltılınca mobil düzene geçiş sürüyor.
+  const isMobile  = MOBIL_CIHAZ || useMediaQuery("(max-width: 768px)")
   const genisEkran = useMediaQuery("(min-width: 1024px)")   // yatay telefon (<1024) bar sağa kaymasın
   const scrollRef = useRef(null)
 
@@ -653,6 +874,9 @@ export default function KuranOkuma({ kitap }) {
   const hedefOranRef = useRef(_sonKonum0.oran || 0)
   const sonKonumRef = useRef({ sayfa: _sonKonum0.sayfa, oran: _sonKonum0.oran || 0 })  // anlık konum (kaydetmek için)
   const geriYuklendiRef = useRef(false)
+  // Ekran döndürme: reflow sırasında konum takibini dondurmak için (aşağıda "EKRAN DÖNDÜRME")
+  const donmeKilidiRef = useRef(false)
+  const donmeCipaRef = useRef(null)
   // ════════════════════════════════════════════════════════════════
   // SCROLL-PENCERESİ (mobil sıçrama çözümü)
   // Temel kural: bir sayfa mount olunca yüksekliği tahminden GERÇEĞE atlar. Bu fark, sayfa
@@ -665,8 +889,8 @@ export default function KuranOkuma({ kitap }) {
   //  • Fling (parmak kalkmış, kayıyor) sırasında üst pencere DONDURULUR → hiç yükseklik değişmez
   //    → hiç sıçrama olmaz. Üst tampon geniş tutulduğu için fling boyunca hazır sayfa biter değil.
   // ════════════════════════════════════════════════════════════════
-  const PENCERE_ALT = 12     // aşağı tampon (her zaman güvenli, sıçrama üretmez)
-  const PENCERE_UST = 30     // yukarı tampon: fling ne kadar uzun olsa da hazır sayfa bitmesin
+  const PENCERE_ALT = PENCERE_ALT_SAYI   // aşağı tampon (her zaman güvenli, sıçrama üretmez)
+  const PENCERE_UST = PENCERE_UST_SAYI   // yukarı tampon: fling boyunca hazır sayfa bitmesin
   const UST_ADIM = 8         // yukarı tampon kademeli büyür (tek seferde donma olmasın)
   const gosterSetRef = useRef(new Set())
   const [, setGosterNonce] = useState(0)
@@ -722,6 +946,9 @@ export default function KuranOkuma({ kitap }) {
   const ustPencereBuyut = useCallback(() => {
     const sc = scrollRef.current
     if (!sc || dokunuyorRef.current) return
+    // Dönme sürerken üst tamponu BÜYÜTME: her adım 8 sayfa daha mount ediyor ve
+    // reflow'un üstüne reflow biniyor. Dönme bitince normal akışında büyür.
+    if (donmeKilidiRef.current) return
     const no = sonKonumRef.current?.sayfa
     const cipa = no && sayfaRefs.current[no]
     if (!no || !cipa) return
@@ -1183,7 +1410,19 @@ useLayoutEffect(() => {
   })
   observer.observe(barRef.current)
   return () => observer.disconnect()
-})
+  // ⚠ BAĞIMLILIK DİZİSİ ŞARTTI — eskiden YOKTU ve bu bir döngü kuruyordu:
+  // dizi olmayınca efekt HER RENDER'DA yeniden çalışıyor, temizleyici observer'ı
+  // söküyor, yerine YENİ bir ResizeObserver kuruluyor. Yeni observer ilk gözlemi
+  // ANINDA bildirir; o geri çağırma setBarYuksekligi + olcSatir çağırır; değer
+  // değiştiyse yeni render olur; yeni render yine yeni observer kurar...
+  // Normalde değerler oturunca duruyor, ama EKRAN DÖNERKEN bar yüksekliği ve
+  // sarma düzeni gerçekten değiştiği için salınım büyüyor. Telefonda ölçüldü:
+  // bir dönmede bileşen 14-22 kez render oluyordu (rozetteki RND) ve her render
+  // 604 sayfa ögesini baştan geçiyor. Blokun asıl kaynağı burası.
+  // `yukleniyor` bağımlılıkta ÇÜNKÜ kitap yüklenirken bar henüz DOM'da değil
+  // (yukarıda erken return var); dizi boş bırakılırsa efekt bir daha hiç
+  // çalışmaz ve bar hiç ölçülmez. (Aynı tuzağa OkumaEkrani'nde düşülmüştü.)
+}, [yukleniyor])
 
 // Player kapanınca ölçülen yüksekliği sıfırla (tahmine dön)
 useEffect(() => { if (player.durum === "kapali") setPlayerYuk(0) }, [player.durum])
@@ -1408,28 +1647,73 @@ const cokSatir = wrapAktif && barYuksekligi > tekSatirYuksekligi * 1.0
     }
   }, [handleScroll, sbTutamakTazele])
 
-  // Zoom Out
+  // Zoom Out — İSTEM DIŞI PINCH ZOOM'U SIFIRLA
+  // ════════════════════════════════════════════════════════════════
+  // DİKKAT: BU EFEKT EKRAN DÖNDÜRMEYİ BOZUYORDU.
+  // `visualViewport` 'resize' olayı YALNIZ pinch zoom'da gelmiyor; ekran
+  // döndürmede, adres çubuğu açılıp kapanmasında ve klavye açılışında da geliyor.
+  // iOS döndürme anında ölçeği geçici olarak 1'in üstünde bildirdiği için burası
+  // "kullanıcı zoom yaptı" sanıp viewport META ETİKETİNİ yeniden yazıyordu.
+  // iOS'ta dönme sırasında viewport meta'sını değiştirmek layout genişliğini
+  // ESKİ (dikey) ölçüde DONDURUYOR: sayfa yan çevrilince ekranın sadece sol
+  // yarısını kaplıyor, dikeye dönünce de düzelmiyordu.
+  // Artık üç kapı var: (1) dönme sürerken hiç karışma, (2) olay ÖLÇÜ
+  // değişiminden geliyorsa (dönme/adres çubuğu/klavye) dokunma, (3) yalnız
+  // gerçek pinch (ölçek 1.05 üstü) sıfırlansın.
+  // TEŞHİS: sorun sürerse aşağıdaki ZOOM_SIFIRLA'yı false yap — efekt tamamen
+  // devre dışı kalır; dönme düzeliyorsa suçlu kesin burasıdır.
+  // VARSAYILAN ARTIK false: uygulamada viewport meta etiketine ÇALIŞMA ZAMANINDA
+  // yazan TEK YER burasıydı (App.jsx'teki yazım da kaldırıldı). iOS'ta dönmede
+  // web görünümünün yeniden yerleşmemesinin bilinen tetikleyicisi bu olduğu için
+  // meta artık yalnız index.html'de, sabit duruyor. İstem dışı pinch zoom yine
+  // sorun olursa true yapıp deneyebilirsin (dönme sırasında zaten susuyor).
+  const ZOOM_SIFIRLA = false
   useEffect(() => {
+    if (!ZOOM_SIFIRLA) return
     if (!isMobile) return
-    
+
     const viewport = window.visualViewport
     if (!viewport) return
 
-    const zoomSifirla = () => {
-      // Zoom varsa (scale > 1) sıfırla
-      if (viewport.scale > 1) {
-        const meta = document.querySelector('meta[name="viewport"]')
-        if (meta) {
-          meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no'
-          setTimeout(() => {
-            meta.content = 'width=device-width, initial-scale=1.0, user-scalable=yes'
-          }, 50)
-        }
-      }
+    const NORMAL_META = 'width=device-width, initial-scale=1.0, user-scalable=yes'
+    let sonEn = window.innerWidth, sonBoy = window.innerHeight, sonOlcuAn = 0
+    const olcuDegisti = () => {
+      sonEn = window.innerWidth; sonBoy = window.innerHeight
+      sonOlcuAn = (typeof performance !== "undefined" ? performance.now() : Date.now())
     }
 
+    const zoomSifirla = () => {
+      if (donmeKilidiRef.current) return                       // (1) dönme sürüyor
+      if (window.innerWidth !== sonEn || window.innerHeight !== sonBoy) {
+        olcuDegisti(); return                                  // (2) ölçü değişimi, pinch değil
+      }
+      const simdi = (typeof performance !== "undefined" ? performance.now() : Date.now())
+      if (simdi - sonOlcuAn < 1200) return                     // ölçü değişiminin hemen ardı
+      if (viewport.scale <= 1.05) return                       // (3) ölçüm gürültüsü
+      const meta = document.querySelector('meta[name="viewport"]')
+      if (!meta) return
+      meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no'
+      setTimeout(() => { meta.content = NORMAL_META }, 50)
+    }
+
+    // Meta ONARIMI: daha önceki bir sürüm meta'yı "maximum-scale" hâlinde
+    // bırakmış olabilir (kayıtlı değil, ama sekme yenilenmeden kalabilir).
+    // Dönme oturduktan sonra normale çekiliyor.
+    const metaOnar = () => setTimeout(() => {
+      const meta = document.querySelector('meta[name="viewport"]')
+      if (meta && /maximum-scale/.test(meta.content)) meta.content = NORMAL_META
+    }, 1000)
+
+    window.addEventListener("resize", olcuDegisti)
+    window.addEventListener("orientationchange", olcuDegisti)
+    window.addEventListener("orientationchange", metaOnar)
     viewport.addEventListener('resize', zoomSifirla)
-    return () => viewport.removeEventListener('resize', zoomSifirla)
+    return () => {
+      window.removeEventListener("resize", olcuDegisti)
+      window.removeEventListener("orientationchange", olcuDegisti)
+      window.removeEventListener("orientationchange", metaOnar)
+      viewport.removeEventListener('resize', zoomSifirla)
+    }
   }, [isMobile])
 
   // ════════════════════════════════════════════════════════════════
@@ -1844,9 +2128,33 @@ const kayitSil = useCallback((id) => {
 const sayfayaKaydir = useCallback((sayfaNo) => { sayfayaHizala(sayfaNo, { ust: 12 }) }, [sayfayaHizala])
 
 // Üst içerik payı (bar/oynatıcı örtüşü) — hizalama ofseti
+// NOT: sûre-git / âyet-git BUNU kullanır ve kusursuz çalışıyor → DOKUNULMADI.
 const ustPay = () => (barKonum === "ust"
   ? ((barGorunur ? barYuksekligi : 0) + (player.durum !== "kapali" ? playerBarYuksekligi : 0) + 8)
   : 16)
+
+// ── KAYDA GİDİŞ PAYI ────────────────────────────────────────────────────────
+// Sûre/âyet gidişinden AYRI tutuldu: oralar ölçülü bir elemana (âyet başı, sûre
+// başlığı) hizalanıyor; kayıt ise sayfa içi ORANA hizalanıyor ve ekranın üstünde
+// ne olduğu (PWA durum çubuğu / tarayıcı çerçevesi) ortamdan ortama değişiyor.
+// Ayarlanacak sayılar dosyanın başındaki KAYIT_PAYI tablosunda.
+const kayitGidisPayi = () => {
+  // Bar üstteyse onun ÖLÇÜLEN yüksekliği + varsa oynatıcı barı: bunlar tahmin değil, ölçüm.
+  const olculen = barKonum === "ust"
+    ? ((barGorunur ? barYuksekligi : 0) + (player.durum !== "kapali" ? playerBarYuksekligi : 0))
+    : 0
+  let elle
+  if (barKonum === "ust") {
+    if (pwaModu)       elle = KAYIT_PAYI.pwaUstBar      // Pwa bölümü üst bar aktifken
+    else if (isMobile) elle = KAYIT_PAYI.mobilUstBar    // mobil üst bar aktifken
+    else               elle = KAYIT_PAYI.webUstBar      // web üst bar aktifken
+  } else {
+    if (pwaModu)       elle = KAYIT_PAYI.pwaAltBar      // Pwa bölümü alt bar aktifken
+    else if (isMobile) elle = KAYIT_PAYI.mobilAltBar    // mobil alt bar aktifken
+    else               elle = KAYIT_PAYI.webAltBar      // web alt bar aktifken
+  }
+  return olculen + elle
+}
 
 // NOT: Arka plan ön-ölçüm + kalıcı yükseklik önbelleği KALDIRILDI — font değiştirilince tüm
 // önbelleği geçersiz kılıp 604 sayfayı yeniden ölçüyor, bu da içeriği sürekli kaydırıyordu.
@@ -1858,7 +2166,9 @@ const sayfaGercekYukseklikleriRef = useRef({})   // (geri uyumluluk; artık kull
 // Kayıtlı konuma ANINDA git — üst bar payını bırak, sayfa içi oranı uygula, işaret vurgusu.
 const kayitSayfaGit = useCallback((sayfa, scrollY, kayitId) => {
   pencereHazirla(sayfa)   // gidiş: hedefin iki yanını hazırla (telafi yok, zaten kaydırılacak)
-  const ust = ustPay() + (isMobile ? 6 : 4)
+  // ESKİDEN: ustPay() + (isMobile ? 6 : 4) → mobil/PWA'da hedef ekranın en tepesinde,
+  // PWA'da saatin altında kalıyordu. Artık ortam ortam ayrı (KAYIT_PAYI tablosu).
+  const ust = kayitGidisPayi()
   let tries = 0
   const git = () => {
     sayfayaHizala(sayfa, { ust, oran: scrollY || 0 })
@@ -1870,7 +2180,7 @@ const kayitSayfaGit = useCallback((sayfa, scrollY, kayitId) => {
     setOdakAyrac(kayitId)
     odakAyracTimeoutRef.current = setTimeout(() => { setOdakAyrac(null); odakAyracTimeoutRef.current = null }, 6000)
   }
-}, [isMobile, barKonum, barGorunur, barYuksekligi, playerBarYuksekligi, player.durum, sayfayaHizala])
+}, [isMobile, pwaModu, barKonum, barGorunur, barYuksekligi, playerBarYuksekligi, player.durum, sayfayaHizala])
 
 // Üstteki sayfayı takip et (header) + son konumu (mid-page) kaydet — sayfaRefs ile
 useEffect(() => {
@@ -1881,6 +2191,16 @@ useEffect(() => {
   const sayfaGuncelle = () => {
     raf = 0
     if (!konumHazirRef.current) return
+    // EKRAN DÖNERKEN BU TAKİP SUSAR. Gerekçe v146'da tersineydi ("altPencere
+    // burada sürülüyor, durdurursak sayfalar mount olmaz") — ama dönmede YENİ
+    // sayfa mount etmemiz gerekmiyor: aynı sayfada kalıyoruz ve çevresi zaten
+    // mount. Buna karşılık her scroll olayı setMevcutSayfa + setGosterNonce
+    // yazıp yeni bir render doğuruyor; hizalama yazımlarımız da scroll üretiyor.
+    // Telefon ölçümü: dönme başına 14-22 render (RND) ve her render 604 sayfa
+    // ögesini baştan geçiyor → blokun büyük kısmı bu.
+    // Kilit ~950 ms sonra açılıyor; sonraki ilk gerçek kaydırmada takip normale
+    // dönüyor ve pencere kaldığı yerden büyümeye devam ediyor.
+    if (donmeKilidiRef.current) return
     const scTop = el.getBoundingClientRect().top + 2
     // Sayfalar belge akışında sıralı → ikili arama: top'u scTop'u geçmeyen SON sayfa
     let lo = 0, hi = sayfaListesi.length - 1, idx = 0
@@ -1901,7 +2221,8 @@ useEffect(() => {
       const oran = Math.max(0, Math.min(1, (scTop - r.top) / (node.offsetHeight || 1)))
       sonKonumRef.current = { sayfa: no, oran }
       const simdi = Date.now()
-      if (simdi - sonKayitZamanRef.current > 600) {
+      // Dönme sürerken kaydetme: o anki konum reflow yüzünden yanlış.
+      if (!donmeKilidiRef.current && simdi - sonKayitZamanRef.current > 600) {
         sonKayitZamanRef.current = simdi
         try { localStorage.setItem("vukuf-son-konum", JSON.stringify(sonKonumRef.current)) } catch {}
       }
@@ -1949,6 +2270,88 @@ useEffect(() => {
     if (oturtRef.current) cancelAnimationFrame(oturtRef.current)
   }
 }, [sayfaListesi])
+
+// ════════════════════════════════════════════════════════════════
+// EKRAN DÖNDÜRME — OKUNAN YERİ KORU
+// ════════════════════════════════════════════════════════════════
+// SORUN (kullanıcı bildirdi): "Ekranı yan döndürünce sayfa değişiyor, geri düz
+// çevirince başka bir yere gidiyor."
+// SEBEP: dönünce satır genişliği değişiyor, sayfa yükseklikleri yeniden
+// hesaplanıyor; tarayıcı scrollTop'u PİKSEL olarak koruduğu için aynı piksel
+// bambaşka bir sayfaya denk geliyor.
+//
+// İLK DENEMEDE İKİ HATA YAPILDI, İKİSİ DE BURADA DÜZELTİLDİ:
+//  (1) Kilit, sayfa takibinin TAMAMINI durduruyordu. Oysa bu ekranda sayfa
+//      içeriğini DOM'a ekleyen "scroll penceresi" (altPencere/ustPencereBuyut)
+//      de aynı takibin içinden sürülüyor. Kilit açıkken hiçbir sayfa mount
+//      olmuyordu → "yazılar oturmuyor, işlem olmuyor gibi". Artık kilit YALNIZ
+//      localStorage yazımını durduruyor; konumu zaten dönme başında KOPYALIYORUZ,
+//      dolayısıyla sonKonumRef'in bu arada bozulması bizi etkilemiyor.
+//  (2) Dinleyici efektinin bağımlılıkları vardı (barYuksekligi, player...).
+//      Dönünce bar yeniden ölçülüyor → efekt SÖKÜLÜYOR → temizleyici, geri
+//      çekme zamanlayıcılarını iptal ediyordu. İlk dönüşte bazen yetişiyordu,
+//      ikinci-üçüncüde hiç yetişmiyordu → "birden fazla döndürünce bozuluyor".
+//      Artık efekt bir kez kuruluyor ([] bağımlılık); değişebilen işlevler
+//      donmeIslevRef üzerinden HER RENDER'DA tazeleniyor, yani hiç bayatlamıyor.
+//
+// ÇIPA: burada DOM elemanı aranmıyor. Mushaf sayfası sabit içerikli olduğundan
+// (sayfa + sayfa içi oran) çifti dönmeden dönmeye güvenilir; zaten kayda gidiş
+// de aynı yolu kullanıyor. Parmak ekrandayken ASLA scrollTop'a yazılmıyor —
+// iOS'ta momentum sırasında yazmak akışı öldürüyor (donma buradan geliyordu).
+const donmeIslevRef = useRef(null)
+donmeIslevRef.current = { sayfayaHizala, ustPay }
+useEffect(() => {
+  let zamanlar = []
+  let acmaZamani = null
+  const temizle = () => { zamanlar.forEach(clearTimeout); zamanlar = [] }
+  const donunce = () => {
+    if (!scrollRef.current) return
+    // Dönme BAŞLADI: konumu KOPYALA. BAŞKA HİÇBİR ŞEY YAPMA.
+    // v152'de burada `pencereDaralt` çağrılıyordu (mount penceresini 43 sayfadan
+    // 5'e indirip reflow'u ucuzlatmak için). İKİ SEBEPLE KALDIRILDI:
+    //  (1) GEÇ KALIYOR: iOS, `orientationchange` bize ulaşmadan ÖNCE mount edilmiş
+    //      bütün sayfaları yeniden yerleştiriyor — fatura zaten ödenmiş oluyor.
+    //  (2) ÜSTÜNE MASRAF EKLİYOR: 38 mushaf sayfasını söküp sonra geri takmak
+    //      demek; Chromium'da ölçüldü → dokunmayınca 0 ms, sök-tak 62 ms.
+    //      Telefonda gerçek Arapça fontlarla ve React uzlaştırmasıyla bu kat kat
+    //      fazla. Dönme sırasında en iyi iş, HİÇ İŞ YAPMAMAK.
+    if (!donmeKilidiRef.current) {
+      donmeKilidiRef.current = true
+      const k = sonKonumRef.current || { sayfa: 1, oran: 0 }
+      donmeCipaRef.current = { sayfa: k.sayfa, oran: k.oran || 0 }
+    }
+    temizle()
+    if (acmaZamani) clearTimeout(acmaZamani)
+    const hizala = () => {
+      const k = donmeCipaRef.current
+      if (!k || dokunuyorRef.current) return       // parmak ekrandaysa KARIŞMA
+      donmeIslevRef.current.sayfayaHizala(k.sayfa, { ust: donmeIslevRef.current.ustPay(), oran: k.oran })
+    }
+    // Yalnız hizalama — mount penceresine DOKUNULMUYOR (yukarıdaki gerekçe).
+    // Sayfalar zaten mount; hizalama sadece scrollTop yazıyor, reflow üretmiyor.
+    for (const ms of [80, 200, 380, 560, 760]) zamanlar.push(setTimeout(hizala, ms))
+    acmaZamani = setTimeout(() => {
+      donmeKilidiRef.current = false
+      donmeCipaRef.current = null
+      try { localStorage.setItem("vukuf-son-konum", JSON.stringify(sonKonumRef.current)) } catch {}
+    }, 950)
+  }
+  window.addEventListener("orientationchange", donunce)
+  // orientationchange her tarayıcıda gelmiyor; medya sorgusu geliyor. İkisi de
+  // bağlı; aynı dönüşte ikisi birden tetiklerse kilit ikinci kopyayı yutuyor.
+  let mq = null
+  try {
+    mq = window.matchMedia("(orientation: portrait)")
+    mq.addEventListener ? mq.addEventListener("change", donunce) : mq.addListener(donunce)
+  } catch {}
+  return () => {
+    window.removeEventListener("orientationchange", donunce)
+    try { mq && (mq.removeEventListener ? mq.removeEventListener("change", donunce) : mq.removeListener(donunce)) } catch {}
+    temizle(); if (acmaZamani) clearTimeout(acmaZamani)
+    donmeKilidiRef.current = false
+  }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [])
 
 // Sayfadan çıkarken / gizlenince anlık konumu (mid-page) kesin kaydet
 useEffect(() => {
@@ -2364,6 +2767,13 @@ function sureGit(sureId, ayetNo) {
   padding: isMobile 
     ? `${Math.round(3 * barUiOlcegi)}px ${Math.round(5 * barUiOlcegi)}px`
     : `${Math.round(6 * barUiOlcegi)}px ${Math.round(8 * barUiOlcegi)}px`,
+  // EŞİT KUTU: bardaki simgelerin çoğu 18px, dördü 16px çiziliyor; bu da o dört
+  // düğmeyi 2px dar bırakıp aralar düzensiz görünüyordu. Kutu en büyük simgeye
+  // (18 + 2×5 dolgu) göre sabitlendi, içerik ortalandı. Yazılı düğmeler (sayfa
+  // no, süre) doğal genişliğinde kalır — bu bir TABAN değer.
+  minWidth: `${Math.round((isMobile ? 28 : 37) * barUiOlcegi)}px`,
+  justifyContent: "center",
+  boxSizing: "border-box",
   borderRadius: "8px",
   fontSize: `${Math.round(12 * barUiOlcegi)}px`,
   background: aktif ? `${theme.accent}20` : "transparent",
@@ -2384,12 +2794,18 @@ const menuStil = {
   zIndex: 80,
   // Bar + oynatıcı payı; bar GİZLİYSE bar payı düşer (menü otomatik gizlemeyle kayar).
   // Bar gizliyken oynatıcı kenara geçtiğinden onun payı korunur.
+  // ÇENTİK PAYI: `black-translucent` durum çubuğuyla içerik artık saatin ALTINA
+  // uzanıyor (perdenin var olma sebebi bu). Okuma metni için doğru, ama BAR ALTTAYKEN
+  // bu menü `top: 0` ile saatin altından başlıyor ve başlığı okunmaz oluyordu
+  // ("menüler üstte yanlış yerden başlıyor"). Bar ÜSTTEYSE zaten barın ölçülen
+  // yüksekliği çentiği içeriyor (barın paddingTop'u max(..., env(safe-area-inset-top))),
+  // o yüzden ek pay YALNIZ bar üstte değilken veriliyor. Çentiksiz cihazda env 0 döner.
   top: barKonum === "ust"
     ? `${(barGorunur ? barYuksekligi : 0) + (player.durum !== "kapali" ? playerBarYuksekligi : 0)}px`
-    : "0px",
+    : "env(safe-area-inset-top)",
   bottom: barKonum === "alt"
     ? `${(barGorunur ? barYuksekligi : 0) + (player.durum !== "kapali" ? playerBarYuksekligi : 0)}px`
-    : "0px",
+    : "env(safe-area-inset-bottom)",
   transition: "top 0.3s ease, bottom 0.3s ease",
   ...(isMobile ? { left: 0 } : {}),
 }
@@ -2630,8 +3046,6 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
           </PanelAcilir>
         </div>
 
-        <PanelAyirac theme={theme} />
-
       {/* TAM GENİŞLİK — web + mobil */}
         <div
           onClick={tamGenislikDegis}
@@ -2639,7 +3053,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
           aria-pressed={tamGenislik}
           style={{
             display: "flex", alignItems: "center", gap: "9px",
-            padding: "9px 10px", marginBottom: "8px", borderRadius: "9px",
+            padding: "9px 10px", marginTop: "12px", marginBottom: "8px", borderRadius: "9px",
             cursor: "pointer", color: theme.text,
             background: tamGenislik ? `${theme.accent}12` : "transparent",
             border: `1px solid ${tamGenislik ? `${theme.accent}44` : theme.border}`,
@@ -2882,7 +3296,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
 
   const AyarlarPanel = ayarlarAcik && (
     <>
-      <div onClick={() => setAyarlarAcik(false)} style={{ position: "fixed", inset: 0, zIndex: 195 }} />
+      <div onClick={() => setAyarlarAcik(false)} style={{ position: "fixed", inset: 0, zIndex: 195 }}/>
       <div className="vukuf-panel" style={{ 
         ...panelStil("right"), 
         width: "270px", 
@@ -3089,6 +3503,42 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
     ...(!barCokSatir && k === ilkSagKey ? { marginLeft: "auto" } : {}),
   })
 
+  /* ÜST SOLMA PERDESİ — ölçüleri tek yerde.
+     perdeBandi: bandın yüksekliği, YALNIZ satır payı kadar. Çentik payı EKLENMİYOR;
+       `black-translucent` ile içeriğin üstü zaten ekranın gerçek tepesinde (y=0),
+       eklemek çift sayım olur ve bandı üç katına çıkarır (ayrıntı render yerindeki notta).
+     TABAN YOK: eskiden `Math.max(24, …)` vardı, bu yüzden PERDE_YUKSEKLIK 0 yapılsa
+       bile bant 24px kalıyor, ayar "bağlı değilmiş" gibi görünüyordu. Artık 0 = perde yok.
+     perdeVar: bar ÜSTTEYKEN perde hiç çizilmiyor — bar o bölgeyi zaten opak kaplıyor. */
+  const perdeBandi = PERDE_YUKSEKLIK > 0
+    ? Math.min(60, Math.round(yaziBoyutu * satirAraligi * PERDE_YUKSEKLIK))
+    : 0
+  const perdeVar = barKonum === "alt" && PERDE_KOYULUK > 0 && perdeBandi > 0
+
+  // ── GEÇİCİ TEŞHİS ÖLÇÜMÜ (TESHIS_UST) ──────────────────────────────────────
+  const insetOlcRef = useRef(null)
+  const [teshis, setTeshis] = useState(null)
+  useEffect(() => {
+    if (!TESHIS_UST) return
+    const oku = () => {
+      const el = insetOlcRef.current
+      let pwa = false
+      try {
+        pwa = window.navigator.standalone === true ||
+              window.matchMedia("(display-mode: standalone)").matches
+      } catch {}
+      setTeshis({
+        inset: el ? Math.round(el.getBoundingClientRect().height) : -1,
+        ic: Math.round(window.innerHeight),
+        ekran: window.screen ? Math.round(window.screen.height) : 0,
+        pwa,
+      })
+    }
+    oku()
+    window.addEventListener("resize", oku)
+    return () => window.removeEventListener("resize", oku)
+  }, [])
+
   const Bar = (
   <div
     ref={barRef}
@@ -3107,8 +3557,20 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
             ? `${pwaAltBosluk}px`
             : `max(${isMobile ? 5 : 3}px, env(safe-area-inset-bottom))`)
         : `${isMobile ? 5 : 3}px`,
-      paddingLeft:   `max(${isMobile ? 12 : 10}px, env(safe-area-inset-left))`,
-      paddingRight:  `max(${isMobile ? 12 : 10}px, env(safe-area-inset-right))`,
+      // YAN DOLGU — tek satırda uç düğmeler köşede kalmasın diye artırıldı (12→18→26).
+    // İKİNCİ ARTIŞIN SEBEBİ KAVİSLİ EKRANLAR: kenarları kıvrık telefonlarda parmak
+    // ekranın son birkaç milimetresine düz basamıyor, uç düğmeye isabet zorlaşıyor.
+    // `env(safe-area-inset-*)` bunu çözmüyor — dikey kullanımda o değer çoğu
+    // cihazda 0'dır, yalnız çentik/yatay kullanımda dolar. Bu yüzden sabit pay.
+    // Tek satırda ilk SAĞ öğe `marginLeft: auto` alıyor; bu, sol grubu tamamen sola,
+    // sağ grubu tamamen sağa itiyor ve uç düğmeler ekran köşesine yapışıyordu —
+    // parmakla, hele köşe jestlerinin olduğu telefonda, isabet ettirmek zordu.
+    // Dolgu `barCokSatir`a BAĞLANMADI bilerek: bağlansaydı "tek satır → dolgu ekle →
+    // sığmayıp iki satıra düş → dolgu küçül → yine tek satır" döngüsü kurulabilirdi.
+    // Sabit dolgu, satır genişliğinden mobilde toplam 12px götürüyor; OkumaEkrani'nde
+    // "Geri" yazısının kalkması bundan fazlasını geri kazandırıyor.
+    paddingLeft:   `max(${isMobile ? 26 : 20}px, env(safe-area-inset-left))`,
+      paddingRight:  `max(${isMobile ? 26 : 20}px, env(safe-area-inset-right))`,
       display: "flex", alignItems: "center", gap: `${Math.round(4 * barUiOlcegi)}px`,
       justifyContent: "center",
       zIndex: 90, flexWrap: "wrap",
@@ -3120,12 +3582,17 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
       pointerEvents: barGorunur ? "auto" : "none",
     }}
   >
-      <button onClick={() => navigate(-1)} style={{ ...barButonStil(), flexShrink: 0, ...barOge("geri") }}>
-        <ArrowLeft size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} /> {!isMobile && ""}
+      {/* GERİ — KİTAPLIĞA. Burada `navigate(-1)` (tarayıcı geçmişi) vardı; simge
+          artık "kitaplığa dön" dediği için hedef de kitaplık yapıldı. Geçmişe
+          dönmek, aramadan ya da tefeülden gelindiğinde başka bir yere götürüyor
+          ve simge yalan söylemiş oluyordu. */}
+      <button onClick={() => navigate("/")} title="Kitaplığa dön" aria-label="Kitaplığa dön"
+        style={{ ...barButonStil(), flexShrink: 0, ...barOge("geri") }}>
+        <GeriIkonu boyut={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />
       </button>
       
             {sureMenuGoster && sadeGorunur("sureMenu") && (
-        <button onClick={() => setMenuAcik(!menuAcik)} style={{ ...barButonStil(menuAcik), flexShrink: 0, ...barOge("sureMenu") }}>
+        <button onClick={() => setMenuAcik(!menuAcik)} style={{ ...barButonStil(menuAcik), flexShrink: 0, ...barOge("sureMenu") }}title="Sûre menüsü">
           <Menu size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />
         </button>
       )}
@@ -3140,7 +3607,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
               setKayitPaneliAcik(false)
             }
           }}
-          style={{ ...barOge("kayit") }}
+          style={{ ...barOge("kayit") }}title="Kayıt menüsü"
         >
           <Bookmark color={theme.accent}
             size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)}
@@ -3160,7 +3627,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
             justifyContent: "center",
             fontWeight: "500",
             color: theme.accent,
-          }}
+          }}title="Sayfa bilgisi ve sayfaya gitme"
         >
           <BookOpen size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />
           {sayfaGosterim === "ikon" ? null : (sayfaGosterim === "sayfa" ? mevcutSayfa : `${mevcutSayfa} / ${toplamSayfa}`)}
@@ -3200,7 +3667,8 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
       )}
 
     {yaziTipiGoster && sadeGorunur("yaziTipi") && (
-      <button onClick={() => togglePanel(setAaAcik, !aaAcik)} style={{ ...barButonStil(aaAcik), ...barOge("yaziTipi") }}>
+      <button onClick={() => togglePanel(setAaAcik, !aaAcik)} style={{ ...barButonStil(aaAcik), ...barOge("yaziTipi") }}
+          title="Yazı Tercihleri">
         <Feather size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />
       </button>
     )}
@@ -3253,18 +3721,20 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
     )}
 
       {sadeModGoster && (
-        <button onClick={() => setSadeMode(!sadeMode)} style={{ ...barButonStil(sadeMode), padding: isMobile ? "3px" : "4px", ...barOge("sadeMod") }}>
+        <button onClick={() => setSadeMode(!sadeMode)} style={{ ...barButonStil(sadeMode), padding: isMobile ? "3px" : "4px", ...barOge("sadeMod") }}
+            title="Sade mod">
           <Circle size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />
         </button>
       )}
 
       {temaGoster && sadeGorunur("tema") && (
-        <button onClick={() => togglePanel(setTemaAcik, !temaAcik)} style={{ ...barButonStil(temaAcik), padding: isMobile ? "3px" : "4px", ...barOge("tema") }}>
+        <button onClick={() => togglePanel(setTemaAcik, !temaAcik)} style={{ ...barButonStil(temaAcik), padding: isMobile ? "3px" : "4px", ...barOge("tema") }}
+            title="Tema paneli">
           <Palette size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />
         </button>
       )}
 
-      <button onClick={() => togglePanel(setAyarlarAcik, !ayarlarAcik)} style={{ ...barButonStil(ayarlarAcik), padding: isMobile ? "3px" : "4px", ...barOge("ayarlar") }}>
+      <button onClick={() => togglePanel(setAyarlarAcik, !ayarlarAcik)} style={{ ...barButonStil(ayarlarAcik), padding: isMobile ? "3px" : "4px", ...barOge("ayarlar") }}title="Ayarlar">
         <Settings size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />
       </button>
 
@@ -3608,11 +4078,19 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
             setKayitKonumModu(true)
             setKayitPaneliAcik(false)
           }}
-          onKayitEkle={(baslik, scrollY) => {
+          onKayitEkle={(baslik) => {
+            // scrollY yoksa KİTABIN GENELİNDEKİ oran (scrollOranRef) kullanılıyordu; oysa
+            // kayıt gidişinde bu değer SAYFA yüksekliğiyle çarpılıyor. Yani kitabın %10'unda
+            // olmak "sayfanın %10'u" diye okunuyordu → kayıt neredeyse hep sayfa başına
+            // düşüyordu ("çok yukarıda karşılıyor"un ikinci sebebi). Doğrusu, kaydırma
+            // takibinin zaten hesapladığı SAYFA İÇİ oran: sonKonumRef.
+            const k = sonKonumRef.current || { sayfa: mevcutSayfa, oran: 0 }
             const yeniKayit = {
               id: Date.now().toString(),
-              sayfa: mevcutSayfa,
-              scrollY: scrollY !== undefined ? scrollY : scrollOranRef.current,
+              sayfa: k.sayfa || mevcutSayfa,
+              // (KayitPaneli'ne verilen `scrollOran` de aynı yanlış değerdi; o yüzden
+              //  dışarıdan gelen scrollY dikkate alınmıyor, konum burada okunuyor.)
+              scrollY: k.oran || 0,
               baslik: baslik,
               olusturma: Date.now(),
             }
@@ -4275,6 +4753,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
                   margin={isMobile ? "4500px 0px" : "3500px 0px"}
                   gorunur0={i < 3}
                   zorla={gosterSetRef.current.has(sayfa.sayfaNo)}
+                  uzak={HIZLI_YERLESIM && Math.abs(sayfa.sayfaNo - mevcutSayfa) > YAKIN_SAYFA}
                   scrollRef={scrollRef}
                   cocuk={
                     <MushafSayfa
@@ -4291,6 +4770,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
                       odakSure={odakSure}
                       odakAyrac={odakAyrac}
                       aktifAyet={player.aktifAyet}
+                      isMobile={isMobile}
                       cuzBaslangic={sayfaCuzBaslangic[sayfa.sayfaNo] ?? null}
                       hizbBaslangic={sayfaHizbBaslangic[sayfa.sayfaNo] ?? null}
                       onKelimeTikla={kelimeTikla}
@@ -4618,6 +5098,85 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
               </div>
             </div>
           </div>
+        )}
+
+        {/* ÜST SOLMA PERDESİ — ayarlar dosyanın başındaki PERDE_* sabitlerinde.
+            NİÇİN MASKE, GRADYAN DEĞİL: perde arka plan renginden saydama geçmeli.
+            Rengi gradyana yazmak için renge alfa eklemek gerekir; tema rengi 3 haneli
+            hex ya da rgb() olursa o hesap sessizce bozulur. Onun yerine perde DÜZ arka
+            plan rengi, solma da perdenin KENDİ maskesiyle yapılıyor → renk biçimi ne
+            olursa olsun çalışır.
+            MASKE KABA DEĞİL PERDEYE: kaydırma kabının üstüne maske koymak uzun
+            sayfalarda fazladan birleştirme katmanı doğurup kaydırmayı yorar; burada
+            maskelenen, sabit duran küçük bir kutu.
+            ── BAR ÜSTTEYKEN PERDE ÇİZİLMİYOR (kullanıcı: "bar üstteyse perdeye gerek yok").
+            Zaten gereksizdi: bar `position:fixed; top:0` ve `background: theme.surface`
+            ile durum çubuğu bölgesini tamamen opak kaplıyor; perde onun ALTINDA kalıyor,
+            yumuşatacak kesik satır orada yok.
+
+            ── ÇENTİK PAYI ÇIKARILDI — "PERDE AYARINI 0 YAPTIM, DEĞİŞMEDİ"İN SEBEBİ BUYDU.
+            v162'de yüksekliğe `+ env(safe-area-inset-top)` eklenmişti; o sırada içerik
+            HÂLÂ durum çubuğunun altından başlıyordu, yani perde çentik bölgesine hiç
+            ulaşmıyordu ve o ek pay doğruydu. Manifest'ten `theme_color` kalkıp
+            `black-translucent` gerçekten devreye girince içeriğin üstü zaten y=0'a,
+            yani ekranın gerçek tepesine taşındı — ek pay ÇİFT SAYIM oldu:
+                34px (bir satır) + 59px (çentik) = 93px'lik bant
+            Üstelik `Math.max(24, …)` tabanı yüzünden PERDE_YUKSEKLIK 0 yapılsa bile
+            bant 24 + 59 = 83px kalıyordu; 93 → 83, %11'lik fark. Kullanıcının
+            "0 yaptığım hâlde bir şey değişmedi" demesinin sebebi tam olarak bu —
+            manifest'le ilgisi yok, ayar zaten bağlı değildi.
+            Şimdi bant yalnız satır payı kadar (~34px) ve PERDE_YUKSEKLIK 0 = perde yok. */}
+        {TESHIS_UST && (
+          <div aria-hidden="true" style={{
+            position: "fixed", left: 0, right: 0, top: 0, height: "160px",
+            zIndex: 9998, pointerEvents: "none",
+            font: "11px/1.2 ui-monospace, monospace", color: "#d40000",
+          }}>
+            {/* env(safe-area-inset-top) değerini GERÇEKTEN ölçen görünmez kutu */}
+            <div ref={insetOlcRef} style={{
+              position: "absolute", left: 0, width: "1px",
+              top: 0, height: "env(safe-area-inset-top)",
+            }} />
+            {/* 20px'de bir yatay çizgi + rakam: içerik ekranın neresinden başlıyor? */}
+            {[0, 20, 40, 60, 80, 100, 120, 140].map(y => (
+              <div key={y} style={{ position: "absolute", left: 0, right: 0, top: `${y}px` }}>
+                <div style={{ height: "1px", background: "rgba(212,0,0,0.55)" }} />
+                <span style={{ position: "absolute", left: "2px", top: "1px" }}>{y}</span>
+              </div>
+            ))}
+            {/* Cihazın bildirdiği çentik payı — KESİK çizgi */}
+            {teshis && teshis.inset >= 0 && (
+              <div style={{
+                position: "absolute", left: 0, right: 0, top: `${teshis.inset}px`,
+                borderTop: "2px dashed #0066d4",
+              }}>
+                <span style={{ position: "absolute", right: "2px", top: "2px", color: "#0066d4" }}>
+                  inset {teshis.inset}
+                </span>
+              </div>
+            )}
+            <div style={{
+              position: "absolute", right: "2px", top: "1px",
+              background: "rgba(255,255,255,0.85)", padding: "1px 3px", borderRadius: "3px",
+            }}>
+              {TESHIS_SURUM} · bar:{barKonum} · perde:{perdeVar ? perdeBandi + "px" : "YOK"}
+              {teshis ? ` · ${teshis.pwa ? "PWA" : "web"} ${teshis.ic}/${teshis.ekran}` : ""}
+            </div>
+          </div>
+        )}
+
+        {perdeVar && (
+          <div
+            aria-hidden="true"
+            style={{
+              position: "absolute", left: 0, right: 0, top: 0,
+              height: `${perdeBandi}px`,
+              background: theme.background,
+              maskImage: PERDE_MASKESI,
+              WebkitMaskImage: PERDE_MASKESI,
+              pointerEvents: "none", zIndex: 10,
+            }}
+          />
         )}
 
         {barKonum === "alt" && Bar}

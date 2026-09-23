@@ -16,6 +16,25 @@
          kalıyordu. O yazım kaldırıldı; tek ve sabit tanım burasıdır.
          Meta'yı JS ile DEĞİŞTİRME. -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <!-- ════════════════════════════════════════════════════════════════════
+         DURUM ÇUBUĞU — SAYFA SAATİN ALTINA UZANSIN
+         ════════════════════════════════════════════════════════════════════
+         Bu iki satır YOKKEN iOS, ana ekrandan açılan uygulamada durum çubuğu
+         için OPAK bir şerit ayırıyor ve sayfa onun ALTINDAN başlıyor. Üstteki
+         solma perdesi de sayfayla birlikte aşağı kaydığı için etkisi
+         görünmüyordu ("sadece perdenin ucu görünüyor, üst kısmı kapalı gibi").
+         `black-translucent` ile şerit kalkıyor, içerik saatin altına kadar
+         uzanıyor — perdenin var oluş sebebi de bu bölge zaten.
+
+         ⚠ BİLİNEN BEDELİ: bu kipte iOS durum çubuğu yazısını (saat, pil)
+         BEYAZ çiziyor. Açık temada beyaz saat okunmayabilir. Rahatsız ederse
+         iki satırı da silmek yeterli; her şey bugünkü hâline döner.
+         (Ara yol: `black-translucent` yerine `default` — şerit geri gelir ama
+         tema rengiyle boyanır.)
+         NOT: `viewport-fit=cover` yukarıdaki satırda ZATEN var ve şarttır;
+         ikisi birlikte çalışır. -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <title>vukuf</title>
   </head>
   <body>

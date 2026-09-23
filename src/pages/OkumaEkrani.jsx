@@ -929,6 +929,30 @@ function FontSecici({ grupId, grup, seciliFontId, onSecim, theme }) {
    elemanaGit içindeki ölçülü hizalamayı kullanır.
    ════════════════════════════════════════════════════════════════════════════ */
 // Kayda gidiş. Değerler kullanıcının elle denediği son hâl.
+/* ════════════════════════════════════════════════════════════════════════════
+   ÜST SOLMA PERDESİ — TEK AYAR NOKTASI
+   ════════════════════════════════════════════════════════════════════════════
+   Ne işe yarıyor: yukarı kayan satır ekranın üst kenarında KESİLEREK bitmesin,
+   arka plana eriyerek bitsin. iOS'ta bar altta olduğunda metin durum çubuğunun
+   (saatin) altına kadar çıkıyor; perde oradaki çakışmayı yumuşatıyor.
+
+   ⚠ KULLANICI ŞARTI: "saatin orada dahi yazılar görülebilir" — yani perde
+   ÖRTMEYECEK, yalnız yumuşatacak. Bu yüzden değerler BİLEREK düşük.
+   Bu sayı bir kez 1.0 (tam kapatıyordu) ve 0.55 denendi, ikisi de fazla mat
+   bulundu; sonra perde tümden kaldırıldı ve şimdi hafif hâliyle geri geliyor.
+
+   PERDE_KOYULUK : en üstteki örtme gücü. 0 = perde yok, 1 = tamamen kapatır.
+                   Yazı daha net olsun istersen KÜÇÜLT, daha çok solsun istersen büyüt.
+   PERDE_ORTA    : bandın ortasındaki (%45) güç — KOYULUK'tan küçük olmalı,
+                   solma ani kesilmesin diye var.
+   PERDE_YUKSEKLIK : bandın yüksekliği = satır yüksekliği × bu çarpan.
+                   Küçült = daha ince bant, yani daha az satır etkilenir.
+   ════════════════════════════════════════════════════════════════════════════ */
+const PERDE_KOYULUK   = 0.34
+const PERDE_ORTA      = 0.13
+const PERDE_YUKSEKLIK = 0.7
+const PERDE_MASKESI = `linear-gradient(to bottom, rgba(0,0,0,${PERDE_KOYULUK}) 0%, rgba(0,0,0,${PERDE_ORTA}) 45%, transparent 100%)`
+
 const KAYIT_PAYI = {
   pwaUstBar:   32,   // Pwa bölümü üst bar aktifken
   mobilUstBar: 32,   // mobil üst bar aktifken
@@ -4035,9 +4059,32 @@ return (
           })}
       </div>
     </div>
-    {/* ÜST SOLMA PERDESİ KALDIRILDI (kullanıcı kararı): "üst kısımdaki
-        perdelere gerek yok, direkt yazı da görünebilir." En üstteki satır
-        artık hiç soldurulmadan, tam netlikte görünüyor. */}
+    {/* ÜST SOLMA PERDESİ — ayarlar dosyanın başındaki PERDE_* sabitlerinde.
+        Maske kullanılıyor (gradyan değil): perde DÜZ arka plan rengi, solma
+        perdenin kendi maskesiyle → 3 haneli hex / rgb() temalarda da bozulmaz.
+        İşaret/vurgu modu bandı kabın tepesine YAPIŞIYOR (sticky) ve perde kabın
+        kardeşi olduğu için onun üstünde kalırdı; o modlarda perde çizilmiyor. */}
+    {!kayitKonumModu && !vurguModu && (
+    <div
+      aria-hidden="true"
+      style={{
+        position: "absolute", left: 0, right: 0,
+        top: barKonum === "ust" ? `${barYuk}px` : 0,
+        // YÜKSEKLİK: bir satır payı + (bar ALTTAYSA) ÇENTİK PAYI. `viewport-fit=cover`
+        // ve black-translucent durum çubuğuyla içerik saatin altına uzanıyor; iOS'ta o
+        // pay ~47-59px, yani tek satırlık 34px'lik perde oraya YETMİYORDU. env() ile
+        // cihaz ne veriyorsa o ekleniyor; çentiksiz cihazlarda env 0 döner ve hiçbir şey
+        // değişmez. Bar ÜSTTEYSE perde zaten barın altından başlıyor, ek pay gerekmez.
+        height: barKonum === "ust"
+          ? `${Math.min(60, Math.max(24, Math.round(yaziBoyutu * satirAraligi * PERDE_YUKSEKLIK)))}px`
+          : `calc(${Math.min(60, Math.max(24, Math.round(yaziBoyutu * satirAraligi * PERDE_YUKSEKLIK)))}px + env(safe-area-inset-top))`,
+        background: theme.background,
+        maskImage: PERDE_MASKESI,
+        WebkitMaskImage: PERDE_MASKESI,
+        pointerEvents: "none", zIndex: 10,
+      }}
+    />
+    )}
 
     {barKonum === "alt" && Bar}
 

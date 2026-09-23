@@ -38,9 +38,20 @@ export default function App() {
     const bg = theme.background
     document.documentElement.style.background = bg
     document.body.style.background = bg
-    let m = document.querySelector('meta[name="theme-color"]')
-    if (!m) { m = document.createElement("meta"); m.setAttribute("name", "theme-color"); document.head.appendChild(m) }
-    m.setAttribute("content", bg)
+    // ══════════════════════════════════════════════════════════════════════
+    // theme-color META'SI ARTIK YAZILMIYOR — ÜSTTEKİ ŞERİDİN SEBEBİ BUYDU.
+    // ══════════════════════════════════════════════════════════════════════
+    // iOS, ana ekrandan açılan uygulamada durum çubuğu alanını `theme-color`
+    // ile boyuyor. Burada her tema değişiminde tema arka planı yazıldığı için
+    // saatin bulunduğu şerit OPAK bir tema rengi bandı olarak duruyordu; sayfa
+    // onun altından başlıyor, üstteki solma perdesi de aşağıda kalıp yalnız
+    // ucu görünüyordu ("tema renklerinden bir şey üst kısmı kapatıyor gibi").
+    // Aynı renk manifest'te de `theme_color` olarak duruyordu, o da kaldırıldı.
+    // Varsa ESKİDEN kalan etiket de siliniyor: kurulu uygulamada head'de kalmış
+    // olabilir ve tek başına bandı diri tutar.
+    document.querySelectorAll('meta[name="theme-color"]').forEach(m => m.remove())
+    // Letterbox/çentik alanının beyaz kalmaması zaten yukarıdaki html+body
+    // arka planıyla sağlanıyor; theme-color buna gerekli değil.
     // ══════════════════════════════════════════════════════════════════════
     // VIEWPORT META'SI ARTIK BURADAN YAZILMIYOR — index.html'de SABİT duruyor.
     // ══════════════════════════════════════════════════════════════════════
@@ -58,7 +69,7 @@ export default function App() {
     //           content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     //     (Böylece çentik/kenar görünümü aynen korunur, ama kimse çalışırken
     //      meta'yı yeniden yazmaz.)
-    // theme-color yazımı kalıyor: o viewport'u ilgilendirmiyor, yerleşimi etkilemez.
+    // (theme-color yazımı yukarıda kaldırıldı; gerekçesi orada.)
   }, [theme])
   return (
     <div style={{ minHeight: "100vh", background: theme.background }}>

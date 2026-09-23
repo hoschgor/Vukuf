@@ -5,7 +5,17 @@
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png" />
     <link rel="apple-touch-icon" href="/icon-192.png" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- VIEWPORT — viewport-fit=cover BURADA, SABİT OLMAK ZORUNDA.
+         Telefonda ölçülerek bulundu: bu satırda `viewport-fit=cover` YOKKEN iOS'ta
+         web görünümü yan çevrildiğinde hiç dönmüyordu (win 440x894 sabit kalıyor,
+         yön portrait-primary'de takılıyor, orientationchange hiç tetiklenmiyordu).
+         Aynı satıra `viewport-fit=cover` eklenince dönme düzeldi: yatayda
+         win 956x440, yön landscape-primary, sayfa ekranı boydan boya dolduruyor.
+         DİKKAT: bunu ÇALIŞMA ZAMANINDA JS ile eklemek İŞE YARAMIYOR — eskiden
+         App.jsx tema efektinin içinde ekliyordu, geç kaldığı için dönme bozuk
+         kalıyordu. O yazım kaldırıldı; tek ve sabit tanım burasıdır.
+         Meta'yı JS ile DEĞİŞTİRME. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>vukuf</title>
   </head>
   <body>

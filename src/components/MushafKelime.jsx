@@ -1,5 +1,4 @@
 import { useState } from "react"
-import { useMediaQuery } from "../data/hooks/useMediaQuery"
 
 // ══════════════════════════════════════════════════════════════════════════════════════════
 // VAKIF (durak) ve TECVİD işaretleri — REFERANS
@@ -303,6 +302,14 @@ export default function MushafKelime({
   yaziBoyutu = 20,
   lineHeight = 2.4,
   harfAraligi = 0,
+  // ⚠ isMobile ARTIK PROP — BURADA `useMediaQuery` ÇAĞRILMIYOR.
+  // Eskiden her kelime kendi başına `(max-width: 768px)` sorgusuna abone
+  // oluyordu. 43 sayfa mount iken bu ~5590 ayrı abone demek; telefon yan
+  // çevrilince genişlik 440 → 956 olup EŞİĞİ GEÇTİĞİ için hepsi birden
+  // tetikleniyor ve 5590 kelime bileşeni yeniden çiziliyordu. Ölçülen 8-9 sn'lik
+  // donmanın kaynağı buydu. Değer artık KuranOkuma'dan tek kaynaktan geliyor ve
+  // cihazın kısa kenarına baktığı için dönmeyle hiç değişmiyor.
+  isMobile = false,
   onTikla,
   kayitKonumModu = false,
   // ── BİRLEŞİK KELİME ──────────────────────────────────────────────────
@@ -322,7 +329,6 @@ export default function MushafKelime({
   obekVurgu = false,
 }) {
   const [hover, setHover] = useState(false)
-  const isMobile = useMediaQuery("(max-width: 768px)")
   const lafizkontrol = lafzatullahMi(kelime.arabic)
   const besmelekontrol = besmeleMi(kelime.id)
   const hasUpperIndicator = kelime.vakif || kelime.secde

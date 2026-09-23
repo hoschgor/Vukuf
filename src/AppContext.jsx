@@ -76,7 +76,11 @@ export function AppProvider({ children }) {
         minHeight: "100vh",
         background: theme.background,
         color: theme.text,
-        transition: "all 0.3s ease",
+        // "all" DEĞİL: bu sarmalayıcıda minHeight 100vh var ve `transition: all`
+        // ekran ölçüsü değiştiğinde (dönme!) YÜKSEKLİĞİ de 0.3 sn animasyonluyor
+        // — dönme anında gereksiz yerleşim çalkantısı çıkarıyor. Tema geçişi için
+        // yalnız renkleri animasyonlamak yeterli.
+        transition: "background-color 0.3s ease, color 0.3s ease",
       }}>
         {children}
       </div>

@@ -905,9 +905,56 @@ function FontSecici({ grupId, grup, seciliFontId, onSecim, theme }) {
 }
 
 
+/* ════════════════════════════════════════════════════════════════════════════
+   GİDİŞ PAYI — ORTAM ORTAM AYRI (ELLE AYARLANACAK TEK YER)
+   ════════════════════════════════════════════════════════════════════════════
+   "Pay" = gidilen hedefin, kaydırma alanının ÜSTÜNDEN kaç piksel aşağıda duracağı.
+   SAYI BÜYÜRSE hedef ekranda AŞAĞI iner, küçülürse YUKARI çıkar.
+   Kullanıcının şikâyeti "mobilde çok yukarıda karşılıyor" → sayıyı BÜYÜT.
+
+   NİÇİN ORTAM ORTAM AYRI — üç ortamda ekranın üstü farklı şeyle doludur:
+     • PWA (ana ekrana eklenmiş): iOS'ta durum çubuğu (saat/pil) İÇERİĞİN ÜSTÜNE
+       biner. Bar ALTTAYSA üstte "hiçbir şey yok" sanılır, oysa saat oradadır.
+       En çok pay bu duruma gerekir.
+     • Mobil tarayıcı (Safari/Chrome sekmesi): adres çubuğu görüntü alanının
+       DIŞINDA, üstte. İçeriğin üstü temiz → daha az pay yeter.
+     • Web (masaüstü): tarayıcı çerçevesi ayrı; en az pay.
+   Bar ÜSTTEYSE barın ÖLÇÜLEN yüksekliği (barYuk) ayrıca eklenir; buradaki sayı
+   barın üstüne binen EK paydır, bar yüksekliğini tekrar yazma.
+
+   İKİ AYRI TABLO:
+     KAYIT_PAYI     → "kayda git" (efektli ayraç ile karşılayan gidiş)
+     ALTBASLIK_PAYI → İçindekiler'deki ALT başlıklar (satır vurgusuyla karşılayan gidiş)
+   Ana başlıklar ayrı bir yoldan (odak çizgisi + elemanaGit) gidiyor; onlar
+   elemanaGit içindeki ölçülü hizalamayı kullanır.
+   ════════════════════════════════════════════════════════════════════════════ */
+// Kayda gidiş. Değerler kullanıcının elle denediği son hâl.
+const KAYIT_PAYI = {
+  pwaUstBar:   32,   // Pwa bölümü üst bar aktifken
+  mobilUstBar: 32,   // mobil üst bar aktifken
+  webUstBar:   31,   // web üst bar aktifken
+  pwaAltBar:   42,   // Pwa bölümü alt bar aktifken
+  mobilAltBar: 32,   // mobil alt bar aktifken
+  webAltBar:   31,   // web alt bar aktifken
+}
+// İçindekiler ALT başlıkları — VE lâhikalardaki "- 12 -" gibi RAKAMLA bulunan
+// mektup ayraçları. İkisi de metnin içindeki bir SATIRA gidiyor; ana başlıklar
+// (#baslik + odak çizgisi) bundan ayrı, kendi ölçülü hizalamasını kullanıyor.
+// Değerler kullanıcının elle denediği son hâl.
+const ALTBASLIK_PAYI = {
+  pwaUstBar:   64,   // Pwa bölümü üst bar aktifken
+  mobilUstBar: 10,   // mobil üst bar aktifken
+  webUstBar:   10,   // web üst bar aktifken
+  pwaAltBar:   70,   // Pwa bölümü alt bar aktifken
+  mobilAltBar: 10,   // mobil alt bar aktifken
+  webAltBar:   10,   // web alt bar aktifken
+}
+
+
 // ════════════════════════════════════════════════════════════════
 // ANA BİLEŞEN
 // ════════════════════════════════════════════════════════════════
+
 
 export default function OkumaEkrani() {
 const { id } = useParams()
@@ -983,6 +1030,10 @@ const scrollRef    = useRef(null)
 const sayfaRefs    = useRef({})
 const sonScrollRef = useRef(0)
 const sonKonumRef  = useRef(null)   // { sayfa, oran } — son okuma konumu
+// Ekran döndürme durumu — zoom efekti de bunu okuduğu için BURADA tanımlı
+// (aşağıdaki "EKRAN DÖNDÜRME" bölümünden önce gelmeli).
+const donmeKilidiRef = useRef(false)
+const donmeCipaRef = useRef(null)
 // İçindekiler menüsü kaydırma konumu (oturum içi): panel kapanıp açılınca aynı yere döner;
 // kitaptan çıkıp geri gelince bileşen yeniden bağlanır → ref sıfırlanır (0'dan başlar).
 const menuListeRef = useRef(null)
@@ -1315,24 +1366,73 @@ useEffect(() => {
     .catch(() => setIcindekiler(null))
 }, [kitap])
 
-// Mobilde istem dışı zoom'u sıfırla
+// Zoom Out — İSTEM DIŞI PINCH ZOOM'U SIFIRLA
+// ════════════════════════════════════════════════════════════════
+// DİKKAT: BU EFEKT EKRAN DÖNDÜRMEYİ BOZUYORDU.
+// `visualViewport` 'resize' olayı YALNIZ pinch zoom'da gelmiyor; ekran
+// döndürmede, adres çubuğu açılıp kapanmasında ve klavye açılışında da geliyor.
+// iOS döndürme anında ölçeği geçici olarak 1'in üstünde bildirdiği için burası
+// "kullanıcı zoom yaptı" sanıp viewport META ETİKETİNİ yeniden yazıyordu.
+// iOS'ta dönme sırasında viewport meta'sını değiştirmek layout genişliğini
+// ESKİ (dikey) ölçüde DONDURUYOR: sayfa yan çevrilince ekranın sadece sol
+// yarısını kaplıyor, dikeye dönünce de düzelmiyordu.
+// Artık üç kapı var: (1) dönme sürerken hiç karışma, (2) olay ÖLÇÜ
+// değişiminden geliyorsa (dönme/adres çubuğu/klavye) dokunma, (3) yalnız
+// gerçek pinch (ölçek 1.05 üstü) sıfırlansın.
+// TEŞHİS: sorun sürerse aşağıdaki ZOOM_SIFIRLA'yı false yap — efekt tamamen
+// devre dışı kalır; dönme düzeliyorsa suçlu kesin burasıdır.
+// VARSAYILAN ARTIK false: uygulamada viewport meta etiketine ÇALIŞMA ZAMANINDA
+// yazan TEK YER burasıydı (App.jsx'teki yazım da kaldırıldı). iOS'ta dönmede
+// web görünümünün yeniden yerleşmemesinin bilinen tetikleyicisi bu olduğu için
+// meta artık yalnız index.html'de, sabit duruyor. İstem dışı pinch zoom yine
+// sorun olursa true yapıp deneyebilirsin (dönme sırasında zaten susuyor).
+const ZOOM_SIFIRLA = false
 useEffect(() => {
+  if (!ZOOM_SIFIRLA) return
   if (!isMobile) return
+
   const viewport = window.visualViewport
   if (!viewport) return
-  const zoomSifirla = () => {
-    if (viewport.scale > 1) {
-      const meta = document.querySelector('meta[name="viewport"]')
-      if (meta) {
-        meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no'
-        setTimeout(() => {
-          meta.content = 'width=device-width, initial-scale=1.0, user-scalable=yes'
-        }, 50)
-      }
-    }
+
+  const NORMAL_META = 'width=device-width, initial-scale=1.0, user-scalable=yes'
+  let sonEn = window.innerWidth, sonBoy = window.innerHeight, sonOlcuAn = 0
+  const olcuDegisti = () => {
+    sonEn = window.innerWidth; sonBoy = window.innerHeight
+    sonOlcuAn = (typeof performance !== "undefined" ? performance.now() : Date.now())
   }
+
+  const zoomSifirla = () => {
+    if (donmeKilidiRef.current) return                       // (1) dönme sürüyor
+    if (window.innerWidth !== sonEn || window.innerHeight !== sonBoy) {
+      olcuDegisti(); return                                  // (2) ölçü değişimi, pinch değil
+    }
+    const simdi = (typeof performance !== "undefined" ? performance.now() : Date.now())
+    if (simdi - sonOlcuAn < 1200) return                     // ölçü değişiminin hemen ardı
+    if (viewport.scale <= 1.05) return                       // (3) ölçüm gürültüsü
+    const meta = document.querySelector('meta[name="viewport"]')
+    if (!meta) return
+    meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no'
+    setTimeout(() => { meta.content = NORMAL_META }, 50)
+  }
+
+  // Meta ONARIMI: daha önceki bir sürüm meta'yı "maximum-scale" hâlinde
+  // bırakmış olabilir (kayıtlı değil, ama sekme yenilenmeden kalabilir).
+  // Dönme oturduktan sonra normale çekiliyor.
+  const metaOnar = () => setTimeout(() => {
+    const meta = document.querySelector('meta[name="viewport"]')
+    if (meta && /maximum-scale/.test(meta.content)) meta.content = NORMAL_META
+  }, 1000)
+
+  window.addEventListener("resize", olcuDegisti)
+  window.addEventListener("orientationchange", olcuDegisti)
+  window.addEventListener("orientationchange", metaOnar)
   viewport.addEventListener('resize', zoomSifirla)
-  return () => viewport.removeEventListener('resize', zoomSifirla)
+  return () => {
+    window.removeEventListener("resize", olcuDegisti)
+    window.removeEventListener("orientationchange", olcuDegisti)
+    window.removeEventListener("orientationchange", metaOnar)
+    viewport.removeEventListener('resize', zoomSifirla)
+  }
 }, [isMobile])
 
 // ════════════════════════════════════════════════════
@@ -1412,6 +1512,10 @@ useEffect(() => {
   if (!el) return
   function onScroll() {
     sonScrollRef.current = el.scrollTop
+    // EKRAN DÖNERKEN konum takibi DONAR. Dönme sırasında tarayıcı scrollTop'u piksel
+    // olarak koruduğu için gelen scroll olayları YANLIŞ sayfayı gösterir; burada
+    // mevcutSayfa/sonKonumRef güncellenirse geri çekeceğimiz konum da bozulur.
+    if (donmeKilidiRef.current) return
     // Aa paneli açıkken kullanıcı kaydırırsa font-ankorunu tazele (geri çekilecek satır güncel kalsın)
     if (aaAcikRef.current) fontAnkorRef.current = ustSatirYakala()
     const merkez = el.getBoundingClientRect().top + el.clientHeight / 2
@@ -1670,18 +1774,71 @@ useLayoutEffect(() => {
   return () => cancelAnimationFrame(id)
 })
 
-// Ekran döndürülünce aynı sayfada kal (px scroll konumu farklı sayfaya denk gelmesin)
-const mevcutSayfaRef = useRef(1)
-useEffect(() => { mevcutSayfaRef.current = mevcutSayfa }, [mevcutSayfa])
+// ════════════════════════════════════════════════════════════════
+// EKRAN DÖNDÜRME — OKUNAN YERİ KORU
+// ════════════════════════════════════════════════════════════════
+// SORUN: dönünce satırlar yeniden sarıyor, sayfa yükseklikleri değişiyor;
+// tarayıcı scrollTop'u PİKSEL olarak koruduğu için aynı piksel başka bir yere
+// denk geliyor. Reflow sırasında akan scroll olayları da mevcutSayfa/sonKonumRef'i
+// yanlış yere yazıyor, yani geri döndüğünde zaten bozulmuş bir konuma dönülüyor.
+//
+// ÇÖZÜM: dönme başlar başlamaz (a) konum takibini dondur, (b) o an üstte duran
+// SATIRI çıpa al (font değişiminde kullandığımız ustSatirYakala/GeriYukle),
+// (c) reflow otururken aynı satırı aynı yüksekliğe birkaç kez geri çek.
+//
+// "BİRDEN FAZLA DÖNDÜRÜNCE BOZULUYOR" HATASI: bu efektin bağımlılıkları vardı
+// (barKonum, barGorunur, barYuk). Dönünce bar yeniden ÖLÇÜLÜYOR → barYuk
+// değişiyor → efekt SÖKÜLÜP yeniden kuruluyor → temizleyici, geri çekme
+// zamanlayıcılarını iptal ediyor ve kilidi açıyordu. İlk dönüşte bazen
+// yetişiyordu, sonrakilerde hiç yetişmiyordu. Artık efekt BİR KEZ kuruluyor
+// ([] bağımlılık); her render'da tazelenen donmeIslevRef sayesinde içerideki
+// işlevler (ve okudukları barYuk/barKonum) yine de hiç bayatlamıyor.
+const donmeIslevRef = useRef(null)
+donmeIslevRef.current = { ustSatirYakala, ustSatirGeriYukle, sayfayaGit }
 useEffect(() => {
-  let zaman
+  let zamanlar = []
+  let acmaZamani = null
+  const temizle = () => { zamanlar.forEach(clearTimeout); zamanlar = [] }
   const donunce = () => {
-    const hedef = mevcutSayfaRef.current
-    clearTimeout(zaman)
-    zaman = setTimeout(() => { try { sayfayaGit(hedef, 0) } catch {} }, 350)
+    if (!scrollRef.current) return
+    // Dönme BAŞLADI: konumu hemen dondur. (iOS'ta bu olay reflow'dan ÖNCE, bazı
+    // Android tarayıcılarda SONRA gelir; ilk çağrıdaki çıpa korunur.)
+    if (!donmeKilidiRef.current) {
+      donmeKilidiRef.current = true
+      const f = donmeIslevRef.current
+      donmeCipaRef.current = {
+        cipa: f.ustSatirYakala(),
+        konum: sonKonumRef.current ? { ...sonKonumRef.current } : null,
+      }
+    }
+    temizle()
+    if (acmaZamani) clearTimeout(acmaZamani)
+    const geriCek = () => {
+      const k = donmeCipaRef.current
+      if (!k) return
+      const f = donmeIslevRef.current
+      if (k.cipa) f.ustSatirGeriYukle(k.cipa)
+      else if (k.konum) { try { f.sayfayaGit(k.konum.sayfa, k.konum.oran || 0) } catch {} }
+    }
+    // Reflow tek karede oturmuyor: yeniden akıtma + tembel mount + font metrikleri
+    // + barın yeniden ölçülmesi. Aynı geri çekme birkaç kez tekrarlanıyor.
+    for (const ms of [60, 180, 340, 520, 760]) zamanlar.push(setTimeout(geriCek, ms))
+    acmaZamani = setTimeout(() => { donmeKilidiRef.current = false; donmeCipaRef.current = null }, 950)
   }
   window.addEventListener("orientationchange", donunce)
-  return () => { window.removeEventListener("orientationchange", donunce); clearTimeout(zaman) }
+  // orientationchange her tarayıcıda gelmiyor; medya sorgusu geliyor. İkisi de
+  // bağlı; aynı dönüşte ikisi birden tetiklerse kilit ikinci çıpayı yutuyor.
+  let mq = null
+  try {
+    mq = window.matchMedia("(orientation: portrait)")
+    mq.addEventListener ? mq.addEventListener("change", donunce) : mq.addListener(donunce)
+  } catch {}
+  return () => {
+    window.removeEventListener("orientationchange", donunce)
+    try { mq && (mq.removeEventListener ? mq.removeEventListener("change", donunce) : mq.removeListener(donunce)) } catch {}
+    temizle(); if (acmaZamani) clearTimeout(acmaZamani)
+    donmeKilidiRef.current = false
+  }
   // eslint-disable-next-line react-hooks/exhaustive-deps
 }, [])
 useEffect(() => { localStorage.setItem("vukuf-otomatik-gizleme", String(otomatikGizleme)) }, [otomatikGizleme])
@@ -1779,12 +1936,33 @@ function frenKaydir(hedefTop, onSettle) {
   requestAnimationFrame(otur)
 }
 
-function sayfayaGit(sayfaNo, oran = 0, ekstra = 0) {
+// ── GİDİŞ PAYI ──────────────────────────────────────────────────────────────
+// Ayarlanacak sayılar dosyanın başındaki KAYIT_PAYI / ALTBASLIK_PAYI tablolarında.
+// `tablo` hangi gidişin ayarlandığını söyler; bar üstteyse ÖLÇÜLEN bar yüksekliği
+// ayrıca eklenir (tahmin değil, offsetHeight ölçümü).
+function gidisPayi(tablo) {
+  const olculen = (barKonum === "ust" && barGorunur) ? barYuk : 0
+  let elle
+  if (barKonum === "ust") {
+    if (pwaModu)       elle = tablo.pwaUstBar      // Pwa bölümü üst bar aktifken
+    else if (isMobile) elle = tablo.mobilUstBar    // mobil üst bar aktifken
+    else               elle = tablo.webUstBar      // web üst bar aktifken
+  } else {
+    if (pwaModu)       elle = tablo.pwaAltBar      // Pwa bölümü alt bar aktifken
+    else if (isMobile) elle = tablo.mobilAltBar    // mobil alt bar aktifken
+    else               elle = tablo.webAltBar      // web alt bar aktifken
+  }
+  return olculen + elle
+}
+
+// `mutlakPay` verilirse bar/ekstra hesabı atlanır ve DOĞRUDAN o pay kullanılır
+// (kayda gidişte ortam ortam ayarlanan pay böyle geçiyor).
+function sayfayaGit(sayfaNo, oran = 0, ekstra = 0, mutlakPay = null) {
   setSayfaGitAcik(false)
   setSayfaGitInput("")
   const el = scrollRef.current
   if (!el) return
-  const ofset = (barKonum === "ust" ? 80 : 12) + ekstra
+  const ofset = mutlakPay != null ? mutlakPay : ((barKonum === "ust" ? 80 : 12) + ekstra)
   const hedefTop = () => {
     const ref = sayfaRefs.current[sayfaNo]
     if (!ref) return el.scrollTop
@@ -1799,13 +1977,17 @@ function sayfayaGit(sayfaNo, oran = 0, ekstra = 0) {
 
 // Bir DOM elemanına tam git (başlık/vurgu). cizgi=false ise odak çizgisi çizilmez.
 // Tek fren döngüsü kullanır -> fazladan scroll olmaz; eleman gerçek konumundan hizalanır.
-function elemanaGit(sayfaNo, selectorFn, fallbackOran = 0, cizgi = true, onLand = null) {
+function elemanaGit(sayfaNo, selectorFn, fallbackOran = 0, cizgi = true, onLand = null, mutlakPay = null) {
   const el = scrollRef.current
   if (!el) return
   setMevcutSayfa(sayfaNo)
   maxSayfaGuncelle(sayfaNo)
   // Üst bar hedefi örtmesin: sabit değil, ölçülen bar yüksekliği + pay kadar aşağı hizala.
-  const ofset = barKonum === "ust" ? (barGorunur ? barYuk + 80 : 0) : 4
+  // `mutlakPay` verilmişse (alt başlık gidişi) ortam ortam ayarlanan pay kullanılır.
+  // ESKİ ALT BAR DEĞERİ 4'tü: hedef ekranın en tepesine yapışıyordu, PWA'da saatin
+  // altında kalıyordu; ayrıca aramaVurgula ardından 60'a çekip ikinci bir kayma yapıyordu.
+  const ofset = mutlakPay != null ? mutlakPay
+    : (barKonum === "ust" ? (barGorunur ? barYuk + 80 : 0) : 4)
 
   // Önce sayfaya yaklaş ki lazy mount tetiklensin (henüz fren yok)
   const ref0 = sayfaRefs.current[sayfaNo]
@@ -1836,7 +2018,7 @@ function elemanaGit(sayfaNo, selectorFn, fallbackOran = 0, cizgi = true, onLand 
 
 // Bulunan öğede aranan metni seçili gibi vurgula (kutular sayfaya göre konumlanır) +
 // kelime görünür değilse ona kaydır. Kısa süre sonra söner.
-function aramaVurgula(sayfaNo, el, aranan, altCizgi = true, tumEleman = false) {
+function aramaVurgula(sayfaNo, el, aranan, altCizgi = true, tumEleman = false, mutlakPay = null) {
   const sc = scrollRef.current, pref = sayfaRefs.current[sayfaNo]
   if (!el || !sc || !pref) return
   // tumEleman: başlık gibi hedeflerde SATIRIN TAMAMINI işaretle → 2 satıra sarıyorsa
@@ -1865,10 +2047,14 @@ function aramaVurgula(sayfaNo, el, aranan, altCizgi = true, tumEleman = false) {
   }))
   // kelime görünüm dışında/çok yukarıdaysa ona doğru ince ayar kaydır
   // Üst bar hedefi örtmesin: ölçülen bar yüksekliği + pay (sabit 110 çentik+2 satırda yetmiyordu).
-  const ofset = barKonum === "ust" ? (barGorunur ? barYuk + 24 : 24) : 60
+  // `mutlakPay` verilmişse (alt başlık gidişi) elemanaGit ile AYNI pay kullanılır;
+  // böylece elemanaGit hedefi yerine oturttuktan sonra burası onu tekrar oynatmaz
+  // (iki farklı sayı iki ayrı kayma demekti: "biraz daha düzeltilmesi gerekiyor").
+  const ofset = mutlakPay != null ? mutlakPay
+    : (barKonum === "ust" ? (barGorunur ? barYuk + 24 : 24) : 60)
   const scRect = sc.getBoundingClientRect()
   const rTop = rects[0].top - scRect.top
-  if (rTop < ofset || rTop > sc.clientHeight * 0.65) {
+  if (rTop < ofset - 2 || rTop > sc.clientHeight * 0.65) {
     sc.scrollTo({ top: rects[0].top - scRect.top + sc.scrollTop - ofset, behavior: "smooth" })
   }
   if (aramaZamanRef.current) clearTimeout(aramaZamanRef.current)
@@ -1993,7 +2179,7 @@ function kayitTumSil() {
 // Bir konuma git + odak (focus) efekti
 // Genel odak git. opt.cizgi === false -> çizgi yerine yalnız ayraç döner (kayıt git).
 function odakGit(sayfaNo, oran = 0, opt = {}) {
-  sayfayaGit(sayfaNo, oran, opt.ekstra || 0)
+  sayfayaGit(sayfaNo, oran, opt.ekstra || 0, opt.mutlakPay != null ? opt.mutlakPay : null)
   odakAyarla(sayfaNo, oran, opt.cizgi !== false)
 }
 
@@ -2040,9 +2226,19 @@ function basligaGit(sayfa, satir, oran = 0, baslikMetni = "", seviye = 1, acikla
      document.querySelector(`[data-satir="${sayfa}-${hedefSatir}"]`)))
 
   const odakla = anaBaslik || mektupOdak   // mektup ayracı: satır başını üste odakla (vurgu arama yok)
+  // PAY KİMLERE UYGULANIR:
+  //  • ALT BAŞLIK → evet. Hem hizalama hem satır vurgusu AYNI payı kullanıyor,
+  //    böylece tek kayma tek duruş oluyor.
+  //  • MEKTUP AYRACI (lâhikalarda "- 12 -" gibi RAKAMLA bulunan satır) → evet.
+  //    Bu yol başlığı metinde arayıp bulunan SATIRA gidiyor, yani alt başlıkla
+  //    aynı iş; ama pay bırakılmadığı için satır ekranın en tepesine yapışıyordu.
+  //  • ANA BAŞLIK → hayır. O #baslik elemanına gidiyor ve kendi ölçülü
+  //    hizalaması sorunsuz çalışıyor; dokunulmadı.
+  const altPay = (anaBaslik && !mektupOdak) ? null : gidisPayi(ALTBASLIK_PAYI)
   elemanaGit(sayfa, sel, oran,
     odakla,                                               // ana başlık / mektup: odak çizgisi
-    odakla ? null : (el) => aramaVurgula(sayfa, el, bulunanTerim, false, true)) // alt başlık: SATIRIN TAMAMINI vurgula (2 satır sarıyorsa alt satır dahil)
+    odakla ? null : (el) => aramaVurgula(sayfa, el, bulunanTerim, false, true, altPay), // alt başlık: SATIRIN TAMAMINI vurgula (2 satır sarıyorsa alt satır dahil)
+    altPay)
 }
 
 // Popup'taki ayet atfına git: hedefi+dönüşü sakla, Kur'an Okuma'yı aç (üstte "Okumaya dön" çıkar)
@@ -2575,7 +2771,10 @@ const KayitPanel = kayitAcik && (
                 <div key={k.id} style={{ display: "flex", alignItems: "center", gap: "8px", padding: "8px 10px", borderRadius: "8px", background: `${theme.accent}0A`, border: `1px solid ${theme.border}`, marginBottom: "6px" }}>
                   <Bookmark size={13} fill={theme.accent} color={theme.accent} />
                   <span style={{ flex: 1, fontSize: "13px", color: theme.text }}>{k.baslik}</span>
-                  <button onClick={() => { odakGit(k.sayfa, k.oran || 0, { cizgi: false, ekstra: barKonum === "ust" ? (isMobile ? 30 : -8) : 20 }); setKayitAcik(false) }} title="İşarete git" style={{ fontSize: "11px", color: theme.accent, background: "none", border: "none", cursor: "pointer" }}><ChevronRight size={13} /></button>
+                  {/* ESKİDEN: ekstra: barKonum === "ust" ? (isMobile ? 40 : -8) : 20 — elle
+                      tutturulmuş tek bir sayıydı, PWA'yı hiç ayırt etmiyordu. Artık pay
+                      ortam ortam ayrı (dosya başındaki KAYIT_PAYI tablosu). */}
+                  <button onClick={() => { odakGit(k.sayfa, k.oran || 0, { cizgi: false, mutlakPay: gidisPayi(KAYIT_PAYI) }); setKayitAcik(false) }} title="İşarete git" style={{ fontSize: "11px", color: theme.accent, background: "none", border: "none", cursor: "pointer" }}><ChevronRight size={13} /></button>
                   <button onClick={() => kayitSil(k.id)} style={{ color: theme.textSecondary, background: "none", border: "none", cursor: "pointer" }}><X size={12} /></button>
                 </div>
               ))
@@ -3836,38 +4035,9 @@ return (
           })}
       </div>
     </div>
-    {/* ÜST SOLMA PERDESİ — metin yukarıda kesilmek yerine eriyerek bitsin.
-        Bu etki iOS'ta ana ekrandan açınca zaten "bedava" oluyordu: bar altta
-        olduğu için metin durum çubuğunun altına kadar kayıyor ve sistem saatin
-        okunur kalması için altındaki içeriği soluklaştırıyordu. Ama o, ne bizim
-        denetimimizde ne de her yerde var — Android'de, tarayıcıda ve masaüstünde
-        hiç yok. Kendimiz çizince her yerde aynı oluyor.
-        NİÇİN MASKE, GRADYAN DEĞİL: perde arka plan renginden saydama geçmeli.
-        Rengi doğrudan gradyana yazmak için renge alfa eklemek gerekir; tema rengi
-        3 haneli hex ya da rgb() olursa o hesap sessizce bozulur (aynı tuzağa lügat
-        vurgusunda düşülmüştü). Onun yerine perde DÜZ arka plan rengi, solma da
-        perdenin KENDİ maskesiyle yapılıyor: renk biçimi ne olursa olsun çalışır.
-        MASKE KAYDIRMA KABINA DEĞİL PERDEYE: kabın üstüne maske koymak uzun
-        sayfalarda fazladan bir birleştirme katmanı doğurur ve kaydırmayı yorar;
-        burada maskelenen, sabit duran 30-60px'lik küçük bir kutu.
-        Bar ÜSTTEYSE perde barın altından başlar; bar zaten o bölgeyi örtüyor. */}
-    {/* İşaret/vurgu modu bandı da kabın en üstüne YAPIŞIYOR (sticky) ve perde
-        kabın kardeşi olduğu için onun üstünde kalıyor — bandın içindeki uyarı ile
-        kapatma düğmesi soluk görünürdü. O modlarda perde hiç çizilmiyor. */}
-    {!kayitKonumModu && !vurguModu && (
-    <div
-      aria-hidden="true"
-      style={{
-        position: "absolute", left: 0, right: 0,
-        top: barKonum === "ust" ? `${barYuk}px` : 0,
-        height: `${Math.min(60, Math.max(24, Math.round(yaziBoyutu * satirAraligi * 0.9)))}px`,
-        background: theme.background,
-        maskImage: "linear-gradient(to bottom, #000, transparent)",
-        WebkitMaskImage: "linear-gradient(to bottom, #000, transparent)",
-        pointerEvents: "none", zIndex: 10,
-      }}
-    />
-    )}
+    {/* ÜST SOLMA PERDESİ KALDIRILDI (kullanıcı kararı): "üst kısımdaki
+        perdelere gerek yok, direkt yazı da görünebilir." En üstteki satır
+        artık hiç soldurulmadan, tam netlikte görünüyor. */}
 
     {barKonum === "alt" && Bar}
 

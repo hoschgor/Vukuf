@@ -5,7 +5,6 @@ import SecdeKenar from "./SecdeKenar"
 import SureBasligi from "./SureBasligi"
 import Besmele from "./Besmele"
 import SureSonu from "./SureSonu"
-import { useMediaQuery } from "../data/hooks/useMediaQuery"
 import { useRef, useEffect, useState, memo } from "react"
 import kelimeGrup from "../data/kelime-grup.json"
 import kelimeObek from "../data/kelime-obek.json"
@@ -79,11 +78,15 @@ function MushafSayfa({
   odakAyet = null,
   odakSure = null,
   odakAyrac = null,
+  // isMobile ARTIK PROP. Eskiden burada da `useMediaQuery` çağrılıyordu; telefon
+  // yan çevrilince 768 eşiği geçildiği için bayrak değişiyor ve bütün sayfalar +
+  // bütün kelimeler yeniden çiziliyordu. Tek kaynak KuranOkuma'da, cihazın kısa
+  // kenarına bakıyor ve dönmeyle DEĞİŞMİYOR.
+  isMobile = false,
   cuzBaslangic = null,   // bu sayfa yeni bir CÜZ başlatıyorsa cüz no
   hizbBaslangic = null,  // bu sayfa yeni bir HİZB başlatıyorsa hizb no (cüz başı değilse)
 }) {
 
-  const isMobile = useMediaQuery("(max-width: 768px)")
   const fontSize = isMobile ? yaziBoyutu : yaziBoyutu + 2
   const lineHeight = satirAraligi || (isMobile ? 2.2 : 2.0) // Azaltıldı
 
@@ -363,6 +366,7 @@ function MushafSayfa({
                         yaziBoyutu={fontSize}
                         lineHeight={lineHeight}
                         harfAraligi={harfAraligi}
+                        isMobile={isMobile}
                         kayitKonumModu={kayitKonumModu}
                         grupKonum={grup_?.konum || null}
                         grupVurgu={!!grup_ && hoverGrup === grup_.anahtar}
@@ -451,6 +455,7 @@ function mushafSayfaEsit(a, b) {
     a.satirAraligi !== b.satirAraligi ||
     a.harfAraligi !== b.harfAraligi ||
     a.kayitKonumModu !== b.kayitKonumModu ||
+    a.isMobile !== b.isMobile ||
     a.cuzBaslangic !== b.cuzBaslangic ||
     a.hizbBaslangic !== b.hizbBaslangic
   ) return false

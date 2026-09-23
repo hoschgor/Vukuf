@@ -1,0 +1,119 @@
+<!doctype html><html lang="tr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Blok testi</title>
+<style>
+ html,body{margin:0;background:#f3ede0;color:#222;font:13px/1.45 ui-monospace,Menlo,monospace}
+ #panel{position:fixed;top:0;left:0;right:0;z-index:9;background:rgba(0,0,0,.86);color:#3f6;padding:8px 10px;white-space:pre}
+ #dugmeler{position:fixed;left:0;right:0;z-index:9;background:#e6dcc4;padding:8px;display:flex;flex-wrap:wrap;gap:6px}
+ button{font:600 13px ui-monospace,Menlo,monospace;padding:9px 11px;border:1px solid #b9a77c;border-radius:7px;background:#fffdf6}
+ button.secili{background:#c9a227;color:#fff;border-color:#c9a227}
+ #icerik{padding:0 10px 40px}
+ .sayfa{border-bottom:1px solid #ddd;padding:6px 10px}
+ .k{display:inline-block;font:26px/2.1 'Scheherazade New',serif;margin-left:6px;position:relative}
+ .v{position:absolute;top:-8px;left:-4px;font-size:12px;color:#c60}
+ /* GERÇEK MUSHAF FONTU — uygulamadaki @font-face'in aynısı. Önceki sürümde bu
+    tanım YOKTU, 'Scheherazade New' çözülemeyip sistem serif'ine düşüyordu; yani
+    test Arapça biçimlendirmeyi GERÇEK fontla hiç denemiyordu. */
+ @font-face{font-family:'KFGQPC Uthmanic';src:url('/fonts/KFGQPC Uthmanic.ttf') format('opentype');font-display:swap}
+ .mushaf .k{font-family:'KFGQPC Uthmanic',serif}
+ .rozet{display:inline-block;vertical-align:middle;margin:0 2px}
+</style></head><body>
+<div id="panel">ölçülüyor…</div>
+<div id="dugmeler"></div>
+<div id="icerik"></div>
+<script>
+// ══════════════════════════════════════════════════════════════════════
+// AYIRT EDİCİ TEST — "ana iş parçacığı MEŞGUL mü, DONDURULMUŞ mu?"
+// Uygulamadaki rozetin ÖLÇÜM MANTIĞININ AYNISI burada da var. Fark:
+// sayfanın ağırlığını düğmelerle değiştirebiliyoruz.
+//   BOŞ'ta da BLOK saniyelerse → iOS/Android dönme sırasında web görünümünü
+//   donduruyor demektir; bizim koddaki hiçbir iyileştirme bunu kısaltmaz.
+//   BOŞ'ta ~0, ağırlaştıkça büyüyorsa → suçlu sayfanın kendi ağırlığı.
+// ══════════════════════════════════════════════════════════════════════
+const KEL = ['الْحَمْدُ','لِلّٰهِ','رَبِّ','الْعَالَمٖينَ','الرَّحْمٰنِ','الرَّحٖيمِ','مَالِكِ','يَوْمِ','الدّٖينِ']
+const icerik = document.getElementById('icerik')
+// Âyet sonu rozetinin taklidi: uygulamadaki MushafAyetRozeti gibi satır içi SVG.
+const ROZET = '<svg class="rozet" width="34" height="34" viewBox="0 0 24 24">' +
+  '<circle cx="12" cy="12" r="10" fill="none" stroke="#c9a227" stroke-width="1.2"/>' +
+  '<path d="M12 2.6 L14 8 L19.4 8 L15 11.4 L16.8 17 L12 13.6 L7.2 17 L9 11.4 L4.6 8 L10 8 Z" fill="none" stroke="#c9a227" stroke-width="1"/>' +
+  '<text x="12" y="15" font-size="8" text-anchor="middle" fill="#8a6d1a">٥٢</text></svg>'
+function kur(divSayisi, doluSayfa, font, rozet) {
+  let h = ''
+  for (let p = 1; p <= divSayisi; p++) {
+    if (p <= doluSayfa) {
+      let ic = ''
+      for (let i = 0; i < 130; i++) {
+        ic += '<span class="k">' + KEL[i % KEL.length] + '<span class="v">ط</span></span>'
+        // sayfa başına ~15 âyet sonu rozeti
+        if (rozet && i % 9 === 8) ic += ROZET
+      }
+      h += '<div class="sayfa' + (font ? ' mushaf' : '') + '">' + ic + '</div>'
+    } else {
+      h += '<div class="sayfa" style="min-height:700px"></div>'
+    }
+  }
+  icerik.innerHTML = h
+}
+const SECENEKLER = [
+  { ad: 'BOŞ',            div: 0,   dolu: 0  },
+  { ad: '604 boş div',    div: 604, dolu: 0  },
+  { ad: '604 div+43 dolu',div: 604, dolu: 43 },
+  // Buradan sonrası uygulamaya bir adım daha yaklaşıyor:
+  { ad: '43 dolu + MUSHAF FONTU',        div: 604, dolu: 43, font: true },
+  { ad: '43 dolu + font + SVG rozet',    div: 604, dolu: 43, font: true, rozet: true },
+]
+let secili = 0
+const dg = document.getElementById('dugmeler')
+SECENEKLER.forEach((s, i) => {
+  const b = document.createElement('button')
+  b.textContent = s.ad
+  b.onclick = () => {
+    secili = i
+    kur(s.div, s.dolu, s.font, s.rozet)
+    sifirla()
+    ciz()
+    // NOKTALI VİRGÜL ŞART: `ciz()` satırından sonra `[` ile başlayan satır,
+    // otomatik noktalı virgül eklenmediği için `ciz()[...]` diye okunuyordu.
+    Array.prototype.forEach.call(dg.children, (c, j) => { c.className = j === i ? 'secili' : '' })
+  }
+  dg.appendChild(b)
+})
+
+// ── ÖLÇÜM (uygulamadaki rozetle aynı mantık) ──
+const simdi = () => performance.now()
+let t0 = 0, sure = 0, sonResizeAn = 0, donme = 0
+let sonTik = simdi(), blok = 0
+const aciOku = () => { try { return screen.orientation ? screen.orientation.angle : null } catch(e) { return null } }
+let sonAci = aciOku()
+function donmeBasladi() {
+  if (t0) return
+  t0 = simdi(); sure = 0; sonResizeAn = t0; blok = 0; sonTik = simdi(); donme++
+}
+function sifirla() { t0 = 0; sure = 0; blok = 0; donme = 0; sonTik = simdi() }
+setInterval(() => {
+  const n = simdi()
+  const g = Math.round(n - sonTik - 100)
+  if (g > blok) blok = g
+  sonTik = n
+  const a = aciOku()
+  if (a != null && a !== sonAci) { sonAci = a; donmeBasladi() }
+  if (t0 && n - sonResizeAn > 1500) t0 = 0
+}, 100)
+addEventListener('resize', () => { if (t0) { sonResizeAn = simdi(); sure = Math.round(sonResizeAn - t0) } })
+addEventListener('orientationchange', donmeBasladi)
+try { matchMedia('(orientation: portrait)').addEventListener('change', donmeBasladi) } catch(e) {}
+
+function ciz() {
+  const s = SECENEKLER[secili]
+  document.getElementById('panel').textContent =
+    'secenek ' + s.ad + '  (div ' + s.div + ', dolu ' + s.dolu + (s.font ? ', MUSHAF FONTU' : '') + (s.rozet ? ', +rozet' : '') + ')' +
+    '\nwin   ' + innerWidth + 'x' + innerHeight + '   ' + ((screen.orientation && screen.orientation.type) || '?') +
+    '\ndonme ' + donme +
+    '\nSURE  ' + sure + ' ms     BLOK ' + blok + ' ms'
+  const yuk = document.getElementById('panel').offsetHeight
+  dg.style.top = yuk + 'px'
+  icerik.style.paddingTop = (yuk + dg.offsetHeight + 8) + 'px'
+}
+setInterval(ciz, 300)
+kur(0, 0, false, false); dg.children[0].className = 'secili'; ciz()
+</script></body></html>

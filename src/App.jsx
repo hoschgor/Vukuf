@@ -41,13 +41,24 @@ export default function App() {
     let m = document.querySelector('meta[name="theme-color"]')
     if (!m) { m = document.createElement("meta"); m.setAttribute("name", "theme-color"); document.head.appendChild(m) }
     m.setAttribute("content", bg)
-    // viewport-fit=cover: içerik fiziksel kenara kadar uzansın (bar/arka plan çentik
-    // altına da devam eder). Sıkışmayı önlemek için bar ve içeriğe env(safe-area-inset-*)
-    // padding'i okuma ekranında ekli.
-    let vp = document.querySelector('meta[name="viewport"]')
-    if (!vp) { vp = document.createElement("meta"); vp.setAttribute("name", "viewport"); document.head.appendChild(vp) }
-    const icerik = vp.getAttribute("content") || "width=device-width, initial-scale=1"
-    if (!/viewport-fit/.test(icerik)) vp.setAttribute("content", icerik + ", viewport-fit=cover")
+    // ══════════════════════════════════════════════════════════════════════
+    // VIEWPORT META'SI ARTIK BURADAN YAZILMIYOR — index.html'de SABİT duruyor.
+    // ══════════════════════════════════════════════════════════════════════
+    // Eskiden burada `viewport-fit=cover` çalışma zamanında meta'ya EKLENİYORDU.
+    // Teşhis rozeti, telefon yan çevrildiğinde sayfanın hiç dönmediğini gösterdi:
+    //   win 440x894 · scr 440x956 · yon portrait-primary · donme 0
+    // yani ekran yatay ama web görünümü 1320px'lik DİKEY geometrisini koruyup
+    // sol üste yapışıyor. iOS'ta WKWebView'ın dönmede yeniden yerleşmemesinin
+    // bilinen tetikleyicilerinden biri, viewport meta etiketinin ÇALIŞMA ZAMANINDA
+    // değiştirilmesidir — özellikle `viewport-fit=cover` sonradan eklendiğinde.
+    // Çözüm: meta'ya çalışırken HİÇ dokunma, tek ve sabit bir tanım bırak.
+    //
+    // >>> YAPILACAK: index.html içindeki viewport satırı tam olarak şu olsun:
+    //     <meta name="viewport"
+    //           content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    //     (Böylece çentik/kenar görünümü aynen korunur, ama kimse çalışırken
+    //      meta'yı yeniden yazmaz.)
+    // theme-color yazımı kalıyor: o viewport'u ilgilendirmiyor, yerleşimi etkilemez.
   }, [theme])
   return (
     <div style={{ minHeight: "100vh", background: theme.background }}>

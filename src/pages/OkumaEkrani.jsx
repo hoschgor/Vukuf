@@ -969,6 +969,17 @@ function FontSecici({ grupId, grup, seciliFontId, onSecim, theme }) {
    Yani perdenin yapmak istediği işi iOS zaten fazlasıyla yapıyor; bizimki
    üstüne binip "fazla soluk" şikâyetini doğuruyordu. İstenirse PERDE_YUKSEKLIK
    0.5-0.7 arası bir değerle geri açılabilir. */
+/* ── ÜST ÇENTİK EK PAYI — TEK AYAR NOKTASI ──────────────────────────────────
+   `env(safe-area-inset-top)` cihazın bildirdiği çentik payıdır; içerik tam o
+   çizgide başlar ve görsel olarak saate "yapışık" durur. Kullanıcı birkaç
+   piksel daha nefes istedi. Bu sayı o nefes payı:
+     BÜYÜT → bar ve içindekiler AŞAĞI iner · KÜÇÜLT → yukarı çıkar · 0 → eski hâl
+   Çentiksiz cihazlarda env() 0 döner; orada da bu pay kadar boşluk kalır, o
+   yüzden abartılmamalı.
+   ⚠ ÜÇ DOSYADA AYNI OLMALI: Navbar.jsx · KuranOkuma.jsx · OkumaEkrani.jsx
+   ───────────────────────────────────────────────────────────────────────── */
+const UST_CENTIK_EK = 6
+
 const PERDE_KOYULUK    = 0.22
 const PERDE_ORTA       = 0.06
 const PERDE_ORTA_YERI  = 28
@@ -3578,7 +3589,7 @@ const Bar = (
     // Dikey padding + safe-area: max() → çift boşluk YOK (baz+inset yerine büyüğü kadar)
     // Baz padding azaltıldı: bar gereksiz uzamasın, ögeler orta bölümde tıklanabilir kalsın.
     // PWA'da alt boşluk DOĞRUDAN pwaAltBosluk (safe-area yok); web'de eskisi gibi max(base, inset).
-    paddingTop:    barKonum === "ust" ? `max(${isMobile ? 5 : 3}px, env(safe-area-inset-top))` : `${isMobile ? 5 : 3}px`,
+    paddingTop:    barKonum === "ust" ? `calc(max(${isMobile ? 5 : 3}px, env(safe-area-inset-top)) + ${UST_CENTIK_EK}px)` : `${isMobile ? 5 : 3}px`,
     paddingBottom: barKonum === "alt"
       ? (pwaModu
           ? `${pwaAltBosluk}px`

@@ -336,7 +336,7 @@ export default function Arama() {
           Sayfanın yatay dolgusu negatif kenar boşluğuyla telafi edilir; yoksa
           altından geçen kartlar sticky bloğun iki yanından görünür. */}
       <div ref={ustRef} style={{
-        position: "sticky", top: "42px", zIndex: 50,
+        position: "sticky", top: "calc(42px + env(safe-area-inset-top))", zIndex: 50,
         background: theme.background,
         marginLeft: isMobile ? "-16px" : "-24px",
         marginRight: isMobile ? "-16px" : "-24px",
@@ -488,7 +488,7 @@ export default function Arama() {
                   Arka planı saydam OLAMAZ — altından geçen kartlar okunur hâle gelir. */}
               <button onClick={() => setSecilenKitap(null)}
                 style={{
-                  position: "sticky", top: `${42 + ustYuk}px`, zIndex: 40,
+                  position: "sticky", top: `calc(${42 + ustYuk}px + env(safe-area-inset-top))`, zIndex: 40,
                   display: "flex", alignItems: "center", gap: "8px", textAlign: "left",
                   padding: "9px 12px", borderRadius: "10px", cursor: "pointer",
                   // SEÇİLİ KİTAP, SONUÇ KARTLARINDAN AYRI RENKTE. Eskiden ikisi de

@@ -5,6 +5,15 @@
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png" />
     <link rel="apple-touch-icon" href="/icon-192.png" />
+    <!-- MANIFEST BAĞLANTISI — bu satır YOKTU, yani public/manifest.webmanifest
+         hiç yüklenmiyordu (24 Eylül'de dosya yolları incelenirken fark edildi).
+         Uygulamanın ana ekrandan standalone açılması tamamen aşağıdaki
+         `apple-mobile-web-app-capable` satırından geliyordu.
+         Eklemek güvenli: manifest'ten `theme_color` (üstteki tema renkli bandı
+         boyayan değer) ve `orientation: portrait` (dönmeyi kilitleyen değer)
+         daha önce çıkarıldı; geriye yalnız ad, simgeler, background_color ve
+         display kaldı. Servis işçisi eklendiğinde bu satır zaten şart olacak. -->
+    <link rel="manifest" href="/manifest.webmanifest" />
     <!-- VIEWPORT — viewport-fit=cover BURADA, SABİT OLMAK ZORUNDA.
          Telefonda ölçülerek bulundu: bu satırda `viewport-fit=cover` YOKKEN iOS'ta
          web görünümü yan çevrildiğinde hiç dönmüyordu (win 440x894 sabit kalıyor,

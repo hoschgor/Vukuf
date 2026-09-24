@@ -1,19 +1,42 @@
 import { useState } from "react"
 import { Link, useLocation } from "react-router-dom"
-import { BookOpen, Search, Shuffle, Menu, X, Palette, Pencil, Info, Type, Sparkles } from "lucide-react"
+import { BookOpen, Search, Shuffle, Menu, X, Palette, Pencil, Info, Type, Sparkles, Settings, HardDrive } from "lucide-react"
 import { useApp } from "../AppContext"
 import { useMediaQuery } from "../data/hooks/useMediaQuery"
 import IosSwitch from "./IosSwitch"
 import AltSayfa from "./AltSayfa"
+import VeriAyarlari from "./VeriAyarlari"
 
-const temaAciklamalari = {
-  sepia: "Göz yormayan sıcak ton",
-  light: "Sade beyaz arka plan",
-  dark: "Koyu mavi gece modu",
-  night: "Tam karanlık mod",
-  coffee: "Koyu kahve tonları",
-  custom: "Kişisel renk ayarları",
-}
+/* ═══════════════════════════════════════════════════════════════════════════
+   AYARLARIN TEK KAPIDA TOPLANMASI (24 Eylül 2026)
+
+   Eskiden sağ üstte İKİ düğme vardı: Sparkles (yalnız Kitaplık sayfasında
+   görünen "Görünüm ayarları") ve Palette (tema açılır menüsü). Veri yedekleme
+   eklenince üçüncü bir düğme koymak yerine hepsi TEK DİŞLİ altında toplandı:
+       AYARLAR → TEMA · GÖRÜNÜM · VERİLER
+   Panel gövdesi yine `AltSayfa` (alttan açılan, sürükleyerek kapanan sayfa) —
+   uzun içerikte kendiliğinden `pan-y`ye geçip kaydırmayı doğru yönettiği için
+   Veriler bölümü panelin boyunu uzatsa da davranış bozulmuyor.
+
+   NE DEĞİŞMEDİ (bilerek): tema listesi, özel tema modalı, Dinamik Mod ve Giriş
+   Animasyonu anahtarları, hamburger menü ve yönlendirmeler AYNEN duruyor.
+   Yalnız AÇILDIKLARI YER değişti. Böylece çalışan hiçbir davranış bozulmadı.
+
+   Dinamik Mod satırı artık her sayfada görünüyor (eskiden yalnız "/" idi).
+   Ayar Kitaplık'a ait olduğu için açıklamasında bu yazıyor; başka sayfadan
+   açılıp kapatılması zararsız, değer localStorage'a yazılıp olay yayınlanıyor.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── ÜST ÇENTİK EK PAYI — TEK AYAR NOKTASI ──────────────────────────────────
+   `env(safe-area-inset-top)` cihazın bildirdiği çentik payıdır; içerik tam o
+   çizgide başlar ve görsel olarak saate "yapışık" durur. Kullanıcı birkaç
+   piksel daha nefes istedi. Bu sayı o nefes payı:
+     BÜYÜT → bar ve içindekiler AŞAĞI iner · KÜÇÜLT → yukarı çıkar · 0 → eski hâl
+   Çentiksiz cihazlarda env() 0 döner; orada da bu pay kadar boşluk kalır, o
+   yüzden abartılmamalı.
+   ⚠ ÜÇ DOSYADA AYNI OLMALI: Navbar.jsx · KuranOkuma.jsx · OkumaEkrani.jsx
+   ───────────────────────────────────────────────────────────────────────── */
+const UST_CENTIK_EK = 6
 
 const paletRenkleri = [
   { key: "background", label: "Arka Plan" },
@@ -47,21 +70,33 @@ function AyarSatiri({ baslik, aciklama, acik, onToggle, theme }) {
   )
 }
 
+// Panel içi bölüm başlığı (ikon + yazı)
+function BolumBasligi({ theme, ikon: Ikon, children, ilk }) {
+  return (
+    <div style={{
+      display: "flex", alignItems: "center", gap: "7px",
+      fontSize: "11px", letterSpacing: "1.2px", color: theme.textSecondary,
+      margin: ilk ? "4px 4px 8px" : "22px 4px 8px",
+    }}>
+      {Ikon && <Ikon size={13} />}
+      {children}
+    </div>
+  )
+}
+
 export default function Navbar() {
   const { theme, currentTheme, setCurrentTheme, customTheme, ozelTemaKaydet } = useApp()
   const location = useLocation()
+  const isMobile = useMediaQuery("(max-width: 768px)")
   const [menuAcik, setMenuAcik] = useState(false)
-  const [temaAcik, setTemaAcik] = useState(false)
+  const [ayarlarAcik, setAyarlarAcik] = useState(false)
+
   const [dinamik, setDinamik] = useState(() => {
     try { return localStorage.getItem("vukuf-dinamik-mod") === "1" } catch { return false }
   })
   const [girisAnim, setGirisAnim] = useState(() => {
     try { return localStorage.getItem("vukuf-giris-animasyonu") !== "0" } catch { return true }  // varsayılan AÇIK
   })
-  const [dinamikPanelAcik, setDinamikPanelAcik] = useState(false)
-
-  // Dinamik mod düğmesi yalnızca Kitaplık sayfasında görünür
-  const dinamikGoster = location.pathname === "/"
 
   function toggleDinamik() {
     setDinamik(prev => {
@@ -79,6 +114,7 @@ export default function Navbar() {
       return yeni
     })
   }
+
   const [ozelPanelAcik, setOzelPanelAcik] = useState(false)
   const [ozelRenkler, setOzelRenkler] = useState(customTheme)
   const [aktifRenk, setAktifRenk] = useState(null)
@@ -99,18 +135,18 @@ export default function Navbar() {
 
   const temaListesi = [
     { id: "sepia",  label: "Sepya",  renk: "#f4ecd8", aciklama: "Göz yormayan sıcak ton" },
-          { id: "light",  label: "Açık",   renk: "#ffffff", aciklama: "Sade beyaz arka plan" },
-          { id: "dark",   label: "Koyu",   renk: "#1a1a2e", aciklama: "Koyu mavi gece modu" },
-          { id: "night",  label: "Gece",   renk: "#0d0d0d", aciklama: "Tam karanlık mod" },
-          { id: "coffee", label: "Kahve",  renk: "#251b04", aciklama: "Koyu kahve tonları" },
-          { id: "highcontrast", label: "Yüksek Karşıtlık",  renk: "#eeb311", aciklama: "Koyu zemin üzerinde sarı vurgular" },
-          { id: "custom", label: "Özel",   renk: customTheme?.background || "#888", aciklama: "Kişisel renk ayarları" },
+    { id: "light",  label: "Açık",   renk: "#ffffff", aciklama: "Sade beyaz arka plan" },
+    { id: "dark",   label: "Koyu",   renk: "#1a1a2e", aciklama: "Koyu mavi gece modu" },
+    { id: "night",  label: "Gece",   renk: "#0d0d0d", aciklama: "Tam karanlık mod" },
+    { id: "coffee", label: "Kahve",  renk: "#251b04", aciklama: "Koyu kahve tonları" },
+    { id: "highcontrast", label: "Yüksek Karşıtlık", renk: "#eeb311", aciklama: "Koyu zemin üzerinde sarı vurgular" },
+    { id: "custom", label: "Özel",   renk: customTheme?.background || "#888", aciklama: "Kişisel renk ayarları" },
   ]
 
   function ozelPanelAc() {
     setOzelRenkler({ ...customTheme })
     setOzelPanelAcik(true)
-    setTemaAcik(false)
+    setAyarlarAcik(false)       // iki katman üst üste binmesin
   }
 
   function renkDegistir(key, deger) {
@@ -125,21 +161,43 @@ export default function Navbar() {
 
   return (
     <>
+      {/* ── ÇENTİK PAYI (24 Eylül 2026) ─────────────────────────────────────
+          index.html'e `apple-mobile-web-app-status-bar-style: black-translucent`
+          eklendiğinden beri içerik ekranın GERÇEK tepesinden (y=0) başlıyor.
+          Navbar `height: 42px` + `top: 0` ile tamamen durum çubuğunun (saatin)
+          altında kalıyor ve hiç görünmüyordu.
+          ÇÖZÜM: barın kendisi çentik şeridini de KAPLASIN — üstte düz `theme.surface`
+          zemin, altında ayırıcı çizgi. Okuma ekranlarındaki bar da aynı kuralla
+          çalışıyor (`paddingTop: max(5px, env(safe-area-inset-top))`), böylece
+          uygulama genelinde tek davranış var.
+          `height` YERİNE `minHeight`: `* { box-sizing: border-box }` yüzünden sabit
+          height + paddingTop, içeriği 42px'in içine sıkıştırıp ezerdi.
+          Çentiksiz cihazlarda env() 0 döner, görünüm bugünküyle birebir aynı kalır.
+
+          ⚠ BUNA BAĞLI YER: Arama.jsx'te sticky üst blok `top: "42px"` varsayıyor.
+          Navbar artık 42px + çentik payı kadar; o dosyada da
+          `calc(42px + env(safe-area-inset-top))` yazılmalı, yoksa arama kutusu
+          navbar'ın ALTINDA kalır. */}
       <nav style={{
         background: theme.surface,
         borderBottom: `1px solid ${theme.border}`,
         padding: "0 20px",
+        paddingTop: `calc(env(safe-area-inset-top) + ${UST_CENTIK_EK}px)`,
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        height: "42px",
+        // border-box (index.css'teki `* { box-sizing: border-box }`) korunuyor —
+        // content-box'a geçmek yatay dolguyu genişliğe ekleyip taşma yapardı.
+        // Bu yüzden yükseklik doğrudan "42px + çentik" yazılıyor: toplam yükseklik
+        // doğru, içerik alanı yine 42px.
+        minHeight: `calc(42px + env(safe-area-inset-top) + ${UST_CENTIK_EK}px)`,
         position: "sticky",
         top: 0,
         zIndex: 100,
       }}>
         {/* Hamburger */}
         <button
-          onClick={() => { setMenuAcik(!menuAcik); setTemaAcik(false) }}
+          onClick={() => { setMenuAcik(!menuAcik); setAyarlarAcik(false) }}
           style={{ color: theme.textSecondary, padding: "6px", borderRadius: "8px", display: "flex", alignItems: "center" }}
         >
           {menuAcik ? <X size={20} /> : <Menu size={20} />}
@@ -150,116 +208,75 @@ export default function Navbar() {
           VUKUF
         </Link>
 
-        {/* Sağ grup: Dinamik + Tema */}
-        <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-        {/* Dinamik mod (yalnızca Kitaplık sayfasında) */}
-        {dinamikGoster && (
-          <button
-            onClick={() => { setDinamikPanelAcik(true); setMenuAcik(false); setTemaAcik(false) }}
-            title="Görünüm ayarları"
-            aria-label="Görünüm ayarları"
-            style={{
-              color: dinamikPanelAcik ? theme.accent : theme.textSecondary,
-              padding: "6px",
-              borderRadius: "8px",
-              display: "flex",
-              alignItems: "center",
-              background: dinamikPanelAcik ? `${theme.accent}15` : "transparent",
-            }}
-          >
-            <Sparkles size={18} />
-          </button>
-        )}
-
-        {/* Tema seçici */}
-        <div style={{ position: "relative" }}>
-          <button
-            onClick={() => { setTemaAcik(!temaAcik); setMenuAcik(false) }}
-            style={{
-              color: temaAcik ? theme.accent : theme.textSecondary,
-              padding: "6px",
-              borderRadius: "8px",
-              display: "flex",
-              alignItems: "center",
-              background: temaAcik ? `${theme.accent}15` : "transparent",
-            }}
-          >
-            <Palette size={18} />
-          </button>
-
-          {/* Tema dropdown */}
-          {temaAcik && (
-            <>
-              <div onClick={() => setTemaAcik(false)} style={{ position: "fixed", inset: 0, zIndex: 150 }} />
-              <div style={{
-                position: "absolute",
-                top: "40px",
-                right: 0,
-                background: theme.surface,
-                border: `1px solid ${theme.border}`,
-                borderRadius: "12px",
-                padding: "8px",
-                zIndex: 200,
-                minWidth: "200px",
-                boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
-              }}>
-                {temaListesi.map(t => (
-                  <button
-                    key={t.id}
-                    onClick={() => {
-                      if (t.id === "custom") {
-                        ozelPanelAc()
-                      } else {
-                        setCurrentTheme(t.id)
-                        setTemaAcik(false)
-                      }
-                    }}
-                    style={{
-                      width: "100%",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "10px",
-                      padding: "8px 12px",
-                      borderRadius: "8px",
-                      fontSize: "13px",
-                      color: currentTheme === t.id ? theme.accent : theme.text,
-                      background: currentTheme === t.id ? `${theme.accent}15` : "transparent",
-                      cursor: "pointer",
-                    }}
-                  >
-                    <div style={{
-                      width: "18px",
-                      height: "18px",
-                      borderRadius: "50%",
-                      background: t.renk,
-                      border: `2px solid ${currentTheme === t.id ? theme.accent : theme.border}`,
-                      flexShrink: 0,
-                    }} />
-                    <span style={{ flex: 1, textAlign: "left" }}>{t.label}</span>
-                    {t.id === "custom" && (
-                      <Pencil size={12} color={theme.textSecondary} />
-                    )}
-                    {currentTheme === t.id && t.id !== "custom" && (
-                      <span style={{ fontSize: "10px", color: theme.accent }}>✓</span>
-                    )}
-                  </button>
-                ))}
-              </div>
-            </>
-          )}
-        </div>
-        </div>
+        {/* TEK AYARLAR DÜĞMESİ — eski Sparkles + Palette ikilisinin yerine */}
+        <button
+          onClick={() => { setAyarlarAcik(true); setMenuAcik(false) }}
+          title="Ayarlar"
+          aria-label="Ayarlar"
+          style={{
+            color: ayarlarAcik ? theme.accent : theme.textSecondary,
+            padding: "6px",
+            borderRadius: "8px",
+            display: "flex",
+            alignItems: "center",
+            background: ayarlarAcik ? `${theme.accent}15` : "transparent",
+          }}
+        >
+          <Settings size={18} />
+        </button>
       </nav>
 
-      {/* Görünüm ayarları — alttan açılır panel (Dinamik Mod + Giriş Animasyonu).
-          Panel gövdesi artık AltSayfa'da: üstteki tutamaktan aşağı sürükleyerek
-          kapanıyor, Esc de kapatıyor. Perde ve giriş/çıkış geçişi orada. */}
-      {dinamikPanelAcik && (
+      {/* ═══ AYARLAR PANELİ ═══════════════════════════════════════════════ */}
+      {ayarlarAcik && (
         <AltSayfa
-          kapat={() => setDinamikPanelAcik(false)}
+          kapat={() => setAyarlarAcik(false)}
           theme={theme}
-          baslik="GÖRÜNÜM"
+          baslik="AYARLAR"
+          maxYukseklik="86vh"
         >
+          {/* ── TEMA ──────────────────────────────────────────────────── */}
+          <BolumBasligi theme={theme} ikon={Palette} ilk>TEMA</BolumBasligi>
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: isMobile ? "1fr 1fr" : "1fr 1fr 1fr",
+            gap: "6px",
+          }}>
+            {temaListesi.map(t => (
+              <button
+                key={t.id}
+                onClick={() => {
+                  if (t.id === "custom") { ozelPanelAc(); return }
+                  setCurrentTheme(t.id)
+                }}
+                style={{
+                  display: "flex", alignItems: "center", gap: "9px",
+                  padding: "10px 11px", borderRadius: "10px",
+                  fontSize: "13px", textAlign: "left", cursor: "pointer",
+                  color: currentTheme === t.id ? theme.accent : theme.text,
+                  background: currentTheme === t.id ? `${theme.accent}15` : "transparent",
+                  border: `1px solid ${currentTheme === t.id ? theme.accent : theme.border}`,
+                  fontFamily: "inherit",
+                }}
+              >
+                <div style={{
+                  width: "18px", height: "18px", borderRadius: "50%",
+                  background: t.renk,
+                  border: `2px solid ${currentTheme === t.id ? theme.accent : theme.border}`,
+                  flexShrink: 0,
+                }} />
+                <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {t.label}
+                </span>
+                {t.id === "custom" && <Pencil size={12} color={theme.textSecondary} />}
+                {currentTheme === t.id && t.id !== "custom" && (
+                  <span style={{ fontSize: "10px", color: theme.accent }}>✓</span>
+                )}
+              </button>
+            ))}
+          </div>
+
+          {/* ── GÖRÜNÜM ───────────────────────────────────────────────── */}
+          <BolumBasligi theme={theme} ikon={Sparkles}>GÖRÜNÜM</BolumBasligi>
           <AyarSatiri
             baslik="Dinamik Mod"
             aciklama="Kitaplıkta akan (coverflow) kapak görünümü"
@@ -275,10 +292,17 @@ export default function Navbar() {
             onToggle={toggleGirisAnim}
             theme={theme}
           />
+
+          {/* ── VERİLER ───────────────────────────────────────────────── */}
+          <BolumBasligi theme={theme} ikon={HardDrive}>VERİLER</BolumBasligi>
+          <VeriAyarlari theme={theme} />
+
+          {/* Panelin sonunda nefes payı — son düğme ekranın en dibine yapışmasın */}
+          <div style={{ height: "8px" }} />
         </AltSayfa>
       )}
 
-      {/* Özel tema paneli */}
+      {/* ═══ ÖZEL TEMA PANELİ (değişmedi) ═════════════════════════════════ */}
       {ozelPanelAcik && (
         <>
           <div
@@ -428,7 +452,7 @@ export default function Navbar() {
         </>
       )}
 
-      {/* Menü overlay - Hakkında en altta */}
+      {/* ═══ HAMBURGER MENÜ (değişmedi) ═══════════════════════════════════ */}
       {menuAcik && (
         <>
           <div
@@ -456,7 +480,7 @@ export default function Navbar() {
                   VUKUF
                 </span>
               </div>
-              
+
               {/* Ana menü öğeleri (Kitaplık, Lügat, Tefeül) */}
               {anaNavItems.map(({ path, label, icon: Icon }) => {
                 const isActive = location.pathname === path
@@ -485,9 +509,9 @@ export default function Navbar() {
             </div>
 
             {/* Alt kısım - Hakkında (çizgi ile ayrılmış) */}
-            <div style={{ 
-              marginTop: "auto", 
-              borderTop: `1px solid ${theme.border}`, 
+            <div style={{
+              marginTop: "auto",
+              borderTop: `1px solid ${theme.border}`,
               paddingTop: "0px",
               marginBottom: "0px",
               marginLeft: "0px",

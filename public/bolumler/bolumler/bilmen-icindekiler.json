@@ -1,0 +1,2442 @@
+[
+ {
+  "seviye": 1,
+  "baslik": "Büyük İslam İlmihâli",
+  "aciklama": "",
+  "sayfa": 1,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 2,
+  "baslik": "BİRİNCİ KİTAP İTİKAT KİTABI",
+  "aciklama": "İTİKAT KİTABI",
+  "sayfa": 2,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "Gerçek Dinin Esasları ve Başlıca Dinler",
+  "aciklama": "",
+  "sayfa": 2,
+  "oran": 0.1176,
+  "satir": 2
+ },
+ {
+  "seviye": 3,
+  "baslik": "Gerçek Bir Dinin Vasıfları ve Yararları",
+  "aciklama": "",
+  "sayfa": 2,
+  "oran": 0.5882,
+  "satir": 10
+ },
+ {
+  "seviye": 3,
+  "baslik": "İslam Dininin Genelliği ve Mutlu Sonuçları",
+  "aciklama": "",
+  "sayfa": 3,
+  "oran": 0.3636,
+  "satir": 4
+ },
+ {
+  "seviye": 3,
+  "baslik": "İman ve İslamın Niteliği",
+  "aciklama": "",
+  "sayfa": 4,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "İman ile İslamın Şartları",
+  "aciklama": "",
+  "sayfa": 4,
+  "oran": 0.7273,
+  "satir": 8
+ },
+ {
+  "seviye": 4,
+  "baslik": "Yüce Allah'a ve O'nun Sıfatlarına İman",
+  "aciklama": "",
+  "sayfa": 5,
+  "oran": 0.4444,
+  "satir": 4
+ },
+ {
+  "seviye": 4,
+  "baslik": "Peygamberlere İman",
+  "aciklama": "",
+  "sayfa": 13,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 4,
+  "baslik": "Peygamberlere Olan İhtiyaç",
+  "aciklama": "",
+  "sayfa": 15,
+  "oran": 0.125,
+  "satir": 1
+ },
+ {
+  "seviye": 4,
+  "baslik": "Semavi Kitablara İman",
+  "aciklama": "",
+  "sayfa": 16,
+  "oran": 0.4,
+  "satir": 4
+ },
+ {
+  "seviye": 4,
+  "baslik": "Semavi Kitablara Olan İhtiyaç",
+  "aciklama": "",
+  "sayfa": 18,
+  "oran": 0.3,
+  "satir": 3
+ },
+ {
+  "seviye": 4,
+  "baslik": "Kur'an'ın Nasıl Bir İlâhi Kitab Olduğu",
+  "aciklama": "",
+  "sayfa": 18,
+  "oran": 0.7,
+  "satir": 7
+ },
+ {
+  "seviye": 4,
+  "baslik": "Kur'an-ı Kerimin Taşıdığı Gerçekler",
+  "aciklama": "",
+  "sayfa": 19,
+  "oran": 0.5,
+  "satir": 5
+ },
+ {
+  "seviye": 4,
+  "baslik": "Meleklere İman",
+  "aciklama": "",
+  "sayfa": 21,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 4,
+  "baslik": "Meleklerin Varlığındaki Hikmet",
+  "aciklama": "",
+  "sayfa": 21,
+  "oran": 0.7778,
+  "satir": 7
+ },
+ {
+  "seviye": 4,
+  "baslik": "Ahirete İman",
+  "aciklama": "",
+  "sayfa": 22,
+  "oran": 0.625,
+  "satir": 5
+ },
+ {
+  "seviye": 4,
+  "baslik": "Kıyametin Oluşu ve Başlangıç Alâmetleri",
+  "aciklama": "",
+  "sayfa": 23,
+  "oran": 0.25,
+  "satir": 2
+ },
+ {
+  "seviye": 4,
+  "baslik": "Ahirete Ait Olaylar",
+  "aciklama": "",
+  "sayfa": 24,
+  "oran": 0.8125,
+  "satir": 13
+ },
+ {
+  "seviye": 4,
+  "baslik": "Ahiretin Varlığındaki Hikmet",
+  "aciklama": "",
+  "sayfa": 26,
+  "oran": 0.5,
+  "satir": 5
+ },
+ {
+  "seviye": 4,
+  "baslik": "Kaza ve Kadere İman",
+  "aciklama": "",
+  "sayfa": 27,
+  "oran": 0.5,
+  "satir": 5
+ },
+ {
+  "seviye": 4,
+  "baslik": "Kaza ve Kadere İman Sorumluluğa Engel Değildir",
+  "aciklama": "",
+  "sayfa": 28,
+  "oran": 0.3333,
+  "satir": 3
+ },
+ {
+  "seviye": 3,
+  "baslik": "İman'da Ehl-i Sünnet İmamları",
+  "aciklama": "",
+  "sayfa": 29,
+  "oran": 0.5,
+  "satir": 6
+ },
+ {
+  "seviye": 4,
+  "baslik": "Başlangıç Müctehidlerimiz",
+  "aciklama": "",
+  "sayfa": 31,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 2,
+  "baslik": "İKİNCİ KİTAP TAHARET (TEMİZLİK) KİTABI",
+  "aciklama": "TAHARET (TEMİZLİK) KİTABI",
+  "sayfa": 37,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "Müslümanlıkta İbadetler, Taharetler",
+  "aciklama": "",
+  "sayfa": 37,
+  "oran": 0.1667,
+  "satir": 2
+ },
+ {
+  "seviye": 3,
+  "baslik": "Bir Kısım Dinî Deyimler",
+  "aciklama": "",
+  "sayfa": 38,
+  "oran": 0.3,
+  "satir": 3
+ },
+ {
+  "seviye": 3,
+  "baslik": "Suların Kısımları",
+  "aciklama": "",
+  "sayfa": 44,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Mutlak Suların Nevileri ve Hükümleri",
+  "aciklama": "",
+  "sayfa": 44,
+  "oran": 0.6667,
+  "satir": 6
+ },
+ {
+  "seviye": 3,
+  "baslik": "Mukayyed Suların Hükümleri",
+  "aciklama": "",
+  "sayfa": 46,
+  "oran": 0.6667,
+  "satir": 6
+ },
+ {
+  "seviye": 3,
+  "baslik": "Su Artıkları Hakkında Hükümler",
+  "aciklama": "",
+  "sayfa": 47,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Kuyular Üzerindeki Hükümler",
+  "aciklama": "",
+  "sayfa": 48,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Din Yönünden Temiz Sayılan Şeyler",
+  "aciklama": "",
+  "sayfa": 51,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Din Yönünden Temiz Sayılmayan Şeyler",
+  "aciklama": "",
+  "sayfa": 53,
+  "oran": 0.1429,
+  "satir": 2
+ },
+ {
+  "seviye": 3,
+  "baslik": "Temiz Olmayan Şeylerin Hükümleri",
+  "aciklama": "",
+  "sayfa": 54,
+  "oran": 0.5,
+  "satir": 6
+ },
+ {
+  "seviye": 3,
+  "baslik": "Temizleme Yolları",
+  "aciklama": "",
+  "sayfa": 55,
+  "oran": 0.1,
+  "satir": 1
+ },
+ {
+  "seviye": 3,
+  "baslik": "Özürlü Kimselere Ait Bazı Meseleler",
+  "aciklama": "",
+  "sayfa": 61,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Özrün Hükmü",
+  "aciklama": "",
+  "sayfa": 61,
+  "oran": 0.5,
+  "satir": 5
+ },
+ {
+  "seviye": 3,
+  "baslik": "Kadınlara Ait Haller",
+  "aciklama": "",
+  "sayfa": 62,
+  "oran": 0.6364,
+  "satir": 7
+ },
+ {
+  "seviye": 3,
+  "baslik": "Hayızla İlgili Meseleler",
+  "aciklama": "",
+  "sayfa": 63,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Nifas Haline Ait Meseleler",
+  "aciklama": "",
+  "sayfa": 65,
+  "oran": 0.7778,
+  "satir": 7
+ },
+ {
+  "seviye": 3,
+  "baslik": "Hayız ve Nifas Hallerine Ait Hükümler",
+  "aciklama": "",
+  "sayfa": 66,
+  "oran": 0.8333,
+  "satir": 10
+ },
+ {
+  "seviye": 3,
+  "baslik": "İstihaze Haline Ait Meseleler",
+  "aciklama": "",
+  "sayfa": 68,
+  "oran": 0.5455,
+  "satir": 6
+ },
+ {
+  "seviye": 3,
+  "baslik": "Abdestin Mahiyeti",
+  "aciklama": "",
+  "sayfa": 69,
+  "oran": 0.3,
+  "satir": 3
+ },
+ {
+  "seviye": 3,
+  "baslik": "Abdestin Farzları",
+  "aciklama": "",
+  "sayfa": 69,
+  "oran": 0.7,
+  "satir": 7
+ },
+ {
+  "seviye": 3,
+  "baslik": "Abdestin Sünnetleri",
+  "aciklama": "",
+  "sayfa": 70,
+  "oran": 0.3571,
+  "satir": 5
+ },
+ {
+  "seviye": 3,
+  "baslik": "Abdestin Edebleri",
+  "aciklama": "",
+  "sayfa": 72,
+  "oran": 0.6875,
+  "satir": 11
+ },
+ {
+  "seviye": 3,
+  "baslik": "Abdestin Duaları",
+  "aciklama": "",
+  "sayfa": 74,
+  "oran": 0.0556,
+  "satir": 1
+ },
+ {
+  "seviye": 3,
+  "baslik": "Vasıf Bakımından Abdestin Nevileri",
+  "aciklama": "",
+  "sayfa": 75,
+  "oran": 0.75,
+  "satir": 15
+ },
+ {
+  "seviye": 3,
+  "baslik": "Abdestin Sıhhatine Engel Olmayan Şeyler",
+  "aciklama": "",
+  "sayfa": 76,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Mestler Üzerine Mesh Verilmesi",
+  "aciklama": "",
+  "sayfa": 76,
+  "oran": 0.7857,
+  "satir": 11
+ },
+ {
+  "seviye": 3,
+  "baslik": "Meshin Cevazındaki Şartlar",
+  "aciklama": "",
+  "sayfa": 77,
+  "oran": 0.2308,
+  "satir": 3
+ },
+ {
+  "seviye": 3,
+  "baslik": "Mesh Müddeti",
+  "aciklama": "",
+  "sayfa": 78,
+  "oran": 0.1111,
+  "satir": 1
+ },
+ {
+  "seviye": 3,
+  "baslik": "Sargı Üzerine Mesh",
+  "aciklama": "",
+  "sayfa": 78,
+  "oran": 0.6667,
+  "satir": 6
+ },
+ {
+  "seviye": 3,
+  "baslik": "Meshi Bozan Şeyler",
+  "aciklama": "",
+  "sayfa": 79,
+  "oran": 0.4,
+  "satir": 6
+ },
+ {
+  "seviye": 3,
+  "baslik": "Abdesti Bozan Şeyler",
+  "aciklama": "",
+  "sayfa": 79,
+  "oran": 0.6667,
+  "satir": 10
+ },
+ {
+  "seviye": 3,
+  "baslik": "Abdesti Bozmayan Şeyler",
+  "aciklama": "",
+  "sayfa": 81,
+  "oran": 0.2353,
+  "satir": 4
+ },
+ {
+  "seviye": 3,
+  "baslik": "Gusül ve Guslü Gerektiren Haller",
+  "aciklama": "",
+  "sayfa": 83,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Guslün Farzları",
+  "aciklama": "",
+  "sayfa": 84,
+  "oran": 0.7692,
+  "satir": 10
+ },
+ {
+  "seviye": 3,
+  "baslik": "Guslün Sünnetleri",
+  "aciklama": "",
+  "sayfa": 86,
+  "oran": 0.2857,
+  "satir": 4
+ },
+ {
+  "seviye": 3,
+  "baslik": "Guslün Vasıfları",
+  "aciklama": "",
+  "sayfa": 87,
+  "oran": 0.5294,
+  "satir": 9
+ },
+ {
+  "seviye": 3,
+  "baslik": "Gusül Etmesi Farz Olanlara Haram veya Mekruh Olan Şeyler",
+  "aciklama": "",
+  "sayfa": 88,
+  "oran": 0.6,
+  "satir": 9
+ },
+ {
+  "seviye": 3,
+  "baslik": "Teyemmümün Niteliği ve Farzları",
+  "aciklama": "",
+  "sayfa": 89,
+  "oran": 0.5385,
+  "satir": 7
+ },
+ {
+  "seviye": 3,
+  "baslik": "Teyemmümün Sünnet Üzere Yapılması",
+  "aciklama": "",
+  "sayfa": 90,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Teyemmümün Şartları",
+  "aciklama": "",
+  "sayfa": 90,
+  "oran": 0.6923,
+  "satir": 9
+ },
+ {
+  "seviye": 3,
+  "baslik": "Teyemmümü Mubah Kılan ve Kılmayan Bazı Haller",
+  "aciklama": "",
+  "sayfa": 92,
+  "oran": 0.6667,
+  "satir": 8
+ },
+ {
+  "seviye": 3,
+  "baslik": "Teyemmümü Bozan Haller",
+  "aciklama": "",
+  "sayfa": 94,
+  "oran": 0.5833,
+  "satir": 7
+ },
+ {
+  "seviye": 2,
+  "baslik": "ÜÇÜNCÜ KİTAP NAMAZ KİTABI",
+  "aciklama": "NAMAZ KİTABI",
+  "sayfa": 95,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "Namazın Önemi ve Fazileti",
+  "aciklama": "",
+  "sayfa": 95,
+  "oran": 0.2,
+  "satir": 2
+ },
+ {
+  "seviye": 3,
+  "baslik": "Namazla İlgili Bazı Deyimler",
+  "aciklama": "",
+  "sayfa": 97,
+  "oran": 0.2667,
+  "satir": 4
+ },
+ {
+  "seviye": 3,
+  "baslik": "Namazların Nevileri ve Rekâtları",
+  "aciklama": "",
+  "sayfa": 98,
+  "oran": 0.1429,
+  "satir": 2
+ },
+ {
+  "seviye": 3,
+  "baslik": "Namazların Farzları, Şartları, Rükünleri",
+  "aciklama": "",
+  "sayfa": 99,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Hadesten ve Necasetten Taharet",
+  "aciklama": "",
+  "sayfa": 99,
+  "oran": 0.8947,
+  "satir": 17
+ },
+ {
+  "seviye": 3,
+  "baslik": "Setr-i Avret (Ayıp Yerleri Örtmek)",
+  "aciklama": "",
+  "sayfa": 100,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Kıbleye Yönelmek",
+  "aciklama": "",
+  "sayfa": 101,
+  "oran": 0.4545,
+  "satir": 5
+ },
+ {
+  "seviye": 3,
+  "baslik": "Namaz Vakitleri",
+  "aciklama": "",
+  "sayfa": 103,
+  "oran": 0.8182,
+  "satir": 9
+ },
+ {
+  "seviye": 3,
+  "baslik": "Namazlara Ait Niyetler",
+  "aciklama": "",
+  "sayfa": 108,
+  "oran": 0.125,
+  "satir": 1
+ },
+ {
+  "seviye": 3,
+  "baslik": "İftitah Tekbiri",
+  "aciklama": "",
+  "sayfa": 110,
+  "oran": 0.2308,
+  "satir": 3
+ },
+ {
+  "seviye": 3,
+  "baslik": "Namazlarda Kıyam (Ayakta Durmak)",
+  "aciklama": "",
+  "sayfa": 111,
+  "oran": 0.2,
+  "satir": 2
+ },
+ {
+  "seviye": 3,
+  "baslik": "Namazlarda Kıraet",
+  "aciklama": "",
+  "sayfa": 113,
+  "oran": 0.8,
+  "satir": 8
+ },
+ {
+  "seviye": 3,
+  "baslik": "Namazlarda Rükû",
+  "aciklama": "",
+  "sayfa": 114,
+  "oran": 0.7778,
+  "satir": 7
+ },
+ {
+  "seviye": 3,
+  "baslik": "Namazlarda Secde",
+  "aciklama": "",
+  "sayfa": 115,
+  "oran": 0.5385,
+  "satir": 7
+ },
+ {
+  "seviye": 3,
+  "baslik": "Namazlarda Son Oturuş",
+  "aciklama": "",
+  "sayfa": 117,
+  "oran": 0.5833,
+  "satir": 7
+ },
+ {
+  "seviye": 3,
+  "baslik": "Tadil-i Erkâna Riayet (Rükünlerin Hakkını Vermek)",
+  "aciklama": "",
+  "sayfa": 118,
+  "oran": 0.4444,
+  "satir": 4
+ },
+ {
+  "seviye": 3,
+  "baslik": "Namazdan Kendi İhtiyarı İle Çıkmak",
+  "aciklama": "",
+  "sayfa": 119,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Namazın Vacibleri",
+  "aciklama": "",
+  "sayfa": 119,
+  "oran": 0.2857,
+  "satir": 4
+ },
+ {
+  "seviye": 3,
+  "baslik": "Namazların Sünnetleri",
+  "aciklama": "",
+  "sayfa": 121,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Namazların Edebleri",
+  "aciklama": "",
+  "sayfa": 124,
+  "oran": 0.25,
+  "satir": 3
+ },
+ {
+  "seviye": 3,
+  "baslik": "Ezan ve İkamet",
+  "aciklama": "",
+  "sayfa": 125,
+  "oran": 0.375,
+  "satir": 3
+ },
+ {
+  "seviye": 3,
+  "baslik": "İmamlık ve Cemaat",
+  "aciklama": "",
+  "sayfa": 129,
+  "oran": 0.8182,
+  "satir": 9
+ },
+ {
+  "seviye": 3,
+  "baslik": "Kadınların Aynı Hizada Durmaları",
+  "aciklama": "",
+  "sayfa": 137,
+  "oran": 0.2222,
+  "satir": 2
+ },
+ {
+  "seviye": 3,
+  "baslik": "Namazlar Nasıl Kılınır?",
+  "aciklama": "",
+  "sayfa": 139,
+  "oran": 0.3333,
+  "satir": 4
+ },
+ {
+  "seviye": 3,
+  "baslik": "Vitir Namazına Dair Bazı Meseleler",
+  "aciklama": "",
+  "sayfa": 143,
+  "oran": 0.5,
+  "satir": 5
+ },
+ {
+  "seviye": 3,
+  "baslik": "Namazların Cemaatle Kılınma Şekli",
+  "aciklama": "",
+  "sayfa": 144,
+  "oran": 0.75,
+  "satir": 9
+ },
+ {
+  "seviye": 3,
+  "baslik": "Cuma Namazı",
+  "aciklama": "",
+  "sayfa": 146,
+  "oran": 0.2727,
+  "satir": 3
+ },
+ {
+  "seviye": 3,
+  "baslik": "Cumanın Vücubunun Şartları",
+  "aciklama": "",
+  "sayfa": 147,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Cumanın Edasının Şartları",
+  "aciklama": "",
+  "sayfa": 147,
+  "oran": 0.7692,
+  "satir": 10
+ },
+ {
+  "seviye": 3,
+  "baslik": "Cuma namazına müteallik bazı mes'eleler",
+  "aciklama": "",
+  "sayfa": 151,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Bayram ve Bayram Namazları",
+  "aciklama": "",
+  "sayfa": 152,
+  "oran": 0.25,
+  "satir": 3
+ },
+ {
+  "seviye": 3,
+  "baslik": "Teravih Namazı",
+  "aciklama": "",
+  "sayfa": 156,
+  "oran": 0.1,
+  "satir": 1
+ },
+ {
+  "seviye": 3,
+  "baslik": "Hastaların Namazları",
+  "aciklama": "",
+  "sayfa": 158,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Seferin Anlamı ve Müddeti",
+  "aciklama": "",
+  "sayfa": 158,
+  "oran": 0.5833,
+  "satir": 7
+ },
+ {
+  "seviye": 3,
+  "baslik": "Seferin Hükümleri",
+  "aciklama": "",
+  "sayfa": 160,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Yolculuğun Sona Erip Ermemesi",
+  "aciklama": "",
+  "sayfa": 163,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Eda ile Kazanın Farkları ve Kaza Namazları",
+  "aciklama": "",
+  "sayfa": 164,
+  "oran": 0.4444,
+  "satir": 4
+ },
+ {
+  "seviye": 3,
+  "baslik": "Müdrik Hakkında Meseleler",
+  "aciklama": "",
+  "sayfa": 168,
+  "oran": 0.4286,
+  "satir": 3
+ },
+ {
+  "seviye": 3,
+  "baslik": "Lâhık Hakkında Meseleler",
+  "aciklama": "",
+  "sayfa": 169,
+  "oran": 0.7778,
+  "satir": 7
+ },
+ {
+  "seviye": 3,
+  "baslik": "Mesbuk Hakkındaki Meseleler",
+  "aciklama": "",
+  "sayfa": 170,
+  "oran": 0.7,
+  "satir": 7
+ },
+ {
+  "seviye": 3,
+  "baslik": "Sehiv (Yanılma) Secdeleri ile İlgili Meseleler",
+  "aciklama": "",
+  "sayfa": 173,
+  "oran": 0.1429,
+  "satir": 1
+ },
+ {
+  "seviye": 3,
+  "baslik": "Tilavet Secdesi ile ilgili Meseleler",
+  "aciklama": "",
+  "sayfa": 180,
+  "oran": 0.4545,
+  "satir": 5
+ },
+ {
+  "seviye": 3,
+  "baslik": "Şükür Secdesi",
+  "aciklama": "",
+  "sayfa": 185,
+  "oran": 0.6667,
+  "satir": 6
+ },
+ {
+  "seviye": 3,
+  "baslik": "Korku Namazına Ait Bilgi",
+  "aciklama": "",
+  "sayfa": 186,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Nafile Namazlar",
+  "aciklama": "",
+  "sayfa": 186,
+  "oran": 0.7778,
+  "satir": 7
+ },
+ {
+  "seviye": 3,
+  "baslik": "Mekruh Vakitler",
+  "aciklama": "",
+  "sayfa": 196,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Namazlarda Mekruh Olan ve Olmayan Okuyuşlar",
+  "aciklama": "",
+  "sayfa": 197,
+  "oran": 0.6364,
+  "satir": 7
+ },
+ {
+  "seviye": 3,
+  "baslik": "Zelletü'l-Kari'ye (Okuyucunun Yanılmasına) Ait Esaslar",
+  "aciklama": "",
+  "sayfa": 200,
+  "oran": 0.8947,
+  "satir": 17
+ },
+ {
+  "seviye": 3,
+  "baslik": "Kur'ân-ı Kerîm'i Öğrenip Okumak ve Dinlemek Görevleri",
+  "aciklama": "",
+  "sayfa": 206,
+  "oran": 0.5455,
+  "satir": 6
+ },
+ {
+  "seviye": 3,
+  "baslik": "Namazların Mekruhları",
+  "aciklama": "",
+  "sayfa": 208,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Namazı Bozan ve Bozmayan Şeyler",
+  "aciklama": "",
+  "sayfa": 214,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "İskat-ı Salât (Namaz Borcunu Düşürme) Meselesi",
+  "aciklama": "",
+  "sayfa": 219,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Mescidlere Ait Hükümler",
+  "aciklama": "",
+  "sayfa": 222,
+  "oran": 0.4444,
+  "satir": 4
+ },
+ {
+  "seviye": 3,
+  "baslik": "Cenaze İle İlgili Vacipler ve Görevler",
+  "aciklama": "",
+  "sayfa": 227,
+  "oran": 0.6667,
+  "satir": 6
+ },
+ {
+  "seviye": 3,
+  "baslik": "Cenazelerin Yıkanması",
+  "aciklama": "",
+  "sayfa": 229,
+  "oran": 0.3333,
+  "satir": 3
+ },
+ {
+  "seviye": 3,
+  "baslik": "Cenazelerin Kefenlenmesi",
+  "aciklama": "",
+  "sayfa": 231,
+  "oran": 0.5,
+  "satir": 6
+ },
+ {
+  "seviye": 3,
+  "baslik": "Cenaze Namazları",
+  "aciklama": "",
+  "sayfa": 233,
+  "oran": 0.25,
+  "satir": 2
+ },
+ {
+  "seviye": 3,
+  "baslik": "Cenazelerin Kabirlerine Konulması",
+  "aciklama": "",
+  "sayfa": 240,
+  "oran": 0.3077,
+  "satir": 4
+ },
+ {
+  "seviye": 3,
+  "baslik": "Kabir ve Makbereler",
+  "aciklama": "",
+  "sayfa": 245,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Şehidler ve Onlara Ait Hükümler",
+  "aciklama": "",
+  "sayfa": 248,
+  "oran": 0.0833,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "Dördüncü Kitap Oruç Kitabı",
+  "aciklama": "",
+  "sayfa": 251,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Orucun Mahiyeti",
+  "aciklama": "",
+  "sayfa": 251,
+  "oran": 0.125,
+  "satir": 1
+ },
+ {
+  "seviye": 3,
+  "baslik": "Orucun Nevileri",
+  "aciklama": "",
+  "sayfa": 252,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Oruçların Farz ve Vacip Olmasındaki Sebebler",
+  "aciklama": "",
+  "sayfa": 254,
+  "oran": 0.5,
+  "satir": 6
+ },
+ {
+  "seviye": 3,
+  "baslik": "Orucun Meşru Olmasındaki Hikmet",
+  "aciklama": "",
+  "sayfa": 255,
+  "oran": 0.2308,
+  "satir": 3
+ },
+ {
+  "seviye": 3,
+  "baslik": "Oruçlu için Müstahab Olan Şeyler",
+  "aciklama": "",
+  "sayfa": 256,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Orucun Şartları",
+  "aciklama": "",
+  "sayfa": 257,
+  "oran": 0.3077,
+  "satir": 4
+ },
+ {
+  "seviye": 3,
+  "baslik": "Orucun Vakti",
+  "aciklama": "",
+  "sayfa": 257,
+  "oran": 0.6923,
+  "satir": 9
+ },
+ {
+  "seviye": 3,
+  "baslik": "Ramazan Hilâli İle Diğer Hilâllerin Sübutu",
+  "aciklama": "",
+  "sayfa": 258,
+  "oran": 0.4167,
+  "satir": 5
+ },
+ {
+  "seviye": 3,
+  "baslik": "Oruçlara Ait Niyetler",
+  "aciklama": "",
+  "sayfa": 265,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Oruçlu İçin Mekruh Olan ve Olmayan Şeyler",
+  "aciklama": "",
+  "sayfa": 267,
+  "oran": 0.25,
+  "satir": 3
+ },
+ {
+  "seviye": 3,
+  "baslik": "Orucu Bozan ve Bozmayan Şeyler",
+  "aciklama": "",
+  "sayfa": 268,
+  "oran": 0.3846,
+  "satir": 5
+ },
+ {
+  "seviye": 3,
+  "baslik": "Kaza Edilmesi Gereken ve Gerekmeyen Oruçlar",
+  "aciklama": "",
+  "sayfa": 272,
+  "oran": 0.5,
+  "satir": 4
+ },
+ {
+  "seviye": 3,
+  "baslik": "Keffareti Gerektirmeyen Oruçlar",
+  "aciklama": "",
+  "sayfa": 274,
+  "oran": 0.2,
+  "satir": 2
+ },
+ {
+  "seviye": 3,
+  "baslik": "Oruç Tutmamayı Mubah Kılan Özürler",
+  "aciklama": "",
+  "sayfa": 278,
+  "oran": 0.5455,
+  "satir": 6
+ },
+ {
+  "seviye": 3,
+  "baslik": "Keffaretin Mahiyeti ve Nevileri",
+  "aciklama": "",
+  "sayfa": 281,
+  "oran": 0.4167,
+  "satir": 5
+ },
+ {
+  "seviye": 3,
+  "baslik": "Oruç Keffareti",
+  "aciklama": "",
+  "sayfa": 281,
+  "oran": 0.6667,
+  "satir": 8
+ },
+ {
+  "seviye": 3,
+  "baslik": "Zihar Keffareti",
+  "aciklama": "",
+  "sayfa": 283,
+  "oran": 0.0909,
+  "satir": 1
+ },
+ {
+  "seviye": 3,
+  "baslik": "Traş Olma Keffareti",
+  "aciklama": "",
+  "sayfa": 283,
+  "oran": 0.3636,
+  "satir": 4
+ },
+ {
+  "seviye": 3,
+  "baslik": "Adam Öldürme (Katil) Keffareti",
+  "aciklama": "",
+  "sayfa": 283,
+  "oran": 0.5455,
+  "satir": 6
+ },
+ {
+  "seviye": 3,
+  "baslik": "Yemin Keffareti",
+  "aciklama": "",
+  "sayfa": 283,
+  "oran": 0.7273,
+  "satir": 8
+ },
+ {
+  "seviye": 3,
+  "baslik": "Yeminin Mahiyeti ve Yemin Sayılıp Sayılmayan Şeyler",
+  "aciklama": "",
+  "sayfa": 284,
+  "oran": 0.4545,
+  "satir": 5
+ },
+ {
+  "seviye": 3,
+  "baslik": "Kasem Suretiyle Olan Yeminin Nevileri ve Hükümleri",
+  "aciklama": "",
+  "sayfa": 286,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Yemine Dair Çeşitli Meseleler",
+  "aciklama": "",
+  "sayfa": 286,
+  "oran": 0.8182,
+  "satir": 9
+ },
+ {
+  "seviye": 3,
+  "baslik": "Nezrin Mahiyeti ve Nevileri",
+  "aciklama": "",
+  "sayfa": 293,
+  "oran": 0.375,
+  "satir": 3
+ },
+ {
+  "seviye": 3,
+  "baslik": "Nezrin Şartları",
+  "aciklama": "",
+  "sayfa": 294,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Belirli ve Belirsiz, Mutlak ve Muallak Adaklar",
+  "aciklama": "",
+  "sayfa": 295,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "İtikâfın Mahiyeti, Nevileri ve Teşriî Hikmeti",
+  "aciklama": "",
+  "sayfa": 298,
+  "oran": 0.1818,
+  "satir": 2
+ },
+ {
+  "seviye": 3,
+  "baslik": "İtikâfın Şartları",
+  "aciklama": "",
+  "sayfa": 299,
+  "oran": 0.1667,
+  "satir": 2
+ },
+ {
+  "seviye": 3,
+  "baslik": "İtikâfın Edebleri",
+  "aciklama": "",
+  "sayfa": 300,
+  "oran": 0.1429,
+  "satir": 2
+ },
+ {
+  "seviye": 3,
+  "baslik": "İtikâfa Dair Bazı Meseleler",
+  "aciklama": "",
+  "sayfa": 300,
+  "oran": 0.6429,
+  "satir": 9
+ },
+ {
+  "seviye": 3,
+  "baslik": "İtikâfı Bozan ve Bozmayan Şeyler",
+  "aciklama": "",
+  "sayfa": 301,
+  "oran": 0.1667,
+  "satir": 2
+ },
+ {
+  "seviye": 2,
+  "baslik": "Beşinci Kitap Zekât Kitabı",
+  "aciklama": "",
+  "sayfa": 305,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Zekâtın Mahiyeti",
+  "aciklama": "",
+  "sayfa": 305,
+  "oran": 0.125,
+  "satir": 1
+ },
+ {
+  "seviye": 3,
+  "baslik": "Zekatın Teşriî Hikmeti",
+  "aciklama": "",
+  "sayfa": 306,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Zekatın Farz Olmasının Şartları",
+  "aciklama": "",
+  "sayfa": 307,
+  "oran": 0.1,
+  "satir": 1
+ },
+ {
+  "seviye": 3,
+  "baslik": "Zekatın Sıhhatının Şartı",
+  "aciklama": "",
+  "sayfa": 309,
+  "oran": 0.6364,
+  "satir": 7
+ },
+ {
+  "seviye": 3,
+  "baslik": "Zekata Bağlı Olan Mallar",
+  "aciklama": "",
+  "sayfa": 310,
+  "oran": 0.7778,
+  "satir": 7
+ },
+ {
+  "seviye": 3,
+  "baslik": "Zekata Bağlı Olmayan Mallar",
+  "aciklama": "",
+  "sayfa": 311,
+  "oran": 0.625,
+  "satir": 5
+ },
+ {
+  "seviye": 3,
+  "baslik": "Ehli Hayvanlara Ait Zekatlar",
+  "aciklama": "",
+  "sayfa": 315,
+  "oran": 0.2222,
+  "satir": 2
+ },
+ {
+  "seviye": 3,
+  "baslik": "Ticaret Mallarının Zekatı",
+  "aciklama": "",
+  "sayfa": 318,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Altın ile Gümüşün Zekatı",
+  "aciklama": "",
+  "sayfa": 320,
+  "oran": 0.1538,
+  "satir": 2
+ },
+ {
+  "seviye": 3,
+  "baslik": "Kağıt Paralarla Banknotların Zekatı",
+  "aciklama": "",
+  "sayfa": 323,
+  "oran": 0.6667,
+  "satir": 6
+ },
+ {
+  "seviye": 3,
+  "baslik": "İstenen Borç Paraların Zekatı",
+  "aciklama": "",
+  "sayfa": 324,
+  "oran": 0.5556,
+  "satir": 5
+ },
+ {
+  "seviye": 3,
+  "baslik": "Arazi Ürünlerinin Zekatı",
+  "aciklama": "",
+  "sayfa": 325,
+  "oran": 0.7143,
+  "satir": 5
+ },
+ {
+  "seviye": 3,
+  "baslik": "Madenlerin ve Definelerin Zekatı",
+  "aciklama": "",
+  "sayfa": 328,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Zekatı Ödeme Yolları",
+  "aciklama": "",
+  "sayfa": 329,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Zekatın Verileceği Yerler",
+  "aciklama": "",
+  "sayfa": 331,
+  "oran": 0.6364,
+  "satir": 7
+ },
+ {
+  "seviye": 3,
+  "baslik": "Kimlere Zekat Verilir, Kimlere Verilmez?",
+  "aciklama": "",
+  "sayfa": 333,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Fitre Sadakası",
+  "aciklama": "",
+  "sayfa": 335,
+  "oran": 0.1818,
+  "satir": 2
+ },
+ {
+  "seviye": 2,
+  "baslik": "Altıncı Kitap HAC KİTABI",
+  "aciklama": "",
+  "sayfa": 339,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Hac İle Umrenin Mahiyetleri",
+  "aciklama": "",
+  "sayfa": 339,
+  "oran": 0.1,
+  "satir": 1
+ },
+ {
+  "seviye": 3,
+  "baslik": "Haccın Nevileri",
+  "aciklama": "",
+  "sayfa": 339,
+  "oran": 0.6,
+  "satir": 6
+ },
+ {
+  "seviye": 3,
+  "baslik": "Haccın Rükünleri",
+  "aciklama": "",
+  "sayfa": 340,
+  "oran": 0.6,
+  "satir": 6
+ },
+ {
+  "seviye": 3,
+  "baslik": "Tavafın Mahiyeti ve Nevileri",
+  "aciklama": "",
+  "sayfa": 342,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Haccın Farz Olmasının Şartları",
+  "aciklama": "",
+  "sayfa": 343,
+  "oran": 0.25,
+  "satir": 3
+ },
+ {
+  "seviye": 3,
+  "baslik": "Haccın Yapılmasını Gerektiren Şartlar",
+  "aciklama": "",
+  "sayfa": 345,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Haccın Sıhhatinin Şartları",
+  "aciklama": "",
+  "sayfa": 345,
+  "oran": 0.6154,
+  "satir": 8
+ },
+ {
+  "seviye": 3,
+  "baslik": "Mikat İle İlgili Bilgiler",
+  "aciklama": "",
+  "sayfa": 347,
+  "oran": 0.4444,
+  "satir": 4
+ },
+ {
+  "seviye": 3,
+  "baslik": "Haccın Farziyetinin Sebebi ve Edasının Fevrî Olup Olmadığı",
+  "aciklama": "",
+  "sayfa": 348,
+  "oran": 0.3333,
+  "satir": 3
+ },
+ {
+  "seviye": 3,
+  "baslik": "Haccın Farziyetindeki Şer'î Hikmetler",
+  "aciklama": "",
+  "sayfa": 349,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Haccın Vacipleri",
+  "aciklama": "",
+  "sayfa": 350,
+  "oran": 0.1053,
+  "satir": 2
+ },
+ {
+  "seviye": 3,
+  "baslik": "Haccın Sünnetleri",
+  "aciklama": "",
+  "sayfa": 353,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Haccın Edebleri",
+  "aciklama": "",
+  "sayfa": 355,
+  "oran": 0.5625,
+  "satir": 9
+ },
+ {
+  "seviye": 3,
+  "baslik": "Farz Hac Üzerinde Uygulama",
+  "aciklama": "",
+  "sayfa": 356,
+  "oran": 0.6364,
+  "satir": 7
+ },
+ {
+  "seviye": 3,
+  "baslik": "Umrenin Yapılış Şekli",
+  "aciklama": "",
+  "sayfa": 359,
+  "oran": 0.4444,
+  "satir": 4
+ },
+ {
+  "seviye": 3,
+  "baslik": "Temettü Haccının Yapılış Şekli",
+  "aciklama": "",
+  "sayfa": 360,
+  "oran": 0.3,
+  "satir": 3
+ },
+ {
+  "seviye": 3,
+  "baslik": "Kıran Hac Nasıl Yapılır?",
+  "aciklama": "",
+  "sayfa": 361,
+  "oran": 0.1429,
+  "satir": 1
+ },
+ {
+  "seviye": 3,
+  "baslik": "Hedy'in Mahiyeti ve Hükümleri",
+  "aciklama": "",
+  "sayfa": 362,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Hac ve Umre İle İlgili Yasaklar",
+  "aciklama": "",
+  "sayfa": 363,
+  "oran": 0.3636,
+  "satir": 4
+ },
+ {
+  "seviye": 3,
+  "baslik": "Hac İle Umrenin Yasaklarına Dair Çeşitli Meseleler",
+  "aciklama": "",
+  "sayfa": 366,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Bedel (Vekâlet) Yolu İle Hac",
+  "aciklama": "",
+  "sayfa": 369,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Hac Konusunda Niyabet, Vasiyet ve Adakla İlgili Bazı Meseleler",
+  "aciklama": "",
+  "sayfa": 371,
+  "oran": 0.7692,
+  "satir": 10
+ },
+ {
+  "seviye": 3,
+  "baslik": "İhsarla İlgili Meseleler",
+  "aciklama": "",
+  "sayfa": 374,
+  "oran": 0.2308,
+  "satir": 3
+ },
+ {
+  "seviye": 3,
+  "baslik": "Resûlullah Efendimizin Kabrini Ziyaret",
+  "aciklama": "",
+  "sayfa": 376,
+  "oran": 0.2,
+  "satir": 2
+ },
+ {
+  "seviye": 2,
+  "baslik": "Yedinci Kitap Kurban ve Av Kitabı",
+  "aciklama": "",
+  "sayfa": 381,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Kurbanın Mahiyeti, Vücubu ve Şer'î Hikmeti",
+  "aciklama": "",
+  "sayfa": 381,
+  "oran": 0.125,
+  "satir": 1
+ },
+ {
+  "seviye": 3,
+  "baslik": "Kurbanın Cinsi ve Kusurlu Olup Olmaması",
+  "aciklama": "",
+  "sayfa": 382,
+  "oran": 0.4167,
+  "satir": 5
+ },
+ {
+  "seviye": 3,
+  "baslik": "Kurbanın Kesilme Vakti",
+  "aciklama": "",
+  "sayfa": 384,
+  "oran": 0.25,
+  "satir": 3
+ },
+ {
+  "seviye": 3,
+  "baslik": "Kurbanın Eti ve Derisi Üzerinde Yapılacak Şeyler",
+  "aciklama": "",
+  "sayfa": 385,
+  "oran": 0.4444,
+  "satir": 4
+ },
+ {
+  "seviye": 3,
+  "baslik": "Akîka Kurbanı",
+  "aciklama": "",
+  "sayfa": 387,
+  "oran": 0.0769,
+  "satir": 1
+ },
+ {
+  "seviye": 3,
+  "baslik": "Zebh, Zebiha ve Tezkiyenin Mahiyetleri",
+  "aciklama": "",
+  "sayfa": 387,
+  "oran": 0.6154,
+  "satir": 8
+ },
+ {
+  "seviye": 3,
+  "baslik": "Zebh (Boğazlamak) İşlemi",
+  "aciklama": "",
+  "sayfa": 388,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Etleri Yenen ve Yenmeyen Hayvanlar",
+  "aciklama": "",
+  "sayfa": 388,
+  "oran": 0.7273,
+  "satir": 8
+ },
+ {
+  "seviye": 3,
+  "baslik": "Kimlerin Boğazlayacağı Hayvanların Eti Yenir veya Yenmez",
+  "aciklama": "",
+  "sayfa": 391,
+  "oran": 0.75,
+  "satir": 6
+ },
+ {
+  "seviye": 3,
+  "baslik": "Meytenin Mahiyeti ve Hükmü",
+  "aciklama": "",
+  "sayfa": 392,
+  "oran": 0.25,
+  "satir": 3
+ },
+ {
+  "seviye": 3,
+  "baslik": "Avın Mahiyeti ve Caiz Oluşu",
+  "aciklama": "",
+  "sayfa": 392,
+  "oran": 0.6667,
+  "satir": 8
+ },
+ {
+  "seviye": 3,
+  "baslik": "Nelerle Av Yapılır?",
+  "aciklama": "",
+  "sayfa": 393,
+  "oran": 0.25,
+  "satir": 3
+ },
+ {
+  "seviye": 3,
+  "baslik": "Av Hayvanında Aranılan Şartlar",
+  "aciklama": "",
+  "sayfa": 393,
+  "oran": 0.6667,
+  "satir": 8
+ },
+ {
+  "seviye": 3,
+  "baslik": "Avla İlgili Çeşitli Meseleler",
+  "aciklama": "",
+  "sayfa": 394,
+  "oran": 0.7273,
+  "satir": 8
+ },
+ {
+  "seviye": 2,
+  "baslik": "Sekizinci Kitap KERAHET ve İSTİHSAN",
+  "aciklama": "",
+  "sayfa": 397,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Bazı Dinî Deyimler",
+  "aciklama": "",
+  "sayfa": 397,
+  "oran": 0.375,
+  "satir": 3
+ },
+ {
+  "seviye": 3,
+  "baslik": "Her Müslüman İçin Öğretme ve Öğrenmenin Gerekliliği",
+  "aciklama": "",
+  "sayfa": 398,
+  "oran": 0.4545,
+  "satir": 5
+ },
+ {
+  "seviye": 3,
+  "baslik": "İslâmda Va'zın ve Öğüt Vermenin Önemi",
+  "aciklama": "",
+  "sayfa": 400,
+  "oran": 0.1818,
+  "satir": 2
+ },
+ {
+  "seviye": 3,
+  "baslik": "Mukaddesata Hürmet ve Saygı",
+  "aciklama": "",
+  "sayfa": 402,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Din ve Muamelâtta Sözleri Kabul Edilecek ve Edilmeyecekler",
+  "aciklama": "",
+  "sayfa": 405,
+  "oran": 0.625,
+  "satir": 5
+ },
+ {
+  "seviye": 3,
+  "baslik": "İslâmda Aile ve Akrabalık İlişkileri",
+  "aciklama": "",
+  "sayfa": 406,
+  "oran": 0.2857,
+  "satir": 4
+ },
+ {
+  "seviye": 3,
+  "baslik": "İslâmda Kazancın (Kesbin) Önemi",
+  "aciklama": "",
+  "sayfa": 409,
+  "oran": 0.1667,
+  "satir": 2
+ },
+ {
+  "seviye": 3,
+  "baslik": "Çeşitli Kazanç Yollarının Üstünlük Dereceleri",
+  "aciklama": "",
+  "sayfa": 410,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Alış-Verişin Çeşitleri ve Kâr (Kazanç) Mikdarı",
+  "aciklama": "",
+  "sayfa": 411,
+  "oran": 0.3333,
+  "satir": 3
+ },
+ {
+  "seviye": 3,
+  "baslik": "İhtikârın Mahiyeti ve Hükümleri",
+  "aciklama": "",
+  "sayfa": 412,
+  "oran": 0.2,
+  "satir": 2
+ },
+ {
+  "seviye": 3,
+  "baslik": "Ribanın Mahiyeti ve Nevileri",
+  "aciklama": "",
+  "sayfa": 413,
+  "oran": 0.4,
+  "satir": 4
+ },
+ {
+  "seviye": 3,
+  "baslik": "İstikraz (Ödünç Alma) Meseleleri",
+  "aciklama": "",
+  "sayfa": 414,
+  "oran": 0.75,
+  "satir": 9
+ },
+ {
+  "seviye": 3,
+  "baslik": "İslâmda Yapılması Yasak Şeyler",
+  "aciklama": "",
+  "sayfa": 416,
+  "oran": 0.0909,
+  "satir": 1
+ },
+ {
+  "seviye": 3,
+  "baslik": "Yenip İçilmesi Helâl Olan ve Olmayan Şeyler",
+  "aciklama": "",
+  "sayfa": 416,
+  "oran": 0.8182,
+  "satir": 9
+ },
+ {
+  "seviye": 3,
+  "baslik": "Yiyip İçme Mikdarı ve Bunların Edebleri",
+  "aciklama": "",
+  "sayfa": 419,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Giyilmesi ve Kullanılması Gerekli ve Caiz Olup Olmayan Şeyler",
+  "aciklama": "",
+  "sayfa": 420,
+  "oran": 0.3636,
+  "satir": 4
+ },
+ {
+  "seviye": 3,
+  "baslik": "Lukataların (Buluntu Malların) Mahiyeti ve Hükümleri",
+  "aciklama": "",
+  "sayfa": 423,
+  "oran": 0.3333,
+  "satir": 5
+ },
+ {
+  "seviye": 3,
+  "baslik": "İslamda Eğlence ve Yarışmaların Hükmü",
+  "aciklama": "",
+  "sayfa": 425,
+  "oran": 0.2727,
+  "satir": 3
+ },
+ {
+  "seviye": 3,
+  "baslik": "İslamda İnsanların Hayat ve Organ Dokunulmazlığı",
+  "aciklama": "",
+  "sayfa": 426,
+  "oran": 0.125,
+  "satir": 1
+ },
+ {
+  "seviye": 3,
+  "baslik": "Hayvanlara Yumuşak Davranmanın Gereği",
+  "aciklama": "",
+  "sayfa": 427,
+  "oran": 0.7273,
+  "satir": 8
+ },
+ {
+  "seviye": 3,
+  "baslik": "İslâmda Maddî ve Manevî Temizlik",
+  "aciklama": "",
+  "sayfa": 428,
+  "oran": 0.3571,
+  "satir": 5
+ },
+ {
+  "seviye": 2,
+  "baslik": "Dokuzuncu Kitap İslâm Ahlâkı Kitabı",
+  "aciklama": "",
+  "sayfa": 431,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Ahlâkın Mahiyeti, Nevileri ve Ahlak İlminin Kısımları",
+  "aciklama": "",
+  "sayfa": 431,
+  "oran": 0.125,
+  "satir": 1
+ },
+ {
+  "seviye": 3,
+  "baslik": "Ahlâkın Önemi ve Arındırmaya Elverişli Olması",
+  "aciklama": "",
+  "sayfa": 432,
+  "oran": 0.1429,
+  "satir": 2
+ },
+ {
+  "seviye": 3,
+  "baslik": "Görevlerin Mahiyetleri (Esasları) ve Nevileri",
+  "aciklama": "",
+  "sayfa": 433,
+  "oran": 0.125,
+  "satir": 1
+ },
+ {
+  "seviye": 3,
+  "baslik": "İlahi Görevler",
+  "aciklama": "",
+  "sayfa": 433,
+  "oran": 0.75,
+  "satir": 6
+ },
+ {
+  "seviye": 3,
+  "baslik": "Şahsa Ait Görevler",
+  "aciklama": "",
+  "sayfa": 434,
+  "oran": 0.6429,
+  "satir": 9
+ },
+ {
+  "seviye": 3,
+  "baslik": "Ailevi Görevler",
+  "aciklama": "",
+  "sayfa": 435,
+  "oran": 0.5,
+  "satir": 6
+ },
+ {
+  "seviye": 3,
+  "baslik": "İçtimaî (Toplumsal) Görevler",
+  "aciklama": "",
+  "sayfa": 437,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "İslâmda Muaşeret (Güzel Geçinme) Âdâbı",
+  "aciklama": "",
+  "sayfa": 438,
+  "oran": 0.0714,
+  "satir": 1
+ },
+ {
+  "seviye": 3,
+  "baslik": "Güzel ve Çirkin Huylar",
+  "aciklama": "",
+  "sayfa": 444,
+  "oran": 0.1538,
+  "satir": 2
+ },
+ {
+  "seviye": 2,
+  "baslik": "Onuncu Kitap Peygamberlerin Siyeri",
+  "aciklama": "",
+  "sayfa": 467,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Peygamberlere Ait Siyerin Anlamı, Yararları ve Kaynakları",
+  "aciklama": "",
+  "sayfa": 467,
+  "oran": 0.1667,
+  "satir": 1
+ },
+ {
+  "seviye": 3,
+  "baslik": "Mübarek İsimleri Kur'an-ı Kerimde Anılan Peygamberler",
+  "aciklama": "",
+  "sayfa": 468,
+  "oran": 0.75,
+  "satir": 6
+ },
+ {
+  "seviye": 3,
+  "baslik": "1) Âdem Aleyhisselâm",
+  "aciklama": "",
+  "sayfa": 469,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "2) İdris Aleyhisselâm",
+  "aciklama": "",
+  "sayfa": 470,
+  "oran": 0.125,
+  "satir": 1
+ },
+ {
+  "seviye": 3,
+  "baslik": "3) Nuh Aleyhisselâm",
+  "aciklama": "",
+  "sayfa": 470,
+  "oran": 0.375,
+  "satir": 3
+ },
+ {
+  "seviye": 3,
+  "baslik": "4) Hud Aleyhisselâm",
+  "aciklama": "",
+  "sayfa": 471,
+  "oran": 0.5,
+  "satir": 4
+ },
+ {
+  "seviye": 3,
+  "baslik": "5) Salih Aleyhisselâm",
+  "aciklama": "",
+  "sayfa": 471,
+  "oran": 0.75,
+  "satir": 6
+ },
+ {
+  "seviye": 3,
+  "baslik": "6) İbrahim Aleyhisselâm",
+  "aciklama": "",
+  "sayfa": 472,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "7) Lût Aleyhisselâm",
+  "aciklama": "",
+  "sayfa": 473,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "8) İsmail Aleyhisselâm",
+  "aciklama": "",
+  "sayfa": 473,
+  "oran": 0.3333,
+  "satir": 3
+ },
+ {
+  "seviye": 3,
+  "baslik": "9) İshak Aleyhisselâm",
+  "aciklama": "",
+  "sayfa": 474,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "10) Yakub Aleyhisselâm",
+  "aciklama": "",
+  "sayfa": 474,
+  "oran": 0.2857,
+  "satir": 4
+ },
+ {
+  "seviye": 3,
+  "baslik": "11) Yûsuf Aleyhisselâm",
+  "aciklama": "",
+  "sayfa": 474,
+  "oran": 0.5,
+  "satir": 7
+ },
+ {
+  "seviye": 3,
+  "baslik": "12) Eyyub Aleyhisselâm",
+  "aciklama": "",
+  "sayfa": 476,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "13) Şuayb Aleyhisselâm",
+  "aciklama": "",
+  "sayfa": 476,
+  "oran": 0.4,
+  "satir": 4
+ },
+ {
+  "seviye": 3,
+  "baslik": "14) Musa Aleyhisselâm",
+  "aciklama": "",
+  "sayfa": 476,
+  "oran": 0.8,
+  "satir": 8
+ },
+ {
+  "seviye": 3,
+  "baslik": "15) Harun Aleyhisselâm",
+  "aciklama": "",
+  "sayfa": 478,
+  "oran": 0.75,
+  "satir": 6
+ },
+ {
+  "seviye": 3,
+  "baslik": "16) Davud Aleyhisselâm",
+  "aciklama": "",
+  "sayfa": 479,
+  "oran": 0.5,
+  "satir": 4
+ },
+ {
+  "seviye": 3,
+  "baslik": "17) Süleyman Aleyhisselâm",
+  "aciklama": "",
+  "sayfa": 480,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "18) İlyas Aleyhisselâm",
+  "aciklama": "",
+  "sayfa": 481,
+  "oran": 0.1,
+  "satir": 1
+ },
+ {
+  "seviye": 3,
+  "baslik": "19) Elyasa' Aleyhisselâm",
+  "aciklama": "",
+  "sayfa": 481,
+  "oran": 0.3,
+  "satir": 3
+ },
+ {
+  "seviye": 3,
+  "baslik": "20) Zülkifl Aleyhisselâm",
+  "aciklama": "",
+  "sayfa": 481,
+  "oran": 0.6,
+  "satir": 6
+ },
+ {
+  "seviye": 3,
+  "baslik": "21) Yunus Aleyhisselâm",
+  "aciklama": "",
+  "sayfa": 481,
+  "oran": 0.8,
+  "satir": 8
+ },
+ {
+  "seviye": 3,
+  "baslik": "22) Zekeriyya Aleyhisselâm",
+  "aciklama": "",
+  "sayfa": 482,
+  "oran": 0.5,
+  "satir": 4
+ },
+ {
+  "seviye": 3,
+  "baslik": "23) Yahya Aleyhisselâm",
+  "aciklama": "",
+  "sayfa": 483,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "24) İsa Aleyhisselâm",
+  "aciklama": "",
+  "sayfa": 483,
+  "oran": 0.375,
+  "satir": 3
+ },
+ {
+  "seviye": 3,
+  "baslik": "25) Hazret-i Muhammed Mustafa (salallahu aleyhi ve sellem)",
+  "aciklama": "",
+  "sayfa": 487,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Peygamberimiz'in Mübarek Nesebleri",
+  "aciklama": "",
+  "sayfa": 488,
+  "oran": 0.1818,
+  "satir": 2
+ },
+ {
+  "seviye": 3,
+  "baslik": "Hazret-i Peygamberin Çocukluğu ve İlk Evlenmeleri",
+  "aciklama": "",
+  "sayfa": 489,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Peygamber Efendimiz'in Allah'ın Vahyine ve Elçiliğine Kavuşması",
+  "aciklama": "",
+  "sayfa": 490,
+  "oran": 0.6667,
+  "satir": 4
+ },
+ {
+  "seviye": 3,
+  "baslik": "İslâm'ın Çıkışında Arabistan'ın Dinî ve İçtimaî Durumu",
+  "aciklama": "",
+  "sayfa": 491,
+  "oran": 0.7143,
+  "satir": 5
+ },
+ {
+  "seviye": 3,
+  "baslik": "İslâmiyeti İlk Kabul Edenler",
+  "aciklama": "",
+  "sayfa": 492,
+  "oran": 0.2857,
+  "satir": 2
+ },
+ {
+  "seviye": 3,
+  "baslik": "İlk Müslümanların Çektikleri Eziyetler, Habeşistan'a Hicretleri ve Çember İçinde Kalmaları",
+  "aciklama": "",
+  "sayfa": 493,
+  "oran": 0.5,
+  "satir": 3
+ },
+ {
+  "seviye": 3,
+  "baslik": "Ebû Talib İle Hazret-i Hadice'nin Vefatları",
+  "aciklama": "",
+  "sayfa": 494,
+  "oran": 0.4,
+  "satir": 2
+ },
+ {
+  "seviye": 3,
+  "baslik": "Peygamberimizin Kabileleri Dine Daveti ve Akabe Bey'atı",
+  "aciklama": "",
+  "sayfa": 495,
+  "oran": 0.3333,
+  "satir": 2
+ },
+ {
+  "seviye": 3,
+  "baslik": "Ayın Bölünmesi ve Miraç Mucizeleri",
+  "aciklama": "",
+  "sayfa": 497,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "İslâmiyetin Medine'de Yayılması ve Müslümanların Oraya Hicreti",
+  "aciklama": "",
+  "sayfa": 498,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Peygamberimizin Medine'ye Hicretleri ve Oradaki Bazı Çalışmaları",
+  "aciklama": "",
+  "sayfa": 498,
+  "oran": 0.625,
+  "satir": 5
+ },
+ {
+  "seviye": 3,
+  "baslik": "Peygamberimizin Cihada Mezuniyeti ve Başlıca Düşmanları",
+  "aciklama": "",
+  "sayfa": 501,
+  "oran": 0.2222,
+  "satir": 2
+ },
+ {
+  "seviye": 3,
+  "baslik": "Müslümanların İlk Sancaktarı ve İlk Seriyyesi",
+  "aciklama": "",
+  "sayfa": 502,
+  "oran": 0.5,
+  "satir": 6
+ },
+ {
+  "seviye": 3,
+  "baslik": "Birinci ve İkinci Bedir Savaşları",
+  "aciklama": "",
+  "sayfa": 503,
+  "oran": 0.2,
+  "satir": 2
+ },
+ {
+  "seviye": 3,
+  "baslik": "Beni Kaynuka ve Uhud Savaşları",
+  "aciklama": "",
+  "sayfa": 504,
+  "oran": 0.6667,
+  "satir": 6
+ },
+ {
+  "seviye": 3,
+  "baslik": "Beni Nadir, Hendek ve Beni Kurayza Savaşları",
+  "aciklama": "",
+  "sayfa": 506,
+  "oran": 0.5714,
+  "satir": 4
+ },
+ {
+  "seviye": 3,
+  "baslik": "Hudeybiye Andlaşması ve Hayber Savaşı",
+  "aciklama": "",
+  "sayfa": 508,
+  "oran": 0.1429,
+  "satir": 1
+ },
+ {
+  "seviye": 3,
+  "baslik": "Hazret-i Peygamberin Hükümdarları İslâm Dinine Davet Etmesi",
+  "aciklama": "",
+  "sayfa": 510,
+  "oran": 0.8,
+  "satir": 8
+ },
+ {
+  "seviye": 3,
+  "baslik": "Umretü'l-Kaza ve Mu'te Savaşı",
+  "aciklama": "",
+  "sayfa": 511,
+  "oran": 0.6364,
+  "satir": 7
+ },
+ {
+  "seviye": 3,
+  "baslik": "Mekke'nin Fethi",
+  "aciklama": "",
+  "sayfa": 512,
+  "oran": 0.625,
+  "satir": 5
+ },
+ {
+  "seviye": 3,
+  "baslik": "Huneyn Savaşı İle Evtas Olayı",
+  "aciklama": "",
+  "sayfa": 513,
+  "oran": 0.625,
+  "satir": 5
+ },
+ {
+  "seviye": 3,
+  "baslik": "Tebük Savaşı",
+  "aciklama": "",
+  "sayfa": 514,
+  "oran": 0.375,
+  "satir": 3
+ },
+ {
+  "seviye": 3,
+  "baslik": "Veda Haccı",
+  "aciklama": "",
+  "sayfa": 515,
+  "oran": 0.5,
+  "satir": 4
+ },
+ {
+  "seviye": 3,
+  "baslik": "Peygamber Efendimizin Ahirete Göç Etmeleri",
+  "aciklama": "",
+  "sayfa": 516,
+  "oran": 0.6154,
+  "satir": 8
+ },
+ {
+  "seviye": 3,
+  "baslik": "Peygamber Efendimizin Göçmelerinden Doğan 'Üzüntüler",
+  "aciklama": "",
+  "sayfa": 517,
+  "oran": 0.7143,
+  "satir": 5
+ },
+ {
+  "seviye": 3,
+  "baslik": "EK  Peygamberimizde Görülen Olgunluk ve Güzellikler",
+  "aciklama": "",
+  "sayfa": 519,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "Bu Eserin Başlıca Kaynakları",
+  "aciklama": "",
+  "sayfa": 528,
+  "oran": 0.0,
+  "satir": 0
+ }
+]

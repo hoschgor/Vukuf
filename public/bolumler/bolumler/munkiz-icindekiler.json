@@ -1,0 +1,138 @@
+[
+  {
+    "seviye": 1,
+    "baslik": "Giriş",
+    "aciklama": "Eserin tanıtımı, yazarın hayatı ve eser hakkında genel bilgiler. İmam-ı Gazâlî'nin fikrî yolculuğu ve eseri yazma sebebi.",
+    "sayfa": 1,
+    "oran": 0.0,
+    "satir": 0
+  },
+  {
+    "seviye": 1,
+    "baslik": "Hakikat Arayanların Kısımları",
+    "aciklama": "Hakikati arayanların dört ana gruba ayrıldığı: Kelamcılar, Batınîler (Ta'limiyye), Felsefeciler ve Sûfîler. Her grubun kendine göre hakikat iddiası.",
+    "sayfa": 7,
+    "oran": 5.0,
+    "satir": 2
+  },
+  {
+    "seviye": 1,
+    "baslik": "Kelam İlminin Gayesi ve Özü",
+    "aciklama": "Kelâm ilminin Ehl-i sünnet i'tikadını koruma amacıyla ortaya çıkışı, bid'at ehliyle mücadeledeki yeri. İmam-ı Gazâlî'nin bu ilimdeki tecrübesi ve onu yeterli bulmayışı.",
+    "sayfa": 9,
+    "oran": 0.0,
+    "satir": 0
+  },
+  {
+    "seviye": 1,
+    "baslik": "Felsefenin Gayesi ve Felsefecilerin Sınıfları",
+    "aciklama": "Felsefecilerin Dehriyyûn, Tabi'iyyûn ve İlahiyyûn olarak üç sınıfa ayrılması. Felsefenin altı kısmı: Riyaziyye (Matematik), Mantık, Tabiat İlimleri, İlahiyyat, Siyaset, Ahlak.",
+    "sayfa": 10,
+    "oran": 0.0,
+    "satir": 0
+  },
+  {
+    "seviye": 2,
+    "baslik": "Riyaziyye (Matematik)",
+    "aciklama": "Matematik ilimlerinin din ile alakası olmadığı, ancak bu ilimlerle uğraşanların felsefecilere hayranlık duyup dinden çıkma tehlikesi. İkinci tehlike ise bu ilimleri reddedenlerin dini zayıf göstermesi.",
+    "sayfa": 14,
+    "oran": 0.0,
+    "satir": 0
+  },
+  {
+    "seviye": 2,
+    "baslik": "Mantık",
+    "aciklama": "Mantık ilminin din ile doğrudan alakasının olmadığı, delillerin şartlarını incelediği. Ancak bu ilimle uğraşanların felsefecilerin batıl fikirlerini kabul etme tehlikesi.",
+    "sayfa": 16,
+    "oran": 0.0,
+    "satir": 0
+  },
+  {
+    "seviye": 2,
+    "baslik": "Tabiat İlimleri",
+    "aciklama": "Tabiat ilimlerinin gökler, yıldızlar, su, hava, ateş, toprak, hayvan, bitki ve madenlerden bahsettiği. Bu ilimlerin dinle çelişmediği, ancak tabiatın Allah'ın emrinde olduğu unutulmamalıdır.",
+    "sayfa": 17,
+    "oran": 0.0,
+    "satir": 0
+  },
+  {
+    "seviye": 2,
+    "baslik": "İlahiyyat",
+    "aciklama": "Felsefecilerin en çok yanıldıkları alan olan ilahiyyat. Üç meselede küfre düştükleri: Âlemin ezelîliği, Allah'ın cüz'iyyatı bilmemesi, cesetlerin dirilmemesi. Bu konular Tehafüt-ül Felasife'de ele alınmıştır.",
+    "sayfa": 18,
+    "oran": 0.0,
+    "satir": 0
+  },
+  {
+    "seviye": 2,
+    "baslik": "Felsefenin Zararları",
+    "aciklama": "Felsefi kitapları okuyanların hak ile batılı ayıramaması, felsefecilerin doğru sözlerine aldanarak batıl fikirlerini de kabul etmeleri. Bu kitapların halktan sakınması gerektiği.",
+    "sayfa": 20,
+    "oran": 0.0,
+    "satir": 0
+  },
+  {
+    "seviye": 1,
+    "baslik": "Ta'limiyye Mezhebi ve Zararları",
+    "aciklama": "İsmailiyye (Batıniyye) fırkasının görüşleri. Ma'sum bir imama uymanın gerekliliği iddiası. İmam-ı Gazâlî'nin bu mezhebi çürütmek için yazdığı eserler: El-Mustahzir, Hüccet-ül-Hak, Mufassal-ül-Hilaf, Kitab-üd-Derc, El-Kıstas-ül-Müstakim.",
+    "sayfa": 23,
+    "oran": 0.0,
+    "satir": 0
+  },
+  {
+    "seviye": 1,
+    "baslik": "Tasavvuf Ehlinin Yolu",
+    "aciklama": "Tasavvufun ilim ve amel ile tamamlandığı. Nefsin kötü huylardan temizlenmesi, kalbin Allah'tan başka her şeyden arındırılması. Bu yolun öğrenmekle değil, tatmak ve yaşamakla elde edildiği. Keşif, müşahede, fenâ mertebeleri.",
+    "sayfa": 34,
+    "oran": 0.1,
+    "satir": 1
+  },
+  {
+    "seviye": 1,
+    "baslik": "Nübüvvetin Hakikati ve Bütün İnsanların Ona Muhtaç Olması",
+    "aciklama": "İnsanın duyu organları, temyiz gücü, akıl ve nübüvvet kuvveti ile âlemleri idrak etmesi. Nübüvvet kuvvetinin aklın idrak edemediği şeyleri anlaması. Rüya örneği. Peygamberliğe imanın tasavvuf yoluyla zevken elde edilmesi.",
+    "sayfa": 41,
+    "oran": 0.9,
+    "satir": 0
+  },
+  {
+    "seviye": 1,
+    "baslik": "Ders Vermeyi Terk Ettikten Sonra Tekrar Ders Vermeye Başlamasının Sebebi",
+    "aciklama": "On bir yıllık uzlet hayatından sonra halkın imanının zaiflediğini görmesi. İman zaifliğinin dört sebebi: Felsefeciler, tasavvuf ehli (sapıklar), ta'limiyye (ismailiyye) ve âlim geçinenler. Nişabur'a dönerek tecdid (yenileme) vazifesini üstlenmesi.",
+    "sayfa": 44,
+    "oran": 0.0,
+    "satir": 2
+  },
+  {
+    "seviye": 2,
+    "baslik": "Halkın İman Zaifliğinin Sebepleri",
+    "aciklama": "Felsefecilerin bozuk fikirleri, ibahe ehlinin (her şeyi mübah görenlerin) sapıklıkları, ta'limiyyenin şüpheleri, âlimlerin ilmiyle amel etmemesinin halk üzerindeki olumsuz etkileri.",
+    "sayfa": 46,
+    "oran": 0.0,
+    "satir": 0
+  },
+  {
+    "seviye": 2,
+    "baslik": "Felsefecilere Karşı Deliller",
+    "aciklama": "Afyonun soğutucu özelliği, rakam tablosunun doğumu kolaylaştırması gibi örneklerle, ibadetlerde de aklın idrak edemeyeceği hikmetlerin bulunabileceği. Peygamberin şefkati ve doğruluğuna dair zarurî deliller.",
+    "sayfa": 53,
+    "oran": 0.0,
+    "satir": 0
+  },
+  {
+    "seviye": 2,
+    "baslik": "Âlimlerin İlmiyle Amel Etmemesi Meselesi",
+    "aciklama": "Âlimlerin günah işlemesinin, ilme inanmadıklarından değil, nefsin arzularına yenildiklerinden olduğu. Hakiki ilmin Allah korkusunu arttırdığı ve sahibini günahtan alıkoyduğu.",
+    "sayfa": 59,
+    "oran": 0.0,
+    "satir": 0
+  },
+  {
+    "seviye": 1,
+    "baslik": "Sonuç ve Dua",
+    "aciklama": "İmam-ı Gazâlî'nin eserini bitirirken yaptığı dua ve Allah'tan hidayet dilemesi. Eserin tamamlandığına dair kapanış.",
+    "sayfa": 60,
+    "oran": 0.0,
+    "satir": 0
+  }
+]

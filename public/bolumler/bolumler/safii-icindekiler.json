@@ -1,0 +1,2650 @@
+[
+ {
+  "seviye": 1,
+  "baslik": "BÜYÜK ŞAFİİ İLMİHALİ",
+  "aciklama": "",
+  "sayfa": 1,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 2,
+  "baslik": "ÖNSÖZ",
+  "aciklama": "",
+  "sayfa": 2,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 2,
+  "baslik": "BİRİNCİ BÖLÜM - AKÂİD",
+  "aciklama": "",
+  "sayfa": 6,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "DİN",
+  "aciklama": "",
+  "sayfa": 8,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "İSLÂM",
+  "aciklama": "",
+  "sayfa": 8,
+  "oran": 0.3,
+  "satir": 3
+ },
+ {
+  "seviye": 3,
+  "baslik": "İMAN",
+  "aciklama": "",
+  "sayfa": 9,
+  "oran": 0.4375,
+  "satir": 7
+ },
+ {
+  "seviye": 3,
+  "baslik": "A - ALLAH'A İMÂN",
+  "aciklama": "",
+  "sayfa": 10,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "ALLAH'I BİLMEK EN BÜYÜK SAÂDETTİR",
+  "aciklama": "",
+  "sayfa": 10,
+  "oran": 0.3333,
+  "satir": 4
+ },
+ {
+  "seviye": 3,
+  "baslik": "ALLAH'I BİLMEK İÇİN EN GÜZEL VASITA AKILDIR",
+  "aciklama": "",
+  "sayfa": 10,
+  "oran": 0.5,
+  "satir": 6
+ },
+ {
+  "seviye": 3,
+  "baslik": "ALLAH'IN SIFATLARI",
+  "aciklama": "",
+  "sayfa": 11,
+  "oran": 0.2667,
+  "satir": 4
+ },
+ {
+  "seviye": 3,
+  "baslik": "SIFAT-I  SÜBÜTİYYE VEYA SIFAT-I MAÂNİ",
+  "aciklama": "",
+  "sayfa": 13,
+  "oran": 0.7273,
+  "satir": 8
+ },
+ {
+  "seviye": 3,
+  "baslik": "B - MELEKLERE İMAN",
+  "aciklama": "",
+  "sayfa": 16,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "MELEKLERİN GÖREVLERİ",
+  "aciklama": "",
+  "sayfa": 17,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "C - KİTAPLARA İMAN",
+  "aciklama": "",
+  "sayfa": 18,
+  "oran": 0.5,
+  "satir": 5
+ },
+ {
+  "seviye": 3,
+  "baslik": "D- PEYGAMBERLERE İMAN",
+  "aciklama": "",
+  "sayfa": 21,
+  "oran": 0.0909,
+  "satir": 1
+ },
+ {
+  "seviye": 3,
+  "baslik": "E - AHİRET GÜNÜNE İMAN",
+  "aciklama": "",
+  "sayfa": 24,
+  "oran": 0.3636,
+  "satir": 4
+ },
+ {
+  "seviye": 3,
+  "baslik": "ALLAH İNSAN'I BOŞUNA YARATMAMIŞTIR",
+  "aciklama": "",
+  "sayfa": 24,
+  "oran": 0.6364,
+  "satir": 7
+ },
+ {
+  "seviye": 3,
+  "baslik": "KIYAMET ALAMETLERİ",
+  "aciklama": "",
+  "sayfa": 25,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "KABİR SUAL'İ",
+  "aciklama": "",
+  "sayfa": 26,
+  "oran": 0.625,
+  "satir": 5
+ },
+ {
+  "seviye": 3,
+  "baslik": "KIYAMETTE HESAB",
+  "aciklama": "",
+  "sayfa": 27,
+  "oran": 0.1111,
+  "satir": 1
+ },
+ {
+  "seviye": 3,
+  "baslik": "HAVUZ",
+  "aciklama": "",
+  "sayfa": 27,
+  "oran": 0.7778,
+  "satir": 7
+ },
+ {
+  "seviye": 3,
+  "baslik": "SIRAT, CENNET VE CEHENNEM",
+  "aciklama": "",
+  "sayfa": 28,
+  "oran": 0.1667,
+  "satir": 2
+ },
+ {
+  "seviye": 3,
+  "baslik": "ŞEFÂAT",
+  "aciklama": "",
+  "sayfa": 28,
+  "oran": 0.5,
+  "satir": 6
+ },
+ {
+  "seviye": 3,
+  "baslik": "F - KADER'E İMAN",
+  "aciklama": "",
+  "sayfa": 30,
+  "oran": 0.5,
+  "satir": 4
+ },
+ {
+  "seviye": 2,
+  "baslik": "İKİNCİ BÖLÜM - İBADET VE ÖNCÜLERİ",
+  "aciklama": "",
+  "sayfa": 32,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "TAHARET",
+  "aciklama": "",
+  "sayfa": 34,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "SU İKİ KISIMDIR",
+  "aciklama": "",
+  "sayfa": 35,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "SUYUN NEVİLERİ",
+  "aciklama": "",
+  "sayfa": 35,
+  "oran": 0.5,
+  "satir": 6
+ },
+ {
+  "seviye": 3,
+  "baslik": "KUYU BAHSİ",
+  "aciklama": "",
+  "sayfa": 38,
+  "oran": 0.4444,
+  "satir": 4
+ },
+ {
+  "seviye": 3,
+  "baslik": "HELÂ VE İSTİNCA",
+  "aciklama": "",
+  "sayfa": 39,
+  "oran": 0.4444,
+  "satir": 4
+ },
+ {
+  "seviye": 3,
+  "baslik": "HELÂNIN VACİPLERİ",
+  "aciklama": "",
+  "sayfa": 39,
+  "oran": 0.7778,
+  "satir": 7
+ },
+ {
+  "seviye": 3,
+  "baslik": "HELÂNIN SÜNNETLERİ",
+  "aciklama": "",
+  "sayfa": 40,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "HELÂNIN MEKRUHLARI",
+  "aciklama": "",
+  "sayfa": 41,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "HELÂNIN HARAMLARI",
+  "aciklama": "",
+  "sayfa": 41,
+  "oran": 0.7647,
+  "satir": 13
+ },
+ {
+  "seviye": 3,
+  "baslik": "İSTİNCA",
+  "aciklama": "",
+  "sayfa": 42,
+  "oran": 0.1429,
+  "satir": 2
+ },
+ {
+  "seviye": 3,
+  "baslik": "TEMİZLEME VASITALARI",
+  "aciklama": "",
+  "sayfa": 43,
+  "oran": 0.5385,
+  "satir": 7
+ },
+ {
+  "seviye": 3,
+  "baslik": "ABDEST",
+  "aciklama": "",
+  "sayfa": 44,
+  "oran": 0.6364,
+  "satir": 14
+ },
+ {
+  "seviye": 3,
+  "baslik": "ABDESTİN ŞARTLARI",
+  "aciklama": "",
+  "sayfa": 44,
+  "oran": 0.7273,
+  "satir": 16
+ },
+ {
+  "seviye": 3,
+  "baslik": "ABDESTİN FARZLARI",
+  "aciklama": "",
+  "sayfa": 45,
+  "oran": 0.6667,
+  "satir": 10
+ },
+ {
+  "seviye": 3,
+  "baslik": "ÖZÜRLÜNÜN NAMAZI EDA ETMESİNİN ŞARTLARI",
+  "aciklama": "",
+  "sayfa": 50,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "ABDESTİN SÜNNETLERİ",
+  "aciklama": "",
+  "sayfa": 51,
+  "oran": 0.3333,
+  "satir": 3
+ },
+ {
+  "seviye": 3,
+  "baslik": "ABDESTİN MEKRUHLARI",
+  "aciklama": "",
+  "sayfa": 57,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "MEST ÜZERİNE MESH ETMEK",
+  "aciklama": "",
+  "sayfa": 57,
+  "oran": 0.1667,
+  "satir": 2
+ },
+ {
+  "seviye": 3,
+  "baslik": "MESHİN ŞARTLARI",
+  "aciklama": "",
+  "sayfa": 57,
+  "oran": 0.5,
+  "satir": 6
+ },
+ {
+  "seviye": 3,
+  "baslik": "MESHİN FARZI",
+  "aciklama": "",
+  "sayfa": 59,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "MESHİN MÜDDETİ",
+  "aciklama": "",
+  "sayfa": 59,
+  "oran": 0.375,
+  "satir": 3
+ },
+ {
+  "seviye": 3,
+  "baslik": "MESHİ BOZAN ŞEYLER",
+  "aciklama": "",
+  "sayfa": 60,
+  "oran": 0.2,
+  "satir": 3
+ },
+ {
+  "seviye": 3,
+  "baslik": "ABDESTİ BOZAN ŞEYLER",
+  "aciklama": "",
+  "sayfa": 60,
+  "oran": 0.8,
+  "satir": 12
+ },
+ {
+  "seviye": 3,
+  "baslik": "GUSÜL",
+  "aciklama": "",
+  "sayfa": 64,
+  "oran": 0.5,
+  "satir": 6
+ },
+ {
+  "seviye": 3,
+  "baslik": "GÜSLÜ GEREKTİREN MÜŞTEREK HALLER",
+  "aciklama": "",
+  "sayfa": 64,
+  "oran": 0.8333,
+  "satir": 10
+ },
+ {
+  "seviye": 3,
+  "baslik": "GUSLÜN FARZLARI",
+  "aciklama": "",
+  "sayfa": 66,
+  "oran": 0.4667,
+  "satir": 7
+ },
+ {
+  "seviye": 3,
+  "baslik": "CÜNÜB İKEN HARAM OLAN ŞEYLER",
+  "aciklama": "",
+  "sayfa": 70,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "NAFİLE GUSÜL",
+  "aciklama": "",
+  "sayfa": 70,
+  "oran": 0.6154,
+  "satir": 8
+ },
+ {
+  "seviye": 3,
+  "baslik": "TEYEMMÜM",
+  "aciklama": "",
+  "sayfa": 71,
+  "oran": 0.7778,
+  "satir": 14
+ },
+ {
+  "seviye": 3,
+  "baslik": "TEYEMMÜMÜN ŞARTLARI",
+  "aciklama": "",
+  "sayfa": 72,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "TEYEMMÜMÜN FARZLARI",
+  "aciklama": "",
+  "sayfa": 74,
+  "oran": 0.4615,
+  "satir": 6
+ },
+ {
+  "seviye": 3,
+  "baslik": "TEYEMMÜMÜN SÜNNETLERİ",
+  "aciklama": "",
+  "sayfa": 76,
+  "oran": 0.5455,
+  "satir": 6
+ },
+ {
+  "seviye": 3,
+  "baslik": "TEYEMMÜMÜN KEYFİYETİ",
+  "aciklama": "",
+  "sayfa": 78,
+  "oran": 0.6667,
+  "satir": 4
+ },
+ {
+  "seviye": 3,
+  "baslik": "TEYEMMÜMÜ BOZAN ŞEYLER",
+  "aciklama": "",
+  "sayfa": 79,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "SARGININ HÜKMÜ",
+  "aciklama": "",
+  "sayfa": 79,
+  "oran": 0.5833,
+  "satir": 7
+ },
+ {
+  "seviye": 3,
+  "baslik": "NECASET VE İZALESİ",
+  "aciklama": "",
+  "sayfa": 80,
+  "oran": 0.5833,
+  "satir": 7
+ },
+ {
+  "seviye": 3,
+  "baslik": "NECİS OLAN BİR ŞEYLE TEDAVİ",
+  "aciklama": "",
+  "sayfa": 85,
+  "oran": 0.6667,
+  "satir": 6
+ },
+ {
+  "seviye": 3,
+  "baslik": "ÖLMÜŞ HAYVANIN YÜNÜ VE KILI",
+  "aciklama": "",
+  "sayfa": 86,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "FARE İLE İLGİLİ BAZI KONULAR",
+  "aciklama": "",
+  "sayfa": 86,
+  "oran": 0.5556,
+  "satir": 5
+ },
+ {
+  "seviye": 3,
+  "baslik": "AFVEDİLEN NECASETLER",
+  "aciklama": "",
+  "sayfa": 89,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "MADDESİ NECİS OLAN ÜÇ ŞEY TAHİR OLUR",
+  "aciklama": "",
+  "sayfa": 91,
+  "oran": 0.3636,
+  "satir": 4
+ },
+ {
+  "seviye": 3,
+  "baslik": "HAYIZ, İSTİHAZE VE NİFAS",
+  "aciklama": "",
+  "sayfa": 92,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "NİFAS",
+  "aciklama": "",
+  "sayfa": 94,
+  "oran": 0.125,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "NAMAZ",
+  "aciklama": "",
+  "sayfa": 96,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "NAMAZIN ŞART, RÜKÜN, SÜNNET, MEKRÛH VE HARAMLARI VARDIR.",
+  "aciklama": "",
+  "sayfa": 97,
+  "oran": 0.4286,
+  "satir": 9
+ },
+ {
+  "seviye": 3,
+  "baslik": "NAMAZ VAKİTLERİ",
+  "aciklama": "",
+  "sayfa": 99,
+  "oran": 0.3077,
+  "satir": 4
+ },
+ {
+  "seviye": 2,
+  "baslik": "EZAN",
+  "aciklama": "",
+  "sayfa": 104,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "MÜEZZİN OLABİLMENİN ŞARTLARI",
+  "aciklama": "",
+  "sayfa": 106,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "EZANIN ŞARTLARI",
+  "aciklama": "",
+  "sayfa": 106,
+  "oran": 0.5333,
+  "satir": 8
+ },
+ {
+  "seviye": 3,
+  "baslik": "EZANIN SÜNNETLERİ",
+  "aciklama": "",
+  "sayfa": 107,
+  "oran": 0.125,
+  "satir": 2
+ },
+ {
+  "seviye": 3,
+  "baslik": "KAMET",
+  "aciklama": "",
+  "sayfa": 110,
+  "oran": 0.2308,
+  "satir": 3
+ },
+ {
+  "seviye": 3,
+  "baslik": "KERAHAT VAKİTLERİ",
+  "aciklama": "",
+  "sayfa": 112,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "NAMAZIN VÜCUB ŞARTLARI",
+  "aciklama": "",
+  "sayfa": 113,
+  "oran": 0.3333,
+  "satir": 4
+ },
+ {
+  "seviye": 3,
+  "baslik": "NAMAZIN SIHHAT ŞARTLARI",
+  "aciklama": "",
+  "sayfa": 115,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "NAMAZIN RÜKÜNLERİ",
+  "aciklama": "",
+  "sayfa": 124,
+  "oran": 0.625,
+  "satir": 5
+ },
+ {
+  "seviye": 3,
+  "baslik": "PARMAKLARLA VE TESBİH İLE ZİKİR",
+  "aciklama": "",
+  "sayfa": 148,
+  "oran": 0.125,
+  "satir": 1
+ },
+ {
+  "seviye": 3,
+  "baslik": "SARIK",
+  "aciklama": "",
+  "sayfa": 148,
+  "oran": 0.5,
+  "satir": 4
+ },
+ {
+  "seviye": 3,
+  "baslik": "NAMAZIN KEYFİYETİ",
+  "aciklama": "",
+  "sayfa": 149,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "NAMAZI BOZAN ŞEYLER",
+  "aciklama": "",
+  "sayfa": 152,
+  "oran": 0.1,
+  "satir": 1
+ },
+ {
+  "seviye": 3,
+  "baslik": "NAMAZIN ADAB VE MEKRUHLARI",
+  "aciklama": "",
+  "sayfa": 157,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "NAMAZIN ADAB VE MEKRUHLARI",
+  "aciklama": "",
+  "sayfa": 157,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "NAMAZIN BAŞLICA ADABI ŞUNLARDIR",
+  "aciklama": "",
+  "sayfa": 157,
+  "oran": 0.3333,
+  "satir": 4
+ },
+ {
+  "seviye": 3,
+  "baslik": "CAMİ ADÂBI",
+  "aciklama": "",
+  "sayfa": 158,
+  "oran": 0.6364,
+  "satir": 7
+ },
+ {
+  "seviye": 3,
+  "baslik": "NAMAZIN MEKRUHLARI",
+  "aciklama": "",
+  "sayfa": 160,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "SECDE-İ SEHİV",
+  "aciklama": "",
+  "sayfa": 160,
+  "oran": 0.8333,
+  "satir": 15
+ },
+ {
+  "seviye": 3,
+  "baslik": "SEHİV SECDESİNİN DÖRT SEBEBİ VARDIR",
+  "aciklama": "",
+  "sayfa": 161,
+  "oran": 0.0909,
+  "satir": 1
+ },
+ {
+  "seviye": 3,
+  "baslik": "SECDE'İ TİLÂVET VE ŞÜKÜR",
+  "aciklama": "",
+  "sayfa": 165,
+  "oran": 0.4286,
+  "satir": 3
+ },
+ {
+  "seviye": 3,
+  "baslik": "SECDE-İ ŞÜKÜR",
+  "aciklama": "",
+  "sayfa": 166,
+  "oran": 0.6923,
+  "satir": 9
+ },
+ {
+  "seviye": 3,
+  "baslik": "İMAMET VE CEMAAT",
+  "aciklama": "",
+  "sayfa": 166,
+  "oran": 0.8462,
+  "satir": 11
+ },
+ {
+  "seviye": 3,
+  "baslik": "İMAM OLMANIN ŞARTLARI",
+  "aciklama": "",
+  "sayfa": 171,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "İMAMA UYABİLME ŞARTLARI",
+  "aciklama": "",
+  "sayfa": 174,
+  "oran": 0.25,
+  "satir": 2
+ },
+ {
+  "seviye": 3,
+  "baslik": "CUMA NAMAZI",
+  "aciklama": "",
+  "sayfa": 184,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "CUMA NAMAZININ SIHHAT ŞARTLARI",
+  "aciklama": "",
+  "sayfa": 185,
+  "oran": 0.375,
+  "satir": 3
+ },
+ {
+  "seviye": 3,
+  "baslik": "HUTBENİN RÜKÜNLERİ",
+  "aciklama": "",
+  "sayfa": 190,
+  "oran": 0.1818,
+  "satir": 2
+ },
+ {
+  "seviye": 3,
+  "baslik": "HUTBENİN ŞARTLARI",
+  "aciklama": "",
+  "sayfa": 191,
+  "oran": 0.125,
+  "satir": 1
+ },
+ {
+  "seviye": 3,
+  "baslik": "HUTBENİN SÜNNETLERİ",
+  "aciklama": "",
+  "sayfa": 193,
+  "oran": 0.3571,
+  "satir": 5
+ },
+ {
+  "seviye": 3,
+  "baslik": "CUMA NAMAZININ EDASI",
+  "aciklama": "",
+  "sayfa": 199,
+  "oran": 0.2,
+  "satir": 2
+ },
+ {
+  "seviye": 3,
+  "baslik": "NAFİLE NAMAZI",
+  "aciklama": "",
+  "sayfa": 202,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "VİTİR NAMAZI",
+  "aciklama": "",
+  "sayfa": 203,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "TERAVİH NAMAZI",
+  "aciklama": "",
+  "sayfa": 207,
+  "oran": 0.5455,
+  "satir": 6
+ },
+ {
+  "seviye": 3,
+  "baslik": "BAYRAM NAMAZI",
+  "aciklama": "",
+  "sayfa": 210,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "KÜSUF VE HUSUF NAMAZLARI",
+  "aciklama": "",
+  "sayfa": 213,
+  "oran": 0.0833,
+  "satir": 1
+ },
+ {
+  "seviye": 3,
+  "baslik": "YAĞMUR NAMAZI",
+  "aciklama": "",
+  "sayfa": 215,
+  "oran": 0.2308,
+  "satir": 3
+ },
+ {
+  "seviye": 3,
+  "baslik": "MİSAFİR NAMAZI",
+  "aciklama": "",
+  "sayfa": 218,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "SEFERİ NAMAZI KILMANIN ŞARTLARI",
+  "aciklama": "",
+  "sayfa": 219,
+  "oran": 0.6364,
+  "satir": 7
+ },
+ {
+  "seviye": 3,
+  "baslik": "CEM'İ TAKDİM VE TE'HİR",
+  "aciklama": "",
+  "sayfa": 223,
+  "oran": 0.6364,
+  "satir": 7
+ },
+ {
+  "seviye": 3,
+  "baslik": "HASTA OLAN KİMSENİN NAMAZI",
+  "aciklama": "",
+  "sayfa": 227,
+  "oran": 0.125,
+  "satir": 1
+ },
+ {
+  "seviye": 3,
+  "baslik": "KORKU NAMAZI",
+  "aciklama": "",
+  "sayfa": 227,
+  "oran": 0.625,
+  "satir": 5
+ },
+ {
+  "seviye": 3,
+  "baslik": "NAMAZ KILMAYANIN HÜKMÜ",
+  "aciklama": "",
+  "sayfa": 230,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "GEÇMİŞ NAMAZIN EDASI",
+  "aciklama": "",
+  "sayfa": 231,
+  "oran": 0.2222,
+  "satir": 2
+ },
+ {
+  "seviye": 3,
+  "baslik": "KEFARET",
+  "aciklama": "",
+  "sayfa": 232,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "CENAZE NAMAZI VE ONUNLA İLGİLİ HÜKÜMLER",
+  "aciklama": "",
+  "sayfa": 234,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "1) YIKAMAK.",
+  "aciklama": "",
+  "sayfa": 236,
+  "oran": 0.4,
+  "satir": 4
+ },
+ {
+  "seviye": 3,
+  "baslik": "2) KEFENLEMEK",
+  "aciklama": "",
+  "sayfa": 239,
+  "oran": 0.8,
+  "satir": 8
+ },
+ {
+  "seviye": 3,
+  "baslik": "3) CENAZE NAMAZINI KILMAK",
+  "aciklama": "",
+  "sayfa": 242,
+  "oran": 0.1111,
+  "satir": 1
+ },
+ {
+  "seviye": 3,
+  "baslik": "CENAZE NAMAZININ RÜKÜNLERİ",
+  "aciklama": "",
+  "sayfa": 242,
+  "oran": 0.4444,
+  "satir": 4
+ },
+ {
+  "seviye": 3,
+  "baslik": "4) ÖLÜYÜ DEFNETMEK",
+  "aciklama": "",
+  "sayfa": 248,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "ŞEHİD'İN HÜKMÜ",
+  "aciklama": "",
+  "sayfa": 251,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "TAZİYE",
+  "aciklama": "",
+  "sayfa": 252,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "KABİR ZİYARETİ",
+  "aciklama": "",
+  "sayfa": 255,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "KABİR ZİYARETİNİN ADABI",
+  "aciklama": "",
+  "sayfa": 257,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "ELBİSE, KAP VE BENZERİ ŞEYLER",
+  "aciklama": "",
+  "sayfa": 257,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "ZEKÂT",
+  "aciklama": "",
+  "sayfa": 261,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "EHLİ HAYVANLARIN ZEKÂTI",
+  "aciklama": "",
+  "sayfa": 266,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "DEVELERİN NİSABI",
+  "aciklama": "",
+  "sayfa": 267,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "SIĞIRIN NİSABI",
+  "aciklama": "",
+  "sayfa": 268,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "ŞAT'IN NİSABI",
+  "aciklama": "",
+  "sayfa": 268,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "TOPRAK MAHSULLERİNİN ZEKÂTI",
+  "aciklama": "",
+  "sayfa": 272,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "TOPRAK MAHSULLERİN NİSAB MİKTARI",
+  "aciklama": "",
+  "sayfa": 274,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "ALTIN VE GÜMÜŞÜN ZEKÂTI",
+  "aciklama": "",
+  "sayfa": 277,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "MADEN, ASARİ ATİKA VE TİCARET MALLARININ ZEKÂTI",
+  "aciklama": "",
+  "sayfa": 280,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "ASARİ ATİKA",
+  "aciklama": "",
+  "sayfa": 281,
+  "oran": 0.7778,
+  "satir": 7
+ },
+ {
+  "seviye": 3,
+  "baslik": "TİCARET MALLARI",
+  "aciklama": "",
+  "sayfa": 281,
+  "oran": 0.7778,
+  "satir": 7
+ },
+ {
+  "seviye": 3,
+  "baslik": "FITIR ZEKÂTI",
+  "aciklama": "",
+  "sayfa": 284,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "FITIR ZEKÂTININ FARZ OLUŞUNUN HİKMETİ",
+  "aciklama": "",
+  "sayfa": 285,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "ZEKÂTIN EDASI",
+  "aciklama": "",
+  "sayfa": 287,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "ZEKAT-I MUACCELE",
+  "aciklama": "",
+  "sayfa": 288,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "ZEKÂT'IN VERİLECEĞİ YERLER",
+  "aciklama": "",
+  "sayfa": 289,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "ORUÇ",
+  "aciklama": "",
+  "sayfa": 297,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "RAMAZAN'I ŞERİFİN SÜBUTÜ",
+  "aciklama": "",
+  "sayfa": 298,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "ORUCUN VÜCÛB ŞARTLARI",
+  "aciklama": "",
+  "sayfa": 300,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "ORUCUN SAHİH OLABİLMESİNİN ŞARTLARI",
+  "aciklama": "",
+  "sayfa": 301,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "ORUC'UN FARZLARI",
+  "aciklama": "",
+  "sayfa": 301,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "ORUCU BOZAN ŞEYLER",
+  "aciklama": "",
+  "sayfa": 303,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "ORUCUN MEKRUHLARI",
+  "aciklama": "",
+  "sayfa": 307,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "ORUÇ TUTMAMAYI MÜBAH KILAN ÖZÜRLER",
+  "aciklama": "",
+  "sayfa": 308,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "ORUCUN KEFFARETİ",
+  "aciklama": "",
+  "sayfa": 311,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "ORUCUN SÜNNETLERİ",
+  "aciklama": "",
+  "sayfa": 314,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "NAFİLE ORUCU",
+  "aciklama": "",
+  "sayfa": 315,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "İTİKÂF",
+  "aciklama": "",
+  "sayfa": 317,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "KADİR GECESİ",
+  "aciklama": "",
+  "sayfa": 319,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "HAC",
+  "aciklama": "",
+  "sayfa": 321,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "HACCIN FARZİYETİ",
+  "aciklama": "",
+  "sayfa": 321,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "HAC YOLCULUĞUNUN ADABI",
+  "aciklama": "",
+  "sayfa": 322,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "HACCIN HİKMETLERİ",
+  "aciklama": "",
+  "sayfa": 324,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "HACCIN FARZ OLMASININ ŞARTLARI",
+  "aciklama": "",
+  "sayfa": 326,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "HACCIN EDASININ ŞARTLARI",
+  "aciklama": "",
+  "sayfa": 328,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "HACCIN SAHİH OLMASININ ŞART VE RÜKÜNLERİ",
+  "aciklama": "",
+  "sayfa": 329,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "İHRAMLA İLGİLİ BİR KAÇ MESELE",
+  "aciklama": "",
+  "sayfa": 331,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "İHRAMIN ZAMANI VE MEKÂNI",
+  "aciklama": "",
+  "sayfa": 331,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "İHRAMIN ŞARTLARI",
+  "aciklama": "",
+  "sayfa": 332,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "İHRAMIN VACİBLERİ",
+  "aciklama": "",
+  "sayfa": 333,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "İHRAMIN SÜNNETLERİ",
+  "aciklama": "",
+  "sayfa": 333,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "İHRAMIN YASAKLARI",
+  "aciklama": "",
+  "sayfa": 334,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "FEVASIK-I HAMSE",
+  "aciklama": "",
+  "sayfa": 336,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "HAREMDEKİ BİTKİ VE AĞAÇ",
+  "aciklama": "",
+  "sayfa": 336,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "ARAFATTA VAKFE",
+  "aciklama": "",
+  "sayfa": 337,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "VAKFE ZAMANI",
+  "aciklama": "",
+  "sayfa": 337,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "ARAFATTAKİ VAKFENİN MİKTARI",
+  "aciklama": "",
+  "sayfa": 337,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "VAKFENİN SÜNNETLERİ",
+  "aciklama": "",
+  "sayfa": 337,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "C-TEVAFÜL İFADA",
+  "aciklama": "",
+  "sayfa": 338,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "TEVAFÜL-İFADA'NIN ŞARTLARI",
+  "aciklama": "",
+  "sayfa": 339,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "TAVAFIN SÜNNETLERİ",
+  "aciklama": "",
+  "sayfa": 340,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "KA'BEYİ TA'ZİM",
+  "aciklama": "",
+  "sayfa": 342,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "SA'Y",
+  "aciklama": "",
+  "sayfa": 343,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "SA'YIN SAHİH OLMASININ ŞARTLARI",
+  "aciklama": "",
+  "sayfa": 343,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "SA'YIN SÜNNETLERİ",
+  "aciklama": "",
+  "sayfa": 344,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "TRAŞ OLMAK VEYA SAÇ KISALTMAK",
+  "aciklama": "",
+  "sayfa": 345,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "TRAŞ ZAMANI VE MEKÂNI",
+  "aciklama": "",
+  "sayfa": 345,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "TRAŞIN HÜKMÜ",
+  "aciklama": "",
+  "sayfa": 346,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "HACCIN VACİBLERİ",
+  "aciklama": "",
+  "sayfa": 346,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "MÜZDELİFE",
+  "aciklama": "",
+  "sayfa": 347,
+  "oran": 0.6667,
+  "satir": 8
+ },
+ {
+  "seviye": 3,
+  "baslik": "MÜZDELİFEDEKİ VAKFENİN ZAMANI",
+  "aciklama": "",
+  "sayfa": 347,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "MÜZDELİFENİN SÜNNETLERİ",
+  "aciklama": "",
+  "sayfa": 347,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "MİNA",
+  "aciklama": "",
+  "sayfa": 347,
+  "oran": 0.75,
+  "satir": 9
+ },
+ {
+  "seviye": 3,
+  "baslik": "TAŞ ATMANIN ŞARTLARI",
+  "aciklama": "",
+  "sayfa": 348,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "TAŞ ATMANIN SÜNNETLERİ",
+  "aciklama": "",
+  "sayfa": 349,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "TAŞ ATMANIN ZAMANI",
+  "aciklama": "",
+  "sayfa": 349,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "TAVAFÜL-VEDA",
+  "aciklama": "",
+  "sayfa": 350,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "TAVAFÜL-VEDÂ'IN ZAMANI",
+  "aciklama": "",
+  "sayfa": 350,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "HACCIN SÜNNETLERİ",
+  "aciklama": "",
+  "sayfa": 351,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "UMRE",
+  "aciklama": "",
+  "sayfa": 352,
+  "oran": 0.5455,
+  "satir": 6
+ },
+ {
+  "seviye": 3,
+  "baslik": "UMRENİN FARZLARI",
+  "aciklama": "",
+  "sayfa": 352,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "UMRE İÇİN İHRAMIN ZAMANI",
+  "aciklama": "",
+  "sayfa": 353,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "UMRE İÇİN MİKAT YERİ",
+  "aciklama": "",
+  "sayfa": 353,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "HACCIN NEVİLERİ",
+  "aciklama": "",
+  "sayfa": 353,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "HAC VE UMRENİN KEYFİYETİ",
+  "aciklama": "",
+  "sayfa": 356,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "HACCI İFRAD'IN KEYFİYETİ",
+  "aciklama": "",
+  "sayfa": 356,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "BİRİNCİ ŞAVTIN DUASI",
+  "aciklama": "",
+  "sayfa": 360,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "İKİNCİ ŞAVTIN DUASI",
+  "aciklama": "",
+  "sayfa": 360,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "ÜÇÜNCÜ ŞAVTIN DUASI",
+  "aciklama": "",
+  "sayfa": 361,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "DÖRDÜNCÜ ŞAVTIN DUASI",
+  "aciklama": "",
+  "sayfa": 361,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "BEŞİNCİ ŞAVTIN DUASI",
+  "aciklama": "",
+  "sayfa": 361,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "ALTINCI ŞAVTIN DUASI",
+  "aciklama": "",
+  "sayfa": 362,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "YEDİNCİ ŞAVTIN DUASI",
+  "aciklama": "",
+  "sayfa": 362,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "SAFA İLE MERVE ARASINDA ŞU DUANIN OKUNMASI GÜZELDİR.",
+  "aciklama": "",
+  "sayfa": 366,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "ARAFAT SAHASINDA OKUNACAK SEÇME DUA",
+  "aciklama": "",
+  "sayfa": 370,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "HACCI TEMETTÛ'UN KEYFİYETİ",
+  "aciklama": "",
+  "sayfa": 381,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "HACCI KIRAN'IN KEYFİYETİ",
+  "aciklama": "",
+  "sayfa": 382,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "TAVAFÜL VEDA",
+  "aciklama": "",
+  "sayfa": 383,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "CİNAYET",
+  "aciklama": "",
+  "sayfa": 385,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "BİRİNCİ MEBHAS",
+  "aciklama": "",
+  "sayfa": 385,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "İKİNCİ MEBHAS AV VE ONUNLA İLGİLİ MESELELER",
+  "aciklama": "",
+  "sayfa": 388,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "ÜÇÜNCÜ MEBHAS  CİNSİ MUKARENET VE ÖNCÜLERİ",
+  "aciklama": "",
+  "sayfa": 389,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "CİNSİ MUKARENETİN ÖNCÜLERİ",
+  "aciklama": "",
+  "sayfa": 390,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "DÖRDÜNCÜ MEBHAS  VACİBİ TERK",
+  "aciklama": "",
+  "sayfa": 390,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "İHSAR VE FEVAT",
+  "aciklama": "",
+  "sayfa": 392,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "\"FEVAT\"",
+  "aciklama": "",
+  "sayfa": 393,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "HEDY",
+  "aciklama": "",
+  "sayfa": 393,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "HEDY'İN ŞARTLARI",
+  "aciklama": "",
+  "sayfa": 395,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "HEDY'İN ŞARTLARI",
+  "aciklama": "",
+  "sayfa": 396,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 3,
+  "baslik": "HEDY'İN KESİLME ZAMANI",
+  "aciklama": "",
+  "sayfa": 396,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "HEDY'İN KESİLME YERİ",
+  "aciklama": "",
+  "sayfa": 396,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "HACC-I BEDEL",
+  "aciklama": "",
+  "sayfa": 397,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "HACC-I BEDELİN ŞARTLARI",
+  "aciklama": "",
+  "sayfa": 397,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "RESÛLÜ EKREM (S.A.V.) EFENDİMİZİ ZİYARET",
+  "aciklama": "",
+  "sayfa": 398,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "CENNETÜL-BAKİ'İN ZİYARETİ",
+  "aciklama": "",
+  "sayfa": 402,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "UHUD ŞEHİDLERİNİ ZİYARET",
+  "aciklama": "",
+  "sayfa": 402,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "ÜÇÜNCÜ BÖLÜM - MUAMELÂT",
+  "aciklama": "",
+  "sayfa": 405,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "ALIŞ-VERİŞ",
+  "aciklama": "",
+  "sayfa": 407,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "ALICI İLE SATICININ İHTİLAFI",
+  "aciklama": "",
+  "sayfa": 415,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "AĞAÇLARIN SATIŞI",
+  "aciklama": "",
+  "sayfa": 416,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "SATIŞ MESELESİ",
+  "aciklama": "",
+  "sayfa": 417,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "RESÛLÜLLAH'IN NEHY ETTİĞİ ŞEYLER",
+  "aciklama": "",
+  "sayfa": 418,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "RİBA",
+  "aciklama": "",
+  "sayfa": 421,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "HİYAR MESELESİ",
+  "aciklama": "",
+  "sayfa": 423,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "KARZ (ÖDÜNÇ)",
+  "aciklama": "",
+  "sayfa": 429,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "REHİN",
+  "aciklama": "",
+  "sayfa": 430,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "HACR",
+  "aciklama": "",
+  "sayfa": 435,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "SULH",
+  "aciklama": "",
+  "sayfa": 438,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 3,
+  "baslik": "ZAMÂN VE KEFALET",
+  "aciklama": "",
+  "sayfa": 440,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "VEKÂLET",
+  "aciklama": "",
+  "sayfa": 442,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "HAVALE",
+  "aciklama": "",
+  "sayfa": 446,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "ARİYET",
+  "aciklama": "",
+  "sayfa": 448,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "İKRAR",
+  "aciklama": "",
+  "sayfa": 451,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "ŞÜF'A",
+  "aciklama": "",
+  "sayfa": 452,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "MUSAKAT, MUHABERE VE MUZARAÂ",
+  "aciklama": "",
+  "sayfa": 454,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "İCARE",
+  "aciklama": "",
+  "sayfa": 455,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "CE'ALET",
+  "aciklama": "",
+  "sayfa": 460,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "İHYA-ÜL MEVAT",
+  "aciklama": "",
+  "sayfa": 461,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "ŞİRKET",
+  "aciklama": "",
+  "sayfa": 465,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "KİRAZ (MÜDAREBE)",
+  "aciklama": "",
+  "sayfa": 467,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "GASP",
+  "aciklama": "",
+  "sayfa": 470,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "VAKIF",
+  "aciklama": "",
+  "sayfa": 473,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "HİBE",
+  "aciklama": "",
+  "sayfa": 475,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "LUKATA",
+  "aciklama": "",
+  "sayfa": 478,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "VASİYET",
+  "aciklama": "",
+  "sayfa": 480,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "EMANET",
+  "aciklama": "",
+  "sayfa": 483,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "FERÂİZ",
+  "aciklama": "",
+  "sayfa": 487,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "VARİS OLMANIN DÖRT SEBEBİ VARDIR",
+  "aciklama": "",
+  "sayfa": 487,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "İRS'E MANİ HALLER",
+  "aciklama": "",
+  "sayfa": 488,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "ERKEKLERDEN ON SINIF VARİSTİR",
+  "aciklama": "",
+  "sayfa": 488,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "KADINLARDAN DA YEDİ SINIF VARİSTİR",
+  "aciklama": "",
+  "sayfa": 489,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "KUR'AN-I KERİM'DE BELİRTİLMİŞ PAYLAR",
+  "aciklama": "",
+  "sayfa": 490,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "DEDE",
+  "aciklama": "",
+  "sayfa": 496,
+  "oran": 0.8235,
+  "satir": 14
+ },
+ {
+  "seviye": 2,
+  "baslik": "ANNE",
+  "aciklama": "",
+  "sayfa": 497,
+  "oran": 0.8889,
+  "satir": 16
+ },
+ {
+  "seviye": 2,
+  "baslik": "NİNE",
+  "aciklama": "",
+  "sayfa": 497,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "ANNE BİR KARDEŞ",
+  "aciklama": "",
+  "sayfa": 498,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "ASABE",
+  "aciklama": "",
+  "sayfa": 498,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "HACB",
+  "aciklama": "",
+  "sayfa": 500,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "MİRAS MESELESİNE AİT HESAPLAR",
+  "aciklama": "",
+  "sayfa": 504,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "AVLİYE VE REDDİYE",
+  "aciklama": "",
+  "sayfa": 507,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "MESELELERİN TASHİHİ",
+  "aciklama": "",
+  "sayfa": 509,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "MÜNASAHA",
+  "aciklama": "",
+  "sayfa": 512,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "FEY' VE GANİMET",
+  "aciklama": "",
+  "sayfa": 515,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "NİKÂH",
+  "aciklama": "",
+  "sayfa": 517,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "NİKÂH'IN RÜKÜNLERİ",
+  "aciklama": "",
+  "sayfa": 523,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "KARI KOCA OLMAĞA NAMZET OLANLARIN BİRBİRİNE DENK OLMALARI",
+  "aciklama": "",
+  "sayfa": 528,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "MEHİR",
+  "aciklama": "",
+  "sayfa": 529,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "MEHRİ MİSİL NE DEMEKTİR",
+  "aciklama": "",
+  "sayfa": 529,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "NİKÂHI FESH ETMEK",
+  "aciklama": "",
+  "sayfa": 531,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "KADINLARIN HARAM VE HELAL OLANLARI",
+  "aciklama": "",
+  "sayfa": 532,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "VELİME",
+  "aciklama": "",
+  "sayfa": 534,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "YEMEĞİN ADABI",
+  "aciklama": "",
+  "sayfa": 535,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "MEVLÛT",
+  "aciklama": "",
+  "sayfa": 536,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "KARI KOCANIN İRTİDADLARI",
+  "aciklama": "",
+  "sayfa": 537,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "RADÂ (Emzirme)",
+  "aciklama": "",
+  "sayfa": 539,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "KAN VERME VE SATMANIN HÜKMÜ",
+  "aciklama": "",
+  "sayfa": 540,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "KARI İLE KOCANIN KARŞILIKLI HAKLARI",
+  "aciklama": "",
+  "sayfa": 541,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "HUL'",
+  "aciklama": "",
+  "sayfa": 542,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "TALÂK",
+  "aciklama": "",
+  "sayfa": 544,
+  "oran": 0.25,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "TALÂKIN RÜKÜNLERİ",
+  "aciklama": "",
+  "sayfa": 546,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "SÜNNİ VE BİD'İ TALÂK",
+  "aciklama": "",
+  "sayfa": 547,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "TALÂKI BİR ŞEYE TA'LİK ETMEK",
+  "aciklama": "",
+  "sayfa": 548,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "TALÂK-I RİC'İ VE TALÂK-I BAİN",
+  "aciklama": "",
+  "sayfa": 550,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "İDDET",
+  "aciklama": "",
+  "sayfa": 551,
+  "oran": 0.875,
+  "satir": 7
+ },
+ {
+  "seviye": 2,
+  "baslik": "ZEVCE VE AKRABALAR'IN NAFAKALARI",
+  "aciklama": "",
+  "sayfa": 552,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "İLA",
+  "aciklama": "",
+  "sayfa": 554,
+  "oran": 0.25,
+  "satir": 3
+ },
+ {
+  "seviye": 2,
+  "baslik": "İFTİRA VE LİÂN",
+  "aciklama": "",
+  "sayfa": 555,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "ZİHAR",
+  "aciklama": "",
+  "sayfa": 556,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "ZİHARIN KEFFARETİ",
+  "aciklama": "",
+  "sayfa": 557,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "HİZANE",
+  "aciklama": "",
+  "sayfa": 558,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "KATİL VE YARALAMA",
+  "aciklama": "",
+  "sayfa": 561,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "GAYRI MÜSLİMLERİN DURUMU VE CİZYE",
+  "aciklama": "",
+  "sayfa": 567,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "DÂR-I İSLÂM İLE DAR-I HARB",
+  "aciklama": "",
+  "sayfa": 570,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "ZİNA VE KAZF",
+  "aciklama": "",
+  "sayfa": 570,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "HIRSIZLIK VE CEZASI",
+  "aciklama": "",
+  "sayfa": 571,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "İÇKİ  İÇMENİN CEZASI",
+  "aciklama": "",
+  "sayfa": 573,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "HİLAFET VE ONA KARŞI GELMEK",
+  "aciklama": "",
+  "sayfa": 575,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "RİDDET",
+  "aciklama": "",
+  "sayfa": 577,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "FARZ'I AYN VE FARZ'I KİFAYE",
+  "aciklama": "",
+  "sayfa": 578,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "BOĞAZLAMAK",
+  "aciklama": "",
+  "sayfa": 581,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "AVLANMAK",
+  "aciklama": "",
+  "sayfa": 584,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "ETİ YENİLİP YENİLMEYEN HAYVANLAR",
+  "aciklama": "",
+  "sayfa": 586,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "KURBAN",
+  "aciklama": "",
+  "sayfa": 587,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "UDHİYE (KURBAN)",
+  "aciklama": "",
+  "sayfa": 587,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "KURBAN KESMENİN ŞARTLARI",
+  "aciklama": "",
+  "sayfa": 587,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "AKİKA",
+  "aciklama": "",
+  "sayfa": 589,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "NEZİR (ADAK)",
+  "aciklama": "",
+  "sayfa": 590,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "YEMİN",
+  "aciklama": "",
+  "sayfa": 592,
+  "oran": 0.3333,
+  "satir": 4
+ },
+ {
+  "seviye": 2,
+  "baslik": "DAVA VE ŞAHİTLİK",
+  "aciklama": "",
+  "sayfa": 595,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "MALİ İTLAF",
+  "aciklama": "",
+  "sayfa": 597,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "TRAFİK KAZALARI",
+  "aciklama": "",
+  "sayfa": 598,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "İMAM ŞAFİİ",
+  "aciklama": "",
+  "sayfa": 601,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "İMAM ŞAFİİ (Muhammed bin İdris)",
+  "aciklama": "",
+  "sayfa": 601,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "Mezhebi",
+  "aciklama": "",
+  "sayfa": 612,
+  "oran": 0.0,
+  "satir": null
+ }
+]

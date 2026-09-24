@@ -1,0 +1,98 @@
+[
+ {
+  "seviye": 1,
+  "baslik": "Sirâcünnur Mecmuası",
+  "aciklama": "",
+  "sayfa": 1,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Üçüncü Şuâ (Münâcat Risalesi)",
+  "aciklama": "",
+  "sayfa": 2,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "Yirmi Beşinci Lem’a (Hastalar Risalesi ve Zeyli On Yedinci Mektub Çocuk Taziyenamesi)",
+  "aciklama": "",
+  "sayfa": 19,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "Yirmi Altıncı Lem’a (ihtiyarlar Risalesi ve Zeyli Yirmi Birinci Mektub)",
+  "aciklama": "",
+  "sayfa": 44,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "Dördüncü Şuâ (Âyet-i Hasbiye Risalesi) birinci mertebesi yazılmamış",
+  "aciklama": "",
+  "sayfa": 89,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "On Üçüncü Lem’a (Hikmet-ül istiaze Risalesi",
+  "aciklama": "",
+  "sayfa": 108,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "Otuz Üçüncü Mektub aynı zamanda Otuz üçüncü Söz Pencereler Risalesi",
+  "aciklama": "",
+  "sayfa": 131,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "Eski Saidin Yeni Said’e inkılabı zamanındaki hazin münâcatı",
+  "aciklama": "",
+  "sayfa": 173,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "On Yedinci Lem’a’nın On İkinci Notası’nda müellifin hazin münâcatı",
+  "aciklama": "",
+  "sayfa": 177,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "On İkinci ŞuâDenizli müdafaanamesi",
+  "aciklama": "",
+  "sayfa": 180,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "Beşinci Şuâ",
+  "aciklama": "",
+  "sayfa": 245,
+  "oran": 0.1538,
+  "satir": 2
+ },
+ {
+  "seviye": 2,
+  "baslik": "Merhum Hasan Feyzi’nin Risale-i Nur Hakkında manzumesi",
+  "aciklama": "",
+  "sayfa": 265,
+  "oran": 0.0,
+  "satir": null
+ }
+]

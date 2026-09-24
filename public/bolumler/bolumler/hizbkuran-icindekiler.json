@@ -1,0 +1,786 @@
+[
+ {
+  "seviye": 1,
+  "baslik": "Hizb-ül Kuran",
+  "aciklama": "",
+  "sayfa": 1,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "1-Fatiha",
+  "aciklama": "",
+  "sayfa": 1,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "2-Bakara",
+  "aciklama": "",
+  "sayfa": 2,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "3-Âl-i İmran",
+  "aciklama": "",
+  "sayfa": 5,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "4-Nisa'",
+  "aciklama": "",
+  "sayfa": 10,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "5-Maide",
+  "aciklama": "",
+  "sayfa": 12,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "6-Enam",
+  "aciklama": "",
+  "sayfa": 13,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "7-A'raf",
+  "aciklama": "",
+  "sayfa": 20,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "8-Enfal",
+  "aciklama": "",
+  "sayfa": 23,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "9-Tevbe",
+  "aciklama": "",
+  "sayfa": 23,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "10-Yunus",
+  "aciklama": "",
+  "sayfa": 25,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "11-Hud",
+  "aciklama": "سُورَةُ هُودٍ",
+  "sayfa": 27,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "12-Yusuf",
+  "aciklama": "سُورَةُ يُوسُفَ",
+  "sayfa": 29,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "13-Ra'd",
+  "aciklama": "سُورَةُ الرَّعْدِ",
+  "sayfa": 29,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "14-İbrahim",
+  "aciklama": "سُورَةُ اِبْرٰه۪يمَ",
+  "sayfa": 32,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "15-Hicr",
+  "aciklama": "سُورَةُالْحِجْرِ",
+  "sayfa": 33,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "16-Nahl",
+  "aciklama": "",
+  "sayfa": 35,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "17-İsra'",
+  "aciklama": "سُورَةُ اْلاِسْرَآءِ",
+  "sayfa": 38,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "18-Kehf",
+  "aciklama": "سُورَةُ الْكَهْفِ",
+  "sayfa": 42,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "19-Meryem",
+  "aciklama": "سُورَةُ مَرْيَمَ",
+  "sayfa": 43,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "20-Tâhâ",
+  "aciklama": "",
+  "sayfa": 44,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "21-Enbiya",
+  "aciklama": "سُورَةُ الْاَنْبِيَآءِ",
+  "sayfa": 45,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "22-Hacc",
+  "aciklama": "سُورَةُ الْحَجِّ",
+  "sayfa": 49,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "23-Mü'minûn",
+  "aciklama": "سُورَةُ الْمُؤْمِنُونَ",
+  "sayfa": 52,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "24-Nur",
+  "aciklama": "سُورَةُ النُّورِ",
+  "sayfa": 55,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "25-Furkan",
+  "aciklama": "سُورَةُ الْفُرْقَانِ",
+  "sayfa": 57,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "26-Şuara",
+  "aciklama": "سُورَةُ الشُّعَرَآءِ",
+  "sayfa": 59,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "27-Neml",
+  "aciklama": "سُورَةُ النَّمْلِ",
+  "sayfa": 60,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "28-Kasas",
+  "aciklama": "",
+  "sayfa": 64,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "29-Ankebut",
+  "aciklama": "سُورَةُ الْعَنْكَبُوتِ",
+  "sayfa": 65,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "30-Rum",
+  "aciklama": "سُورَةُ الرُّومِ",
+  "sayfa": 67,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "31-Lukman",
+  "aciklama": "",
+  "sayfa": 70,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "32-Secde",
+  "aciklama": "",
+  "sayfa": 73,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "33-Ahzab",
+  "aciklama": "سُورَةُ الْاَحْزَابِ",
+  "sayfa": 74,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "34-Sebe'",
+  "aciklama": "سُورَةُ سَبَأٍ",
+  "sayfa": 76,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "35-Fatır",
+  "aciklama": "سُورَةُ فَاطِرٍ",
+  "sayfa": 77,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "36-Yâsin",
+  "aciklama": "سُورَةُ يٰسٓ",
+  "sayfa": 80,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "37-Saffat",
+  "aciklama": "سُورَةُ الصَّآفَّاتِ",
+  "sayfa": 83,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "38-Sâd",
+  "aciklama": "سُورَةُ صٓ",
+  "sayfa": 84,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "39-Zümer",
+  "aciklama": "سُورَةُ الزُّمَرِ",
+  "sayfa": 84,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "40-Mü'min",
+  "aciklama": "سُورَةُ الْمُؤْمِنِ",
+  "sayfa": 90,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "41-Fussilet",
+  "aciklama": "سُورَةُ فُصِّلَتْ",
+  "sayfa": 92,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "42-Şûrâ",
+  "aciklama": "",
+  "sayfa": 95,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "43-Zuhruf",
+  "aciklama": "سُورَةُ الزُّخْرُفِ",
+  "sayfa": 97,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "44-Duhan",
+  "aciklama": "سُورَةُ الدُّخَانِ",
+  "sayfa": 99,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "45-Câsiye",
+  "aciklama": "سُورَةُ الْجَاثِيَةِ",
+  "sayfa": 99,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "46-Ahkaf",
+  "aciklama": "",
+  "sayfa": 101,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "47-Muhammed",
+  "aciklama": "سُورَةُ مُحَمَّدٍ",
+  "sayfa": 102,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "48-Feth",
+  "aciklama": "سُورَةُ الْفَتْحِ",
+  "sayfa": 102,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "49-Hucurat",
+  "aciklama": "",
+  "sayfa": 103,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "50-Kâf",
+  "aciklama": "",
+  "sayfa": 106,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "51-Zariyat",
+  "aciklama": "سُورَةُ الذَّارِيَاتِ",
+  "sayfa": 107,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "52-Tûr",
+  "aciklama": "سُورَةُ الطُّورِ",
+  "sayfa": 108,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "53-Necm",
+  "aciklama": "",
+  "sayfa": 111,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "54-Kamer",
+  "aciklama": "سُورَةُ الْقَمَرِ",
+  "sayfa": 112,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "55-Rahman",
+  "aciklama": "",
+  "sayfa": 114,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "56-Vakıa",
+  "aciklama": "سُورَةُ الْوَاقِعَةِ",
+  "sayfa": 115,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "57-Hadid",
+  "aciklama": "سُورَةُ الْحَد۪يدِ",
+  "sayfa": 118,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "59-Haşr",
+  "aciklama": "سُورَةُ الْحَشْرِ",
+  "sayfa": 120,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "61-Sâff",
+  "aciklama": "",
+  "sayfa": 120,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "62-Cumua",
+  "aciklama": "سُورَةُ الْجُمُعَةِ",
+  "sayfa": 122,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "64-Teğabün",
+  "aciklama": "",
+  "sayfa": 123,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "65-Talak",
+  "aciklama": "سُورَةُ الطَّلَاقِ",
+  "sayfa": 123,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "67-Mülk",
+  "aciklama": "",
+  "sayfa": 124,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "68-Kalem",
+  "aciklama": "سُورَةُ الْقَلَمِ",
+  "sayfa": 126,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "69-Hakka",
+  "aciklama": "سُورَةُ الْحَآقَّةِ",
+  "sayfa": 126,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "70-Meâric",
+  "aciklama": "سُورَةُ الْمَعَارِجِ",
+  "sayfa": 127,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "71-Nuh",
+  "aciklama": "سُورَةُ نُوحٍ",
+  "sayfa": 128,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "72-Cinn",
+  "aciklama": "",
+  "sayfa": 129,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "73-Müzzemmil",
+  "aciklama": "سُورَةُ الْمُزَّمِّلِ",
+  "sayfa": 129,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "74-Müddessir",
+  "aciklama": "",
+  "sayfa": 130,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "75-Kıyamet",
+  "aciklama": "سُورَةُ الْقِيٰمَةِ",
+  "sayfa": 130,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "76-İnsan",
+  "aciklama": "سُورَةُ اْلاِنْسَانِ",
+  "sayfa": 131,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "77-Mürselat",
+  "aciklama": "سُورَةُ الْمُرْسَلَاتِ",
+  "sayfa": 133,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "78-Nebe'",
+  "aciklama": "",
+  "sayfa": 133,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "79-Naziat",
+  "aciklama": "سُورَةُ النَّازِعَاتِ",
+  "sayfa": 135,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "80-Abese",
+  "aciklama": "سُورَةُ عَبَسَ",
+  "sayfa": 136,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "81-Tekvir",
+  "aciklama": "",
+  "sayfa": 138,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "82-İnfitar",
+  "aciklama": "",
+  "sayfa": 139,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "83-Mütaffifin",
+  "aciklama": "سُورَةُ الْمُطَفِّف۪ينَ",
+  "sayfa": 139,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "84-İnşikak",
+  "aciklama": "",
+  "sayfa": 140,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "85-Büruc",
+  "aciklama": "سُورَةُ الْبُرُوجِ",
+  "sayfa": 140,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "86-Târık",
+  "aciklama": "",
+  "sayfa": 141,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "87-A'lâ",
+  "aciklama": "سُورَةُ الْاَعْلٰى",
+  "sayfa": 141,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "88-Gâşiye",
+  "aciklama": "سُورَةُ الْغَاشِيَةِ",
+  "sayfa": 142,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "89-Fecr",
+  "aciklama": "",
+  "sayfa": 143,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "91-Şems",
+  "aciklama": "سُورَةُ الشَّمْسِ",
+  "sayfa": 143,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "94-İnşirah",
+  "aciklama": "",
+  "sayfa": 144,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "95-Tin",
+  "aciklama": "سُورَةُ التّ۪ينِ",
+  "sayfa": 144,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "96-Alak",
+  "aciklama": "سُورَةُ الْعَلَقِ",
+  "sayfa": 144,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "97-Kadr",
+  "aciklama": "",
+  "sayfa": 145,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "99-Zilzal",
+  "aciklama": "سُورَةُ الزِّلْزَالِ",
+  "sayfa": 145,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "103-Asr",
+  "aciklama": "سُورَةُ الْعَصْرِ",
+  "sayfa": 145,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "108-Kevser",
+  "aciklama": "",
+  "sayfa": 146,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "110-Nasr",
+  "aciklama": "سُورَةُ النَّصْرِ",
+  "sayfa": 146,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "112-İhlas",
+  "aciklama": "سُورَةُ اْلاِخْلَاصِ",
+  "sayfa": 146,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "113-Felak",
+  "aciklama": "سُورَةُ الْفَلَقِ",
+  "sayfa": 146,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "114-Nas",
+  "aciklama": "",
+  "sayfa": 147,
+  "oran": 0.0,
+  "satir": null
+ }
+]

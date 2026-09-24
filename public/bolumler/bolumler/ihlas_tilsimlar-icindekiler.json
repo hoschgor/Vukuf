@@ -1,0 +1,154 @@
+[
+ {
+  "seviye": 1,
+  "baslik": "Tılsımlar Mecmuası",
+  "aciklama": "",
+  "sayfa": 1,
+  "oran": 0.2,
+  "satir": 1
+ },
+ {
+  "seviye": 2,
+  "baslik": "Birinci Söz",
+  "aciklama": "",
+  "sayfa": 4,
+  "oran": 0.25,
+  "satir": 2
+ },
+ {
+  "seviye": 2,
+  "baslik": "On Dördüncü Lem’anın İkinci Makamı",
+  "aciklama": "",
+  "sayfa": 7,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 2,
+  "baslik": "On Birinci Söz",
+  "aciklama": "",
+  "sayfa": 15,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 2,
+  "baslik": "On Altıncı Söz",
+  "aciklama": "",
+  "sayfa": 25,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Yirminci Mektubun Onuncu Kelimesi",
+  "aciklama": "",
+  "sayfa": 34,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 2,
+  "baslik": "On Birinci Kelime",
+  "aciklama": "",
+  "sayfa": 42,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Yirmi İkinci Sözün İkinci Makamı",
+  "aciklama": "",
+  "sayfa": 49,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "Yirminci Dördüncü Mektup",
+  "aciklama": "",
+  "sayfa": 70,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "Yirminci Altıncı Söz",
+  "aciklama": "",
+  "sayfa": 86,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "Yirminci Yedinci Sözün Zeyli",
+  "aciklama": "",
+  "sayfa": 100,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "Yirminci Dokuzuncu Sözün İkinci Maksadı",
+  "aciklama": "",
+  "sayfa": 110,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "Otuzuncu Sözün İkinci Maksadı",
+  "aciklama": "",
+  "sayfa": 132,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "Yirmi Sekizinci Sözün İkinci Sualin Cevabındaki Haşiye",
+  "aciklama": "",
+  "sayfa": 144,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "Yirmi Dördüncü Sözün Beşinci Dalı",
+  "aciklama": "",
+  "sayfa": 145,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "Otuz Birinci Sözün Dördüncü Esası",
+  "aciklama": "",
+  "sayfa": 154,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Hasan Feyzi’nin Manzumesi",
+  "aciklama": "",
+  "sayfa": 159,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "Dördüncü Şua",
+  "aciklama": "",
+  "sayfa": 165,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Üstadımızın Naşirlere Duası",
+  "aciklama": "",
+  "sayfa": 170,
+  "oran": 0.0,
+  "satir": null
+ }
+]

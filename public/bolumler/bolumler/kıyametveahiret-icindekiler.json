@@ -1,0 +1,179 @@
+
+[
+  {
+    "seviye": 1,
+    "baslik": "Giriş",
+    "aciklama": "Eserin tanıtımı, Allah'ın her canlıya ölümü takdir etmesi. Üç âlem (dünya, melekût, ceberût) ve bu âlemlerdeki canlıların ölümü.",
+    "sayfa": 1,
+    "oran": 0.0,
+    "satir": 0
+  },
+  {
+    "seviye": 1,
+    "baslik": "Birinci Fasıl: Ruhların Yaratılışı ve Mîsâk",
+    "aciklama": "Âdem aleyhisselâmın belinden zerrelerin alınması, sağ ve sol taraf. Allah'ın rubûbiyyet sözleşmesi (mîsâk). Ruhların arşın hazinelerinde muhafazası ve ana karnındaki hayat.",
+    "sayfa": 3,
+    "oran": 0.0,
+    "satir": 0
+  },
+  {
+    "seviye": 1,
+    "baslik": "İkinci Fasıl: Ölüm Anı ve Ruhun Çıkışı",
+    "aciklama": "Ölüm anında dört meleğin gelmesi, ruhun çekilmesi. Mümin ve kâfirin ruhunu çıkarma şekilleri. Ölüm acısının şiddeti. Ruhun kalbe gelmesiyle dilin tutulması. Fitneler (şeytanların telkinleri), Cebrâîl'in gelişi ve müjde. Ölüm halindeki alametler.",
+    "sayfa": 4,
+    "oran": 0.0,
+    "satir": 0
+  },
+  {
+    "seviye": 1,
+    "baslik": "Üçüncü Fasıl: Kâfirin Ruhunun Çıkışı ve Cehenneme Gidişi",
+    "aciklama": "Kâfir ruhunun şiddetle alınması, zebânîlere teslim edilmesi. Cebrâîl ile semaya yükseliş, kapıların açılmaması, ruhun siccîne gönderilmesi. Müşrik ve münafıkların durumu.",
+    "sayfa": 13,
+    "oran": 0.0,
+    "satir": 0
+  },
+  {
+    "seviye": 1,
+    "baslik": "Müminlerin Amellerinin Geri Çevrilmesi",
+    "aciklama": "Namaz, zekât, oruç, hac gibi ibadetlerin riyâ, gösteriş veya eksiklik sebebiyle geri çevrilmesi. Müminlerin kusurlu amellerinin durumu.",
+    "sayfa": 15,
+    "oran": 0.0,
+    "satir": 0
+  },
+  {
+    "seviye": 1,
+    "baslik": "Kabir Hayatı",
+    "aciklama": "Ruhun cesede geri dönüşü, yıkama ve kefenleme sırasındaki haller. Kabrin meyyite söyledikleri. Münker ve Nekîr meleklerinin sualleri. Mümin ve kâfirin kabirdeki halleri, azap ve nimet. Amelin korkunç şekil alması. Kabir azabına dair misaller.",
+    "sayfa": 16,
+    "oran": 0.0,
+    "satir": 0
+  },
+  {
+    "seviye": 1,
+    "baslik": "Dördüncü Fasıl: Fâcirin Kabirdeki Hali",
+    "aciklama": "Kâfirlerin Münker ve Nekîr meleklerine cevap verememesi, demir kamçı ile dövülmesi. Amelin köpek şeklinde görünmesi. Kabir azabının çeşitleri ve ibret verici hikâyeler.",
+    "sayfa": 22,
+    "oran": 0.0,
+    "satir": 0
+  },
+  {
+    "seviye": 1,
+    "baslik": "Beşinci Fasıl: Kabirdeki Dört Hal",
+    "aciklama": "Ölülerin kabirde dört halde bulunması: Oturarak bekleyenler, uyku halinde olanlar, Cennet kuşuna binenler, Enbiyâ ve Evliyâya mahsus serbest dolaşanlar. Evliyânın kabirdeki kerametleri.",
+    "sayfa": 27,
+    "oran": 0.0,
+    "satir": 0
+  },
+  {
+    "seviye": 1,
+    "baslik": "Altıncı Fasıl: Kıyâmetin Kopuşu",
+    "aciklama": "Sûr'un üflenmesi, dağların uçması, denizlerin taşması, güneşin kararması, göklerin erimesi. Allah'ın kahır tecellisi, 'Mülk kimindir?' sorusu. Hayat denizinin yağmuru, kuyruk sokumu kemiğinden diriliş. İkinci nefha ile haşr.",
+    "sayfa": 31,
+    "oran": 0.0,
+    "satir": 0
+  },
+  {
+    "seviye": 1,
+    "baslik": "Yedinci Fasıl: İki Nefha Arasındaki Tevakkuf",
+    "aciklama": "Birinci ve ikinci nefha arasındaki ölüm hali (ikinci ölüm). Bu sürenin kırk yıl olduğu görüşü. Peygamberlerin kabirdeki durumları. Hz. Mûsâ'nın Arş'a yapışması.",
+    "sayfa": 35,
+    "oran": 0.0,
+    "satir": 0
+  },
+  {
+    "seviye": 1,
+    "baslik": "Sekizinci Fasıl: Mahşer ve Haşr",
+    "aciklama": "Kabirlerden kalkış, çıplak haşr olunma. Amellerin binek hayvanı olarak görünmesi. Müminlerin nûrları, kâfirlerin karanlıkta kalması. Amellerin miktarına göre haşr şekilleri (deve, katır vb.). Kıyâmet gününün korkuları.",
+    "sayfa": 36,
+    "oran": 0.0,
+    "satir": 0
+  },
+  {
+    "seviye": 1,
+    "baslik": "Mahşer Meydanı ve Meleklerin Safhaları",
+    "aciklama": "Yeryüzünün düz beyaz bir sayfa gibi olması. Meleklerin kat kat mahşeri çevirmesi. İzdiham, terleme (Eshâb-ı rey, rışh, ka'b). Güneşin yaklaşması ve harareti. Arasât meydanında bin sene bekleme.",
+    "sayfa": 42,
+    "oran": 0.0,
+    "satir": 0
+  },
+  {
+    "seviye": 1,
+    "baslik": "Peygamberlere Şefaat Talebi",
+    "aciklama": "Mahşerdeki sıkıntı üzerine insanların Âdem, Nuh, İbrâhîm, Mûsâ, Îsâ aleyhimüsselâma şefaat için başvurması. Her birinin özür beyan etmesi. Son olarak Peygamberimiz Muhammed Mustafâ'ya başvurulması.",
+    "sayfa": 46,
+    "oran": 0.0,
+    "satir": 0
+  },
+  {
+    "seviye": 1,
+    "baslik": "Peygamberimizin Şefaati",
+    "aciklama": "Peygamberimizin secdeye kapanması, Allah'ı hamd ile medh etmesi, şefaat izni alması. Cennet ve Cehennem'in getirilmesi. Cehennem'in korkunç hali. Peygamberimizin Cehennem'i durdurması.",
+    "sayfa": 49,
+    "oran": 0.0,
+    "satir": 0
+  },
+  {
+    "seviye": 1,
+    "baslik": "Dokuzuncu Fasıl: Cennet ve Cehennem, Amellerin Tartılması",
+    "aciklama": "Cennet ve Cehennem'in mahşere getirilmesi. Mîzân'ın kurulması. Amel defterlerinin dağıtılması. Hayvanlar arasında hüküm verilmesi. Peygamberlere ve ümmetlerine sual sorulması. Kitapların okunması.",
+    "sayfa": 51,
+    "oran": 0.0,
+    "satir": 0
+  },
+  {
+    "seviye": 1,
+    "baslik": "Hesap ve Şahitlik",
+    "aciklama": "Levh-i Mahfûz'un getirilmesi, Cebrâîl ve peygamberlerin şahitliği. Her ümmetin kendi peygamberiyle birlikte sorgulanması. Nuh, Hûd, Sâlih, Mûsâ, Dâvud, Îsâ ve Muhammed aleyhimüsselâma yapılan muamele. İnkârcıların Cehenneme atılması.",
+    "sayfa": 54,
+    "oran": 0.0,
+    "satir": 0
+  },
+  {
+    "seviye": 1,
+    "baslik": "Mîzân ve Amel Defterleri",
+    "aciklama": "Mîzân'ın iki kefesi (nûr ve zulmet). Amellerin tartılması. Hasenât ve seyyiâtın denk gelmesi durumu. 'Üf' kelimesi ile ağır basan seyyiât. Bir sevabın diğerine hibe edilmesi. Hesabın kolay ve zor olanları.",
+    "sayfa": 72,
+    "oran": 0.0,
+    "satir": 0
+  },
+  {
+    "seviye": 1,
+    "baslik": "Onuncu Fasıl: Cennet ve Cehennem Ehlinin Sınıfları",
+    "aciklama": "Arasât meydanından Cennet ve Cehennem'e ayrılma. Cennet ehlinin farklı sınıfları ve sancakları (Şu'ayb, Eyyûb, Yûsuf, Ali, Nuh, Yahyâ, İbrâhîm, Îsâ, Süleymân). Her sınıfın özellikleri ve imamları. Dört şeyin (mal, belâ, gençlik, fakirlik) sahiplerine yapılan muamele.",
+    "sayfa": 65,
+    "oran": 0.0,
+    "satir": 0
+  },
+  {
+    "seviye": 1,
+    "baslik": "Sırât Köprüsü ve Kevser Havzı",
+    "aciklama": "Sırât köprüsünden geçiş. Müminlerin derecelerine göre geçiş hızı. Günahkâr müminlerin Cehenneme atılması, şefaate kavuşması. Kevser havzından içme. Abdest, namaz ve huşû'un önemi.",
+    "sayfa": 62,
+    "oran": 0.0,
+    "satir": 0
+  },
+  {
+    "seviye": 1,
+    "baslik": "Cehennem'den Kurtuluş ve Son Durum",
+    "aciklama": "Büyük günah sahibi müminlerin Cehennem'de azap görmesi ve sonunda şefaate kavuşarak çıkarılması. 'Lâ ilâhe illallah' diyerek Cehennem'den kurtulanlar. Allah'ın affı ve rahmeti. Cennet'teki nimetler.",
+    "sayfa": 73,
+    "oran": 0.0,
+    "satir": 0
+  },
+  {
+    "seviye": 1,
+    "baslik": "Kur'an, Cuma ve İslam'ın Fazileti",
+    "aciklama": "Kıyâmet gününde Kur'an-ı kerim ve Cuma'nın müminlere şefaat etmesi. Kur'an ehlinin ve Cuma namazına devam edenlerin kıymeti.",
+    "sayfa": 77,
+    "oran": 0.0,
+    "satir": 0
+  },
+  {
+    "seviye": 1,
+    "baslik": "Sonuç ve Dua",
+    "aciklama": "Eserin tamamlanması, Ehl-i sünnet yoluna sarılma tavsiyesi. Bid'atlerden sakınma uyarısı. Allah'tan af, emniyet ve muvaffakiyet dileme. Salavat ile bitiş.",
+    "sayfa": 79,
+    "oran": 0.0,
+    "satir": 0
+  }
+]

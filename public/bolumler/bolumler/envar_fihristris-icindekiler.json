@@ -1,0 +1,50 @@
+[
+ {
+  "seviye": 1,
+  "baslik": "Fihrist Risalesi",
+  "aciklama": "",
+  "sayfa": 1,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Sözler",
+  "aciklama": "",
+  "sayfa": 3,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "Mektubat",
+  "aciklama": "",
+  "sayfa": 21,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Lem'alar",
+  "aciklama": "",
+  "sayfa": 71,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Şuâlar",
+  "aciklama": "",
+  "sayfa": 175,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Mesnevî-i Nuriye",
+  "aciklama": "",
+  "sayfa": 223,
+  "oran": 0.0,
+  "satir": 0
+ }
+]

@@ -1,0 +1,26 @@
+[
+ {
+  "seviye": 1,
+  "baslik": "Celcelutiye Kasidesi",
+  "aciklama": "",
+  "sayfa": 1,
+  "oran": 0.0,
+  "satir": 0
+ },
+ {
+  "seviye": 2,
+  "baslik": "Arapçası",
+  "aciklama": "",
+  "sayfa": 1,
+  "oran": 0.0,
+  "satir": null
+ },
+ {
+  "seviye": 2,
+  "baslik": "Tercümesi",
+  "aciklama": "",
+  "sayfa": 27,
+  "oran": 0.0,
+  "satir": 0
+ }
+]

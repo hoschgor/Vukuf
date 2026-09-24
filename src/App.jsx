@@ -10,6 +10,7 @@ import OkumaEkrani from "./pages/OkumaEkrani"
 import Arama from "./pages/Arama"
 import Hakkinda from "./pages/Hakkinda"
 import { useApp } from "./AppContext"
+import { swKaydet, swGuncelle } from "./data/cevrimdisi"
 import KuranOkuma from "./pages/KuranOkuma"
 
 export default function App() {
@@ -24,6 +25,19 @@ export default function App() {
     try { return localStorage.getItem("vukuf-giris-animasyonu") !== "0" } catch { return true }
   })
   const [girisSoluyor, setGirisSoluyor] = useState(false)
+
+  /* ── ÇEVRİMDIŞI / SERVİS İŞÇİSİ ───────────────────────────────────────────
+     Kayıt yalnız ÜRETİM derlemesinde yapılıyor; `npm run dev` sırasında servis
+     işçisi açık olursa kaynak değişiklikleri önbelleğe takılır ve "değiştirdim
+     ama olmadı" saatleri başlar.
+     Yeni sürüm hazır olduğunda `skipWaiting` KENDİLİĞİNDEN çağrılmıyor —
+     kullanıcı okurken uygulamayı altından çekmek doğru değil. Aşağıdaki çubuk
+     çıkıyor, karar ona bırakılıyor. */
+  const [guncellemeKaydi, setGuncellemeKaydi] = useState(null)
+  useEffect(() => {
+    if (!import.meta.env.PROD) return
+    swKaydet((kayit) => setGuncellemeKaydi(kayit))
+  }, [])
   useEffect(() => {
     if (!girisVar) return
     const t1 = setTimeout(() => setGirisSoluyor(true), 2000)   // 2 sn görün
@@ -88,6 +102,42 @@ export default function App() {
           </div>
         </div>
       )}
+      {/* ── YENİ SÜRÜM ÇUBUĞU ─────────────────────────────────────────────
+          Okuma ekranlarında da görünüyor (orada Navbar yok) ama ALTTA duruyor
+          ki metnin üstünü kapatmasın. Kapatılabiliyor: kullanıcı şimdi
+          istemiyorsa bir dahaki açılışta yine karşısına çıkar. */}
+      {guncellemeKaydi && (
+        <div style={{
+          position: "fixed", left: "12px", right: "12px",
+          bottom: "calc(12px + env(safe-area-inset-bottom))",
+          zIndex: 9000, display: "flex", alignItems: "center", gap: "10px",
+          padding: "11px 14px", borderRadius: "12px",
+          background: theme.surface, border: `1px solid ${theme.accent}`,
+          boxShadow: "0 6px 24px rgba(0,0,0,0.22)",
+          maxWidth: "520px", margin: "0 auto",
+        }}>
+          <span style={{ flex: 1, minWidth: 0, fontSize: "13px", color: theme.text }}>
+            Yeni sürüm hazır.
+          </span>
+          <button
+            onClick={() => swGuncelle(guncellemeKaydi)}
+            style={{
+              padding: "7px 13px", borderRadius: "9px", border: "none",
+              background: theme.accent, color: "#fff",
+              fontSize: "13px", fontWeight: 600, fontFamily: "inherit", cursor: "pointer",
+            }}
+          >Güncelle</button>
+          <button
+            onClick={() => setGuncellemeKaydi(null)}
+            aria-label="Şimdilik kapat"
+            style={{
+              background: "none", border: "none", color: theme.textSecondary,
+              cursor: "pointer", fontSize: "13px", fontFamily: "inherit", padding: "4px",
+            }}
+          >Sonra</button>
+        </div>
+      )}
+
       {!okumadaMiyiz && <Navbar />}
       <Routes>
         <Route path="/" element={<Kutuphane />} />

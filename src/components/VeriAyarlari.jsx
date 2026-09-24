@@ -25,8 +25,9 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 import { useState, useEffect, useRef, useMemo } from "react"
-import { Download, Upload, Copy, Check, AlertTriangle, Trash2, FileText, X, HardDrive, Wifi, Loader } from "lucide-react"
+import { Download, Upload, Copy, Check, AlertTriangle, Trash2, FileText, X, HardDrive, Wifi, Loader, CloudOff } from "lucide-react"
 import Katlanir from "./Katlanir"
+import { destekVar, swSurum, onbellekDokumu, onbellegiTemizle } from "../data/cevrimdisi"
 import {
   envanter, toplamBoyut, boyutMetni,
   yedekIndir, yedekMetni, yedekDosyaAdi,
@@ -192,6 +193,29 @@ export default function VeriAyarlari({ theme }) {
     } catch {
       bilgiVer("kotu", "Bu tarayıcı kalıcı depolamayı desteklemiyor.")
     }
+  }
+
+  // ── ÇEVRİMDIŞI DURUMU ────────────────────────────────────────────────────
+  const [cevrimdisi, setCevrimdisi] = useState(null)
+  useEffect(() => {
+    let iptal = false
+    ;(async () => {
+      if (!destekVar()) { if (!iptal) setCevrimdisi({ destek: false }); return }
+      const [surum, dokum] = await Promise.all([swSurum(), onbellekDokumu()])
+      let kayitli = false
+      try {
+        const k = await navigator.serviceWorker.getRegistrations()
+        kayitli = k.length > 0
+      } catch { /* yoksay */ }
+      if (!iptal) setCevrimdisi({ destek: true, surum, dokum, kayitli })
+    })()
+    return () => { iptal = true }
+  }, [tazele])
+
+  async function onbellekTemizleTikla() {
+    const n = await onbellegiTemizle()
+    bilgiVer("iyi", `${n} önbellek silindi, sayfa yenileniyor…`)
+    setTimeout(() => window.location.reload(), 600)
   }
 
   // ── ÇEVRİMDIŞI TESTİ (geçici) ────────────────────────────────────────────
@@ -545,6 +569,74 @@ export default function VeriAyarlari({ theme }) {
           İki soruyu tek dokunuşta cevaplıyor: (1) ses sunucusu CORS gönderiyor
           mu, (2) bir âyet gerçekte kaç KB. İkincisi "tüm Kur'ân kaç MB eder"
           sorusunu tahminden ÖLÇÜME çeviriyor. */}
+      </Katlanir>
+
+      {/* ── ÇEVRİMDIŞI ────────────────────────────────────────────────────
+          Servis işçisinin bilinen bedeli BAYAT KOD: yeni sürüm yayınlanır,
+          cihaz eskisini çalıştırır, olmayan hata aranır. Bu bölüm o şüpheyi
+          tahminle değil BAKARAK çözmek için var — sürüm damgası görünür,
+          önbellekte kaç dosya olduğu görünür, ve tek dokunuşla temizlenir. */}
+      <Katlanir
+        theme={theme} ikon={CloudOff} baslik="Çevrimdışı"
+        ozet={cevrimdisi
+          ? (cevrimdisi.destek === false ? "kapalı" : cevrimdisi.kayitli ? (cevrimdisi.surum || "etkin") : "kurulmadı")
+          : null}
+        {...kapak("cevrimdisi")}
+      >
+        <div style={{
+          padding: "10px 12px", borderRadius: "10px",
+          border: `1px solid ${theme.border}`, background: theme.background,
+          fontSize: "12px", color: theme.textSecondary, lineHeight: 1.6,
+        }}>
+          {!cevrimdisi && "Bakılıyor…"}
+          {cevrimdisi?.destek === false && (
+            <>
+              <b style={{ color: "#c0392b" }}>Çevrimdışı kapalı.</b> Servis işçisi
+              yalnız güvenli bağlamda (HTTPS ya da localhost) çalışır. Geliştirme
+              sunucusuna ağ adresiyle bağlanıldığında tarayıcı bu özelliği hiç
+              açmaz — kurulu uygulamadan bakın.
+            </>
+          )}
+          {cevrimdisi?.destek && (
+            <>
+              <div>
+                Durum: <b style={{ color: theme.text }}>{cevrimdisi.kayitli ? "etkin" : "henüz kurulmadı"}</b>
+                {cevrimdisi.surum && <> · Sürüm: <b style={{ color: theme.text }}>{cevrimdisi.surum}</b></>}
+              </div>
+              {cevrimdisi.dokum?.length > 0 ? (
+                <div style={{ marginTop: "6px" }}>
+                  {cevrimdisi.dokum.map(d => (
+                    <div key={d.ad} style={{ fontFamily: "ui-monospace, monospace", fontSize: "11px" }}>
+                      {d.ad}: {d.adet} dosya
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div style={{ marginTop: "6px" }}>Önbellekte henüz dosya yok.</div>
+              )}
+              <div style={{ marginTop: "8px", lineHeight: 1.5 }}>
+                Açtığınız sayfalar ve kitaplar kendiliğinden saklanıyor; bir kez
+                çevrimiçi açtığınız şey sonra çevrimdışı da açılır.
+              </div>
+            </>
+          )}
+        </div>
+
+        {cevrimdisi?.destek && (
+          <div style={{ marginTop: "8px" }}>
+            <OnayliDugme
+              theme={theme} ikon={Trash2}
+              metin="Önbelleği temizle ve yenile"
+              onayMetni="Önbellek silinecek, sayfa yenilenecek. Tekrar dokunun"
+              onOnay={onbellekTemizleTikla}
+            />
+            <div style={{ fontSize: "11px", color: theme.textSecondary, marginTop: "6px", lineHeight: 1.5 }}>
+              Yalnız indirilmiş dosyaları siler — işaretleriniz, notlarınız ve
+              ayarlarınız etkilenmez. "Yeni sürümü almıyor" şüphesinde ilk
+              başvurulacak yer burası.
+            </div>
+          </div>
+        )}
       </Katlanir>
 
       {CEVRIMDISI_TESTI && (

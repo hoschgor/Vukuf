@@ -25,10 +25,11 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 import { useState, useEffect, useRef, useMemo } from "react"
-import { Download, Upload, Copy, Check, AlertTriangle, Trash2, FileText, X, HardDrive, Wifi, Loader, CloudOff, BookOpen } from "lucide-react"
+import { Download, Upload, Copy, Check, AlertTriangle, Trash2, FileText, X, HardDrive, Wifi, Loader, CloudOff, BookOpen, Search } from "lucide-react"
 import Katlanir from "./Katlanir"
 import { destekVar, swSurum, onbellekDokumu, onbellegiTemizle, kabukDurumu, onYukle } from "../data/cevrimdisi"
 import { kategoriler } from "../data/kitaplar"
+import { normHarf } from "../data/okumaKayit"
 import {
   envanter, toplamBoyut, boyutMetni,
   yedekIndir, yedekMetni, yedekDosyaAdi,
@@ -58,6 +59,10 @@ function kitapListesi() {
             id: b.id,
             ad: b.baslik || b.id,
             yazar: b.yazar || alim.isim || "",
+            // Arama bunlarda da eşleşiyor: "Bediüzzaman" yazınca o âlimin
+            // bütün eserleri, kısım adı yazınca o rafın tamamı süzülüyor.
+            alim: alim.isim || "",
+            kisim: kisim.baslik || "",
             adresler: [
               `/kitap-metin/${b.dosya}`,
               `/bolumler/${b.dosya.replace(/-metin\.json$/, "-icindekiler.json")}`,
@@ -68,6 +73,17 @@ function kitapListesi() {
     }
   }
   return liste
+}
+
+/* Kur'ân-ı Kerîm katalogda bir "kitap" olarak yer almıyor (kendi ekranı var),
+   ama çevrimdışı hazırlıkta en çok istenen şey o. Listeye elle bir girdi olarak
+   ekleniyor ki seçilebilsin ve durumu görünsün. */
+const KURAN_GIRDISI = {
+  id: "__kuran",
+  ad: "Kur'ân-ı Kerîm",
+  yazar: "mushaf verisi",
+  alim: "", kisim: "Kur'ân",
+  adresler: ["/kuran-mushaf.json", "/kuran.json", "/sayfa-harita.json"],
 }
 
 // Mushaf tarafının çekirdek dosyaları (fetch ile alınanlar; import edilenler
@@ -267,14 +283,28 @@ export default function VeriAyarlari({ theme }) {
   }, [tazele])
 
   // ── KİTAP İNDİRME ────────────────────────────────────────────────────────
-  const kitaplar = useMemo(() => kitapListesi(), [])
+  const kitaplar = useMemo(() => [KURAN_GIRDISI, ...kitapListesi()], [])
+  // KURAN_ADRESLERI artık KURAN_GIRDISI üzerinden geliyor; iki kez eklenmesin.
   const adresler = useMemo(
-    () => [...KURAN_ADRESLERI, ...FONTLAR, ...kitaplar.flatMap(k => k.adresler)],
+    () => [...new Set([...FONTLAR, ...kitaplar.flatMap(k => k.adresler)])],
     [kitaplar]
   )
   const [durum, setDurum] = useState(null)      // { hazir, bayt, kitapDurum: Map }
   const [indirme, setIndirme] = useState(null)  // { tamam, hata, toplam }
   const [listeAcik, setListeAcik] = useState(false)
+  const [arama, setArama] = useState("")
+
+  /* Süzme: kitap adı, yazar, ÂLİM ve KISIM adında birden arıyor. Böylece
+     "Bediüzzaman" yazmak o âlimin bütün eserlerini, raf adı yazmak o rafın
+     tamamını getiriyor — ayrı bir raf/âlim seçici kutusuna gerek kalmıyor.
+     `normHarf` uygulamanın kendi normalizasyonu (İ/ı, şapka) — arama kutusuyla
+     aynı davranış olsun diye yeniden yazılmadı. */
+  const gorunen = useMemo(() => {
+    const q = normHarf(arama.trim())
+    if (!q) return kitaplar
+    return kitaplar.filter(k =>
+      normHarf(`${k.ad} ${k.yazar} ${k.alim} ${k.kisim}`).includes(q))
+  }, [kitaplar, arama])
 
   /* BOYUT NASIL ÖLÇÜLÜYOR — ve sınırı ne:
      Önbellekteki yanıtların GÖVDESİ okunmuyor (40 MB'ı diskten okumak gerekirdi);
@@ -294,7 +324,7 @@ export default function VeriAyarlari({ theme }) {
         }
         let hazir = 0, bayt = 0
         const kitapDurum = new Map()
-        for (const u of [...KURAN_ADRESLERI, ...FONTLAR]) {
+        for (const u of FONTLAR) {
           const b = await olc(u)
           if (b !== null) { hazir++; bayt += b }
         }
@@ -832,7 +862,10 @@ export default function VeriAyarlari({ theme }) {
 
             {/* ── KİTAP SEÇ ───────────────────────────────────────────────
                 Varsayılan KAPALI: 60'tan fazla satır paneli boğuyordu.
-                Açılınca kendi içinde kayan kısa bir liste geliyor. */}
+                Ayrı bir "raf/âlim seçici" kutusu YAPILMADI — arama zaten kitap
+                adı, yazar, âlim ve kısım adında birden eşleşiyor, yani
+                "Bediüzzaman" yazmak o âlimin eserlerini süzüyor. Tek kutu,
+                iki işi birden görüyor ve panel sade kalıyor. */}
             <button
               onClick={() => setListeAcik(v => !v)}
               style={{
@@ -847,54 +880,107 @@ export default function VeriAyarlari({ theme }) {
             </button>
 
             {listeAcik && (
-              <div style={{
-                marginTop: "8px", maxHeight: "300px", overflowY: "auto",
-                overscrollBehavior: "contain",
-                border: `1px solid ${theme.border}`, borderRadius: "10px",
-              }}>
-                {kitaplar.map((kt, i) => {
-                  const d = durum?.kitapDurum?.get(kt.id)
-                  const hazirMi = Boolean(d && d.hazir)
+              <>
+                <div style={{
+                  display: "flex", alignItems: "center", gap: "8px",
+                  marginTop: "8px", padding: "8px 11px", borderRadius: "10px",
+                  border: `1px solid ${theme.border}`, background: theme.background,
+                }}>
+                  <Search size={14} color={theme.accent} style={{ flexShrink: 0 }} />
+                  <input
+                    value={arama}
+                    onChange={e => setArama(e.target.value)}
+                    placeholder="Kitap, yazar, âlim ya da raf…"
+                    style={{
+                      flex: 1, minWidth: 0, border: "none", outline: "none",
+                      background: "transparent", color: theme.text,
+                      fontSize: "13px", fontFamily: "inherit",
+                    }}
+                  />
+                  {arama && (
+                    <button onClick={() => setArama("")} aria-label="Temizle"
+                      style={{ background: "none", border: "none", color: theme.textSecondary, cursor: "pointer", display: "flex", padding: "2px" }}>
+                      <X size={14} />
+                    </button>
+                  )}
+                </div>
+
+                {/* Süzülmüş kümeyi topluca indirme — asıl kolaylık burada:
+                    "Bediüzzaman" yaz, tek dokunuşla o külliyatı indir. */}
+                {(() => {
+                  const eksik = gorunen.filter(k => !(durum?.kitapDurum?.get(k.id)?.hazir))
+                  if (!arama.trim() || eksik.length === 0) return null
                   return (
-                    <div key={kt.id} style={{
-                      display: "flex", alignItems: "center", gap: "10px",
-                      padding: "9px 11px",
-                      borderTop: i === 0 ? "none" : `1px solid ${theme.border}`,
-                    }}>
-                      <span style={{ flex: 1, minWidth: 0 }}>
-                        <span style={{
-                          display: "block", fontSize: "13px", color: theme.text,
-                          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                        }}>{kt.ad}</span>
-                        <span style={{
-                          display: "block", fontSize: "11px", color: theme.textSecondary,
-                          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                        }}>
-                          {kt.yazar}{hazirMi && d.bayt ? ` · ≈${boyutMetni(d.bayt)}` : ""}
-                        </span>
-                      </span>
-                      {hazirMi ? (
-                        <span style={{
-                          flexShrink: 0, display: "flex", alignItems: "center", gap: "4px",
-                          fontSize: "11px", color: theme.accent,
-                        }}><Check size={13} /> hazır</span>
-                      ) : (
-                        <button
-                          onClick={() => indirBasla(kt.adresler, kt.ad)}
-                          disabled={!cevrimdisi?.destek}
-                          style={{
-                            flexShrink: 0, display: "flex", alignItems: "center", gap: "5px",
-                            padding: "6px 10px", borderRadius: "8px",
-                            background: "transparent", border: `1px solid ${theme.accent}`,
-                            color: theme.accent, fontSize: "11px", fontWeight: 600,
-                            fontFamily: "inherit", cursor: "pointer",
-                          }}
-                        ><Download size={12} /> indir</button>
-                      )}
-                    </div>
+                    <button
+                      onClick={() => indirBasla(eksik.flatMap(k => k.adresler), `${eksik.length} eser`)}
+                      disabled={!cevrimdisi?.destek}
+                      style={{
+                        width: "100%", marginTop: "8px", padding: "10px 12px",
+                        display: "flex", alignItems: "center", justifyContent: "center", gap: "6px",
+                        borderRadius: "10px", border: `1px solid ${theme.accent}`,
+                        background: `${theme.accent}12`, color: theme.accent,
+                        fontSize: "13px", fontWeight: 600, fontFamily: "inherit", cursor: "pointer",
+                      }}
+                    >
+                      <Download size={14} /> Görünen {eksik.length} eseri indir
+                    </button>
                   )
-                })}
-              </div>
+                })()}
+
+                <div style={{
+                  marginTop: "8px", maxHeight: "300px", overflowY: "auto",
+                  overscrollBehavior: "contain",
+                  border: `1px solid ${theme.border}`, borderRadius: "10px",
+                }}>
+                  {gorunen.length === 0 && (
+                    <div style={{ padding: "14px", fontSize: "12px", color: theme.textSecondary, textAlign: "center" }}>
+                      Eşleşme yok.
+                    </div>
+                  )}
+                  {gorunen.map((kt, i) => {
+                    const d = durum?.kitapDurum?.get(kt.id)
+                    const hazirMi = Boolean(d && d.hazir)
+                    return (
+                      <div key={kt.id} style={{
+                        display: "flex", alignItems: "center", gap: "10px",
+                        padding: "9px 11px",
+                        borderTop: i === 0 ? "none" : `1px solid ${theme.border}`,
+                      }}>
+                        <span style={{ flex: 1, minWidth: 0 }}>
+                          <span style={{
+                            display: "block", fontSize: "13px", color: theme.text,
+                            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                          }}>{kt.ad}</span>
+                          <span style={{
+                            display: "block", fontSize: "11px", color: theme.textSecondary,
+                            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                          }}>
+                            {kt.yazar}{hazirMi && d.bayt ? ` · ≈${boyutMetni(d.bayt)}` : ""}
+                          </span>
+                        </span>
+                        {hazirMi ? (
+                          <span style={{
+                            flexShrink: 0, display: "flex", alignItems: "center", gap: "4px",
+                            fontSize: "11px", color: theme.accent,
+                          }}><Check size={13} /> hazır</span>
+                        ) : (
+                          <button
+                            onClick={() => indirBasla(kt.adresler, kt.ad)}
+                            disabled={!cevrimdisi?.destek}
+                            style={{
+                              flexShrink: 0, display: "flex", alignItems: "center", gap: "5px",
+                              padding: "6px 10px", borderRadius: "8px",
+                              background: "transparent", border: `1px solid ${theme.accent}`,
+                              color: theme.accent, fontSize: "11px", fontWeight: 600,
+                              fontFamily: "inherit", cursor: "pointer",
+                            }}
+                          ><Download size={12} /> indir</button>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              </>
             )}
           </>
         )}

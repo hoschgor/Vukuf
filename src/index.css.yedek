@@ -68,7 +68,7 @@
 /*  Alternatif */
 @font-face {
     font-family: 'Indopak';
-    src: url('/fonts/digital-khatt-indopak.otf') format('opentype');
+    src: url('https://fonts.quran.ws/assets/fonts/digital-khatt-indopak.otf') format('opentype');
     font-display: swap;
 }
 /*  Alternatif */
@@ -79,13 +79,13 @@
 /*  Sure Başlık Fontu */
 @font-face {
     font-family: 'surah-name-v2-icon';
-    src: url('/fonts/surah-name-v2.ttf') format('truetype');
+    src: url('https://fonts.quran.ws/assets/fonts/surah-name-v2.ttf') format('truetype');
     font-display: swap;
 }
 /*  2. Alternatif */
 @font-face {
     font-family: 'IndopakNastaleeq';
-    src: url('/fonts/indopak-nastaleeq.ttf') format('truetype');
+    src: url('https://fonts.quran.ws/assets/fonts/indopak-nastaleeq.ttf') format('truetype');
     font-display: swap;
 }
 /*  Besmele - Ayet sonu fontları */

@@ -158,10 +158,21 @@ export default function VeriAyarlari({ theme }) {
   useEffect(() => {
     let iptal = false
     ;(async () => {
+      // NİÇİN AYRI TEŞHİS: `navigator.storage` yalnız GÜVENLİ BAĞLAMDA (HTTPS ya da
+      // localhost) tanımlıdır. Geliştirme sunucusuna telefondan http://192.168.x.x
+      // ile bağlanınca API hiç yoktur; eski hâl buna "bu tarayıcı desteklemiyor"
+      // diyordu ve yanlış yöne baktırıyordu. Aynı kısıt SERVİS İŞÇİSİ için de
+      // geçerli — çevrimdışı özelliği de o adreste hiç çalışmaz.
       try {
-        const e = await navigator.storage.estimate()
-        if (!iptal) setDepolama({ kullanilan: e.usage || 0, kota: e.quota || 0 })
-      } catch { if (!iptal) setDepolama({ hata: true }) }
+        if (!window.isSecureContext) {
+          if (!iptal) setDepolama({ hata: "guvensiz" })
+        } else if (!navigator.storage || !navigator.storage.estimate) {
+          if (!iptal) setDepolama({ hata: "yok" })
+        } else {
+          const e = await navigator.storage.estimate()
+          if (!iptal) setDepolama({ kullanilan: e.usage || 0, kota: e.quota || 0 })
+        }
+      } catch { if (!iptal) setDepolama({ hata: "yok" }) }
       try {
         const k = await navigator.storage.persisted()
         if (!iptal) setKalici(k)
@@ -314,7 +325,16 @@ export default function VeriAyarlari({ theme }) {
         fontSize: "12px", color: theme.textSecondary, lineHeight: 1.6,
       }}>
         {!depolama && "Ölçülüyor…"}
-        {depolama?.hata && "Bu tarayıcı depolama bilgisi vermiyor."}
+        {depolama?.hata === "guvensiz" && (
+          <>
+            <b style={{ color: "#c0392b" }}>Güvenli bağlam değil.</b> Bu sayfa{" "}
+            <code style={{ fontSize: "11px" }}>{location.protocol}//{location.host}</code>{" "}
+            adresinden açıldı; tarayıcı depolama bilgisini yalnız HTTPS ya da
+            localhost üzerinde veriyor. <b>Çevrimdışı özelliği de</b> aynı sebeple
+            burada çalışmaz — kurulu uygulama (HTTPS) üzerinden bakın.
+          </>
+        )}
+        {depolama?.hata === "yok" && "Bu tarayıcı depolama bilgisi vermiyor."}
         {depolama && !depolama.hata && (
           <>
             <div>

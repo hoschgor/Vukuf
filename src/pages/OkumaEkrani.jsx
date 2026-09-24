@@ -5,7 +5,16 @@ import { useApp } from "../AppContext"
 import { kitaplar, kategoriler } from "../data/kitaplar"
 import { okumaKaydet, trFold } from "../data/okumaKayit"
 import lugatVerisi from "../data/lugat.json"
-import risaleLugat from "../data/risale-lugat.json"
+/* ── risale-lugat.json IMPORT'U KALDIRILDI (24 Eylül 2026) ──────────────────
+   `veri_denetim.py --ikizler` iki dosyanın sha256'sının AYNI olduğunu gösterdi:
+   src/data/lugat.json ve src/data/risale-lugat.json BAYT BAYT aynı (42.288 kayıt).
+   Aşağıdaki arama `lugatVerisi[k] || risaleLugat[k]` yazıyordu; ikinci terim
+   birinciyle aynı nesne olduğu için HİÇBİR ZAMAN yeni bir sonuç üretemezdi.
+   Buna karşılık Vite ikisini AYRI modül olarak paketliyordu → aynı 2,46 MB
+   pakete İKİ KEZ giriyor ve her açılışta iki kez ayrıştırılıyordu.
+   NOT: İleride gerçekten ayrı bir Risale lügatı üretilirse (ör. şu an
+   public/risale/lugat/risale-lugat.json'da duran 4,55 MB'lık sürüm) import
+   geri eklenir ve aşağıdaki satıra `|| risaleLugat[temiz]` yazılır. */
 import kavramlarVerisi from "../data/kavramlar.json"
 import KitapAyraci from "../components/KitapAyraci"
 import YuklemeEkrani from "../components/YuklemeEkrani"
@@ -182,7 +191,7 @@ const STOPKELIMELER = new Set([
 function kelimeAra(kelime) {
   const temiz = kelime.toLowerCase().replace(/[.,!?;:'"()\[\]]/g, "").trim()
   if (!temiz || STOPKELIMELER.has(temiz)) return null
-  return lugatVerisi[temiz] || risaleLugat[temiz] || null
+  return lugatVerisi[temiz] || null
 }
 function kavramAra(kelime) {
   const temiz = kelime.toLowerCase().replace(/[.,!?;:'"()\[\]]/g, "").trim()

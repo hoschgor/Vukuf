@@ -27,7 +27,7 @@
 import { useState, useEffect, useRef, useMemo } from "react"
 import { Download, Upload, Copy, Check, AlertTriangle, Trash2, FileText, X, HardDrive, Wifi, Loader, CloudOff } from "lucide-react"
 import Katlanir from "./Katlanir"
-import { destekVar, swSurum, onbellekDokumu, onbellegiTemizle } from "../data/cevrimdisi"
+import { destekVar, swSurum, onbellekDokumu, onbellegiTemizle, kabukDurumu } from "../data/cevrimdisi"
 import {
   envanter, toplamBoyut, boyutMetni,
   yedekIndir, yedekMetni, yedekDosyaAdi,
@@ -201,13 +201,13 @@ export default function VeriAyarlari({ theme }) {
     let iptal = false
     ;(async () => {
       if (!destekVar()) { if (!iptal) setCevrimdisi({ destek: false }); return }
-      const [surum, dokum] = await Promise.all([swSurum(), onbellekDokumu()])
+      const [surum, dokum, kabuk] = await Promise.all([swSurum(), onbellekDokumu(), kabukDurumu()])
       let kayitli = false
       try {
         const k = await navigator.serviceWorker.getRegistrations()
         kayitli = k.length > 0
       } catch { /* yoksay */ }
-      if (!iptal) setCevrimdisi({ destek: true, surum, dokum, kayitli })
+      if (!iptal) setCevrimdisi({ destek: true, surum, dokum, kayitli, kabuk })
     })()
     return () => { iptal = true }
   }, [tazele])
@@ -602,6 +602,15 @@ export default function VeriAyarlari({ theme }) {
               <div>
                 Durum: <b style={{ color: theme.text }}>{cevrimdisi.kayitli ? "etkin" : "henüz kurulmadı"}</b>
                 {cevrimdisi.surum && <> · Sürüm: <b style={{ color: theme.text }}>{cevrimdisi.surum}</b></>}
+              </div>
+              {/* SOĞUK AÇILIŞ TEŞHİSİ: veri önbelleği doluyken bile kabuk boşsa
+                  uygulama çevrimdışı AÇILMAZ, ama açıkken her şey çalışır. */}
+              <div style={{ marginTop: "4px" }}>
+                Uygulama kabuğu:{" "}
+                {cevrimdisi.kabuk === null ? <b style={{ color: theme.text }}>bilinmiyor</b>
+                  : cevrimdisi.kabuk
+                    ? <b style={{ color: theme.accent }}>saklandı</b>
+                    : <b style={{ color: "#c0392b" }}>SAKLANMADI — çevrimdışı açılmaz</b>}
               </div>
               {cevrimdisi.dokum?.length > 0 ? (
                 <div style={{ marginTop: "6px" }}>

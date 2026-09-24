@@ -42,7 +42,7 @@ import {
    İçindekiler dosyasının adı OkumaEkrani'ndeki KURALIN AYNISIYLA türetiliyor
    (`-metin.json` → `-icindekiler.json`); her kitapta olmayabilir, olmayanlar
    indirmede "bulunamadı" sayılır ve sessizce geçilir. */
-function kitapAdresleri() {
+function kitapListesi() {
   const gorulen = new Set()
   const liste = []
   for (const kisim of kategoriler || []) {
@@ -54,8 +54,15 @@ function kitapAdresleri() {
         for (const b of alt.kitaplar || []) {
           if (!b || !b.dosya || gorulen.has(b.dosya)) continue
           gorulen.add(b.dosya)
-          liste.push(`/kitap-metin/${b.dosya}`)
-          liste.push(`/bolumler/${b.dosya.replace(/-metin\.json$/, "-icindekiler.json")}`)
+          liste.push({
+            id: b.id,
+            ad: b.baslik || b.id,
+            yazar: b.yazar || alim.isim || "",
+            adresler: [
+              `/kitap-metin/${b.dosya}`,
+              `/bolumler/${b.dosya.replace(/-metin\.json$/, "-icindekiler.json")}`,
+            ],
+          })
         }
       }
     }
@@ -66,6 +73,20 @@ function kitapAdresleri() {
 // Mushaf tarafının çekirdek dosyaları (fetch ile alınanlar; import edilenler
 // zaten JS paketinin içinde ve kabukla birlikte saklanıyor).
 const KURAN_ADRESLERI = ["/kuran-mushaf.json", "/kuran.json", "/sayfa-harita.json"]
+
+/* Yerel font dosyaları. Kullanıldıkça zaten önbelleğe giriyorlar ama okunmamış
+   bir kitabın fontu eksik kalabilir — toplu indirmeye dâhil edildiler.
+   `encodeURI` ŞART: "KFGQPC Uthmanic.ttf" adında BOŞLUK var, kodlanmadan
+   istenirse sunucu 404 döner. */
+const FONTLAR = [
+  "aria-script.ttf", "Bookerly.ttf", "digital-khatt-indopak.otf",
+  "indopak-nastaleeq.ttf", "KFGQPC Uthmanic.ttf", "liva-nur.ttf",
+  "Me_Quran.ttf", "PlayfairDisplay-Bold.ttf", "PlayfairDisplay-Regular.ttf",
+  "ScheherazadeNew-Bold.ttf", "ScheherazadeNew-Regular.ttf",
+  "souvenir-demi.ttf", "Souvenir.ttf", "surah-name-v1.ttf", "surah-name-v2.ttf",
+  "Symbols1_Ver02.woff2", "uc_ondokuz.ttf", "uthmanic-bazzi-v20.ttf",
+  "uthmanic-hafs-v22.ttf",
+].map(a => encodeURI(`/fonts/${a}`))
 
 const ONAY_SURESI = 4000   // ms — bu süre dokunulmazsa onay hâli geri döner
 
@@ -246,37 +267,68 @@ export default function VeriAyarlari({ theme }) {
   }, [tazele])
 
   // ── KİTAP İNDİRME ────────────────────────────────────────────────────────
-  const adresler = useMemo(() => [...KURAN_ADRESLERI, ...kitapAdresleri()], [])
-  const [hazir, setHazir] = useState(null)          // önbellekte kaç adres var
-  const [indirme, setIndirme] = useState(null)      // { tamam, hata, toplam }
+  const kitaplar = useMemo(() => kitapListesi(), [])
+  const adresler = useMemo(
+    () => [...KURAN_ADRESLERI, ...FONTLAR, ...kitaplar.flatMap(k => k.adresler)],
+    [kitaplar]
+  )
+  const [durum, setDurum] = useState(null)      // { hazir, bayt, kitapDurum: Map }
+  const [indirme, setIndirme] = useState(null)  // { tamam, hata, toplam }
+  const [listeAcik, setListeAcik] = useState(false)
 
+  /* BOYUT NASIL ÖLÇÜLÜYOR — ve sınırı ne:
+     Önbellekteki yanıtların GÖVDESİ okunmuyor (40 MB'ı diskten okumak gerekirdi);
+     yalnız `content-length` başlığı toplanıyor. Bu, İNDİRİLEN (aktarım) boyutu
+     demek. Sunucu gzip uyguluyorsa diskte kapladığı yer bundan büyük olabilir;
+     gerçek disk kullanımı Depolama bölümündeki rakamdır. Bu yüzden "≈" ile
+     gösteriliyor. */
   useEffect(() => {
     let iptal = false
     ;(async () => {
       try {
         const k = await caches.open("vukuf-veri")
-        let n = 0
-        for (const a of adresler) if (await k.match(a, { ignoreVary: true })) n++
-        if (!iptal) setHazir(n)
-      } catch { if (!iptal) setHazir(null) }
+        const olc = async (u) => {
+          const y = await k.match(u, { ignoreVary: true })
+          if (!y) return null
+          return Number(y.headers.get("content-length") || 0)
+        }
+        let hazir = 0, bayt = 0
+        const kitapDurum = new Map()
+        for (const u of [...KURAN_ADRESLERI, ...FONTLAR]) {
+          const b = await olc(u)
+          if (b !== null) { hazir++; bayt += b }
+        }
+        for (const kt of kitaplar) {
+          // Kitabın ASIL dosyası metin; içindekiler olmayabilir, "hazır" kararı
+          // metne bakılarak veriliyor — yoksa içindekilersiz kitaplar hep
+          // "eksik" görünür ve kullanıcı boşuna indirmeye çalışır.
+          const bMetin = await olc(kt.adresler[0])
+          const bIcindekiler = await olc(kt.adresler[1])
+          const kb = (bMetin || 0) + (bIcindekiler || 0)
+          if (bMetin !== null) hazir++
+          if (bIcindekiler !== null) hazir++
+          bayt += kb
+          kitapDurum.set(kt.id, { hazir: bMetin !== null, bayt: kb })
+        }
+        if (!iptal) setDurum({ hazir, bayt, kitapDurum })
+      } catch { if (!iptal) setDurum(null) }
     })()
     return () => { iptal = true }
-  }, [adresler, tazele, indirme])
+  }, [kitaplar, adresler, tazele, indirme])
 
-  function kitaplariIndir() {
+  function indirBasla(hedefler, ad) {
     if (!destekVar() || !navigator.serviceWorker.controller) {
       bilgiVer("kotu", "Çevrimdışı etkin değil; indirme yapılamıyor.")
       return
     }
-    setIndirme({ tamam: 0, hata: 0, toplam: adresler.length })
-    // İndirme SERVİS İŞÇİSİNDE yürüyor: panel kapansa, hatta uygulama arka
-    // plana alınsa bile sürüyor. İlerleme mesajla geliyor.
-    const birak = onYukle(adresler, (d) => {
-      setIndirme(d)
+    setIndirme({ tamam: 0, hata: 0, toplam: hedefler.length, ad })
+    // İndirme SERVİS İŞÇİSİNDE yürüyor: panel kapansa bile sürüyor.
+    const birak = onYukle(hedefler, (d) => {
+      setIndirme({ ...d, ad })
       if (d.tamam + d.hata >= d.toplam) {
         birak()
-        setTimeout(() => { setIndirme(null); setTazele(x => x + 1) }, 1200)
-        bilgiVer("iyi", `${d.tamam} dosya indirildi${d.hata ? `, ${d.hata} bulunamadı` : ""}.`)
+        setTimeout(() => { setIndirme(null); setTazele(x => x + 1) }, 1000)
+        bilgiVer("iyi", `${ad}: ${d.tamam} dosya indirildi${d.hata ? `, ${d.hata} bulunamadı` : ""}.`)
       }
     })
   }
@@ -719,11 +771,12 @@ export default function VeriAyarlari({ theme }) {
 
       {/* ── KİTAPLARI İNDİR ───────────────────────────────────────────────
           "Kullanıldıkça sakla" günlük kullanımda yeterli ama yolculuk/cami gibi
-          önceden hazırlık gereken durumlarda yetmiyor. Burası tek dokunuşla
-          hepsini alıyor. Ayrı bir bölüm yapıldı ki aranmadan bulunsun. */}
+          önceden hazırlık gereken durumlarda yetmiyor.
+          Kitap listesi KATALOGDAN (kitaplar.js) türetiliyor — yeni eser
+          eklendiğinde burada hiçbir şey değişmiyor. */}
       <Katlanir
         theme={theme} ikon={BookOpen} baslik="Kitapları indir"
-        ozet={hazir === null ? null : `${hazir}/${adresler.length} hazır`}
+        ozet={durum ? `${durum.hazir}/${adresler.length} · ≈${boyutMetni(durum.bayt)}` : null}
         {...kapak("indir")}
       >
         <div style={{
@@ -731,21 +784,19 @@ export default function VeriAyarlari({ theme }) {
           border: `1px solid ${theme.border}`, background: theme.background,
           fontSize: "12px", color: theme.textSecondary, lineHeight: 1.6,
         }}>
-          Bütün kitap metinleri, içindekiler dosyaları ve mushaf verisi bir kerede
-          indirilir; sonrasında hepsi internetsiz açılır.
-          {hazir !== null && (
+          İndirilenler internetsiz açılır. Boyutlar aktarım boyutudur (≈);
+          cihazda kapladığı gerçek yer Depolama bölümünde.
+          {durum && (
             <div style={{ marginTop: "6px", color: theme.text }}>
-              Şu an <b>{hazir}</b> / {adresler.length} dosya hazır.
+              <b>{durum.hazir}</b> / {adresler.length} dosya hazır ·{" "}
+              <b>≈{boyutMetni(durum.bayt)}</b>
             </div>
           )}
         </div>
 
         {indirme ? (
           <div style={{ marginTop: "10px" }}>
-            <div style={{
-              height: "8px", borderRadius: "4px", overflow: "hidden",
-              background: `${theme.accent}20`,
-            }}>
+            <div style={{ height: "8px", borderRadius: "4px", overflow: "hidden", background: `${theme.accent}20` }}>
               <div style={{
                 height: "100%", background: theme.accent, borderRadius: "4px",
                 width: `${Math.round(((indirme.tamam + indirme.hata) / Math.max(1, indirme.toplam)) * 100)}%`,
@@ -753,7 +804,7 @@ export default function VeriAyarlari({ theme }) {
               }} />
             </div>
             <div style={{ fontSize: "12px", color: theme.textSecondary, marginTop: "6px" }}>
-              {indirme.tamam + indirme.hata} / {indirme.toplam} · indiriliyor…
+              {indirme.ad} · {indirme.tamam + indirme.hata} / {indirme.toplam}
               {indirme.hata > 0 && ` (${indirme.hata} bulunamadı)`}
             </div>
             <div style={{ fontSize: "11px", color: theme.textSecondary, marginTop: "4px", lineHeight: 1.5 }}>
@@ -761,22 +812,91 @@ export default function VeriAyarlari({ theme }) {
             </div>
           </div>
         ) : (
-          <button
-            onClick={kitaplariIndir}
-            disabled={!cevrimdisi?.destek}
-            style={{
-              width: "100%", marginTop: "10px",
-              display: "flex", alignItems: "center", justifyContent: "center", gap: "7px",
-              padding: "11px 12px", borderRadius: "10px", border: "none",
-              background: cevrimdisi?.destek ? theme.accent : theme.border,
-              color: cevrimdisi?.destek ? "#fff" : theme.textSecondary,
-              fontSize: "13px", fontWeight: 600, fontFamily: "inherit",
-              cursor: cevrimdisi?.destek ? "pointer" : "default",
-            }}
-          >
-            <Download size={15} />
-            {hazir === adresler.length ? "Yeniden indir" : "Hepsini indir"}
-          </button>
+          <>
+            <button
+              onClick={() => indirBasla(adresler, "Tümü")}
+              disabled={!cevrimdisi?.destek}
+              style={{
+                width: "100%", marginTop: "10px",
+                display: "flex", alignItems: "center", justifyContent: "center", gap: "7px",
+                padding: "11px 12px", borderRadius: "10px", border: "none",
+                background: cevrimdisi?.destek ? theme.accent : theme.border,
+                color: cevrimdisi?.destek ? "#fff" : theme.textSecondary,
+                fontSize: "13px", fontWeight: 600, fontFamily: "inherit",
+                cursor: cevrimdisi?.destek ? "pointer" : "default",
+              }}
+            >
+              <Download size={15} />
+              {durum && durum.hazir >= adresler.length ? "Yeniden indir" : "Hepsini indir"}
+            </button>
+
+            {/* ── KİTAP SEÇ ───────────────────────────────────────────────
+                Varsayılan KAPALI: 60'tan fazla satır paneli boğuyordu.
+                Açılınca kendi içinde kayan kısa bir liste geliyor. */}
+            <button
+              onClick={() => setListeAcik(v => !v)}
+              style={{
+                width: "100%", marginTop: "8px", padding: "9px 12px",
+                display: "flex", alignItems: "center", justifyContent: "center", gap: "6px",
+                borderRadius: "10px", background: "transparent",
+                border: `1px solid ${theme.border}`, color: theme.textSecondary,
+                fontSize: "12px", fontFamily: "inherit", cursor: "pointer",
+              }}
+            >
+              {listeAcik ? "Listeyi kapat" : `Kitap seç (${kitaplar.length})`}
+            </button>
+
+            {listeAcik && (
+              <div style={{
+                marginTop: "8px", maxHeight: "300px", overflowY: "auto",
+                overscrollBehavior: "contain",
+                border: `1px solid ${theme.border}`, borderRadius: "10px",
+              }}>
+                {kitaplar.map((kt, i) => {
+                  const d = durum?.kitapDurum?.get(kt.id)
+                  const hazirMi = Boolean(d && d.hazir)
+                  return (
+                    <div key={kt.id} style={{
+                      display: "flex", alignItems: "center", gap: "10px",
+                      padding: "9px 11px",
+                      borderTop: i === 0 ? "none" : `1px solid ${theme.border}`,
+                    }}>
+                      <span style={{ flex: 1, minWidth: 0 }}>
+                        <span style={{
+                          display: "block", fontSize: "13px", color: theme.text,
+                          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                        }}>{kt.ad}</span>
+                        <span style={{
+                          display: "block", fontSize: "11px", color: theme.textSecondary,
+                          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                        }}>
+                          {kt.yazar}{hazirMi && d.bayt ? ` · ≈${boyutMetni(d.bayt)}` : ""}
+                        </span>
+                      </span>
+                      {hazirMi ? (
+                        <span style={{
+                          flexShrink: 0, display: "flex", alignItems: "center", gap: "4px",
+                          fontSize: "11px", color: theme.accent,
+                        }}><Check size={13} /> hazır</span>
+                      ) : (
+                        <button
+                          onClick={() => indirBasla(kt.adresler, kt.ad)}
+                          disabled={!cevrimdisi?.destek}
+                          style={{
+                            flexShrink: 0, display: "flex", alignItems: "center", gap: "5px",
+                            padding: "6px 10px", borderRadius: "8px",
+                            background: "transparent", border: `1px solid ${theme.accent}`,
+                            color: theme.accent, fontSize: "11px", fontWeight: 600,
+                            fontFamily: "inherit", cursor: "pointer",
+                          }}
+                        ><Download size={12} /> indir</button>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </>
         )}
       </Katlanir>
 

@@ -163,7 +163,10 @@
  // üzerine yazılıyor. Böylece çevrimdışı çalışır, çevrimiçiyken de tazelenir.
  async function bayatIkenTazele(istek, adi) {
    const k = await caches.open(adi)
-   const bulunan = await k.match(istek)
+   // `ignoreVary`: toplu indirmede kayıtlar DİZGE adresle konuyor; sonradan
+   // gelen gerçek isteğin başlıkları farklı olduğu için Vary eşleşmesi sessizce
+   // başarısız olabilirdi — dosya önbellekte olduğu hâlde "yok" sayılırdı.
+   const bulunan = await k.match(istek, { ignoreVary: true })
    const agdan = fetch(istek)
    .then(y => { if (saklanabilir(y)) k.put(istek, y.clone()); return y })
    .catch(() => null)

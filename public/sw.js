@@ -35,7 +35,7 @@
  *   de çalışır ama eski varlıklar önbellekte birikir.
  * ═══════════════════════════════════════════════════════════════════════════ */
 
- const SURUM = "2026-09-24-2"
+ const SURUM = "2026-09-24-3"
 
  const KABUK = `vukuf-kabuk-${SURUM}`
  const VARLIK = `vukuf-varlik-${SURUM}`

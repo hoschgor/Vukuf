@@ -26,6 +26,7 @@
 
 import { useState, useEffect, useRef, useMemo } from "react"
 import { Download, Upload, Copy, Check, AlertTriangle, Trash2, FileText, X, HardDrive, Wifi, Loader } from "lucide-react"
+import Katlanir from "./Katlanir"
 import {
   envanter, toplamBoyut, boyutMetni,
   yedekIndir, yedekMetni, yedekDosyaAdi,
@@ -123,21 +124,21 @@ function OnayliDugme({ theme, metin, onayMetni = "Emin misiniz? Tekrar dokunun",
   )
 }
 
-function Baslik({ theme, children }) {
-  return (
-    <div style={{
-      fontSize: "11px", letterSpacing: "1.2px", color: theme.textSecondary,
-      margin: "18px 4px 8px",
-    }}>{children}</div>
-  )
-}
-
 function Ayrac({ theme }) {
   return <div style={{ height: "1px", background: theme.border, opacity: 0.6, margin: "12px 0" }} />
 }
 
 export default function VeriAyarlari({ theme }) {
   // Envanter her açılışta bir kez okunur; silme/yükleme sonrası `tazele` ile yenilenir.
+  // ── AKORDİYON ────────────────────────────────────────────────────────────
+  // Aynı anda TEK bölüm açık. Panel kısa kalsın diye; önemli sayılar zaten
+  // başlık satırındaki özette görünüyor, bölüm açmaya gerek kalmıyor.
+  const [acikBolum, setAcikBolum] = useState(null)
+  const kapak = (id) => ({
+    acik: acikBolum === id,
+    onAc: () => setAcikBolum(x => (x === id ? null : id)),
+  })
+
   const [tazele, setTazele] = useState(0)
   const kutular = useMemo(() => envanter(), [tazele])
   const toplam = useMemo(() => toplamBoyut(), [tazele])
@@ -270,6 +271,7 @@ export default function VeriAyarlari({ theme }) {
     const c = await dosyadanOku(d)
     if (c.hata) { bilgiVer("kotu", c.hata); return }
     setAday(c)
+    setAcikBolum("geri")
   }
 
   function yapistirilaniAl() {
@@ -278,6 +280,7 @@ export default function VeriAyarlari({ theme }) {
     setYapistirAcik(false)
     setYapistirMetni("")
     setAday(c)
+    setAcikBolum("geri")
   }
 
   function geriYukle(kip) {
@@ -302,23 +305,21 @@ export default function VeriAyarlari({ theme }) {
 
   return (
     <div>
-      {/* ── DURUM ─────────────────────────────────────────────────────────── */}
-      <div style={{
-        padding: "10px 12px", borderRadius: "10px",
-        background: `${theme.accent}0d`, border: `1px solid ${theme.border}`,
-        fontSize: "12px", color: theme.textSecondary, lineHeight: 1.5,
-      }}>
-        Bu cihazda <b style={{ color: theme.text }}>{doluKutular.reduce((t, k) => t + k.adet, 0)}</b> kayıt
-        {" "}(<b style={{ color: theme.text }}>{boyutMetni(toplam)}</b>) saklı.
-        Veriler yalnız bu tarayıcıda durur; uygulamayı silmek ya da site verilerini
-        temizlemek hepsini götürür.
-      </div>
-
-      {/* ── DEPOLAMA ──────────────────────────────────────────────────────
-          Çevrimdışı indirme (kitap metinleri, kâri sesleri) bu sayılara bağlı;
-          tarayıcının verdiği yer cihaza ve işletim sistemi sürümüne göre ciddi
-          biçimde değişiyor, tahmin edilemez — ölçülmesi gerekiyor. */}
-      <Baslik theme={theme}><HardDrive size={12} style={{ verticalAlign: "-1px", marginRight: "5px" }} />DEPOLAMA</Baslik>
+      <Katlanir
+        theme={theme} ikon={HardDrive} baslik="Depolama"
+        ozet={depolama && !depolama.hata ? `${boyutMetni(depolama.kota)} ayrıldı` : null}
+        {...kapak("depolama")}
+      >
+        <div style={{
+          padding: "10px 12px", borderRadius: "10px", marginBottom: "8px",
+          background: `${theme.accent}0d`, border: `1px solid ${theme.border}`,
+          fontSize: "12px", color: theme.textSecondary, lineHeight: 1.5,
+        }}>
+          Bu cihazda <b style={{ color: theme.text }}>{doluKutular.reduce((t, k) => t + k.adet, 0)}</b> kayıt
+          {" "}(<b style={{ color: theme.text }}>{boyutMetni(toplam)}</b>) saklı.
+          Veriler yalnız bu tarayıcıda durur; uygulamayı silmek ya da site verilerini
+          temizlemek hepsini götürür.
+        </div>
       <div style={{
         padding: "10px 12px", borderRadius: "10px",
         border: `1px solid ${theme.border}`, background: theme.background,
@@ -366,8 +367,13 @@ export default function VeriAyarlari({ theme }) {
         )}
       </div>
 
-      {/* ── YEDEK AL ──────────────────────────────────────────────────────── */}
-      <Baslik theme={theme}>YEDEK AL</Baslik>
+      </Katlanir>
+
+      <Katlanir
+        theme={theme} ikon={Download} baslik="Yedek al"
+        ozet={`${doluKutular.reduce((t, k) => t + k.adet, 0)} kayıt`}
+        {...kapak("yedek")}
+      >
       <div style={{ display: "flex", gap: "8px" }}>
         <button onClick={indir} style={{
           flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: "7px",
@@ -395,8 +401,13 @@ export default function VeriAyarlari({ theme }) {
         </div>
       )}
 
-      {/* ── GERİ YÜKLE ────────────────────────────────────────────────────── */}
-      <Baslik theme={theme}>GERİ YÜKLE</Baslik>
+      </Katlanir>
+
+      <Katlanir
+        theme={theme} ikon={Upload} baslik="Geri yükle"
+        ozet={aday ? `${aday.adet} kayıt okundu` : null}
+        {...kapak("geri")}
+      >
       {!aday && (
         <>
           <div style={{ display: "flex", gap: "8px" }}>
@@ -476,8 +487,13 @@ export default function VeriAyarlari({ theme }) {
         </div>
       )}
 
-      {/* ── SIFIRLA ───────────────────────────────────────────────────────── */}
-      <Baslik theme={theme}>SIFIRLA</Baslik>
+      </Katlanir>
+
+      <Katlanir
+        theme={theme} ikon={Trash2} baslik="Sıfırla"
+        ozet={`${doluKutular.length} bölüm`}
+        {...kapak("sifirla")}
+      >
       <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "10px", lineHeight: 1.5 }}>
         Silinen geri getirilemez. Sıfırlamadan önce yukarıdan bir yedek almanız iyi olur.
       </div>
@@ -529,9 +545,14 @@ export default function VeriAyarlari({ theme }) {
           İki soruyu tek dokunuşta cevaplıyor: (1) ses sunucusu CORS gönderiyor
           mu, (2) bir âyet gerçekte kaç KB. İkincisi "tüm Kur'ân kaç MB eder"
           sorusunu tahminden ÖLÇÜME çeviriyor. */}
+      </Katlanir>
+
       {CEVRIMDISI_TESTI && (
-        <>
-          <Baslik theme={theme}><Wifi size={12} style={{ verticalAlign: "-1px", marginRight: "5px" }} />ÇEVRİMDIŞI TESTİ (geçici)</Baslik>
+        <Katlanir
+          theme={theme} ikon={Wifi} baslik="Çevrimdışı testi (geçici)"
+          ozet={test && !test.calisiyor && test.toplam ? boyutMetni(test.toplam) : null}
+          {...kapak("test")}
+        >
           <input
             value={testUrl}
             onChange={e => setTestUrl(e.target.value)}
@@ -598,7 +619,7 @@ export default function VeriAyarlari({ theme }) {
               )}
             </div>
           )}
-        </>
+        </Katlanir>
       )}
 
       {/* Loader'ın dönmesi için — `arama-spin` Arama.jsx'te tanımlı, buraya

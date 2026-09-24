@@ -6,6 +6,7 @@ import { useMediaQuery } from "../data/hooks/useMediaQuery"
 import IosSwitch from "./IosSwitch"
 import AltSayfa from "./AltSayfa"
 import VeriAyarlari from "./VeriAyarlari"
+import Katlanir from "./Katlanir"
 
 /* ═══════════════════════════════════════════════════════════════════════════
    AYARLARIN TEK KAPIDA TOPLANMASI (24 Eylül 2026)
@@ -70,26 +71,19 @@ function AyarSatiri({ baslik, aciklama, acik, onToggle, theme }) {
   )
 }
 
-// Panel içi bölüm başlığı (ikon + yazı)
-function BolumBasligi({ theme, ikon: Ikon, children, ilk }) {
-  return (
-    <div style={{
-      display: "flex", alignItems: "center", gap: "7px",
-      fontSize: "11px", letterSpacing: "1.2px", color: theme.textSecondary,
-      margin: ilk ? "4px 4px 8px" : "22px 4px 8px",
-    }}>
-      {Ikon && <Ikon size={13} />}
-      {children}
-    </div>
-  )
-}
-
 export default function Navbar() {
   const { theme, currentTheme, setCurrentTheme, customTheme, ozelTemaKaydet } = useApp()
   const location = useLocation()
   const isMobile = useMediaQuery("(max-width: 768px)")
   const [menuAcik, setMenuAcik] = useState(false)
   const [ayarlarAcik, setAyarlarAcik] = useState(false)
+  // Ayarlar paneli de akordiyon: aynı anda tek bölüm açık, panel kısa kalıyor.
+  // TEMA varsayılan olarak açık — en sık dokunulan yer orası.
+  const [acikBolum, setAcikBolum] = useState("tema")
+  const kapak = (id) => ({
+    acik: acikBolum === id,
+    onAc: () => setAcikBolum(x => (x === id ? null : id)),
+  })
 
   const [dinamik, setDinamik] = useState(() => {
     try { return localStorage.getItem("vukuf-dinamik-mod") === "1" } catch { return false }
@@ -235,7 +229,11 @@ export default function Navbar() {
           maxYukseklik="86vh"
         >
           {/* ── TEMA ──────────────────────────────────────────────────── */}
-          <BolumBasligi theme={theme} ikon={Palette} ilk>TEMA</BolumBasligi>
+          <Katlanir
+            theme={theme} ikon={Palette} baslik="Tema"
+            ozet={(temaListesi.find(t => t.id === currentTheme) || {}).label}
+            {...kapak("tema")}
+          >
           <div style={{
             display: "grid",
             gridTemplateColumns: isMobile ? "1fr 1fr" : "1fr 1fr 1fr",
@@ -275,8 +273,14 @@ export default function Navbar() {
             ))}
           </div>
 
+          </Katlanir>
+
           {/* ── GÖRÜNÜM ───────────────────────────────────────────────── */}
-          <BolumBasligi theme={theme} ikon={Sparkles}>GÖRÜNÜM</BolumBasligi>
+          <Katlanir
+            theme={theme} ikon={Sparkles} baslik="Görünüm"
+            ozet={[dinamik && "dinamik", girisAnim && "giriş"].filter(Boolean).join(" · ") || "kapalı"}
+            {...kapak("gorunum")}
+          >
           <AyarSatiri
             baslik="Dinamik Mod"
             aciklama="Kitaplıkta akan (coverflow) kapak görünümü"
@@ -293,9 +297,19 @@ export default function Navbar() {
             theme={theme}
           />
 
-          {/* ── VERİLER ───────────────────────────────────────────────── */}
-          <BolumBasligi theme={theme} ikon={HardDrive}>VERİLER</BolumBasligi>
-          <VeriAyarlari theme={theme} />
+          </Katlanir>
+
+          {/* ── VERİLER ───────────────────────────────────────────────────
+              İçinde kendi akordiyonu var (Depolama · Yedek al · Geri yükle ·
+              Sıfırla), o yüzden burada iç dolgu verilmiyor — iki kat çerçeve
+              görüntüyü boğuyordu. */}
+          <Katlanir
+            theme={theme} ikon={HardDrive} baslik="Veriler"
+            ozet="yedek · sıfırla"
+            {...kapak("veriler")}
+          >
+            <VeriAyarlari theme={theme} />
+          </Katlanir>
 
           {/* Panelin sonunda nefes payı — son düğme ekranın en dibine yapışmasın */}
           <div style={{ height: "8px" }} />

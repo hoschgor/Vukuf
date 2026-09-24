@@ -25,11 +25,16 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 import { useState, useEffect, useRef, useMemo } from "react"
-import { Download, Upload, Copy, Check, AlertTriangle, Trash2, FileText, X, HardDrive, Wifi, Loader, CloudOff, BookOpen, Search } from "lucide-react"
+import { Download, Upload, Copy, Check, AlertTriangle, Trash2, FileText, X, HardDrive, Wifi, Loader, CloudOff, BookOpen, Search, Music } from "lucide-react"
 import Katlanir from "./Katlanir"
 import { destekVar, swSurum, onbellekDokumu, onbellegiTemizle, kabukDurumu, onYukle } from "../data/cevrimdisi"
 import { kategoriler } from "../data/kitaplar"
 import { normHarf } from "../data/okumaKayit"
+import { KARILAR } from "../data/hooks/useAudioPlayer"
+import {
+  mushafYukle, sureListesi, cuzListesi, sesAdresleri,
+  boyutOrnekle, tahminiBoyut, sesAnahtarlari, sesOnbellegiSil,
+} from "../data/sesIndirme"
 import {
   envanter, toplamBoyut, boyutMetni,
   yedekIndir, yedekMetni, yedekDosyaAdi,
@@ -81,7 +86,7 @@ function kitapListesi() {
 const KURAN_GIRDISI = {
   id: "__kuran",
   ad: "Kur'ân-ı Kerîm",
-  yazar: "mushaf verisi",
+  yazar: "",
   alim: "", kisim: "Kur'ân",
   adresler: ["/kuran-mushaf.json", "/kuran.json", "/sayfa-harita.json"],
 }
@@ -301,10 +306,15 @@ export default function VeriAyarlari({ theme }) {
      aynı davranış olsun diye yeniden yazılmadı. */
   const gorunen = useMemo(() => {
     const q = normHarf(arama.trim())
-    if (!q) return kitaplar
-    return kitaplar.filter(k =>
-      normHarf(`${k.ad} ${k.yazar} ${k.alim} ${k.kisim}`).includes(q))
-  }, [kitaplar, arama])
+    const suzulmus = q
+      ? kitaplar.filter(k => normHarf(`${k.ad} ${k.yazar} ${k.alim} ${k.kisim}`).includes(q))
+      : kitaplar
+    /* İNDİRİLMEMİŞLER ÜSTTE: liste 60+ satır ve kullanıcının burada aradığı şey
+       "ne eksik" — hazır olanları üstte görmek işe yaramıyor. Kendi içlerinde
+       katalog sırası korunuyor (sort kararlı). */
+    const hazirMi = (k) => Boolean(durum?.kitapDurum?.get(k.id)?.hazir)
+    return [...suzulmus].sort((a, b) => Number(hazirMi(a)) - Number(hazirMi(b)))
+  }, [kitaplar, arama, durum])
 
   /* BOYUT NASIL ÖLÇÜLÜYOR — ve sınırı ne:
      Önbellekteki yanıtların GÖVDESİ okunmuyor (40 MB'ı diskten okumak gerekirdi);
@@ -361,6 +371,69 @@ export default function VeriAyarlari({ theme }) {
         bilgiVer("iyi", `${ad}: ${d.tamam} dosya indirildi${d.hata ? `, ${d.hata} bulunamadı` : ""}.`)
       }
     })
+  }
+
+  // ── SESLER ───────────────────────────────────────────────────────────────
+  const [kari, setKari] = useState(() => {
+    try { return localStorage.getItem("vukuf-kari") || KARILAR[0].id } catch { return KARILAR[0].id }
+  })
+  const [mushaf, setMushaf] = useState(null)
+  const [sesSekme, setSesSekme] = useState("cuz")
+  const [sesArama, setSesArama] = useState("")
+  const [olcum, setOlcum] = useState(null)      // { baytKelime, orneklem, … }
+  const [olcuyor, setOlcuyor] = useState(false)
+  const [sesVarlar, setSesVarlar] = useState(null)  // önbellekteki adres kümesi
+
+  // Mushaf 5 MB — YALNIZ bölüm açıldığında çekiliyor.
+  useEffect(() => {
+    if (acikBolum !== "sesler" || mushaf) return
+    let iptal = false
+    mushafYukle().then(d => { if (!iptal) setMushaf(d) }).catch(() => {})
+    return () => { iptal = true }
+  }, [acikBolum, mushaf])
+
+  useEffect(() => {
+    if (acikBolum !== "sesler") return
+    let iptal = false
+    sesAnahtarlari().then(x => { if (!iptal) setSesVarlar(x) })
+    return () => { iptal = true }
+  }, [acikBolum, tazele, indirme])
+
+  const sureler = useMemo(() => (mushaf ? sureListesi(mushaf) : []), [mushaf])
+  const cuzler = useMemo(() => (mushaf ? cuzListesi(mushaf) : []), [mushaf])
+
+  // Kâri değişince ölçüm geçersiz: bitrate kâriden kâriye değişiyor.
+  useEffect(() => { setOlcum(null) }, [kari])
+
+  async function boyutOlc() {
+    if (!mushaf) return
+    setOlcuyor(true)
+    const o = await boyutOrnekle(kari, mushaf, 20)
+    setOlcum(o)
+    setOlcuyor(false)
+    if (o.hata) bilgiVer("kotu", o.hata)
+  }
+
+  const sesSatirlari = useMemo(() => {
+    const yap = (ad, alt, ayetler, kelime) => {
+      const adresler = sesAdresleri(kari, ayetler)
+      const hazir = sesVarlar ? adresler.filter(u => sesVarlar.has(u)).length : 0
+      return { ad, alt, adresler, kelime, hazir, toplam: adresler.length }
+    }
+    if (sesSekme === "cuz") {
+      return cuzler.map(c => yap(`${c.no}. Cüz`, c.sureler.slice(0, 3).join(", "), c.ayetler, c.kelime))
+    }
+    const q = normHarf(sesArama.trim())
+    return sureler
+      .filter(s => !q || normHarf(`${s.no} ${s.ad}`).includes(q))
+      .map(s => yap(`${s.no}. ${s.ad}`, `${s.ayetSayisi} âyet`, s.ayetler, s.kelime))
+  }, [sesSekme, sesArama, cuzler, sureler, kari, sesVarlar])
+
+  async function sesleriSil() {
+    await sesOnbellegiSil()
+    setSesVarlar(new Set())
+    setTazele(x => x + 1)
+    bilgiVer("iyi", "İndirilen sesler silindi.")
   }
 
   async function onbellekTemizleTikla() {
@@ -981,6 +1054,162 @@ export default function VeriAyarlari({ theme }) {
                   })}
                 </div>
               </>
+            )}
+          </>
+        )}
+      </Katlanir>
+
+      {/* ── SESLER ────────────────────────────────────────────────────────
+          Kâri sesleri DIŞ KAYNAKTAN geliyor ve kâriden kâriye bitrate değişiyor
+          (her kâride 64 kbps yok). Bu yüzden hiçbir boyut varsayılmıyor:
+          seçilen kâriden 20 âyet ÖRNEKLENİP bayt/kelime oranı çıkarılıyor ve
+          her cüz/sûre kendi KELİME sayısıyla çarpılıyor. Âyet uzunlukları çok
+          değişken olduğu için "âyet başına ortalama" kötü bir ölçü olurdu. */}
+      <Katlanir
+        theme={theme} ikon={Music} baslik="Sesler"
+        ozet={sesVarlar && sesVarlar.size ? `${sesVarlar.size} âyet indirildi` : null}
+        {...kapak("sesler")}
+      >
+        {!mushaf ? (
+          <div style={{ fontSize: "12px", color: theme.textSecondary, padding: "6px 2px" }}>
+            Mushaf verisi yükleniyor…
+          </div>
+        ) : (
+          <>
+            {/* Kâri */}
+            <select
+              value={kari}
+              onChange={e => setKari(e.target.value)}
+              style={{
+                width: "100%", padding: "10px 11px", borderRadius: "10px",
+                border: `1px solid ${theme.border}`, background: theme.background,
+                color: theme.text, fontSize: "13px", fontFamily: "inherit",
+              }}
+            >
+              {KARILAR.map(k => <option key={k.id} value={k.id}>{k.label}</option>)}
+            </select>
+
+            {/* Ölçüm */}
+            {!olcum ? (
+              <button
+                onClick={boyutOlc} disabled={olcuyor}
+                style={{
+                  width: "100%", marginTop: "8px", padding: "10px 12px",
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: "7px",
+                  borderRadius: "10px", border: `1px solid ${theme.accent}`,
+                  background: "transparent", color: theme.accent,
+                  fontSize: "13px", fontWeight: 600, fontFamily: "inherit",
+                  cursor: olcuyor ? "default" : "pointer", opacity: olcuyor ? 0.6 : 1,
+                }}
+              >
+                {olcuyor ? <Loader size={15} className="veri-spin" /> : <Wifi size={15} />}
+                {olcuyor ? "Ölçülüyor…" : "Bu kârinin boyutunu ölç"}
+              </button>
+            ) : olcum.hata ? (
+              <div style={{ marginTop: "8px", fontSize: "12px", color: "#c0392b" }}>{olcum.hata}</div>
+            ) : (
+              <div style={{
+                marginTop: "8px", padding: "9px 11px", borderRadius: "10px",
+                border: `1px solid ${theme.border}`, background: theme.background,
+                fontSize: "12px", color: theme.textSecondary, lineHeight: 1.6,
+              }}>
+                {olcum.orneklem} âyet örneklendi · tüm Kur'ân{" "}
+                <b style={{ color: theme.text }}>
+                  ≈{boyutMetni(tahminiBoyut(olcum, sureler.reduce((t, x) => t + x.kelime, 0)))}
+                </b>
+                <button onClick={boyutOlc}
+                  style={{ marginLeft: "8px", background: "none", border: "none", color: theme.accent, fontSize: "11px", fontFamily: "inherit", cursor: "pointer", padding: 0 }}>
+                  yeniden ölç
+                </button>
+              </div>
+            )}
+
+            {/* Cüz / Sûre sekmeleri */}
+            <div style={{ display: "flex", gap: "6px", marginTop: "10px" }}>
+              {[["cuz", `Cüz (${cuzler.length})`], ["sure", `Sûre (${sureler.length})`]].map(([id, et]) => (
+                <button key={id} onClick={() => setSesSekme(id)}
+                  style={{
+                    flex: 1, padding: "8px", borderRadius: "9px", fontSize: "12px",
+                    fontWeight: 600, fontFamily: "inherit", cursor: "pointer",
+                    border: `1px solid ${sesSekme === id ? theme.accent : theme.border}`,
+                    background: sesSekme === id ? `${theme.accent}15` : "transparent",
+                    color: sesSekme === id ? theme.accent : theme.textSecondary,
+                  }}>{et}</button>
+              ))}
+            </div>
+
+            {sesSekme === "sure" && (
+              <div style={{
+                display: "flex", alignItems: "center", gap: "8px", marginTop: "8px",
+                padding: "8px 11px", borderRadius: "10px",
+                border: `1px solid ${theme.border}`, background: theme.background,
+              }}>
+                <Search size={14} color={theme.accent} style={{ flexShrink: 0 }} />
+                <input value={sesArama} onChange={e => setSesArama(e.target.value)}
+                  placeholder="Sûre adı ya da numarası…"
+                  style={{ flex: 1, minWidth: 0, border: "none", outline: "none", background: "transparent", color: theme.text, fontSize: "13px", fontFamily: "inherit" }} />
+                {sesArama && (
+                  <button onClick={() => setSesArama("")} aria-label="Temizle"
+                    style={{ background: "none", border: "none", color: theme.textSecondary, cursor: "pointer", display: "flex", padding: "2px" }}>
+                    <X size={14} />
+                  </button>
+                )}
+              </div>
+            )}
+
+            <div style={{
+              marginTop: "8px", maxHeight: "320px", overflowY: "auto",
+              overscrollBehavior: "contain",
+              border: `1px solid ${theme.border}`, borderRadius: "10px",
+            }}>
+              {sesSatirlari.length === 0 && (
+                <div style={{ padding: "14px", fontSize: "12px", color: theme.textSecondary, textAlign: "center" }}>Eşleşme yok.</div>
+              )}
+              {sesSatirlari.map((r, i) => {
+                const tamHazir = r.hazir >= r.toplam
+                const kismi = r.hazir > 0 && !tamHazir
+                return (
+                  <div key={r.ad} style={{
+                    display: "flex", alignItems: "center", gap: "10px", padding: "9px 11px",
+                    borderTop: i === 0 ? "none" : `1px solid ${theme.border}`,
+                  }}>
+                    <span style={{ flex: 1, minWidth: 0 }}>
+                      <span style={{ display: "block", fontSize: "13px", color: theme.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.ad}</span>
+                      <span style={{ display: "block", fontSize: "11px", color: theme.textSecondary, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {r.alt}
+                        {olcum && !olcum.hata ? ` · ≈${boyutMetni(tahminiBoyut(olcum, r.kelime))}` : ""}
+                        {kismi ? ` · ${r.hazir}/${r.toplam}` : ""}
+                      </span>
+                    </span>
+                    {tamHazir ? (
+                      <span style={{ flexShrink: 0, display: "flex", alignItems: "center", gap: "4px", fontSize: "11px", color: theme.accent }}>
+                        <Check size={13} /> hazır
+                      </span>
+                    ) : (
+                      <button onClick={() => indirBasla(r.adresler, r.ad)} disabled={!cevrimdisi?.destek || Boolean(indirme)}
+                        style={{
+                          flexShrink: 0, display: "flex", alignItems: "center", gap: "5px",
+                          padding: "6px 10px", borderRadius: "8px", background: "transparent",
+                          border: `1px solid ${theme.accent}`, color: theme.accent,
+                          fontSize: "11px", fontWeight: 600, fontFamily: "inherit",
+                          cursor: indirme ? "default" : "pointer", opacity: indirme ? 0.5 : 1,
+                        }}><Download size={12} /> indir</button>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+
+            {sesVarlar && sesVarlar.size > 0 && (
+              <div style={{ marginTop: "10px" }}>
+                <OnayliDugme theme={theme} tehlike ikon={Trash2}
+                  metin={`İndirilen sesleri sil (${sesVarlar.size} dosya)`}
+                  onayMetni="Sesler silinecek! Tekrar dokunun"
+                  onOnay={sesleriSil} />
+                <div style={{ fontSize: "11px", color: theme.textSecondary, marginTop: "6px", lineHeight: 1.5 }}>
+                  Sesler ayrı bir önbellekte durur; silmek metinlere dokunmaz.
+                </div>
+              </div>
             )}
           </>
         )}

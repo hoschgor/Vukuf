@@ -40,6 +40,7 @@
  const KABUK = `vukuf-kabuk-${SURUM}`
  const VARLIK = `vukuf-varlik-${SURUM}`
  const VERI = "vukuf-veri"          // SÜRÜMSÜZ — bilerek
+ const SES = "vukuf-ses"            // SÜRÜMSÜZ ve AYRI — aşağıdaki nota bak
 
  // Veri sayılan uzantılar (bayatken tazele ile yönetilir)
  const VERI_DESENI = /\.(json|webmanifest|ttf|otf|woff2?|png|jpe?g|svg|ico)$/i
@@ -100,7 +101,7 @@
      const adlar = await caches.keys()
      await Promise.all(adlar.map(ad => {
        if (!ad.startsWith("vukuf-")) return null
-         if (ad === KABUK || ad === VARLIK || ad === VERI) return null
+         if (ad === KABUK || ad === VARLIK || ad === VERI || ad === SES) return null
            return caches.delete(ad)
      }))
      await self.clients.claim()
@@ -110,6 +111,67 @@
  })
 
  /* ── STRATEJİLER ─────────────────────────────────────────────────────────── */
+
+ /* ── KÂRİ SESLERİ ─────────────────────────────────────────────────────────
+  * Sesler DIŞ KAYNAKTAN (everyayah.com) geliyor ve iki ayrı kuralı çiğniyor:
+  *
+  * 1) `type === "basic"` ŞARTI TUTMUYOR. CORS'lu bir dış yanıtın türü "cors"tur.
+  *    Aşağıdaki `saklanabilir()` yalnız "basic" kabul ettiği için, toplu indirme
+  *    SESSİZCE HİÇBİR ŞEY SAKLAMAZDI — ilerleme çubuğu dolar, önbellek boş kalırdı.
+  *    Bu yüzden sesler için ayrı bir ölçüt var. "opaque" YİNE kabul edilmiyor:
+  *    içeriği okunamaz, 404 bile başarılı görünür ve kotada şişer.
+  *
+  * 2) OYNATICI KISMİ İSTEK (Range) GÖNDERİYOR. `<audio>` bir mp3'ü çoğu zaman
+  *    `Range: bytes=0-` ile ister ve buna 200 yerine 206 + `Content-Range` bekler.
+  *    Önbellekteki tam yanıtı olduğu gibi vermek Safari'de sessizce başarısız
+  *    olur. Bu yüzden istek Range taşıyorsa yanıt burada DİLİMLENİP 206 olarak
+  *    kuruluyor.
+  *
+  * Önbellek AYRI (`vukuf-ses`): yüzlerce MB olabiliyor, kullanıcı metinleri
+  * silmeden sesleri silebilsin ve kota hesabı karışmasın diye. */
+ const SES_KOKU = "https://everyayah.com/"
+
+ function sesMi(url) {
+   return String(url).startsWith(SES_KOKU)
+ }
+
+ function saklanabilirSes(y) {
+   return y && y.ok && (y.type === "basic" || y.type === "cors")
+ }
+
+ async function menzilYaniti(yanit, menzilBasligi) {
+   const tampon = await yanit.arrayBuffer()
+   const toplam = tampon.byteLength
+   const m = /bytes=(\d*)-(\d*)/.exec(menzilBasligi || "")
+   let bas = m && m[1] ? parseInt(m[1], 10) : 0
+   let son = m && m[2] ? parseInt(m[2], 10) : toplam - 1
+   if (!Number.isFinite(bas) || bas < 0) bas = 0
+     if (!Number.isFinite(son) || son >= toplam) son = toplam - 1
+       if (bas > son) {
+         return new Response(null, { status: 416, headers: { "Content-Range": `bytes */${toplam}` } })
+       }
+       const parca = tampon.slice(bas, son + 1)
+       return new Response(parca, {
+         status: 206,
+         statusText: "Partial Content",
+         headers: {
+           "Content-Type": yanit.headers.get("content-type") || "audio/mpeg",
+                           "Content-Length": String(parca.byteLength),
+                           "Content-Range": `bytes ${bas}-${son}/${toplam}`,
+                           "Accept-Ranges": "bytes",
+         },
+       })
+ }
+
+ async function sesVer(istek) {
+   const k = await caches.open(SES)
+   // Anahtar Range'SİZ: aynı dosya farklı aralıklarla istendiğinde hep aynı
+   // kayda düşsün diye tam adresle aranıyor.
+   const bulunan = await k.match(istek.url, { ignoreVary: true })
+   const menzil = istek.headers.get("range")
+   if (bulunan) return menzil ? menzilYaniti(bulunan, menzil) : bulunan.clone()
+     try { return await fetch(istek) } catch { return Response.error() }
+ }
 
  function saklanabilir(y) {
    // `basic` = aynı kaynaklı ve saydam. Opak (cors dışı) yanıtlar saklanmıyor:
@@ -179,14 +241,17 @@
  self.addEventListener("fetch", (olay) => {
    const istek = olay.request
    if (istek.method !== "GET") return
-     // Kısmi istekler (ses oynatıcının aradığı Range) elleçlenmiyor: yanlış
-     // yönetilen bir Range yanıtı oynatıcıyı sessizce bozar. Ses önbelleği ayrı
-     // bir adımda, kendi kurallarıyla gelecek.
+
+     // SES ÖNCE: Range başlığı ve dış kaynak atlamalarından ÖNCE bakılıyor,
+     // çünkü ses istekleri her ikisini de taşıyor.
+     if (sesMi(istek.url)) { olay.respondWith(sesVer(istek)); return }
+
+     // Aynı kaynaklı kısmi istekler elleçlenmiyor.
      if (istek.headers.has("range")) return
 
        let url
        try { url = new URL(istek.url) } catch { return }
-       // Dış kaynaklar (everyayah, qurancdn) bu adımda hiç dokunulmadan geçiyor.
+       // Diğer dış kaynaklar (ör. qurancdn kelime sesi) dokunulmadan geçiyor.
        if (url.origin !== self.location.origin) return
 
          if (istek.mode === "navigate") { olay.respondWith(agOnce(istek)); return }
@@ -217,12 +282,17 @@
    // Toplu indirme (sonraki adım) buradan yürütülecek.
    if (veri.tip === "ON_YUKLE" && Array.isArray(veri.adresler)) {
      olay.waitUntil((async () => {
-       const k = await caches.open(VERI)
+       const kVeri = await caches.open(VERI)
+       const kSes = await caches.open(SES)
        let tamam = 0, hata = 0
        for (const a of veri.adresler) {
          try {
-           const y = await fetch(a, { cache: "no-cache" })
-           if (saklanabilir(y)) { await k.put(a, y.clone()); tamam++ } else hata++
+           const ses = sesMi(a)
+           // Dış kaynaktan CORS'lu indirme: `mode: "cors"` açıkça isteniyor ki
+           // yanıt "opaque" değil "cors" olsun ve içeriği doğrulanabilsin.
+           const y = await fetch(a, ses ? { mode: "cors", cache: "no-cache" } : { cache: "no-cache" })
+           const uygun = ses ? saklanabilirSes(y) : saklanabilir(y)
+           if (uygun) { await (ses ? kSes : kVeri).put(a, y.clone()); tamam++ } else hata++
          } catch { hata++ }
          // Her dosyada ilerleme bildir — arayüz çubuğu bunu dinleyecek.
          const hepsi = await self.clients.matchAll()

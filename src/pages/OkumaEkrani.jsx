@@ -31,6 +31,7 @@ import {
 } from "lucide-react"
 import { useMediaQuery } from '../data/hooks/useMediaQuery'
 import usePanelKilidi from "../data/hooks/usePanelKilidi"
+import useZoomOnar from "../data/hooks/useZoomOnar"
 import BarSiraPaneli, { barSatirOlc } from '../components/BarSiraPaneli'
 import GorselOlustur from '../components/GorselOlustur'
 
@@ -1433,74 +1434,16 @@ useEffect(() => {
     .catch(() => setIcindekiler(null))
 }, [kitap])
 
-// Zoom Out — İSTEM DIŞI PINCH ZOOM'U SIFIRLA
-// ════════════════════════════════════════════════════════════════
-// DİKKAT: BU EFEKT EKRAN DÖNDÜRMEYİ BOZUYORDU.
-// `visualViewport` 'resize' olayı YALNIZ pinch zoom'da gelmiyor; ekran
-// döndürmede, adres çubuğu açılıp kapanmasında ve klavye açılışında da geliyor.
-// iOS döndürme anında ölçeği geçici olarak 1'in üstünde bildirdiği için burası
-// "kullanıcı zoom yaptı" sanıp viewport META ETİKETİNİ yeniden yazıyordu.
-// iOS'ta dönme sırasında viewport meta'sını değiştirmek layout genişliğini
-// ESKİ (dikey) ölçüde DONDURUYOR: sayfa yan çevrilince ekranın sadece sol
-// yarısını kaplıyor, dikeye dönünce de düzelmiyordu.
-// Artık üç kapı var: (1) dönme sürerken hiç karışma, (2) olay ÖLÇÜ
-// değişiminden geliyorsa (dönme/adres çubuğu/klavye) dokunma, (3) yalnız
-// gerçek pinch (ölçek 1.05 üstü) sıfırlansın.
-// TEŞHİS: sorun sürerse aşağıdaki ZOOM_SIFIRLA'yı false yap — efekt tamamen
-// devre dışı kalır; dönme düzeliyorsa suçlu kesin burasıdır.
-// VARSAYILAN ARTIK false: uygulamada viewport meta etiketine ÇALIŞMA ZAMANINDA
-// yazan TEK YER burasıydı (App.jsx'teki yazım da kaldırıldı). iOS'ta dönmede
-// web görünümünün yeniden yerleşmemesinin bilinen tetikleyicisi bu olduğu için
-// meta artık yalnız index.html'de, sabit duruyor. İstem dışı pinch zoom yine
-// sorun olursa true yapıp deneyebilirsin (dönme sırasında zaten susuyor).
-const ZOOM_SIFIRLA = false
-useEffect(() => {
-  if (!ZOOM_SIFIRLA) return
-  if (!isMobile) return
-
-  const viewport = window.visualViewport
-  if (!viewport) return
-
-  const NORMAL_META = 'width=device-width, initial-scale=1.0, user-scalable=yes'
-  let sonEn = window.innerWidth, sonBoy = window.innerHeight, sonOlcuAn = 0
-  const olcuDegisti = () => {
-    sonEn = window.innerWidth; sonBoy = window.innerHeight
-    sonOlcuAn = (typeof performance !== "undefined" ? performance.now() : Date.now())
-  }
-
-  const zoomSifirla = () => {
-    if (donmeKilidiRef.current) return                       // (1) dönme sürüyor
-    if (window.innerWidth !== sonEn || window.innerHeight !== sonBoy) {
-      olcuDegisti(); return                                  // (2) ölçü değişimi, pinch değil
-    }
-    const simdi = (typeof performance !== "undefined" ? performance.now() : Date.now())
-    if (simdi - sonOlcuAn < 1200) return                     // ölçü değişiminin hemen ardı
-    if (viewport.scale <= 1.05) return                       // (3) ölçüm gürültüsü
-    const meta = document.querySelector('meta[name="viewport"]')
-    if (!meta) return
-    meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no'
-    setTimeout(() => { meta.content = NORMAL_META }, 50)
-  }
-
-  // Meta ONARIMI: daha önceki bir sürüm meta'yı "maximum-scale" hâlinde
-  // bırakmış olabilir (kayıtlı değil, ama sekme yenilenmeden kalabilir).
-  // Dönme oturduktan sonra normale çekiliyor.
-  const metaOnar = () => setTimeout(() => {
-    const meta = document.querySelector('meta[name="viewport"]')
-    if (meta && /maximum-scale/.test(meta.content)) meta.content = NORMAL_META
-  }, 1000)
-
-  window.addEventListener("resize", olcuDegisti)
-  window.addEventListener("orientationchange", olcuDegisti)
-  window.addEventListener("orientationchange", metaOnar)
-  viewport.addEventListener('resize', zoomSifirla)
-  return () => {
-    window.removeEventListener("resize", olcuDegisti)
-    window.removeEventListener("orientationchange", olcuDegisti)
-    window.removeEventListener("orientationchange", metaOnar)
-    viewport.removeEventListener('resize', zoomSifirla)
-  }
-}, [isMobile])
+/* ── KLAVYE YAKINLAŞMASI ────────────────────────────────────────────────────
+   Bir yazı alanına (arama, not) odaklanınca iOS sayfayı yakınlaştırıyor, yazı
+   bitince geri açmıyordu. Eskiden burada `ZOOM_SIFIRLA` adlı bir efekt vardı;
+   hem bayrağı `false` (kapalı) idi hem de açık olsa bu sorunu çözemezdi:
+   "pencere ölçüsü değiştiyse pinch değildir" kapısı, ölçüyü tam da klavyenin
+   değiştirdiği durumu eliyordu. Gerekçe ve yeni yaklaşım
+   src/data/hooks/useZoomOnar.js dosyasında.
+   Dönme kilidi geçiriliyor: iOS'ta dönme sırasında viewport meta'sına yazmak
+   yerleşimi eski genişlikte donduruyor. */
+useZoomOnar({ etkin: isMobile, kilitRef: donmeKilidiRef })
 
 // ════════════════════════════════════════════════════
 // Sayfa yükseklik tahmini (LazySayfa yer-tutucusu gerçek yüksekliğe yakın olsun

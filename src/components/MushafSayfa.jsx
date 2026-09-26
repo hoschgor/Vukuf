@@ -5,7 +5,7 @@ import SecdeKenar from "./SecdeKenar"
 import SureBasligi from "./SureBasligi"
 import Besmele from "./Besmele"
 import SureSonu from "./SureSonu"
-import { useRef, useEffect, useState, memo } from "react"
+import { useRef, useEffect, useState, useMemo, memo } from "react"
 import kelimeGrup from "../data/kelime-grup.json"
 import kelimeObek from "../data/kelime-obek.json"
 
@@ -89,6 +89,25 @@ function MushafSayfa({
 
   const fontSize = isMobile ? yaziBoyutu : yaziBoyutu + 2
   const lineHeight = satirAraligi || (isMobile ? 2.2 : 2.0) // Azaltıldı
+
+  /* HIFZ PERDESİ İÇİN KELİME SIRASI — her kelimenin ÂYET İÇİNDEKİ kaçıncı
+     kelime olduğu. Perde "baştan n kelime açık" diye çalıştığı için bu sıra
+     şart; kelimelerin kendi verisinde âyet içi indeks yok.
+     ⚠ DİKKAT: kelimelere `data-sure`/`data-ayet` EKLENMEDİ. O ikisi yalnız
+     âyet-sonu rozetinde duruyor ve `sureGit` hizalaması onları arıyor; kelimeye
+     de eklenseydi `querySelector` ilk kelimeyi bulur, kusursuz çalışan gidiş
+     davranışı değişirdi. Bu yüzden ayrı adlar: `data-hifz` ve `data-hs`. */
+  const kelimeSirasi = useMemo(() => {
+    const sira = new Map(), sayac = new Map()
+    for (const el of elemanlar) {
+      if (el.tip !== "kelime") continue
+      const k = `${el.sure.id}:${el.ayet.no}`
+      const n = (sayac.get(k) || 0) + 1
+      sayac.set(k, n)
+      sira.set(el.kelime.id, n)
+    }
+    return sira
+  }, [elemanlar])
 
   // Secde ayetlerini topla
   const secdeAyetleriMap = new Map()
@@ -356,8 +375,8 @@ function MushafSayfa({
                     // [data-sure][data-ayet] hizalamasını ETKİLEMEZ. display:contents → düzeni bozmaz.
                     <span key={el.kelime.id} data-kelime="1" style={{ display: "contents" }}>
                       <MushafKelime
-                        data-sure={el.sure.id}
-                        data-ayet={el.ayet.no}
+                        hifzAnahtar={`${el.sure.id}:${el.ayet.no}`}
+                        hifzSira={kelimeSirasi.get(el.kelime.id) || 1}
                         kelime={el.kelime}
                         position={el.position || (index + 1)}
                         aktif={aktif}

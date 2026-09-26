@@ -4,6 +4,7 @@ import Navbar from "./components/Navbar"
 import MushafYukleniyorRozeti from "./components/MushafYukleniyorRozeti"
 import Kutuphane from "./pages/Kutuphane"
 import Lugat from "./pages/Lugat"
+import HifzEkrani from "./pages/HifzEkrani"
 import Tefeul from "./pages/SozTefeul"
 import OkumaTefeulu from "./pages/OkumaTefeulu"
 import OkumaEkrani from "./pages/OkumaEkrani"
@@ -144,6 +145,7 @@ export default function App() {
         <Route path="/lugat" element={<Lugat />} />
         <Route path="/arama" element={<Arama />} />
         <Route path="/kuran" element={<KuranOkuma />} />
+        <Route path="/hifz" element={<HifzEkrani />} />
         <Route path="/tefeul" element={<Tefeul />} />
         <Route path="/okuma-tefeul" element={<OkumaTefeulu />} />
         <Route path="/kitap/:id" element={<OkumaEkrani />} />

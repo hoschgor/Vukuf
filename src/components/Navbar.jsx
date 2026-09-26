@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { Link, useLocation } from "react-router-dom"
-import { BookOpen, Search, Shuffle, Menu, X, Palette, Pencil, Info, Type, Sparkles, Settings, HardDrive } from "lucide-react"
+import { BookOpen, Search, Shuffle, Menu, X, Palette, Pencil, Info, Type, Sparkles, Settings, HardDrive, Brain } from "lucide-react"
 import { useApp } from "../AppContext"
 import { useMediaQuery } from "../data/hooks/useMediaQuery"
 import IosSwitch from "./IosSwitch"
@@ -118,6 +118,7 @@ export default function Navbar() {
     { path: "/", label: "Kitaplık", icon: BookOpen },
     { path: "/arama", label: "Arama", icon: Search },
     { path: "/lugat", label: "Lügat", icon: Type },
+    { path: "/hifz", label: "Hıfz", icon: Brain },
     { path: "/tefeul", label: "Söz Tefeülü", icon: Shuffle },
     { path: "/okuma-tefeul", label: "Okuma Tefeülü", icon: Shuffle },
   ]

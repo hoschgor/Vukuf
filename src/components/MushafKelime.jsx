@@ -295,6 +295,11 @@ function lafzatullahMi(arabic) {
 
 
 export default function MushafKelime({
+  // Hıfz perdesi bu iki öznitelikten sürülüyor (CSS ile, prop ile değil —
+  // gerekçesi src/data/hifz.js'te). Adları `data-sure`/`data-ayet` DEĞİL:
+  // o ikisi sureGit hizalamasının aradığı seçici, kelimeye eklenemez.
+  hifzAnahtar = null,
+  hifzSira = 1,
   kelime,
   aktif = false,
   theme,
@@ -371,6 +376,8 @@ export default function MushafKelime({
   return (
     <span
       className="mushaf-kelime"
+      data-hifz={hifzAnahtar || undefined}
+      data-hs={hifzAnahtar ? hifzSira : undefined}
       onClick={(e) => onTikla?.(kelime, e)}
       onMouseEnter={() => { if (!kayitKonumModu) { setHover(true); onGrupHover?.(true) } }}
       onMouseLeave={() => { setHover(false); onGrupHover?.(false) }}

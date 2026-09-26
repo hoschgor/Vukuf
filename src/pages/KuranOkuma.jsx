@@ -30,12 +30,19 @@ import GeriIkonu from "../components/GeriIkonu"
 import AyetPopup from "../components/AyetPopup"
 import MealPopup from "../components/MealPopup"
 import IzlemeModu from "../components/IzlemeModu"
+import HifzPaneli from "../components/HifzPaneli"
+import {
+  hifzOku, ayarGuncelle as hifzAyarGuncelle, gizlemeHaritasi, perdeCss,
+  PERDE_SINIF, ACIK_SINIF, ipucuAlindi, ezberlendi, calisildi,
+  bekleyenTekrarlar, sonrakiKademe, oncekiKademe, HEDEF_ANAHTAR, DONUS_ANAHTAR,
+} from "../data/hifz"
 import { barSatirOlc } from "../components/BarSiraPaneli"
 import GorselOlustur from "../components/GorselOlustur"
 import { useMushaf, sureBaslangicSayfasi, ayetSayfasi } from "../data/hooks/useMushaf"
 import useAudioPlayer, { BESMELE_OKUYANLAR } from "../data/hooks/useAudioPlayer"
 import { useMediaQuery } from "../data/hooks/useMediaQuery"
 import usePanelKilidi from "../data/hooks/usePanelKilidi"
+import useZoomOnar from "../data/hooks/useZoomOnar"
 import { flushSync } from "react-dom"
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, TouchSensor, useSensor, useSensors } from "@dnd-kit/core"
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable"
@@ -46,7 +53,7 @@ import {
   Settings, Circle, Clock, ChevronsUp, ChevronsDown,
   Pencil, ChevronLeft, Bookmark, BookOpen, Feather,
   Layers, Check, Shuffle, Mic, Repeat, Gem, UnfoldHorizontal, GripVertical, RotateCcw, Save, AlignLeft, AlignRight,
-  Camera, FoldHorizontal, ChevronUp, ImagePlay,
+  Camera, FoldHorizontal, ChevronUp, ImagePlay, Brain,
 } from "lucide-react"
 
 // ── Arapça font listesi
@@ -212,6 +219,7 @@ const SADE_OGELERI = [
   { key: "hizbBilgisi", label: "Hizb Bilgisi" },
   { key: "bilgi",       label: "Bilgi (İşaretler)" },
   { key: "gorsel",      label: "Görsel / Video" },
+  { key: "hifz",        label: "Hıfz Modu" },
 ]
 
 // Alt bardaki SIRALANABİLİR butonlar (varsayılan sıra). Geri tuşu ve sağdaki
@@ -224,6 +232,7 @@ const SIRALANABILIR = [
   { key: "tekrar",      label: "Tekrar (Döngü)",     Ikon: Repeat,    taraf: "sol" },
   { key: "bilgi",       label: "Bilgi (İşaretler)",  Ikon: Gem,  taraf: "sol" },
   { key: "gorsel",      label: "Görsel / Video",     Ikon: ImagePlay, taraf: "sol" },
+  { key: "hifz",        label: "Hıfz Modu",          Ikon: Brain,     taraf: "sol" },
   { key: "yaziTipi",    label: "Yazı Tipi",          Ikon: Feather,   taraf: "sol" },
   { key: "otoOynat",    label: "Otomatik Kaydırma",  Ikon: Play,      taraf: "sol" },
   { key: "sadeMod",     label: "Sade Mod",           Ikon: Circle,    taraf: "sag" },
@@ -1024,6 +1033,36 @@ export default function KuranOkuma({ kitap }) {
 
   // İZLEME MODU — tam ekran. Kalıcı DEĞİL: uygulama izleme ekranında açılmasın.
   const [izlemeModu, setIzlemeModu] = useState(false)
+
+  /* HIFZ MODU — perdeleme mushafın ÜZERİNDE yürüyor (gerekçesi data/hifz.js'te).
+     Mod kalıcı değil, ama kademe/zincir/tekrar tercihleri kalıcı. */
+  const [hifzAcik, setHifzAcik] = useState(false)
+  const [hifzKapsam, setHifzKapsam] = useState("sayfa")      // "sayfa" | "sure"
+  const [hifzKademe, setHifzKademe] = useState(() => hifzOku().ayarlar.kademe)
+  const [hifzZincir, setHifzZincir] = useState(() => hifzOku().ayarlar.zincir)
+  const [hifzTekrar, setHifzTekrar] = useState(() => hifzOku().ayarlar.tekrarSayisi)
+  // Perdenin birimi: "kelime" (âyetin baştan bir kısmı açık) | "ayet" (ya hep ya hiç)
+  const [hifzBirim, setHifzBirim] = useState(() => hifzOku().ayarlar.birim || "kelime")
+  const [hifzAktif, setHifzAktif] = useState(0)              // zincirde kaçıncı âyet
+  const [hifzIpucu, setHifzIpucu] = useState(0)              // bu oturumdaki ipucu
+  const hifzAcikRef = useRef(false)
+  useEffect(() => { hifzAcikRef.current = hifzAcik }, [hifzAcik])
+  // kelimeTikla gibi kimliği sabit kalan callback'ler ayarı REF'ten okuyor.
+  const hifzBirimRef = useRef(hifzBirim)
+  useEffect(() => { hifzBirimRef.current = hifzBirim }, [hifzBirim])
+  useEffect(() => {
+    hifzAyarGuncelle({
+      kademe: hifzKademe, zincir: hifzZincir, tekrarSayisi: hifzTekrar, birim: hifzBirim,
+    })
+  }, [hifzKademe, hifzZincir, hifzTekrar, hifzBirim])
+  /* `sureGit` bileşen gövdesinde her render'da yeniden kurulan bir fonksiyon;
+     useCallback'e kapatılsaydı ilk render'ın bayat kapanışı saklanırdı. Onun
+     için her render'da REF'e yazılıyor (dosyadaki donmeIslevRef ile aynı usul). */
+  const hifzSureGitRef = useRef(null)
+  // Hıfz açılırken / zincir ilerlerken odak isteği buraya yazılıyor.
+  const hifzOdakIsteRef = useRef(false)
+  // /hifz ekranından gelen hedef âyet, kapsam oturana kadar burada bekliyor.
+  const hifzHedefRef = useRef(null)
   
 
   const [kayitlar, setKayitlar] = useState(() => {
@@ -1123,6 +1162,7 @@ export default function KuranOkuma({ kitap }) {
   const [tekrarBtnGoster, setTekrarBtnGoster] = useState(() => localStorage.getItem("vukuf-btn-tekrar") !== "false")
   const [bilgiGoster, setBilgiGoster] = useState(() => localStorage.getItem("vukuf-btn-bilgi") !== "false")   // işaret/tecvid bilgi paneli butonu
   const [gorselGoster, setGorselGoster] = useState(() => localStorage.getItem("vukuf-btn-gorsel") !== "false") // âyet paylaşım görseli butonu
+  const [hifzGoster, setHifzGoster] = useState(() => localStorage.getItem("vukuf-btn-hifz") !== "false")
   const [bilgiAcik, setBilgiAcik] = useState(false)
   // Buton sıralaması: alt bar flex olduğundan sıra CSS `order` ile veriliyor (JSX yeri değişmez).
   const [butonSirasi, setButonSirasi] = useState(() => {
@@ -1308,7 +1348,8 @@ const maxWidth = useMemo(() =>
     localStorage.setItem("vukuf-btn-tekrar",   String(tekrarBtnGoster))
     localStorage.setItem("vukuf-btn-bilgi",    String(bilgiGoster))
     localStorage.setItem("vukuf-btn-gorsel",   String(gorselGoster))
-  }, [sureGoster, sureBilgisiGoster, cuzBilgisiGoster, hizbBilgisiGoster, sureMenuGoster, kayitGoster, sayfaGitGoster, sadeModGoster, temaGoster, yaziTipiGoster, otoOynatGoster, tekrarBtnGoster, bilgiGoster, gorselGoster])
+    localStorage.setItem("vukuf-btn-hifz",     String(hifzGoster))
+  }, [sureGoster, sureBilgisiGoster, cuzBilgisiGoster, hizbBilgisiGoster, sureMenuGoster, kayitGoster, sayfaGitGoster, sadeModGoster, temaGoster, yaziTipiGoster, otoOynatGoster, tekrarBtnGoster, bilgiGoster, gorselGoster, hifzGoster])
   useEffect(() => { try { localStorage.setItem("vukuf-kuran-sade-gizli", JSON.stringify(sadeGizli)) } catch {} }, [sadeGizli])
 
 
@@ -1511,6 +1552,7 @@ const gorunurOgeSayisi = useMemo(() => {
   if (tekrarBtnGoster && sadeGorunur("tekrar")) n++
   if (bilgiGoster && sadeGorunur("bilgi")) n++
   if (gorselGoster && sadeGorunur("gorsel")) n++
+  if (hifzGoster && sadeGorunur("hifz")) n++
   if (yaziTipiGoster && sadeGorunur("yaziTipi")) n++
   if (otoOynatGoster && sadeGorunur("otoOynat")) n++
   if (sadeModGoster) n++
@@ -1519,7 +1561,7 @@ const gorunurOgeSayisi = useMemo(() => {
   if (sureBilgisiGoster && sadeGorunur("sureBilgisi")) n++
   if ((cuzBilgisiGoster && sadeGorunur("cuzBilgisi")) || (hizbBilgisiGoster && sadeGorunur("hizbBilgisi"))) n++
   return n
-}, [sureMenuGoster, kayitGoster, sayfaGitGoster, tekrarBtnGoster, bilgiGoster, gorselGoster, yaziTipiGoster, otoOynatGoster,
+}, [sureMenuGoster, kayitGoster, sayfaGitGoster, tekrarBtnGoster, bilgiGoster, gorselGoster, hifzGoster, yaziTipiGoster, otoOynatGoster,
     sadeModGoster, temaGoster, sureGoster, sureBilgisiGoster, cuzBilgisiGoster, hizbBilgisiGoster,
     sadeMode, sadeGizli])
 const wrapAktif = isMobile && barUiOlcegi > 0.9 && gorunurOgeSayisi >= 5
@@ -1711,74 +1753,15 @@ const cokSatir = wrapAktif && barYuksekligi > tekSatirYuksekligi * 1.0
     }
   }, [handleScroll, sbTutamakTazele])
 
-  // Zoom Out — İSTEM DIŞI PINCH ZOOM'U SIFIRLA
-  // ════════════════════════════════════════════════════════════════
-  // DİKKAT: BU EFEKT EKRAN DÖNDÜRMEYİ BOZUYORDU.
-  // `visualViewport` 'resize' olayı YALNIZ pinch zoom'da gelmiyor; ekran
-  // döndürmede, adres çubuğu açılıp kapanmasında ve klavye açılışında da geliyor.
-  // iOS döndürme anında ölçeği geçici olarak 1'in üstünde bildirdiği için burası
-  // "kullanıcı zoom yaptı" sanıp viewport META ETİKETİNİ yeniden yazıyordu.
-  // iOS'ta dönme sırasında viewport meta'sını değiştirmek layout genişliğini
-  // ESKİ (dikey) ölçüde DONDURUYOR: sayfa yan çevrilince ekranın sadece sol
-  // yarısını kaplıyor, dikeye dönünce de düzelmiyordu.
-  // Artık üç kapı var: (1) dönme sürerken hiç karışma, (2) olay ÖLÇÜ
-  // değişiminden geliyorsa (dönme/adres çubuğu/klavye) dokunma, (3) yalnız
-  // gerçek pinch (ölçek 1.05 üstü) sıfırlansın.
-  // TEŞHİS: sorun sürerse aşağıdaki ZOOM_SIFIRLA'yı false yap — efekt tamamen
-  // devre dışı kalır; dönme düzeliyorsa suçlu kesin burasıdır.
-  // VARSAYILAN ARTIK false: uygulamada viewport meta etiketine ÇALIŞMA ZAMANINDA
-  // yazan TEK YER burasıydı (App.jsx'teki yazım da kaldırıldı). iOS'ta dönmede
-  // web görünümünün yeniden yerleşmemesinin bilinen tetikleyicisi bu olduğu için
-  // meta artık yalnız index.html'de, sabit duruyor. İstem dışı pinch zoom yine
-  // sorun olursa true yapıp deneyebilirsin (dönme sırasında zaten susuyor).
-  const ZOOM_SIFIRLA = false
-  useEffect(() => {
-    if (!ZOOM_SIFIRLA) return
-    if (!isMobile) return
-
-    const viewport = window.visualViewport
-    if (!viewport) return
-
-    const NORMAL_META = 'width=device-width, initial-scale=1.0, user-scalable=yes'
-    let sonEn = window.innerWidth, sonBoy = window.innerHeight, sonOlcuAn = 0
-    const olcuDegisti = () => {
-      sonEn = window.innerWidth; sonBoy = window.innerHeight
-      sonOlcuAn = (typeof performance !== "undefined" ? performance.now() : Date.now())
-    }
-
-    const zoomSifirla = () => {
-      if (donmeKilidiRef.current) return                       // (1) dönme sürüyor
-      if (window.innerWidth !== sonEn || window.innerHeight !== sonBoy) {
-        olcuDegisti(); return                                  // (2) ölçü değişimi, pinch değil
-      }
-      const simdi = (typeof performance !== "undefined" ? performance.now() : Date.now())
-      if (simdi - sonOlcuAn < 1200) return                     // ölçü değişiminin hemen ardı
-      if (viewport.scale <= 1.05) return                       // (3) ölçüm gürültüsü
-      const meta = document.querySelector('meta[name="viewport"]')
-      if (!meta) return
-      meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no'
-      setTimeout(() => { meta.content = NORMAL_META }, 50)
-    }
-
-    // Meta ONARIMI: daha önceki bir sürüm meta'yı "maximum-scale" hâlinde
-    // bırakmış olabilir (kayıtlı değil, ama sekme yenilenmeden kalabilir).
-    // Dönme oturduktan sonra normale çekiliyor.
-    const metaOnar = () => setTimeout(() => {
-      const meta = document.querySelector('meta[name="viewport"]')
-      if (meta && /maximum-scale/.test(meta.content)) meta.content = NORMAL_META
-    }, 1000)
-
-    window.addEventListener("resize", olcuDegisti)
-    window.addEventListener("orientationchange", olcuDegisti)
-    window.addEventListener("orientationchange", metaOnar)
-    viewport.addEventListener('resize', zoomSifirla)
-    return () => {
-      window.removeEventListener("resize", olcuDegisti)
-      window.removeEventListener("orientationchange", olcuDegisti)
-      window.removeEventListener("orientationchange", metaOnar)
-      viewport.removeEventListener('resize', zoomSifirla)
-    }
-  }, [isMobile])
+  /* ── KLAVYE YAKINLAŞMASI ──────────────────────────────────────────────────
+     Bir yazı alanına odaklanınca iOS sayfayı yakınlaştırıyor, yazı bitince geri
+     açmıyordu. Eskiden burada `ZOOM_SIFIRLA` adlı bir efekt vardı; hem bayrağı
+     `false` (kapalı) idi hem de açık olsa bu sorunu çözemezdi: "pencere ölçüsü
+     değiştiyse pinch değildir" kapısı, ölçüyü tam da klavyenin değiştirdiği
+     durumu eliyordu. Ayrıntılı gerekçe ve yeni yaklaşım hooks/useZoomOnar.js'te.
+     Dönme kilidi geçiriliyor: iOS'ta dönme sırasında viewport meta'sına yazmak
+     yerleşimi eski genişlikte donduruyor (projenin bilinen tuzağı). */
+  useZoomOnar({ etkin: isMobile, kilitRef: donmeKilidiRef })
 
   // ════════════════════════════════════════════════════════════════
   // VERİ HAZIRLAMA
@@ -1840,6 +1823,188 @@ const cokSatir = wrapAktif && barYuksekligi > tekSatirYuksekligi * 1.0
 
   
   
+  /* ── HIFZ: çalışılan âyetler ────────────────────────────────────────────
+     Kelime sayıları SAYFADAN değil MUSHAF VERİSİNDEN alınıyor: bir âyet iki
+     sayfaya bölünmüş olabiliyor, sayfadaki parçasına göre perdelenseydi
+     "yarısı" kademesi âyetin yarısı değil sayfadaki parçasının yarısı olurdu. */
+  const hifzBirimler = useMemo(() => {
+    if (!hifzAcik) return []
+    const kelimeSay = (sureNo, ayetNo) => {
+      const sr = mushafData.find(x => x.id === sureNo)
+      const ay = sr && (sr.ayetler || []).find(y => y.no === ayetNo)
+      return (ay && ay.kelimeler && ay.kelimeler.length) || 1
+    }
+    if (hifzKapsam === "sure") {
+      const sr = mushafData.find(x => x.id === mevcutSureBilgisi?.id)
+      if (!sr) return []
+      return (sr.ayetler || []).map(a => ({
+        anahtar: `${sr.id}:${a.no}`, sureNo: sr.id, ayetNo: a.no,
+        kelime: (a.kelimeler || []).length || 1,
+      }))
+    }
+    const els = (sayfaMap && sayfaMap.get(mevcutSayfa)) || []
+    const gorulen = new Set(), cikti = []
+    for (const el of els) {
+      if (el.tip !== "kelime") continue
+      const k = `${el.sure.id}:${el.ayet.no}`
+      if (gorulen.has(k)) continue
+      gorulen.add(k)
+      cikti.push({ anahtar: k, sureNo: el.sure.id, ayetNo: el.ayet.no, kelime: kelimeSay(el.sure.id, el.ayet.no) })
+    }
+    return cikti
+  }, [hifzAcik, hifzKapsam, mevcutSayfa, sayfaMap, mushafData, mevcutSureBilgisi])
+
+  // Zincirde bulunduğumuz âyet, liste kısalırsa taşmasın
+  const hifzSinir = Math.max(0, hifzBirimler.length - 1)
+  const hifzIndeks = Math.min(hifzAktif, hifzSinir)
+  // Kimliği sabit kalması gereken callback'ler (odaklama) bunları ref'ten okuyor.
+  const hifzBirimlerRef = useRef(hifzBirimler)
+  const hifzAktifRef = useRef(0)
+  hifzBirimlerRef.current = hifzBirimler
+  hifzAktifRef.current = hifzIndeks
+
+  /* Perde, React yerine ÜRETİLEN CSS ile sürülüyor: sayfalar kaydırdıkça monte
+     olup söküldüğü için elle sınıf yazmak yeni gelen kelimeleri perdesiz
+     bırakırdı; ayrıca yüzlerce kelimeye prop geçmediğimiz için yeniden çizim yok. */
+  /* KAPSAM DIŞI SAYFALAR — "seçili kısımlar hariç bulansın" isteğinin karşılığı.
+     Kapsam dışı olan her kelimeye ayrı kural yazmak yanlış olurdu: sanallaştırma
+     sırasında 40'tan fazla sayfa monte duruyor, yani ~5000 kelime için ayrı
+     bulanıklık katmanı açılırdı. Onun yerine SAYFA KABUĞUNA tek kural gidiyor.
+     Yalnız komşu iki sayfa yazılıyor — ekranın kenarından görünebilecek olanlar
+     bunlar; uzaktakiler zaten görünmüyor ve boşa katman açmıyor. */
+  const hifzDisSayfalar = useMemo(() => {
+    if (!hifzAcik) return []
+    let ilk = mevcutSayfa, son = mevcutSayfa
+    if (hifzKapsam === "sure") {
+      const sr = mushafData.find(x => x.id === mevcutSureBilgisi?.id)
+      const sayfalar = sr ? (sr.ayetler || []).map(a => a.sayfa).filter(Boolean) : []
+      if (sayfalar.length) { ilk = Math.min(...sayfalar); son = Math.max(...sayfalar) }
+    }
+    const dis = []
+    for (let n = ilk - 2; n <= son + 2; n++) {
+      if (n < 1 || n > toplamSayfa) continue
+      if (n >= ilk && n <= son) continue
+      dis.push(n)
+    }
+    return dis
+  }, [hifzAcik, hifzKapsam, mevcutSayfa, mushafData, mevcutSureBilgisi, toplamSayfa])
+
+  const hifzCss = useMemo(() => {
+    if (!hifzAcik || !hifzBirimler.length) return ""
+    const boy = new Map(hifzBirimler.map(b => [b.anahtar, b.kelime]))
+    // Zincirde ARTIK TÜM ARALIK haritaya giriyor: aktiften sonrakiler de
+    // perdeleniyor (gizlemeHaritasi 0 veriyor). Eskiden `slice(0, i+1)` ile
+    // kesiliyordu, yani sıradaki âyet ekranda apaçık duruyordu.
+    const harita = gizlemeHaritasi({
+      anahtarlar: hifzBirimler.map(b => b.anahtar),
+      kademe: hifzKademe,
+      zincir: hifzZincir,
+      birim: hifzBirim,
+      aktifAnahtar: hifzZincir ? (hifzBirimler[hifzIndeks] || {}).anahtar : null,
+      kelimeSayisi: (a) => boy.get(a) || 1,
+    })
+    return perdeCss(harita, { disSayfalar: hifzDisSayfalar })
+  }, [hifzAcik, hifzBirimler, hifzKademe, hifzZincir, hifzBirim, hifzIndeks, hifzDisSayfalar])
+
+  const hifzEtiket = useMemo(() => {
+    if (!hifzBirimler.length) return "Hıfz"
+    const ilk = hifzBirimler[0], son = hifzBirimler[hifzBirimler.length - 1]
+    const ad = sureler.find(x => x.id === ilk.sureNo)?.isim || `Sûre ${ilk.sureNo}`
+    return ilk.sureNo === son.sureNo
+      ? `${ad} ${ilk.ayetNo}-${son.ayetNo}`
+      : `${ad} ${ilk.ayetNo} → ${(sureler.find(x => x.id === son.sureNo)?.isim) || son.sureNo} ${son.ayetNo}`
+  }, [hifzBirimler, sureler])
+
+  // Açılan ipuçlarını temizle (kelimelere elle eklenen sınıf)
+  const hifzIpuclariniSil = useCallback(() => {
+    try { document.querySelectorAll("." + ACIK_SINIF).forEach(el => el.classList.remove(ACIK_SINIF)) }
+    catch { /* yoksay */ }
+    setHifzIpucu(0)
+  }, [])
+
+  const hifzAcKapa = useCallback(() => {
+    setHifzAcik(a => {
+      if (a) { hifzIpuclariniSil(); return false }
+      setHifzAktif(0); setHifzIpucu(0)
+      hifzOdakIsteRef.current = true      // açılışta çalışılan âyete hizalanılsın
+      return true
+    })
+  }, [hifzIpuclariniSil])
+
+  /* ODAKLAMA — perde açıkken gözün doğru yerde olması modun yarısı: her yer
+     bulanıkken sayfanın ortasında durmak hiçbir şey anlatmıyor.
+     `sureGit` çağrılıyor (hizalaması kusursuz, dokunulmadı); o aynı zamanda
+     âyeti kısa süre vurguluyor, bu da "şu an buradayız" demenin en kısa yolu. */
+  const hifzOdakla = useCallback((indeks) => {
+    const liste = hifzBirimlerRef.current
+    if (!liste || !liste.length) return
+    const i = Math.max(0, Math.min(indeks ?? hifzAktifRef.current, liste.length - 1))
+    const b = liste[i]
+    if (b && hifzSureGitRef.current) hifzSureGitRef.current(b.sureNo, b.ayetNo)
+  }, [])
+
+  // Sayfa/kapsam değişince zincir başa döner, açılan ipuçları kalkar.
+  // (Sayfa değişiminde ODAKLAMA YAPILMIYOR: kullanıcı serbest kaydırırken
+  //  ekranı kendi kendine geri çekmek kaydırmayla güreşmek olurdu.)
+  useEffect(() => {
+    if (!hifzAcik) return
+    if (!hifzHedefRef.current) setHifzAktif(0)   // devirle gelen hedef varsa ona dokunma
+    hifzIpuclariniSil()
+  }, [hifzAcik, hifzKapsam, mevcutSayfa, hifzIpuclariniSil])
+
+  /* AÇILIŞ ODAĞI — kapsam (hifzBirimler) oturduğu anda bir kez hizalanıyor.
+     Mod açıldığında sayfanın âyetleri henüz hesaplanmamış olabiliyor, onun için
+     istek bir bayrakla bekletiliyor. */
+  useEffect(() => {
+    if (!hifzAcik) { hifzOdakIsteRef.current = false; return }
+    if (!hifzOdakIsteRef.current || !hifzBirimler.length) return
+    if (hifzHedefRef.current) return             // hedefli giriş kendi hizalamasını yapıyor
+    const b = hifzBirimler[Math.min(hifzAktif, hifzBirimler.length - 1)]
+    if (!b || !hifzSureGitRef.current) return    // istek duruyor, sonraki turda denenir
+    hifzOdakIsteRef.current = false
+    const t = setTimeout(() => hifzSureGitRef.current?.(b.sureNo, b.ayetNo), 60)
+    return () => clearTimeout(t)
+  }, [hifzAcik, hifzBirimler, hifzAktif])
+
+  /* /hifz EKRANINDAN DEVİR — "mushafta aç" hedefi. Mushaf yüklenmeden `sureGit`
+     hizalayamayacağı için yükleme bitene kadar bekleniyor; hedef bir kez
+     karşılanıp siliniyor (bayrak, çift çalışmaya karşı). */
+  const hifzDevirRef = useRef(false)
+  useEffect(() => {
+    if (hifzDevirRef.current || yukleniyor || !sayfaMap || !sayfaMap.size) return
+    let hedef = null
+    try { hedef = localStorage.getItem(HEDEF_ANAHTAR) } catch { /* yoksay */ }
+    if (!hedef) return
+    hifzDevirRef.current = true
+    try { localStorage.removeItem(HEDEF_ANAHTAR) } catch { /* yoksay */ }
+    // Biçim: "sûre:âyet" ya da "sûre:âyet|kapsam" (kapsam "sayfa" | "sure").
+    const [konum, kapsam] = String(hedef).split("|")
+    const [sn, an] = String(konum).split(":").map(Number)
+    if (!sn || !an) return
+    setHifzAcik(true)
+    setHifzKapsam(kapsam === "sure" ? "sure" : "sayfa")
+    setHifzAktif(0)
+    // Zincirdeki SIRASI burada bilinemiyor: kapsam mevcut sayfadan türüyor ve
+    // hedefin sayfası daha gelmedi. Anahtar bekletiliyor, aşağıdaki efekt
+    // kapsam oturunca indisi buluyor.
+    hifzHedefRef.current = `${sn}:${an}`
+    sureGit(sn, an)
+    // `sureGit` bileşen gövdesinde tanımlı bir fonksiyon; bağımlılığa konulsa
+    // her render'da kimliği değişip efekti boşuna tetiklerdi.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [yukleniyor, sayfaMap])
+
+  /* Bekleyen hedef âyet kapsama girince zincir ona ayarlanıyor. Bu efekt,
+     yukarıdaki "sayfa değişince başa dön" efektinden SONRA tanımlı olmak
+     zorunda: ikisi aynı render turunda çalışıyor ve son yazan kazanıyor. */
+  useEffect(() => {
+    if (!hifzAcik || !hifzHedefRef.current || !hifzBirimler.length) return
+    const i = hifzBirimler.findIndex(b => b.anahtar === hifzHedefRef.current)
+    if (i < 0) return                    // hedefin sayfası daha yerleşmedi
+    hifzHedefRef.current = null
+    setHifzAktif(i)
+  }, [hifzAcik, hifzBirimler])
+
   const filtreliSureler = useMemo(() => {
     if (!menuArama) return sureler
     const q = normHarf(menuArama)  // şapka/aksan + büyük-küçük duyarsız
@@ -2503,6 +2668,10 @@ function sureGit(sureId, ayetNo) {
   }
 }
 
+// Hıfz odaklaması buradan geçiyor. `sureGit` KUSURSUZ ÇALIŞTIĞI İÇİN
+// DOKUNULMUYOR; yalnız her render'da güncel kopyası ref'e alınıyor.
+hifzSureGitRef.current = sureGit
+
 
   // ════════════════════════════════════════════════════════════════
   // POPUP YÖNETİMİ
@@ -2524,6 +2693,31 @@ function sureGit(sureId, ayetNo) {
   }, [])
 
   const kelimeTikla = useCallback((kelime, sure, ayet, e) => {
+    /* HIFZ MODU: kelime anlamı yerine İPUCU. Perdeli kelimeye dokununca yalnız
+       o kelime açılıyor; sınıf DOM'a doğrudan yazılıyor çünkü React durumunda
+       tutmak her dokunuşta sayfayı yeniden çizerdi. */
+    if (hifzAcikRef.current) {
+      const anahtar = `${sure.id}:${ayet.no}`
+      // ÂYET BİRİMİNDE ipucu da âyet ölçüsünde: tek kelime açmak orada bir şey
+      // ifade etmiyor (âyet ya hep ya hiç perdeli), âyetin tamamı açılıyor.
+      if (hifzBirimRef.current === "ayet") {
+        let yeni = false
+        try {
+          document.querySelectorAll(`[data-hifz="${anahtar}"]`).forEach(k => {
+            if (!k.classList.contains(ACIK_SINIF)) { k.classList.add(ACIK_SINIF); yeni = true }
+          })
+        } catch { /* yoksay */ }
+        if (yeni) { setHifzIpucu(n => n + 1); ipucuAlindi(anahtar) }
+        return
+      }
+      const el = e && e.currentTarget
+      if (el && el.classList && !el.classList.contains(ACIK_SINIF)) {
+        el.classList.add(ACIK_SINIF)
+        setHifzIpucu(n => n + 1)
+        ipucuAlindi(anahtar)
+      }
+      return
+    }
     sarfIste()
     // 1) ÖNCE konuma bağlı anlam (quran.com hizalaması). Doğru olan bu:
     //    sözlükteki "من → 710 anlam" gibi yığılmalar burada yaşanmaz, çünkü
@@ -3540,6 +3734,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
             <AyarToggle etiket="Tekrar (Döngü)" aktif={tekrarBtnGoster} onToggle={() => setTekrarBtnGoster(v => !v)} {...{theme, isMobile, barUiOlcegi}} />
             <AyarToggle etiket="Bilgi (İşaretler)" aktif={bilgiGoster} onToggle={() => setBilgiGoster(v => !v)} {...{theme, isMobile, barUiOlcegi}} />
             <AyarToggle etiket="Görsel / Video" aktif={gorselGoster} onToggle={() => setGorselGoster(v => !v)} {...{theme, isMobile, barUiOlcegi}} />
+            <AyarToggle etiket="Hıfz Modu" aktif={hifzGoster} onToggle={() => setHifzGoster(v => !v)} {...{theme, isMobile, barUiOlcegi}} />
 
 
             <AyarToggle etiket="Yazı Tipi"         aktif={yaziTipiGoster} onToggle={() => setYaziTipiGoster(v => !v)} {...{theme, isMobile, barUiOlcegi}} />
@@ -3609,6 +3804,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
       case "tekrar":      return tekrarBtnGoster && sadeGorunur("tekrar")
       case "bilgi":       return bilgiGoster && sadeGorunur("bilgi")
       case "gorsel":      return gorselGoster && sadeGorunur("gorsel")
+      case "hifz":        return hifzGoster && sadeGorunur("hifz")
       case "yaziTipi":    return yaziTipiGoster && sadeGorunur("yaziTipi")
       case "otoOynat":    return otoOynatGoster && sadeGorunur("otoOynat")
       case "sadeMod":     return !!sadeModGoster
@@ -3753,6 +3949,16 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
           title="Âyetten görsel veya video oluştur"
         >
           <ImagePlay size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />
+        </button>
+      )}
+
+      {hifzGoster && sadeGorunur("hifz") && (
+        <button
+          onClick={() => { setPopup(null); hifzAcKapa() }}
+          style={{ ...barButonStil(hifzAcik), flexShrink: 0, ...barOge("hifz") }}
+          title="Hıfz modu — bu sayfayı perdeleyerek çalış"
+        >
+          <Brain size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />
         </button>
       )}
 
@@ -4720,11 +4926,86 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
           onOlcum={setMealOlcu}
           onKapat={() => setMealModu(false)}
         />
+
+        {/* HIFZ PERDESİ — üretilen stil; kelimelere prop geçilmiyor */}
+        {hifzCss ? <style>{hifzCss}</style> : null}
+
+        <HifzPaneli
+          acik={hifzAcik}
+          kapat={hifzAcKapa}
+          theme={theme}
+          isMobile={isMobile}
+          altBosluk={barKonum === "alt"
+            ? (barGorunur ? barYuksekligi : 0) + (player.durum !== "kapali" ? playerBarYuksekligi : 0)
+            : 0}
+          etiket={hifzEtiket}
+          kademe={hifzKademe}
+          onKademe={(d) => setHifzKademe(k => (
+            typeof d === "string" ? d : d > 0 ? sonrakiKademe(k) : oncekiKademe(k)
+          ))}
+          birim={hifzBirim}
+          onBirim={setHifzBirim}
+          zincir={hifzZincir}
+          onZincir={setHifzZincir}
+          aktifSira={hifzIndeks + 1}
+          toplam={hifzBirimler.length}
+          // Zincirde gezinirken odak da birlikte gidiyor: perdeli bir sayfada
+          // "sıradaki âyet" ekran dışında kalırsa düğme hiçbir şey yapmış gibi
+          // görünüyordu.
+          onOnceki={() => { const n = Math.max(0, hifzIndeks - 1); setHifzAktif(n); hifzOdakla(n) }}
+          onSonraki={() => { const n = Math.min(hifzSinir, hifzIndeks + 1); setHifzAktif(n); hifzOdakla(n) }}
+          onOdakla={() => hifzOdakla()}
+          onPanel={() => {
+            // Köprü: dönüşte bırakılan yere gelinebilsin diye konum yazılıyor.
+            const b = hifzBirimler[hifzIndeks]
+            try {
+              localStorage.setItem(DONUS_ANAHTAR, JSON.stringify({
+                sure: b ? b.sureNo : (mevcutSureBilgisi?.id || 1),
+                ayet: b ? b.ayetNo : 1,
+                kapsam: hifzKapsam,
+              }))
+            } catch { /* kota */ }
+            navigate("/hifz")
+          }}
+          tekrarSayisi={hifzTekrar}
+          onTekrarSayisi={setHifzTekrar}
+          calisiyor={player.durum === "caliyor"}
+          sesAcik={player.durum !== "kapali"}
+          onDurdur={() => player.durdur()}
+          onCal={() => {
+            // Çalıyorsa duraklat, duraklamışsa devam et — düğme tek başına
+            // oynat/duraklat görevi görüyor, durdurma ayrı düğmede.
+            if (player.durum === "caliyor") { player.duraklat(); return }
+            if (player.durum === "duraklatildi") { player.devamEt(); return }
+            const kume = hifzZincir ? hifzBirimler.slice(0, hifzIndeks + 1) : hifzBirimler
+            const tek = kume.map(b => ({ sureNo: b.sureNo, ayetNo: b.ayetNo }))
+            if (!tek.length) return
+            // Tekrar sayısı kadar kuyruğa ekleniyor; döngü YOK ki bitince dursun.
+            const liste = []
+            for (let i = 0; i < Math.max(1, hifzTekrar); i++) liste.push(...tek)
+            calisildi(tek.map(t => `${t.sureNo}:${t.ayetNo}`))
+            player.listeCal(liste, false)
+          }}
+          ezberliMi={false}
+          onEzberledim={() => {
+            const kume = hifzZincir ? hifzBirimler.slice(0, hifzIndeks + 1) : hifzBirimler
+            if (!kume.length) return
+            ezberlendi(kume.map(b => b.anahtar))
+            setHifzIpucu(0)
+          }}
+          onHepsiniAc={hifzIpuclariniSil}
+          ipucu={hifzIpucu}
+          bekleyenTekrar={hifzAcik ? bekleyenTekrarlar().length : 0}
+        />
         {/* Akış modeli: tüm sayfalar normal belge akışında (SayfaBlok ile tembel içerik) */}
         <div
           ref={scrollRef}
-          className="kuran-scroll-container" 
+          className={`kuran-scroll-container${hifzAcik ? ` ${PERDE_SINIF}` : ""}`}
           style={{
+            /* PERDE BULANIKLIĞI — üretilen CSS bunu okuyor. Yazı boyutuna bağlı:
+               sabit bir px değeri, 20 puntoda okunabilir kalırken 60 puntoda
+               yalnız hafif bir titreme olurdu. Oran ölçülerek seçildi. */
+            ...(hifzAcik ? { "--hifz-bulanik": `${Math.max(4, Math.round(yaziBoyutu * 0.26))}px` } : null),
             flex: 1,
             overflowY: "auto",
             overflowX: "hidden",

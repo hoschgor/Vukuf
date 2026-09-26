@@ -109,6 +109,42 @@ const FONTLAR = [
   "uthmanic-hafs-v22.ttf",
 ].map(a => encodeURI(`/fonts/${a}`))
 
+/* Yazı tipleri de listede BİR SATIR. Eskiden sayaca giriyorlar ama listede hiç
+   görünmüyorlardı: bir font eksik kaldığında "117/118" yazıyor, liste ise her
+   şeyi hazır gösteriyordu — eksik olanı bulmanın yolu yoktu. KURAL: sayaca
+   giren her dosya listede bir satıra ait olmalı. */
+const FONT_GIRDISI = {
+  id: "__fontlar",
+  ad: "Yazı tipleri",
+  yazar: `${FONTLAR.length} dosya · mushaf ve kitap fontları`,
+  alim: "", kisim: "Uygulama",
+  ozel: true,
+  adresler: FONTLAR,
+}
+
+/* ── SUNUCUDA OLMAYAN DOSYALAR ──────────────────────────────────────────────
+   İçindekiler dosyası her kitapta yok. Olmayan bir dosya hiçbir zaman
+   önbelleğe giremeyeceği için sayaç asla tamamlanmıyordu (117/118 gibi).
+   İndirme sırasında servis işçisi 404 alan adresleri bildiriyor; burada
+   saklanıp sayaçtan düşülüyor. Her yeni indirmede hedef adresler listeden
+   çıkarılıp YENİDEN sınanıyor — sunucuya sonradan eklenen dosya kaçmasın. */
+const YOK_ANAHTAR = "vukuf-cevrimdisi-yok"
+function yokOku() {
+  try { return new Set(JSON.parse(localStorage.getItem(YOK_ANAHTAR) || "[]")) }
+  catch { return new Set() }
+}
+function yokYaz(kume) {
+  try { localStorage.setItem(YOK_ANAHTAR, JSON.stringify([...kume])) } catch { /* kota */ }
+}
+
+// Eksik dosyayı satırda adıyla göstermek için: "/bolumler/x-icindekiler.json" → "içindekiler"
+function dosyaEtiketi(u) {
+  const ad = decodeURI(String(u).split("/").pop() || "")
+  if (/-icindekiler\.json$/.test(ad)) return "içindekiler"
+  if (/-metin\.json$/.test(ad)) return "metin"
+  return ad
+}
+
 const ONAY_SURESI = 4000   // ms — bu süre dokunulmazsa onay hâli geri döner
 
 /* Çift onaylı düğme. `onayMetni` ikinci dokunuşu bekleyen hâlin yazısı. */
@@ -240,12 +276,16 @@ export default function VeriAyarlari({ theme }) {
   }, [tazele])
 
   // ── KİTAP İNDİRME ────────────────────────────────────────────────────────
-  const kitaplar = useMemo(() => [KURAN_GIRDISI, ...kitapListesi()], [])
-  // KURAN_ADRESLERI artık KURAN_GIRDISI üzerinden geliyor; iki kez eklenmesin.
+  const kitaplar = useMemo(() => [KURAN_GIRDISI, FONT_GIRDISI, ...kitapListesi()], [])
+  const kitapSayisi = kitaplar.filter(k => !k.ozel).length
+  // Fontlar ve Kur'ân dosyaları artık kendi satırlarından geliyor; tek kaynak.
   const adresler = useMemo(
-    () => [...new Set([...FONTLAR, ...kitaplar.flatMap(k => k.adresler)])],
+    () => [...new Set(kitaplar.flatMap(k => k.adresler))],
     [kitaplar]
   )
+  const [yok, setYok] = useState(yokOku)        // sunucuda olmadığı öğrenilen adresler
+  // Sayacın paydası: sunucuda olmadığı BİLİNEN dosyalar düşülüyor.
+  const sayilan = useMemo(() => adresler.filter(u => !yok.has(u)), [adresler, yok])
   const [durum, setDurum] = useState(null)      // { hazir, bayt, kitapDurum: Map }
   const [indirme, setIndirme] = useState(null)  // { tamam, hata, toplam }
   const [listeAcik, setListeAcik] = useState(false)
@@ -262,10 +302,14 @@ export default function VeriAyarlari({ theme }) {
       ? kitaplar.filter(k => normHarf(`${k.ad} ${k.yazar} ${k.alim} ${k.kisim}`).includes(q))
       : kitaplar
     /* İNDİRİLMEMİŞLER ÜSTTE: liste 60+ satır ve kullanıcının burada aradığı şey
-       "ne eksik" — hazır olanları üstte görmek işe yaramıyor. Kendi içlerinde
-       katalog sırası korunuyor (sort kararlı). */
-    const hazirMi = (k) => Boolean(durum?.kitapDurum?.get(k.id)?.hazir)
-    return [...suzulmus].sort((a, b) => Number(hazirMi(a)) - Number(hazirMi(b)))
+       "ne eksik" — hazır olanları üstte görmek işe yaramıyor. Sıra: hiç
+       inmemiş → kısmen inmiş → hazır. Kendi içlerinde katalog sırası korunuyor
+       (sort kararlı). */
+    const derece = (k) => {
+      const d = durum?.kitapDurum?.get(k.id)
+      return !d ? 0 : d.hazir ? 2 : d.kismen ? 1 : 0
+    }
+    return [...suzulmus].sort((a, b) => derece(a) - derece(b))
   }, [kitaplar, arama, durum])
 
   /* BOYUT NASIL ÖLÇÜLÜYOR — ve sınırı ne:
@@ -282,45 +326,82 @@ export default function VeriAyarlari({ theme }) {
         const olc = async (u) => {
           const y = await k.match(u, { ignoreVary: true })
           if (!y) return null
+          // Veri adresine saklanmış HTML = SPA yönlendirmesinin index.html'i;
+          // dosya aslında YOK. Hazır sayılmıyor (işçi indirmede bunu siliyor).
+          if ((y.headers.get("content-type") || "").toLowerCase().includes("text/html")) return null
           return Number(y.headers.get("content-length") || 0)
         }
+        /* ⚠ ESKİ HATA — SAYAÇ İLE LİSTE FARKLI ŞEYLER SAYIYORDU.
+           Sayaç DOSYA sayıyordu (fontlar + Kur'ân'ın üç dosyası + her kitabın
+           metni VE içindekileri), liste ise bir kitabı yalnız METNİNE bakarak
+           "hazır" diyordu; fontlar listede hiç yoktu. Eksik dosya bir font,
+           kuran.json/sayfa-harita.json ya da bir içindekiler olunca sayaç
+           117/118'de takılıyor, liste ise her satırı hazır gösteriyordu.
+           ŞİMDİ: her dosya bir kez ölçülüyor; sayaç da satırlar da BU TEK
+           ölçümden türüyor, yani biri eksik derken öbürü hazır diyemez. */
+        const dosya = new Map()                 // adres → bayt | null (yok)
+        for (const u of adresler) dosya.set(u, await olc(u))
         let hazir = 0, bayt = 0
-        const kitapDurum = new Map()
-        for (const u of FONTLAR) {
-          const b = await olc(u)
-          if (b !== null) { hazir++; bayt += b }
+        for (const u of sayilan) {
+          const b = dosya.get(u)
+          if (b !== null && b !== undefined) { hazir++; bayt += b }
         }
+        const kitapDurum = new Map()
         for (const kt of kitaplar) {
-          // Kitabın ASIL dosyası metin; içindekiler olmayabilir, "hazır" kararı
-          // metne bakılarak veriliyor — yoksa içindekilersiz kitaplar hep
-          // "eksik" görünür ve kullanıcı boşuna indirmeye çalışır.
-          const bMetin = await olc(kt.adresler[0])
-          const bIcindekiler = await olc(kt.adresler[1])
-          const kb = (bMetin || 0) + (bIcindekiler || 0)
-          if (bMetin !== null) hazir++
-          if (bIcindekiler !== null) hazir++
-          bayt += kb
-          kitapDurum.set(kt.id, { hazir: bMetin !== null, bayt: kb })
+          let kb = 0
+          const eksik = []
+          for (const u of kt.adresler) {
+            const b = dosya.get(u)
+            if (b !== null && b !== undefined) kb += b
+            else if (!yok.has(u)) eksik.push(u)   // sunucuda olmayan eksik sayılmaz
+          }
+          // Asıl dosya (ilk adres: metin / mushaf / ilk font) varsa satır en az
+          // "kısmen" hazır; yalnız yan dosyalar eksikse "tamamla" düğmesi çıkıyor.
+          const asil = dosya.get(kt.adresler[0])
+          kitapDurum.set(kt.id, {
+            hazir: eksik.length === 0,
+            kismen: eksik.length > 0 && asil !== null && asil !== undefined,
+            eksik,
+            bayt: kb,
+          })
         }
         if (!iptal) setDurum({ hazir, bayt, kitapDurum })
       } catch { if (!iptal) setDurum(null) }
     })()
     return () => { iptal = true }
-  }, [kitaplar, adresler, tazele, indirme])
+  }, [kitaplar, adresler, sayilan, yok, tazele, indirme])
 
   function indirBasla(hedefler, ad) {
     if (!destekVar() || !navigator.serviceWorker.controller) {
       bilgiVer("kotu", "Çevrimdışı etkin değil; indirme yapılamıyor.")
       return
     }
+    // Hedefler YENİDEN sınanıyor: daha önce "sunucuda yok" diye işaretlenmiş
+    // bir dosya sonradan eklenmişse bu indirmede yakalanır.
+    const sinanacak = new Set(yokOku())
+    for (const u of hedefler) sinanacak.delete(u)
+    yokYaz(sinanacak)
+    setYok(new Set(sinanacak))
     setIndirme({ tamam: 0, hata: 0, toplam: hedefler.length, ad })
     // İndirme SERVİS İŞÇİSİNDE yürüyor: panel kapansa bile sürüyor.
     const birak = onYukle(hedefler, (d) => {
       setIndirme({ ...d, ad })
       if (d.tamam + d.hata >= d.toplam) {
         birak()
+        // İşçi 404 alan adresleri `yok` dizisinde bildiriyor (eski sürüm
+        // işçide alan yoksa boş dizi — davranış eskisi gibi kalır).
+        const yeniYok = new Set(sinanacak)
+        for (const u of (Array.isArray(d.yok) ? d.yok : [])) yeniYok.add(u)
+        yokYaz(yeniYok)
+        setYok(yeniYok)
+        const yokSayisi = Array.isArray(d.yok) ? d.yok.length : 0
+        const baskaHata = d.hata - yokSayisi
         setTimeout(() => { setIndirme(null); setTazele(x => x + 1) }, 1000)
-        bilgiVer("iyi", `${ad}: ${d.tamam} dosya indirildi${d.hata ? `, ${d.hata} bulunamadı` : ""}.`)
+        bilgiVer(baskaHata > 0 ? "kotu" : "iyi",
+          `${ad}: ${d.tamam} dosya indirildi` +
+          (yokSayisi ? `, ${yokSayisi} dosya sunucuda yok (sayaçtan düşüldü)` : "") +
+          (baskaHata > 0 ? `, ${baskaHata} dosya alınamadı — bağlantıyı kontrol edip tekrar deneyin` : "") +
+          ".")
       }
     })
   }
@@ -781,7 +862,7 @@ export default function VeriAyarlari({ theme }) {
           eklendiğinde burada hiçbir şey değişmiyor. */}
       <Katlanir
         theme={theme} ikon={BookOpen} baslik="Kitapları indir"
-        ozet={durum ? `${durum.hazir}/${adresler.length} · ≈${boyutMetni(durum.bayt)}` : null}
+        ozet={durum ? `${durum.hazir}/${sayilan.length} · ≈${boyutMetni(durum.bayt)}` : null}
         {...kapak("indir")}
       >
         <div style={{
@@ -793,7 +874,7 @@ export default function VeriAyarlari({ theme }) {
           cihazda kapladığı gerçek yer Depolama bölümünde.
           {durum && (
             <div style={{ marginTop: "6px", color: theme.text }}>
-              <b>{durum.hazir}</b> / {adresler.length} dosya hazır ·{" "}
+              <b>{durum.hazir}</b> / {sayilan.length} dosya hazır ·{" "}
               <b>≈{boyutMetni(durum.bayt)}</b>
             </div>
           )}
@@ -832,7 +913,7 @@ export default function VeriAyarlari({ theme }) {
               }}
             >
               <Download size={15} />
-              {durum && durum.hazir >= adresler.length ? "Yeniden indir" : "Hepsini indir"}
+              {durum && durum.hazir >= sayilan.length ? "Yeniden indir" : "Hepsini indir"}
             </button>
 
             {/* ── KİTAP SEÇ ───────────────────────────────────────────────
@@ -851,7 +932,7 @@ export default function VeriAyarlari({ theme }) {
                 fontSize: "12px", fontFamily: "inherit", cursor: "pointer",
               }}
             >
-              {listeAcik ? "Listeyi kapat" : `Kitap seç (${kitaplar.length})`}
+              {listeAcik ? "Listeyi kapat" : `Kitap seç (${kitapSayisi})`}
             </button>
 
             {listeAcik && (
@@ -885,9 +966,11 @@ export default function VeriAyarlari({ theme }) {
                 {(() => {
                   const eksik = gorunen.filter(k => !(durum?.kitapDurum?.get(k.id)?.hazir))
                   if (!arama.trim() || eksik.length === 0) return null
+                  // Yalnız EKSİK dosyalar isteniyor; kısmen inmiş kitabın metni yeniden çekilmesin.
+                  const hedef = eksik.flatMap(k => durum?.kitapDurum?.get(k.id)?.eksik || k.adresler)
                   return (
                     <button
-                      onClick={() => indirBasla(eksik.flatMap(k => k.adresler), `${eksik.length} eser`)}
+                      onClick={() => indirBasla(hedef, `${eksik.length} eser`)}
                       disabled={!cevrimdisi?.destek}
                       style={{
                         width: "100%", marginTop: "8px", padding: "10px 12px",
@@ -915,6 +998,14 @@ export default function VeriAyarlari({ theme }) {
                   {gorunen.map((kt, i) => {
                     const d = durum?.kitapDurum?.get(kt.id)
                     const hazirMi = Boolean(d && d.hazir)
+                    const kismen = Boolean(d && d.kismen)
+                    // Kısmen inmiş satırda hangi dosyanın eksik olduğu ADIYLA yazılıyor —
+                    // "117/118"in hangi satırdan geldiği ilk bakışta görülsün.
+                    const eksikYazi = kismen
+                      ? (d.eksik.length <= 2
+                          ? d.eksik.map(dosyaEtiketi).join(", ")
+                          : `${d.eksik.length} dosya`) + " eksik"
+                      : ""
                     return (
                       <div key={kt.id} style={{
                         display: "flex", alignItems: "center", gap: "10px",
@@ -930,7 +1021,9 @@ export default function VeriAyarlari({ theme }) {
                             display: "block", fontSize: "11px", color: theme.textSecondary,
                             overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
                           }}>
-                            {kt.yazar}{hazirMi && d.bayt ? ` · ≈${boyutMetni(d.bayt)}` : ""}
+                            {kismen
+                              ? <span style={{ color: "#c0392b" }}>{eksikYazi}</span>
+                              : [kt.yazar, hazirMi && d.bayt ? `≈${boyutMetni(d.bayt)}` : ""].filter(Boolean).join(" · ")}
                           </span>
                         </span>
                         {hazirMi ? (
@@ -938,6 +1031,18 @@ export default function VeriAyarlari({ theme }) {
                             flexShrink: 0, display: "flex", alignItems: "center", gap: "4px",
                             fontSize: "11px", color: theme.accent,
                           }}><Check size={13} /> hazır</span>
+                        ) : kismen ? (
+                          <button
+                            onClick={() => indirBasla(d.eksik, kt.ad)}
+                            disabled={!cevrimdisi?.destek}
+                            style={{
+                              flexShrink: 0, display: "flex", alignItems: "center", gap: "5px",
+                              padding: "6px 10px", borderRadius: "8px",
+                              background: `${theme.accent}14`, border: `1px solid ${theme.accent}`,
+                              color: theme.accent, fontSize: "11px", fontWeight: 600,
+                              fontFamily: "inherit", cursor: "pointer",
+                            }}
+                          ><Download size={12} /> tamamla</button>
                         ) : (
                           <button
                             onClick={() => indirBasla(kt.adresler, kt.ad)}

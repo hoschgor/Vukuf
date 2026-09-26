@@ -35,7 +35,7 @@
  *   de çalışır ama eski varlıklar önbellekte birikir.
  * ═══════════════════════════════════════════════════════════════════════════ */
 
- const SURUM = "2026-09-26-3"
+ const SURUM = "2026-09-26-5"
 
  const KABUK = `vukuf-kabuk-${SURUM}`
  const VARLIK = `vukuf-varlik-${SURUM}`
@@ -179,6 +179,23 @@
    return y && y.ok && y.type === "basic"
  }
 
+ /* SUNUCUDA YOK MU — iki biçimde gelebiliyor:
+  *   1) Dürüst 404/410.
+  *   2) SPA yönlendirmesi: bazı barındırıcılar (Vercel/Netlify/nginx
+  *      `try_files … /index.html`) olmayan HER adrese 200 ile index.html
+  *      döndürüyor. Bir .json/.ttf adresine HTML gelmesi bu demek; saklanırsa
+  *      dosya "indirildi" sayılıyor ama açıldığında JSON diye HTML okunuyor.
+  * Her iki durumda da dosya SAKLANMIYOR ve sayfaya "yok" olarak bildiriliyor. */
+ function sunucudaYok(adres, y) {
+   if (!y) return false
+     if (y.status === 404 || y.status === 410) return true
+       if (!y.ok) return false
+         let yol = ""
+         try { yol = new URL(adres, self.location.origin).pathname } catch { return false }
+         const tur = (y.headers.get("content-type") || "").toLowerCase()
+         return VERI_DESENI.test(yol) && tur.includes("text/html")
+ }
+
  // Gezinme: önce ağ, olmazsa önbellek. Çevrimiçiyken daima en yeni kabuk.
  async function agOnce(istek) {
    try {
@@ -230,7 +247,11 @@
    // başarısız olabilirdi — dosya önbellekte olduğu hâlde "yok" sayılırdı.
    const bulunan = await k.match(istek, { ignoreVary: true })
    const agdan = fetch(istek)
-   .then(y => { if (saklanabilir(y)) k.put(istek, y.clone()); return y })
+   .then(y => {
+     // SPA yönlendirmesinin döndürdüğü index.html veri adresi altına saklanmasın.
+     if (saklanabilir(y) && !sunucudaYok(istek.url, y)) k.put(istek, y.clone())
+       return y
+   })
    .catch(() => null)
    if (bulunan) return bulunan
      const y = await agdan
@@ -285,18 +306,30 @@
        const kVeri = await caches.open(VERI)
        const kSes = await caches.open(SES)
        let tamam = 0, hata = 0
+       // Sunucuda OLMAYAN adresler ayrı bildiriliyor: sayfa bunları sayaçtan
+       // düşüyor. Yoksa hiç inemeyecek bir dosya sayacı sonsuza dek eksik tutar
+       // (içindekiler dosyası her kitapta yok).
+       const yok = []
        for (const a of veri.adresler) {
          try {
            const ses = sesMi(a)
            // Dış kaynaktan CORS'lu indirme: `mode: "cors"` açıkça isteniyor ki
            // yanıt "opaque" değil "cors" olsun ve içeriği doğrulanabilsin.
            const y = await fetch(a, ses ? { mode: "cors", cache: "no-cache" } : { cache: "no-cache" })
-           const uygun = ses ? saklanabilirSes(y) : saklanabilir(y)
-           if (uygun) { await (ses ? kSes : kVeri).put(a, y.clone()); tamam++ } else hata++
+           if (!ses && sunucudaYok(a, y)) {
+             yok.push(a); hata++
+             // Eski sürüm işçi SPA'nın index.html'ini bu adresle saklamış olabilir;
+             // o bayat kayıt da temizleniyor ki sayaç onu "hazır" saymasın.
+             await kVeri.delete(a, { ignoreVary: true })
+           }
+           else {
+             const uygun = ses ? saklanabilirSes(y) : saklanabilir(y)
+             if (uygun) { await (ses ? kSes : kVeri).put(a, y.clone()); tamam++ } else hata++
+           }
          } catch { hata++ }
          // Her dosyada ilerleme bildir — arayüz çubuğu bunu dinleyecek.
          const hepsi = await self.clients.matchAll()
-         hepsi.forEach(c => c.postMessage({ tip: "ON_YUKLE_ILERLEME", tamam, hata, toplam: veri.adresler.length }))
+         hepsi.forEach(c => c.postMessage({ tip: "ON_YUKLE_ILERLEME", tamam, hata, yok, toplam: veri.adresler.length }))
        }
      })())
    }

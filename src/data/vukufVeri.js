@@ -40,6 +40,10 @@ const GECICI_ANAHTAR = new Set([
   "vukuf-arama-devam", "vukuf-arama-durum", "vukuf-arama-hedef",
   "vukuf-donus", "vukuf-donus-yol", "vukuf-kuran-hedef",
   "vukuf-tefeul-devam", "vukuf-tefeul-durum", "vukuf-okuma-devam",
+  // Hıfz ekranı ↔ mushaf köprüsü (okunur okunmaz siliniyorlar)
+  "vukuf-hifz-hedef", "vukuf-hifz-donus",
+  // Çevrimdışı: sunucuda olmadığı öğrenilen dosyalar — silinirse yalnız yeniden sınanır
+  "vukuf-cevrimdisi-yok",
 ])
 
 /* ── KATEGORİLER ─────────────────────────────────────────────────────────────

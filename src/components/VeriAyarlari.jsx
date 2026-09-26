@@ -111,54 +111,6 @@ const FONTLAR = [
 
 const ONAY_SURESI = 4000   // ms — bu süre dokunulmazsa onay hâli geri döner
 
-/* ── ÇEVRİMDIŞI HAZIRLIK TESTİ — GEÇİCİ ────────────────────────────────────
-   Çevrimdışı ses indirme tasarlanabilmesi için iki bilinmeyen var ve ikisi de
-   ancak GERÇEK CİHAZDA ölçülebilir:
-     1) everyayah.com CORS başlığı gönderiyor mu? Göndermiyorsa yanıtlar OPAK
-        olur: önbelleğe konur ama içeriği okunamaz, 404 bile "başarılı" sayılır
-        ve tarayıcılar opak kayıtları kotaya ŞİŞİRİLMİŞ olarak yazar.
-     2) Bir âyetin gerçek boyutu kaç KB? Tüm Kur'ân tahminini (130-520 MB gibi
-        geniş bir aralık) gerçek ölçüme çevirmek için lazım.
-   İş bitince `CEVRIMDISI_TESTI = false` yapılıp bu bölüm kaldırılır. */
-const CEVRIMDISI_TESTI = true
-
-/* ⚠ ÖRNEKLEM HATASI VE DÜZELTMESİ (24 Eylül 2026)
-   İlk sürümde örnek âyetler ELLE seçilmişti: 001001, 002255, 114006. İçlerinden
-   002255 ÂYETÜ'L-KÜRSÎ — Kur'ân'ın en uzun âyetlerinden biri (~50 sn). Üç
-   örnekten biri o olunca ortalama gerçeğin 4-5 katına çıktı ve test "cüz başına
-   73 MB" dedi; bu toplamda ~2,2 GB eder, mp3 için imkânsız.
-   DERS: küçük ve ELLE seçilmiş örneklem, uzunluğu çok değişken bir kümede
-   ortalamayı tamamen kaydırır. Artık örnekler 6236 âyetin TAMAMINDAN rastgele
-   çekiliyor ve sayı 24'e çıkarıldı. Ayrıca dosyalar indirilmiyor: `HEAD` ile
-   yalnız `Content-Length` okunuyor (CORS'ta güvenli listede olan bir başlık),
-   yani test hem doğru hem hafif. */
-const ORNEK_SAYISI = 24
-
-// Sûre başına âyet sayısı (Kûfî sayım) — toplam 6236. Rastgele âyet seçmek için.
-const AYET_SAYILARI = [
-  7,286,200,176,120,165,206,75,129,109,123,111,43,52,99,128,111,110,98,135,
-  112,78,118,64,77,227,93,88,69,60,34,30,73,54,45,83,182,88,75,85,
-  54,53,89,59,37,35,38,29,18,45,60,49,62,55,78,96,29,22,24,13,
-  14,11,11,18,12,12,30,52,52,44,28,28,20,56,40,31,50,40,46,42,
-  29,19,36,25,22,17,19,26,30,20,15,21,11,8,8,19,5,8,8,11,
-  11,8,3,9,5,4,7,3,6,3,5,4,5,6,
-]
-const AYET_SAYISI = AYET_SAYILARI.reduce((t, n) => t + n, 0)   // 6236
-
-// Rastgele, ÇAKIŞMASIZ âyet kimlikleri ("002255" biçiminde).
-function rastgeleAyetler(adet) {
-  const uc = (n) => String(n).padStart(3, "0")
-  const secilen = new Set()
-  let guvenlik = 0
-  while (secilen.size < adet && guvenlik++ < adet * 20) {
-    const s = Math.floor(Math.random() * 114)
-    const a = Math.floor(Math.random() * AYET_SAYILARI[s]) + 1
-    secilen.add(`${uc(s + 1)}${uc(a)}`)
-  }
-  return [...secilen]
-}
-const VARSAYILAN_KARI = "https://everyayah.com/data/Alafasy_128kbps/"
-
 /* Çift onaylı düğme. `onayMetni` ikinci dokunuşu bekleyen hâlin yazısı. */
 function OnayliDugme({ theme, metin, onayMetni = "Emin misiniz? Tekrar dokunun", ikon: Ikon, kapali, tehlike, onOnay }) {
   const [onayda, setOnayda] = useState(false)
@@ -440,52 +392,6 @@ export default function VeriAyarlari({ theme }) {
     const n = await onbellegiTemizle()
     bilgiVer("iyi", `${n} önbellek silindi, sayfa yenileniyor…`)
     setTimeout(() => window.location.reload(), 600)
-  }
-
-  // ── ÇEVRİMDIŞI TESTİ (geçici) ────────────────────────────────────────────
-  const [testUrl, setTestUrl] = useState(VARSAYILAN_KARI)
-  const [test, setTest] = useState(null)      // { calisiyor, cors, ornekler, hata }
-
-  async function cevrimdisiTest() {
-    setTest({ calisiyor: true })
-    const kok = testUrl.trim().replace(/\/?$/, "/")
-    const ornekler = []
-    let cors = null, hata = null
-    for (const a of rastgeleAyetler(ORNEK_SAYISI)) {
-      const url = `${kok}${a}.mp3`
-      try {
-        // HEAD: dosyayı İNDİRMEDEN boyutu öğreniyoruz. `Content-Length` CORS'ta
-        // güvenli listede olduğu için ek başlık izni gerekmiyor.
-        // mode:"cors" — sunucu CORS göndermiyorsa burada HATA fırlar; asıl soru bu.
-        let y = await fetch(url, { method: "HEAD", mode: "cors", cache: "no-store" })
-        let bayt = Number(y.headers.get("content-length") || 0)
-        // Bazı sunucular HEAD'e boyut vermiyor; o âyet için tek seferlik GET.
-        if (y.ok && !bayt) {
-          const g = await fetch(url, { mode: "cors", cache: "no-store" })
-          if (g.ok) bayt = (await g.blob()).size
-        }
-        cors = true
-        if (y.ok && bayt) ornekler.push({ a, bayt })
-        else ornekler.push({ a, hata: y.ok ? "boyut yok" : `HTTP ${y.status}` })
-      } catch (e) {
-        cors = false
-        hata = String(e && e.message ? e.message : e)
-        ornekler.push({ a, hata: "erişilemedi" })
-        break            // CORS yoksa 24 kez denemenin anlamı yok
-      }
-    }
-    const olculen = ornekler.filter(o => o.bayt).map(o => o.bayt)
-    const ortalama = olculen.length ? olculen.reduce((t, b) => t + b, 0) / olculen.length : 0
-    // Dağılımın ne kadar savruk olduğunu da gösterelim — tahminin ne kadar
-    // güvenilir olduğunu kullanıcı görsün (âyet uzunlukları çok değişken).
-    const enKucuk = olculen.length ? Math.min(...olculen) : 0
-    const enBuyuk = olculen.length ? Math.max(...olculen) : 0
-    setTest({
-      cors, ornekler, ortalama, enKucuk, enBuyuk,
-      sayi: olculen.length,
-      toplam: ortalama * AYET_SAYISI,
-      hata,
-    })
   }
 
   const doluKutular = kutular.filter(k => k.adet > 0)
@@ -789,10 +695,6 @@ export default function VeriAyarlari({ theme }) {
         kapali={!doluKutular.length}
         onOnay={() => kategoriSifirla("hepsi", "Tümü")} />
 
-      {/* ── ÇEVRİMDIŞI TESTİ (GEÇİCİ — CEVRIMDISI_TESTI ile kapatılır) ──────
-          İki soruyu tek dokunuşta cevaplıyor: (1) ses sunucusu CORS gönderiyor
-          mu, (2) bir âyet gerçekte kaç KB. İkincisi "tüm Kur'ân kaç MB eder"
-          sorusunu tahminden ÖLÇÜME çeviriyor. */}
       </Katlanir>
 
       {/* ── ÇEVRİMDIŞI ────────────────────────────────────────────────────
@@ -1214,81 +1116,6 @@ export default function VeriAyarlari({ theme }) {
           </>
         )}
       </Katlanir>
-
-      {CEVRIMDISI_TESTI && (
-        <Katlanir
-          theme={theme} ikon={Wifi} baslik="Çevrimdışı testi (geçici)"
-          ozet={test && !test.calisiyor && test.toplam ? boyutMetni(test.toplam) : null}
-          {...kapak("test")}
-        >
-          <input
-            value={testUrl}
-            onChange={e => setTestUrl(e.target.value)}
-            placeholder="Kâri klasörünün adresi…"
-            style={{
-              width: "100%", boxSizing: "border-box", padding: "9px 10px",
-              borderRadius: "10px", border: `1px solid ${theme.border}`,
-              background: theme.background, color: theme.text,
-              fontSize: "11px", fontFamily: "ui-monospace, monospace",
-            }}
-          />
-          <div style={{ fontSize: "11px", color: theme.textSecondary, margin: "6px 2px 8px", lineHeight: 1.5 }}>
-            Uygulamanın gerçekten kullandığı kâri adresini yapıştırırsanız ölçüm doğru olur.
-          </div>
-          <button onClick={cevrimdisiTest} disabled={test?.calisiyor} style={{
-            width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: "7px",
-            padding: "10px 12px", borderRadius: "10px",
-            background: "transparent", border: `1px solid ${theme.accent}`,
-            color: theme.accent, fontSize: "13px", fontWeight: 600,
-            fontFamily: "inherit", cursor: test?.calisiyor ? "default" : "pointer",
-            opacity: test?.calisiyor ? 0.6 : 1,
-          }}>
-            {test?.calisiyor ? <Loader size={15} className="veri-spin" /> : <Wifi size={15} />}
-            {test?.calisiyor ? "Ölçülüyor…" : "3 âyet indirip ölç"}
-          </button>
-
-          {test && !test.calisiyor && (
-            <div style={{
-              marginTop: "8px", padding: "10px 12px", borderRadius: "10px",
-              border: `1px solid ${theme.border}`, background: theme.background,
-              fontSize: "12px", color: theme.textSecondary, lineHeight: 1.6,
-            }}>
-              <div style={{ color: test.cors ? theme.accent : "#c0392b", fontWeight: 600, marginBottom: "6px" }}>
-                {test.cors
-                  ? "CORS var — sesler saydam olarak önbelleğe alınabilir."
-                  : "CORS yok — ancak opak olarak saklanabilir (kotada şişer, hata ayıklanamaz)."}
-              </div>
-              {test.ortalama > 0 ? (
-                <div style={{ color: theme.text }}>
-                  <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "6px" }}>
-                    {test.sayi} rastgele âyet ölçüldü · en küçük {boyutMetni(test.enKucuk)} ·
-                    en büyük {boyutMetni(test.enBuyuk)} · ortalama <b>{boyutMetni(test.ortalama)}</b>
-                  </div>
-                  <div>
-                    {AYET_SAYISI} âyet ≈ <b>{boyutMetni(test.toplam)}</b>
-                  </div>
-                  <div>
-                    Cüz başına ≈ <b>{boyutMetni(test.toplam / 30)}</b>
-                  </div>
-                  <div style={{ fontSize: "11px", color: theme.textSecondary, marginTop: "6px", lineHeight: 1.5 }}>
-                    En küçük ile en büyük arasındaki fark ne kadar açıksa tahmin o kadar
-                    kaba demektir; testi birkaç kez çalıştırıp sonuçları karşılaştırın.
-                  </div>
-                </div>
-              ) : (
-                <div style={{ fontFamily: "ui-monospace, monospace", fontSize: "11px" }}>
-                  {test.ornekler.slice(0, 4).map(o => (
-                    <div key={o.a}>{o.a}: {o.hata}</div>
-                  ))}
-                </div>
-              )}
-              {test.hata && (
-                <div style={{ fontSize: "11px", marginTop: "6px", color: "#c0392b" }}>{test.hata}</div>
-              )}
-            </div>
-          )}
-        </Katlanir>
-      )}
 
       {/* Loader'ın dönmesi için — `arama-spin` Arama.jsx'te tanımlı, buraya
           bağımlı olmayalım diye kendi adıyla kopyası. */}

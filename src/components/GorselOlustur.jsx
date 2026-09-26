@@ -37,7 +37,7 @@ const ROZET_GRUP = (t) => `<g transform="${t}">`
 const ROZET_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="140" height="68" viewBox="-70 -34 140 68" fill="#000">`
   + ROZET_GRUP("translate(-50 0)") + ROZET_GRUP("translate(50 0) scale(-1 1)") + `</svg>`
 const ROZET_ORAN = 140 / 68          // rozet genişlik/yükseklik oranı (viewBox)
-const rozetGorseliUret = () => {
+export const rozetGorseliUret = () => {
   const im = new Image()
   im.src = "data:image/svg+xml;utf8," + encodeURIComponent(ROZET_SVG)
   return im
@@ -60,6 +60,225 @@ const yildizCiz = (ctx, cx, cy, r, renk) => {
   ctx.fillStyle = renk
   ctx.fill()
   ctx.restore()
+}
+
+// ── RAHLE ────────────────────────────────────────────────────────────────────
+// Sûre adı hattının altındaki süs: ÜSTTEN HAFİF EĞİK bakışla, üzerinde açık
+// mushaf duran çapraz ayaklı rahle.
+//
+// ÜÇ DENEMEDEN ÇIKAN DERS: bir nesne çizimini tanınır yapan şey ayrıntı değil,
+// (1) YERE BASMASI ve (2) ÖRTÜŞME. Perspektifli sürüm ayrıntılıydı ama havada
+// duruyordu; örtüşmesiz sürüm de düz bir "X" harfi gibi okunuyordu.
+//   • Yere basma: lataların alt uçları YATAY kesiliyor, ikisi de aynı zemin
+//     çizgisinde bitiyor; altlarında pabuç ve soluk bir zemin çizgisi var.
+//   • Örtüşme: arka plan fotoğraf olabildiği için DOLGU kullanılamıyor. Onun
+//     yerine `gizliCiz()` her çizgiyi engel çokgenlerle (kitabın iki sayfası,
+//     öndeki lata) kesiştirip yalnız DIŞARIDA kalan parçalarını çiziyor. Gerçek
+//     gizli-çizgi hesabı; saf `stroke` ile katı nesne görüntüsü veren şey bu.
+//
+// cx: merkez, yUst: üst kenar, gen: toplam genişlik. Yükseklik gen*RAHLE_ORAN.
+const RAHLE_ORAN = 0.74
+function rahleCiz(ctx, cx, yUst, gen, renk, kalin) {
+  const h = gen * RAHLE_ORAN
+  const P = (nx, ny) => ({ x: cx + (nx - 0.5) * gen, y: yUst + ny * h })
+  const ekle = (p, dx, dy) => ({ x: p.x + dx, y: p.y + dy })
+  const ara = (a, b, f) => ({ x: a.x + (b.x - a.x) * f, y: a.y + (b.y - a.y) * f })
+  const yTepe = yUst + h * 0.02
+  const yZemin = yUst + h * 0.95
+  const YARI = gen * 0.058
+
+  ctx.save()
+  ctx.strokeStyle = renk
+  ctx.lineWidth = kalin
+  ctx.lineCap = "round"
+  ctx.lineJoin = "round"
+  const yol = (n, kapali = false) => {
+    ctx.beginPath()
+    n.forEach((q, i) => (i ? ctx.lineTo(q.x, q.y) : ctx.moveTo(q.x, q.y)))
+    if (kapali) ctx.closePath()
+    ctx.stroke()
+  }
+
+  // ── Geometri yardımcıları ───────────────────────────────────────────────
+  const kesisimT = (p1, p2, p3, p4) => {
+    const r = { x: p2.x - p1.x, y: p2.y - p1.y }
+    const t2 = { x: p4.x - p3.x, y: p4.y - p3.y }
+    const payda = r.x * t2.y - r.y * t2.x
+    if (Math.abs(payda) < 1e-9) return null
+    const t = ((p3.x - p1.x) * t2.y - (p3.y - p1.y) * t2.x) / payda
+    const u = ((p3.x - p1.x) * r.y - (p3.y - p1.y) * r.x) / payda
+    return t > 0 && t < 1 && u > 0 && u < 1 ? t : null
+  }
+  const icindeMi = (n, cok) => {
+    let ic = false
+    for (let i = 0, j = cok.length - 1; i < cok.length; j = i++) {
+      const a = cok[i], b = cok[j]
+      if ((a.y > n.y) !== (b.y > n.y) &&
+          n.x < ((b.x - a.x) * (n.y - a.y)) / ((b.y - a.y) || 1e-9) + a.x) ic = !ic
+    }
+    return ic
+  }
+  /* Bir doğru parçasını engel çokgenlerin DIŞINDA kalan parçalarına bölerek çizer. */
+  const gizliCiz = (p, q, engeller) => {
+    if (!engeller.length) { yol([p, q]); return }
+    const ts = [0, 1]
+    for (const cok of engeller) {
+      for (let i = 0, j = cok.length - 1; i < cok.length; j = i++) {
+        const t = kesisimT(p, q, cok[j], cok[i])
+        if (t !== null) ts.push(t)
+      }
+    }
+    ts.sort((a, b) => a - b)
+    const uzerinde = (t) => ara(p, q, t)
+    for (let i = 0; i < ts.length - 1; i++) {
+      if (ts[i + 1] - ts[i] < 0.005) continue
+      const orta = uzerinde((ts[i] + ts[i + 1]) / 2)
+      if (engeller.some(c => icindeMi(orta, c))) continue
+      yol([uzerinde(ts[i]), uzerinde(ts[i + 1])])
+    }
+  }
+  const cokgenCiz = (nk, engeller) => {
+    for (let i = 0; i < nk.length; i++) gizliCiz(nk[i], nk[(i + 1) % nk.length], engeller)
+  }
+
+  // ── LATALAR ─────────────────────────────────────────────────────────────
+  // Eksenden iki paralel kenar, üstte ve zeminde YATAY kesim → düz basan ayak.
+  const lataCokgen = (eksenA, eksenB) => {
+    const dx = eksenB.x - eksenA.x, dy = eksenB.y - eksenA.y
+    const L = Math.hypot(dx, dy) || 1
+    const px = -dy / L * YARI, py = dx / L * YARI
+    const kes = (ax, ay, yy) => ({ x: ax + dx * ((yy - ay) / (dy || 1e-6)), y: yy })
+    const kenar = (s) => [
+      kes(eksenA.x + px * s, eksenA.y + py * s, yTepe),
+      kes(eksenA.x + px * s, eksenA.y + py * s, yZemin),
+    ]
+    const [u1, a1] = kenar(1), [u2, a2] = kenar(-1)
+    return [u1, a1, a2, u2]            // üst1, alt1, alt2, üst2
+  }
+  const onLata = lataCokgen(P(0.045, 1.04), P(0.945, -0.06))
+  const arkaLata = lataCokgen(P(0.955, 1.04), P(0.055, -0.06))
+
+  // ── AÇIK MUSHAF ─────────────────────────────────────────────────────────
+  // Sırt ortada, iki sayfa dışa-yukarı. Üstten baktığımız için her sayfanın
+  // ARKA kenarı `derin` kadar yukarıda: yüzeyi görüyoruz.
+  const C = P(0.5, 0.44)                     // sırt, ön uç
+  const Lf = P(0.165, 0.215), Rf = P(0.835, 0.215)
+  const derin = -h * 0.185
+  const Cb = ekle(C, 0, derin), Lb = ekle(Lf, 0, derin), Rb = ekle(Rf, 0, derin)
+  const solSayfa = [C, Lf, Lb, Cb]
+  const sagSayfa = [C, Rf, Rb, Cb]
+  const kitap = [solSayfa, sagSayfa]
+
+  // ── ZEMİN ───────────────────────────────────────────────────────────────
+  ctx.save(); ctx.globalAlpha = 0.28; ctx.lineWidth = kalin * 0.8
+  yol([P(0.0, 0.975), P(1.0, 0.975)])
+  ctx.restore()
+
+  // ── ÇİZİM SIRASI: arka lata (kitap + ön lata arkasında) → ön lata (kitap
+  //    arkasında) → pabuçlar → kitap. Her biri kendinden ÖNDEKİLERLE kesiliyor.
+  cokgenCiz(arkaLata, [onLata, ...kitap])
+  cokgenCiz(onLata, kitap)
+
+  /* PABUÇ — fotoğraftaki en ayırt edici parça: tabanı yere düz basan, dış ucu
+     kızak gibi yukarı kıvrılan ayak. */
+  const ayak = (lata) => {
+    const [, a1, a2] = lata
+    const dis = Math.abs(a1.x - cx) > Math.abs(a2.x - cx) ? a1 : a2
+    const ic = dis === a1 ? a2 : a1
+    const yon = Math.sign(dis.x - ic.x) || 1
+    const e = YARI * 1.05
+    const uc = dis.x + yon * e
+    ctx.beginPath()
+    ctx.moveTo(ic.x, yZemin)
+    ctx.lineTo(uc, yZemin)
+    ctx.quadraticCurveTo(uc + yon * e * 0.2, yZemin - YARI * 0.7, dis.x - yon * YARI * 0.15, yZemin - YARI * 1.15)
+    ctx.stroke()
+  }
+  ayak(arkaLata); ayak(onLata)
+
+  // Oyma süsü — ALT kollarda (üst kollar kitabın arkasında kalıyor)
+  const badem = (merkez, yon, uzun, genis) => {
+    const A = ekle(merkez, -yon.x * uzun, -yon.y * uzun)
+    const B = ekle(merkez, yon.x * uzun, yon.y * uzun)
+    ctx.beginPath()
+    ctx.moveTo(A.x, A.y)
+    ctx.quadraticCurveTo(merkez.x - yon.y * genis, merkez.y + yon.x * genis, B.x, B.y)
+    ctx.quadraticCurveTo(merkez.x + yon.y * genis, merkez.y - yon.x * genis, A.x, A.y)
+    ctx.stroke()
+  }
+  const birim = (a, b) => {
+    const dx = b.x - a.x, dy = b.y - a.y, L = Math.hypot(dx, dy) || 1
+    return { x: dx / L, y: dy / L }
+  }
+  ctx.save(); ctx.globalAlpha = 0.7; ctx.lineWidth = kalin * 0.7
+  for (const l of [onLata, arkaLata]) {
+    const ustOrta = ara(l[0], l[3], 0.5), altOrta = ara(l[1], l[2], 0.5)
+    badem(ara(ustOrta, altOrta, 0.80), birim(ustOrta, altOrta), gen * 0.06, gen * 0.042)
+  }
+  ctx.restore()
+
+  // ── KİTAP en üstte: yüzeyler, sayfa kalınlığı, satır izleri ─────────────
+  yol(solSayfa, true)
+  yol(sagSayfa, true)
+  const kal = h * 0.055
+  yol([ekle(Lf, 0, kal), ekle(C, 0, kal), ekle(Rf, 0, kal)])
+  yol([Lf, ekle(Lf, 0, kal)]); yol([C, ekle(C, 0, kal)]); yol([Rf, ekle(Rf, 0, kal)])
+
+  ctx.save(); ctx.globalAlpha = 0.5; ctx.lineWidth = kalin * 0.6
+  for (const D of [Lf, Rf]) {
+    for (const f of [0.28, 0.52, 0.76]) {
+      const a = ara(C, Cb, f), b = ara(D, D === Lf ? Lb : Rb, f)
+      yol([ara(a, b, 0.14), ara(a, b, 0.88)])
+    }
+  }
+  ctx.restore()
+
+  ctx.restore()
+}
+
+// Sûre adı, SureBasligi.jsx ile AYNI kaynaktan geliyor: `surah-name-v2-icon`
+// fontunun özel kullanım alanındaki (PUA) glifleri, U+E000 + sûre numarası.
+// Tek yerde tanımlı olması, başlıkla görselin ayrışmasını imkânsız kılıyor.
+const SURE_ADI_FONT = "'surah-name-v2-icon', serif"
+const sureAdiGlifi = (sureNo) =>
+  sureNo >= 1 && sureNo <= 114 ? String.fromCodePoint(0xE000 + sureNo) : ""
+
+/* ── SÛRE ADI GLİFİNİN GERÇEK YÜKSEKLİĞİ ─────────────────────────────────────
+   `measureText` bu fontun özel alan (PUA) glifleri için güvenilir değil: dönen
+   kutu gerçek mürekkebin çok altında kalabiliyor, blok yüksekliksiz kalıyor ve
+   hat KAYNAK SATIRININ ÜSTÜNE BİNİYOR (cihazda görüldü). Bu yüzden glif bir kez
+   gizli tuvale çizilip PİKSELLERİ TARANIYOR; taban çizgisine göre gerçek üst/alt
+   taşma bulunuyor. Sonuç punto oranı olarak saklanıyor, her boyda çarpılıyor.
+   Ölçüm glif başına bir kez yapılıyor (114 sûre → en çok 114 küçük tarama).
+   DİKKAT: yalnız font YÜKLENDİKTEN sonra çağrılmalı; çağıranlar bunu güvence
+   altına alıyor (sûre adı, font hazır değilse zaten hiç çizilmiyor). */
+const sureAdiOlcuBellek = new Map()
+function sureAdiOlcusu(glif) {
+  if (sureAdiOlcuBellek.has(glif)) return sureAdiOlcuBellek.get(glif)
+  let sonuc = null
+  try {
+    const REF = 90
+    const cv = document.createElement("canvas")
+    cv.width = REF * 5; cv.height = REF * 3
+    const c = cv.getContext("2d")
+    c.font = `${REF}px ${SURE_ADI_FONT}`
+    c.textAlign = "center"; c.textBaseline = "alphabetic"; c.fillStyle = "#000"
+    try { c.direction = "rtl" } catch { /* eski tarayıcı */ }
+    const taban = REF * 2
+    c.fillText(glif, cv.width / 2, taban)
+    const d = c.getImageData(0, 0, cv.width, cv.height).data
+    let ust = -1, alt = -1
+    for (let y = 0; y < cv.height; y++) {
+      let dolu = false
+      for (let x = 0; x < cv.width; x++) {
+        if (d[(y * cv.width + x) * 4 + 3] > 8) { dolu = true; break }
+      }
+      if (dolu) { if (ust < 0) ust = y; alt = y }
+    }
+    if (ust >= 0) sonuc = { asc: (taban - ust) / REF, desc: (alt - taban) / REF }
+  } catch { /* tuval okunamadı → metriklere düşülür */ }
+  sureAdiOlcuBellek.set(glif, sonuc)
+  return sonuc
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -336,17 +555,26 @@ function satirlaraBol(ctx, metin, maxW) {
 
 // ════════════════════════════════════════════════════════════════
 // SAF ÇİZİM — bileşenden bağımsız, tek başına test edilebilir.
-// ayar: { W,H, arka, cerceve, karartma, arapca, meal, kaynak, imza, arapcaFont }
+// ayar: { W,H, arka, cerceve, karartma, arapca, meal, kaynak, sureNo, rahle, arapcaFont,
+//         guvenliUst, guvenliAlt }
 // dönüş: { olcek }  (0.45'e kadar inip metni sığdırır; altına inmez)
 // ════════════════════════════════════════════════════════════════
 export async function gorselCiz(ctx, ayar) {
-  const { W, H, arka, cerceve, karartma, arapca, meal, kaynak, imza, arapcaFont, yaziRengi } = ayar
+  const { W, H, arka, cerceve, karartma, arapca, meal, kaynak, arapcaFont, yaziRengi } = ayar
   // rozetNo: âyet numarası (varsa MushafAyetRozeti çizilir). secde: secde âyeti rozeti.
-  // rozetImg: ön-yüklenmiş süsleme görseli (source-in ile boyanır). logoImg: Vukuf logosu.
+  // rozetImg: ön-yüklenmiş süsleme görseli (source-in ile boyanır).
   const rozetNo = ayar.rozetNo || null
   const secde = !!ayar.secde
   const rozetImg = ayar.rozetImg || null
-  const logoImg = ayar.logoImg || null
+  // sureNo: kaynak satırının üstüne SÛRE BAŞLIĞINDAKİ hat fontuyla sûre adı yazılır.
+  const sureNo = Number(ayar.sureNo) || 0
+  const rahle = !!ayar.rahle
+  /* GÜVENLİ ALAN — yalnız TAM EKRANDA kullanılıyor (izleme modu). Arka plan bütün
+     ekranı kaplamaya devam ediyor, çerçeve ve yazı bu paylar kadar içeri alınıyor;
+     böylece çentiğin/ana ekran çizgisinin altında yazı kalmıyor ama kenarlarda
+     siyah bant da oluşmuyor. Dosyaya kaydedilen görselde ikisi de 0. */
+  const gUst = Math.max(0, Number(ayar.guvenliUst) || 0)
+  const gAlt = Math.max(0, Number(ayar.guvenliAlt) || 0)
   const rozetVar = !!(rozetNo && rozetImg && rozetImg.complete && rozetImg.naturalWidth > 0)
   // katman: "hepsi" (fotoğraf) | "arka" (yalnız arka plan) | "on" (karartma+çerçeve+yazı).
   // Videoda arka plan hareket ettiği için iki katman AYRI ön-çizilir, her karede birleştirilir.
@@ -398,7 +626,7 @@ export async function gorselCiz(ctx, ayar) {
 
   // 3) ÇERÇEVE
   const pay = S * 0.075
-  const cx0 = pay, cy0 = pay, cx1 = W - pay, cy1 = H - pay
+  const cx0 = pay, cy0 = pay + gUst, cx1 = W - pay, cy1 = H - pay - gAlt
   const kalin = Math.max(2, S * 0.0035)
   ctx.save()
   ctx.strokeStyle = vurguRenk
@@ -452,11 +680,14 @@ export async function gorselCiz(ctx, ayar) {
   // 4) METİN — tek ÖLÇEK ile hepsi birlikte küçülür/büyür (ikili arama)
   const icPay = cerceve === "yok" ? S * 0.10 : pay + S * 0.055
   // Kemerde üst kısım daralıyor → metin kutusu üstten ve yanlardan biraz daha içeri alınır
-  const icPayUst = icPay + (cerceve === "kemer" ? S * 0.075 : 0)
+  const icPayUst = icPay + gUst + (cerceve === "kemer" ? S * 0.075 : 0)
+  const icPayAlt = icPay + gAlt
   const kutuW = (W - icPay * 2) * (cerceve === "kemer" ? 0.9 : 1)
-  const kutuH = H - icPayUst - icPay
+  const kutuH = H - icPayUst - icPayAlt
   const mealVar   = !!meal
   const kaynakVar = !!kaynak
+  const sureAdiGlif = sureAdiGlifi(sureNo)
+  const sureAdiVar  = !!sureAdiGlif
 
   // İŞARETLERİ FONT ÇİZER — overlay yok. Fontlar onarıldı: KFGQPC'de uni0656 konturu düzeltildi,
   // me_quran'a U+0615 (ط durağı) ve U+08D1..08DE Osmanlı işaretleri eklendi. Böylece vakıf,
@@ -530,17 +761,53 @@ export async function gorselCiz(ctx, ayar) {
       bloklar.push({ tip: "meal", boy: b, satirlar: sat, yuk: sat.length * satirYuk, satirYuk })
       toplam += sat.length * satirYuk
     }
-    if (kaynakVar) {
+    if (kaynakVar || sureAdiVar) {
       const bo = S * 0.05 * olcek
+      bloklar.push({ tip: "bosluk", yuk: bo })
+      toplam += bo
+    }
+    /* SIRA (kullanıcı kararı): önce SÛRE BİLGİSİ (kaynak satırı), altında SÛRE ADI
+       hattı, en altta RAHLE. Yani hat, rahlenin hemen üzerinde duruyor. */
+    if (kaynakVar) {
       const b = S * 0.028 * olcek
       ctx.font = kucukFontYap(b)
       // Kaynak uzun olabilir (kitap · kısım yolu · sayfa) → KAÇ SATIR GEREKİYORSA o kadar
       // sarılır, KISALTILMAZ. Tamamı görünsün; sığmıyorsa genel ölçek zaten küçülür.
       const sat = satirlaraBol(ctx, kaynak, kutuW)
       const satirYuk = b * 1.4
-      bloklar.push({ tip: "bosluk", yuk: bo })
       bloklar.push({ tip: "kaynak", boy: b, satirlar: sat, yuk: sat.length * satirYuk, satirYuk })
-      toplam += bo + sat.length * satirYuk
+      toplam += sat.length * satirYuk
+    }
+    /* ⚠ YÜKSEKLİK: `actualBoundingBox*` TEK BAŞINA YETMİYOR. Sûre adı fontunun
+       özel alan (PUA) glifleri için bu değerler çok küçük (hatta sıfıra yakın)
+       dönebiliyor; blok neredeyse yüksekliksiz kalıyor ve glifin mürekkebi
+       yukarı taşıp KAYNAK SATIRININ ÜSTÜNE BİNİYORDU (cihazda görüldü).
+       Bu yüzden üç ölçünün EN BÜYÜĞÜ alınıyor: gerçek glif kutusu, fontun kendi
+       ascent/descent'i ve punto oranından bir taban. Fazla boşluk kalması,
+       üst üste binmeye göre kat kat iyi. */
+    if (sureAdiVar) {
+      const b = S * 0.062 * olcek
+      const o = sureAdiOlcusu(sureAdiGlif)
+      let asc, desc
+      if (o) { asc = o.asc * b; desc = o.desc * b }
+      else {
+        ctx.font = `${Math.round(b)}px ${SURE_ADI_FONT}`
+        const m = ctx.measureText(sureAdiGlif)
+        asc = Math.max(m.actualBoundingBoxAscent || 0, m.fontBoundingBoxAscent || 0, b * 0.88)
+        desc = Math.max(m.actualBoundingBoxDescent || 0, m.fontBoundingBoxDescent || 0, b * 0.26)
+      }
+      // Boşluğun ÇOĞU ÜSTTE: hat, üstteki sûre bilgisinden uzaklaşsın, altındaki
+      // rahleye yakın dursun (kullanıcı isteği).
+      const ustPay = b * 0.60
+      const yuk = ustPay + asc + desc + b * 0.06
+      bloklar.push({ tip: "sureAdi", boy: b, asc, desc, ustPay, yuk })
+      toplam += yuk
+    }
+    if (rahle) {
+      const gen = Math.min(kutuW * 0.34, S * 0.15) * olcek
+      const yuk = gen * RAHLE_ORAN + S * 0.014 * olcek   // çizim + üstünde ince nefes
+      bloklar.push({ tip: "rahle", gen, yuk })
+      toplam += yuk
     }
     return { bloklar, toplam }
   }
@@ -619,6 +886,20 @@ export async function gorselCiz(ctx, ayar) {
       ctx.font = kucukFontYap(b.boy)
       ctx.fillStyle = vurguRenk
       for (const st of b.satirlar) { ctx.fillText(st, W / 2, y + (b.satirYuk - b.boy) / 2); y += b.satirYuk }
+    } else if (b.tip === "sureAdi") {
+      // Ölçülen glif kutusu blok içine ortalanıyor; taban çizgisi ona göre bulunuyor.
+      ctx.font = `${Math.round(b.boy)}px ${SURE_ADI_FONT}`
+      ctx.fillStyle = vurguRenk
+      ctx.textAlign = "center"; ctx.textBaseline = "alphabetic"
+      try { ctx.direction = "rtl" } catch { /* eski tarayıcı */ }
+      ctx.fillText(sureAdiGlif, W / 2, y + b.ustPay + b.asc)
+      try { ctx.direction = "ltr" } catch { /* yoksay */ }
+      ctx.textBaseline = "top"
+      y += b.yuk
+    } else if (b.tip === "rahle") {
+      const cizYuk = b.gen * RAHLE_ORAN
+      rahleCiz(ctx, W / 2, y + (b.yuk - cizYuk), b.gen, vurguRenk, Math.max(1.2, S * 0.0022))
+      y += b.yuk
     } else if (b.tip === "rozet") {
       // Süslemeyi metin rengine boya (source-in) ve ortala; rakamı Scheherazade ile yaz.
       const rh = b.rh
@@ -664,16 +945,8 @@ export async function gorselCiz(ctx, ayar) {
     }
   }
 
-  // 5) İMZA — YALNIZ LOGO (ortalı). "Vukuf" yazısı kaldırıldı; logo tek başına imza görevi görür.
-  // Logo yüklenemezse imza hiç çizilmez (yazıya geri dönülmez).
-  if (imza) {
-    const logoVar = !!(logoImg && logoImg.complete && logoImg.naturalWidth > 0)
-    if (logoVar) {
-      const lb = Math.round(S * 0.040)              // logo kenarı (biraz büyütüldü)
-      const tabanY = H - S * 0.032                  // biraz daha AŞAĞI alındı
-      try { ctx.drawImage(logoImg, W / 2 - lb / 2, tabanY - lb * 0.78, lb, lb) } catch { /* logo çizilemedi */ }
-    }
-  }
+  // İMZA YOK — uygulamanın çıktıya imza koyma amacı yok (kullanıcı kararı).
+  // Görselin altında duran tek süs, kaynak satırının altındaki rahle çizimidir.
   return { olcek }
 }
 
@@ -699,9 +972,8 @@ export default function GorselOlustur({
 }) {
   const canvasRef = useRef(null)
   const dosyaRef = useRef(null)
-  // Âyet sonu rozeti süslemesi + Vukuf logosu — bir kez yüklenir, canvas'a senkron çizilir.
+  // Âyet sonu rozeti süslemesi — bir kez yüklenir, canvas'a senkron çizilir.
   const rozetImgRef = useRef(null)
-  const logoImgRef = useRef(null)
   const [varliklarSurum, setVarliklarSurum] = useState(0)   // görseller yüklenince yeniden çiz
   const [oran, setOran] = useState("4:5")
   const [arkaId, setArkaId] = useState("zumrut")
@@ -711,7 +983,7 @@ export default function GorselOlustur({
   const [arapcaAcik, setArapcaAcik] = useState(!!arapca)
   const [mealAcik, setMealAcik] = useState(!!meal)
   const [kaynakAcik, setKaynakAcik] = useState(true)
-  const [imzaAcik, setImzaAcik] = useState(true)
+  const [rahleAcik, setRahleAcik] = useState(true)
   const [gecerliGorseller, setGecerliGorseller] = useState([])   // dosyası GERÇEKTEN olanlar
   const [durum, setDurum] = useState("")                          // kullanıcıya kısa bilgi
   const [calisiyor, setCalisiyor] = useState(false)
@@ -845,26 +1117,38 @@ export default function GorselOlustur({
     cizelgeRef.current = []
   }, [acik, mod])
 
-  // Âyet rozeti süslemesi + Vukuf logosu — bir kez yüklenir (canvas'a senkron çizmek için).
+  // Âyet rozeti süslemesi — bir kez yüklenir (canvas'a senkron çizmek için).
   // Yüklenince `varliklarSurum` artar → foto önizlemesi ve video katmanı yeniden çizilir.
   useEffect(() => {
-    if (rozetImgRef.current && logoImgRef.current) return
+    if (rozetImgRef.current) return
     let iptal = false
-    const yuklendi = () => { if (!iptal) setVarliklarSurum(v => v + 1) }
-    if (!rozetImgRef.current) {
-      const rim = rozetGorseliUret()
-      rim.onload = () => { rozetImgRef.current = rim; yuklendi() }
-      rim.onerror = () => {}
-      if (rim.complete && rim.naturalWidth > 0) rozetImgRef.current = rim
-    }
-    if (!logoImgRef.current) {
-      const lim = new Image()
-      lim.onload = () => { logoImgRef.current = lim; yuklendi() }
-      lim.onerror = () => {}
-      lim.src = "/icon-512.png"
-    }
+    const rim = rozetGorseliUret()
+    rim.onload = () => { rozetImgRef.current = rim; if (!iptal) setVarliklarSurum(v => v + 1) }
+    rim.onerror = () => {}
+    if (rim.complete && rim.naturalWidth > 0) rozetImgRef.current = rim
     return () => { iptal = true }
   }, [])
+
+  // SÛRE ADI FONTU — canvas, CSS'teki @font-face'i KENDİLİĞİNDEN yüklemez; font
+  // hazır değilken çizilirse yedek yazı tipiyle boş kutu çıkar ve bir daha yenilenmez.
+  // Bu yüzden glif açıkça yüklenip bitince yeniden çizim tetikleniyor.
+  // Font gelmezse sûre adı HİÇ çizilmiyor: PUA glifi yedek yazı tipinde boş kutu (□)
+  // olarak çıkar ve görselin altında anlamsız bir kare kalırdı.
+  const sureAdiNo = ayet?.sureNo || 0
+  const [sureAdiHazir, setSureAdiHazir] = useState(false)
+  useEffect(() => {
+    const glif = sureAdiGlifi(sureAdiNo)
+    if (!acik || !glif || typeof document === "undefined" || !document.fonts) { setSureAdiHazir(false); return }
+    let iptal = false
+    document.fonts.load(`64px ${SURE_ADI_FONT}`, glif)
+      .then(yuzler => {
+        if (iptal) return
+        setSureAdiHazir(yuzler && yuzler.length > 0)
+        setVarliklarSurum(v => v + 1)
+      })
+      .catch(() => { if (!iptal) setSureAdiHazir(false) })
+    return () => { iptal = true }
+  }, [acik, sureAdiNo])
 
   // Hangi hazır fotoğraflar GERÇEKTEN var? (dosya yoksa listede hiç görünmesin)
   useEffect(() => {
@@ -909,16 +1193,17 @@ export default function GorselOlustur({
     arapca: arapcaAcik ? arapca : null,
     meal:   mealAcik   ? meal   : null,
     kaynak: kaynakAcik ? kaynak : null,
-    imza: imzaAcik,
+    // Sûre adı hattı kaynak satırının parçası — kaynak kapatılırsa o da kapanır.
+    sureNo: kaynakAcik && sureAdiHazir ? sureAdiNo : 0,
+    rahle: rahleAcik,
     arapcaFont,
     yaziRengi,
-    // Âyet sonu rozeti (foto: prop'tan; video: parça kendi rozetNo'sunu ek ile geçer) + logo
+    // Âyet sonu rozeti (foto: prop'tan; video: parça kendi rozetNo'sunu ek ile geçer)
     rozetNo: arapcaAcik ? (ayet?.ayetNo || null) : null,
     secde: arapcaAcik ? secde : false,
     rozetImg: rozetImgRef.current,
-    logoImg: logoImgRef.current,
     ...ek,
-  }), [olcu, secili, cerceve, karartma, arapca, meal, kaynak, arapcaAcik, mealAcik, kaynakAcik, imzaAcik, arapcaFont, yaziRengi, ayet, secde, varliklarSurum])
+  }), [olcu, secili, cerceve, karartma, arapca, meal, kaynak, arapcaAcik, mealAcik, kaynakAcik, rahleAcik, sureAdiNo, sureAdiHazir, arapcaFont, yaziRengi, ayet, secde, varliklarSurum])
 
   // ÇİZİM SIRA NUMARASI — `gorselCiz` asenkron (arka plan fotoğrafını bekliyor). Art arda
   // ayar değiştirilince ESKİ çizim SONRA bitip canvas'a basabiliyordu: kullanıcı ayarı
@@ -1049,7 +1334,7 @@ export default function GorselOlustur({
   hazirlaRef.current = katmanlariHazirla
   kareRef.current = videoKare
   // Önizlemenin yeniden kurulmasını gerektiren AYAR imzası (ilkel değerlerden)
-  const icerikImza = `${arapcaAcik ? 1 : 0}${mealAcik ? 1 : 0}${kaynakAcik ? 1 : 0}${imzaAcik ? 1 : 0}`
+  const icerikImza = `${arapcaAcik ? 1 : 0}${mealAcik ? 1 : 0}${kaynakAcik ? 1 : 0}${rahleAcik ? 1 : 0}`
     + `|${kapsam}|${(arapca || "").length}|${(meal || "").length}|${kaynak || ""}`
     + `|${secili.id}|${cerceve}|${karartma}|${yaziRengi || "oto"}|${arapcaFont || ""}|${videoParcalari.length}|${varliklarSurum}`
 
@@ -1405,14 +1690,21 @@ export default function GorselOlustur({
       onClick={kapat}
       style={{
         position: "fixed", inset: 0, zIndex: 420, background: "rgba(0,0,0,0.62)",
-        display: "flex", alignItems: "center", justifyContent: "center", padding: isMobile ? "10px" : "18px",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        /* ÇENTİK PAYI — panel %94 yükseklikte olduğu için üstte yalnız ~%3 boşluk
+           kalıyordu; iPhone'da çentik payı bundan büyük, panelin başlığı saatin
+           altında kalıyordu. Pay burada AÇIKÇA veriliyor ve panel `maxHeight:100%`
+           ile bu payın içinde kalıyor (94vh olsaydı payı aşabilirdi). */
+        padding: isMobile
+          ? "calc(env(safe-area-inset-top) + 10px) 10px calc(env(safe-area-inset-bottom) + 10px)"
+          : "18px",
       }}
     >
       <div
         className="vukuf-panel"
         onClick={e => e.stopPropagation()}
         style={{
-          width: "100%", maxWidth: isMobile ? "100%" : "820px", maxHeight: "94vh",
+          width: "100%", maxWidth: isMobile ? "100%" : "820px", maxHeight: "100%",
           display: "flex", flexDirection: "column",
           background: theme.background, border: `1px solid ${theme.border}`,
           borderRadius: "16px", overflow: "hidden", boxShadow: "0 18px 60px rgba(0,0,0,0.45)",
@@ -1539,7 +1831,7 @@ export default function GorselOlustur({
             {anahtar("Âyet (Arapça)", arapcaAcik, setArapcaAcik, !arapca)}
             {anahtar("Meal / Metin", mealAcik, setMealAcik, !meal)}
             {anahtar("Kaynak", kaynakAcik, setKaynakAcik, !kaynak)}
-            {anahtar("Vukuf imzası", imzaAcik, setImzaAcik, false)}
+            {anahtar("Rahle süsü", rahleAcik, setRahleAcik, false)}
           </div>
 
           {/* ARKA PLAN */}

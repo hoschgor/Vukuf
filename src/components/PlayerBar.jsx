@@ -7,6 +7,37 @@ import { KARILAR } from "../data/hooks/useAudioPlayer"
 import { useMediaQuery } from "../data/hooks/useMediaQuery"
 import MushafPlayButton from "./MushafPlayButton"
 
+/* ── ÇEVİRİ (MEAL) ve İZLEME SİMGELERİ ───────────────────────────────────────
+   lucide'da ikisinin de karşılığı yok: "Languages" Latin-Latin, "Maximize" ise
+   yalnız tam ekran anlatıyor. Bu yüzden elde çizildiler; ikisi de 24'lük ızgara,
+   `currentColor` ve düğmenin kendi rengini alıyor. Çeviri simgesi Arapça kâse +
+   nokta → ok → Latin "A" düzeninde; izleme simgesi tam ekran köşeleri + oynat. */
+function CeviriIkonu({ size = 17 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M2.4 3.2c0 4.3 1.9 6.6 4.4 6.6s4.4-2.3 4.4-6.6" />
+      <circle cx="6.8" cy="12.1" r="1" fill="currentColor" stroke="none" />
+      <path d="M12.3 22 16.8 12.1h1.3L22.6 22" />
+      <path d="M14.1 19.1h6.6" />
+      <path d="M2.6 16.6h5.6" />
+      <path d="M6.7 14.9l1.7 1.7-1.7 1.7" />
+    </svg>
+  )
+}
+function IzlemeIkonu({ size = 17 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M3 8.2V4.6A1.6 1.6 0 0 1 4.6 3H8.2" />
+      <path d="M15.8 3h3.6A1.6 1.6 0 0 1 21 4.6v3.6" />
+      <path d="M21 15.8v3.6a1.6 1.6 0 0 1-1.6 1.6h-3.6" />
+      <path d="M8.2 21H4.6A1.6 1.6 0 0 1 3 19.4v-3.6" />
+      <path d="M10.3 9v6l5-3z" fill="currentColor" stroke="none" />
+    </svg>
+  )
+}
+
 
 export default function PlayerBar({
   player,
@@ -21,6 +52,10 @@ export default function PlayerBar({
   onOlcum,
   onDonguAyar,          // döngü/tekrar ayar arayüzünü aç (KuranOkuma yönetir)
   tekrarAktif = false,  // bir tekrar modu seçili mi (buton vurgusu)
+  // Meal ve izleme modları — ayar dişlisi BAR'A KONMADI: ortak ayar paneline meal
+  // penceresinin kenarından ve izleme ekranından giriliyor, bar kalabalıklaşmasın.
+  onCeviri, ceviriAktif = false,
+  onIzleme, izlemeAktif = false,
 }) {
   const {
     durum, aktifAyet, kariId, duraklat, devamEt, durdur, oncekiAyet, sonrakiAyet,
@@ -278,6 +313,40 @@ export default function PlayerBar({
         >
           <Glasses size={isMobile ? 17 : 19} />
         </button>
+
+        {/* ÇEVİRİ — meal penceresini aç/kapat (çalan âyetin mealini takip eder) */}
+        {onCeviri && (
+          <button
+            onClick={onCeviri}
+            title={ceviriAktif ? "Meal penceresini kapat" : "Meal (çeviri) penceresini aç"}
+            style={{
+              display: "flex", alignItems: "center", justifyContent: "center",
+              width: isMobile ? "27px" : "29px", height: isMobile ? "27px" : "29px", borderRadius: "50%",
+              border: "none", cursor: "pointer", flexShrink: 0, touchAction: "manipulation", padding: 0,
+              background: ceviriAktif ? theme.accent : "transparent",
+              color: ceviriAktif ? "#fff" : theme.textSecondary,
+            }}
+          >
+            <CeviriIkonu size={isMobile ? 16 : 17} />
+          </button>
+        )}
+
+        {/* İZLEME — tam ekranda âyetleri kâri sesiyle birlikte ilerlet */}
+        {onIzleme && (
+          <button
+            onClick={onIzleme}
+            title={izlemeAktif ? "İzleme modundan çık" : "İzleme modu (tam ekran)"}
+            style={{
+              display: "flex", alignItems: "center", justifyContent: "center",
+              width: isMobile ? "27px" : "29px", height: isMobile ? "27px" : "29px", borderRadius: "50%",
+              border: "none", cursor: "pointer", flexShrink: 0, touchAction: "manipulation", padding: 0,
+              background: izlemeAktif ? theme.accent : "transparent",
+              color: izlemeAktif ? "#fff" : theme.textSecondary,
+            }}
+          >
+            <IzlemeIkonu size={isMobile ? 16 : 17} />
+          </button>
+        )}
 
         {/* DÖNGÜ / TEKRAR — ayar arayüzünü açar (sayfa/ayet/sure tekrarı) */}
         <button

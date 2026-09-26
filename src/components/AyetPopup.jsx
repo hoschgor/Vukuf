@@ -29,7 +29,9 @@ export default function AyetPopup({ sure, ayetNo, meal, konum, player, theme, on
     } else if (duraklatildi) {
       player.devamEt()
     } else {
-      player.ayetCal(sure.id, ayetNo)
+      // Âyet sayısı da veriliyor: oynatıcı kuyruğa sûrenin tamamını koyup o
+      // âyetten başlıyor, böylece ileri/geri düğmeleri çalışıyor.
+      player.ayetCal(sure.id, ayetNo, sure.ayetSayisi)
     }
   }
 

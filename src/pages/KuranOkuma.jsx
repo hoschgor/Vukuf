@@ -28,6 +28,8 @@ import IosSwitch from "../components/IosSwitch"
 import PanelAyirac, { PanelAcilir, panelBolumeHizala } from "../components/PanelAyirac"
 import GeriIkonu from "../components/GeriIkonu"
 import AyetPopup from "../components/AyetPopup"
+import MealPopup from "../components/MealPopup"
+import IzlemeModu from "../components/IzlemeModu"
 import { barSatirOlc } from "../components/BarSiraPaneli"
 import GorselOlustur from "../components/GorselOlustur"
 import { useMushaf, sureBaslangicSayfasi, ayetSayfasi } from "../data/hooks/useMushaf"
@@ -732,7 +734,7 @@ const MOBIL_CIHAZ = (() => {
    yüzden abartılmamalı.
    ⚠ ÜÇ DOSYADA AYNI OLMALI: Navbar.jsx · KuranOkuma.jsx · OkumaEkrani.jsx
    ───────────────────────────────────────────────────────────────────────── */
-const UST_CENTIK_EK = 10
+const UST_CENTIK_EK = 6
 
 const PERDE_KOYULUK    = 0.22
 const PERDE_ORTA       = 0.06
@@ -746,20 +748,6 @@ const PERDE_MASKESI = `linear-gradient(to bottom, rgba(0,0,0,${PERDE_KOYULUK}) 0
    sıçrama üretiyordu (ölçüldü: sayfa başına 160 px). Uygulaması düzeltildi,
    ama asıl dönme hızını sağlayan şey bu değil (o MOBIL_CIHAZ idi), o yüzden
    varsayılan güvenli tarafta bırakıldı. */
-/* ════════════════════════════════════════════════════════════════════════════
-   GEÇİCİ TEŞHİS CETVELİ — İŞ BİTİNCE `false` YAP
-   ════════════════════════════════════════════════════════════════════════════
-   Niçin var: kullanıcı bar ÜSTTEYKEN de (perde artık hiç çizilmiyor) üst kısmı
-   soluk görüyor. Demek ki soluklaştıran şey bizim perdemiz DEĞİL. Elde kalan üç
-   ihtimali ayırt etmek için tahmin değil ÖLÇÜM gerekiyor:
-     (1) yeni paket telefona hiç ulaşmamış (eski JS çalışıyor),
-     (2) içerik ekranın tepesinden başlamıyor (çentik payı hâlâ bir yerden geliyor),
-     (3) ikisi de değil → soluklaştıran şey iOS'un kendisi, uygulama değil.
-   Cetvel SAYDAM: yalnız kırmızı çizgiler ve rakamlar çizer, altındaki yazı
-   görünmeye devam eder — "neyin solduğunu" görmeyi engellemez.
-   ════════════════════════════════════════════════════════════════════════════ */
-const TESHIS_UST = false
-const TESHIS_SURUM = "V166"
 
 const HIZLI_YERLESIM = false
 const YAKIN_SAYFA = 3
@@ -1024,6 +1012,18 @@ export default function KuranOkuma({ kitap }) {
   const gorselAcRef = useRef(null)
   const [gorselVeri, setGorselVeri] = useState(null)
   useEffect(() => { gorselModuRef.current = gorselModu }, [gorselModu])
+
+  // MEAL MODU — PlayerBar'daki çeviri düğmesi. Pencere çalan âyeti takip ettiği
+  // için ayrı bir "hangi âyet" durumu YOK; tercih ise kalıcı.
+  const [mealModu, setMealModu] = useState(() => {
+    try { return localStorage.getItem("vukuf-meal-modu") === "true" } catch { return false }
+  })
+  useEffect(() => {
+    try { localStorage.setItem("vukuf-meal-modu", String(mealModu)) } catch { /* yoksay */ }
+  }, [mealModu])
+
+  // İZLEME MODU — tam ekran. Kalıcı DEĞİL: uygulama izleme ekranında açılmasın.
+  const [izlemeModu, setIzlemeModu] = useState(false)
   
 
   const [kayitlar, setKayitlar] = useState(() => {
@@ -1041,6 +1041,34 @@ export default function KuranOkuma({ kitap }) {
   const [satirAraligi, setSatirAraligi] = useState(() =>
     parseFloat(localStorage.getItem("vukuf-satir-araligi") || "2.4")
   )
+
+  /* ÇENTİK PAYI — TAHMİN DEĞİL ÖLÇÜM.
+     Bar ALTTAYKEN üst tarafta hiçbir opak eleman yok; kök kapsayıcı `100vh` ve
+     güvenli alan payı vermiyor, yani içerik ekranın gerçek tepesinden (y=0)
+     başlıyor. Bu yüzden odaklanılan âyet 16px payla hizalanınca saatin/perdenin
+     altında kalıyordu. `env(safe-area-inset-top)` CSS'te bir sayı değil; görünmez
+     bir kutuya yükseklik olarak verilip ÖLÇÜLÜYOR. Çentiksiz cihazda 0 döner,
+     dolayısıyla masaüstü ve normal tarayıcı davranışı hiç değişmez. */
+  const [ustCentik, setUstCentik] = useState(0)
+  useEffect(() => {
+    const kutu = document.createElement("div")
+    kutu.setAttribute("aria-hidden", "true")
+    kutu.style.cssText = "position:fixed;top:0;left:0;width:0;height:env(safe-area-inset-top);visibility:hidden;pointer-events:none"
+    document.body.appendChild(kutu)
+    const oku = () => setUstCentik(Math.round(kutu.getBoundingClientRect().height) || 0)
+    oku()
+    window.addEventListener("resize", oku)
+    window.addEventListener("orientationchange", oku)
+    return () => {
+      window.removeEventListener("resize", oku)
+      window.removeEventListener("orientationchange", oku)
+      kutu.remove()
+    }
+  }, [])
+
+  // Meal penceresinin ÖLÇÜLEN yeri ve boyu: { yuk, konum } | null. Üstteyken
+  // hizalama payına giriyor, yoksa odaklanan âyet pencerenin arkasında kalıyor.
+  const [mealOlcu, setMealOlcu] = useState(null)
   // TAM GENİŞLİK: sayfa metnini ekran boyunca yayar, kenar boşluğu bırakmaz (web + mobil;
   // yüksek çözünürlüklü ekranda küçük puntoyla tam ekran okumak isteyenler için).
   const [tamGenislik, setTamGenislik] = useState(() => localStorage.getItem("vukuf-tam-genislik") === "true")
@@ -1060,6 +1088,19 @@ export default function KuranOkuma({ kitap }) {
   // ── Bar
   const [barGorunur, setBarGorunur]       = useState(true)
   const [barKonum, setBarKonum]           = useState(() => localStorage.getItem("vukuf-bar-konum") || "alt")
+
+  /* ÜST SOLMA PERDESİ — ölçüleri tek yerde. (Hizalama payı `ustPay` bunu okuduğu
+     için tanım ondan ÖNCE duruyor; çizim çok aşağıda.)
+     perdeBandi: bandın yüksekliği, YALNIZ satır payı kadar. Çentik payı EKLENMİYOR;
+       `black-translucent` ile içeriğin üstü zaten ekranın gerçek tepesinde (y=0),
+       eklemek çift sayım olur ve bandı üç katına çıkarır.
+     TABAN YOK: eskiden `Math.max(24, …)` vardı, bu yüzden PERDE_YUKSEKLIK 0 yapılsa
+       bile bant 24px kalıyor, ayar "bağlı değilmiş" gibi görünüyordu. Artık 0 = perde yok.
+     perdeVar: bar ÜSTTEYKEN perde hiç çizilmiyor — bar o bölgeyi zaten opak kaplıyor. */
+  const perdeBandi = PERDE_YUKSEKLIK > 0
+    ? Math.min(60, Math.round(yaziBoyutu * satirAraligi * PERDE_YUKSEKLIK))
+    : 0
+  const perdeVar = barKonum === "alt" && PERDE_KOYULUK > 0 && perdeBandi > 0
   const [sadeMode, setSadeMode]           = useState(() => localStorage.getItem("vukuf-sade-mod") === "true")
   const [otomatikGizleme, setOtomatikGizleme] = useState(() => localStorage.getItem("vukuf-otomatik-gizleme") === "true")   // varsayılan KAPALI (yeni kullanıcı bar gizlemeden başlar)
   const [gizlemeSuresi, setGizlemeSuresi] = useState(() => parseInt(localStorage.getItem("vukuf-gizleme-suresi") || "5"))
@@ -1379,7 +1420,19 @@ const maxWidth = useMemo(() =>
   }, [menuAcik])
 
   const [barYuksekligi, setBarYuksekligi] = useState(48)
-  const barRef = useRef(null)
+  /* ⚠ BAR DÜĞÜMÜ DURUMDA TUTULUYOR — ÖLÇÜMÜN KAYNAK HATASI BUYDU.
+     `Bar` ağaçta İKİ AYRI YERDE render ediliyor ({barKonum === "ust" && Bar} ve
+     {barKonum === "alt" && Bar}). Konum değişince React eskisini söküp yenisini
+     monte ediyor, yani DOM düğümü DEĞİŞİYOR. Ölçüm efektinin bağımlılığı
+     [yukleniyor] olduğu için efekt yeniden çalışmıyor ve ResizeObserver
+     SÖKÜLMÜŞ düğümü gözlemeye devam ediyordu → `barYuksekligi` eski konumun
+     değerinde donuyordu. PWA'da iki konumun yüksekliği çok farklı (üstte çentik
+     payı var, altta yok), sonuç: bar aşağı alınınca oynatıcı çubuğu barın epey
+     ÜSTÜNDE kalıyor, yukarı alınınca saatin/perdenin ALTINA giriyordu.
+     Çözüm: düğümü geri-çağırma ref'i ile DURUMA yazmak; düğüm değişince efekt
+     kendiliğinden yeniden bağlanıyor. Bağımlılık listesi unutmaya kapalı. */
+  const [barDugumu, setBarDugumu] = useState(null)
+  const barOlcRef = useCallback((el) => setBarDugumu(el), [])
   // PWA (standalone) modu: iOS'ta safe-area-inset-bottom gerçek ~34px → alt bar fazla boşluklu.
   // Tarayıcıda inset ≈0. Bu yüzden safe-area'yı yalnız PWA'da bir miktar kırpıyoruz.
   const [pwaModu, setPwaModu] = useState(() => {
@@ -1406,9 +1459,9 @@ const maxWidth = useMemo(() =>
   const [barSatirKes, setBarSatirKes] = useState([])   // ayraçların order değerleri
 
 useLayoutEffect(() => {
-  if (!barRef.current) return
+  if (!barDugumu) return
   const olcSatir = () => {
-    const el = barRef.current
+    const el = barDugumu
     if (!el) return
     const { cokSatir, kes } = barSatirOlc(el)
     setBarCokSatir(cokSatir)
@@ -1416,10 +1469,10 @@ useLayoutEffect(() => {
   }
   const observer = new ResizeObserver(() => {
     // offsetHeight = padding + border dahil (contentRect padding'i atlıyordu → player bara biniyordu)
-    if (barRef.current) setBarYuksekligi(Math.ceil(barRef.current.offsetHeight))
+    setBarYuksekligi(Math.ceil(barDugumu.offsetHeight))
     olcSatir()
   })
-  observer.observe(barRef.current)
+  observer.observe(barDugumu)
   return () => observer.disconnect()
   // ⚠ BAĞIMLILIK DİZİSİ ŞARTTI — eskiden YOKTU ve bu bir döngü kuruyordu:
   // dizi olmayınca efekt HER RENDER'DA yeniden çalışıyor, temizleyici observer'ı
@@ -1433,7 +1486,7 @@ useLayoutEffect(() => {
   // `yukleniyor` bağımlılıkta ÇÜNKÜ kitap yüklenirken bar henüz DOM'da değil
   // (yukarıda erken return var); dizi boş bırakılırsa efekt bir daha hiç
   // çalışmaz ve bar hiç ölçülmez. (Aynı tuzağa OkumaEkrani'nde düşülmüştü.)
-}, [yukleniyor])
+}, [barDugumu, yukleniyor])
 
 // Player kapanınca ölçülen yüksekliği sıfırla (tahmine dön)
 useEffect(() => { if (player.durum === "kapali") setPlayerYuk(0) }, [player.durum])
@@ -2138,11 +2191,16 @@ const kayitSil = useCallback((id) => {
 
 const sayfayaKaydir = useCallback((sayfaNo) => { sayfayaHizala(sayfaNo, { ust: 12 }) }, [sayfayaHizala])
 
-// Üst içerik payı (bar/oynatıcı örtüşü) — hizalama ofseti
-// NOT: sûre-git / âyet-git BUNU kullanır ve kusursuz çalışıyor → DOKUNULMADI.
+// Üst içerik payı (bar/oynatıcı örtüşü) — hizalama ofseti.
+// Sûre-git / âyet-git bunu kullanıyor; ÇALIŞAN DAVRANIŞ KORUNDU: eklenen iki terim
+// de ilgili engel YOKKEN 0 döner, yani eski durumların hiçbirinde sayı değişmez.
+//   • ustCentik + perdeBandi: yalnız bar ALTTAYKEN — üstte opak bir şey olmadığı
+//     için 16px pay âyeti saatin/perdenin altına bırakıyordu.
+//   • mealUstEngel: meal penceresi ÜSTTE ve açıkken; kapalıyken 0.
+const mealUstEngel = () => (mealOlcu && mealOlcu.konum === "ust" ? mealOlcu.yuk + 10 : 0)
 const ustPay = () => (barKonum === "ust"
-  ? ((barGorunur ? barYuksekligi : 0) + (player.durum !== "kapali" ? playerBarYuksekligi : 0) + 8)
-  : 16)
+  ? ((barGorunur ? barYuksekligi : 0) + (player.durum !== "kapali" ? playerBarYuksekligi : 0) + 8 + mealUstEngel())
+  : (ustCentik + (perdeVar ? perdeBandi : 0) + 16 + mealUstEngel()))
 
 // ── KAYDA GİDİŞ PAYI ────────────────────────────────────────────────────────
 // Sûre/âyet gidişinden AYRI tutuldu: oralar ölçülü bir elemana (âyet başı, sûre
@@ -2656,6 +2714,63 @@ function sureGit(sureId, ayetNo) {
     () => (gorselVeri?.sureNo ? { sureNo: gorselVeri.sureNo, ayetNo: gorselVeri.ayetNo } : null),
     [gorselVeri?.sureNo, gorselVeri?.ayetNo]
   )
+
+  /* İzleme modunun içerik sağlayıcısı: çalan âyetin Arapçası, meali ve kaynağı.
+     Arapça metin `ayetArapcasi` ile mushaf verisinden geliyor — görsel modunun
+     kullandığı işlevin aynısı, yani iki ekran aynı metni gösteriyor. */
+  const izlemeIcerik = useCallback((a) => {
+    if (!a) return null
+    const hedef = a.besmeleIcin || a.sureNo
+    const sure = mushafData.find(x => x.id === hedef)
+    if (a.besmeleIcin) {
+      // Besmele çalıyor: metin Fâtiha 1:1, kaynak ise GİRİLEN sûre.
+      const { metin } = ayetArapcasi(1, 1)
+      return {
+        arapca: metin || null,
+        meal: "Rahmân ve Rahîm olan Allah'ın adıyla.",
+        kaynak: sure ? `${sure.isim} sûresi` : "",
+        sureNo: hedef, ayetNo: null, secde: false,
+      }
+    }
+    const { metin, secde } = ayetArapcasi(a.sureNo, a.ayetNo)
+    return {
+      arapca: metin || null,
+      meal: ayetMeal[a.sureNo]?.[a.ayetNo] || null,
+      kaynak: sure ? `${sure.isim} sûresi, ${a.ayetNo}. âyet` : "",
+      sureNo: a.sureNo, ayetNo: a.ayetNo, secde,
+    }
+  }, [mushafData, ayetArapcasi])
+
+  /* İzleme düğmesi: ses çalmıyorsa önce oynatmayı başlatır (karar: izleme kâri
+     sesine bağlı ilerler, sessiz izleme yok). Duraklatılmışsa kaldığı yerden. */
+  const izlemeAcKapa = useCallback(() => {
+    setIzlemeModu(acikMi => {
+      if (acikMi) return false
+      if (player.durum === "duraklatildi") player.devamEt()
+      else if (player.durum === "kapali") {
+        const s = mevcutSureBilgisi
+        if (!s) return false           // hangi sûrede olduğumuz bilinmiyorsa açma
+        player.sureCal(s.id, s.ayetSayisi, 1)
+      }
+      return true
+    })
+  }, [player, mevcutSureBilgisi])
+
+  // Meal penceresinin içeriği: çalan âyet. `besmeleIcin` doluysa henüz sûrenin
+  // besmelesi okunuyor demektir — âyet numarası verilmez.
+  const mealPencere = useMemo(() => {
+    const a = player.aktifAyet
+    if (!a) return null
+    const sureNo = a.besmeleIcin || a.sureNo
+    const sure = sureler.find(s => s.id === sureNo)
+    if (!sure) return null
+    return {
+      sure,
+      besmeleMi: !!a.besmeleIcin,
+      ayetNo: a.besmeleIcin ? null : a.ayetNo,
+      meal: a.besmeleIcin ? null : (ayetMeal[sureNo]?.[a.ayetNo] || null),
+    }
+  }, [player.aktifAyet, sureler])
   const gorselSureBilgiProp = useMemo(() => {
     if (!gorselVeri?.sureNo) return null
     const sr = mushafData.find(x => x.id === gorselVeri.sureNo)
@@ -3514,45 +3629,9 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
     ...(!barCokSatir && k === ilkSagKey ? { marginLeft: "auto" } : {}),
   })
 
-  /* ÜST SOLMA PERDESİ — ölçüleri tek yerde.
-     perdeBandi: bandın yüksekliği, YALNIZ satır payı kadar. Çentik payı EKLENMİYOR;
-       `black-translucent` ile içeriğin üstü zaten ekranın gerçek tepesinde (y=0),
-       eklemek çift sayım olur ve bandı üç katına çıkarır (ayrıntı render yerindeki notta).
-     TABAN YOK: eskiden `Math.max(24, …)` vardı, bu yüzden PERDE_YUKSEKLIK 0 yapılsa
-       bile bant 24px kalıyor, ayar "bağlı değilmiş" gibi görünüyordu. Artık 0 = perde yok.
-     perdeVar: bar ÜSTTEYKEN perde hiç çizilmiyor — bar o bölgeyi zaten opak kaplıyor. */
-  const perdeBandi = PERDE_YUKSEKLIK > 0
-    ? Math.min(60, Math.round(yaziBoyutu * satirAraligi * PERDE_YUKSEKLIK))
-    : 0
-  const perdeVar = barKonum === "alt" && PERDE_KOYULUK > 0 && perdeBandi > 0
-
-  // ── GEÇİCİ TEŞHİS ÖLÇÜMÜ (TESHIS_UST) ──────────────────────────────────────
-  const insetOlcRef = useRef(null)
-  const [teshis, setTeshis] = useState(null)
-  useEffect(() => {
-    if (!TESHIS_UST) return
-    const oku = () => {
-      const el = insetOlcRef.current
-      let pwa = false
-      try {
-        pwa = window.navigator.standalone === true ||
-              window.matchMedia("(display-mode: standalone)").matches
-      } catch {}
-      setTeshis({
-        inset: el ? Math.round(el.getBoundingClientRect().height) : -1,
-        ic: Math.round(window.innerHeight),
-        ekran: window.screen ? Math.round(window.screen.height) : 0,
-        pwa,
-      })
-    }
-    oku()
-    window.addEventListener("resize", oku)
-    return () => window.removeEventListener("resize", oku)
-  }, [])
-
   const Bar = (
   <div
-    ref={barRef}
+    ref={barOlcRef}
     className="mushaf-bar"
     style={{
       position: "fixed", left: 0, right: 0,
@@ -4605,6 +4684,41 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
           }}
           onDonguAyar={acDonguAyar}
           tekrarAktif={!!tekrarModu}
+          onCeviri={() => setMealModu(v => !v)}
+          ceviriAktif={mealModu}
+          onIzleme={izlemeAcKapa}
+          izlemeAktif={izlemeModu}
+        />
+
+        {/* İZLEME MODU — tam ekran; çizim görsel modunun `gorselCiz`i ile aynı */}
+        <IzlemeModu
+          acik={izlemeModu}
+          kapat={() => setIzlemeModu(false)}
+          player={player}
+          icerikAl={izlemeIcerik}
+          arapcaFont={aktifArapcaFont.style}
+          theme={theme}
+          isMobile={isMobile}
+        />
+
+        {/* MEAL PENCERESİ — oynatıcı açıkken ve meal modu seçiliyken görünür.
+            Konum/genişlik ayarı kendi dişlisinde (ortak panel). */}
+        <MealPopup
+          acik={mealModu && player.durum !== "kapali" && !!mealPencere}
+          sure={mealPencere?.sure}
+          ayetNo={mealPencere?.ayetNo}
+          meal={mealPencere?.meal}
+          besmeleMi={mealPencere?.besmeleMi}
+          theme={theme}
+          isMobile={isMobile}
+          altBosluk={barKonum === "alt"
+            ? (barGorunur ? barYuksekligi : 0) + (player.durum !== "kapali" ? playerBarYuksekligi : 0)
+            : 0}
+          ustBosluk={barKonum === "ust"
+            ? (barGorunur ? barYuksekligi : 0) + (player.durum !== "kapali" ? playerBarYuksekligi : 0)
+            : 0}
+          onOlcum={setMealOlcu}
+          onKapat={() => setMealModu(false)}
         />
         {/* Akış modeli: tüm sayfalar normal belge akışında (SayfaBlok ile tembel içerik) */}
         <div
@@ -4870,14 +4984,16 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
             onClick={() => setSiraAcik(false)}
             style={{
               position: "fixed", inset: 0, zIndex: 400, background: "rgba(0,0,0,0.45)",
-              display: "flex", alignItems: "center", justifyContent: "center", padding: "16px",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              // Çentik payı: ortalanan panel kısa/uzun ekranda saatin altına girmesin
+              padding: "calc(env(safe-area-inset-top) + 16px) 16px calc(env(safe-area-inset-bottom) + 16px)",
             }}
           >
             <div
               onClick={(e) => e.stopPropagation()}
               style={{
                 width: "100%", maxWidth: isMobile ? "340px" : "410px",
-                maxHeight: "84vh", display: "flex", flexDirection: "column",
+                maxHeight: "100%", display: "flex", flexDirection: "column",
                 background: theme.background, border: `1px solid ${theme.border}`,
                 borderRadius: "14px", boxShadow: "0 12px 40px rgba(0,0,0,0.35)", overflow: "hidden",
               }}
@@ -4993,7 +5109,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
               position: "fixed", inset: 0, zIndex: 400,
               background: "rgba(0,0,0,0.45)",
               display: "flex", alignItems: "center", justifyContent: "center",
-              padding: "16px",
+              padding: "calc(env(safe-area-inset-top) + 16px) 16px calc(env(safe-area-inset-bottom) + 16px)",
               animation: "vukufBilgiFade 0.18s ease",
             }}
           >
@@ -5003,7 +5119,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
               onClick={(e) => e.stopPropagation()}
               style={{
                 width: "100%", maxWidth: isMobile ? "340px" : "420px",
-                maxHeight: "78vh", display: "flex", flexDirection: "column",
+                maxHeight: "100%", display: "flex", flexDirection: "column",
                 background: theme.background,
                 border: `1px solid ${theme.border}`,
                 borderRadius: "14px",
@@ -5137,45 +5253,6 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
             "0 yaptığım hâlde bir şey değişmedi" demesinin sebebi tam olarak bu —
             manifest'le ilgisi yok, ayar zaten bağlı değildi.
             Şimdi bant yalnız satır payı kadar (~34px) ve PERDE_YUKSEKLIK 0 = perde yok. */}
-        {TESHIS_UST && (
-          <div aria-hidden="true" style={{
-            position: "fixed", left: 0, right: 0, top: 0, height: "160px",
-            zIndex: 9998, pointerEvents: "none",
-            font: "11px/1.2 ui-monospace, monospace", color: "#d40000",
-          }}>
-            {/* env(safe-area-inset-top) değerini GERÇEKTEN ölçen görünmez kutu */}
-            <div ref={insetOlcRef} style={{
-              position: "absolute", left: 0, width: "1px",
-              top: 0, height: "env(safe-area-inset-top)",
-            }} />
-            {/* 20px'de bir yatay çizgi + rakam: içerik ekranın neresinden başlıyor? */}
-            {[0, 20, 40, 60, 80, 100, 120, 140].map(y => (
-              <div key={y} style={{ position: "absolute", left: 0, right: 0, top: `${y}px` }}>
-                <div style={{ height: "1px", background: "rgba(212,0,0,0.55)" }} />
-                <span style={{ position: "absolute", left: "2px", top: "1px" }}>{y}</span>
-              </div>
-            ))}
-            {/* Cihazın bildirdiği çentik payı — KESİK çizgi */}
-            {teshis && teshis.inset >= 0 && (
-              <div style={{
-                position: "absolute", left: 0, right: 0, top: `${teshis.inset}px`,
-                borderTop: "2px dashed #0066d4",
-              }}>
-                <span style={{ position: "absolute", right: "2px", top: "2px", color: "#0066d4" }}>
-                  inset {teshis.inset}
-                </span>
-              </div>
-            )}
-            <div style={{
-              position: "absolute", right: "2px", top: "1px",
-              background: "rgba(255,255,255,0.85)", padding: "1px 3px", borderRadius: "3px",
-            }}>
-              {TESHIS_SURUM} · bar:{barKonum} · perde:{perdeVar ? perdeBandi + "px" : "YOK"}
-              {teshis ? ` · ${teshis.pwa ? "PWA" : "web"} ${teshis.ic}/${teshis.ekran}` : ""}
-            </div>
-          </div>
-        )}
-
         {perdeVar && (
           <div
             aria-hidden="true"

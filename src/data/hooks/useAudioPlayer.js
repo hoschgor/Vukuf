@@ -41,6 +41,66 @@ export function besmeleUrl(kariId) {
 
 const kariEtiket = (id) => (KARILAR.find(k => k.id === id)?.label || "Kur'ân-ı Kerîm")
 
+/* ── ÖNDEN BAYT İNDİRME — âyet geçişindeki uzun sessizliğin çözümü ─────────
+ *  ÇİFT TAMPON TEK BAŞINA iOS'TA İŞE YARAMIYORDU. Boştaki <audio>'ya sıradaki
+ *  âyetin adresi verilip `load()` çağrılıyordu; masaüstü Chromium bunu gerçekten
+ *  doldurur, ama iOS WebKit çalınmayan bir ses elemanı için VERİ İNDİRMEZ —
+ *  `preload="auto"` da `load()` da yok sayılır, dosya ancak play() ile istenir.
+ *  Sonuç: her geçişte everyayah'a o anda gidiliyor ve sessizlik, sunucunun
+ *  yanıt süresi kadar uzuyordu.
+ *  ÖLÇÜLDÜ (Chromium'da iOS davranışı taklit edilerek, gerçek bu kanca ile):
+ *  sunucu gecikmesi 0,35 sn → geçiş başına ~365 ms sessizlik; 0,70 sn → ~714 ms.
+ *  ÇÖZÜM: sıradaki âyetlerin BAYTLARI `fetch` ile önceden indirilip bellekte
+ *  Blob olarak tutuluyor; boştaki elemana bu yerel adres (blob:) veriliyor.
+ *  Yerel kaynak ağ beklemeden çalar — iOS önden doldurmasa bile.
+ *  Kâri sunucusu CORS veriyor (v171'de kullanıcının cihazında ölçüldü);
+ *  indirme başarısız olursa eski yol (doğrudan ağ adresi) aynen kullanılıyor.
+ *  Pencere küçük tutuluyor: önceki + çalan + ONDEN kadar sonraki; dışarıda
+ *  kalanlar serbest bırakılıyor (uzun âyet 192 kbps'te birkaç MB). */
+const ONDEN = 2
+
+/* ── ERKEN BAŞLATMA — kalan son milisaniyeler ──────────────────────────────
+ *  Baytlar hazır olsa da "ended" olayını bekleyip sonra play() demek iki gecikme
+ *  ekliyor: olayın gelişi ve yeni elemanın çalmaya BAŞLAMA süresi. Bu süre
+ *  cihaza göre çok değişiyor (masaüstü Chromium ~10 ms; iOS'ta yeni bir ses
+ *  elemanı çok daha yavaş açılıyor). Sabit bir sayı TAHMİN ETMEK yerine cihazın
+ *  kendisinde ÖLÇÜLÜYOR: yerel kaynaktan her başlatmada play() çağrısı ile
+ *  "playing" olayı arasındaki süre ortalamaya katılıyor ve sıradaki âyet, çalan
+ *  âyetin bitişinden TAM O KADAR önce başlatılıyor.
+ *  GÜVENLİK: çalan âyet ASLA erken kesilmiyor — kendi sonuna kadar çalıp susuyor;
+ *  yalnız yenisi biraz önce başlıyor. Tahmin fazla çıkarsa en kötü ihtimalle iki
+ *  dosyanın sessiz uçları birkaç ms üst üste biner (duyulmaz).
+ *  Yalnız EKRAN AÇIKKEN: arka planda zamanlayıcılar kısıldığı için orada
+ *  "ended" yolu kullanılıyor (baytlar yerel olduğu için o da hızlı).
+ *  Değer oturum boyunca modülde saklanıyor — yeni kanca örneği sıfırdan başlamasın. */
+let olculenBaslama = 40      // ms, ilk tahmin; İLK ölçüm bunun yerine doğrudan geçer
+let baslamaOlculdu = false
+const baslamaEkle = (ms) => {
+  if (!Number.isFinite(ms) || ms < 0 || ms > 1500) return      // uç değer: ağdan gelmiş olabilir
+    // İlk ölçüm tahmini SİLER: ortalamaya katılsaydı yanlış ilk tahmin birkaç
+    // âyet boyunca sürüklenirdi (ölçüldü: 150 ms'lik cihazda 99→72→40→29→21 ms).
+    olculenBaslama = baslamaOlculdu ? olculenBaslama * 0.6 + ms * 0.4 : ms
+    baslamaOlculdu = true
+}
+const oncuMs = () => Math.min(250, Math.max(10, olculenBaslama))
+
+/* ⚠ ERKEN BAŞLATMA YALNIZ İKİ SESİN AYNI ANDA ÇALABİLDİĞİ YERDE.
+ *  Erken geçişte çıkan âyet son milisaniyelerini çalarken yenisi başlıyor. iOS
+ *  WebKit'in, bir ses elemanı çalmaya başlayınca diğerini DURAKLATTIĞI yaygın
+ *  olarak bildiriliyor; öyleyse erken başlatma orada her âyetin SONUNU KIRPAR
+ *  — geçişteki kısa boşluktan çok daha kötü. Bu cihazda doğrulanamadığı için:
+ *    1) iOS'ta (iPhone/iPad; iOS'taki bütün tarayıcılar WebKit) hiç açılmıyor.
+ *    2) Başka yerlerde ÇALIŞMA ANINDA denetleniyor: erken geçişte çıkan eleman
+ *       bizden başka biri tarafından duraklatılırsa özellik o oturum için
+ *       kendini kapatıyor ("ended" yoluna dönülüyor). */
+const iosMu = () => {
+  try {
+    const ua = navigator.userAgent || ""
+    return /iPad|iPhone|iPod/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)
+  } catch { return false }
+}
+let erkenIzinli = typeof navigator !== "undefined" ? !iosMu() : false
+
 export default function useAudioPlayer() {
   // ── ÇİFT TAMPON (double buffer) ──
   // Kilit ekranında/arka planda iOS, "ended" olunca yeni src yükleyip play() çağırmayı
@@ -205,6 +265,70 @@ export default function useAudioPlayer() {
       return j
   }, [])
 
+  // ── Bayt belleği (yukarıdaki ÖNDEN BAYT İNDİRME notu) ──
+  // adres → { durum: "iniyor" | "hazir" | "hata", blobUrl, iptal }
+  const sesBellekRef = useRef(new Map())
+  const sonrakiOnyukleRef = useRef(null)
+
+  const bellekBirak = (k) => {
+    try { if (k.iptal) k.iptal.abort() } catch { /* yoksay */ }
+    try { if (k.blobUrl) URL.revokeObjectURL(k.blobUrl) } catch { /* yoksay */ }
+  }
+  const bellekTemizle = useCallback(() => {
+    for (const k of sesBellekRef.current.values()) bellekBirak(k)
+      sesBellekRef.current.clear()
+  }, [])
+  // Çalınacak kaynak: bayt hazırsa yerel blob, değilse ağ adresi.
+  const kaynakAl = useCallback((url) => {
+    const k = sesBellekRef.current.get(url)
+    return (k && k.durum === "hazir" && k.blobUrl) ? k.blobUrl : url
+  }, [])
+
+  const bellekIndir = useCallback((url) => {
+    const bellek = sesBellekRef.current
+    let iptal = null
+    try { iptal = new AbortController() } catch { /* eski tarayıcı: iptalsiz sürer */ }
+    const k = { durum: "iniyor", blobUrl: "", iptal }
+    bellek.set(url, k)
+    fetch(url, { mode: "cors", signal: iptal ? iptal.signal : undefined })
+    .then(y => { if (!y.ok) throw new Error(String(y.status)); return y.blob() })
+    .then(b => {
+      if (bellek.get(url) !== k) return              // bu arada pencereden çıktı
+        // Tür boş gelirse Safari blob'u çalamayabiliyor → açıkça audio/mpeg.
+        const tur = (b.type && b.type.startsWith("audio/")) ? b.type : "audio/mpeg"
+        k.blobUrl = URL.createObjectURL(b.type === tur ? b : new Blob([b], { type: tur }))
+        k.durum = "hazir"; k.iptal = null
+        // Boştaki tampon bu âyeti ağ adresiyle bekliyorsa şimdi yerel kaynağa geçsin.
+        if (sonrakiOnyukleRef.current) sonrakiOnyukleRef.current()
+    })
+    // Hata kaydı pencerede KALIYOR: aynı dosya döngüyle tekrar tekrar istenmesin,
+    // o âyet eski yoldan (ağ adresi) çalınır.
+    .catch(() => { if (bellek.get(url) === k) { k.durum = "hata"; k.iptal = null } })
+  }, [])
+
+  /* Pencereyi güncelle: önceki + çalan + ONDEN kadar sonraki kalır, gerisi
+   *    bırakılır; sonrakilerden inmemiş olanlar indirilmeye başlar. */
+  const bellekYonet = useCallback(() => {
+    const bellek = sesBellekRef.current
+    const kuyruk = kuyrukRef.current
+    const kari = kariIdRef.current
+    const adres = (it) => mp3Url(kari, it.sureNo, it.ayetNo)
+    const i = kuyrukIndisRef.current
+    const tut = new Set()
+    if (kuyruk[i - 1]) tut.add(adres(kuyruk[i - 1]))
+      if (kuyruk[i]) tut.add(adres(kuyruk[i]))
+        const ileri = []
+        let j = i
+        for (let n = 0; n < ONDEN; n++) {
+          j = sonrakiIndeks(j)
+          if (j < 0 || !kuyruk[j]) break
+            const u = adres(kuyruk[j])
+            tut.add(u); ileri.push(u)
+        }
+        for (const [u, k] of bellek) if (!tut.has(u)) { bellekBirak(k); bellek.delete(u) }
+        for (const u of ileri) if (!bellek.has(u)) bellekIndir(u)
+  }, [sonrakiIndeks, bellekIndir])
+
   // Media Session meta verisi (kilit ekranı başlığı) — oturumu canlı tutar
   const mediaMeta = useCallback((sureNo, ayetNo, besmeleIcin) => {
     if (!("mediaSession" in navigator)) return
@@ -222,22 +346,77 @@ export default function useAudioPlayer() {
 
   // Sıradaki âyeti BOŞTA elemana önden yükle (arka planda ağ beklemesi olmasın)
   const sonrakiOnyukle = useCallback(() => {
+    bellekYonet()
     const b = bostaEl()
     if (!b) return
-      const j = sonrakiIndeks(kuyrukIndisRef.current)
-      if (j < 0) return
-        const it = kuyrukRef.current[j]
-        if (!it) return
-          try {
-            const url = mp3Url(kariIdRef.current, it.sureNo, it.ayetNo)
-            if (b.dataset.url !== url) {
-              b.dataset.url = url; b.src = url
-              b.playbackRate = hizRef.current
-              b.volume = sesRef.current
-              b.load()
-            }
-          } catch {}
-  }, [aktifEl, bostaEl, sonrakiIndeks])
+      // Boştaki tampon hâlâ çalıyorsa (geçişin son milisaniyeleri) kaynağına dokunma.
+      if (!b.paused && !b.ended) return
+        const j = sonrakiIndeks(kuyrukIndisRef.current)
+        if (j < 0) return
+          const it = kuyrukRef.current[j]
+          if (!it) return
+            try {
+              const url = mp3Url(kariIdRef.current, it.sureNo, it.ayetNo)
+              const kaynak = kaynakAl(url)
+              if (b.dataset.url !== url || b.dataset.kaynak !== kaynak) {
+                const k = sesBellekRef.current.get(url)
+                // Baytlar zaten iniyorsa ağ adresini ÖNDEN DOLDURMA: Android Chrome boştaki
+                // elemanı gerçekten doldurduğu için aynı dosya iki kez inerdi. Baytlar
+                // gelince bu işlev tekrar çağrılıp yerel kaynağa geçiliyor.
+                b.preload = (kaynak === url && k && k.durum === "iniyor") ? "none" : "auto"
+                b.dataset.url = url; b.dataset.kaynak = kaynak; b.src = kaynak
+                b.playbackRate = hizRef.current
+                b.volume = sesRef.current
+                b.load()
+              }
+            } catch {}
+  }, [bostaEl, sonrakiIndeks, bellekYonet, kaynakAl])
+  sonrakiOnyukleRef.current = sonrakiOnyukle
+
+  // ── Erken başlatma zamanlayıcısı (yukarıdaki ERKEN BAŞLATMA notu) ──
+  const erkenZamanRef = useRef(0)
+  const erkenIptal = useCallback(() => {
+    if (erkenZamanRef.current) { clearTimeout(erkenZamanRef.current); erkenZamanRef.current = 0 }
+  }, [])
+  const erkenKur = useCallback(() => {
+    erkenIptal()
+    const a = aktifEl()
+    if (!a || a.paused || a.ended) return
+      if (!erkenIzinli) return
+        // Tek âyet dinlemede âyet kendiliğinden bitince DURULUYOR — öne alınacak geçiş yok.
+        if (tekAyetRef.current) return
+          if (sonrakiIndeks(kuyrukIndisRef.current) < 0) return          // kuyruk sonu: "ended" bitirir
+            if (typeof document !== "undefined" && document.visibilityState !== "visible") return
+              const indeks = kuyrukIndisRef.current
+              const adim = () => {
+                erkenZamanRef.current = 0
+                // İzin TETİKLEME ANINDA yeniden soruluyor: kapanma kararı ("tek ses" platformu)
+                // bu zamanlayıcı kurulduktan birkaç ms sonra gelebiliyor — ölçümde yakalandı.
+                if (!erkenIzinli) return
+                  // Bu arada başka bir geçiş olduysa ya da duraklatıldıysa hiçbir şey yapma.
+                  if (a !== aktifEl() || indeks !== kuyrukIndisRef.current || a.paused || a.ended) return
+                    const sure = a.duration
+                    if (!Number.isFinite(sure) || sure <= 0) return               // süre bilinmiyor → "ended" yolu
+                      const kalan = ((sure - a.currentTime) / (a.playbackRate || 1)) * 1000 - oncuMs()
+                      if (kalan <= 2) {
+                        // Sıradaki âyet boştaki tamponda hazır DEĞİLSE erken geçme: yoksa çalan
+                        // elemanın kaynağı değiştirilip âyet ortasında kesilirdi.
+                        const j = sonrakiIndeks(indeks)
+                        const it = j >= 0 ? kuyrukRef.current[j] : null
+                        const b = bostaEl()
+                        if (!it || !b || b.dataset.url !== mp3Url(kariIdRef.current, it.sureNo, it.ayetNo)) return
+                          sonrakiAyetCalRef.current(false, true)
+                          return
+                      }
+                      // Uzaktayken seyrek, yaklaşınca tam hedefe: zamanlayıcı kayması sona doğru küçülür.
+                      erkenZamanRef.current = setTimeout(adim, kalan > 400 ? kalan - 250 : kalan)
+              }
+              adim()
+  }, [aktifEl, bostaEl, sonrakiIndeks, erkenIptal])
+  const erkenKurRef = useRef(erkenKur)
+  erkenKurRef.current = erkenKur
+  const erkenIptalRef = useRef(erkenIptal)
+  erkenIptalRef.current = erkenIptal
 
   // iOS: her elemanı ilk kez kullanıcı hareketiyle "kilidini aç" (sessiz play→pause)
   const kilitAc = useCallback(() => {
@@ -257,14 +436,18 @@ export default function useAudioPlayer() {
 
   // Bir âyeti oynat. hazir=true → sıradaki BOŞTA elemana geçerek (önden yüklenmiş) oynat
   // (arka plan güvenli). hazir=false → aktif elemana yükleyip oynat (ilk başlatma / geri).
-  const _ayetOynat = useCallback((sureNo, ayetNo, besmeleIcin = null, hazir = false) => {
+  const _ayetOynat = useCallback((sureNo, ayetNo, besmeleIcin = null, hazir = false, erken = false) => {
     if (!elsRef.current.length) return
       setHata(null)
+      erkenIptal()
       const url = mp3Url(kariIdRef.current, sureNo, ayetNo)
 
       // Her iki elemanı da DURDUR → aynı anda tek ses çalar (manuel "sonraki"de üst üste
       // iki ses çalması / yanlış elemanın açık kalması engellenir).
-      for (const el of elsRef.current) { if (el) { try { el.pause() } catch {} } }
+      // ERKEN geçişte çıkan âyet DURDURULMUYOR: son milisaniyelerini çalıp kendisi
+      // bitiyor (bkz. ERKEN BAŞLATMA) — kesilirse âyetin sonu kırpılırdı.
+      if (!erken) for (const el of elsRef.current) { if (el) { el.__erkenCikis = 0; try { el.pause() } catch {} } }
+      else { const cikan = aktifEl(); if (cikan) cikan.__erkenCikis = performance.now() }
 
       if (hazir) {
         const b = bostaEl()
@@ -275,7 +458,12 @@ export default function useAudioPlayer() {
       }
       const a = aktifEl()
       if (!a) return
-        if (a.dataset.url !== url) { a.dataset.url = url; a.src = url }
+        // Baytlar önden indiyse YEREL kaynak — ağ beklemesi yok (bkz. ÖNDEN BAYT İNDİRME).
+        const kaynak = kaynakAl(url)
+        if (a.dataset.url !== url || a.dataset.kaynak !== kaynak) {
+          a.preload = "auto"
+          a.dataset.url = url; a.dataset.kaynak = kaynak; a.src = kaynak
+        }
         try { if (a.currentTime !== 0) a.currentTime = 0 } catch {}
         a.playbackRate = hizRef.current
         a.volume = sesRef.current
@@ -288,6 +476,9 @@ export default function useAudioPlayer() {
           if (g) { try { g.gain.value = sesRef.current } catch { /* yoksay */ } }
         }
         sesCtxUyandir()            // iOS: kazanç zinciri varsa askıdan çıkar
+        // Başlama süresi ölçümü YALNIZ yerel kaynakta: ağdan başlatmada süreye
+        // sunucu gecikmesi karışır ve erken başlatma payını şişirirdi.
+        a.__baslat = kaynak !== url ? performance.now() : 0
         a.play()
         .then(() => {
           a.playbackRate = hizRef.current
@@ -297,11 +488,12 @@ export default function useAudioPlayer() {
           sonrakiOnyukle()   // bir sonrakini hazırla
         })
         .catch(() => { setHata("Oynatma başlatılamadı"); setDurum("kapali") })
-  }, [aktifEl, bostaEl, mediaMeta, sonrakiOnyukle, sesCtxUyandir, kazancKur, volumeYazilabilir])
+  }, [aktifEl, bostaEl, mediaMeta, sonrakiOnyukle, sesCtxUyandir, kazancKur, volumeYazilabilir, kaynakAl, erkenIptal])
 
   /* elle=true → kullanıcı "sonraki" düğmesine bastı. elle=false → âyet kendiliğinden
    *    bitti ("ended"). Tek âyet modunda yalnız İKİNCİSİ durdurur. */
-  const sonrakiAyetCal = useCallback((elle = false) => {
+  const sonrakiAyetCal = useCallback((elle = false, erken = false) => {
+    erkenIptal()
     // Çift ilerleme koruması: 250ms içinde ikinci "sonraki" çağrısını yok say
     // (foreground'da spurious "ended" / hızlı çift dokunuş → sesin kesilmesi olmasın).
     const simdi = Date.now()
@@ -313,7 +505,7 @@ export default function useAudioPlayer() {
         // ⚠ SESİ DE DURDUR. Eskiden yalnız React durumu "kapali" yapılıyor, <audio>
         // çalmaya devam ediyordu: PlayerBar kayboluyor (durum kapali) ama ses arkadan
         // geliyordu — kullanıcının bildirdiği belirti tam olarak buydu.
-        for (const el of elsRef.current) { if (el) { try { el.pause() } catch { /* yoksay */ } } }
+        for (const el of elsRef.current) { if (el) { el.__erkenCikis = 0; try { el.pause() } catch { /* yoksay */ } } }
         setDurum("kapali")
         setAktifAyet(null)
         kuyrukIndisRef.current = 0
@@ -329,8 +521,8 @@ export default function useAudioPlayer() {
       kuyrukIndisRef.current = j
       const { sureNo, ayetNo, besmeleIcin } = kuyrukRef.current[j]
       // Elle geçişte önden yüklenmiş tampon doğru âyet olmayabilir → aktif elemana yükle.
-      _ayetOynat(sureNo, ayetNo, besmeleIcin, !elle)
-  }, [sonrakiIndeks, _ayetOynat])
+      _ayetOynat(sureNo, ayetNo, besmeleIcin, !elle, erken && !elle)
+  }, [sonrakiIndeks, _ayetOynat, erkenIptal])
 
   // Bu callback'lerin son sürümünü "ended"/Media Session handler'larından çağırmak için ref
   const sonrakiAyetCalRef = useRef(sonrakiAyetCal)
@@ -354,7 +546,29 @@ export default function useAudioPlayer() {
       a.volume = sesRef.current
       try { a.setAttribute("playsinline", "") } catch {}
       a.dataset.url = ""
-      a.addEventListener("ended", (e) => { if (e.target === aktifEl()) sonrakiAyetCalRef.current() })
+      a.addEventListener("ended", (e) => {
+        a.__erkenCikis = 0
+        if (e.target === aktifEl()) { sonrakiAyetCalRef.current(); return }
+        // Erken geçişte çıkan tampon son milisaniyelerini bitirdi → artık boşta;
+        // sıradaki âyet ona yüklenebilir (çalarken dokunulmamıştı).
+        if (sonrakiOnyukleRef.current) sonrakiOnyukleRef.current()
+      })
+      // Başlama süresi ölçümü + erken başlatma zamanlayıcısı (bkz. ERKEN BAŞLATMA)
+      a.addEventListener("playing", () => {
+        if (a.__baslat) { baslamaEkle(performance.now() - a.__baslat); a.__baslat = 0 }
+        if (a === aktifEl()) erkenKurRef.current()
+      })
+      a.addEventListener("pause", () => {
+        if (a === aktifEl()) { erkenIptalRef.current(); return }
+        // Erken geçişte çıkan eleman sonuna varmadan DURAKLATILDI → bu platform iki
+        // sesi birlikte çalmıyor; erken başlatma bu oturumda kapanıyor.
+        if (a.__erkenCikis && !a.ended && performance.now() - a.__erkenCikis < 600) erkenIzinli = false
+          a.__erkenCikis = 0
+      })
+      // Hız, konum ya da süre değişince kalan süre değişir → zamanlayıcı yeniden kurulur.
+      for (const olay of ["ratechange", "seeked", "durationchange"]) {
+        a.addEventListener(olay, () => { if (a === aktifEl() && !a.paused) erkenKurRef.current() })
+      }
       a.addEventListener("error", () => {
         // Yalnız aktif eleman hata verirse kullanıcıya bildir (boşta ön-yükleme hatası sessiz)
         if (a === aktifEl() && a.dataset.url) { setHata("Ses yüklenemedi"); setDurum("kapali") }
@@ -367,11 +581,11 @@ export default function useAudioPlayer() {
       try {
         navigator.mediaSession.setActionHandler("play",  () => {
           const a = aktifEl(); if (!a) return
-          const b = bostaEl(); if (b && b !== a && !b.paused) { try { b.pause() } catch {} }   // çift ses guard
+          const b = bostaEl(); if (b && b !== a && !b.paused) { b.__erkenCikis = 0; try { b.pause() } catch {} }   // çift ses guard
           a.play().then(() => { setDurum("caliyor"); try { navigator.mediaSession.playbackState = "playing" } catch {} }).catch(() => {})
         })
         navigator.mediaSession.setActionHandler("pause", () => {
-          for (const el of elsRef.current) { if (el) { try { el.pause() } catch {} } }   // her iki tamponu da durdur
+          for (const el of elsRef.current) { if (el) { el.__erkenCikis = 0; try { el.pause() } catch {} } }   // her iki tamponu da durdur
           setDurum("duraklatildi")
           try { navigator.mediaSession.playbackState = "paused" } catch {}
         })
@@ -382,6 +596,7 @@ export default function useAudioPlayer() {
 
     return () => {
       for (const a of elsRef.current) { try { a.pause(); a.src = "" } catch {} }
+      bellekTemizle()
     }
     // eslint-disable-next-line
   }, [])
@@ -392,14 +607,16 @@ export default function useAudioPlayer() {
   // yanlışlıkla çalıp çift ses olur). Görünür olunca tek elemana indir + durumu gerçeğe çek.
   useEffect(() => {
     const senkronla = () => {
-      if (document.visibilityState !== "visible") return
-        sesCtxUyandir()                       // askıya alınmış kazanç zinciri geri gelsin
-        if (durumRef.current === "kapali") return
-          const a = aktifEl(); if (!a) return
-          const b = bostaEl()
-          if (b && b !== a && !b.paused) { try { b.pause() } catch {} }   // çift ses guard
-          if (durumRef.current === "caliyor" && a.paused) setDurum("duraklatildi")
-            else if (durumRef.current === "duraklatildi" && !a.paused) setDurum("caliyor")
+      // Arka planda zamanlayıcılar kısılıyor → erken başlatma kapanır, "ended" yolu işler.
+      if (document.visibilityState !== "visible") { erkenIptalRef.current(); return }
+      erkenKurRef.current()
+      sesCtxUyandir()                       // askıya alınmış kazanç zinciri geri gelsin
+      if (durumRef.current === "kapali") return
+        const a = aktifEl(); if (!a) return
+        const b = bostaEl()
+        if (b && b !== a && !b.paused) { b.__erkenCikis = 0; try { b.pause() } catch {} }   // çift ses guard
+        if (durumRef.current === "caliyor" && a.paused) setDurum("duraklatildi")
+          else if (durumRef.current === "duraklatildi" && !a.paused) setDurum("caliyor")
     }
     document.addEventListener("visibilitychange", senkronla)
     window.addEventListener("focus", senkronla)
@@ -410,8 +627,10 @@ export default function useAudioPlayer() {
   useEffect(() => {
     kariIdRef.current = kariId
     localStorage.setItem("vukuf-kari", kariId)
+    // Önden inen baytlar ESKİ kârinin sesi — hepsi bırakılıyor.
+    bellekTemizle()
     if (elsRef.current.length && durum !== "kapali") {
-      for (const a of elsRef.current) { try { a.pause(); a.src = ""; a.dataset.url = "" } catch {} }
+      for (const a of elsRef.current) { try { a.__erkenCikis = 0; a.pause(); a.src = ""; a.dataset.url = ""; a.dataset.kaynak = "" } catch {} }
       setDurum("kapali")
       setAktifAyet(null)
     }
@@ -484,7 +703,7 @@ export default function useAudioPlayer() {
     const a = aktifEl()
     if (!a || durum === "kapali") return
       // Her iki tamponu da durdur → arkada bir tampon çalıyor kalmasın (çift ses)
-      for (const el of elsRef.current) { if (el) { try { el.pause() } catch {} } }
+      for (const el of elsRef.current) { if (el) { el.__erkenCikis = 0; try { el.pause() } catch {} } }
       setDurum("duraklatildi")
       try { if ("mediaSession" in navigator) navigator.mediaSession.playbackState = "paused" } catch {}
   }, [durum, aktifEl])
@@ -499,7 +718,7 @@ export default function useAudioPlayer() {
           _ayetOynat(aktifAyet.sureNo, aktifAyet.ayetNo, aktifAyet.besmeleIcin, false)
           return
         }
-        const b = bostaEl(); if (b && b !== a && !b.paused) { try { b.pause() } catch {} }   // çift ses guard
+        const b = bostaEl(); if (b && b !== a && !b.paused) { b.__erkenCikis = 0; try { b.pause() } catch {} }   // çift ses guard
         sesCtxUyandir()            // iOS: kazanç zinciri askıdaysa uyandır
         a.play()
         .then(() => { setDurum("caliyor"); try { if ("mediaSession" in navigator) navigator.mediaSession.playbackState = "playing" } catch {} })
@@ -507,7 +726,9 @@ export default function useAudioPlayer() {
   }, [durum, aktifEl, bostaEl, aktifAyet, _ayetOynat, sesCtxUyandir])
 
   const durdur = useCallback(() => {
-    for (const a of elsRef.current) { try { a.pause(); a.src = ""; a.dataset.url = "" } catch {} }
+    erkenIptalRef.current()
+    for (const a of elsRef.current) { try { a.__erkenCikis = 0; a.pause(); a.src = ""; a.dataset.url = ""; a.dataset.kaynak = "" } catch {} }
+    bellekTemizle()
     donguRef.current = false
     tekAyetRef.current = false
     kuyrukRef.current = []
@@ -516,7 +737,7 @@ export default function useAudioPlayer() {
     setAktifAyet(null)
     setHata(null)
     try { if ("mediaSession" in navigator) { navigator.mediaSession.playbackState = "none"; navigator.mediaSession.metadata = null } } catch {}
-  }, [])
+  }, [bellekTemizle])
 
   // Düğmeden gelen "sonraki": ELLE. (Argümansız çağrılmalı — `onClick={sonrakiAyet}`
   // ile bağlanırsa tıklama olayı ilk argüman olur; o yüzden burada sarmalanıyor.)

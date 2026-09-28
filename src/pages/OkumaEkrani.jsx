@@ -1103,6 +1103,16 @@ const sonKonumRef  = useRef(null)   // { sayfa, oran } — son okuma konumu
 // (aşağıdaki "EKRAN DÖNDÜRME" bölümünden önce gelmeli).
 const donmeKilidiRef = useRef(false)
 const donmeCipaRef = useRef(null)
+// KARARLI ÇIPA (28 Eylül 2026): dönmede çıpa OLAY ANINDA alınmıyor — iOS
+// yerleşimi bizim olay dinleyicimizden ÖNCE yeniden yapıyor, o an okunan satır
+// zaten kaymış oluyor. Bunun yerine kaydırma DURULUNCA okunan satır burada
+// saklanıyor; hangi genişlikte alındığı da tutuluyor (genişlik değişmişse o an
+// okunan her şey yeni yerleşime aittir, çıpa sayılmaz).
+const stabilCipaRef = useRef(null)
+const stabilGenislikRef = useRef(null)
+const cipaZamanRef = useRef(null)
+const donmeTetikRef = useRef(null)   // dönme işleyicisi (kaydırma/RO içinden çağrılır)
+const sayfaTakipRef = useRef(null)   // kaydırma takibi (kilit açılınca bir kez çalıştırılır)
 // İçindekiler menüsü kaydırma konumu (oturum içi): panel kapanıp açılınca aynı yere döner;
 // kitaptan çıkıp geri gelince bileşen yeniden bağlanır → ref sıfırlanır (0'dan başlar).
 const menuListeRef = useRef(null)
@@ -1492,17 +1502,29 @@ const ustReferansY = () => {
   if (!el) return 0
   return el.getBoundingClientRect().top + ((barKonum === "ust" && barGorunur) ? barYuk : 0) + 4
 }
-// En üstte (referansın altında) görünen ilk satırı yakala → {satir, ofset}
+// En üstte (referansın altında) görünen ilk satırı yakala → {satir, ofset, oran}
+// `oran`: referans çizgisinin paragrafın NERESİNE düştüğü (0-1). Genişlik değişince
+// paragraf yeniden sarılıp uzuyor/kısalıyor; piksel ofseti aynı kalırsa paragrafın
+// içinde başka bir satıra düşülüyordu (uzun paragrafta ~140 harf kayma ölçüldü).
+// Oran, yeni yükseklikte aynı göreli noktayı veriyor.
+// Satırlar belge sırasında → alt kenarları artan → İKİLİ ARAMA (her satırın
+// rect'ini okumak binlerce satırlık kitapta pahalıydı; artık ~12 okuma).
 const ustSatirYakala = () => {
   const el = scrollRef.current
   if (!el) return null
   const refY = ustReferansY()
   const satirlar = el.querySelectorAll("[data-satir]")
-  for (let i = 0; i < satirlar.length; i++) {
-    const r = satirlar[i].getBoundingClientRect()
-    if (r.bottom > refY + 1) return { satir: satirlar[i].getAttribute("data-satir"), ofset: r.top - refY }
+  let lo = 0, hi = satirlar.length - 1, bul = -1
+  while (lo <= hi) {
+    const mid = (lo + hi) >> 1
+    if (satirlar[mid].getBoundingClientRect().bottom > refY + 1) { bul = mid; hi = mid - 1 }
+    else lo = mid + 1
   }
-  return null
+  if (bul < 0) return null
+  const r = satirlar[bul].getBoundingClientRect()
+  const ofset = r.top - refY
+  const oran = ofset < 0 && r.height > 0 ? Math.min(1, -ofset / r.height) : 0
+  return { satir: satirlar[bul].getAttribute("data-satir"), ofset, oran }
 }
 // Yakalanan satırı aynı yüksekliğe geri çek
 const ustSatirGeriYukle = (ank) => {
@@ -1510,9 +1532,13 @@ const ustSatirGeriYukle = (ank) => {
   if (!el || !ank || !ank.satir) return
   const h = el.querySelector(`[data-satir="${ank.satir}"]`)
   if (!h) return
-  const simdi = h.getBoundingClientRect().top - ustReferansY()
-  el.scrollTop += (simdi - ank.ofset)
+  const r = h.getBoundingClientRect()
+  const hedef = ank.oran > 0 ? -ank.oran * r.height : ank.ofset
+  el.scrollTop += (r.top - ustReferansY()) - hedef
 }
+// Kaydırma efektinin içinden (bağımlılıksız) en güncel işleve ulaşmak için
+const ustSatirYakalaRef = useRef(null)
+ustSatirYakalaRef.current = ustSatirYakala
 
 // ════════════════════════════════════════════════════
 // Scroll takibi
@@ -1521,12 +1547,27 @@ const ustSatirGeriYukle = (ank) => {
 useEffect(() => {
   const el = scrollRef.current
   if (!el) return
+  if (stabilGenislikRef.current == null) stabilGenislikRef.current = el.clientWidth
   function onScroll() {
     sonScrollRef.current = el.scrollTop
     // EKRAN DÖNERKEN konum takibi DONAR. Dönme sırasında tarayıcı scrollTop'u piksel
     // olarak koruduğu için gelen scroll olayları YANLIŞ sayfayı gösterir; burada
     // mevcutSayfa/sonKonumRef güncellenirse geri çekeceğimiz konum da bozulur.
     if (donmeKilidiRef.current) return
+    // GENİŞLİK DEĞİŞMİŞ ama kilit henüz yok: iOS yerleşimi dönme olayından ÖNCE
+    // yapıp bu kaydırma olayını gönderdi. Bu olay konum SAYILMAZ — dönmeyi buradan
+    // başlat (çıpa, önceki kararlı çıpa olur).
+    if (el.clientWidth !== stabilGenislikRef.current) {
+      if (donmeTetikRef.current) donmeTetikRef.current()
+      return
+    }
+    // Kararlı çıpa: kaydırma durulunca bir kez oku (her olayda satır aramak pahalı)
+    if (cipaZamanRef.current) clearTimeout(cipaZamanRef.current)
+    cipaZamanRef.current = setTimeout(() => {
+      cipaZamanRef.current = null
+      if (donmeKilidiRef.current || el.clientWidth !== stabilGenislikRef.current) return
+      stabilCipaRef.current = ustSatirYakalaRef.current ? ustSatirYakalaRef.current() : null
+    }, 140)
     // Aa paneli açıkken kullanıcı kaydırırsa font-ankorunu tazele (geri çekilecek satır güncel kalsın)
     if (aaAcikRef.current) fontAnkorRef.current = ustSatirYakala()
     const merkez = el.getBoundingClientRect().top + el.clientHeight / 2
@@ -1549,8 +1590,22 @@ useEffect(() => {
     }
   }
   el.addEventListener("scroll", onScroll, { passive: true })
+  sayfaTakipRef.current = onScroll
   onScroll()
-  return () => el.removeEventListener("scroll", onScroll)
+  // Kaydırma alanının GENİŞLİĞİ değişince (dönme, pencere boyutu) dönme işleyicisi —
+  // orientationchange/medya sorgusu geç gelse ya da hiç gelmese de yakalanır.
+  let ro = null
+  try {
+    ro = new ResizeObserver(() => {
+      if (stabilGenislikRef.current != null && el.clientWidth !== stabilGenislikRef.current && donmeTetikRef.current) donmeTetikRef.current()
+    })
+    ro.observe(el)
+  } catch {}
+  return () => {
+    el.removeEventListener("scroll", onScroll)
+    try { ro && ro.disconnect() } catch {}
+    if (cipaZamanRef.current) { clearTimeout(cipaZamanRef.current); cipaZamanRef.current = null }
+  }
 }, [yukleniyor, kitapMetni])
 
 // Aa paneli açılınca üst satırı yakala (ref senkronu + ilk ankor)
@@ -1810,32 +1865,53 @@ useEffect(() => {
   let zamanlar = []
   let acmaZamani = null
   const temizle = () => { zamanlar.forEach(clearTimeout); zamanlar = [] }
+  const geriCek = () => {
+    const k = donmeCipaRef.current
+    if (!k) return
+    const f = donmeIslevRef.current
+    if (k.cipa) f.ustSatirGeriYukle(k.cipa)
+    else if (k.konum) { try { f.sayfayaGit(k.konum.sayfa, k.konum.oran || 0) } catch {} }
+  }
+  const bitir = () => {
+    geriCek()
+    donmeKilidiRef.current = false
+    donmeCipaRef.current = null
+    const el = scrollRef.current
+    if (el) stabilGenislikRef.current = el.clientWidth
+    // Yeni genişlikte çıpayı ve sayfa takibini tazele
+    try { stabilCipaRef.current = donmeIslevRef.current.ustSatirYakala() } catch {}
+    if (sayfaTakipRef.current) sayfaTakipRef.current()
+  }
   const donunce = () => {
     if (!scrollRef.current) return
-    // Dönme BAŞLADI: konumu hemen dondur. (iOS'ta bu olay reflow'dan ÖNCE, bazı
-    // Android tarayıcılarda SONRA gelir; ilk çağrıdaki çıpa korunur.)
+    // Dönme BAŞLADI: konumu hemen dondur.
+    // ⚠ ÇIPA BURADA DOM'DAN OKUNMUYOR (28 Eylül 2026 düzeltmesi). Eskiden
+    // `ustSatirYakala()` bu anda çağrılıyordu; ama iOS yerleşimi bu olaydan ÖNCE
+    // yeniyor (KuranOkuma'da da ölçülmüştü) ve o an en üstteki satır zaten başka
+    // bir satır oluyordu. Her dönmede çıpa biraz ileri kayıyor, kısa sayfalı
+    // kitaplarda (Evrâd) bu ~10 sayfa ediyordu. Laboratuvarda olay geç
+    // gönderilerek birebir üretildi. Artık kaydırma durulunca saklanan KARARLI
+    // çıpa kullanılıyor; kullanıcı dönmeden hemen önce (140 ms içinde) kaydırıyor
+    // idiyse o çıpa eski sayılır ve sayfa+oran konumuna düşülür.
     if (!donmeKilidiRef.current) {
       donmeKilidiRef.current = true
-      const f = donmeIslevRef.current
+      const tazeDegil = !!cipaZamanRef.current
+      if (cipaZamanRef.current) { clearTimeout(cipaZamanRef.current); cipaZamanRef.current = null }
       donmeCipaRef.current = {
-        cipa: f.ustSatirYakala(),
+        cipa: tazeDegil ? null : stabilCipaRef.current,
         konum: sonKonumRef.current ? { ...sonKonumRef.current } : null,
       }
     }
     temizle()
     if (acmaZamani) clearTimeout(acmaZamani)
-    const geriCek = () => {
-      const k = donmeCipaRef.current
-      if (!k) return
-      const f = donmeIslevRef.current
-      if (k.cipa) f.ustSatirGeriYukle(k.cipa)
-      else if (k.konum) { try { f.sayfayaGit(k.konum.sayfa, k.konum.oran || 0) } catch {} }
-    }
     // Reflow tek karede oturmuyor: yeniden akıtma + tembel mount + font metrikleri
-    // + barın yeniden ölçülmesi. Aynı geri çekme birkaç kez tekrarlanıyor.
-    for (const ms of [60, 180, 340, 520, 760]) zamanlar.push(setTimeout(geriCek, ms))
-    acmaZamani = setTimeout(() => { donmeKilidiRef.current = false; donmeCipaRef.current = null }, 950)
+    // + barın yeniden ölçülmesi. Aynı geri çekme birkaç kez tekrarlanıyor. Bu
+    // işleyici genişlik her değiştiğinde (RO) yeniden çağrıldığı için süre SON
+    // değişiklikten itibaren sayılıyor.
+    for (const ms of [0, 60, 180, 340, 520, 760]) zamanlar.push(setTimeout(geriCek, ms))
+    acmaZamani = setTimeout(bitir, 950)
   }
+  donmeTetikRef.current = donunce
   window.addEventListener("orientationchange", donunce)
   // orientationchange her tarayıcıda gelmiyor; medya sorgusu geliyor. İkisi de
   // bağlı; aynı dönüşte ikisi birden tetiklerse kilit ikinci çıpayı yutuyor.
@@ -1849,6 +1925,7 @@ useEffect(() => {
     try { mq && (mq.removeEventListener ? mq.removeEventListener("change", donunce) : mq.removeListener(donunce)) } catch {}
     temizle(); if (acmaZamani) clearTimeout(acmaZamani)
     donmeKilidiRef.current = false
+    donmeTetikRef.current = null
   }
   // eslint-disable-next-line react-hooks/exhaustive-deps
 }, [])

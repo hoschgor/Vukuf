@@ -114,7 +114,8 @@ export const KATEGORILER = [
   ad: "Tema ve renkler",
   aciklama: "Seçili tema, özel palet ve renk tercihleri",
   anahtarlar: [
-    "vukuf-tema", "vukuf-ozel-tema", "vukuf-lugat-renk", "vukuf-arapca-renk",
+    "vukuf-tema", "vukuf-ozel-tema", "vukuf-ton-modu", "vukuf-ton-favori",
+    "vukuf-lugat-renk", "vukuf-arapca-renk",
     "vukuf-kuran-ayetno-renk", "vukuf-kuran-yazi-renk", "vukuf-gorsel-son-renkler",
   ],
   onekler: [],

@@ -21,6 +21,7 @@ import YuklemeEkrani from "../components/YuklemeEkrani"
 import IosSwitch from "../components/IosSwitch"
 import PanelAyirac, { PanelAcilir, panelBolumeHizala } from "../components/PanelAyirac"
 import GeriIkonu from "../components/GeriIkonu"
+import TemaSecici from "../components/TemaSecici"
 import {
   ArrowLeft, BookOpen, Eye, EyeOff, Play, Pause,
   Plus, Minus, AlignJustify, AlignLeft, AlignCenter, ChevronsUp, ChevronsDown,
@@ -2909,56 +2910,18 @@ const KayitPanel = kayitAcik && (
 const TemaPanel = temaAcik && (
   <>
     <div onClick={() => setTemaAcik(false)} style={{ position: "fixed", inset: 0, zIndex: 95 }} />
-    <div className="okuma-panel" style={{ ...panelStil("right"), width: "240px" }}>
+    {/* Ton anahtarı ve Otomatik'teki iki grup paneli uzatabiliyor → kısa ekranda kaydırılsın */}
+    <div className="okuma-panel" style={{ ...panelStil("right"), width: "240px", maxHeight: "80vh", overflowY: "auto" }}>
       <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "10px", letterSpacing: "1px" }}>TEMA</div>
-      {[
-        { id: "sepia",  label: "Sepya",  renk: "#f4ecd8", aciklama: "Göz yormayan sıcak ton" },
-          { id: "light",  label: "Açık",   renk: "#ffffff", aciklama: "Sade beyaz arka plan" },
-          { id: "dark",   label: "Koyu",   renk: "#1a1a2e", aciklama: "Koyu mavi gece modu" },
-          { id: "night",  label: "Gece",   renk: "#0d0d0d", aciklama: "Tam karanlık mod" },
-          { id: "coffee", label: "Kahve",  renk: "#251b04", aciklama: "Koyu kahve tonları" },
-          { id: "highcontrast", label: "Yüksek Karşıtlık",  renk: "#eeb311", aciklama: "Koyu zemin üzerinde sarı vurgular" },
-          { id: "custom", label: "Özel",   renk: customTheme?.background || "#888", aciklama: "Kişisel renk ayarları" },
-      ].map(t => (
-        <button 
-          key={t.id} 
-          onClick={() => {
-            if (t.id === "custom") {
-              setTemaAcik(false);
-              setOzelTemaPanelAcik(true);  // Yeni paneli aç
-            } else {
-              setCurrentTheme(t.id);
-              setTemaAcik(false);
-            }
-          }} 
-          style={{
-            width: "100%", display: "flex", alignItems: "center", gap: "10px",
-            padding: "8px 10px", borderRadius: "8px", fontSize: "13px",
-            color: currentTheme === t.id ? theme.accent : theme.text,
-            background: currentTheme === t.id ? `${theme.accent}15` : "transparent",
-            border: "none", cursor: "pointer", marginBottom: "2px",
-          }}
-        >
-          <div style={{ 
-            width: "16px", 
-            height: "16px", 
-            borderRadius: "50%", 
-            background: t.renk, 
-            border: `2px solid ${currentTheme === t.id ? theme.accent : theme.border}`,
-            flexShrink: 0 
-          }} />
-          <div style={{ flex: 1, textAlign: "left" }}>
-            <div style={{ fontSize: "13px" }}>{t.label}</div>
-            <div style={{ fontSize: "10px", color: theme.textSecondary }}>{t.aciklama}</div>
-          </div>
-          {currentTheme === t.id && t.id !== "custom" && (
-            <span style={{ fontSize: "10px", color: theme.accent }}>✓</span>
-          )}
-          {t.id === "custom" && (
-            <Pencil size={12} color={theme.textSecondary} />
-          )}
-        </button>
-      ))}
+      {/* Ton anahtarı + önizlemeli liste — ortak bileşen (components/TemaSecici.jsx).
+          Hazır tema seçilince panel eskisi gibi kapanır; yalnız Otomatik modda
+          ekrana yansımayan (öbür tonun) seçimde açık kalır ki işaret görülsün. */}
+      <TemaSecici
+        theme={theme}
+        duzen="satir"
+        onOzel={() => { setTemaAcik(false); setOzelTemaPanelAcik(true) }}
+        onSec={(id, uygulandi) => { if (uygulandi) setTemaAcik(false) }}
+      />
 
       {/* Arapça harf rengi */}
       <div style={{ borderTop: `1px solid ${theme.border}`, marginTop: "10px", paddingTop: "10px" }}>

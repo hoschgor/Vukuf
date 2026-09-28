@@ -1,12 +1,14 @@
 import { useState } from "react"
 import { Link, useLocation } from "react-router-dom"
-import { BookOpen, Search, Shuffle, Menu, X, Palette, Pencil, Info, Type, Sparkles, Settings, HardDrive, Brain } from "lucide-react"
+import { BookOpen, Search, Shuffle, Menu, X, Palette, Info, Type, Sparkles, Settings, HardDrive, Brain } from "lucide-react"
 import { useApp } from "../AppContext"
 import { useMediaQuery } from "../data/hooks/useMediaQuery"
 import IosSwitch from "./IosSwitch"
 import AltSayfa from "./AltSayfa"
 import VeriAyarlari from "./VeriAyarlari"
 import Katlanir from "./Katlanir"
+import TemaSecici from "./TemaSecici"
+import { themes } from "../styles/themes"
 
 /* ═══════════════════════════════════════════════════════════════════════════
    AYARLARIN TEK KAPIDA TOPLANMASI (24 Eylül 2026)
@@ -72,7 +74,7 @@ function AyarSatiri({ baslik, aciklama, acik, onToggle, theme }) {
 }
 
 export default function Navbar() {
-  const { theme, currentTheme, setCurrentTheme, customTheme, ozelTemaKaydet } = useApp()
+  const { theme, currentTheme, customTheme, ozelTemaKaydet, tonModu } = useApp()
   const location = useLocation()
   const isMobile = useMediaQuery("(max-width: 768px)")
   const [menuAcik, setMenuAcik] = useState(false)
@@ -128,15 +130,9 @@ export default function Navbar() {
     { path: "/hakkinda", label: "Hakkında", icon: Info },
   ]
 
-  const temaListesi = [
-    { id: "sepia",  label: "Sepya",  renk: "#f4ecd8", aciklama: "Göz yormayan sıcak ton" },
-    { id: "light",  label: "Açık",   renk: "#ffffff", aciklama: "Sade beyaz arka plan" },
-    { id: "dark",   label: "Koyu",   renk: "#1a1a2e", aciklama: "Koyu mavi gece modu" },
-    { id: "night",  label: "Gece",   renk: "#0d0d0d", aciklama: "Tam karanlık mod" },
-    { id: "coffee", label: "Kahve",  renk: "#251b04", aciklama: "Koyu kahve tonları" },
-    { id: "highcontrast", label: "Yüksek Karşıtlık", renk: "#eeb311", aciklama: "Koyu zemin üzerinde sarı vurgular" },
-    { id: "custom", label: "Özel",   renk: customTheme?.background || "#888", aciklama: "Kişisel renk ayarları" },
-  ]
+  // Tema listesi artık TemaSecici.jsx'te (üç ekranda ortak). Burada yalnız özet.
+  const temaAdi = currentTheme === "custom" ? "Özel" : (themes[currentTheme]?.name || "")
+  const temaOzeti = tonModu === "oto" ? `${temaAdi} · otomatik` : temaAdi
 
   function ozelPanelAc() {
     setOzelRenkler({ ...customTheme })
@@ -232,47 +228,17 @@ export default function Navbar() {
           {/* ── TEMA ──────────────────────────────────────────────────── */}
           <Katlanir
             theme={theme} ikon={Palette} baslik="Tema"
-            ozet={(temaListesi.find(t => t.id === currentTheme) || {}).label}
+            ozet={temaOzeti}
             {...kapak("tema")}
           >
-          <div style={{
-            display: "grid",
-            gridTemplateColumns: isMobile ? "1fr 1fr" : "1fr 1fr 1fr",
-            gap: "6px",
-          }}>
-            {temaListesi.map(t => (
-              <button
-                key={t.id}
-                onClick={() => {
-                  if (t.id === "custom") { ozelPanelAc(); return }
-                  setCurrentTheme(t.id)
-                }}
-                style={{
-                  display: "flex", alignItems: "center", gap: "9px",
-                  padding: "10px 11px", borderRadius: "10px",
-                  fontSize: "13px", textAlign: "left", cursor: "pointer",
-                  color: currentTheme === t.id ? theme.accent : theme.text,
-                  background: currentTheme === t.id ? `${theme.accent}15` : "transparent",
-                  border: `1px solid ${currentTheme === t.id ? theme.accent : theme.border}`,
-                  fontFamily: "inherit",
-                }}
-              >
-                <div style={{
-                  width: "18px", height: "18px", borderRadius: "50%",
-                  background: t.renk,
-                  border: `2px solid ${currentTheme === t.id ? theme.accent : theme.border}`,
-                  flexShrink: 0,
-                }} />
-                <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                  {t.label}
-                </span>
-                {t.id === "custom" && <Pencil size={12} color={theme.textSecondary} />}
-                {currentTheme === t.id && t.id !== "custom" && (
-                  <span style={{ fontSize: "10px", color: theme.accent }}>✓</span>
-                )}
-              </button>
-            ))}
-          </div>
+          {/* Ton anahtarı + canlı önizleme kartları — ortak bileşen (TemaSecici.jsx).
+              Aynı bileşen okuma ekranlarının tema panelinde de kullanılıyor. */}
+          <TemaSecici
+            theme={theme}
+            duzen="kart"
+            sutun={isMobile ? 2 : 3}
+            onOzel={ozelPanelAc}
+          />
 
           </Katlanir>
 

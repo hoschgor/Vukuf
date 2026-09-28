@@ -129,6 +129,23 @@ function RozetSekli({ cx, cy, r, t }) {
   )
 }
 
+/* Yatık hilal (alem): ağzı SAĞ ÜSTE bakan, 45° eğik. Yerel koordinatta ağız
+   +x yönünde: dış çember (0,0) R, iç çember (0.45R,0) 0.82R; iki büyük yay
+   kesişim noktalarında birleşiyor. OTURUŞ (kullanıcı örnekleriyle): hilal
+   direğin TAM ÜSTÜNDE ORTALI — dış çemberin EN ALT noktası direk ucuna
+   (ux,uy) değiyor; o nokta hilalin dolu sırtında kaldığı için (boynuzlar
+   ağız yönünden ±54°, alt nokta ağızdan 135° uzakta) direk gövdeye girer. */
+function hilalYolu(ux, uy, R, aci = -45) {
+  const d = 0.45 * R, r2 = 0.82 * R
+  const kx = (R * R - r2 * r2 + d * d) / (2 * d)
+  const ky = Math.sqrt(Math.max(0, R * R - kx * kx))
+  const cx = ux, cy = uy - R * 0.96   // hafif gömülü: direk ile hilal arasında boşluk kalmasın
+  return {
+    d: `M${kx} ${-ky} A${R} ${R} 0 1 0 ${kx} ${ky} A${r2} ${r2} 0 1 1 ${kx} ${-ky} Z`,
+    transform: `translate(${cx.toFixed(2)} ${cy.toFixed(2)}) rotate(${aci})`,
+  }
+}
+
 function CamiOnizleme({ t, ad }) {
   const f = (fill, stroke, sw, ek) => ({ fill, stroke, strokeWidth: sw, transition: GECIS, ...ek })
   const yuzey = f(t.surface, t.border, 1.2)
@@ -140,9 +157,9 @@ function CamiOnizleme({ t, ad }) {
       <rect x={x - 9} y="84" width="18" height="4" rx="1" style={hat} />
       <rect x={x - 9} y="128" width="18" height="4" rx="1" style={hat} />
       <path d={`M${x - 6} 46 L${x} 12 L${x + 6} 46 Z`} style={f(t.accent, t.accent, 1, { fillOpacity: 0.85 })} />
-      <line x1={x} y1="12" x2={x} y2="7" style={f("none", t.accent, 1.2)} />
-      {/* yatay hilal — boynuzlar yukarı (Osmanlı alemi) */}
-      <path d={`M${x - 3.6} 4 A3.6 3.6 0 0 0 ${x + 3.6} 4 A3.6 2.1 0 0 1 ${x - 3.6} 4 Z`} style={f(t.accent, "none", 0)} />
+      <line x1={x} y1="12" x2={x} y2="6" style={f("none", t.accent, 1.1)} />
+      {/* yatık hilal */}
+      <path {...hilalYolu(x, 6.4, 3.1)} style={f(t.accent, "none", 0)} />
     </g>
   )
   const pencere = (x, y, g, h) => (
@@ -161,11 +178,11 @@ function CamiOnizleme({ t, ad }) {
       <rect x="98" y="88" width="104" height="24" style={yuzey} />
       {[108, 128, 162, 182].map(x => <g key={x}>{pencere(x, 94, 10, 14)}</g>)}
       <path d="M94 90 A56 50 0 0 1 206 90 Z" style={hat} />
-      {/* kubbe alemi: direk + iki top + yatay hilal (boynuzlar yukarı) */}
+      {/* kubbe alemi: direk + iki top + yatık hilal */}
       <line x1="150" y1="40" x2="150" y2="21" style={f("none", t.accent, 1.4)} />
       <circle cx="150" cy="32" r="2.8" style={f(t.accent, "none", 0)} />
       <circle cx="150" cy="25" r="2" style={f(t.accent, "none", 0)} />
-      <path d="M143 15 A7 7 0 0 0 157 15 A7 4 0 0 1 143 15 Z" style={f(t.accent, "none", 0)} />
+      <path {...hilalYolu(150, 21.5, 7)} style={f(t.accent, "none", 0)} />
       <RozetSekli cx={150} cy={68} r={13} t={t} />
 
       {/* cephe */}

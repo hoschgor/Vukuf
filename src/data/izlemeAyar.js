@@ -16,6 +16,7 @@ export const VARSAYILAN = {
     yaziBoyu: 14,        // px
     kaydir: 0,           // sürükleyerek yapılan ince ayar (px)
     hat: true,           // sûre adını hat fontuyla göster
+    sus: "dal",          // pencere süsü: "dal" (saran dallar) | "tezhip" (köşe rozetleri + şemse)
   },
   izleme: {
     arka: "zumrut",

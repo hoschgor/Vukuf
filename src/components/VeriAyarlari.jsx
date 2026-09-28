@@ -30,7 +30,7 @@ import Katlanir from "./Katlanir"
 import { destekVar, swSurum, onbellekDokumu, onbellegiTemizle, kabukDurumu, onYukle } from "../data/cevrimdisi"
 import { kategoriler } from "../data/kitaplar"
 import { normHarf } from "../data/okumaKayit"
-import { KARILAR } from "../data/hooks/useAudioPlayer"
+import { KARILAR, sesTeshisMetni, sesTeshisTemizle } from "../data/hooks/useAudioPlayer"
 import {
   mushafYukle, sureListesi, cuzListesi, sesAdresleri,
   boyutOrnekle, tahminiBoyut, sesAnahtarlari, sesOnbellegiSil,
@@ -143,6 +143,55 @@ function dosyaEtiketi(u) {
   if (/-icindekiler\.json$/.test(ad)) return "içindekiler"
   if (/-metin\.json$/.test(ad)) return "metin"
   return ad
+}
+
+/* GEÇİCİ — ses geçiş teşhisi görüntüleyici. Metin açılışta ve "Yenile"de
+   okunuyor; kopyalama iOS'ta pano izni kullanıcı dokunuşuyla verildiği için
+   düğmeden yapılıyor, olmazsa metin seçilebilir kutuda duruyor. */
+function SesTeshisi({ theme, bilgiVer }) {
+  const [metin, setMetin] = useState(() => sesTeshisMetni())
+  const kutu = useRef(null)
+  const dugme = {
+    flex: 1, padding: "8px 10px", borderRadius: "9px", cursor: "pointer",
+    border: `1px solid ${theme.border}`, background: "transparent", color: theme.text,
+    fontSize: "12px", fontWeight: 600, fontFamily: "inherit",
+  }
+  async function kopyala() {
+    try { await navigator.clipboard.writeText(metin); bilgiVer("iyi", "Teşhis metni kopyalandı.") }
+    catch {
+      // Yedek yol: metni seçip eski komutla kopyala. (textarea DEĞİL — 16px altı
+      // yazı alanına dokunmak iOS'ta sayfayı yakınlaştırıyor.)
+      try {
+        const aralik = document.createRange(); aralik.selectNodeContents(kutu.current)
+        const secim = window.getSelection(); secim.removeAllRanges(); secim.addRange(aralik)
+        document.execCommand("copy"); bilgiVer("iyi", "Teşhis metni kopyalandı.")
+      } catch { bilgiVer("kotu", "Kopyalanamadı — kutudaki metni elle seçip kopyalayın.") }
+    }
+  }
+  return (
+    <div style={{ marginTop: "4px" }}>
+      <div style={{ fontSize: "12px", color: theme.textSecondary, lineHeight: 1.6, marginBottom: "8px" }}>
+        Kur'ân'da bir sûreyi <b>ekran açıkken</b> 6-8 âyet çalın, sonra buraya
+        gelip "Yenile" ve "Kopyala"ya basın. Her satır bir âyet geçişi:
+        sessizliğin hangi adımda harcandığını gösterir.
+      </div>
+      <pre
+        ref={kutu}
+        style={{
+          margin: 0, maxHeight: "min(240px, 34vh)", overflow: "auto", boxSizing: "border-box",
+          padding: "8px", borderRadius: "9px", border: `1px solid ${theme.border}`,
+          background: theme.background, color: theme.text, whiteSpace: "pre-wrap",
+          wordBreak: "break-word", userSelect: "text", WebkitUserSelect: "text",
+          fontFamily: "ui-monospace, Menlo, monospace", fontSize: "10.5px", lineHeight: 1.45,
+        }}
+      >{metin}</pre>
+      <div style={{ display: "flex", gap: "8px", marginTop: "8px" }}>
+        <button style={dugme} onClick={() => setMetin(sesTeshisMetni())}>Yenile</button>
+        <button style={{ ...dugme, borderColor: theme.accent, color: theme.accent }} onClick={kopyala}>Kopyala</button>
+        <button style={dugme} onClick={() => { sesTeshisTemizle(); setMetin(sesTeshisMetni()) }}>Temizle</button>
+      </div>
+    </div>
+  )
 }
 
 const ONAY_SURESI = 4000   // ms — bu süre dokunulmazsa onay hâli geri döner
@@ -985,9 +1034,14 @@ export default function VeriAyarlari({ theme }) {
                   )
                 })()}
 
+                {/* İÇ LİSTE — KAYDIRMA ZİNCİRİ AÇIK. Eskiden `overscrollBehavior:
+                    "contain"` vardı: parmak listenin üstündeyken liste sonuna
+                    gelince kaydırma dış panele GEÇMİYORDU; açık bir bölümde bu
+                    liste panelin büyük kısmını kapladığı için panel "kaymıyor"
+                    gibi hissettiriyordu (kullanıcı bildirdi). Yükseklik de ekran
+                    boyuna bağlandı ki panelde tutulacak boş yer kalsın. */}
                 <div style={{
-                  marginTop: "8px", maxHeight: "300px", overflowY: "auto",
-                  overscrollBehavior: "contain",
+                  marginTop: "8px", maxHeight: "min(300px, 38vh)", overflowY: "auto",
                   border: `1px solid ${theme.border}`, borderRadius: "10px",
                 }}>
                   {gorunen.length === 0 && (
@@ -1164,9 +1218,9 @@ export default function VeriAyarlari({ theme }) {
               </div>
             )}
 
+            {/* İç liste — kaydırma zinciri açık (kitap listesindeki notun aynısı). */}
             <div style={{
-              marginTop: "8px", maxHeight: "320px", overflowY: "auto",
-              overscrollBehavior: "contain",
+              marginTop: "8px", maxHeight: "min(320px, 38vh)", overflowY: "auto",
               border: `1px solid ${theme.border}`, borderRadius: "10px",
             }}>
               {sesSatirlari.length === 0 && (
@@ -1221,6 +1275,17 @@ export default function VeriAyarlari({ theme }) {
           </>
         )}
       </Katlanir>
+
+      {/* ── SES GEÇİŞ TEŞHİSİ — ⏸ YORUMDA (ileride lazım olabilir) ──────────
+          Açmak için: useAudioPlayer.js'te SES_TESHIS = true yapıp aşağıdaki
+          bölümün yorumunu kaldır. <SesTeshisi> bileşeni dosyada duruyor.
+      <Katlanir
+        theme={theme} ikon={Music} baslik="Ses geçiş teşhisi"
+        {...kapak("teshis")}
+      >
+        <SesTeshisi theme={theme} bilgiVer={bilgiVer} />
+      </Katlanir>
+      */}
 
       {/* Loader'ın dönmesi için — `arama-spin` Arama.jsx'te tanımlı, buraya
           bağımlı olmayalım diye kendi adıyla kopyası. */}

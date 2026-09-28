@@ -17,7 +17,7 @@ export const themes = {
     surface: "#16213e",
     text: "#a5a5a5",
     textSecondary: "#a0a0b0",
-    accent: "#5b92f2",
+    accent: "#6892de",        // eski #5b92f2 — aynı mavi, doygunluk %85 → %64 (neon parlaması azaldı)
     lugatHighlight: "#e8dd7c",
     arabicHighlight: "#fac400",
     ayetNoRengi: "#92c2f6",
@@ -41,23 +41,25 @@ export const themes = {
     surface: "#1a1a1a",
     text: "#a5a5a5",
     textSecondary: "#888888",
-    accent: "#04f6c1",
+    accent: "#24dbb4",        // eski #04f6c1 — aynı turkuaz, doygunluk %97 → %72 (neon yumuşadı)
     lugatHighlight: "#37cf6a",
     arabicHighlight: "#00fac8",
     ayetNoRengi: "#8fe8d4",
     border: "#2a2a2a",
   },
   coffee: {
+    // ODUNSU: koyu ceviz zemin, meşe vurgu, sıcak (grimsi değil) yazı.
+    // Eski değerler yanlarında — geri almak istenen satır tek tek döndürülebilir.
     name: "Kahve",
-    background: "#0d0d0d",
-    surface: "#1a100a",
-    text: "#a5a5a5",
-    textSecondary: "#99785d",
-    accent: "#9e714f",
-    lugatHighlight: "#99785d",
+    background: "#14100c",    // eski #0d0d0d (saf siyaha yakın) → koyu ceviz
+    surface: "#231811",       // eski #1a100a → ceviz tahtası
+    text: "#bcae9a",          // eski #a5a5a5 (soğuk gri) → sıcak kâğıt tonu
+    textSecondary: "#a8896a", // eski #99785d
+    accent: "#b5875c",        // eski #9e714f → meşe
+    lugatHighlight: "#a8896a",// eski #99785d — önceki gibi ikincil yazıyla aynı
     arabicHighlight: "#f0ad60",
     ayetNoRengi: "#948114",
-    border: "#302010",
+    border: "#3a2b1e",        // eski #302010
   },
   highcontrast:{
     name: "Yüksek Karşıtlık",

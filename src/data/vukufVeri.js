@@ -44,6 +44,8 @@ const GECICI_ANAHTAR = new Set([
   "vukuf-hifz-hedef", "vukuf-hifz-donus",
   // Çevrimdışı: sunucuda olmadığı öğrenilen dosyalar — silinirse yalnız yeniden sınanır
   "vukuf-cevrimdisi-yok",
+  // Bu cihazın ses başlama süresi (ölçüm) — silinirse ilk geçişte yeniden ölçülür
+  "vukuf-ses-baslama",
 ])
 
 /* ── KATEGORİLER ─────────────────────────────────────────────────────────────

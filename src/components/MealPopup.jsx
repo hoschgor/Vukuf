@@ -15,6 +15,7 @@ import { useEffect, useRef, useState } from "react"
 import { X, Settings2 } from "lucide-react"
 import { useIzlemeAyar } from "../data/izlemeAyar"
 import MealIzlemeAyarlari from "./MealIzlemeAyarlari"
+import DalSusu from "./DalSusu"
 
 const GENISLIK = {
   dar:   "min(340px, 90vw)",
@@ -92,6 +93,8 @@ export default function MealPopup({
   const m = ayar.meal
   const kokRef = useRef(null)
   const sonOlcuRef = useRef(null)
+  // Dal süsü pencerenin gerçek ölçüsüyle çiziliyor (meal uzunluğu âyetten âyete değişir).
+  const [olcu, setOlcu] = useState(null)
   const olcumRef = useRef(onOlcum)
   useEffect(() => { olcumRef.current = onOlcum }, [onOlcum])
   useEffect(() => {
@@ -103,6 +106,8 @@ export default function MealPopup({
     if (!el) return
     const bildir = () => {
       const yuk = Math.ceil(el.offsetHeight)
+      const en = Math.ceil(el.offsetWidth)
+      setOlcu(o => (o && o.en === en && o.boy === yuk) ? o : { en, boy: yuk })
       const onceki = sonOlcuRef.current
       if (onceki && onceki.yuk === yuk && onceki.konum === m.konum) return
       sonOlcuRef.current = { yuk, konum: m.konum }
@@ -120,6 +125,7 @@ export default function MealPopup({
 
   const ac = theme.accent
   const glif = m.hat && hatVar && sure ? sureAdiGlifi(sure.id) : ""
+  const sus = m.sus === "tezhip" ? "tezhip" : "dal"
 
   // Bar yüksekliklerinin İÇİNDE güvenli alan payı zaten var (barın paddingBottom'u
   // env(...) ile hesaplanıyor). Bar o tarafta değilse pay burada ekleniyor — yoksa
@@ -183,21 +189,28 @@ export default function MealPopup({
           boxSizing: "border-box",
         }}
       >
-        {/* İç çerçeve + köşe rozetleri: sûre başlığındaki çift çerçeve düzeninin küçüğü */}
+        {/* SÜS — "dal": pencereyi saran dallar (DalSusu) · "tezhip": köşe rozetleri + şemse.
+            İç çerçeve ikisinde de var. */}
         <div aria-hidden="true" style={{
           position: "absolute", inset: "4px", borderRadius: "10px",
           border: `1px solid ${ac}2e`, pointerEvents: "none",
         }} />
-        {[["-7px", "-7px", null, null], [null, "-7px", "-7px", null], ["-7px", null, null, "-7px"], [null, null, "-7px", "-7px"]]
-          .map(([sol, ust, sag, alt], i) => (
-            <div key={i} aria-hidden="true" style={{
-              position: "absolute", left: sol, top: ust, right: sag, bottom: alt,
-              pointerEvents: "none", opacity: 0.9,
-            }}><KoseRozeti ac={ac} /></div>
-          ))}
-        <div aria-hidden="true" style={{
-          position: "absolute", top: "-7px", left: "50%", transform: "translateX(-50%)", pointerEvents: "none",
-        }}><UstSemse ac={ac} zemin={theme.surface} /></div>
+        {sus === "dal" ? (
+          olcu && <DalSusu en={olcu.en} boy={olcu.boy} renk={ac} zemin={theme.surface} sayfa={theme.background} yaricap={14} />
+        ) : (
+          <>
+            {[["-7px", "-7px", null, null], [null, "-7px", "-7px", null], ["-7px", null, null, "-7px"], [null, null, "-7px", "-7px"]]
+              .map(([sol, ust, sag, alt], i) => (
+                <div key={i} aria-hidden="true" style={{
+                  position: "absolute", left: sol, top: ust, right: sag, bottom: alt,
+                  pointerEvents: "none", opacity: 0.9,
+                }}><KoseRozeti ac={ac} /></div>
+              ))}
+            <div aria-hidden="true" style={{
+              position: "absolute", top: "-7px", left: "50%", transform: "translateX(-50%)", pointerEvents: "none",
+            }}><UstSemse ac={ac} zemin={theme.surface} /></div>
+          </>
+        )}
 
         {/* BAŞLIK — sürükleme tutamağı da bu satır */}
         <div

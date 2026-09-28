@@ -96,6 +96,13 @@ export default function MealIzlemeAyarlari({ acik, kapat, theme, isMobile, odak 
       <div style={serit}>
         {anahtar("Sûre adı hattı", ayar.meal.hat, v => guncelle("meal", { hat: v }))}
       </div>
+      <p style={baslik}>Süs</p>
+      <div style={serit}>
+        {[{ id: "dal", ad: "Dallar" }, { id: "tezhip", ad: "Tezhip" }].map(x => (
+          <button key={x.id} onClick={() => guncelle("meal", { sus: x.id })}
+            style={cip((ayar.meal.sus || "dal") === x.id)}>{x.ad}</button>
+        ))}
+      </div>
     </div>
   )
 

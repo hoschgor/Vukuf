@@ -48,9 +48,15 @@
      bir fiske atıldıysa. Yalnız mesafeye bakmak hızlı kapatmayı imkânsız kılar,
      yalnız hıza bakmak yavaş ama uzun sürüklemeyi yok sayar.
    • Perde (backdrop) sürükledikçe SOLUYOR — panelin nereye gittiği görünsün.
+   • YATAY TELEFON (29 Eylül 2026): `yp-altsayfa` sınıfı — 520 px'lik dar sayfa
+     ekranın ~430 px'lik boyunun %82'sine sıkışıyor, yanlarda yüzlerce piksel
+     boş kalıyordu. Yatayda en ~780 px, boy çentik payı dışında ekranın tamamı
+     (bkz. yatayDuzen.js). Tema bölümü bu genişlikte cami + rozetleri yan yana
+     diziyor. Dikeyde ve masaüstünde hiçbir şey değişmedi.
    ═══════════════════════════════════════════════════════════════════════════ */
 
 import { useState, useRef, useEffect, useLayoutEffect, useCallback } from "react"
+import "./yatayDuzen"
 
 const KAPANMA_SURESI = 220          // ms — çıkış geçişiyle aynı olmalı
 const ESIK_PX = 90                  // bu kadar aşağı inerse kapanır
@@ -187,6 +193,7 @@ export default function AltSayfa({
 
       <div
         ref={sayfaRef}
+        className="yp-altsayfa"
         role="dialog"
         aria-modal="true"
         onPointerDown={(e) => inisBasla(e, false)}

@@ -29,12 +29,55 @@ import PanelAyirac, { PanelAcilir, panelBolumeHizala } from "../components/Panel
 import GeriIkonu from "../components/GeriIkonu"
 import TemaSecici from "../components/TemaSecici"
 import { SekmeCubugu, Kaydirici, sekmeOku, sekmeYaz } from "../components/AyarSekmeleri"
+import { ypDegisken } from "../components/yatayDuzen"
+import { useIzlemeAyar } from "../data/izlemeAyar"
+import { eslemeYukle, kelimeSesCal, kelimeSesDurdur } from "../data/kelimeSes"
+/* ── DÖNME TEŞHİSİ — ⏸ YORUMDA (30 Eylül 2026) ─────────────────────────────
+   Ölçüm tamamlandı, sonuç (iPhone, 44 sayfa): dönmede ekran 6-12 kez çiziliyor
+   ama TOPLAM çizim yalnız ~150-200 ms (her biri 20-49 ms) ve hiçbir yerel
+   durum (useState) değişmiyor — çizimler üst bileşenden/kancalardan geliyor.
+   İlk resize'dan sonraki ~560 ms'lik blokta yalnız ~22 ms'lik BİR çizim var:
+   o blok React değil, tarayıcının yeni ölçüdeki yerleşimi. Kalan donma
+   (~1,4 sn) sayfanın yerleşimi; güvenli kazanımlar (sade kelime, süsler resim)
+   kalıcı yapıldı, riskli yollar (sayfa erteleme/sökme) sıçrama yüzünden reddedildi.
+   Yeniden açmak için: aşağıdaki bloğun, KuranOkuma gövdesindeki "GEÇİCİ — dönme
+   teşhisi" satırlarının ve react içe aktarımındaki `useState as _useState`un
+   yorumunu kaldır; MushafSayfa/MushafKelime'deki sayaç satırları ve Veriler'deki
+   bölüm de aynı işaretle yorumda.
+// GEÇİCİ — dönme teşhisi (bkz. data/donmeTeshis.js; ölçüm bitince silinecek)
+import {
+  donmeOlceriKur, SAYAC as DONME_SAYAC,
+  donmeDurumAdlari, donmeCizimBasla, donmeCizimBitti, donmeDurumDegisti,
+} from "../data/donmeTeshis"
+
+/* GEÇİCİ — DÖNME TEŞHİSİ: hangi durum (useState) ekranı yeniden çizdirdi?
+   Bu dosyadaki useState çağrıları bu sarmalayıcıdan geçiyor; KuranOkuma
+   gövdesi çalışırken (izIndeks ≥ 0) her durumun değeri bir önceki çizimle
+   kıyaslanıyor, değişenin SIRASI teşhise bildiriliyor. Sıra → ad eşlemesi
+   (KURAN_DURUM_ADLARI) kaynak koddaki sırayla ÜRETİLDİ; teşhis bitince bu
+   blok, sarmalayıcı ve liste silinecek. Diğer bileşenlerde (gövde dışında)
+   izIndeks -1 olduğundan sarmalayıcı düz useState gibi davranıyor. *∕
+let izIndeks = -1
+const izOnceki = []
+function useState(ilk) {
+  const sonuc = _useState(ilk)
+  if (izIndeks >= 0) {
+    const i = izIndeks++
+    if (i < izOnceki.length && !Object.is(izOnceki[i], sonuc[0])) donmeDurumDegisti(i)
+    izOnceki[i] = sonuc[0]
+  }
+  return sonuc
+}
+const KURAN_DURUM_ADLARI = ["odakAyet", "odakSure", "odakAyrac", "donusTip", "donusYol", "tekrarModu", "donguAyarAcik", "tmMod", "tmSayfaBas", "tmSayfaSon", "tmSure", "tmSureArama", "tmAyetBas", "tmAyetSon", "tmBesmele", "kariSecAcik", "sureUyari", "kayitPaneliAcik", "mushafData", "yukleniyor", "scrollKilitli", "popup", "mevcutSayfa", "?", "konumHazir", "acilisOrtu", "sayfaGirdi", "sayfaGirdiAcik", "kayitKonumModu", "gorselModu", "gorselVeri", "mealModu", "izlemeModu", "hifzAcik", "hifzEzber", "hifzKismi", "hifzYon", "hifzTekrarYontem", "hifzBagla", "hifzDonus", "hifzManuel", "hifzSureSira", "hifzEzberSurum", "hifzKademe", "hifzZincir", "hifzTekrar", "hifzBirim", "hifzAktif", "hifzIpucu", "hifzDokunAc", "hifzDokunSes", "kayitlar", "yaziBoyutu", "satirAraligi", "ustCentik", "mealOlcu", "tamGenislik", "kenarBosluk", "harfAraligi", "barGorunur", "barKonum", "sadeMode", "otomatikGizleme", "gizlemeSuresi", "sureGoster", "barKilitli", "sureBilgisiGoster", "cuzBilgisiGoster", "hizbBilgisiGoster", "sureMenuGoster", "kayitGoster", "sayfaGitGoster", "sadeModGoster", "temaGoster", "yaziTipiGoster", "otoOynatGoster", "tekrarBtnGoster", "bilgiGoster", "gorselGoster", "hifzGoster", "bilgiAcik", "butonSirasi", "butonTaraf", "siraAcik", "siraTaslak", "tarafTaslak", "sifirlaOnay", "sadeGizli", "sadeIcerikAcik", "gorunumAcik", "scrollbarGorunur", "aaAcik", "temaAcik", "ayarlarAcik", "ozelTemaPanelAcik", "sayfaGitAcik", "sayfaGitInput", "sayfaGosterim", "sayfaGosterimAcik", "ozelRenkler", "aktifRenk", "acikBolum", "aaSekme", "arapcaFontId", "yaziRengi", "ayetNoRengi", "bugunSure", "menuAcik", "menuArama", "acikSure", "anaBaslik", "cuzArama", "acikCuz", "ayetArama", "otomatikKaydirma", "kaydirmaHizi", "duraklatildi", "barYuksekligi", "barDugumu", "pwaModu", "playerYuk", "barCokSatir", "barSatirKes", "barUiOlcegi", "sarfSozluk"]
+donmeDurumAdlari(KURAN_DURUM_ADLARI)
+*/
 import AyetPopup from "../components/AyetPopup"
 import MealPopup from "../components/MealPopup"
 import IzlemeModu from "../components/IzlemeModu"
 import HifzPaneli from "../components/HifzPaneli"
 import {
   hifzOku, ayarGuncelle as hifzAyarGuncelle, gizlemeHaritasi, perdeCss,
+  sayfaKismiSec, cuzSayfalari, donusDizisi, baglamaAdimlari, duzAdimlar, adimlariListele,
   PERDE_SINIF, ACIK_SINIF, ipucuAlindi, ezberlendi, calisildi,
   bekleyenTekrarlar, sonrakiKademe, oncekiKademe, HEDEF_ANAHTAR, DONUS_ANAHTAR,
 } from "../data/hifz"
@@ -146,12 +189,18 @@ function bugunAnahtari() {
   return `vukuf-sure-kuran-${now.getFullYear()}-${now.getMonth()}-${now.getDate()}`
 }
 
+// x/y: eski tahmin (ölçümden önceki ilk kare); ax/ay: DOKUNULAN NOKTANIN KENDİSİ —
+// baloncuklar (AyetPopup, KelimePopup) kendi boylarını ölçüp buna göre altına/üstüne
+// yerleşiyor (data/hooks/useEkranIcinde.js).
+// Hıfz: perde AÇILMADAN yalnız DİNLENEN perdeli kelime — ipucu kelime başına bir kez sayılsın
+const HIFZ_DINLENDI = "hifz-dinlendi"
+
 function popupKonum(e) {
   const x = Math.min(e.clientX, window.innerWidth - 310)
   const y = e.clientY + 12 + 220 > window.innerHeight
     ? e.clientY - 200
     : e.clientY + 12
-  return { x, y }
+  return { x, y, ax: e.clientX, ay: e.clientY }
 }
 
 // ── ELİFSİZ YEDEK İNDEKS ───────────────────────────────────────────────────
@@ -188,6 +237,29 @@ function lugat(kelimeHam) {
   const hedef = ELIFSIZ_YEDEK.get(elifsiz(temiz))
   return hedef ? arapcaLugat[hedef] : null
 }
+/* MEAL PENCERESİ BOYUTU kaydırıcısı — AYRI BİLEŞEN, bilerek: izleme ayarlarına
+   abone olan bu küçük parça; KuranOkuma'nın kendisi abone olsaydı meal penceresi
+   her sürüklendiğinde bütün okuma ekranı yeniden çizilirdi. */
+function MealOlcekAyari({ theme, etiketStil }) {
+  const [ayar, guncelle] = useIzlemeAyar()
+  const olcek = ayar.meal.olcek || 1
+  return (
+    <div>
+      <div style={{ ...etiketStil, display: "flex", justifyContent: "space-between" }}>
+        <span>MEAL PENCERESİ BOYUTU</span>
+        <span style={{ color: theme.accent, fontWeight: "bold" }}>{Math.round(olcek * 100)}%</span>
+      </div>
+      <input
+        type="range" min="0.85" max="1.6" step="0.05"
+        value={olcek}
+        aria-label="Meal penceresi boyutu"
+        onChange={e => guncelle("meal", { olcek: parseFloat(e.target.value) })}
+        style={{ width: "100%", accentColor: theme.accent }}
+      />
+    </div>
+  )
+}
+
 function AyarToggle({ etiket, aktif, onToggle, theme, isMobile, barUiOlcegi }) {
   return (
     <div onClick={onToggle} role="button" aria-pressed={aktif} style={{
@@ -798,6 +870,8 @@ const KAYIT_PAYI = {
 // ANA BİLEŞEN
 // ════════════════════════════════════════════════════════════════
 export default function KuranOkuma({ kitap }) {
+  // GEÇİCİ — dönme teşhisi: çizim başlangıcı + durum izleme (bkz. dosya başı)
+  // izIndeks = 0; donmeCizimBasla()   // ⏸ dönme teşhisi (yorumda)
   const {
     // temaTaban: seçili temanın HAM hâli. Kullanıcının "Yazı Rengi" / "Âyet No Rengi"
     // tercihleri bunun üstüne bindirilerek aşağıda `theme` üretilir.
@@ -819,6 +893,8 @@ export default function KuranOkuma({ kitap }) {
   const isMobile  = MOBIL_CIHAZ || useMediaQuery("(max-width: 768px)")
   const genisEkran = useMediaQuery("(min-width: 1024px)")   // yatay telefon (<1024) bar sağa kaymasın
   const scrollRef = useRef(null)
+  // GEÇİCİ — dönme teşhisi: çizim sayacı + ölçer (ölçüm kapalıysa ölçer hiçbir şey yapmaz)
+  // DONME_SAYAC.kuran++; useEffect(() => donmeOlceriKur(), [])   // ⏸ dönme teşhisi (yorumda)
 
   // Son/Sık Okunanlar rafları için okuma kaydı
   useEffect(() => { okumaKaydet(KURAN_ID) }, [])
@@ -1039,7 +1115,22 @@ export default function KuranOkuma({ kitap }) {
   /* HIFZ MODU — perdeleme mushafın ÜZERİNDE yürüyor (gerekçesi data/hifz.js'te).
      Mod kalıcı değil, ama kademe/zincir/tekrar tercihleri kalıcı. */
   const [hifzAcik, setHifzAcik] = useState(false)
-  const [hifzKapsam, setHifzKapsam] = useState("sayfa")      // "sayfa" | "sure"
+  /* EZBER PLANI (30 Eylül 2026) — ayrıntısı data/hifz.js "EZBER PLANI"nda.
+     hifzKapsam artık AYRI DURUM DEĞİL, ezber tercihinden türüyor: sûre →
+     "sure", sayfa ve dönüş → "sayfa" (dönüşte sayfa, dönüş dizisinden gelir). */
+  const [hifzEzber, setHifzEzber] = useState(() => hifzOku().ayarlar.ezber || "sayfa")
+  const [hifzKismi, setHifzKismi] = useState(() => hifzOku().ayarlar.sayfaKismi || "tam")
+  const [hifzYon, setHifzYon] = useState(() => hifzOku().ayarlar.yon || "yukari")
+  const [hifzTekrarYontem, setHifzTekrarYontem] = useState(() => hifzOku().ayarlar.tekrarYontem || "duz")
+  const [hifzBagla, setHifzBagla] = useState(() => hifzOku().ayarlar.bagla !== false)
+  const [hifzDonus, setHifzDonus] = useState(() => ({ bas: "son", sira: 0, ...(hifzOku().ayarlar.donus || {}) }))
+  // MANUEL (30 Eylül 2026, kullanıcı isteği): sûre ve âyet aralığı elle yazılıyor
+  const [hifzManuel, setHifzManuel] = useState(() => ({ sure: 1, bas: 1, son: 7, ...(hifzOku().ayarlar.manuel || {}) }))
+  // Sûre listesinin sırası + "Ezberledim"den sonra ✓ işaretlerini tazelemek için sayaç
+  const [hifzSureSira, setHifzSureSira] = useState(() => hifzOku().ayarlar.sureSira || "orijinal")
+  const [hifzEzberSurum, setHifzEzberSurum] = useState(0)
+  const hifzKapsam = hifzEzber === "sure" ? "sure" : hifzEzber === "manuel" ? "manuel" : "sayfa"
+  const setHifzKapsam = (k) => setHifzEzber(k === "sure" ? "sure" : k === "manuel" ? "manuel" : "sayfa")
   const [hifzKademe, setHifzKademe] = useState(() => hifzOku().ayarlar.kademe)
   const [hifzZincir, setHifzZincir] = useState(() => hifzOku().ayarlar.zincir)
   const [hifzTekrar, setHifzTekrar] = useState(() => hifzOku().ayarlar.tekrarSayisi)
@@ -1052,15 +1143,38 @@ export default function KuranOkuma({ kitap }) {
   // kelimeTikla gibi kimliği sabit kalan callback'ler ayarı REF'ten okuyor.
   const hifzBirimRef = useRef(hifzBirim)
   useEffect(() => { hifzBirimRef.current = hifzBirim }, [hifzBirim])
+  // DOKUNUNCA NE OLSUN (29 Eylül 2026, kullanıcı: "ayar ile kullanıcıya
+  // bırakalım, farklı tercih istenebilir"): perdeyi aç ve/veya kelimeyi okut.
+  // İkisi bağımsız; "aç" eskiden hep açıktı (varsayılan açık), "okut" yeni
+  // (varsayılan kapalı). kelimeTikla kimliği sabit → REF'ten okunuyor.
+  const [hifzDokunAc, setHifzDokunAc] = useState(() => hifzOku().ayarlar.dokunAc !== false)
+  const [hifzDokunSes, setHifzDokunSes] = useState(() => !!hifzOku().ayarlar.dokunSes)
+  const hifzDokunRef = useRef({ ac: hifzDokunAc, ses: hifzDokunSes })
+  // Oynatıcı her render'da yeni nesne; sabit kimlikli kelimeTikla güncelini buradan okur
+  const hifzPlayerRef = useRef(null)
+  hifzPlayerRef.current = player
+  useEffect(() => { hifzDokunRef.current = { ac: hifzDokunAc, ses: hifzDokunSes } }, [hifzDokunAc, hifzDokunSes])
+  // Okutma açıksa kelime eşleme tablosu hıfz açılır açılmaz önden isteniyor —
+  // ilk dokunuşta beklemeden (iOS dokunuş kuralı bozulmadan) çalabilsin.
+  useEffect(() => {
+    if (hifzAcik && hifzDokunSes) eslemeYukle().catch(() => {})
+    if (!hifzAcik) kelimeSesDurdur()
+  }, [hifzAcik, hifzDokunSes])
   useEffect(() => {
     hifzAyarGuncelle({
       kademe: hifzKademe, zincir: hifzZincir, tekrarSayisi: hifzTekrar, birim: hifzBirim,
+      dokunAc: hifzDokunAc, dokunSes: hifzDokunSes,
+      ezber: hifzEzber, sayfaKismi: hifzKismi, yon: hifzYon,
+      tekrarYontem: hifzTekrarYontem, bagla: hifzBagla, donus: hifzDonus, manuel: hifzManuel,
+      sureSira: hifzSureSira,
     })
-  }, [hifzKademe, hifzZincir, hifzTekrar, hifzBirim])
+  }, [hifzKademe, hifzZincir, hifzTekrar, hifzBirim, hifzDokunAc, hifzDokunSes,
+      hifzEzber, hifzKismi, hifzYon, hifzTekrarYontem, hifzBagla, hifzDonus, hifzManuel, hifzSureSira])
   /* `sureGit` bileşen gövdesinde her render'da yeniden kurulan bir fonksiyon;
      useCallback'e kapatılsaydı ilk render'ın bayat kapanışı saklanırdı. Onun
      için her render'da REF'e yazılıyor (dosyadaki donmeIslevRef ile aynı usul). */
   const hifzSureGitRef = useRef(null)
+  const hifzSayfaGitRef = useRef(null)   // dönüşte dizideki sayfaya gitmek için
   // Hıfz açılırken / zincir ilerlerken odak isteği buraya yazılıyor.
   const hifzOdakIsteRef = useRef(false)
   // /hifz ekranından gelen hedef âyet, kapsam oturana kadar burada bekliyor.
@@ -1832,6 +1946,17 @@ const cokSatir = wrapAktif && barYuksekligi > tekSatirYuksekligi * 1.0
      Kelime sayıları SAYFADAN değil MUSHAF VERİSİNDEN alınıyor: bir âyet iki
      sayfaya bölünmüş olabiliyor, sayfadaki parçasına göre perdelenseydi
      "yarısı" kademesi âyetin yarısı değil sayfadaki parçasının yarısı olurdu. */
+  // DÖNÜŞ: cüz sınırları ve dönüş dizisi mushaf verisinden (elle yazılmış tablo yok)
+  const hifzDonusDizi = useMemo(() => {
+    if (!hifzAcik || hifzEzber !== "donus" || !mushafData || !mushafData.length) return []
+    return donusDizisi(cuzSayfalari(mushafData), hifzDonus.bas)
+  }, [hifzAcik, hifzEzber, mushafData, hifzDonus.bas])
+  const hifzDonusYer = hifzDonusDizi.length
+    ? hifzDonusDizi[Math.max(0, Math.min(hifzDonus.sira || 0, hifzDonusDizi.length - 1))]
+    : null
+  // Çalışılan SAYFA: dönüşte dönüş dizisinin sayfası (kaydırınca kaymaz), öbürlerinde bulunulan sayfa
+  const hifzSayfa = (hifzEzber === "donus" && hifzDonusYer) ? hifzDonusYer.sayfa : mevcutSayfa
+
   const hifzBirimler = useMemo(() => {
     if (!hifzAcik) return []
     const kelimeSay = (sureNo, ayetNo) => {
@@ -1839,15 +1964,18 @@ const cokSatir = wrapAktif && barYuksekligi > tekSatirYuksekligi * 1.0
       const ay = sr && (sr.ayetler || []).find(y => y.no === ayetNo)
       return (ay && ay.kelimeler && ay.kelimeler.length) || 1
     }
-    if (hifzKapsam === "sure") {
-      const sr = mushafData.find(x => x.id === mevcutSureBilgisi?.id)
+    if (hifzKapsam === "sure" || hifzKapsam === "manuel") {
+      const sr = mushafData.find(x => x.id === (hifzKapsam === "manuel" ? hifzManuel.sure : mevcutSureBilgisi?.id))
       if (!sr) return []
-      return (sr.ayetler || []).map(a => ({
+      // Manuelde yalnız yazılan âyet aralığı
+      const bas = hifzKapsam === "manuel" ? Math.min(hifzManuel.bas, hifzManuel.son) : 1
+      const son = hifzKapsam === "manuel" ? Math.max(hifzManuel.bas, hifzManuel.son) : Infinity
+      return (sr.ayetler || []).filter(a => a.no >= bas && a.no <= son).map(a => ({
         anahtar: `${sr.id}:${a.no}`, sureNo: sr.id, ayetNo: a.no,
         kelime: (a.kelimeler || []).length || 1,
       }))
     }
-    const els = (sayfaMap && sayfaMap.get(mevcutSayfa)) || []
+    const els = (sayfaMap && sayfaMap.get(hifzSayfa)) || []
     const gorulen = new Set(), cikti = []
     for (const el of els) {
       if (el.tip !== "kelime") continue
@@ -1856,12 +1984,16 @@ const cokSatir = wrapAktif && barYuksekligi > tekSatirYuksekligi * 1.0
       gorulen.add(k)
       cikti.push({ anahtar: k, sureNo: el.sure.id, ayetNo: el.ayet.no, kelime: kelimeSay(el.sure.id, el.ayet.no) })
     }
-    return cikti
-  }, [hifzAcik, hifzKapsam, mevcutSayfa, sayfaMap, mushafData, mevcutSureBilgisi])
+    // Sayfanın üst/alt yarısı (sayfa ve dönüşte)
+    return sayfaKismiSec(cikti, hifzKismi)
+  }, [hifzAcik, hifzKapsam, hifzSayfa, hifzKismi, sayfaMap, mushafData, mevcutSureBilgisi, hifzManuel])
 
-  // Zincirde bulunduğumuz âyet, liste kısalırsa taşmasın
+  // Zincirde bulunduğumuz âyet, liste kısalırsa taşmasın.
+  // hifzAktif ÖĞRENME SIRASINDAKİ adım; aşağıdan yukarı ezberde adım 0 sayfanın
+  // SON âyeti. hifzIndeks ise listedeki gerçek yer (perde ve odak bunu kullanır).
   const hifzSinir = Math.max(0, hifzBirimler.length - 1)
-  const hifzIndeks = Math.min(hifzAktif, hifzSinir)
+  const hifzAdim = Math.min(hifzAktif, hifzSinir)
+  const hifzIndeks = hifzYon === "asagi" ? hifzSinir - hifzAdim : hifzAdim
   // Kimliği sabit kalması gereken callback'ler (odaklama) bunları ref'ten okuyor.
   const hifzBirimlerRef = useRef(hifzBirimler)
   const hifzAktifRef = useRef(0)
@@ -1879,10 +2011,12 @@ const cokSatir = wrapAktif && barYuksekligi > tekSatirYuksekligi * 1.0
      bunlar; uzaktakiler zaten görünmüyor ve boşa katman açmıyor. */
   const hifzDisSayfalar = useMemo(() => {
     if (!hifzAcik) return []
-    let ilk = mevcutSayfa, son = mevcutSayfa
-    if (hifzKapsam === "sure") {
-      const sr = mushafData.find(x => x.id === mevcutSureBilgisi?.id)
-      const sayfalar = sr ? (sr.ayetler || []).map(a => a.sayfa).filter(Boolean) : []
+    let ilk = hifzSayfa, son = hifzSayfa
+    if (hifzKapsam === "sure" || hifzKapsam === "manuel") {
+      const sr = mushafData.find(x => x.id === (hifzKapsam === "manuel" ? hifzManuel.sure : mevcutSureBilgisi?.id))
+      const lo = hifzKapsam === "manuel" ? Math.min(hifzManuel.bas, hifzManuel.son) : 1
+      const hi = hifzKapsam === "manuel" ? Math.max(hifzManuel.bas, hifzManuel.son) : Infinity
+      const sayfalar = sr ? (sr.ayetler || []).filter(a => a.no >= lo && a.no <= hi).map(a => a.sayfa).filter(Boolean) : []
       if (sayfalar.length) { ilk = Math.min(...sayfalar); son = Math.max(...sayfalar) }
     }
     const dis = []
@@ -1892,7 +2026,7 @@ const cokSatir = wrapAktif && barYuksekligi > tekSatirYuksekligi * 1.0
       dis.push(n)
     }
     return dis
-  }, [hifzAcik, hifzKapsam, mevcutSayfa, mushafData, mevcutSureBilgisi, toplamSayfa])
+  }, [hifzAcik, hifzKapsam, hifzSayfa, mushafData, mevcutSureBilgisi, toplamSayfa, hifzManuel])
 
   const hifzCss = useMemo(() => {
     if (!hifzAcik || !hifzBirimler.length) return ""
@@ -1907,9 +2041,10 @@ const cokSatir = wrapAktif && barYuksekligi > tekSatirYuksekligi * 1.0
       birim: hifzBirim,
       aktifAnahtar: hifzZincir ? (hifzBirimler[hifzIndeks] || {}).anahtar : null,
       kelimeSayisi: (a) => boy.get(a) || 1,
+      yon: hifzYon,
     })
     return perdeCss(harita, { disSayfalar: hifzDisSayfalar })
-  }, [hifzAcik, hifzBirimler, hifzKademe, hifzZincir, hifzBirim, hifzIndeks, hifzDisSayfalar])
+  }, [hifzAcik, hifzBirimler, hifzKademe, hifzZincir, hifzBirim, hifzIndeks, hifzDisSayfalar, hifzYon])
 
   const hifzEtiket = useMemo(() => {
     if (!hifzBirimler.length) return "Hıfz"
@@ -1922,7 +2057,10 @@ const cokSatir = wrapAktif && barYuksekligi > tekSatirYuksekligi * 1.0
 
   // Açılan ipuçlarını temizle (kelimelere elle eklenen sınıf)
   const hifzIpuclariniSil = useCallback(() => {
-    try { document.querySelectorAll("." + ACIK_SINIF).forEach(el => el.classList.remove(ACIK_SINIF)) }
+    try {
+      document.querySelectorAll("." + ACIK_SINIF).forEach(el => el.classList.remove(ACIK_SINIF))
+      document.querySelectorAll("." + HIFZ_DINLENDI).forEach(el => el.classList.remove(HIFZ_DINLENDI))
+    }
     catch { /* yoksay */ }
     setHifzIpucu(0)
   }, [])
@@ -1955,7 +2093,7 @@ const cokSatir = wrapAktif && barYuksekligi > tekSatirYuksekligi * 1.0
     if (!hifzAcik) return
     if (!hifzHedefRef.current) setHifzAktif(0)   // devirle gelen hedef varsa ona dokunma
     hifzIpuclariniSil()
-  }, [hifzAcik, hifzKapsam, mevcutSayfa, hifzIpuclariniSil])
+  }, [hifzAcik, hifzKapsam, hifzSayfa, hifzKismi, hifzYon, hifzManuel, hifzIpuclariniSil])
 
   /* AÇILIŞ ODAĞI — kapsam (hifzBirimler) oturduğu anda bir kez hizalanıyor.
      Mod açıldığında sayfanın âyetleri henüz hesaplanmamış olabiliyor, onun için
@@ -1964,12 +2102,12 @@ const cokSatir = wrapAktif && barYuksekligi > tekSatirYuksekligi * 1.0
     if (!hifzAcik) { hifzOdakIsteRef.current = false; return }
     if (!hifzOdakIsteRef.current || !hifzBirimler.length) return
     if (hifzHedefRef.current) return             // hedefli giriş kendi hizalamasını yapıyor
-    const b = hifzBirimler[Math.min(hifzAktif, hifzBirimler.length - 1)]
+    const b = hifzBirimler[hifzIndeks]
     if (!b || !hifzSureGitRef.current) return    // istek duruyor, sonraki turda denenir
     hifzOdakIsteRef.current = false
     const t = setTimeout(() => hifzSureGitRef.current?.(b.sureNo, b.ayetNo), 60)
     return () => clearTimeout(t)
-  }, [hifzAcik, hifzBirimler, hifzAktif])
+  }, [hifzAcik, hifzBirimler, hifzIndeks])
 
   /* /hifz EKRANINDAN DEVİR — "mushafta aç" hedefi. Mushaf yüklenmeden `sureGit`
      hizalayamayacağı için yükleme bitene kadar bekleniyor; hedef bir kez
@@ -2007,8 +2145,99 @@ const cokSatir = wrapAktif && barYuksekligi > tekSatirYuksekligi * 1.0
     const i = hifzBirimler.findIndex(b => b.anahtar === hifzHedefRef.current)
     if (i < 0) return                    // hedefin sayfası daha yerleşmedi
     hifzHedefRef.current = null
-    setHifzAktif(i)
+    // Liste yeri → öğrenme adımı (aşağıdan yukarıda ters sayılıyor)
+    setHifzAktif(hifzYon === "asagi" ? (hifzBirimler.length - 1 - i) : i)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hifzAcik, hifzBirimler])
+
+  /* ── DÖNÜŞ: dizideki sayfaya git ─────────────────────────────────────────
+     Dönüş seçildiğinde ve dizide ilerlendikçe mushaf o sayfaya gidiyor.
+     Sayfa elle kaydırılsa da çalışılan sayfa DEĞİŞMİYOR (dizi belirler). */
+  const hifzDonusSayfasi = hifzAcik && hifzEzber === "donus" && hifzDonusYer ? hifzDonusYer.sayfa : null
+  useEffect(() => {
+    if (!hifzDonusSayfasi || !hifzSayfaGitRef.current) return
+    const t = setTimeout(() => hifzSayfaGitRef.current?.(hifzDonusSayfasi), 30)
+    return () => clearTimeout(t)
+  }, [hifzDonusSayfasi])
+
+  /* ── BAĞLAMA: komşu (önceden ezberlenmiş) âyet ────────────────────────────
+     Sayfada: çalışılan kısmın hemen ÖNCESİ (önceki sayfanın son âyeti; alt
+     yarıda üst yarının son âyeti). Cüz sonundan dönüşte: hemen SONRASI (bir
+     önceki dönüşte ezberlenen, sonraki sayfanın ilk âyeti) — o da AYNI CÜZDE
+     ise. Sûre ezberinde yok (sûre kendi başından başlar). */
+  const hifzBagAyeti = useMemo(() => {
+    // Sûre ezberinde bağ yok (sûre kendi başından başlar); manuelde aralığın öncesi
+    if (!hifzAcik || !hifzBagla || hifzEzber === "sure" || !hifzBirimler.length || !mushafData) return null
+    const sonra = hifzEzber === "donus" && hifzDonus.bas === "son"
+    const uc = sonra ? hifzBirimler[hifzBirimler.length - 1] : hifzBirimler[0]
+    const sr = mushafData.find(x => x.id === uc.sureNo)
+    if (!sr) return null
+    const ayetler = sr.ayetler || []
+    const i = ayetler.findIndex(a => a.no === uc.ayetNo)
+    let hedefSure = sr, hedef = null
+    if (sonra) {
+      if (i >= 0 && i + 1 < ayetler.length) hedef = ayetler[i + 1]
+      else { hedefSure = mushafData.find(x => x.id === uc.sureNo + 1); hedef = hedefSure && (hedefSure.ayetler || [])[0] }
+    } else {
+      if (i > 0) hedef = ayetler[i - 1]
+      else { hedefSure = mushafData.find(x => x.id === uc.sureNo - 1); const l = hedefSure && hedefSure.ayetler; hedef = l && l[l.length - 1] }
+    }
+    if (!hedef || !hedefSure) return null
+    // Manuelde komşu aynı sûrede olmalı (aralık sûrenin başıysa bağ yok)
+    if (hifzEzber === "manuel" && hedefSure.id !== uc.sureNo) return null
+    // Dönüşte komşu aynı cüzde olmalı (öbür cüzün o sayfası henüz ezberlenmedi)
+    if (hifzEzber === "donus") {
+      const ucAyet = i >= 0 ? ayetler[i] : null
+      if (!ucAyet || ucAyet.cuz !== hedef.cuz) return null
+    }
+    const b = { sureNo: hedefSure.id, ayetNo: hedef.no }
+    // Çalışılan kısmın içindeyse (sayfaya bölünmüş âyet) bağ sayılmaz
+    if (hifzBirimler.some(x => x.sureNo === b.sureNo && x.ayetNo === b.ayetNo)) return null
+    return b
+  }, [hifzAcik, hifzBagla, hifzEzber, hifzBirimler, mushafData, hifzDonus.bas])
+
+  /* ── KISA SÛRELER (sûre ezberi için) — en çok 2 sayfaya yayılanlar,
+     mushaf verisinden hesaplanıyor. */
+  // ayetSayisi/kelime: "kısadan uzuna" sıralama için; ezber: bütün âyetleri
+  // "ezberlendi" (✓, listenin sonuna iner — kullanıcı önerisi)
+  const hifzKisaSureler = useMemo(() => {
+    if (!hifzAcik || hifzEzber !== "sure" || !mushafData) return []
+    const kayit = hifzOku().birimler || {}
+    const l = []
+    for (const sr of mushafData) {
+      const ay = sr.ayetler || []
+      const s = ay.map(a => a.sayfa).filter(Boolean)
+      if (!s.length) continue
+      if (Math.max(...s) - Math.min(...s) + 1 <= 2) l.push({
+        id: sr.id, isim: sureler.find(x => x.id === sr.id)?.isim || `Sûre ${sr.id}`,
+        ayetSayisi: ay.length,
+        kelime: ay.reduce((t, a) => t + ((a.kelimeler || []).length || 1), 0),
+        ezber: ay.length > 0 && ay.every(a => (kayit[`${sr.id}:${a.no}`] || {}).d === 2),   // DURUM.EZBERLENDI
+      })
+    }
+    return l
+    // hifzEzberSurum: "Ezberledim" sonrası ✓'ların tazelenmesi için
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hifzAcik, hifzEzber, mushafData, sureler, hifzEzberSurum])
+
+  /* ── BAĞLAMA ÇALARKEN ZİNCİRİ İZLE ─────────────────────────────────────
+     Bağlamada her YENİ âyet başladığında zincir o âyete geçiyor: perde yeni
+     âyeti açık, öncekileri perdeli gösteriyor. Birlikte okunan bloklarda
+     yalnız öğrenilmiş âyetler çaldığı için zincir geri gitmiyor. */
+  // (VAKIF YENİDEN BOYAMA denemesi — sayfa kabuğunu yeniden boyatmak — işe
+  //  yaramadı, kaldırıldı. Açık sorun: âyet okunup geçince vakıf işaretinin bir
+  //  kısmı siliniyor; "Durdur" yeniden çizdiriyor. Sonra bakılacak.)
+  const hifzBaglamaCaliyorRef = useRef(false)
+  useEffect(() => {
+    if (player.durum === "kapali") { hifzBaglamaCaliyorRef.current = false; return }
+    if (!hifzAcik || !hifzBaglamaCaliyorRef.current || !player.aktifAyet) return
+    const { sureNo, ayetNo } = player.aktifAyet
+    const i = hifzBirimler.findIndex(b => b.sureNo === sureNo && b.ayetNo === ayetNo)
+    if (i < 0) return
+    const adim = hifzYon === "asagi" ? hifzBirimler.length - 1 - i : i
+    setHifzAktif(a => (adim > a ? adim : a))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [player.aktifAyet, player.durum])
 
   const filtreliSureler = useMemo(() => {
     if (!menuArama) return sureler
@@ -2676,6 +2905,7 @@ function sureGit(sureId, ayetNo) {
 // Hıfz odaklaması buradan geçiyor. `sureGit` KUSURSUZ ÇALIŞTIĞI İÇİN
 // DOKUNULMUYOR; yalnız her render'da güncel kopyası ref'e alınıyor.
 hifzSureGitRef.current = sureGit
+hifzSayfaGitRef.current = sayfayaGit
 
 
   // ════════════════════════════════════════════════════════════════
@@ -2703,24 +2933,50 @@ hifzSureGitRef.current = sureGit
        tutmak her dokunuşta sayfayı yeniden çizerdi. */
     if (hifzAcikRef.current) {
       const anahtar = `${sure.id}:${ayet.no}`
-      // ÂYET BİRİMİNDE ipucu da âyet ölçüsünde: tek kelime açmak orada bir şey
-      // ifade etmiyor (âyet ya hep ya hiç perdeli), âyetin tamamı açılıyor.
-      if (hifzBirimRef.current === "ayet") {
-        let yeni = false
-        try {
-          document.querySelectorAll(`[data-hifz="${anahtar}"]`).forEach(k => {
-            if (!k.classList.contains(ACIK_SINIF)) { k.classList.add(ACIK_SINIF); yeni = true }
-          })
-        } catch { /* yoksay */ }
-        if (yeni) { setHifzIpucu(n => n + 1); ipucuAlindi(anahtar) }
-        return
-      }
+      const { ac, ses } = hifzDokunRef.current
       const el = e && e.currentTarget
-      if (el && el.classList && !el.classList.contains(ACIK_SINIF)) {
-        el.classList.add(ACIK_SINIF)
-        setHifzIpucu(n => n + 1)
-        ipucuAlindi(anahtar)
+      // Perdeli mi? Kapsam dışı ya da zaten açık kelimeye dokunmak ipucu değil.
+      const perdeliMi = (k) => {
+        try { return !!k && !k.classList.contains(ACIK_SINIF) && getComputedStyle(k).filter !== "none" }
+        catch { return false }
       }
+      const perdeli = perdeliMi(el)
+      let ipucu = false
+
+      // 1) PERDEYİ AÇ (ayar açıksa)
+      if (ac) {
+        // ÂYET BİRİMİNDE ipucu da âyet ölçüsünde: tek kelime açmak orada bir şey
+        // ifade etmiyor (âyet ya hep ya hiç perdeli), âyetin tamamı açılıyor.
+        if (hifzBirimRef.current === "ayet") {
+          try {
+            document.querySelectorAll(`[data-hifz="${anahtar}"]`).forEach(k => {
+              if (!k.classList.contains(ACIK_SINIF)) { k.classList.add(ACIK_SINIF); ipucu = true }
+            })
+          } catch { /* yoksay */ }
+        } else if (el && el.classList && !el.classList.contains(ACIK_SINIF)) {
+          el.classList.add(ACIK_SINIF)
+          ipucu = true
+        }
+      }
+
+      // 2) KELİMEYİ OKUT (ayar açıksa). Perde açılmıyor olsa bile perdeli
+      //    kelimeyi DUYMAK da ipucudur → kelime başına bir kez sayılır.
+      if (ses) {
+        // kelimeTikla'nın kimliği sabit (useCallback) → oynatıcı REF'ten okunuyor
+        const pl = hifzPlayerRef.current
+        if (pl && pl.durum === "caliyor") pl.duraklat()
+        const grup = kelime.id ? kelimeGrup[kelime.id] : null
+        kelimeSesCal({
+          sureNo: sure.id, ayetNo: ayet.no,
+          kelime: { id: kelime.id, grupUyeleri: grup?.uyeler || null, position: kelime.id ? parseInt(kelime.id.split(":")[2]) : 0 },
+        })
+        if (!ac && perdeli && el && !el.classList.contains(HIFZ_DINLENDI)) {
+          el.classList.add(HIFZ_DINLENDI)
+          ipucu = true
+        }
+      }
+
+      if (ipucu) { setHifzIpucu(n => n + 1); ipucuAlindi(anahtar) }
       return
     }
     sarfIste()
@@ -3069,9 +3325,14 @@ hifzSureGitRef.current = sureGit
   // PANEL ve BAR STİLLERİ
   // ════════════════════════════════════════════════════════════════
 
-  const panelStil = (konum) => ({
+  // YATAY TELEFON: panelin bar tarafındaki payı + karşı kenarda 12 px → panel
+  // boyu ekranın gerçekten kalan kısmına bağlanıyor (yatayDuzen.js). `en` yatayda
+  // istenen genişlik; dikey düzende hiçbir etkisi yok.
+  const panelPayi = barYuksekligi + (player.durum !== "kapali" ? playerBarYuksekligi : 4)
+  const panelStil = (konum, en = 620) => ({
     position: "fixed",
-    [barKonum === "alt" ? "bottom" : "top"]: `${barYuksekligi + (player.durum !== "kapali" ? playerBarYuksekligi : 4)}px`,
+    [barKonum === "alt" ? "bottom" : "top"]: `${panelPayi}px`,
+    ...ypDegisken({ pay: panelPayi + 12, en, cizgi: theme.border }),
     ...(konum === "right"
       ? { right: "12px" }
       : konum === "left"
@@ -3146,7 +3407,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
   const SayfaGitPopup = sayfaGitAcik && (
   <>
     <div onClick={() => setSayfaGitAcik(false)} style={{ position: "fixed", inset: 0, zIndex: 95 }} />
-    <div className="vukuf-panel" style={{ ...panelStil("center"), width: "280px", zIndex: 96 }}>
+    <div className="vukuf-panel yp-panel" style={{ ...panelStil("center"), width: "280px", zIndex: 96 }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px" }}>
         <div style={{ fontSize: "12px", color: theme.textSecondary }}>SAYFAYA GİT (1 – {toplamSayfa})</div>
         <button onClick={() => setSayfaGosterimAcik(v => !v)} title="Bardaki görünüm tipi"
@@ -3242,12 +3503,14 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
           bırakıyor, kaydırılan içerik oradan sızıyordu. Üst dolguyu bloğun KENDİ
           dolgusuna taşıyınca sticky doğrudan `top: 0`a oturuyor — arada kaçacak
           boşluk kalmıyor. */}
-      <div ref={aaPanelRef} className="vukuf-panel" style={{ ...panelStil("center"), padding: "0 12px 12px", width: "300px", maxHeight: "80vh", overflowY: "auto", zIndex: 200 }}>
+      {/* YATAY TELEFON: yp-aa → önizleme solda sabit, sekmeler ve ayarlar sağda */}
+      <div ref={aaPanelRef} className="vukuf-panel yp-panel yp-genis yp-aa" style={{ ...panelStil("center", 640), padding: "0 12px 12px", width: "300px", maxHeight: "80vh", overflowY: "auto", zIndex: 200 }}>
 
         {/* TEK ÖNİZLEME — panelin üstünde sabit durur, aşağıdaki BÜTÜN ayarlar
             (boyut, satır aralığı, harf aralığı, yazı tipi) bunu anında değiştirir.
-            Eskiden her ayarın altında ayrı bir önizleme vardı; menü kalabalıktı. */}
-        <div style={{
+            Eskiden her ayarın altında ayrı bir önizleme vardı; menü kalabalıktı.
+            yp-aa-onizleme: yatay telefonda sol sütun (yatayDuzen.js). */}
+        <div className="yp-aa-onizleme" style={{
           position: "sticky", top: 0, zIndex: 2,
           background: theme.surface,
           margin: "0 -12px 12px", padding: "12px 12px 10px",
@@ -3277,6 +3540,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
             Kullanıcı: "açılan paneller açılıp kapandığında rahat kullanılmıyor".
             İçerik yerinde değişiyor; panel zıplamıyor, kaydırmak gerekmiyor. */}
         <SekmeCubugu
+          sinif="yp-aa-ilk"
           theme={theme}
           secili={aaSekme}
           onSec={aaSekmeSec}
@@ -3287,7 +3551,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
           ]}
         />
         {/* İçerik alanı sabit en az yükseklikte — sekme değişince panel boyu zıplamasın */}
-        <div style={{ minHeight: "186px" }}>
+        <div className="yp-aa-icerik" style={{ minHeight: "186px" }}>
 
         {aaSekme === "boyut" && (<>
           <Kaydirici theme={theme} etiket="YAZI BOYUTU" deger={yaziBoyutu} gosterim={`${yaziBoyutu}px`}
@@ -3386,11 +3650,12 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
     <>
       <div onClick={() => setTemaAcik(false)} style={{ position: "fixed", inset: 0, zIndex: 195 }} />
       {/* Renk bölümleri eklendiği için panel uzayabilir → kısa ekranlarda kaydırılabilsin */}
-      <div className="vukuf-panel" style={{
-        ...panelStil("right"), width: "240px", zIndex: 200,
+      {/* YATAY TELEFON: yp-tema → tema satırları 2-3 sütun, renk ayarları yan yana */}
+      <div className="vukuf-panel yp-panel yp-genis yp-sag yp-tema" style={{
+        ...panelStil("right", 600), width: "240px", zIndex: 200,
         maxHeight: "80vh", overflowY: "auto", overscrollBehavior: "contain",
       }}>
-        <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "10px", letterSpacing: "1px" }}>TEMA</div>
+        <div className="yp-tam" style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "10px", letterSpacing: "1px" }}>TEMA</div>
         {/* Ton anahtarı + önizlemeli liste — ortak bileşen (components/TemaSecici.jsx).
             Hazır tema seçilince panel eskisi gibi kapanır; yalnız Otomatik modda
             ekrana yansımayan (öbür tonun) seçimde açık kalır ki işaret görülsün. */}
@@ -3403,7 +3668,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
         />
 
         {/* ── YAZI RENGİ — seçili temanın metin rengini ezer, temayı değiştirmez */}
-        <div style={{ borderTop: `1px solid ${theme.border}`, marginTop: "10px", paddingTop: "10px" }}>
+        <div className="yp-renk" style={{ borderTop: `1px solid ${theme.border}`, marginTop: "10px", paddingTop: "10px" }}>
           <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px" }}>YAZI RENGİ</div>
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <input
@@ -3425,7 +3690,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
         </div>
 
         {/* ── ÂYET NO RENGİ — rozet rakamı ve âyet numarası vurguları */}
-        <div style={{ marginTop: "10px" }}>
+        <div className="yp-renk" style={{ marginTop: "10px" }}>
           <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px" }}>ÂYET NO RENGİ</div>
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <input
@@ -3457,7 +3722,9 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
     <>
       <div onClick={() => setOzelTemaPanelAcik(false)}
         style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 300 }} />
-      <div className="vukuf-panel" style={{
+      {/* YATAY TELEFON: genişliyor, renk listesi iki sütun */}
+      <div className="vukuf-panel yp-panel yp-genis" style={{
+        ...ypDegisken({ pay: 24, en: 620 }),
         position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)",
         background: theme.surface, border: `1px solid ${theme.border}`,
         borderRadius: "24px", padding: "24px", zIndex: 400,
@@ -3470,7 +3737,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
             <X size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />
           </button>
         </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+        <div className="yp-iki" style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
           {PALET_ALANLARI.map(palet => (
             <div key={palet.key}>
               <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
@@ -3551,11 +3818,19 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
   // AYARLAR PANELİ
   // ════════════════════════════════════════════════════════════════
 
+  // Ayarlar panelindeki bölüm başlıkları — OkumaEkrani'yla aynı görünüm (büyük harf,
+  // harf aralıklı), boyut arayüz ölçeğine bağlı.
+  const ayarEtiket = {
+    fontSize: `${Math.round((isMobile ? 11 : 12) * barUiOlcegi)}px`,
+    color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px",
+  }
+
   const AyarlarPanel = ayarlarAcik && (
     <>
       <div onClick={() => setAyarlarAcik(false)} style={{ position: "fixed", inset: 0, zIndex: 195 }}/>
-      <div className="vukuf-panel" style={{ 
-        ...panelStil("right"), 
+      {/* YATAY TELEFON: yp-iki → iki sütun */}
+      <div className="vukuf-panel yp-panel yp-genis yp-sag yp-iki" style={{ 
+        ...panelStil("right", 640), 
         width: "270px", 
         display: "flex", 
         flexDirection: "column", 
@@ -3564,8 +3839,15 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
         maxHeight: "80vh",
         overflowY: "auto",
       }}>
+        {/* SIRA (29 Eylül 2026, kullanıcı isteği) — OkumaEkrani'yla AYNI düzen:
+              BAR KONUMU        | OTOMATİK GİZLEME
+              ARAYÜZ BOYUTU     | MEAL PENCERESİ BOYUTU
+              GÖRÜNTÜLEME       | SADE MOD İÇERİKLERİ
+              KÂRÎ (tam genişlik)
+            Dikeyde aynı sırayla alt alta; yatay telefonda iki sütun (yp-iki).
+            Etiketler de OkumaEkrani gibi büyük harf, değer sağda yüzde. */}
         <div>
-          <div style={{ fontSize: `${Math.round((isMobile ? 11 : 12) * barUiOlcegi)}px`, color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px" }}>Bar Konumu</div>
+          <div style={ayarEtiket}>BAR KONUMU</div>
           <div style={{ display: "flex", gap: "6px" }}>
             {["ust", "alt"].map(k => (
               <button key={k} onClick={() => setBarKonum(k)} style={{
@@ -3581,27 +3863,12 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
             ))}
           </div>
         </div>
+
         <div>
-          <div>
-            </div>
-          <div style={{ fontSize: `${Math.round((isMobile ? 11 : 12) * barUiOlcegi)}px`, color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px" }}>Arayüz Boyutu</div>
-          <div style={{ display: "flex", justifyContent: "space-between", fontSize: `${Math.round((isMobile ? 11 : 12) * barUiOlcegi)}px`, color: theme.textSecondary, marginBottom: "6px" }}>
-            <span>Küçük</span>
-            <span style={{ color: theme.accent, fontWeight: "bold" }}>{barUiOlcegi.toFixed(1)}x</span>
-            <span>Büyük</span>
-          </div>
-          <input
-            type="range" min="0.8" max="1.6" step="0.1"
-            value={barUiOlcegi}
-            onChange={e => setBarUiOlcegi(parseFloat(e.target.value))}
-            style={{ width: "100%", accentColor: theme.accent }}
-          />
-        <div>
-        </div>
-          <div style={{ fontSize: `${Math.round((isMobile ? 11 : 12) * barUiOlcegi)}px`, color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px" }}>Otomatik Gizleme</div>
+          <div style={ayarEtiket}>OTOMATİK GİZLEME</div>
           <div onClick={() => setOtomatikGizleme(!otomatikGizleme)} role="button" aria-pressed={otomatikGizleme} style={{
             width: "100%", padding: "7px 10px", borderRadius: "8px", fontSize: `${Math.round((isMobile ? 12 : 13) * barUiOlcegi)}px`,
-            color: theme.text,
+            color: theme.text, boxSizing: "border-box",
             cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px",
           }}>
             <span>Otomatik gizleme</span>
@@ -3616,9 +3883,29 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
                 onChange={e => setGizlemeSuresi(Number(e.target.value))}
                 style={{ width: "100%", accentColor: theme.accent }}
               />
-            </div>           
+            </div>
           )}
         </div>
+
+        <div>
+          <div style={{ ...ayarEtiket, display: "flex", justifyContent: "space-between" }}>
+            <span>ARAYÜZ BOYUTU</span>
+            <span style={{ color: theme.accent, fontWeight: "bold" }}>{Math.round(barUiOlcegi * 100)}%</span>
+          </div>
+          <input
+            type="range" min="0.8" max="1.6" step="0.1"
+            value={barUiOlcegi}
+            onChange={e => setBarUiOlcegi(parseFloat(e.target.value))}
+            style={{ width: "100%", accentColor: theme.accent }}
+          />
+        </div>
+
+        {/* MEAL PENCERESİ BOYUTU — OkumaEkrani'daki "Bilgi menüsü boyutu"nun karşılığı.
+            Sesli okumada açılan meal penceresini (yazı, başlık, düğmeler, genişlik)
+            birlikte büyütür. Meal yazı boyutu (pencerenin kendi ayarı) ayrıca duruyor;
+            bu oran onun ÜSTÜNE çarpılıyor. Kayıt: izlemeAyar → meal.olcek. */}
+        <MealOlcekAyari theme={theme} etiketStil={ayarEtiket} />
+
         <div>
         {/* Açılır başlık */}
         <button
@@ -3631,7 +3918,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
             color: theme.textSecondary, letterSpacing: "1px",
           }}
         >
-          <span>Görüntüleme</span>
+          <span>GÖRÜNTÜLEME</span>
           {gorunumAcik
             ? <ChevronDown size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />
             : <ChevronRight size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />}
@@ -3694,7 +3981,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
               color: theme.textSecondary, letterSpacing: "1px",
             }}
           >
-            <span>Sade Mod İçerikleri</span>
+            <span>SADE MOD İÇERİKLERİ</span>
             {sadeIcerikAcik
               ? <ChevronDown size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />
               : <ChevronRight size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />}
@@ -3712,7 +3999,8 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
           )}
         </div>
 
-        <div style={{ position: "relative", zIndex: 300 }}>
+        {/* Kârî — Görüntüleme ve Sade Mod'un altında, yatayda iki sütunu birden kaplar */}
+        <div className="yp-tam" style={{ position: "relative", zIndex: 300 }}>
           <KariSecici
             kariId={player.kariId}
             setKariId={player.setKariId}
@@ -4044,6 +4332,9 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
   // ════════════════════════════════════════════════════════════════
   // ANA RENDER
   // ════════════════════════════════════════════════════════════════
+
+  // GEÇİCİ — dönme teşhisi: commit anı (çizim süresi) + durum izlemeyi bitir
+  // useLayoutEffect(() => { donmeCizimBitti() }); izIndeks = -1   // ⏸ dönme teşhisi (yorumda)
 
   if (yukleniyor) return <YuklemeEkrani theme={theme} yukseklik="100vh" />
 
@@ -4882,15 +5173,52 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
           ))}
           birim={hifzBirim}
           onBirim={setHifzBirim}
+          dokunAc={hifzDokunAc}
+          onDokunAc={setHifzDokunAc}
+          dokunSes={hifzDokunSes}
+          onDokunSes={setHifzDokunSes}
           zincir={hifzZincir}
           onZincir={setHifzZincir}
-          aktifSira={hifzIndeks + 1}
+          aktifSira={hifzAdim + 1}
           toplam={hifzBirimler.length}
           // Zincirde gezinirken odak da birlikte gidiyor: perdeli bir sayfada
           // "sıradaki âyet" ekran dışında kalırsa düğme hiçbir şey yapmış gibi
           // görünüyordu.
-          onOnceki={() => { const n = Math.max(0, hifzIndeks - 1); setHifzAktif(n); hifzOdakla(n) }}
-          onSonraki={() => { const n = Math.min(hifzSinir, hifzIndeks + 1); setHifzAktif(n); hifzOdakla(n) }}
+          // Önceki/sonraki ÖĞRENME SIRASINDA (aşağıdan yukarıda sayfada yukarı doğru)
+          onOnceki={() => { const n = Math.max(0, hifzAdim - 1); setHifzAktif(n); hifzOdakla(hifzYon === "asagi" ? hifzSinir - n : n) }}
+          onSonraki={() => { const n = Math.min(hifzSinir, hifzAdim + 1); setHifzAktif(n); hifzOdakla(hifzYon === "asagi" ? hifzSinir - n : n) }}
+          ezber={hifzEzber} onEzber={setHifzEzber}
+          kismi={hifzKismi} onKismi={setHifzKismi}
+          yon={hifzYon} onYon={(y) => { setHifzYon(y); setHifzAktif(0) }}
+          tekrarYontem={hifzTekrarYontem} onTekrarYontem={setHifzTekrarYontem}
+          bagla={hifzBagla} onBagla={setHifzBagla}
+          donusBas={hifzDonus.bas}
+          onDonusBas={(b) => setHifzDonus({ bas: b, sira: 0 })}
+          donusYer={hifzDonusYer}
+          donusToplam={hifzDonusDizi.length}
+          donusSira={Math.min(hifzDonus.sira || 0, Math.max(0, hifzDonusDizi.length - 1))}
+          onDonusGit={(n) => setHifzDonus(d => ({ ...d, sira: Math.max(0, Math.min(n, hifzDonusDizi.length - 1)) }))}
+          kisaSureler={hifzKisaSureler}
+          sureSira={hifzSureSira}
+          onSureSira={setHifzSureSira}
+          sureListesi={(mushafData || []).map(sr => ({
+            id: sr.id, isim: sureler.find(x => x.id === sr.id)?.isim || `Sûre ${sr.id}`,
+            ayetSayisi: (sr.ayetler || []).length,
+          }))}
+          manuel={hifzManuel}
+          onManuel={(m) => {
+            // Geçerli aralığa sıkıştır (âyet sayısı mushaf verisinden)
+            const sr = mushafData && mushafData.find(x => x.id === m.sure)
+            const n = (sr && sr.ayetler && sr.ayetler.length) || 1
+            const bas = Math.max(1, Math.min(n, m.bas | 0 || 1))
+            const son = Math.max(1, Math.min(n, m.son | 0 || bas))
+            const yeni = { sure: m.sure, bas: Math.min(bas, son), son: Math.max(bas, son) }
+            setHifzManuel(yeni); setHifzAktif(0)
+            setHifzEzber("manuel")
+            hifzSureGitRef.current?.(yeni.sure, yeni.bas)
+          }}
+          seciliSure={mevcutSureBilgisi?.id}
+          onSureSec={(id) => { setHifzAktif(0); hifzSureGitRef.current?.(id, 1) }}
           onOdakla={() => hifzOdakla()}
           onPanel={() => {
             // Köprü: dönüşte bırakılan yere gelinebilsin diye konum yazılıyor.
@@ -4914,20 +5242,37 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
             // oynat/duraklat görevi görüyor, durdurma ayrı düğmede.
             if (player.durum === "caliyor") { player.duraklat(); return }
             if (player.durum === "duraklatildi") { player.devamEt(); return }
-            const kume = hifzZincir ? hifzBirimler.slice(0, hifzIndeks + 1) : hifzBirimler
-            const tek = kume.map(b => ({ sureNo: b.sureNo, ayetNo: b.ayetNo }))
-            if (!tek.length) return
-            // Tekrar sayısı kadar kuyruğa ekleniyor; döngü YOK ki bitince dursun.
-            const liste = []
-            for (let i = 0; i < Math.max(1, hifzTekrar); i++) liste.push(...tek)
-            calisildi(tek.map(t => `${t.sureNo}:${t.ayetNo}`))
+            const hepsi = hifzBirimler.map(b => ({ sureNo: b.sureNo, ayetNo: b.ayetNo }))
+            if (!hepsi.length) return
+            let adimlar
+            if (hifzTekrarYontem === "baglama") {
+              // BAĞLAMA: zincirin bulunduğu adımdan başlar (öncekiler öğrenilmiş
+              // sayılır ve birlikte okunan bloklara girer).
+              adimlar = baglamaAdimlari({
+                ayetler: hepsi, yon: hifzYon, tekrar: hifzTekrar,
+                bag: hifzBagAyeti, bas: hifzZincir ? hifzAdim : 0,
+              })
+              hifzBaglamaCaliyorRef.current = true
+            } else {
+              // DÜZ: zincirde öğrenilenler (yöne göre), değilse hepsi — N kez
+              const kume = !hifzZincir ? hepsi
+                : hifzYon === "asagi" ? hepsi.slice(hifzIndeks) : hepsi.slice(0, hifzIndeks + 1)
+              adimlar = duzAdimlar({ ayetler: kume, tekrar: hifzTekrar })
+              hifzBaglamaCaliyorRef.current = false
+            }
+            const liste = adimlariListele(adimlar)
+            if (!liste.length) return
+            calisildi(hifzBirimler.map(b => b.anahtar))
+            // Döngü YOK ki bitince dursun.
             player.listeCal(liste, false)
           }}
           ezberliMi={false}
           onEzberledim={() => {
-            const kume = hifzZincir ? hifzBirimler.slice(0, hifzIndeks + 1) : hifzBirimler
+            const kume = !hifzZincir ? hifzBirimler
+              : hifzYon === "asagi" ? hifzBirimler.slice(hifzIndeks) : hifzBirimler.slice(0, hifzIndeks + 1)
             if (!kume.length) return
             ezberlendi(kume.map(b => b.anahtar))
+            setHifzEzberSurum(n => n + 1)   // sûre listesinde ✓ tazelensin
             setHifzIpucu(0)
           }}
           onHepsiniAc={hifzIpuclariniSil}

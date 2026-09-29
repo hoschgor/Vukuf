@@ -14,13 +14,15 @@ export default function KariSecici({ kariId, setKariId, theme, barUiOlcegi = 1, 
 
   return (
     <div style={{ position: "relative" }}>
+      {/* Büyük harf (29 Eylül 2026) — ayarlar panelindeki öbür bölüm
+          başlıklarıyla (BAR KONUMU, OTOMATİK GİZLEME…) aynı görünüm */}
       <div style={{
-        fontSize: `${Math.round(11 * barUiOlcegi)}px`, 
+        fontSize: `${Math.round(11 * barUiOlcegi)}px`,
         color: theme.textSecondary,
-        marginBottom: "8px", 
+        marginBottom: "8px",
         letterSpacing: "1px",
       }}>
-        Kârî (Okuyucu)
+        KÂRÎ (OKUYUCU)
       </div>
 
       {/* Seçili kari butonu */}
@@ -28,15 +30,15 @@ export default function KariSecici({ kariId, setKariId, theme, barUiOlcegi = 1, 
         onClick={() => setAcik(!acik)}
         style={{
           width: "100%",
-          display: "flex", 
-          alignItems: "center", 
+          display: "flex",
+          alignItems: "center",
           justifyContent: "space-between",
-          padding: "8px 12px", 
+          padding: "8px 12px",
           borderRadius: "8px",
           border: `1px solid ${acik ? theme.accent : theme.border}`,
           background: acik ? `${theme.accent}10` : theme.background,
-          color: theme.text, 
-          fontSize: `${Math.round(13 * barUiOlcegi)}px`, 
+          color: theme.text,
+          fontSize: `${Math.round(13 * barUiOlcegi)}px`,
           cursor: "pointer",
           transition: "all 0.15s",
         }}
@@ -60,7 +62,7 @@ export default function KariSecici({ kariId, setKariId, theme, barUiOlcegi = 1, 
         <div style={{
           position: "absolute",
           bottom: "calc(100% + 4px)",
-          left: 0, 
+          left: 0,
           right: 0,
           background: theme.surface,
           border: `1px solid ${theme.border}`,
@@ -75,13 +77,13 @@ export default function KariSecici({ kariId, setKariId, theme, barUiOlcegi = 1, 
           {/* Başlık - sabit kalır */}
           <div style={{
             padding: "8px 8px",
-            fontSize: `${Math.round(10 * barUiOlcegi)}px`, 
+            fontSize: `${Math.round(10 * barUiOlcegi)}px`,
             color: theme.textSecondary,
             letterSpacing: "1px",
             borderBottom: `1px solid ${theme.border}`,
             flexShrink: 0,
           }}>
-            Kârî (Okuyucu)
+            KÂRÎ (OKUYUCU)
           </div>
 
           {/* Liste - kaydırılabilir */}
@@ -97,7 +99,7 @@ export default function KariSecici({ kariId, setKariId, theme, barUiOlcegi = 1, 
                   onClick={() => secKari(kari.id)}
                   style={{
                     width: "100%",
-                    display: "flex", 
+                    display: "flex",
                     alignItems: "center",
                     justifyContent: "space-between",
                     padding: "10px 12px",
@@ -107,7 +109,7 @@ export default function KariSecici({ kariId, setKariId, theme, barUiOlcegi = 1, 
                       : "none",
                     background: secili ? `${theme.accent}12` : "transparent",
                     color: secili ? theme.accent : theme.text,
-                    fontSize: `${Math.round(13 * barUiOlcegi)}px`, 
+                    fontSize: `${Math.round(13 * barUiOlcegi)}px`,
                     cursor: "pointer",
                     textAlign: "left",
                     transition: "background 0.1s",

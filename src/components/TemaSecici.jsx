@@ -6,6 +6,8 @@ import { mushafYukle, mushafHazirMi } from "../data/mushafVerisi"
 import { tecvidAyikla, ozelOkuyusAyikla } from "./MushafKelime"
 import MushafAyetRozeti from "./MushafAyetRozeti"
 import { dalPaleti } from "./DalSusu"
+// Yatay telefonda kart düzeni iki sütun, satır düzeni çok sütun (bkz. yatayDuzen.js)
+import "./yatayDuzen"
 
 /* ═══════════════════════════════════════════════════════════════════════════
    TEMA SEÇİCİ — CAMİ + MİHRAP + TEZHİP ROZETLERİ (28 Eylül 2026)
@@ -499,17 +501,21 @@ export default function TemaSecici({ theme, duzen = "kart", onOzel, onSec, kalem
   const boyut = dar ? 44 : 54
 
   return (
-    <div>
+    <div className={dar ? "yp-tam" : "vts-kart"}>
+    {/* YATAY TELEFON (kart düzeni): cami önizleme solda sabit, ton anahtarı ve
+        rozetler sağda — kabuk ≥540 px ise (yatayDuzen.js, kap sorgusu). Kap
+        kendi kendini biçimleyemediği için ızgara bu iç sarmalayıcıda. */}
+    <div className={dar ? undefined : "vts-kart-ic"}>
       <style>{STIL}</style>
       <TonAnahtari theme={theme} tonModu={tonModu} tonSec={tonSec} dar={dar} />
 
       {/* ── Cami önizleme (ortada mihrap) — YALNIZ Ayarlar'da. Okuma panelleri
           dar ve zaten arkalarında sayfanın kendisi görünüyor; orada cami yok,
           liste satırlarında soldaki küçük kutu yerine tezhip çiçeği var. ── */}
-      {!dar && <>
+      {!dar && <div className="vts-onizleme">
       {/* Önizleme panel genişliğince büyür (400 px'e kadar) — mihraptaki âyet ve
           söz küçük ekranda da okunaklı kalsın (kullanıcı: "böyle hiç okunmuyor"). */}
-      <div style={{ maxWidth: "400px", margin: "18px auto 0", padding: "0 2px" }}>
+      <div className="vts-cami" style={{ maxWidth: "400px", margin: "18px auto 0", padding: "0 2px" }}>
         <CamiOnizleme t={gt} ad={gAd} />
       </div>
       <div style={{
@@ -520,7 +526,7 @@ export default function TemaSecici({ theme, duzen = "kart", onOzel, onSec, kalem
           ? <>Cihaz {TON_ADI[bekleyenTon].toLocaleLowerCase("tr")} tona geçince uygulanacak</>
           : gAciklama}
       </div>
-      </>}
+      </div>}
 
       {oto && (
         <div style={{ fontSize: "11px", color: theme.textSecondary, margin: "10px 2px 0", lineHeight: 1.4, textAlign: dar ? "left" : "center" }}>
@@ -543,8 +549,9 @@ export default function TemaSecici({ theme, duzen = "kart", onOzel, onSec, kalem
             </div>
           )}
           {dar ? (
-            /* Okuma paneli: önceki satır düzeni — soldaki önizleme kutusu yerine rozet */
-            <div>
+            /* Okuma paneli: önceki satır düzeni — soldaki önizleme kutusu yerine rozet.
+               Yatay telefonda satırlar 2-3 sütuna dağılıyor (vts-satirlar). */
+            <div className="vts-satirlar">
               {ogeler(ton).map(x => {
                 const secili = seciliMi(x.id, ton)
                 const ad = x.ozel ? "Özel" : x.t.name
@@ -630,6 +637,7 @@ export default function TemaSecici({ theme, duzen = "kart", onOzel, onSec, kalem
           )}
         </div>
       ))}
+    </div>
     </div>
   )
 }

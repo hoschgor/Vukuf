@@ -11,16 +11,34 @@
 
 import { useState } from "react"
 import {
-  X, Settings2, ChevronLeft, ChevronRight, Play, Pause, Square, Check, Eye,
+  X, Settings2, ChevronLeft, ChevronRight, Play, Pause, Square, Check, Eye, Volume2,
   Minus, Plus, Crosshair, CalendarCheck,
 } from "lucide-react"
-import { KADEMELER, BIRIMLER, kademeBul } from "../data/hifz"
+import {
+  KADEMELER, BIRIMLER, kademeBul,
+  EZBER_TERCIHLERI, SAYFA_KISIMLARI, YONLER, TEKRAR_YONTEMLERI, DONUS_BASLARI,
+  SURE_SIRALARI, sureListesiSirala, manuelOneriler,
+} from "../data/hifz"
+import { normHarf } from "../data/okumaKayit"
 
 export default function HifzPaneli({
   acik, kapat, theme, isMobile, altBosluk = 96,
   etiket,                 // "Bakara 1-7" gibi
   kademe, onKademe,
   birim, onBirim,         // "kelime" | "ayet"
+  // EZBER PLANI (30 Eylül 2026) — kuralları data/hifz.js "EZBER PLANI"nda
+  ezber = "sayfa", onEzber,          // "sayfa" | "sure" | "donus"
+  kismi = "tam", onKismi,            // sayfanın tamamı / üst / alt yarısı
+  yon = "yukari", onYon,             // yeni âyetlerin geliş sırası
+  tekrarYontem = "duz", onTekrarYontem,
+  bagla = true, onBagla,             // bağlamada komşu âyetle başla
+  donusBas = "son", onDonusBas,      // dönüş: cüz sonundan / başından
+  donusYer = null, donusSira = 0, donusToplam = 0, onDonusGit,
+  kisaSureler = [], seciliSure, onSureSec,
+  sureSira = "orijinal", onSureSira,   // kısa sûre listesinin sırası
+  sureListesi = [], manuel = { sure: 1, bas: 1, son: 7 }, onManuel,   // manuel aralık
+  dokunAc = true, onDokunAc,     // perdeli yere dokununca orası açılsın mı
+  dokunSes = false, onDokunSes,  // dokunulan kelime okunsun mu
   zincir, onZincir,
   aktifSira, toplam,      // zincirde kaçıncı âyetteyiz
   onOnceki, onSonraki,
@@ -34,6 +52,10 @@ export default function HifzPaneli({
   bekleyenTekrar = 0,
 }) {
   const [ayarAcik, setAyarAcik] = useState(false)
+  // Manuel aralık FORMU — "Uygula"ya basılana kadar kapsam değişmesin
+  // (her tuş vuruşunda perde ve odak yeniden kurulmasın)
+  // MANUEL ARAMA — arama ekranı gibi: yazdıkça öneriler (bkz. hifz.js manuelOneriler)
+  const [aramaMetni, setAramaMetni] = useState("")
   if (!acik) return null
 
   const ac = theme.accent
@@ -54,6 +76,10 @@ export default function HifzPaneli({
   // Perde kademesi YALNIZ kelime biriminde anlamlı: âyet biriminde âyet ya tam
   // açık ya tam kapalı olduğu için "yarısı/ilk kelime" diye bir ara durum yok.
   const kademeVar = birim !== "ayet"
+  // Başlıklar Türkçe büyük harfle (CSS text-transform "i"yi "I" yapıyordu: "TERCIHI")
+  const baslikStil = { fontSize: "11px", fontWeight: 700, letterSpacing: "0.04em", color: theme.textSecondary, margin: "0 0 6px" }
+  const Baslik = ({ children }) => <p style={baslikStil}>{String(children).toLocaleUpperCase("tr")}</p>
+  const satirStil = { display: "flex", gap: "6px", flexWrap: "wrap", marginBottom: "10px" }
 
   return (
     <>
@@ -111,6 +137,27 @@ export default function HifzPaneli({
           </button>
         </div>
 
+        {/* DÖNÜŞ SATIRI — dönüş ezberinde dizide gezinme (RTL: sağ ok önceki) */}
+        {ezber === "donus" && donusYer && (
+          <div style={{
+            display: "flex", alignItems: "center", gap: "6px", marginBottom: "8px",
+            padding: "4px 6px", borderRadius: "10px", background: `${ac}10`,
+          }}>
+            <button onClick={() => onDonusGit?.(donusSira - 1)} disabled={donusSira <= 0}
+              title="Dizide önceki sayfa" style={{ ...yuvarlak, opacity: donusSira <= 0 ? 0.35 : 1 }}>
+              <ChevronRight size={16} />
+            </button>
+            <span style={{ flex: 1, minWidth: 0, textAlign: "center", fontSize: "12px", color: theme.text }}>
+              <b style={{ color: ac }}>{donusYer.donus}. dönüş</b> · {donusYer.cuz}. cüz · s. {donusYer.sayfa}
+              <span style={{ color: theme.textSecondary, marginLeft: "6px" }}>({donusSira + 1}/{donusToplam})</span>
+            </span>
+            <button onClick={() => onDonusGit?.(donusSira + 1)} disabled={donusSira >= donusToplam - 1}
+              title="Dizide sonraki sayfa" style={{ ...yuvarlak, opacity: donusSira >= donusToplam - 1 ? 0.35 : 1 }}>
+              <ChevronLeft size={16} />
+            </button>
+          </div>
+        )}
+
         {/* ALT SATIR — sarmalı: dar ekranda ikinci satıra iniyor */}
         <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px" }}>
           {/* Perde kademesi */}
@@ -144,8 +191,8 @@ export default function HifzPaneli({
           {/* SES — tek düğme oynat/duraklat; etkinken yanında DURDUR çıkıyor
               (şeridi boş yere kalabalıklaştırmasın diye yalnız o zaman). */}
           <button onClick={onCal} style={calisiyor ? vurgulu : kucuk}
-            title={calisiyor ? "Duraklat" : "Kâri sesiyle tekrar et"}>
-            {calisiyor ? <Pause size={13} /> : <Play size={13} />} {tekrarSayisi}×
+            title={calisiyor ? "Duraklat" : tekrarYontem === "baglama" ? "Bağlama usulüyle kâri sesinden çalış" : "Kâri sesiyle tekrar et"}>
+            {calisiyor ? <Pause size={13} /> : <Play size={13} />} {tekrarSayisi}×{tekrarYontem === "baglama" ? " bağla" : ""}
           </button>
           {sesAcik && (
             <button onClick={onDurdur} style={yuvarlak} title="Sesi durdur">
@@ -158,13 +205,148 @@ export default function HifzPaneli({
           </button>
         </div>
 
-        {/* AYARLAR — dişliyle açılır, şeridin içinde büyür */}
+        {/* AYARLAR — dişliyle açılır, şeridin içinde büyür. Uzadığı için kendi
+            içinde kaydırılıyor (yatay telefonda ekranı kaplamasın). */}
         {ayarAcik && (
-          <div style={{ marginTop: "10px", paddingTop: "9px", borderTop: `1px solid ${theme.border}` }}>
-            <p style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase", color: theme.textSecondary, margin: "0 0 6px" }}>
-              Neyi gizleyelim
-            </p>
-            <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginBottom: "10px" }}>
+          <div style={{
+            marginTop: "10px", paddingTop: "9px", borderTop: `1px solid ${theme.border}`,
+            maxHeight: "min(52vh, 440px)", overflowY: "auto", overscrollBehavior: "contain",
+          }}>
+            {/* 1) EZBER TERCİHİ */}
+            <Baslik>Ezber tercihi</Baslik>
+            <div style={satirStil}>
+              {EZBER_TERCIHLERI.map(t => (
+                <button key={t.id} onClick={() => onEzber?.(t.id)} style={ezber === t.id ? vurgulu : kucuk}>{t.ad}</button>
+              ))}
+            </div>
+            {(ezber === "sayfa" || ezber === "donus") && (
+              <>
+                <Baslik>Sayfanın</Baslik>
+                <div style={satirStil}>
+                  {SAYFA_KISIMLARI.map(k => (
+                    <button key={k.id} onClick={() => onKismi?.(k.id)} style={kismi === k.id ? vurgulu : kucuk}>{k.ad}</button>
+                  ))}
+                </div>
+              </>
+            )}
+            {ezber === "donus" && (
+              <>
+                <Baslik>Dönüş başlangıcı</Baslik>
+                <div style={satirStil}>
+                  {DONUS_BASLARI.map(d => (
+                    <button key={d.id} onClick={() => onDonusBas?.(d.id)} style={donusBas === d.id ? vurgulu : kucuk}>
+                      {d.ad}{d.id === "son" ? " (klasik)" : ""}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+            {ezber === "sure" && kisaSureler.length > 0 && (
+              <>
+                <Baslik>Kısa sûreler</Baslik>
+                <div style={{ ...satirStil, marginBottom: "6px" }}>
+                  {SURE_SIRALARI.map(x => (
+                    <button key={x.id} onClick={() => onSureSira?.(x.id)}
+                      style={{ ...(sureSira === x.id ? vurgulu : kucuk), height: "26px", fontSize: "11px" }}>{x.ad}</button>
+                  ))}
+                </div>
+                {/* Ezberlenmiş (✓) sûreler listenin sonunda, soluk */}
+                <div style={{ ...satirStil, maxHeight: "132px", overflowY: "auto" }}>
+                  {sureListesiSirala(kisaSureler, sureSira).map(k => (
+                    <button key={k.id} onClick={() => onSureSec?.(k.id)}
+                      title={`${k.ayetSayisi} âyet${k.ezber ? " · ezberlendi" : ""}`}
+                      style={{
+                        ...(seciliSure === k.id ? vurgulu : kucuk),
+                        ...(k.ezber && seciliSure !== k.id ? { opacity: 0.6 } : null),
+                      }}>
+                      {k.ezber && <Check size={12} />}{k.isim}
+                      <span style={{ fontWeight: 400, opacity: 0.7, fontSize: "10.5px" }}>{k.ayetSayisi}</span>
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+            {ezber === "manuel" && (() => {
+              const oneriler = manuelOneriler(aramaMetni, sureListesi, normHarf)
+              const suAn = sureListesi.find(x => x.id === manuel.sure)
+              return (
+                <>
+                  <Baslik>Sûre ve âyet aralığı</Baslik>
+                  {/* 16 px: iOS daha küçük yazılı alana dokununca sayfayı yakınlaştırıyor */}
+                  <input
+                    type="search" value={aramaMetni} placeholder="ör. Bakara 5-10 · 36:1-12 · Mülk"
+                    aria-label="Sûre ve âyet aralığı ara"
+                    onChange={e => setAramaMetni(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === "Enter" && oneriler[0]) {
+                        const o = oneriler[0]
+                        onManuel?.({ sure: o.id, bas: o.bas, son: o.son }); setAramaMetni("")
+                      }
+                    }}
+                    style={{
+                      width: "100%", height: "36px", borderRadius: "10px", boxSizing: "border-box",
+                      border: `1px solid ${theme.border}`, background: theme.background, color: theme.text,
+                      fontSize: "16px", fontFamily: "inherit", padding: "0 10px", marginBottom: "6px",
+                    }}
+                  />
+                  {oneriler.length > 0 && (
+                    <div style={{
+                      display: "flex", flexDirection: "column", gap: "4px", marginBottom: "8px",
+                      maxHeight: "190px", overflowY: "auto",
+                    }}>
+                      {oneriler.map(o => (
+                        <button key={o.id}
+                          onClick={() => { onManuel?.({ sure: o.id, bas: o.bas, son: o.son }); setAramaMetni("") }}
+                          style={{
+                            display: "flex", alignItems: "center", gap: "8px", textAlign: "left",
+                            padding: "8px 10px", borderRadius: "9px", cursor: "pointer", fontFamily: "inherit",
+                            border: `1px solid ${theme.border}`, background: `${ac}08`, color: theme.text,
+                          }}>
+                          <span style={{ fontSize: "11px", fontWeight: 700, color: ac, minWidth: "24px" }}>{o.id}</span>
+                          <span style={{ flex: 1, fontSize: "13px" }}>
+                            {o.isim} <b style={{ color: ac }}>{o.bas === o.son ? `${o.bas}` : `${o.bas}–${o.son}`}</b>
+                          </span>
+                          <span style={{ fontSize: "10.5px", color: theme.textSecondary }}>{o.ayetSayisi} âyet</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  <p style={{ fontSize: "11px", color: theme.textSecondary, margin: "0 0 10px" }}>
+                    Şu an çalışılan: <b style={{ color: theme.text }}>{suAn ? suAn.isim : `Sûre ${manuel.sure}`} {manuel.bas}–{manuel.son}</b>
+                    {" "}· Aralık yazılmazsa kısa sûrenin tamamı, uzun sûrenin ilk 7 âyeti.
+                  </p>
+                </>
+              )
+            })()}
+
+            {/* 2) SIRA */}
+            <Baslik>Sıra</Baslik>
+            <div style={satirStil}>
+              {YONLER.map(y => (
+                <button key={y.id} onClick={() => onYon?.(y.id)} style={yon === y.id ? vurgulu : kucuk}>{y.ad}</button>
+              ))}
+            </div>
+
+            {/* 3) TEKRAR */}
+            <Baslik>Tekrar</Baslik>
+            <div style={satirStil}>
+              {TEKRAR_YONTEMLERI.map(t => (
+                <button key={t.id} onClick={() => onTekrarYontem?.(t.id)} style={tekrarYontem === t.id ? vurgulu : kucuk}>{t.ad}</button>
+              ))}
+              {[1, 3, 5, 7].map(n => (
+                <button key={n} onClick={() => onTekrarSayisi?.(n)} style={tekrarSayisi === n ? vurgulu : kucuk}>{n}×</button>
+              ))}
+              {tekrarYontem === "baglama" && ezber !== "sure" && (
+                <button onClick={() => onBagla?.(!bagla)} aria-pressed={bagla} style={bagla ? vurgulu : kucuk}
+                  title="Blok, önceden ezberlenmiş komşu âyetle başlasın">
+                  Komşu âyetle bağla
+                </button>
+              )}
+            </div>
+
+            {/* 4) PERDE */}
+            <Baslik>Neyi gizleyelim</Baslik>
+            <div style={satirStil}>
               {BIRIMLER.map(b => (
                 <button key={b.id} onClick={() => onBirim?.(b.id)} style={birim === b.id ? vurgulu : kucuk}>{b.ad}</button>
               ))}
@@ -172,10 +354,8 @@ export default function HifzPaneli({
 
             {kademeVar && (
               <>
-                <p style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase", color: theme.textSecondary, margin: "0 0 6px" }}>
-                  Perde kademesi
-                </p>
-                <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginBottom: "10px" }}>
+                <Baslik>Perde kademesi</Baslik>
+                <div style={satirStil}>
                   {KADEMELER.map(k => (
                     <button key={k.id} onClick={() => onKademe?.(k.id)} style={kademe === k.id ? vurgulu : kucuk}>{k.ad}</button>
                   ))}
@@ -183,23 +363,43 @@ export default function HifzPaneli({
               </>
             )}
 
-            <p style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase", color: theme.textSecondary, margin: "0 0 6px" }}>
-              Yöntem
-            </p>
-            <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginBottom: "6px" }}>
+            <Baslik>Perde düzeni</Baslik>
+            <div style={satirStil}>
               <button onClick={() => onZincir?.(true)} style={zincir ? vurgulu : kucuk}>Zincir</button>
               <button onClick={() => onZincir?.(false)} style={!zincir ? vurgulu : kucuk}>Tüm aralık</button>
-              {[1, 3, 5, 7].map(n => (
-                <button key={n} onClick={() => onTekrarSayisi?.(n)} style={tekrarSayisi === n ? vurgulu : kucuk}>{n}× tekrar</button>
-              ))}
               <button onClick={onHepsiniAc} style={kucuk}>İpuçlarını sıfırla</button>
             </div>
+
+            {/* DOKUNUNCA — iki bağımsız seçim (29 Eylül 2026, kullanıcı: "ayar ile
+                kullanıcıya bırakalım, farklı tercih istenebilir"). İkisi de açılıp
+                kapanabilir; ikisi kapalıysa dokunmak bir şey yapmaz. */}
+            <Baslik>Kelimeye dokununca</Baslik>
+            <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginBottom: "10px" }}>
+              <button onClick={() => onDokunAc?.(!dokunAc)} aria-pressed={dokunAc} style={dokunAc ? vurgulu : kucuk}
+                title="Perdeli kelimeye dokununca perde kalksın">
+                <Eye size={13} /> Perdeyi kaldır
+              </button>
+              <button onClick={() => onDokunSes?.(!dokunSes)} aria-pressed={dokunSes} style={dokunSes ? vurgulu : kucuk}
+                title="Dokunulan kelime sesli okunsun (kelime kelime okuyuş)">
+                <Volume2 size={13} /> Kelimeyi okut
+              </button>
+            </div>
+
             <p style={{ fontSize: "11px", color: theme.textSecondary, lineHeight: 1.6, margin: "6px 0 0" }}>
-              <b>Kelime</b>: âyetin baştan bir kısmı açık kalır. <b>Âyet</b>: âyet
-              ya tümüyle açık ya tümüyle perdeli. <b>Zincir</b>: sıradaki âyet
-              açık, öncesi perdeli, sonrası kapalı — klasik usul. <b>Tüm
-              aralık</b>: hepsi aynı kademede. Perdeli bir yere dokunursanız
-              orası açılır ve ipucu olarak sayılır.
+              <b>Sayfa</b>: bulunulan sayfa (tamamı ya da yarısı). <b>Sûre</b>:
+              bulunulan sûre; kısa sûreler listeden seçilir. <b>Manuel</b>: sûre ve
+              âyet aralığını kendiniz yazarsınız; komşu âyetle bağlama aralığın
+              bir önceki âyetinden başlar. <b>Dönüş</b>: her
+              cüzden aynı sıradaki bir sayfa — klasik usulde önce her cüzün son
+              sayfası, sonraki dönüşte sondan ikincisi… <b>Aşağıdan yukarı</b>:
+              yeni âyetler sayfanın sonundan başlar; birlikte okunan kısımlar yine
+              mushaf sırasıyla okunur. <b>Bağlama</b>: yeni âyet tekrarlanır, sonra
+              öğrenilenlerle birlikte okunur (1 · 1-2 · 1-2-3…); "komşu âyetle
+              bağla" bloğu önceden ezberlenen komşu âyetle başlatır. Çalma, zincirde
+              bulunulan âyetten başlar. <b>Zincir</b>: sıradaki âyet açık,
+              öğrenilenler perdeli, gelmeyenler kapalı. <b>Perdeyi kaldır</b> /
+              <b> Kelimeyi okut</b>: dokunulan kelime açılır / okunur; perdeli bir
+              yeri açmak ya da dinlemek ipucu sayılır (kelime başına bir kez).
             </p>
           </div>
         )}

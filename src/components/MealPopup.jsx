@@ -11,16 +11,17 @@
    engellemeyen bir şerit. Aynı bileşene iki işi birden yaptırmak ikisini de
    bozardı. */
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useLayoutEffect, useRef, useState } from "react"
 import { X, Settings2 } from "lucide-react"
 import { useIzlemeAyar } from "../data/izlemeAyar"
 import MealIzlemeAyarlari from "./MealIzlemeAyarlari"
 import DalSusu from "./DalSusu"
 
+// [en (px), ekranın en fazla yüzdesi] — en, MEAL PENCERESİ BOYUTU oranıyla çarpılıyor
 const GENISLIK = {
-  dar:   "min(340px, 90vw)",
-  orta:  "min(440px, 94vw)",
-  genis: "min(580px, 96vw)",
+  dar:   [340, 90],
+  orta:  [440, 94],
+  genis: [580, 96],
 }
 
 // Sûre adı hattı SureBasligi.jsx ile aynı kaynaktan: surah-name-v2-icon, U+E000 + sûre no
@@ -117,13 +118,49 @@ export default function MealPopup({
     const ro = new ResizeObserver(bildir)
     ro.observe(el)
     return () => ro.disconnect()
-  }, [acik, m.konum, m.genislik, m.yaziBoyu])
+  }, [acik, m.konum, m.genislik, m.yaziBoyu, m.olcek])
   // Bileşen tamamen kalkarsa ölçüm de düşsün (pay kilitli kalmasın).
   useEffect(() => () => { olcumRef.current?.(null) }, [])
+
+  // ── EKRAN İÇİNDE KAL (29 Eylül 2026) ─────────────────────────────────────
+  // Sürükleme payı (kaydir) dikeyde ekran boyunun %40'ına kadar kaydediliyor
+  // (932 px'te ~370 px). Telefon yatay çevrilince (430 px) aynı pay pencereyi
+  // ekranın dışına itebiliyordu. Kayıtlı değer DEĞİŞTİRİLMİYOR (dikeye dönünce
+  // eski yerinde olsun); yalnız görüntüde, ekrana sığacak kadar düzeltme
+  // ekleniyor. Pencere ekrandan uzunsa başı görünür kalıyor.
+  const kaydirDegeri = gecici === null ? m.kaydir : gecici
+  const [duzeltme, setDuzeltme] = useState(0)
+  const duzeltmeRef = useRef(0)
+  useLayoutEffect(() => {
+    if (!acik) { if (duzeltmeRef.current) { duzeltmeRef.current = 0; setDuzeltme(0) } return }
+    const el = kokRef.current
+    if (!el) return
+    const hesap = () => {
+      const r = el.getBoundingClientRect()
+      const onceki = duzeltmeRef.current
+      const ust = r.top - onceki, alt = r.bottom - onceki
+      const H = window.innerHeight, pay = 6
+      let d = 0
+      if (r.height > H - 2 * pay || ust < pay) d = pay - ust
+      else if (alt > H - pay) d = (H - pay) - alt
+      d = Math.round(d)
+      if (d !== onceki) { duzeltmeRef.current = d; setDuzeltme(d) }
+    }
+    hesap()
+    window.addEventListener("resize", hesap)
+    return () => window.removeEventListener("resize", hesap)
+  }, [acik, olcu, m.konum, kaydirDegeri, altBosluk, ustBosluk])
 
   if (!acik) return null
 
   const ac = theme.accent
+  // MEAL PENCERESİ BOYUTU (KuranOkuma → Ayarlar; OkumaEkrani'daki "bilgi menüsü
+  // boyutu"nun karşılığı). Yazı, başlık, düğmeler, dolgu ve en BİRLİKTE büyüyor —
+  // yalnız yazıyı büyütmek dar pencerede satırları kırpıyordu. Yazı boyutu
+  // (pencerenin kendi ayarı) ayrıca duruyor; oran onun üstüne çarpılıyor.
+  const k = Math.min(1.6, Math.max(0.85, Number(m.olcek) || 1))
+  const px = (v) => `${Math.round(v * k * 10) / 10}px`
+  const [enPx, enVw] = GENISLIK[m.genislik] || GENISLIK.orta
   const glif = m.hat && hatVar && sure ? sureAdiGlifi(sure.id) : ""
   const sus = m.sus === "tezhip" ? "tezhip" : "dal"
 
@@ -137,7 +174,7 @@ export default function MealPopup({
         ? { top: "50%" }
         : { bottom: altBosluk > 0 ? `${altBosluk + 10}px` : "calc(env(safe-area-inset-bottom) + 10px)" }
 
-  const kaydir = gecici === null ? m.kaydir : gecici
+  const kaydir = kaydirDegeri + duzeltme
   const donusum = `translateX(-50%)${m.konum === "orta" ? " translateY(-50%)" : ""} translateY(${kaydir}px)`
 
   function suruklemeBasla(e) {
@@ -166,10 +203,10 @@ export default function MealPopup({
   const dugme = (baslik, Ikon, tikla) => (
     <button onClick={tikla} title={baslik} aria-label={baslik} style={{
       display: "flex", alignItems: "center", justifyContent: "center",
-      width: "26px", height: "26px", borderRadius: "50%", flexShrink: 0,
+      width: px(26), height: px(26), borderRadius: "50%", flexShrink: 0,
       border: "none", background: "transparent", color: theme.textSecondary,
       cursor: "pointer", padding: 0, touchAction: "manipulation",
-    }}><Ikon size={14} /></button>
+    }}><Ikon size={Math.round(14 * k)} /></button>
   )
 
   return (
@@ -179,13 +216,13 @@ export default function MealPopup({
         className="meal-pencere"
         style={{
           position: "fixed", left: "50%", transform: donusum, ...konumStil,
-          width: GENISLIK[m.genislik] || GENISLIK.orta,
+          width: `min(${Math.round(enPx * k)}px, ${enVw}vw)`,
           zIndex: 92,
           background: theme.surface,
           border: `1px solid ${ac}55`,
           borderRadius: "14px",
           boxShadow: "0 6px 26px rgba(0,0,0,0.22)",
-          padding: "10px 14px 12px",
+          padding: `${px(10)} ${px(14)} ${px(12)}`,
           boxSizing: "border-box",
         }}
       >
@@ -227,14 +264,14 @@ export default function MealPopup({
         >
           {glif && (
             <span style={{
-              fontFamily: "'surah-name-v2-icon', serif", fontSize: "26px", lineHeight: 1,
+              fontFamily: "'surah-name-v2-icon', serif", fontSize: px(26), lineHeight: 1,
               color: ac, opacity: 0.9, flexShrink: 0, direction: "rtl",
             }}>{glif}</span>
           )}
           <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-            <span style={{ fontSize: "12.5px", fontWeight: 600, color: ac }}>{sure?.isim || "—"}</span>
+            <span style={{ fontSize: px(12.5), fontWeight: 600, color: ac }}>{sure?.isim || "—"}</span>
             {!besmeleMi && ayetNo ? (
-              <span style={{ fontSize: "11.5px", color: theme.textSecondary, marginLeft: "6px" }}>{ayetNo}. âyet</span>
+              <span style={{ fontSize: px(11.5), color: theme.textSecondary, marginLeft: "6px" }}>{ayetNo}. âyet</span>
             ) : null}
           </span>
           {dugme("Meal ve izleme ayarları", Settings2, () => setAyarAcik(true))}
@@ -243,7 +280,7 @@ export default function MealPopup({
 
         {/* MEAL */}
         <div ref={metinRef} style={{
-          fontSize: `${m.yaziBoyu}px`, lineHeight: 1.75, color: theme.text,
+          fontSize: px(m.yaziBoyu), lineHeight: 1.75, color: theme.text,
           maxHeight: isMobile ? "24vh" : "30vh", overflowY: "auto",
           whiteSpace: "pre-line", direction: "ltr",
         }}>

@@ -8,6 +8,8 @@ import SureSonu from "./SureSonu"
 import { useRef, useEffect, useState, useMemo, memo } from "react"
 import kelimeGrup from "../data/kelime-grup.json"
 import kelimeObek from "../data/kelime-obek.json"
+// GEÇİCİ — dönme teşhisi sayacı (ölçüm bitince silinecek)
+// import { SAYAC as DONME_SAYAC } from "../data/donmeTeshis"   // ⏸ dönme teşhisi (yorumda)
 
 // ── BİRLEŞİK KELİME GRUPLARI ───────────────────────────────────────────────
 // quran.com'un TEK kelime saydığı yeri biz İKİ kelimeye bölmüşüz (176 grup,
@@ -86,6 +88,7 @@ function MushafSayfa({
   cuzBaslangic = null,   // bu sayfa yeni bir CÜZ başlatıyorsa cüz no
   hizbBaslangic = null,  // bu sayfa yeni bir HİZB başlatıyorsa hizb no (cüz başı değilse)
 }) {
+  // DONME_SAYAC.sayfa++   // ⏸ dönme teşhisi (yorumda)
 
   const fontSize = isMobile ? yaziBoyutu : yaziBoyutu + 2
   const lineHeight = satirAraligi || (isMobile ? 2.2 : 2.0) // Azaltıldı
@@ -405,6 +408,9 @@ function MushafSayfa({
                 }
 
                 if (el.tip === "ayet-sonu") {
+                  // (Rozete vurgu vererek vakıf silinmesini önleme denemeleri — görünmez ve
+                  //  görünür — işe yaramadı, kaldırıldı. Şimdiki yol KuranOkuma'da:
+                  //  "VAKIF YENİDEN BOYAMA".)
                   return (
                     <span
                       key={`ayet-sonu-${el.sure.id}-${el.ayet.no}`}
@@ -420,6 +426,7 @@ function MushafSayfa({
                         // Âyet sonundaki lâmelif işareti rozetin üstüne taşıyor; sıra
                         // tarayıcıya bırakılınca iPhone'da rozet işaretin üstüne
                         // boyanabiliyordu (odak büyümesinden sonra katmanlaşmış rozet).
+                        // (Dönme teşhisinde bu katı kapatmak hızı DEĞİŞTİRMEDİ — ölçüldü; kaldı.)
                         position: "relative",
                         zIndex: 0,
                         WebkitTapHighlightColor: kayitKonumModu ? "transparent" : undefined,

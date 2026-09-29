@@ -25,12 +25,14 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 import { useState, useEffect, useRef, useMemo } from "react"
-import { Download, Upload, Copy, Check, AlertTriangle, Trash2, FileText, X, HardDrive, Wifi, Loader, CloudOff, BookOpen, Search, Music } from "lucide-react"
+import { Download, Upload, Copy, Check, AlertTriangle, Trash2, FileText, X, HardDrive, Wifi, Loader, CloudOff, BookOpen, Search, Music, RotateCw } from "lucide-react"
 import Katlanir from "./Katlanir"
 import { destekVar, swSurum, onbellekDokumu, onbellegiTemizle, kabukDurumu, onYukle } from "../data/cevrimdisi"
 import { kategoriler } from "../data/kitaplar"
 import { normHarf } from "../data/okumaKayit"
 import { KARILAR, sesTeshisMetni, sesTeshisTemizle } from "../data/hooks/useAudioPlayer"
+// GEÇİCİ — dönme teşhisi (ölçüm bitince bu satır ve aşağıdaki bölüm silinecek)
+import { DENEY, deneyAyarla, teshisAcikMi, teshisAyarla, donmeTeshisMetni, donmeTeshisTemizle } from "../data/donmeTeshis"
 import {
   mushafYukle, sureListesi, cuzListesi, sesAdresleri,
   boyutOrnekle, tahminiBoyut, sesAnahtarlari, sesOnbellegiSil,
@@ -189,6 +191,77 @@ function SesTeshisi({ theme, bilgiVer }) {
         <button style={dugme} onClick={() => setMetin(sesTeshisMetni())}>Yenile</button>
         <button style={{ ...dugme, borderColor: theme.accent, color: theme.accent }} onClick={kopyala}>Kopyala</button>
         <button style={dugme} onClick={() => { sesTeshisTemizle(); setMetin(sesTeshisMetni()) }}>Temizle</button>
+      </div>
+    </div>
+  )
+}
+
+/* GEÇİCİ — DÖNME TEŞHİSİ. Ölçüm açılır, Kur'ân'da (ses ÇALMADAN) telefon
+   birkaç kez çevrilir, burada okunup kopyalanır. Deneyler tek tek açılıp aynı
+   ölçüm tekrarlanır → suçlu sayıyla çıkar. Ayarlar Kur'ân'a yeniden girince
+   geçerli olur (uygulamayı kapatmak gerekmez). */
+function DonmeTeshisi({ theme, bilgiVer }) {
+  const [metin, setMetin] = useState(() => donmeTeshisMetni())
+  const [acik, setAcik] = useState(() => teshisAcikMi())
+  const [deney, setDeney] = useState(() => ({ ...DENEY }))
+  const kutu = useRef(null)
+  const dugme = {
+    flex: 1, padding: "8px 10px", borderRadius: "9px", cursor: "pointer",
+    border: `1px solid ${theme.border}`, background: "transparent", color: theme.text,
+    fontSize: "12px", fontWeight: 600, fontFamily: "inherit",
+  }
+  const cip = (secili) => ({
+    padding: "6px 10px", borderRadius: "999px", cursor: "pointer", fontFamily: "inherit",
+    fontSize: "11.5px", fontWeight: 600,
+    border: `1px solid ${secili ? theme.accent : theme.border}`,
+    background: secili ? theme.accent : "transparent", color: secili ? "#fff" : theme.textSecondary,
+  })
+  const DENEYLER = [
+
+  ]
+  async function kopyala() {
+    try { await navigator.clipboard.writeText(metin); bilgiVer("iyi", "Teşhis metni kopyalandı.") }
+    catch {
+      try {
+        const aralik = document.createRange(); aralik.selectNodeContents(kutu.current)
+        const secim = window.getSelection(); secim.removeAllRanges(); secim.addRange(aralik)
+        document.execCommand("copy"); bilgiVer("iyi", "Teşhis metni kopyalandı.")
+      } catch { bilgiVer("kotu", "Kopyalanamadı — kutudaki metni elle seçip kopyalayın.") }
+    }
+  }
+  return (
+    <div style={{ marginTop: "4px" }}>
+      <div style={{ fontSize: "12px", color: theme.textSecondary, lineHeight: 1.6, marginBottom: "8px" }}>
+        1) Ölçümü açın. 2) Kur'ân'a girin, <b>ses çalmadan</b> telefonu 3 kez
+        yatay-dikey çevirin — her dönmeden ~2 sn sonra ekranın üstünde
+        "Dönme ölçüldü" yazısı çıkar. 3) Buraya dönüp "Yenile" ve "Kopyala".
+        Rapor, dönmede ekranın kaç kez ve ne kadar sürede çizildiğini ve bunu
+        hangi durumların tetiklediğini de yazar.
+      </div>
+      <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginBottom: "8px" }}>
+        <button style={cip(acik)} onClick={() => { teshisAyarla(!acik); setAcik(!acik); setMetin(donmeTeshisMetni()) }}>
+          Ölçüm {acik ? "açık" : "kapalı"}
+        </button>
+        {DENEYLER.map(([ad, etiket]) => (
+          <button key={ad} style={cip(!!deney[ad])} onClick={() => {
+            deneyAyarla(ad, !deney[ad]); setDeney({ ...DENEY }); setMetin(donmeTeshisMetni())
+          }}>{etiket}</button>
+        ))}
+      </div>
+      <pre
+        ref={kutu}
+        style={{
+          margin: 0, maxHeight: "min(240px, 34vh)", overflow: "auto", boxSizing: "border-box",
+          padding: "8px", borderRadius: "9px", border: `1px solid ${theme.border}`,
+          background: theme.background, color: theme.text, whiteSpace: "pre-wrap",
+          wordBreak: "break-word", userSelect: "text", WebkitUserSelect: "text",
+          fontFamily: "ui-monospace, Menlo, monospace", fontSize: "10.5px", lineHeight: 1.45,
+        }}
+      >{metin}</pre>
+      <div style={{ display: "flex", gap: "8px", marginTop: "8px" }}>
+        <button style={dugme} onClick={() => setMetin(donmeTeshisMetni())}>Yenile</button>
+        <button style={{ ...dugme, borderColor: theme.accent, color: theme.accent }} onClick={kopyala}>Kopyala</button>
+        <button style={dugme} onClick={() => { donmeTeshisTemizle(); setMetin(donmeTeshisMetni()) }}>Temizle</button>
       </div>
     </div>
   )
@@ -1284,6 +1357,17 @@ export default function VeriAyarlari({ theme }) {
         {...kapak("teshis")}
       >
         <SesTeshisi theme={theme} bilgiVer={bilgiVer} />
+      </Katlanir>
+      */}
+
+      {/* ── DÖNME TEŞHİSİ — ⏸ YORUMDA (ileride lazım olabilir) ──────────────
+          Açmak için bu bölümün yorumunu kaldır ve KuranOkuma'daki "dönme
+          teşhisi (yorumda)" satırlarını aç. <DonmeTeshisi> dosyada duruyor.
+      <Katlanir
+        theme={theme} ikon={RotateCw} baslik="Dönme teşhisi (geçici)"
+        {...kapak("donme")}
+      >
+        <DonmeTeshisi theme={theme} bilgiVer={bilgiVer} />
       </Katlanir>
       */}
 

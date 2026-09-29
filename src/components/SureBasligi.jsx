@@ -1,5 +1,20 @@
 import { Play, Pause } from "lucide-react"
+import { renderToStaticMarkup } from "react-dom/server"
 import MushafPlayButton from "./MushafPlayButton"
+
+/* ── SÜSÜ RESME ÇEVİR (30 Eylül 2026 — dönme teşhisiyle ÖLÇÜLDÜ, kalıcı) ───
+   iPhone, aynı sayfada: sayfa öğesi 144 bin → 52 bin, dönme donması ~%16 az;
+   öbür iki düzeltmeyle birlikte ~%43 (1,9 sn → ~1,1 sn).
+   Bu başlığın tezhibi CANLI SVG olarak ~1100 öğe (sayıldı: 1109). 30. cüz
+   gibi kısa sûrelerin sık olduğu yerde 44 sayfada ~37 başlık = ~41 bin öğe;
+   teşhiste o bölgede sayfa 140 bin öğeye çıkmıştı ve telefon dönmede bütün
+   öğeleri iki kez yerleştiriyor (donma öğe sayısıyla orantılı).
+   Tezhip HER SÛREDE AYNI (yalnız tema rengine bağlı) → bir kez SVG metnine
+   çevrilip <img> olarak veriliyor: 1100 öğe → 1 öğe. Değişen tek şey sûre
+   adı hattı; o, resmin üstünde ayrı küçük bir SVG'de canlı kalıyor (hat
+   fontu resmin içinde yüklenemez). Vurgu (odak) animasyonu sırasında eski
+   canlı çizim kullanılıyor — dönen rozet sınıfları resimde çalışmaz. */
+const susResimBellek = new Map()
 
 export default function SureBasligi({ sure, theme, onTikla, player, vurgulu = false, nonce }) {
   const ac = theme.accent
@@ -15,18 +30,31 @@ export default function SureBasligi({ sure, theme, onTikla, player, vurgulu = fa
 
   const rgb = hexToRgb(ac.length === 7 ? ac : "#8b5e3c")
 
-  return (
-    <div
-      onClick={onTikla}
-      data-sure-baslik={sure.id}
-      style={{ 
-        cursor: "pointer", userSelect: "none", margin: "32px 0 8px", 
-        direction: "ltr", position: "relative"  // ← ekle
-      }}
-      title={`${sure.isim} · ${sure.anlam} · ${sure.yer}`}
-    >
+  // Sûre adı hattı — canlı çizimde de resimli çizimde de aynı öğe
+  const adYazisi = (
+        <text
+          x={w / 2}
+          y={h / 2 + 27}
+          textAnchor="middle"
+          fontFamily="'surah-name-v2-icon', serif"
+          fontSize="60"
+          fontWeight="500"
+          fill={ac}
+          fillOpacity="0.85"
+          direction="rtl"
+        >
+          {String.fromCodePoint(0xE000 + sure.id)}
+        </text>
+  )
+
+
+  // Tezhibin tamamı. resimIcin=true: <img> için düz SVG metni (ad hattı yok,
+  // vurgu sınıfı yok, sabit ölçü + xmlns).
+  const cizim = (resimIcin) => (
       <svg
-        width="100%"
+        xmlns="http://www.w3.org/2000/svg"
+        width={resimIcin ? 580 : "100%"}
+        height={resimIcin ? 110 : undefined}
         viewBox="0 0 580 110"
         preserveAspectRatio="xMidYMid meet"
       >
@@ -780,20 +808,8 @@ export default function SureBasligi({ sure, theme, onTikla, player, vurgulu = fa
         {/* SURE İSMİ - MERKEZ OVAL İÇİ */}
         {/* ========================================================= */}
 
-        {/* Arapça sure ismi */}
-        <text
-          x={w / 2}
-          y={h / 2 + 27}
-          textAnchor="middle"
-          fontFamily="'surah-name-v2-icon', serif"
-          fontSize="60"
-          fontWeight="500"
-          fill={ac}
-          fillOpacity="0.85"
-          direction="rtl"
-        >
-          {String.fromCodePoint(0xE000 + sure.id)}
-        </text>
+        {/* Arapça sure ismi — resim için çizilirken YOK (üstte canlı katmanda) */}
+        {!resimIcin && adYazisi}
 
                 {/* ========================================================= */}
                 {/* GÜL (ROSE) SİMGELERİ - MERKEZ YAKINI */}
@@ -1141,6 +1157,38 @@ export default function SureBasligi({ sure, theme, onTikla, player, vurgulu = fa
                           </g>
                         ))}
       </svg>
+  )
+  const susResmi = (renk) => {
+    let u = susResimBellek.get(renk)
+    if (!u) {
+      u = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(renderToStaticMarkup(cizim(true)))
+      susResimBellek.set(renk, u)
+    }
+    return u
+  }
+
+  return (
+    <div
+      onClick={onTikla}
+      data-sure-baslik={sure.id}
+      style={{ 
+        cursor: "pointer", userSelect: "none", margin: "32px 0 8px", 
+        direction: "ltr", position: "relative"  // ← ekle
+      }}
+      title={`${sure.isim} · ${sure.anlam} · ${sure.yer}`}
+    >
+      {!vurgulu ? (
+        <div style={{ position: "relative" }}>
+          <img
+            src={susResmi(ac)} alt="" draggable={false}
+            style={{ display: "block", width: "100%", height: "auto", pointerEvents: "none" }}
+          />
+          <svg viewBox="0 0 580 110" preserveAspectRatio="xMidYMid meet"
+            style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none" }}>
+            {adYazisi}
+          </svg>
+        </div>
+      ) : cizim(false)}
       {/* Oynat butonu */}
       {player && (() => {
         const caliniyor = player?.durum === "caliyor" && player?.aktifAyet?.sureNo === sure.id && !player?.aktifAyet?.besmeleIcin

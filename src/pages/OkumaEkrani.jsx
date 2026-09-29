@@ -23,6 +23,7 @@ import PanelAyirac, { PanelAcilir, panelBolumeHizala } from "../components/Panel
 import GeriIkonu from "../components/GeriIkonu"
 import TemaSecici from "../components/TemaSecici"
 import { SekmeCubugu, Kaydirici, sekmeOku, sekmeYaz } from "../components/AyarSekmeleri"
+import { ypDegisken } from "../components/yatayDuzen"
 import {
   ArrowLeft, BookOpen, Eye, EyeOff, Play, Pause,
   Plus, Minus, AlignJustify, AlignLeft, AlignCenter, ChevronsUp, ChevronsDown,
@@ -2514,9 +2515,12 @@ const gorselYap = () => {
   try { window.getSelection()?.removeAllRanges() } catch { /* yoksay */ }
 }
 
-const panelStil = (konum = "center") => ({
+// YATAY TELEFON: `en` yatayda istenen genişlik; boy ekranın kalanına bağlı
+// (56 px bar payı + karşı kenarda 12 px). Dikey düzende etkisi yok (yatayDuzen.js).
+const panelStil = (konum = "center", en = 620) => ({
   position: "fixed",
   [barKonum === "alt" ? "bottom" : "top"]: "56px",
+  ...ypDegisken({ pay: 68, en, cizgi: theme.border }),
   ...(konum === "center"
     ? { left: "50%", transform: "translateX(-50%)" }
     : { [konum]: "16px" }),
@@ -2544,13 +2548,15 @@ const AaPanel = aaAcik && (
         Aradaki 4px, kaydırılan yazıların üstten ve yanlardan sızdığı şeritti.
         Üst dolguyu bloğun KENDİ dolgusuna taşıyınca sticky doğrudan `top: 0`a
         oturuyor; telafi edilecek bir sayı kalmadığı için yanlış da olamıyor. */}
-    <div ref={aaPanelRef} className="okuma-panel" style={{ ...panelStil("center"), padding: "0 16px 16px", width: "300px", maxHeight: "80vh", overflowY: "auto" }}>
+    {/* YATAY TELEFON: yp-aa → önizleme solda sabit; hizalama, sekmeler ve ayarlar sağda */}
+    <div ref={aaPanelRef} className="okuma-panel yp-panel yp-genis yp-aa" style={{ ...panelStil("center", 660), padding: "0 16px 16px", width: "300px", maxHeight: "80vh", overflowY: "auto" }}>
 
       {/* TEK ÖNİZLEME — panelin tepesinde SABİT durur; aşağıdaki BÜTÜN ayarlar
           (boyutlar, aralıklar, hizalama, yazı tipleri) onu anında değiştirir.
           Düzen mushaf panelindekiyle (KuranOkuma) BİREBİR aynı: ortalanmış bölüm
-          başlığı, kutu içinde önizleme, altında ortalanmış aktif yazı tipi adı. */}
-      <div style={{
+          başlığı, kutu içinde önizleme, altında ortalanmış aktif yazı tipi adı.
+          yp-aa-onizleme: yatay telefonda sol sütun (yatayDuzen.js). */}
+      <div className="yp-aa-onizleme" style={{
         position: "sticky", top: 0, zIndex: 2,
         background: theme.surface,
         margin: "0 -16px 12px", padding: "16px 16px 10px",
@@ -2602,7 +2608,7 @@ const AaPanel = aaAcik && (
           ikonlar hizalamayı zaten gösteriyor (ad `title`de duruyor). Açılır bir
           bölüme taşımak sadeliği artırırdı ama hizalamayı değiştirmek iki
           dokunuşa çıkardı — istenen bu değildi. */}
-      <div style={{
+      <div className="yp-aa-ilk" style={{
         display: "flex", alignItems: "center", gap: "9px",
         padding: "9px 10px", marginTop: "0", borderRadius: "9px",
         border: `1px solid ${theme.border}`, color: theme.text,
@@ -2651,7 +2657,7 @@ const AaPanel = aaAcik && (
         ]}
       />
       {/* İçerik alanı sabit en az yükseklikte — sekme değişince panel boyu zıplamasın */}
-      <div style={{ minHeight: "186px" }}>
+      <div className="yp-aa-icerik" style={{ minHeight: "186px" }}>
 
       {aaSekme === "boyut" && (<>
         <Kaydirici theme={theme} etiket="YAZI BOYUTU" deger={yaziBoyutu} gosterim={`${yaziBoyutu}px`}
@@ -2747,7 +2753,7 @@ const AaPanel = aaAcik && (
 const KayitPanel = kayitAcik && (
   <>
     <div onClick={() => setKayitAcik(false)} style={{ position: "fixed", inset: 0, zIndex: 95 }} />
-    <div className="okuma-panel" style={{ ...panelStil("center"), width: "320px", maxHeight: "480px", display: "flex", flexDirection: "column" }}>
+    <div className="okuma-panel yp-panel yp-genis" style={{ ...panelStil("center", 520), width: "320px", maxHeight: "480px", display: "flex", flexDirection: "column" }}>
 
       {/* Sekmeler */}
       <div style={{ display: "flex", gap: "4px", marginBottom: "12px" }}>
@@ -2917,8 +2923,9 @@ const TemaPanel = temaAcik && (
   <>
     <div onClick={() => setTemaAcik(false)} style={{ position: "fixed", inset: 0, zIndex: 95 }} />
     {/* Ton anahtarı ve Otomatik'teki iki grup paneli uzatabiliyor → kısa ekranda kaydırılsın */}
-    <div className="okuma-panel" style={{ ...panelStil("right"), width: "240px", maxHeight: "80vh", overflowY: "auto" }}>
-      <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "10px", letterSpacing: "1px" }}>TEMA</div>
+    {/* YATAY TELEFON: yp-tema → tema satırları 2-3 sütun, renk ayarları yan yana */}
+    <div className="okuma-panel yp-panel yp-genis yp-sag yp-tema" style={{ ...panelStil("right", 600), width: "240px", maxHeight: "80vh", overflowY: "auto" }}>
+      <div className="yp-tam" style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "10px", letterSpacing: "1px" }}>TEMA</div>
       {/* Ton anahtarı + önizlemeli liste — ortak bileşen (components/TemaSecici.jsx).
           Hazır tema seçilince panel eskisi gibi kapanır; yalnız Otomatik modda
           ekrana yansımayan (öbür tonun) seçimde açık kalır ki işaret görülsün. */}
@@ -2930,7 +2937,7 @@ const TemaPanel = temaAcik && (
       />
 
       {/* Arapça harf rengi */}
-      <div style={{ borderTop: `1px solid ${theme.border}`, marginTop: "10px", paddingTop: "10px" }}>
+      <div className="yp-renk" style={{ borderTop: `1px solid ${theme.border}`, marginTop: "10px", paddingTop: "10px" }}>
         <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px" }}>ARAPÇA HARF RENGİ</div>
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
           <input type="color" value={arapcaRenk || theme.arabicHighlight}
@@ -2944,7 +2951,7 @@ const TemaPanel = temaAcik && (
       </div>
 
       {/* Lügat (Latin) kelime rengi */}
-      <div style={{ marginTop: "10px" }}>
+      <div className="yp-renk" style={{ marginTop: "10px" }}>
         <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px" }}>LÜGAT RENGİ</div>
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
           <input type="color" value={lugatRenkOzel || theme.lugatHighlight}
@@ -2968,7 +2975,8 @@ const TemaPanel = temaAcik && (
 const AyarlarPanel = ayarlarAcik && (
   <>
     <div onClick={() => setAyarlarAcik(false)} style={{ position: "fixed", inset: 0, zIndex: 95 }} />
-    <div className="okuma-panel" style={{ ...panelStil("right"), width: "280px", maxHeight: "80vh", overflowY: "auto", display: "flex", flexDirection: "column", gap: "16px" }}>
+    {/* YATAY TELEFON: yp-iki → iki sütun */}
+    <div className="okuma-panel yp-panel yp-genis yp-sag yp-iki" style={{ ...panelStil("right", 640), width: "280px", maxHeight: "80vh", overflowY: "auto", display: "flex", flexDirection: "column", gap: "16px" }}>
 
       {/* Bar konumu */}
       <div>
@@ -3122,7 +3130,9 @@ const OzelTemaPanel = ozelTemaPanelAcik && (
       onClick={() => setOzelTemaPanelAcik(false)}
       style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 300 }}
     />
-    <div style={{
+    {/* YATAY TELEFON: genişliyor, renk listesi iki sütun */}
+    <div className="yp-panel yp-genis" style={{
+      ...ypDegisken({ pay: 24, en: 620 }),
       position: "fixed",
       top: "50%",
       left: "50%",
@@ -3147,7 +3157,7 @@ const OzelTemaPanel = ozelTemaPanelAcik && (
       </div>
 
       {/* Renk paleti */}
-      <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+      <div className="yp-iki" style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
         {PALET_ALANLARI.map(palet => (
           <div key={palet.key}>
             <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
@@ -3278,7 +3288,7 @@ const OzelTemaPanel = ozelTemaPanelAcik && (
 const AramaPanel = aramaAcik && (
   <>
     <div onClick={() => setAramaAcik(false)} style={{ position: "fixed", inset: 0, zIndex: 95 }} />
-    <div className="okuma-panel" style={{ ...panelStil("center"), width: "300px" }}>
+    <div className="okuma-panel yp-panel" style={{ ...panelStil("center"), width: "300px" }}>
       <div style={{ display: "flex", gap: "8px", alignItems: "center", marginBottom: "10px" }}>
         <Search size={14} color={theme.textSecondary} />
         <input
@@ -3346,7 +3356,7 @@ const AramaPanel = aramaAcik && (
 const SayfaGitPopup = sayfaGitAcik && (
   <>
     <div onClick={() => setSayfaGitAcik(false)} style={{ position: "fixed", inset: 0, zIndex: 95 }} />
-    <div className="okuma-panel" style={{ ...panelStil("center"), width: "280px" }}>
+    <div className="okuma-panel yp-panel" style={{ ...panelStil("center"), width: "280px" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px" }}>
         <div style={{ fontSize: "12px", color: theme.textSecondary }}>SAYFAYA GİT (1 – {kitapMetni.length})</div>
         <button onClick={() => setSayfaGosterimAcik(v => !v)} title="Bardaki görünüm tipi"

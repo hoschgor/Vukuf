@@ -1,6 +1,13 @@
+import { useRef } from "react"
 import { Play, Pause, X } from "lucide-react"
+import { useEkranIcinde, BALONCUK_MAX_BOY } from "../data/hooks/useEkranIcinde"
 
 export default function AyetPopup({ sure, ayetNo, meal, konum, player, theme, onKapat }) {
+  // KONUM ÖLÇÜLEREK (29 Eylül 2026) — yatayda baloncuğun başı ekran dışına
+  // taşıyordu (bkz. useEkranIcinde). Kanca `return`'den ÖNCE olmalı.
+  const kutuRef = useRef(null)
+  const yer = useEkranIcinde(kutuRef, sure ? konum : null)
+
   if (!sure) return null
 
   
@@ -19,8 +26,11 @@ export default function AyetPopup({ sure, ayetNo, meal, konum, player, theme, on
     player?.durum === "caliyor" &&
     player?.aktifAyet?.sureNo === sure.id
 
-  const asagiMi = konum.y + window.innerHeight * 1 < window.innerHeight
-  const topDeger = asagiMi ? konum.y : konum.y - window.innerHeight * 0.2
+  // Eski tahmin (`asagiMi` hiç doğru olamıyordu → hep ekran boyunun %20'si
+  // kadar yukarı) yalnız ölçümden önceki ilk hesap için; boyanmadan önce
+  // useEkranIcinde gerçek yeri veriyor.
+  const topDeger = yer ? yer.top : konum.y
+  const leftDeger = yer ? yer.left : konum.x
 
   function sesTikla() {
     if (!player) return
@@ -57,11 +67,11 @@ export default function AyetPopup({ sure, ayetNo, meal, konum, player, theme, on
     
 
       {/* Popup kutusu */}
-      <div style={{
+      <div ref={kutuRef} style={{
         position: "fixed",
-        left: konum.x,
+        left: leftDeger,
         top: topDeger,
-        maxHeight: "35vh",
+        maxHeight: BALONCUK_MAX_BOY,
         overflowY: "auto",
         zIndex: 300,
         background: theme.surface,

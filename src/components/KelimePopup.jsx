@@ -1,31 +1,14 @@
-import { useState, useRef } from "react"
+import { useEffect, useRef } from "react"
+import { useEkranIcinde, BALONCUK_MAX_BOY } from "../data/hooks/useEkranIcinde"
 import { Play, Pause, X, Link2, Type, Brackets } from "lucide-react"
-import kelimeMapping from "../data/kelime-mapping.json"
 import { tecvidAyikla, ozelOkuyusAyikla } from "./MushafKelime"
-
-// Bizim kelime id'miz → quran.com kelime sırası.
-// NEDEN GEREKLİ: kelime sesleri (WBW mp3) quran.com'un kelime numaralarına göre
-// dosyalanmış. Bizim bölünmemiz bazı yerlerde farklı (ör. Bakara 40'ta bizde
-// "يَا" + "بَنٖي" iki kelime, onlarda tek), dolayısıyla BİZİM sıramızla dosya
-// istemek o âyette yanlış kelimeyi çaldırır. Eşleme varsa ondan okunur.
-function eslenenSira(kelimeId) {
-  if (!kelimeId) return null
-  const eslenen = kelimeMapping[kelimeId]
-  if (!eslenen) return null
-  const p = String(eslenen).split(":")
-  const n = parseInt(p[2], 10)
-  return Number.isFinite(n) && n > 0 ? n : null
-}
-
-const WBW_BASE = "https://audio.qurancdn.com/wbw"
-
-function kelimeMp3(sureNo, ayetNo, position) {
-  const pos = position && position > 0 ? position : 1
-  const s = String(sureNo).padStart(3, "0")
-  const a = String(ayetNo).padStart(3, "0")
-  const k = String(pos).padStart(3, "0")
-  return `${WBW_BASE}/${s}_${a}_${k}.mp3`
-}
+// KELİME SESİ ARTIK ORTAK MODÜLDE (29 Eylül 2026) — bkz. data/kelimeSes.js:
+//  • tek çalar: baloncuk kapanınca ses DURUYOR (eskiden arkadan çalmaya devam
+//    ediyordu), iki kelimeye art arda dokununca iki ses üst üste binmiyor;
+//  • eşleme tablosu (kelime-mapping.json, 1,7 MB) tembel — Kur'ân sayfası
+//    açılırken ayrıştırılmıyor, baloncuk açılınca önden isteniyor;
+//  • hıfz modu da aynı modülü kullanabilecek (sıra hesabı tek yerde).
+import { eslemeYukle, kelimeSesCal, kelimeSesDurdur, useKelimeCaliyor } from "../data/kelimeSes"
 
 // Baloncuktaki Arapça yazı boyutu. Tecvid simgelerinin konumu buna oranlıdır
 // (mushaf sayfasındaki formülün aynısı), bu yüzden tek yerde tutuluyor.
@@ -45,8 +28,18 @@ export default function KelimePopup({
   // tahminle ayrılamaz). Yoksa satır hiç çizilmez.
   sarf = null,
 }) {
-  const [kelimeCaliyor, setKelimeCaliyor] = useState(false)
-  const kelimeAudioRef = useRef(null)
+  // Bu baloncuğun kelimesi — çalan sesin kime ait olduğunu tanımak için
+  const sesAnahtar = kelime ? `${sureNo}:${ayetNo}:${kelime.id || kelime.position || ""}` : null
+  const kelimeCaliyor = useKelimeCaliyor(sesAnahtar)
+
+  // Eşleme tablosu baloncuk açılınca önden istenir: dokununca beklemeden
+  // (iOS'un "dokunuş içinde çal" kuralını bozmadan) çalabilsin.
+  useEffect(() => { eslemeYukle().catch(() => {}) }, [])
+  // Baloncuk KAPANINCA ya da başka kelimeye geçince çalan kelime susar.
+  useEffect(() => () => kelimeSesDurdur(), [sesAnahtar])
+  // Ekran içinde kalsın — yatayda (kısa ekran) baloncuk taşıyordu (bkz. useEkranIcinde)
+  const kutuRef = useRef(null)
+  const yer = useEkranIcinde(kutuRef, kelime ? konum : null)
 
   if (!kelime) return null
 
@@ -56,12 +49,8 @@ export default function KelimePopup({
   // burada bir de kaç parçadan oluştuğu söylenir ve SES doğru sıradan çalınır.
   const uyeler = Array.isArray(kelime.grupUyeleri) ? kelime.grupUyeleri : null
   const birlesik = !!(uyeler && uyeler.length > 1)
-  // Ses sırası: önce eşleme tablosu (doğrusu bu), yoksa gelen konum.
-  const sesSirasi =
-    eslenenSira(kelime.id) ||
-    (birlesik ? eslenenSira(uyeler[0]) : null) ||
-    kelime.position ||
-    null
+  // Ses sırası kelimeSes.js'te (eşleme tablosu → birleşikte ilk üye → konum).
+  const sesVar = !!(kelime.id || kelime.position || birlesik)
 
   // ── TECVİD / KIRAAT İŞARETLERİ ──────────────────────────────────
   // Mushaf sayfasıyla AYNI işlev (MushafKelime'den geliyor): işaret metinden
@@ -92,24 +81,14 @@ export default function KelimePopup({
     player?.aktifAyet?.ayetNo === ayetNo
 
   function kelimeTikla() {
-    if (!sesSirasi) return
-
-    if (kelimeCaliyor) {
-      kelimeAudioRef.current?.pause()
-      setKelimeCaliyor(false)
-      return
-    }
-
+    if (!sesVar) return
+    if (kelimeCaliyor) { kelimeSesDurdur(); return }
     // Ana player'ı duraklat
     if (player?.durum === "caliyor") player.duraklat()
-
-    const audio = new Audio(kelimeMp3(sureNo, ayetNo, sesSirasi))
-    kelimeAudioRef.current = audio
-    setKelimeCaliyor(true)
-
-    audio.play().catch(() => setKelimeCaliyor(false))
-    audio.addEventListener("ended", () => setKelimeCaliyor(false))
-    audio.addEventListener("error", () => setKelimeCaliyor(false))
+    kelimeSesCal({
+      sureNo, ayetNo, anahtar: sesAnahtar,
+      kelime: { id: kelime.id, grupUyeleri: uyeler, position: kelime.position },
+    })
   }
 
   function ayetTikla() {
@@ -120,10 +99,7 @@ export default function KelimePopup({
       player.devamEt()
     } else {
       // Kelime sesini durdur
-      if (kelimeAudioRef.current) {
-        kelimeAudioRef.current.pause()
-        setKelimeCaliyor(false)
-      }
+      kelimeSesDurdur()
       player.ayetCal(sureNo, ayetNo)
     }
   }
@@ -151,10 +127,10 @@ export default function KelimePopup({
       <div onClick={onKapat} style={{ position: "fixed", inset: 0, zIndex: 299 }} />
 
       {/* Popup */}
-      <div style={{
+      <div ref={kutuRef} style={{
         position: "fixed",
-        left: konum.x,
-        top: konum.y,
+        left: yer ? yer.left : konum.x,
+        top: yer ? yer.top : konum.y,
         zIndex: 300,
         background: theme.surface,
         border: `1px solid ${theme.border}`,
@@ -162,7 +138,7 @@ export default function KelimePopup({
         padding: "14px 16px",
         maxWidth: "260px",
         minWidth: "180px",
-        maxHeight: "35vh",
+        maxHeight: BALONCUK_MAX_BOY,
         overflowY: "auto",
         boxShadow: "0 4px 24px rgba(0,0,0,0.15)",
       }}>

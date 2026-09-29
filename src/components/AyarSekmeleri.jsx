@@ -15,9 +15,10 @@
    sürüklemek yerine tek adım ince ayar (telefonda en çok zorlanılan kısım buydu).
    ═══════════════════════════════════════════════════════════════════════════ */
 
-export function SekmeCubugu({ theme, sekmeler, secili, onSec }) {
+// sinif: dışarıdan sınıf (ör. yatay telefon düzeni için "yp-aa-ilk")
+export function SekmeCubugu({ theme, sekmeler, secili, onSec, sinif }) {
   return (
-    <div role="tablist" style={{
+    <div role="tablist" className={sinif} style={{
       display: "flex", gap: "3px", padding: "3px", borderRadius: "11px",
       background: theme.background, border: `1px solid ${theme.border}`,
       margin: "10px 0",

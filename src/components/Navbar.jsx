@@ -8,6 +8,7 @@ import AltSayfa from "./AltSayfa"
 import VeriAyarlari from "./VeriAyarlari"
 import Katlanir from "./Katlanir"
 import TemaSecici from "./TemaSecici"
+import { ypDegisken } from "./yatayDuzen"
 import { themes } from "../styles/themes"
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -290,7 +291,9 @@ export default function Navbar() {
             onClick={() => setOzelPanelAcik(false)}
             style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 300 }}
           />
-          <div style={{
+          {/* YATAY TELEFON: genişliyor, renk listesi iki sütun (yatayDuzen.js) */}
+          <div className="yp-panel yp-genis" style={{
+            ...ypDegisken({ pay: 24, en: 620 }),
             position: "fixed",
             top: "50%",
             left: "50%",
@@ -315,7 +318,7 @@ export default function Navbar() {
             </div>
 
             {/* Renk paleti */}
-            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+            <div className="yp-iki" style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
               {paletRenkleri.map(palet => (
                 <div key={palet.key}>
                   <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
@@ -453,6 +456,10 @@ export default function Navbar() {
             display: "flex",
             flexDirection: "column",
             justifyContent: "space-between", // İçeriği üst ve alt olarak ayırır
+            // Yatay telefonda (ekran ~430 px) menü öğeleri sığmayıp alttan
+            // kesiliyordu → kendi içinde kaydırılsın.
+            overflowY: "auto",
+            overscrollBehavior: "contain",
           }}>
             {/* Üst kısım - Logo ve ana menü */}
             <div>

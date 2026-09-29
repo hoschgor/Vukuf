@@ -1,18 +1,108 @@
-import { useEffect, useState } from "react"
+import { useEffect, useState, lazy, Suspense, Component } from "react"
 import { Routes, Route, useLocation } from "react-router-dom"
 import Navbar from "./components/Navbar"
 import MushafYukleniyorRozeti from "./components/MushafYukleniyorRozeti"
 import Kutuphane from "./pages/Kutuphane"
-import Lugat from "./pages/Lugat"
-import HifzEkrani from "./pages/HifzEkrani"
-import Tefeul from "./pages/SozTefeul"
-import OkumaTefeulu from "./pages/OkumaTefeulu"
-import OkumaEkrani from "./pages/OkumaEkrani"
-import Arama from "./pages/Arama"
-import Hakkinda from "./pages/Hakkinda"
 import { useApp } from "./AppContext"
 import { swKaydet, swGuncelle } from "./data/cevrimdisi"
-import KuranOkuma from "./pages/KuranOkuma"
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SAYFALAR GEREKTİĞİNDE YÜKLENİYOR (29 Eylül 2026)
+
+   Eskiden bütün sayfalar burada doğrudan içe aktarılıyordu. Sayfaların içe
+   aktardığı JSON'lar da (ölçüldü: lügat 2,5 MB, kelime anlamı 2,0 MB, kelime
+   eşleme 1,7 MB, kavramlar 1,5 MB, Arapça lügat 1,4 MB, meal 1,1 MB, öbek
+   452 KB…) böylece ANA PAKETE giriyordu: uygulama Kitaplık'ı göstermek için
+   ~11 MB veriyi indirip JavaScript olarak ayrıştırmak zorundaydı.
+
+   Artık yalnız Kitaplık (açılış sayfası) doğrudan geliyor; ötekiler ilk
+   açıldıklarında yükleniyor, kendi JSON'larıyla birlikte ayrı parça olarak.
+
+   ÇEVRİMDIŞI: parçaların hepsi servis işçisi kurulurken önden önbelleğe
+   alınıyor (vite.config.js → varlik-listesi.json → sw.js). Bir kez çevrimiçi
+   açılmış sürüm internetsiz de her sayfayı açar.
+
+   PARÇA YÜKLENEMEZSE: yeni sürüm yayınlanmış ve eski sayfanın istediği parça
+   sunucudan kalkmış olabilir. Bir kez sayfa yenileniyor (yeni index.html yeni
+   parça adlarını getirir); ikinci kez de olmazsa hata olduğu gibi çıkıyor —
+   sonsuz yenileme döngüsü olmasın diye bayrak oturumda tutuluyor.
+   ═══════════════════════════════════════════════════════════════════════════ */
+const YENILEME_BAYRAK = "vukuf-parca-yenilendi"
+function tembel(yukle) {
+  return lazy(() => yukle().then(
+    (m) => { try { sessionStorage.removeItem(YENILEME_BAYRAK) } catch { /* yoksay */ } return m },
+    (hata) => {
+      let yenilendi = false
+      try { yenilendi = sessionStorage.getItem(YENILEME_BAYRAK) === "1" } catch { /* yoksay */ }
+      if (!yenilendi && navigator.onLine !== false) {
+        try { sessionStorage.setItem(YENILEME_BAYRAK, "1") } catch { /* yoksay */ }
+        window.location.reload()
+        return new Promise(() => {})          // yenilenene kadar bekle
+      }
+      throw hata
+    },
+  ))
+}
+
+const Lugat        = tembel(() => import("./pages/Lugat"))
+const HifzEkrani   = tembel(() => import("./pages/HifzEkrani"))
+const Tefeul       = tembel(() => import("./pages/SozTefeul"))
+const OkumaTefeulu = tembel(() => import("./pages/OkumaTefeulu"))
+const OkumaEkrani  = tembel(() => import("./pages/OkumaEkrani"))
+const Arama        = tembel(() => import("./pages/Arama"))
+const Hakkinda     = tembel(() => import("./pages/Hakkinda"))
+const KuranOkuma   = tembel(() => import("./pages/KuranOkuma"))
+
+/* Parça HİÇ yüklenemezse (çevrimdışı ve önbellekte yok, ya da yenileme de
+   yetmedi) beyaz ekran yerine açıklama + iki çıkış. Sayfa değişince sıfırlanır. */
+class ParcaHatasi extends Component {
+  constructor(p) { super(p); this.state = { hata: null } }
+  static getDerivedStateFromError(hata) { return { hata } }
+  componentDidUpdate(onceki) {
+    if (onceki.yol !== this.props.yol && this.state.hata) this.setState({ hata: null })
+  }
+  render() {
+    if (!this.state.hata) return this.props.children
+    const { theme } = this.props
+    const dugme = (etiket, tikla, ana) => (
+      <button onClick={tikla} style={{
+        padding: "9px 16px", borderRadius: "10px", fontSize: "14px", fontFamily: "inherit", cursor: "pointer",
+        border: ana ? "none" : `1px solid ${theme.border}`,
+        background: ana ? theme.accent : "transparent", color: ana ? "#fff" : theme.text,
+      }}>{etiket}</button>
+    )
+    return (
+      <div style={{ padding: "80px 24px", textAlign: "center", color: theme.text }}>
+        <div style={{ fontSize: "16px", marginBottom: "8px" }}>Bu bölüm yüklenemedi.</div>
+        <div style={{ fontSize: "13px", color: theme.textSecondary, marginBottom: "20px", lineHeight: 1.5 }}>
+          {navigator.onLine === false
+            ? "İnternet bağlantısı yok ve bu bölüm henüz cihaza indirilmemiş."
+            : "Bağlantı kesilmiş ya da uygulama güncellenmiş olabilir."}
+        </div>
+        <div style={{ display: "flex", gap: "10px", justifyContent: "center" }}>
+          {dugme("Yeniden dene", () => window.location.reload(), true)}
+          {dugme("Kitaplık", () => { window.location.href = "/" })}
+        </div>
+      </div>
+    )
+  }
+}
+
+/* Parça yüklenirken: ortada rozet. 180 ms gecikmeli beliriyor — önbellekten
+   anında gelen geçişlerde ekran bir kare yanıp sönmesin. */
+function SayfaYukleniyor({ theme }) {
+  return (
+    <div style={{
+      position: "fixed", inset: 0, zIndex: 50,
+      display: "flex", alignItems: "center", justifyContent: "center",
+      background: theme.background,
+      opacity: 0, animation: "vukufParcaBelir .25s ease .18s forwards",
+    }}>
+      <style>{`@keyframes vukufParcaBelir { to { opacity: 1 } }`}</style>
+      <MushafYukleniyorRozeti size={96} ac={theme.accent} />
+    </div>
+  )
+}
 
 export default function App() {
   const { theme } = useApp()
@@ -140,6 +230,8 @@ export default function App() {
       )}
 
       {!okumadaMiyiz && <Navbar />}
+      <ParcaHatasi theme={theme} yol={location.pathname}>
+      <Suspense fallback={<SayfaYukleniyor theme={theme} />}>
       <Routes>
         <Route path="/" element={<Kutuphane />} />
         <Route path="/lugat" element={<Lugat />} />
@@ -151,6 +243,8 @@ export default function App() {
         <Route path="/kitap/:id" element={<OkumaEkrani />} />
         <Route path="/hakkinda" element={<Hakkinda />} />
       </Routes>
+      </Suspense>
+      </ParcaHatasi>
     </div>
   )
 }

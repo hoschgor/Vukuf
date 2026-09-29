@@ -1,6 +1,16 @@
 
 
 import React from "react"
+import { renderToStaticMarkup } from "react-dom/server"
+// Süsü resme çevir — bkz. SureBasligi.jsx notu (dönme teşhisiyle ölçüldü, kalıcı)
+
+/* Rozet çerçevesi canlı SVG olarak ~44 öğe; sayfada âyet başına bir tane
+   (30. cüz bölgesinde 44 sayfada ~700 rozet = ~31 bin öğe). Çerçeve yalnız
+   renge bağlı → bir kez resme çevrilip <img>; rakam üstte canlı kalıyor.
+   Resmin görüş kutusu çizimin taşan kısmını da kapsayacak kadar geniş
+   (ölçüldü: çizim x ±68, y ±31 → -72 -36 144 72). */
+const RESIM_KUTU = { x: -72, y: -36, w: 144, h: 72 }
+const cerceveBellek = new Map()
 
 const ARAPCA = "٠١٢٣٤٥٦٧٨٩"
 
@@ -21,27 +31,9 @@ export default function MushafAyetRozeti({
   const fontSize =
     yazi.length === 1 ? 50 : yazi.length === 2 ? 52 : 52
 
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="-65 -30 130 60"
-      style={{
-        color: ac,
-        overflow: "visible",
-        display: "block",
-        // Pasifken DÖNÜŞÜM YOK ("scale(1)" değil "none") — 28 Eylül 2026.
-        // `scale(1)` de bir dönüşümdür: rozeti ayrı bir katmana (yığın bağlamı,
-        // iPhone'da çoğu zaman ayrı bir birleştirme katmanı) alıyordu. Rozet bir kez
-        // odaklanıp büyüyüp küçüldükten sonra (âyet okunup geçince) WebKit bu katmanı
-        // tutuyor ve âyet sonundaki GENİŞ vakıf işaretinin (lâmelif لا) rozete taşan
-        // yarısını ÜSTÜNE boyuyordu — kullanıcı: "okuyup geçtikten sonra lâmelif
-        // vakıflarının yarısı kayboluyor". Katman yalnız vurgu sırasında var.
-        transform: aktif ? "scale(1.3)" : "none",
-        transition: "transform 0.3s ease",
-        filter: aktif ? `drop-shadow(0 0 4px currentColor)` : "none",
-      }}
-    >
+  // Çerçeve (rakam hariç) — canlı çizimde de resim üretiminde de aynı öğeler
+  const cerceve = (
+    <>
       {/* Sol taraf */}
       <g transform="translate(-50 0)">
         {/* Ana gövde - dış kavis (ince) */}
@@ -405,6 +397,69 @@ export default function MushafAyetRozeti({
           opacity=".5"
         />
       </g>
+
+    </>
+  )
+
+  // Çerçeve resim, rakam canlı. Kapsayıcı canlı SVG ile AYNI kutu
+  // (size × size), aynı dönüşüm/gölge; görünüm aynı kalıyor. Renk verilmemişse
+  // (currentColor) resim üretilemez → canlı çizim.
+  if (ac !== "currentColor") {
+    let url = cerceveBellek.get(ac)
+    if (!url) {
+      url = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(renderToStaticMarkup(
+        <svg xmlns="http://www.w3.org/2000/svg" width={RESIM_KUTU.w} height={RESIM_KUTU.h}
+          viewBox={`${RESIM_KUTU.x} ${RESIM_KUTU.y} ${RESIM_KUTU.w} ${RESIM_KUTU.h}`} style={{ color: ac }}>
+          {cerceve}
+        </svg>
+      ))
+      cerceveBellek.set(ac, url)
+    }
+    const olcek = size / 130                      // canlı SVG: 130 birim → size px (en sınırlı)
+    const iw = RESIM_KUTU.w * olcek, ih = RESIM_KUTU.h * olcek
+    return (
+      <span style={{
+        display: "block", position: "relative", width: size, height: size, color: ac,
+        transform: aktif ? "scale(1.3)" : "none",
+        transition: "transform 0.3s ease",
+        filter: aktif ? `drop-shadow(0 0 4px currentColor)` : "none",
+      }}>
+        <img src={url} alt="" draggable={false} style={{
+          position: "absolute", left: (size - iw) / 2, top: (size - ih) / 2, width: iw, height: ih,
+          pointerEvents: "none",
+        }} />
+        <svg width={size} height={size} viewBox="-65 -30 130 60"
+          style={{ position: "absolute", left: 0, top: 0, overflow: "visible", pointerEvents: "none" }}>
+          <text x="0" y="3" textAnchor="middle" dominantBaseline="middle"
+            fontFamily="'Scheherazade New', serif" fontWeight="900" fontSize={fontSize}
+            fill={ac} letterSpacing="-2.5">{yazi}</text>
+        </svg>
+      </span>
+    )
+  }
+
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="-65 -30 130 60"
+      style={{
+        color: ac,
+        overflow: "visible",
+        display: "block",
+        // Pasifken DÖNÜŞÜM YOK ("scale(1)" değil "none") — 28 Eylül 2026.
+        // `scale(1)` de bir dönüşümdür: rozeti ayrı bir katmana (yığın bağlamı,
+        // iPhone'da çoğu zaman ayrı bir birleştirme katmanı) alıyordu. Rozet bir kez
+        // odaklanıp büyüyüp küçüldükten sonra (âyet okunup geçince) WebKit bu katmanı
+        // tutuyor ve âyet sonundaki GENİŞ vakıf işaretinin (lâmelif لا) rozete taşan
+        // yarısını ÜSTÜNE boyuyordu — kullanıcı: "okuyup geçtikten sonra lâmelif
+        // vakıflarının yarısı kayboluyor". Katman yalnız vurgu sırasında var.
+        transform: aktif ? "scale(1.3)" : "none",
+        transition: "transform 0.3s ease",
+        filter: aktif ? `drop-shadow(0 0 4px currentColor)` : "none",
+      }}
+    >
+      {cerceve}
 
       {/* Rakam */}
       <text

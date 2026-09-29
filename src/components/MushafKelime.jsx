@@ -1,4 +1,6 @@
-import { useState, useEffect, useRef } from "react"
+import { useState } from "react"
+// GEÇİCİ — dönme teşhisi sayacı (ölçüm bitince silinecek)
+// import { SAYAC as DONME_SAYAC } from "../data/donmeTeshis"   // ⏸ dönme teşhisi (yorumda)
 
 // ══════════════════════════════════════════════════════════════════════════════════════════
 // VAKIF (durak) ve TECVİD işaretleri — REFERANS
@@ -294,6 +296,14 @@ function lafzatullahMi(arabic) {
 
 
 
+/* ── İŞARETLİ KELİMEYİ YENİDEN ÇİZ — KALDIRILDI (30 Eylül 2026) ─────────────
+   ص işaretinin okuma sonrası silinmesine karşı, vurgu değişiminden 60/420 ms
+   sonra kelimenin iç katmanları yeniden kuruluyordu (YenidenCiz). Kullanıcı
+   dönme teşhisinde bunu kapatıp denedi: "kesinlikle kapalı olmalı, SIÇRAMAYA
+   sebep oluyor" — yeniden kurulan iç katmanlar satırı bir an oynatıyordu.
+   Tamamen çıkarıldı. ص silinmesi geri gelirse başka bir yol aranacak
+   (yeniden kurmadan, yalnız yeniden boyatmak gibi). */
+
 export default function MushafKelime({
   // Hıfz perdesi bu iki öznitelikten sürülüyor (CSS ile, prop ile değil —
   // gerekçesi src/data/hifz.js'te). Adları `data-sure`/`data-ayet` DEĞİL:
@@ -333,6 +343,7 @@ export default function MushafKelime({
   obekKonum = null,
   obekVurgu = false,
 }) {
+  // DONME_SAYAC.kelime++   // ⏸ dönme teşhisi (yorumda)
   const [hover, setHover] = useState(false)
   const lafizkontrol = lafzatullahMi(kelime.arabic)
   const besmelekontrol = besmeleMi(kelime.id)
@@ -362,26 +373,13 @@ export default function MushafKelime({
   const icVakif = [...temizArabic].some(c => VAKIF_CPS.has(c.codePointAt(0)))
   const isaretli = hasUpperIndicator || icVakif
 
-  // ── İŞARETLİ KELİMEYİ YENİDEN ÇİZ (28 Eylül 2026) ──────────────────────
-  // Kullanıcı (iPhone, Şems): âyet okunup geçince ص işaretinin kelime kutusunun
-  // İÇİNDE kalan kısmı (son harfle çakışan yarısı) siliniyor; "okuma sonrası
-  // ufak bir gecikmeyle yeniden render edilebilir". Vurgu zemini değişince
-  // WebKit yalnız kutunun içini yeniden boyuyor ve taşan işaretin o kısmını
-  // geri çizmiyor (masaüstü Chromium'da hiç olmuyor — WebKit boyama hatası).
-  // Çözüm: vurgu açılıp kapandıktan kısa süre sonra işaretleri ve metni
-  // taşıyan span'ler YENİDEN KURULUYOR (anahtar artıyor) → tarayıcı onları
-  // sıfırdan boyamak zorunda. İki kez: vurgu değişiminin hemen ardından ve
-  // boyama oturduktan sonra. Yalnız işaretli kelimelerde (sayfada birkaç
-  // tane); işaretsiz binlerce kelimeye hiçbir şey eklenmiyor.
-  const [tazele, setTazele] = useState(0)
-  const ilkCizimRef = useRef(true)
-  useEffect(() => {
-    if (!isaretli) return
-    if (ilkCizimRef.current) { ilkCizimRef.current = false; return }
-    const z1 = setTimeout(() => setTazele(n => n + 1), 60)
-    const z2 = setTimeout(() => setTazele(n => n + 1), 420)
-    return () => { clearTimeout(z1); clearTimeout(z2) }
-  }, [aktif, isaretli])
+  // SADE KELİME (30 Eylül 2026, dönme teşhisiyle ÖLÇÜLDÜ): hiçbir işareti
+  // (vakıf, secde, tecvid, özel okuyuş) olmayan kelimede konumlu
+  // (position:relative) katman ve iç <span> gereksiz. WebKit her konumlu öğeye
+  // ayrı katman açıyor; iPhone'da aynı sayfada konumlu öğe 13.349 → 5.490,
+  // dönme donması tek başına ~%7 azaldı, öbür iki düzeltmeyle birlikte ~%43.
+  // Görünüm aynı (Chromium'da ekran görüntüsüyle karşılaştırıldı).
+  const sade = !isaretli && tecvidler.length === 0 && ozeller.length === 0
   // Grup üyeleri TEK BİRİM görünsün: aralarındaki dolgu kapanır, köşe yuvarlaması
   // yalnız dış kenarlarda kalır. Yazı RTL aktığı için "bas" üye SAĞDA durur →
   // mantıksal (start/end) köşe özellikleri kullanılır, sağ/sol sabitlenmez.
@@ -398,71 +396,13 @@ export default function MushafKelime({
   : lineHeight
   
 
-  return (
-    <span
-      className="mushaf-kelime"
-      data-hifz={hifzAnahtar || undefined}
-      data-hs={hifzAnahtar ? hifzSira : undefined}
-      onClick={(e) => onTikla?.(kelime, e)}
-      onMouseEnter={() => { if (!kayitKonumModu) { setHover(true); onGrupHover?.(true) } }}
-      onMouseLeave={() => { setHover(false); onGrupHover?.(false) }}
-      style={{
-        position: "relative",
-        // VAKIF/SECDE İŞARETLİ KELİME ÜST KATTA (28 Eylül 2026). Kullanıcı (iPhone,
-        // Nebe 37): âyet sesle okunurken vurgu kutuları vakıf işaretini yarıdan
-        // örtüyordu, sonraki âyete geçince düzeliyordu. İşaret kelime kutusunun sol
-        // kenarından TAŞIYOR; kendi `zIndex: 2`'si, kelime yığın bağlamı kurmadığı
-        // için ebeveyn bağlamında yarışıyor ve WebKit (telefonda) vurgulu kutuları
-        // üstüne boyayabiliyor. Artık işaretli kelime kendi bağlamını kuruyor ve
-        // z-index 1 ile diğer bütün kelimelerden SONRA boyanıyor: içeride önce kendi
-        // zemini, sonra işaret; dışarıda komşu kutular işaretin altında kalıyor.
-        // Yalnız işaretli kelimelerde — geri kalan binlerce kelime eskisi gibi.
-        zIndex: isaretli ? 1 : undefined,
-        display: "inline-block",
-        cursor: kayitKonumModu ? "crosshair" : "pointer",
-        marginTop: hasUpperIndicator ? `${yaziBoyutu * 0.35}px` : "0",
-        // Grubun İÇ kenarındaki dolgu sıfırlanır → iki kelime bitişik görünür,
-        // dış kenarlardaki dolgu korunur (kelime aralığı bozulmaz).
-        paddingInlineStart: `${disBas ? yanDolgu : 0}px`,
-        paddingInlineEnd: `${disSon ? yanDolgu : 0}px`,
-        paddingBottom: "2px",
-        borderStartStartRadius: kose,
-        borderEndStartRadius: kose,
-        borderStartEndRadius: koseSon,
-        borderEndEndRadius: koseSon,
-        background: kayitKonumModu
-          ? "transparent"
-          : aktif
-            ? `${theme.accent}22`
-            : (hover || grupVurgu || obekVurgu) ? `${theme.accent}0a` : "transparent",
-        boxShadow: kayitKonumModu ? "none" : aktif ? `inset 0 -2px 0 ${theme.accent}` : "none",
-        // Birleşik kelimenin ortak bağı: grup boyunca kesintisiz ince nokta çizgi.
-        // Kesintisiz olması için İÇ kenarlarda dolgu zaten sıfırlandı.
-        // Bağ çizgisi: grupta KESİNTİSİZ (iç dolgu zaten sıfırlandı), öbekte
-        // kelimeler arası boşluk durduğu için çizgi de kelime kelime kesilir —
-        // bu doğru: "aynı anlamı paylaşıyorlar" der, "tek kelimedir" demez.
-        // Öbek çizgisi daha SOLUK, karışmasın diye.
-        borderBottom: kayitKonumModu
-          ? undefined
-          : grupta
-            ? `1px dotted ${theme.accent}${grupVurgu ? "88" : "44"}`
-            : (obekKonum != null)
-              ? `1px dotted ${theme.accent}${obekVurgu ? "66" : "2a"}`
-              : undefined,
-        // İşaretli kelimede geçiş YOK: 0,15 sn'lik ara karelerin her biri WebKit'te
-        // aynı eksik boyamayı tekrarlıyordu; zemin tek karede değişsin.
-        transition: isaretli ? "none" : "background 0.15s",
-        whiteSpace: "nowrap",
-        verticalAlign: "middle",
-        userSelect: "none",
-        lineHeight: lineHeight,
-        WebkitTapHighlightColor: kayitKonumModu ? "transparent" : undefined,
-      }}
-    >
+  // Kelimenin iç katmanları (işaretler + Arapça metin). İşaretli kelimede
+  // <YenidenCiz> sarmalıyor; öbürlerinde doğrudan çiziliyor.
+  const icerik = () => (
+    <>
       {/* Vakıf işareti */}
       {kelime.vakif && (
         <span
-          key={`vk-${tazele}`}
           style={{
             position: "absolute",
             top: `-${yaziBoyutu * 0.09}px`,
@@ -573,9 +513,8 @@ export default function MushafKelime({
         </span>
       ))}
 
-      {/* Arapça metin — anahtar: yukarıdaki "yeniden çiz" (içindeki vakıf işaretleriyle birlikte) */}
+      {/* Arapça metin */}
       <span
-        key={`ar-${tazele}`}
         style={{
           fontFamily: arapcaFont,
           fontSize: `${yaziBoyutu}px`,
@@ -589,7 +528,7 @@ export default function MushafKelime({
           // kullanıcının tarif ettiği "âyet bitince silinme" birebir bu. %5'lik fark
           // gözle zaten seçilmiyordu.
           verticalAlign: "middle",
-          position: "relative",
+          position: sade ? undefined : "relative",   // sade kelimede katmansız (yukarıdaki not)
         }}
       >
         {(() => {
@@ -604,7 +543,8 @@ export default function MushafKelime({
           const hasOzel = [...temizArabic].some(c => TUM_OZEL_CPS.has(c.codePointAt(0)))
 
           if (!hasOzel) {
-            return <span>{temizArabic}</span>
+            // sade kelimede iç <span> de yok (yalnız metin)
+            return sade ? temizArabic : <span>{temizArabic}</span>
           }
 
           const chars = [...temizArabic]
@@ -694,6 +634,71 @@ export default function MushafKelime({
           )
         })()}
       </span>
+    </>
+  )
+
+  return (
+    <span
+      className="mushaf-kelime"
+      data-hifz={hifzAnahtar || undefined}
+      data-hs={hifzAnahtar ? hifzSira : undefined}
+      onClick={(e) => onTikla?.(kelime, e)}
+      onMouseEnter={() => { if (!kayitKonumModu) { setHover(true); onGrupHover?.(true) } }}
+      onMouseLeave={() => { setHover(false); onGrupHover?.(false) }}
+      style={{
+        position: sade ? undefined : "relative",   // sade kelimede katmansız
+        // VAKIF/SECDE İŞARETLİ KELİME ÜST KATTA (28 Eylül 2026). Kullanıcı (iPhone,
+        // Nebe 37): âyet sesle okunurken vurgu kutuları vakıf işaretini yarıdan
+        // örtüyordu, sonraki âyete geçince düzeliyordu. İşaret kelime kutusunun sol
+        // kenarından TAŞIYOR; kendi `zIndex: 2`'si, kelime yığın bağlamı kurmadığı
+        // için ebeveyn bağlamında yarışıyor ve WebKit (telefonda) vurgulu kutuları
+        // üstüne boyayabiliyor. Artık işaretli kelime kendi bağlamını kuruyor ve
+        // z-index 1 ile diğer bütün kelimelerden SONRA boyanıyor: içeride önce kendi
+        // zemini, sonra işaret; dışarıda komşu kutular işaretin altında kalıyor.
+        // Yalnız işaretli kelimelerde — geri kalan binlerce kelime eskisi gibi.
+        zIndex: isaretli ? 1 : undefined,
+        display: "inline-block",
+        cursor: kayitKonumModu ? "crosshair" : "pointer",
+        marginTop: hasUpperIndicator ? `${yaziBoyutu * 0.35}px` : "0",
+        // Grubun İÇ kenarındaki dolgu sıfırlanır → iki kelime bitişik görünür,
+        // dış kenarlardaki dolgu korunur (kelime aralığı bozulmaz).
+        paddingInlineStart: `${disBas ? yanDolgu : 0}px`,
+        paddingInlineEnd: `${disSon ? yanDolgu : 0}px`,
+        paddingBottom: "2px",
+        borderStartStartRadius: kose,
+        borderEndStartRadius: kose,
+        borderStartEndRadius: koseSon,
+        borderEndEndRadius: koseSon,
+        background: kayitKonumModu
+          ? "transparent"
+          : aktif
+            ? `${theme.accent}22`
+            : (hover || grupVurgu || obekVurgu) ? `${theme.accent}0a` : "transparent",
+        boxShadow: kayitKonumModu ? "none" : aktif ? `inset 0 -2px 0 ${theme.accent}` : "none",
+        // Birleşik kelimenin ortak bağı: grup boyunca kesintisiz ince nokta çizgi.
+        // Kesintisiz olması için İÇ kenarlarda dolgu zaten sıfırlandı.
+        // Bağ çizgisi: grupta KESİNTİSİZ (iç dolgu zaten sıfırlandı), öbekte
+        // kelimeler arası boşluk durduğu için çizgi de kelime kelime kesilir —
+        // bu doğru: "aynı anlamı paylaşıyorlar" der, "tek kelimedir" demez.
+        // Öbek çizgisi daha SOLUK, karışmasın diye.
+        borderBottom: kayitKonumModu
+          ? undefined
+          : grupta
+            ? `1px dotted ${theme.accent}${grupVurgu ? "88" : "44"}`
+            : (obekKonum != null)
+              ? `1px dotted ${theme.accent}${obekVurgu ? "66" : "2a"}`
+              : undefined,
+        // İşaretli kelimede geçiş YOK: 0,15 sn'lik ara karelerin her biri WebKit'te
+        // aynı eksik boyamayı tekrarlıyordu; zemin tek karede değişsin.
+        transition: isaretli ? "none" : "background 0.15s",
+        whiteSpace: "nowrap",
+        verticalAlign: "middle",
+        userSelect: "none",
+        lineHeight: lineHeight,
+        WebkitTapHighlightColor: kayitKonumModu ? "transparent" : undefined,
+      }}
+    >
+      {icerik()}
     </span>
   )
 }

@@ -154,8 +154,84 @@ function SortableKitap({ kitap, duzenlemeMode, theme, alimId }) {
   )
 }
 
+/* ── KAPAĞI NET ÇİZ (28 Eylül 2026) ────────────────────────────────────────
+   Kullanıcı: "Kur'ân-ı Kerîm görseli %100 yakınlaştırmada kötü, %110'da güzel;
+   yalnız web'de; pencereyi yarım ekrana alınca başka bir yakınlaştırmada bozuluyor".
+   Kur'ân kapağı <img> DEĞİL, CSS arka planı (`url() center/cover`) — ilk
+   denemedeki düzeltme yalnız <img> kapakları kapsadığı için ona hiç değmemişti
+   (konsoldaki görsel araması boş döndü, bu yüzden anlaşıldı).
+   Sebep: büyük görsel küçük kutuya TEK ADIMDA ve kesirli bir oranla küçültülüyor;
+   tarayıcı arka plan görselini hızlı örneklemeyle çiziyor, altın desenlerde
+   bozulma kalıyor. Oran yakınlaştırmayla / pencere eniyle değiştiği için bazı
+   değerlerde temiz, bazılarında bozuk görünüyor.
+   ÇÖZÜM: görsel bir kez tuvalde YARIYA YARIYA (her adım yüksek kaliteli) kutunun
+   GERÇEK PİKSEL ölçüsüne küçültülüyor, bu kopya kullanılıyor — tarayıcıya
+   neredeyse 1:1 çizim kalıyor. `mod`: "contain" (img) | "cover" (arka plan).
+   Piksel yoğunluğu değişince (yakınlaştırma) yeniden üretiliyor. Sonuç modül
+   ömrünce önbellekte; hata olursa (CORS, bellek) asıl görsele düşülüyor. */
+const netKapakBellek = new Map()
+function netKapakUret(src, kutuW, kutuH, mod, dpr) {
+  if (!src || !kutuW || !kutuH) return Promise.resolve(null)
+  const anahtar = `${src}|${kutuW}x${kutuH}|${mod}|${dpr}`
+  if (netKapakBellek.has(anahtar)) return netKapakBellek.get(anahtar)
+  const s = new Promise(coz => {
+    const im = new Image()
+    im.decoding = "async"
+    im.onload = () => {
+      try {
+        const nw = im.naturalWidth, nh = im.naturalHeight
+        if (!nw || !nh) return coz(null)
+        const olcek = (mod === "cover" ? Math.max(kutuW / nw, kutuH / nh) : Math.min(kutuW / nw, kutuH / nh)) * dpr
+        const hw = Math.max(1, Math.round(nw * olcek)), hh = Math.max(1, Math.round(nh * olcek))
+        if (nw < hw * 1.4) return coz(null)                       // zaten gereken boya yakın: dokunma
+        let kaynak = im, w = nw, h = nh
+        while (w / 2 >= hw * 1.001) {
+          const c = document.createElement("canvas")
+          c.width = Math.round(w / 2); c.height = Math.round(h / 2)
+          const x = c.getContext("2d"); x.imageSmoothingEnabled = true; x.imageSmoothingQuality = "high"
+          x.drawImage(kaynak, 0, 0, c.width, c.height)
+          kaynak = c; w = c.width; h = c.height
+        }
+        const son = document.createElement("canvas")
+        son.width = hw; son.height = hh
+        const x = son.getContext("2d"); x.imageSmoothingEnabled = true; x.imageSmoothingQuality = "high"
+        x.drawImage(kaynak, 0, 0, hw, hh)
+        son.toBlob(b => coz(b ? URL.createObjectURL(b) : null), "image/png")
+      } catch { coz(null) }
+    }
+    im.onerror = () => coz(null)
+    im.src = src
+  })
+  netKapakBellek.set(anahtar, s)
+  return s
+}
+// Piksel yoğunluğu: tarayıcı yakınlaştırması ve ekran değişince güncellenir
+function usePikselYogunlugu() {
+  const [dpr, setDpr] = useState(() => (typeof window !== "undefined" && window.devicePixelRatio) || 1)
+  useEffect(() => {
+    const guncelle = () => setDpr(window.devicePixelRatio || 1)
+    window.addEventListener("resize", guncelle)
+    return () => window.removeEventListener("resize", guncelle)
+  }, [])
+  return Math.round(dpr * 100) / 100
+}
+function useNetKapak(src, kutuW, kutuH, mod = "contain") {
+  const dpr = usePikselYogunlugu()
+  const [net, setNet] = useState(null)
+  useEffect(() => {
+    let iptal = false
+    // Genişlik geçişinde (0,3 sn) her ara ölçü için üretmemek: kısa bekleme
+    const z = setTimeout(() => {
+      netKapakUret(src, kutuW, kutuH, mod, dpr).then(u => { if (!iptal) setNet(u) })
+    }, 120)
+    return () => { iptal = true; clearTimeout(z) }
+  }, [src, kutuW, kutuH, mod, dpr])
+  return net || src
+}
+
 // 80×128 küçük kapak + başlık (grid görünümü)
 function KucukKapak({ kitap, theme, alimId, duzenlemeMode }) {
+  const kapakSrc = useNetKapak(kitap.gorsel, 80, 128)
   // IZGARA GÖRÜNÜMÜNDE SABİT ÇERÇEVE YOK — burada `contain` kalıyor.
   // Bir ara karma raflarda `cover` yapılmıştı (dinamik moddaki gibi); NETLİK BOZULDU.
   // Sebep ölçek yönü: kutu burada yalnız 80×128 ve `cover`, görseli kutuyu DOLDURACAK
@@ -169,7 +245,7 @@ function KucukKapak({ kitap, theme, alimId, duzenlemeMode }) {
         // Görsel: şekle duyarlı gölge (drop-shadow, alfayı takip eder) → tam kapak da,
         // saydam kenarlı kapak da doğru gölge alır; dikdörtgen kutu gölgesi yok.
         <img
-          src={kitap.gorsel}
+          src={kapakSrc}
           alt={kitap.baslik}
           draggable={duzenlemeMode ? false : undefined}
           style={{
@@ -876,6 +952,8 @@ function SortableKategori({ kategori,
 
   const kuranW = dinamikMod ? (isMobile ? 242 : 312) : 80
   const kuranH = dinamikMod ? Math.round(kuranW * 1.5) : 128
+  // Kur'ân kapağı arka plan görseli — yüksek kaliteli küçültülmüş kopya (bkz. useNetKapak)
+  const kuranKapakSrc = useNetKapak(kategori.kuran?.gorsel, kuranW, kuranH, "cover")
 
   return (
     <div ref={setNodeRef} style={{ ...style, marginBottom: "32px", background: theme.surface, borderRadius: "16px", overflow: "hidden", border: `1px solid ${theme.border}`, boxShadow: "0 2px 12px rgba(0,0,0,0.06)", opacity: gizli ? 0.55 : 1 }}>
@@ -972,7 +1050,7 @@ function SortableKategori({ kategori,
                       style={{
                         width: `${kuranW}px`, height: `${kuranH}px`,
                         background: kategori.kuran.gorsel
-                          ? `url(${kategori.kuran.gorsel}) center/cover no-repeat`
+                          ? `url(${kuranKapakSrc}) center/cover no-repeat`
                           : kitapSirtiRengi(kategori.kuran.id),
                         borderRadius: dinamikMod ? "3px 9px 9px 3px" : "2px 6px 6px 2px",
                         boxShadow: dinamikMod

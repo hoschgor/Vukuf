@@ -30,7 +30,14 @@ export default function MushafAyetRozeti({
         color: ac,
         overflow: "visible",
         display: "block",
-        transform: aktif ? "scale(1.3)" : "scale(1)",
+        // Pasifken DÖNÜŞÜM YOK ("scale(1)" değil "none") — 28 Eylül 2026.
+        // `scale(1)` de bir dönüşümdür: rozeti ayrı bir katmana (yığın bağlamı,
+        // iPhone'da çoğu zaman ayrı bir birleştirme katmanı) alıyordu. Rozet bir kez
+        // odaklanıp büyüyüp küçüldükten sonra (âyet okunup geçince) WebKit bu katmanı
+        // tutuyor ve âyet sonundaki GENİŞ vakıf işaretinin (lâmelif لا) rozete taşan
+        // yarısını ÜSTÜNE boyuyordu — kullanıcı: "okuyup geçtikten sonra lâmelif
+        // vakıflarının yarısı kayboluyor". Katman yalnız vurgu sırasında var.
+        transform: aktif ? "scale(1.3)" : "none",
         transition: "transform 0.3s ease",
         filter: aktif ? `drop-shadow(0 0 4px currentColor)` : "none",
       }}

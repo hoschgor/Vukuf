@@ -54,27 +54,18 @@ export default function Hakkinda() {
 
         {/* Âyetler — RTL, tıklanınca meal */}
         <div style={{
-          fontFamily: arapcaFont || "'Scheherazade New', 'Amiri', 'Traditional Arabic', serif",
+          fontFamily: arapcaFont || "'KFGQPC Uthmanic', 'Amiri', 'Traditional Arabic', serif",
           direction: "rtl",
           textAlign: "center",
-          color: theme.text,
+          color: theme.arabicHighlight,
           lineHeight: "1.9",
-          fontSize: "23px",
+          fontSize: "33px",
         }}>
           <p style={{ margin: "0 0 10px" }}>
             <span onClick={() => handleAyetClick("بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ")}
               style={ayetStil} onMouseEnter={(e) => hover(e, "0.7")} onMouseLeave={(e) => hover(e, "1")}>
               بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ
             </span>
-          </p>
-          <p style={{ margin: "0 0 4px" }}>
-            <span onClick={() => handleAyetClick("وَمَا تَوْفِيقِي إِلَّا بِاللَّهِ")}
-              style={ayetStil} onMouseEnter={(e) => hover(e, "0.7")} onMouseLeave={(e) => hover(e, "1")}>
-              وَمَا تَوْفِيقِي إِلَّا بِاللَّهِ
-            </span>
-          </p>
-          <p style={{ margin: 0, fontSize: "12px", color: theme.textSecondary, fontFamily: "inherit", direction: "ltr" }}>
-            (Hûd Sûresi, 88)
           </p>
         </div>
 

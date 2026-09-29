@@ -131,8 +131,12 @@ const DALLAR = [
   // ALT KOL: aynı kökten ALT KENARIN SONUNA kadar tek parça, sağ alt köşeyi dönüp
   // sağ kenardan biraz yukarı tırmanıyor.
   // sik: 0,7 — alt kenar kalabalıktı (kullanıcı: "alttakiler çok fazla, seyrekleştirelim")
+  // disOlcek / iceOran (28 Eylül 2026) — kullanıcı: "alt kısımdaki dallar biraz fazla
+  // uzun, dışa daha çok çıkmasındansa içeri çıkması daha iyi; tamamını kaldırmayalım,
+  // doğal görünmesi önemli". Dışa sürgünler %60 boy; dışa sürgünlerin ~%45'i içe
+  // çevriliyor (içe olanlar zaten kısa ve yazının altında soluk çiziliyor).
   { bas: 7.32, bit: 4.86, k0: 2.5, k1: 0.55, ofset: 1.6, dalga: 4.8, dalgaBoyu: 100, tohum: 23,
-    cicek: 0, minik: 1, sik: 0.7 },
+    cicek: 0, minik: 1, sik: 0.7, disOlcek: 0.6, iceOran: 0.45 },
   // Sağ üst — İÇE DÖNÜK: köşede pencerenin arkasından çıkıp sağ kenardan iniyor,
   // UCU PENCERENİN İÇİNE kıvrılıyor. (İlk hâli dışarı doğru kalın bir kökle
   // başlıyordu — kullanıcı: "dışa dönük, içe dönük olsa daha iyi".)
@@ -261,7 +265,10 @@ function dalCiz(tanim, g, yogunluk) {
     if (q.alt) { i += 2; continue }          // kartın arkasında: görünmeyen yere yaprak takılmaz
     taraf = -taraf
     // Dal içerideyken içe dönen sürgün METNE yaklaşır → o zaman hep dışa
-    const disa = taraf > 0 || q.d < 0 || rnd() < 0.3
+    let disa = taraf > 0 || q.d < 0 || rnd() < 0.3
+    // İçe çevirme kararı AYRI diziden (rnd2) — ana dizinin çekim sırası bozulmasın.
+    // Dal kartın içindeyken (d<0) çevrilmiyor: o zaman içe sürgün metne fazla yaklaşır.
+    if (disa && tanim.iceOran && q.d >= 0 && rnd2() < tanim.iceOran) disa = false
     const nx = disa ? q.dnx : -q.dnx, ny = disa ? q.dny : -q.dny
     const ileriA = Math.atan2(q.ty, q.tx), yanA = Math.atan2(ny, nx)
     let fark = yanA - ileriA
@@ -271,7 +278,7 @@ function dalCiz(tanim, g, yogunluk) {
     // İçe dönen sürgün artık pencereye girebiliyor (kullanıcı: "yazıyı aşırı
     // engellemediği sürece sorun yok"). Süs yazının ALTINDA çizildiği için harfleri
     // örtmüyor; köşelerde (yazı yok) tam boy, kenarlarda biraz kısa.
-    const sinir = disa ? 1 : (q.kose ? 1 : 0.75)
+    const sinir = disa ? (tanim.disOlcek ?? 1) : (q.kose ? 1 : 0.75)
     const sik = tanim.sik ?? 1
     if (rnd() < 0.5 * yogunluk * sik && q.ilerleme < 0.93) {
       // SÜRGÜN — ucunda 1-3 yapraklık küme

@@ -1,7 +1,7 @@
 import { useRef, useEffect, useState } from "react"
 import {
-  Square, SkipBack, SkipForward, Glasses, Repeat, Gauge, Check, RotateCcw,
-  Volume2, Volume1, VolumeX,
+  Square, SkipBack, SkipForward, Glasses, Gauge, RotateCcw,
+  Volume2, Volume1, VolumeX, SlidersHorizontal,
 } from "lucide-react"
 import { KARILAR } from "../data/hooks/useAudioPlayer"
 import { useMediaQuery } from "../data/hooks/useMediaQuery"
@@ -62,8 +62,11 @@ export default function PlayerBar({
     hiz = 1, hizAyarla, ses = 1, sesAyarla,
   } = player
   const isMobile = useMediaQuery("(max-width: 768px)")
-  const [hizAcik, setHizAcik] = useState(false)
-  const [sesAcik, setSesAcik] = useState(false)
+  // SES + HIZ TEK MENÜDE (28 Eylül 2026). Kullanıcı: bar fazla doluydu, kâri adı
+  // görünmüyordu; ayrı ses ve hız düğmeleri yerine "sonraki âyet" düğmesinin
+  // sağında tek düğme, yukarı doğru açılan ince menü. Döngü düğmesi de bardan
+  // kalktı (aşağıdaki ana barda zaten var).
+  const [ayarAcik, setAyarAcik] = useState(false)
   // Sessize alınca eski seviyeyi hatırla → tekrar dokununca aynı seviyeye dön
   const oncekiSesRef = useRef(ses > 0 ? ses : 1)
   useEffect(() => { if (ses > 0) oncekiSesRef.current = ses }, [ses])
@@ -71,19 +74,17 @@ export default function PlayerBar({
 
   // Baloncuk (ses/hız kutusu): dışarı dokununca ve Esc ile kapanır.
   const baloncukRef = useRef(null)
-  const sesDugmeRef = useRef(null)
-  const hizDugmeRef = useRef(null)
-  const baloncukAcik = sesAcik || hizAcik
-  const kapatBaloncuk = () => { setSesAcik(false); setHizAcik(false) }
+  const ayarDugmeRef = useRef(null)
+  const baloncukAcik = ayarAcik
   useEffect(() => {
     if (!baloncukAcik) return
     const disari = (e) => {
       const t = e.target
       if (baloncukRef.current?.contains(t)) return
-      if (sesDugmeRef.current?.contains(t) || hizDugmeRef.current?.contains(t)) return
-      setSesAcik(false); setHizAcik(false)
+      if (ayarDugmeRef.current?.contains(t)) return
+      setAyarAcik(false)
     }
-    const tus = (e) => { if (e.key === "Escape") { setSesAcik(false); setHizAcik(false) } }
+    const tus = (e) => { if (e.key === "Escape") setAyarAcik(false) }
     // "capture" değil: baloncuk içi tıklamalar zaten yukarıda eleniyor.
     document.addEventListener("pointerdown", disari)
     document.addEventListener("keydown", tus)
@@ -150,6 +151,20 @@ export default function PlayerBar({
     touchAction: "manipulation",
   })
 
+  // Ses/hız menüsü satır stilleri
+  const satirStil = { display: "flex", alignItems: "center", gap: "7px", padding: "4px 0" }
+  const ikonDugme = {
+    display: "flex", alignItems: "center", justifyContent: "center",
+    width: "26px", height: "26px", borderRadius: "50%", border: "none",
+    background: "transparent", cursor: "pointer", flexShrink: 0, padding: 0,
+  }
+  const degerStil = { fontSize: "12px", fontWeight: 700, color: theme.accent, minWidth: "34px", textAlign: "right", flexShrink: 0 }
+  const sifirStil = {
+    display: "flex", alignItems: "center", justifyContent: "center",
+    width: "24px", height: "24px", borderRadius: "50%", cursor: "pointer", flexShrink: 0, padding: 0,
+    border: `1px solid ${theme.border}`, background: "transparent", color: theme.textSecondary,
+  }
+
   return (
     <div ref={rootRef} style={{
       position: "fixed",
@@ -167,7 +182,10 @@ export default function PlayerBar({
       alignItems: "center", 
       justifyContent: "space-between",
       gap: isMobile ? "8px" : "12px",
-      zIndex: 91,
+      // Menü açıkken meal penceresinin (z 92) ÜSTÜNE çıkar — menü barın dışına,
+      // pencerenin bulunduğu yere taşıyor ve altında kalıyordu. Kapalıyken eski
+      // sıra korunuyor (meal penceresi bara yakın durduğunda davranış değişmesin).
+      zIndex: baloncukAcik ? 95 : 91,
       boxShadow: barKonum === "alt"
         ? `0 -2px 12px ${theme.accent}10`
         : `0 2px 12px ${theme.accent}10`,
@@ -184,85 +202,63 @@ export default function PlayerBar({
           üstteyse altında) küçük bir kutu olarak açılır. Böylece sûre·âyet bilgisi ve
           oynatma düğmeleri gözden kaybolmaz, ayar için ekranın bir ucundan öbürüne
           gitmek gerekmez. Dışarı dokununca veya Esc ile kapanır. */}
-      {(sesAcik || hizAcik) && (
+      {ayarAcik && (
         <div
           ref={baloncukRef}
           onClick={e => e.stopPropagation()}
           style={{
             position: "absolute",
-            right: isMobile ? "10px" : "24px",
+            right: isMobile ? "8px" : "20px",
             bottom: barKonum === "alt" ? "calc(100% + 8px)" : "auto",
             top: barKonum === "ust" ? "calc(100% + 8px)" : "auto",
-            width: isMobile ? "min(72vw, 250px)" : "260px",
-            maxWidth: "calc(100vw - 20px)",
+            width: isMobile ? "min(70vw, 236px)" : "250px",
+            maxWidth: "calc(100vw - 16px)",
             background: theme.surface,
             border: `1px solid ${theme.accent}33`,
-            borderRadius: "12px",
+            borderRadius: "14px",
             boxShadow: barKonum === "alt"
               ? "0 -6px 22px rgba(0,0,0,0.22)"
               : "0 6px 22px rgba(0,0,0,0.22)",
-            padding: isMobile ? "7px 9px" : "8px 10px",
-            display: "flex", alignItems: "center", gap: "8px",
+            padding: "6px 8px",
+            display: "flex", flexDirection: "column", gap: "2px",
             zIndex: 3,
           }}
         >
-          {sesAcik ? (<>
-            {/* Simgeye dokunmak sessize alır / eski seviyeye döndürür */}
+          {/* SES — simgeye dokunmak sessize alır / eski seviyeye döndürür */}
+          <div style={satirStil}>
             <button
               onClick={() => sesAyarla && sesAyarla(ses === 0 ? (oncekiSesRef.current || 1) : 0)}
               title={ses === 0 ? "Sesi aç" : "Sessize al"}
-              style={{
-                display: "flex", alignItems: "center", justifyContent: "center",
-                width: "26px", height: "26px", borderRadius: "50%", border: "none",
-                background: "transparent", color: ses === 0 ? "#c0392b" : theme.accent,
-                cursor: "pointer", flexShrink: 0, padding: 0,
-              }}
+              style={{ ...ikonDugme, color: ses === 0 ? "#c0392b" : theme.accent }}
             >
               <SesIkon size={16} />
             </button>
             <input type="range" min={0} max={1} step={0.01} value={ses}
+              aria-label="Ses seviyesi"
               onChange={e => sesAyarla && sesAyarla(parseFloat(e.target.value))}
               style={{ flex: 1, minWidth: 0, accentColor: theme.accent, cursor: "pointer" }} />
-            <span style={{ fontSize: "12px", fontWeight: 700, color: theme.accent, minWidth: "34px", textAlign: "right", flexShrink: 0 }}>
-              %{Math.round(ses * 100)}
-            </span>
-            <button onClick={() => sesAyarla && sesAyarla(1)} title="Tam sese getir"
-              style={{
-                display: "flex", alignItems: "center", justifyContent: "center",
-                width: "26px", height: "26px", borderRadius: "50%", cursor: "pointer", flexShrink: 0,
-                border: `1px solid ${theme.border}`, background: "transparent", color: theme.textSecondary,
-              }}>
-              <RotateCcw size={13} />
+            <span style={degerStil}>%{Math.round(ses * 100)}</span>
+            <button onClick={() => sesAyarla && sesAyarla(1)} title="Tam sese getir" style={sifirStil}>
+              <RotateCcw size={12} />
             </button>
-          </>) : (<>
-            <Gauge size={16} color={theme.accent} style={{ flexShrink: 0 }} />
+          </div>
+          <div style={{ height: "1px", background: theme.border, opacity: 0.6, margin: "0 2px" }} />
+          {/* HIZ */}
+          <div style={satirStil}>
+            <span style={{ ...ikonDugme, cursor: "default" }}><Gauge size={16} color={theme.accent} /></span>
             <input type="range" min={0.5} max={2} step={0.05} value={hiz}
+              aria-label="Çalma hızı"
               onChange={e => hizAyarla && hizAyarla(parseFloat(e.target.value))}
               style={{ flex: 1, minWidth: 0, accentColor: theme.accent, cursor: "pointer" }} />
-            <span style={{ fontSize: "12px", fontWeight: 700, color: theme.accent, minWidth: "34px", textAlign: "right", flexShrink: 0 }}>
-              {hiz}×
-            </span>
-            <button onClick={() => hizAyarla && hizAyarla(1)} title="1×'e getir"
-              style={{
-                display: "flex", alignItems: "center", justifyContent: "center",
-                width: "26px", height: "26px", borderRadius: "50%", cursor: "pointer", flexShrink: 0,
-                border: `1px solid ${theme.border}`, background: "transparent", color: theme.textSecondary,
-              }}>
-              <RotateCcw size={13} />
+            <span style={degerStil}>{hiz}×</span>
+            <button onClick={() => hizAyarla && hizAyarla(1)} title="1×'e getir" style={sifirStil}>
+              <RotateCcw size={12} />
             </button>
-          </>)}
-          <button onClick={kapatBaloncuk} title="Kapat"
-            style={{
-              display: "flex", alignItems: "center", justifyContent: "center",
-              width: "26px", height: "26px", borderRadius: "50%", border: "none",
-              cursor: "pointer", background: theme.accent, color: "#fff", flexShrink: 0, padding: 0,
-            }}>
-            <Check size={14} />
-          </button>
+          </div>
         </div>
       )}
 
-      {/* SOL grup: (sure·ayet + kâri adı) → Gözlük → Döngü */}
+      {/* SOL grup: (sure·ayet + kâri adı) → Gözlük → Meal → İzleme */}
       <div style={{
         display: "flex",
         alignItems: "center",
@@ -348,23 +344,11 @@ export default function PlayerBar({
           </button>
         )}
 
-        {/* DÖNGÜ / TEKRAR — ayar arayüzünü açar (sayfa/ayet/sure tekrarı) */}
-        <button
-          onClick={onDonguAyar}
-          title="Tekrar (döngü) ayarları"
-          style={{
-            display: "flex", alignItems: "center", justifyContent: "center",
-            width: isMobile ? "27px" : "29px", height: isMobile ? "27px" : "29px", borderRadius: "50%",
-            border: "none", cursor: "pointer", flexShrink: 0, touchAction: "manipulation", padding: 0,
-            background: tekrarAktif ? theme.accent : "transparent",
-            color: tekrarAktif ? "#fff" : theme.textSecondary,
-          }}
-        >
-          <Repeat size={isMobile ? 15 : 16} />
-        </button>
+        {/* DÖNGÜ düğmesi KALDIRILDI (28 Eylül 2026) — ana barda zaten var.
+            `onDonguAyar`/`tekrarAktif` prop'ları geriye uyum için kabul ediliyor. */}
       </div>
 
-      {/* SAĞ grup: Çalma hızı → oynatma butonları */}
+      {/* SAĞ grup: oynatma düğmeleri → ses/hız menüsü */}
       <div style={{
         display: "flex",
         alignItems: "center",
@@ -372,40 +356,6 @@ export default function PlayerBar({
         flexShrink: 0,
         marginRight: isMobile ? "3%" : "1%",
       }}>
-        {/* SES — dokununca bar yatay ses kaydırıcısına döner (yukarıdaki sesAcik dalı).
-            Uzun basmak gerekmez; seviye kalıcıdır (localStorage). */}
-        <button
-          ref={sesDugmeRef}
-          onClick={() => { setHizAcik(false); setSesAcik(v => !v) }}
-          title={ses === 0 ? "Ses kapalı — açmak için dokunun" : `Ses %${Math.round(ses * 100)}`}
-          style={{
-            display: "flex", alignItems: "center", justifyContent: "center",
-            width: isMobile ? "27px" : "29px", height: isMobile ? "27px" : "29px", borderRadius: "50%",
-            border: "none", cursor: "pointer", flexShrink: 0, touchAction: "manipulation", padding: 0,
-            background: sesAcik ? `${theme.accent}33` : ses !== 1 ? `${theme.accent}22` : "transparent",
-            color: ses === 0 ? "#c0392b" : (sesAcik || ses !== 1) ? theme.accent : theme.textSecondary,
-          }}
-        >
-          <SesIkon size={isMobile ? 16 : 17} />
-        </button>
-
-        {/* ÇALMA HIZI — dokununca üstte küçük baloncuk açılır (bar olduğu gibi kalır) */}
-        <button
-          ref={hizDugmeRef}
-          onClick={() => { setSesAcik(false); setHizAcik(v => !v) }}
-          title="Çalma hızı"
-          style={{
-            display: "flex", alignItems: "center", justifyContent: "center", gap: "2px",
-            minWidth: isMobile ? "36px" : "40px", height: isMobile ? "27px" : "29px", borderRadius: "14px",
-            border: "none", cursor: "pointer", flexShrink: 0, touchAction: "manipulation", padding: "0 6px",
-            background: hizAcik ? `${theme.accent}33` : hiz !== 1 ? `${theme.accent}22` : "transparent",
-            color: (hizAcik || hiz !== 1) ? theme.accent : theme.textSecondary,
-            fontSize: `${Math.round((isMobile ? 10 : 11) * (barUiOlcegi || 1))}px`, fontWeight: 600, fontFamily: "inherit",
-          }}
-        >
-          <Gauge size={isMobile ? 16 : 17} />{hiz}×
-        </button>
-
         {/* Kontrol butonları */}
         <button 
           onClick={oncekiAyet} 
@@ -461,6 +411,32 @@ export default function PlayerBar({
           onTouchEnd={e => e.currentTarget.style.background = "transparent"}
         >
           <SkipForward size={isMobile ? 15 : 14} />
+        </button>
+
+        {/* SES + HIZ MENÜSÜ — yukarı açılan ince menü. Varsayılandan farklı bir
+            ses/hız varsa düğme hafif vurgulu kalır (ayar unutulmasın). */}
+        <button
+          ref={ayarDugmeRef}
+          onClick={() => setAyarAcik(v => !v)}
+          title={`Ses %${Math.round(ses * 100)} · Hız ${hiz}×`}
+          aria-expanded={ayarAcik}
+          style={{
+            display: "flex", alignItems: "center", justifyContent: "center",
+            width: isMobile ? "28px" : "30px", height: isMobile ? "28px" : "30px", borderRadius: "50%",
+            border: "none", cursor: "pointer", flexShrink: 0, touchAction: "manipulation", padding: 0,
+            position: "relative",
+            background: ayarAcik ? `${theme.accent}33` : (ses !== 1 || hiz !== 1) ? `${theme.accent}1f` : "transparent",
+            color: ses === 0 ? "#c0392b" : (ayarAcik || ses !== 1 || hiz !== 1) ? theme.accent : theme.textSecondary,
+          }}
+        >
+          <SlidersHorizontal size={isMobile ? 15 : 16} />
+          {hiz !== 1 && (
+            <span style={{
+              position: "absolute", top: "-3px", right: "-5px",
+              fontSize: "8.5px", fontWeight: 700, lineHeight: 1, padding: "1px 3px",
+              borderRadius: "6px", background: theme.accent, color: "#fff",
+            }}>{hiz}×</span>
+          )}
         </button>
       </div>
     </div>

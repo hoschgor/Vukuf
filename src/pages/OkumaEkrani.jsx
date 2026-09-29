@@ -22,13 +22,14 @@ import IosSwitch from "../components/IosSwitch"
 import PanelAyirac, { PanelAcilir, panelBolumeHizala } from "../components/PanelAyirac"
 import GeriIkonu from "../components/GeriIkonu"
 import TemaSecici from "../components/TemaSecici"
+import { SekmeCubugu, Kaydirici, sekmeOku, sekmeYaz } from "../components/AyarSekmeleri"
 import {
   ArrowLeft, BookOpen, Eye, EyeOff, Play, Pause,
   Plus, Minus, AlignJustify, AlignLeft, AlignCenter, ChevronsUp, ChevronsDown,
   Bookmark, X, Type, StickyNote, Palette,
   Search, Highlighter, ChevronDown, Clock, Settings,
   ChevronUp, ChevronRight, Edit2, Pencil, Circle, Feather, List, Check, Shuffle, Asterisk, ArrowRight,
-  GripVertical, Eye as EyeIkon, UnfoldHorizontal, Camera, FoldHorizontal, ImagePlay,
+  GripVertical, Eye as EyeIkon, UnfoldHorizontal, Camera, FoldHorizontal, ImagePlay, MoveVertical,
 } from "lucide-react"
 import { useMediaQuery } from '../data/hooks/useMediaQuery'
 import usePanelKilidi from "../data/hooks/usePanelKilidi"
@@ -1178,7 +1179,10 @@ usePanelKilidi()
 // dolduruyordu. Kaydırıcıları tek bir düğmenin altına alıp aynı anda tek bölüm
 // açık tutmak, panelin varsayılan hâlini birkaç satıra indiriyor. İki ayrı
 // bayrak yerine tek durum: hangisi açıksa o. (Mushaf panelinde de aynı kural.)
-const [acikBolum, setAcikBolum] = useState(null)   // null | "boyut" | "font"
+const [acikBolum, setAcikBolum] = useState(null)   // null | "boyut" | "font"  (eski açılır bölümler — artık sekme)
+// Yazı paneli SEKMESİ (açılır bölümlerin yerine) — son açılan hatırlanıyor
+const [aaSekme, setAaSekme] = useState(() => sekmeOku("vukuf-okuma-aa-sekme", "boyut", ["boyut", "aralik", "font", "sayfa"]))
+const aaSekmeSec = (id) => { setAaSekme(id); sekmeYaz("vukuf-okuma-aa-sekme", id) }
 const yaziTipiBtnRef = useRef(null)
 const yaziTipiListeRef = useRef(null)
 const boyutBtnRef = useRef(null)
@@ -2590,109 +2594,7 @@ const AaPanel = aaAcik && (
         </div>
       </div>
 
-      {/* BOYUT VE ARALIK — altı kaydırıcı tek çatı altında. Düğme kapalıyken de
-          o anki değerleri yazıyor: paneli kısaltmak için ayarları saklamak değil,
-          TOPLAMAK istiyoruz. */}
-      <PanelAcilir
-        theme={theme}
-        Ikon={Type}
-        etiket="BOYUT VE ARALIK"
-        ozet={`${yaziBoyutu}px · ar ${yaziBoyutu + arapBoyutu}px · ${satirAraligi.toFixed(1)}`}
-        acik={acikBolum === "boyut"}
-        onDegis={() => bolumDegis("boyut", "asagi")}
-        dugmeRef={boyutBtnRef}
-        icerikRef={boyutIcerikRef}
-      >
-        {/* YAZI BOYUTU */}
-        <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px", textAlign: "center" }}>YAZI BOYUTU</div>
-        <div>
-          <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", color: theme.textSecondary, marginBottom: "6px" }}>
-            <span>Küçük</span>
-            <span style={{ color: theme.accent, fontWeight: "bold" }}>{yaziBoyutu}px</span>
-            <span>Büyük</span>
-          </div>
-          <input type="range" min="14" max="40" step="1" value={yaziBoyutu}
-            onChange={e => setYaziBoyutu(parseInt(e.target.value))}
-            style={{ width: "100%", accentColor: theme.accent }} />
-        </div>
-
-        <PanelAyirac theme={theme} />
-
-        {/* ARAPÇA YAZI BOYUTU */}
-        <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px", textAlign: "center" }}>ARAPÇA YAZI BOYUTU</div>
-        <div>
-          <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", color: theme.textSecondary, marginBottom: "6px" }}>
-            <span>Küçük</span>
-            <span style={{ color: theme.accent, fontWeight: "bold" }}>{yaziBoyutu + arapBoyutu}px</span>
-            <span>Büyük</span>
-          </div>
-          <input type="range" min="-6" max="40" step="1" value={arapBoyutu}
-            onChange={e => setArapBoyutu(parseInt(e.target.value))}
-            style={{ width: "100%", accentColor: theme.accent }} />
-        </div>
-
-        <PanelAyirac theme={theme} />
-
-        {/* BAŞLIK BOYUTU */}
-        <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px", textAlign: "center" }}>BAŞLIK BOYUTU</div>
-        <div>
-          <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", color: theme.textSecondary, marginBottom: "6px" }}>
-            <span>Küçük</span>
-            <span style={{ color: theme.accent, fontWeight: "bold" }}>{Math.round(yaziBoyutu * baslikBoyutu)}px</span>
-            <span>Büyük</span>
-          </div>
-          <input type="range" min="1.2" max="3" step="0.1" value={baslikBoyutu}
-            onChange={e => setBaslikBoyutu(parseFloat(e.target.value))}
-            style={{ width: "100%", accentColor: theme.accent }} />
-        </div>
-
-        <PanelAyirac theme={theme} />
-
-        {/* SATIR ARALIĞI */}
-        <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px", textAlign: "center" }}>SATIR ARALIĞI</div>
-        <div>
-          <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", color: theme.textSecondary, marginBottom: "6px" }}>
-            <span>Sıkışık</span>
-            <span style={{ color: theme.accent, fontWeight: "bold" }}>{satirAraligi.toFixed(1)}</span>
-            <span>Geniş</span>
-          </div>
-          <input type="range" min="1.4" max="3" step="0.1" value={satirAraligi}
-            onChange={e => setSatirAraligi(parseFloat(e.target.value))}
-            style={{ width: "100%", accentColor: theme.accent }} />
-        </div>
-
-        <PanelAyirac theme={theme} />
-
-        {/* HARF ARALIĞI */}
-        <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px", textAlign: "center" }}>HARF ARALIĞI</div>
-        <div>
-          <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", color: theme.textSecondary, marginBottom: "6px" }}>
-            <span>Normal</span>
-            <span style={{ color: theme.accent, fontWeight: "bold" }}>{harfAraligi.toFixed(1)}px</span>
-            <span>Geniş</span>
-          </div>
-          <input type="range" min="0" max="2" step="0.1" value={harfAraligi}
-            onChange={e => setHarfAraligi(parseFloat(e.target.value))}
-            style={{ width: "100%", accentColor: theme.accent }} />
-        </div>
-
-        <PanelAyirac theme={theme} />
-
-        {/* KELİME ARALIĞI */}
-        <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px", textAlign: "center" }}>KELİME ARALIĞI</div>
-        <div>
-          <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", color: theme.textSecondary, marginBottom: "6px" }}>
-            <span>Normal</span>
-            <span style={{ color: theme.accent, fontWeight: "bold" }}>{kelimeAraligi.toFixed(1)}px</span>
-            <span>Geniş</span>
-          </div>
-          <input type="range" min="0" max="10" step="0.5" value={kelimeAraligi}
-            onChange={e => setKelimeAraligi(parseFloat(e.target.value))}
-            style={{ width: "100%", accentColor: theme.accent }} />
-        </div>
-      </PanelAcilir>
-
-      {/* METİN HİZALAMA — AÇILIR BÖLÜME KONMADI, ÜSTELİK TEK DOKUNUŞ.
+      {/* METİN HİZALAMA — EN ÜSTTE (28 Eylül 2026, kullanıcı isteği). AÇILIR BÖLÜME KONMADI, ÜSTELİK TEK DOKUNUŞ.
           Ortalanmış başlık + üç geniş metin düğmesi olarak duruyordu ve panelin
           geri kalanına benzemiyordu: çevresindeki her şey "ikon + etiket + sağda
           denetim" biçiminde tek satırlık kabuklar. Buraya da aynı kabuk verildi.
@@ -2702,7 +2604,7 @@ const AaPanel = aaAcik && (
           dokunuşa çıkardı — istenen bu değildi. */}
       <div style={{
         display: "flex", alignItems: "center", gap: "9px",
-        padding: "9px 10px", marginTop: "12px", borderRadius: "9px",
+        padding: "9px 10px", marginTop: "0", borderRadius: "9px",
         border: `1px solid ${theme.border}`, color: theme.text,
       }}>
         <AlignJustify size={15} color={theme.accent} style={{ flexShrink: 0 }} />
@@ -2735,20 +2637,44 @@ const AaPanel = aaAcik && (
         </span>
       </div>
 
-      {/* YAZI TİPİ — liste düğmenin ÜSTÜNDE açılır; aşağı açılsa panelin dibinde
-          kalıp görünmüyordu. */}
-      <div style={{ marginTop: "12px" }}>
-        <PanelAcilir
-          theme={theme}
-          Ikon={Feather}
-          etiket="YAZI TİPİ"
-          ozet={aktifMetinFontAdi}
-          acik={acikBolum === "font"}
-          onDegis={() => bolumDegis("font", "yukari")}
-          yon="yukari"
-          dugmeRef={yaziTipiBtnRef}
-          icerikRef={yaziTipiListeRef}
-        >
+      {/* SEKMELER — açılır bölümlerin yerine (bkz. components/AyarSekmeleri.jsx).
+          İçerik yerinde değişiyor; panel zıplamıyor, kaydırmak gerekmiyor. */}
+      <SekmeCubugu
+        theme={theme}
+        secili={aaSekme}
+        onSec={aaSekmeSec}
+        sekmeler={[
+          { id: "boyut", etiket: "Boyut", Ikon: Type },
+          { id: "aralik", etiket: "Aralık", Ikon: MoveVertical },
+          { id: "font", etiket: "Yazı tipi", Ikon: Feather },
+          { id: "sayfa", etiket: "Sayfa", Ikon: UnfoldHorizontal },
+        ]}
+      />
+      {/* İçerik alanı sabit en az yükseklikte — sekme değişince panel boyu zıplamasın */}
+      <div style={{ minHeight: "186px" }}>
+
+      {aaSekme === "boyut" && (<>
+        <Kaydirici theme={theme} etiket="YAZI BOYUTU" deger={yaziBoyutu} gosterim={`${yaziBoyutu}px`}
+          min={14} max={40} step={1} onChange={setYaziBoyutu} />
+        <Kaydirici theme={theme} etiket="ARAPÇA YAZI BOYUTU" deger={arapBoyutu} gosterim={`${yaziBoyutu + arapBoyutu}px`}
+          min={-6} max={40} step={1} onChange={setArapBoyutu} />
+        {/* BAŞLIK: üst sınır 3 → 5 kat (kullanıcı: "başlık boyutu çok küçük kalabiliyor").
+            Satıra sığmayan başlık OtoFit ile düzgün alta geçiyor. */}
+        <Kaydirici theme={theme} etiket="BAŞLIK BOYUTU" deger={baslikBoyutu} gosterim={`${Math.round(yaziBoyutu * baslikBoyutu)}px`}
+          min={1.2} max={5} step={0.1} onChange={setBaslikBoyutu} />
+      </>)}
+
+      {aaSekme === "aralik" && (<>
+        <Kaydirici theme={theme} etiket="SATIR ARALIĞI" deger={satirAraligi} gosterim={satirAraligi.toFixed(1)}
+          min={1.4} max={3} step={0.1} onChange={setSatirAraligi} />
+        <Kaydirici theme={theme} etiket="HARF ARALIĞI" deger={harfAraligi} gosterim={`${harfAraligi.toFixed(1)}px`}
+          min={0} max={2} step={0.1} onChange={setHarfAraligi} />
+        <Kaydirici theme={theme} etiket="KELİME ARALIĞI" deger={kelimeAraligi} gosterim={`${kelimeAraligi.toFixed(1)}px`}
+          min={0} max={10} step={0.5} onChange={setKelimeAraligi} />
+      </>)}
+
+      {aaSekme === "font" && (
+        <div>
           {Object.entries(FONT_GRUPLARI).filter(([grupId]) => grupId !== "osmanlica").map(([grupId, grup]) => (
             <FontSecici
               key={grupId}
@@ -2759,9 +2685,10 @@ const AaPanel = aaAcik && (
               theme={theme}
             />
           ))}
-        </PanelAcilir>
-      </div>
+        </div>
+      )}
 
+      {aaSekme === "sayfa" && (<>
       {/* TAM GENİŞLİK — web + mobil */}
       <div
         onClick={tamGenislikDegis}
@@ -2769,7 +2696,7 @@ const AaPanel = aaAcik && (
         aria-pressed={tamGenislik}
         style={{
           display: "flex", alignItems: "center", gap: "9px",
-          padding: "9px 10px", marginTop: "12px", marginBottom: "8px", borderRadius: "9px",
+          padding: "9px 10px", marginTop: "0", marginBottom: "8px", borderRadius: "9px",
           cursor: "pointer", color: theme.text,
           background: tamGenislik ? `${theme.accent}12` : "transparent",
           border: `1px solid ${tamGenislik ? `${theme.accent}44` : theme.border}`,
@@ -2806,6 +2733,8 @@ const AaPanel = aaAcik && (
           </span>
         </span>
         <IosSwitch acik={kenarBosluk} theme={theme} boyut={0.82} />
+      </div>
+      </>)}
       </div>
     </div>
   </>

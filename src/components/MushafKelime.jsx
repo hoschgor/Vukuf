@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 
 // ══════════════════════════════════════════════════════════════════════════════════════════
 // VAKIF (durak) ve TECVİD işaretleri — REFERANS
@@ -357,6 +357,31 @@ export default function MushafKelime({
   // Bakara 2:14 مُسْتَهْزِؤُ۫نَ'de "مد" ؤ'nin altında olmalıyken kelimenin ucunda duruyordu.
   // Yatay konum artık tecvid işaretleriyle aynı taban-harf sayımından geliyor (`sol`).
   const { metin: temizArabic, ozeller } = ozelOkuyusAyikla(tecvidsizArabic)
+  // Metnin İÇİNDE mutlak konumlu çizilen vakıf işareti var mı (aşağıdaki VAKIF_CPS
+  // dalı)? Onlar da kutudan taşabiliyor → kelime aynı nedenle üst kata alınıyor.
+  const icVakif = [...temizArabic].some(c => VAKIF_CPS.has(c.codePointAt(0)))
+  const isaretli = hasUpperIndicator || icVakif
+
+  // ── İŞARETLİ KELİMEYİ YENİDEN ÇİZ (28 Eylül 2026) ──────────────────────
+  // Kullanıcı (iPhone, Şems): âyet okunup geçince ص işaretinin kelime kutusunun
+  // İÇİNDE kalan kısmı (son harfle çakışan yarısı) siliniyor; "okuma sonrası
+  // ufak bir gecikmeyle yeniden render edilebilir". Vurgu zemini değişince
+  // WebKit yalnız kutunun içini yeniden boyuyor ve taşan işaretin o kısmını
+  // geri çizmiyor (masaüstü Chromium'da hiç olmuyor — WebKit boyama hatası).
+  // Çözüm: vurgu açılıp kapandıktan kısa süre sonra işaretleri ve metni
+  // taşıyan span'ler YENİDEN KURULUYOR (anahtar artıyor) → tarayıcı onları
+  // sıfırdan boyamak zorunda. İki kez: vurgu değişiminin hemen ardından ve
+  // boyama oturduktan sonra. Yalnız işaretli kelimelerde (sayfada birkaç
+  // tane); işaretsiz binlerce kelimeye hiçbir şey eklenmiyor.
+  const [tazele, setTazele] = useState(0)
+  const ilkCizimRef = useRef(true)
+  useEffect(() => {
+    if (!isaretli) return
+    if (ilkCizimRef.current) { ilkCizimRef.current = false; return }
+    const z1 = setTimeout(() => setTazele(n => n + 1), 60)
+    const z2 = setTimeout(() => setTazele(n => n + 1), 420)
+    return () => { clearTimeout(z1); clearTimeout(z2) }
+  }, [aktif, isaretli])
   // Grup üyeleri TEK BİRİM görünsün: aralarındaki dolgu kapanır, köşe yuvarlaması
   // yalnız dış kenarlarda kalır. Yazı RTL aktığı için "bas" üye SAĞDA durur →
   // mantıksal (start/end) köşe özellikleri kullanılır, sağ/sol sabitlenmez.
@@ -383,6 +408,16 @@ export default function MushafKelime({
       onMouseLeave={() => { setHover(false); onGrupHover?.(false) }}
       style={{
         position: "relative",
+        // VAKIF/SECDE İŞARETLİ KELİME ÜST KATTA (28 Eylül 2026). Kullanıcı (iPhone,
+        // Nebe 37): âyet sesle okunurken vurgu kutuları vakıf işaretini yarıdan
+        // örtüyordu, sonraki âyete geçince düzeliyordu. İşaret kelime kutusunun sol
+        // kenarından TAŞIYOR; kendi `zIndex: 2`'si, kelime yığın bağlamı kurmadığı
+        // için ebeveyn bağlamında yarışıyor ve WebKit (telefonda) vurgulu kutuları
+        // üstüne boyayabiliyor. Artık işaretli kelime kendi bağlamını kuruyor ve
+        // z-index 1 ile diğer bütün kelimelerden SONRA boyanıyor: içeride önce kendi
+        // zemini, sonra işaret; dışarıda komşu kutular işaretin altında kalıyor.
+        // Yalnız işaretli kelimelerde — geri kalan binlerce kelime eskisi gibi.
+        zIndex: isaretli ? 1 : undefined,
         display: "inline-block",
         cursor: kayitKonumModu ? "crosshair" : "pointer",
         marginTop: hasUpperIndicator ? `${yaziBoyutu * 0.35}px` : "0",
@@ -414,7 +449,9 @@ export default function MushafKelime({
             : (obekKonum != null)
               ? `1px dotted ${theme.accent}${obekVurgu ? "66" : "2a"}`
               : undefined,
-        transition: "background 0.15s",
+        // İşaretli kelimede geçiş YOK: 0,15 sn'lik ara karelerin her biri WebKit'te
+        // aynı eksik boyamayı tekrarlıyordu; zemin tek karede değişsin.
+        transition: isaretli ? "none" : "background 0.15s",
         whiteSpace: "nowrap",
         verticalAlign: "middle",
         userSelect: "none",
@@ -425,10 +462,17 @@ export default function MushafKelime({
       {/* Vakıf işareti */}
       {kelime.vakif && (
         <span
+          key={`vk-${tazele}`}
           style={{
             position: "absolute",
             top: `-${yaziBoyutu * 0.09}px`,
-            left: isMobile ? "10px" : "3px",
+            // Kelimenin METNİNDE de bir vakıf işareti varsa (Şems 1-7: ص + لا) ikisi
+            // aynı köşeye düşüp iç içe geçiyordu; alan işareti bir işaret eni kadar
+            // SAĞA (kelimenin üstüne) kayıyor, ikisi yan yana duruyor — solda âyet
+            // sonu rozeti olduğu için oraya kaydırılmıyor. Yerleri yine doğru kelimede.
+            left: icVakif
+              ? `${(isMobile ? 10 : 3) + yaziBoyutu * 0.42}px`
+              : (isMobile ? "10px" : "3px"),
             transform: "translateX(-10%)",
             fontSize: `${yaziBoyutu * 0.48}px`,
             color: vakifRengi,
@@ -529,15 +573,21 @@ export default function MushafKelime({
         </span>
       ))}
 
-      {/* Arapça metin */}
+      {/* Arapça metin — anahtar: yukarıdaki "yeniden çiz" (içindeki vakıf işaretleriyle birlikte) */}
       <span
+        key={`ar-${tazele}`}
         style={{
           fontFamily: arapcaFont,
           fontSize: `${yaziBoyutu}px`,
           lineHeight: lineHeight,
           color: (lafizkontrol || besmelekontrol) ? (theme.lugatHighlight || theme.accent) : theme.text,
           display: "inline",
-          opacity: aktif ? 1 : 0.95,
+          // `opacity: aktif ? 1 : 0.95` KALDIRILDI (28 Eylül 2026). 1'in altındaki
+          // her opaklık bu metin kutusunu ayrı bir katmana alıyor; iPhone bu katmanı
+          // kutudan taşan VAKIF İŞARETİNİN üstüne boyuyordu. Âyet okunurken (aktif →
+          // opaklık 1) işaret tamdı, âyet bitince (0.95) yarısı siliniyordu —
+          // kullanıcının tarif ettiği "âyet bitince silinme" birebir bu. %5'lik fark
+          // gözle zaten seçilmiyordu.
           verticalAlign: "middle",
           position: "relative",
         }}
@@ -561,6 +611,11 @@ export default function MushafKelime({
           const spans = []
           let normalBuf = ''
           let atla = false
+          // Aynı kelimede BİRDEN FAZLA metin içi vakıf işareti (Şems 1-7: ص + لا)
+          // aynı noktaya düşüp iç içe geçiyordu → her sonraki işaret yarım yazı
+          // boyu kadar SAĞA (kelimenin üstüne) kayıyor, yan yana duruyorlar.
+          // Sola değil: solda âyet sonu rozeti var, işaret rozetin süsüne biniyordu.
+          let vakifSira = 0
 
           chars.forEach((c, i) => {
             if (atla) { atla = false; return }
@@ -606,7 +661,11 @@ export default function MushafKelime({
                     : `-${yaziBoyutu * 0}px`  // kfgqpc: normal
 
               const vakifLeft = f.includes('nastaleeq') ? '10px' : 'auto'
-              const vakifTransform = f.includes('nastaleeq') ? 'none' : 'translateX(-50%)'
+              const kayma = vakifSira * yaziBoyutu * 0.5
+              vakifSira++
+              const vakifTransform = f.includes('nastaleeq')
+                ? (kayma ? `translateX(${kayma}px)` : 'none')
+                : `translateX(calc(-50% + ${kayma}px))`
 
               spans.push(<span key={i} style={{ 
                 position: 'absolute', 

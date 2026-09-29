@@ -416,6 +416,12 @@ function MushafSayfa({
                       }}
                       style={{
                         display: "inline-block",
+                        // AÇIK SIRA: rozet z 0, vakıf işaretli kelime z 1 (MushafKelime).
+                        // Âyet sonundaki lâmelif işareti rozetin üstüne taşıyor; sıra
+                        // tarayıcıya bırakılınca iPhone'da rozet işaretin üstüne
+                        // boyanabiliyordu (odak büyümesinden sonra katmanlaşmış rozet).
+                        position: "relative",
+                        zIndex: 0,
                         WebkitTapHighlightColor: kayitKonumModu ? "transparent" : undefined,
                         cursor: kayitKonumModu ? "crosshair" : "pointer",
                         margin: `0 ${isMobile ? 1 : 2}px`,

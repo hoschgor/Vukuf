@@ -17,7 +17,7 @@ import {
 import {
   KADEMELER, BIRIMLER, kademeBul,
   EZBER_TERCIHLERI, SAYFA_KISIMLARI, YONLER, TEKRAR_YONTEMLERI, DONUS_BASLARI,
-  SURE_SIRALARI, sureListesiSirala, manuelOneriler,
+  SURE_SIRALARI, sureListesiSirala, manuelOneriler, hifzOku, ayarGuncelle,
 } from "../data/hifz"
 import { normHarf } from "../data/okumaKayit"
 
@@ -36,6 +36,7 @@ export default function HifzPaneli({
   donusYer = null, donusSira = 0, donusToplam = 0, onDonusGit,
   kisaSureler = [], seciliSure, onSureSec,
   sureSira = "orijinal", onSureSira,   // kısa sûre listesinin sırası
+  onSureEzber,                         // (id, isaretle) — listeden ✓ ekle/kaldır
   sureListesi = [], manuel = { sure: 1, bas: 1, son: 7 }, onManuel,   // manuel aralık
   dokunAc = true, onDokunAc,     // perdeli yere dokununca orası açılsın mı
   dokunSes = false, onDokunSes,  // dokunulan kelime okunsun mu
@@ -56,6 +57,8 @@ export default function HifzPaneli({
   // (her tuş vuruşunda perde ve odak yeniden kurulmasın)
   // MANUEL ARAMA — arama ekranı gibi: yazdıkça öneriler (bkz. hifz.js manuelOneriler)
   const [aramaMetni, setAramaMetni] = useState("")
+  // Ezberlenen (✓) sûreleri listede gizle — kullanıcı: "göz yoruyorsa kaldırabilirsin"
+  const [ezberGizle, setEzberGizle] = useState(() => !!hifzOku().ayarlar.ezberGizle)
   if (!acik) return null
 
   const ac = theme.accent
@@ -250,20 +253,62 @@ export default function HifzPaneli({
                       style={{ ...(sureSira === x.id ? vurgulu : kucuk), height: "26px", fontSize: "11px" }}>{x.ad}</button>
                   ))}
                 </div>
-                {/* Ezberlenmiş (✓) sûreler listenin sonunda, soluk */}
-                <div style={{ ...satirStil, maxHeight: "132px", overflowY: "auto" }}>
-                  {sureListesiSirala(kisaSureler, sureSira).map(k => (
-                    <button key={k.id} onClick={() => onSureSec?.(k.id)}
-                      title={`${k.ayetSayisi} âyet${k.ezber ? " · ezberlendi" : ""}`}
-                      style={{
-                        ...(seciliSure === k.id ? vurgulu : kucuk),
-                        ...(k.ezber && seciliSure !== k.id ? { opacity: 0.6 } : null),
-                      }}>
-                      {k.ezber && <Check size={12} />}{k.isim}
-                      <span style={{ fontWeight: 400, opacity: 0.7, fontSize: "10.5px" }}>{k.ayetSayisi}</span>
-                    </button>
-                  ))}
-                </div>
+                {/* Ezberlenmiş (✓) sûreler listenin sonunda, soluk — istenirse gizli.
+                    Her sûrede iki dokunma alanı: ADI (sûreye git) · ✓ (ezberledim
+                    işaretle / kaldır). */}
+                {(() => {
+                  const liste = sureListesiSirala(kisaSureler, sureSira)
+                  const gorunen = ezberGizle ? liste.filter(k => !k.ezber) : liste
+                  const ezberSay = liste.filter(k => k.ezber).length
+                  return (
+                    <>
+                      <div style={{ ...satirStil, maxHeight: "150px", overflowY: "auto", marginBottom: "6px" }}>
+                        {gorunen.map(k => {
+                          const sec = seciliSure === k.id
+                          return (
+                            <span key={k.id} style={{
+                              display: "inline-flex", alignItems: "stretch", borderRadius: "999px", overflow: "hidden",
+                              border: `1px solid ${sec ? ac : theme.border}`,
+                              opacity: k.ezber && !sec ? 0.65 : 1,
+                            }}>
+                              <button onClick={() => onSureSec?.(k.id)} title={`${k.ayetSayisi} âyet — sûreye git`}
+                                style={{
+                                  display: "inline-flex", alignItems: "center", gap: "5px", padding: "0 9px 0 11px",
+                                  height: "30px", border: "none", cursor: "pointer", fontFamily: "inherit",
+                                  fontSize: "12px", fontWeight: 600,
+                                  background: sec ? ac : "transparent", color: sec ? "#fff" : theme.textSecondary,
+                                }}>
+                                {k.isim}
+                                <span style={{ fontWeight: 400, opacity: 0.7, fontSize: "10.5px" }}>{k.ayetSayisi}</span>
+                              </button>
+                              <button onClick={() => onSureEzber?.(k.id, !k.ezber)}
+                                aria-pressed={k.ezber}
+                                title={k.ezber ? "Ezber işaretini kaldır" : "Bu sûreyi ezberledim olarak işaretle"}
+                                style={{
+                                  display: "inline-flex", alignItems: "center", justifyContent: "center",
+                                  width: "30px", height: "30px", border: "none", cursor: "pointer", padding: 0,
+                                  borderLeft: `1px solid ${sec ? "#ffffff55" : theme.border}`,
+                                  background: k.ezber ? `${ac}22` : "transparent",
+                                  color: k.ezber ? ac : `${theme.textSecondary}88`,
+                                }}>
+                                <Check size={14} strokeWidth={k.ezber ? 3 : 2} />
+                              </button>
+                            </span>
+                          )
+                        })}
+                        {!gorunen.length && (
+                          <span style={{ fontSize: "12px", color: theme.textSecondary }}>Listedeki bütün sûreler ezberli. ✓</span>
+                        )}
+                      </div>
+                      {ezberSay > 0 && (
+                        <button onClick={() => { const y = !ezberGizle; setEzberGizle(y); ayarGuncelle({ ezberGizle: y }) }}
+                          style={{ ...kucuk, height: "26px", fontSize: "11px", marginBottom: "10px" }}>
+                          <Check size={12} /> {ezberGizle ? `Ezberlenenleri göster (${ezberSay})` : `Ezberlenenleri gizle (${ezberSay})`}
+                        </button>
+                      )}
+                    </>
+                  )
+                })()}
               </>
             )}
             {ezber === "manuel" && (() => {

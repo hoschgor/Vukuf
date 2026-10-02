@@ -78,7 +78,7 @@ import HifzPaneli from "../components/HifzPaneli"
 import {
   hifzOku, ayarGuncelle as hifzAyarGuncelle, gizlemeHaritasi, perdeCss,
   sayfaKismiSec, cuzSayfalari, donusDizisi, baglamaAdimlari, duzAdimlar, adimlariListele,
-  PERDE_SINIF, ACIK_SINIF, ipucuAlindi, ezberlendi, calisildi,
+  PERDE_SINIF, ACIK_SINIF, ipucuAlindi, ezberlendi, calisildi, ezberleEksikleri, geriAl as hifzGeriAl,
   bekleyenTekrarlar, sonrakiKademe, oncekiKademe, HEDEF_ANAHTAR, DONUS_ANAHTAR,
 } from "../data/hifz"
 import { barSatirOlc } from "../components/BarSiraPaneli"
@@ -5267,13 +5267,44 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
             player.listeCal(liste, false)
           }}
           ezberliMi={false}
+          /* EZBERLEDİM (2 Ekim 2026, kullanıcı: "yalnız ipucu sayacını sıfırlıyor,
+             sıradaki âyete geçmeli; sûrede sûre işaretlenmiyor").
+             Zincirde: o âna kadar öğrenilenler işaretlenir VE zincir sıradaki
+             âyete geçer (odaklanır, ipuçları temizlenir). Son âyette basılınca
+             kapsamın TAMAMI işaretlenir → sûre listesinde ✓. Tüm aralıkta:
+             hepsi birden. Zaten ezberli âyetin takvimi bozulmasın diye yalnız
+             eksikler işaretleniyor. */
           onEzberledim={() => {
             const kume = !hifzZincir ? hifzBirimler
               : hifzYon === "asagi" ? hifzBirimler.slice(hifzIndeks) : hifzBirimler.slice(0, hifzIndeks + 1)
             if (!kume.length) return
-            ezberlendi(kume.map(b => b.anahtar))
+            // Bu adımdaki âyet her durumda (yeniden) işaretlenir; öncekiler yalnız eksikse
+            const buAyet = hifzBirimler[hifzIndeks]
+            ezberleEksikleri(kume.map(b => b.anahtar))
+            if (buAyet) ezberlendi([buAyet.anahtar])
             setHifzEzberSurum(n => n + 1)   // sûre listesinde ✓ tazelensin
             setHifzIpucu(0)
+            if (hifzZincir && hifzAdim < hifzSinir) {
+              const n = hifzAdim + 1
+              hifzIpuclariniSil()
+              setHifzAktif(n)
+              hifzOdakla(hifzYon === "asagi" ? hifzSinir - n : n)
+            }
+          }}
+          // SÛRE LİSTESİNDEN ✓ (kullanıcı önerisi): dokununca sûrenin bütün
+          // âyetleri ezberli işaretlenir (yalnız eksikler); ✓'lıyken dokunmak
+          // onay sorup işareti kaldırır (tekrar takvimi de silinir).
+          onSureEzber={(id, isaretle) => {
+            const sr = mushafData && mushafData.find(x => x.id === id)
+            if (!sr) return
+            const anahtarlar = (sr.ayetler || []).map(a => `${id}:${a.no}`)
+            if (isaretle) ezberleEksikleri(anahtarlar)
+            else {
+              const ad = sureler.find(x => x.id === id)?.isim || `Sûre ${id}`
+              if (!window.confirm(`${ad} sûresinin ezber işareti ve tekrar takvimi kaldırılsın mı?`)) return
+              hifzGeriAl(anahtarlar)
+            }
+            setHifzEzberSurum(n => n + 1)
           }}
           onHepsiniAc={hifzIpuclariniSil}
           ipucu={hifzIpucu}

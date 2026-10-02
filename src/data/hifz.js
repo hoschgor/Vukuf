@@ -159,11 +159,123 @@ export function ezberlendi(anahtarlar) {
   return yaz({ ...v, birimler })
 }
 
+/* Yalnız henüz ezberlenmemiş olanları "ezberlendi" yap — zaten ezberli
+   âyetin tekrar takvimi SIFIRLANMASIN (sûreye ✓ atınca yarısı ezberliyse). */
+export function ezberleEksikleri(anahtarlar) {
+  const v = hifzOku()
+  const eksik = anahtarlar.filter(a => (v.birimler[a] || {}).d !== DURUM.EZBERLENDI)
+  return eksik.length ? ezberlendi(eksik) : v
+}
+
+/* ESKİDEN EZBERLENMİŞ KISIM EKLE (Hıfz ekranı → "Ezberlediklerimi ekle").
+   Kullanıcı yıllar önce ezberlediği bir sûreyi/aralığı ekliyor. Normal
+   "ezberlendi" gibi hepsini YARINA tekrar koymak, büyük bir ekleme (ör. bir
+   cüz) "bugün tekrar" listesini yüzlerce âyetle doldururdu. Bunun yerine:
+   takvime 3. basamaktan (7 gün aralık) giriyor ve İLK tekrarları mushaf
+   sırasıyla önümüzdeki 14 güne YAYILIYOR. Zaten ezberli âyete dokunulmuyor. */
+export function eskiEzberEkle(anahtarlar) {
+  const v = hifzOku()
+  const g = bugun()
+  const birimler = { ...v.birimler }
+  const eksik = anahtarlar.filter(a => (birimler[a] || {}).d !== DURUM.EZBERLENDI)
+  const n = eksik.length
+  eksik.forEach((a, i) => {
+    const b = birimAl(v, a)
+    const gun = 1 + Math.floor((i * 14) / Math.max(1, n))          // 1..14
+    birimler[a] = { ...b, d: DURUM.EZBERLENDI, g, a: 2, s: g + gun, t: (b.t || 0) + 1 }
+  })
+  return yaz({ ...v, birimler })
+}
+
 export function geriAl(anahtarlar) {
   const v = hifzOku()
   const birimler = { ...v.birimler }
   for (const a of anahtarlar) delete birimler[a]
   return yaz({ ...v, birimler })
+}
+
+/* ── DÜZENLEME GÜVENLİĞİ: SON DEĞİŞİKLİĞİ GERİ AL (2 Ekim 2026) ────────────
+   Kullanıcı: "ezberledikleri hatalı eklenirse diye düzenleme ve sıfırlama".
+   Hıfz ekranındaki her elle ekleme/çıkarma/sıfırlamadan ÖNCE birimlerin o anki
+   hâli tek bir yedek yuvasına yazılıyor; "Geri al" onu geri koyuyor. Yuva
+   localStorage'da — sayfadan çıkıp dönünce de geri alınabiliyor. Tek yuva:
+   yalnız EN SON değişiklik geri alınır (yeni değişiklik eskisinin yerine geçer). */
+export const YEDEK_ANAHTAR = "vukuf-hifz-yedek"
+
+export function yedekAl(aciklama) {
+  const v = hifzOku()
+  try {
+    localStorage.setItem(YEDEK_ANAHTAR, JSON.stringify({ z: Date.now(), aciklama, birimler: v.birimler }))
+  } catch { /* kota — yedeksiz devam */ }
+}
+
+export function yedekOku() {
+  try {
+    const y = JSON.parse(localStorage.getItem(YEDEK_ANAHTAR) || "null")
+    return y && y.birimler ? y : null
+  } catch { return null }
+}
+
+export function yedektenDon() {
+  const y = yedekOku()
+  if (!y) return null
+  try { localStorage.removeItem(YEDEK_ANAHTAR) } catch { /* yoksay */ }
+  const v = hifzOku()
+  yaz({ ...v, birimler: y.birimler })
+  return y
+}
+
+/* SIFIRLAMA. Ayarlar (perde, ezber tercihi…) hiçbirinde silinmiyor.
+     "ezber"  → ezber işaretleri ve tekrar takvimi silinir; ipucu sayaçları
+                (zor âyetler) kalır.
+     "ipucu"  → yalnız ipucu sayaçları sıfırlanır.
+     "hepsi"  → bütün hıfz ilerlemesi (ezber, çalışılan, ipucu). */
+export function sifirla(tur) {
+  const v = hifzOku()
+  if (tur === "hepsi") return yaz({ ...v, birimler: {} })
+  const birimler = {}
+  for (const [a, b] of Object.entries(v.birimler)) {
+    if (tur === "ezber") {
+      if (b.d !== DURUM.EZBERLENDI) birimler[a] = b
+      else if ((b.i || 0) > 0) birimler[a] = { d: DURUM.YENI, t: 0, a: -1, s: 0, i: b.i, g: b.g || 0 }
+    } else if (tur === "ipucu") {
+      const yeni = { ...b, i: 0 }
+      // Yalnız ipucu için tutulan (hiç çalışılmamış) kayıt artık boş → sil
+      if (yeni.d !== DURUM.YENI) birimler[a] = yeni
+    } else birimler[a] = b
+  }
+  return yaz({ ...v, birimler })
+}
+
+/* Elle ezberden çıkarma (Hıfz ekranı düzenleme). geriAl'dan farkı: âyetin
+   ipucu sayacı (zor âyetler listesi) korunuyor, yalnız ezber + takvim gidiyor. */
+export function ezberdenCikar(anahtarlar) {
+  const v = hifzOku()
+  const birimler = { ...v.birimler }
+  for (const a of anahtarlar) {
+    const b = birimler[a]
+    if (!b || b.d !== DURUM.EZBERLENDI) continue
+    if ((b.i || 0) > 0) birimler[a] = { d: DURUM.YENI, t: 0, a: -1, s: 0, i: b.i, g: b.g || 0 }
+    else delete birimler[a]
+  }
+  return yaz({ ...v, birimler })
+}
+
+/* Ezberli âyetleri sûre sûre ARDIŞIK ARALIKLARA topla — düzenleme listesi için.
+   `sureler`: [{ id, isim, ayetSayisi }] (mushaf sırası). */
+export function ezberAraliklari(veri, sureler) {
+  const sonuc = []
+  for (const s of sureler) {
+    const araliklar = []
+    let bas = null, n = 0
+    for (let a = 1; a <= s.ayetSayisi + 1; a++) {
+      const ezberli = a <= s.ayetSayisi && (veri.birimler[`${s.id}:${a}`] || {}).d === DURUM.EZBERLENDI
+      if (ezberli) { if (bas == null) bas = a; n++ }
+      else if (bas != null) { araliklar.push({ bas, son: a - 1 }); bas = null }
+    }
+    if (araliklar.length) sonuc.push({ ...s, ezberli: n, araliklar })
+  }
+  return sonuc
 }
 
 /* Tekrar cevabı. zorluk: "kolay" | "orta" | "zor" */

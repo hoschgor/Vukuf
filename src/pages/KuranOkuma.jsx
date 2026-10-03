@@ -75,6 +75,8 @@ import AyetPopup from "../components/AyetPopup"
 import MealPopup from "../components/MealPopup"
 import IzlemeModu from "../components/IzlemeModu"
 import HifzPaneli from "../components/HifzPaneli"
+import DonusDugmesi from "../components/DonusDugmesi"
+import { useDonusAyari, donusAcikMi, noktalariOku, noktaEkle, noktayaKadarSil, noktalariTemizle } from "../data/donusNoktalari"
 import {
   hifzOku, ayarGuncelle as hifzAyarGuncelle, gizlemeHaritasi, perdeCss,
   sayfaKismiSec, cuzSayfalari, donusDizisi, baglamaAdimlari, duzAdimlar, adimlariListele,
@@ -907,6 +909,11 @@ export default function KuranOkuma({ kitap }) {
   const kuranHedefRef = useRef(false)   // Arama'dan gelen sure hedefi işlendi mi
   const [donusTip, setDonusTip] = useState("")   // "arama" | "tefeul" | "okuma"
   const [donusYol, setDonusYol] = useState("")   // "okuma" için geri dönülecek kitap yolu
+  // DÖNÜŞ NOKTALARI (3 Ekim 2026) — İçindekiler/arama/sayfaya git/işaret ile
+  // atlamadan önce okunan yer yığına konur; "Geri dön" oraya götürür.
+  // Ayrıntı: data/donusNoktalari.js. Ayar iki okuma ekranında ortak.
+  const [donusAcik, setDonusAcik] = useDonusAyari()
+  const [donusNoktalari, setDonusNoktalari] = useState(() => noktalariOku("kuran"))
   // ── TEKRAR / DÖNGÜ ──
   const [tekrarModu, setTekrarModu] = useState(null)     // aktif mod: null | "sayfa" | "ayet" | "sure"
   const [donguAyarAcik, setDonguAyarAcik] = useState(false)
@@ -2307,6 +2314,14 @@ useEffect(() => {
   if (h && h.sureNo) {
     kuranHedefRef.current = true
     try { localStorage.removeItem("vukuf-kuran-hedef") } catch {}
+    // DÖNÜŞ NOKTASI: aramaya gitmeden önce okunan yer (açılışta geri yüklenmedi,
+    // sonKonumRef hâlâ kayıtlı son konumu tutuyor). Mushafın başıysa bırakılmaz.
+    {
+      const k = sonKonumRef.current
+      if (k && (k.sayfa > 1 || (k.oran || 0) > 0.02)) {
+        donusBirak("arama", ayetSayfasi(h.sureNo, h.ayetNo || 1, ayetSayfaLookup), { ...k })
+      }
+    }
     setTimeout(() => {
       // sureGit kendi hizalaması oturunca içeriği gösterir (bitir → konumuGoster).
       // Mobilde zaten gizli; masaüstünde ilk-açılış-atıf durumunda da bitir gösterecek.
@@ -2913,6 +2928,39 @@ function sureGit(sureId, ayetNo) {
 hifzSureGitRef.current = sureGit
 hifzSayfaGitRef.current = sayfayaGit
 
+/* ── DÖNÜŞ NOKTALARI ──────────────────────────────────────────────────────
+   Atlamadan ÖNCE okunan yeri (sonKonumRef: sayfa + sayfa içi oran) bırak.
+   Etiket mushaf verisinden: o sayfadaki âyetlerden orana denk gelen. */
+function kuranKonumEtiketi(sayfa, oran) {
+  const liste = []
+  for (const sr of mushafData || []) {
+    for (const a of sr.ayetler || []) if (a.sayfa === sayfa) liste.push([sr.id, a.no])
+  }
+  if (!liste.length) return `Sayfa ${sayfa}`
+  const [sn, an] = liste[Math.min(liste.length - 1, Math.floor((oran || 0) * liste.length))]
+  const ad = (sureler.find(x => x.id === sn) || {}).isim || `Sûre ${sn}`
+  return `${ad} ${an} · s. ${sayfa}`
+}
+function donusBirak(kaynak, hedefSayfa = null, konum = null) {
+  if (!donusAcikMi()) return
+  const k = konum || sonKonumRef.current
+  if (!k || !k.sayfa) return
+  const nokta = { sayfa: k.sayfa, oran: k.oran || 0, kaynak, etiket: kuranKonumEtiketi(k.sayfa, k.oran || 0) }
+  setDonusNoktalari(noktaEkle("kuran", nokta, hedefSayfa ? { sayfa: hedefSayfa } : null))
+}
+// İçindekiler'deki sûre/âyet gidişleri — hedef sayfa önceden biliniyor (aynı sayfaya atlama nokta bırakmaz)
+function sureyeGitDonuslu(kaynak, sureId, ayetNo) {
+  const hedef = ayetNo ? ayetSayfasi(sureId, ayetNo, ayetSayfaLookup) : sureBaslangicSayfasi(sureId, sureSayfaLookup)
+  donusBirak(kaynak, hedef)
+  sureGit(sureId, ayetNo)
+}
+function donuseGit(i) {
+  const n = donusNoktalari[i]
+  if (!n) return
+  setDonusNoktalari(noktayaKadarSil("kuran", i))
+  kayitSayfaGit(n.sayfa, n.oran || 0)
+}
+
 
   // ════════════════════════════════════════════════════════════════
   // POPUP YÖNETİMİ
@@ -3445,6 +3493,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
           onKeyDown={e => {
             if (e.key === "Enter") {
               const n = Math.min(Math.max(1, parseInt(sayfaGitInput)), toplamSayfa)
+              donusBirak("sayfa", n)
               sayfayaGit(n)
               setSayfaGitAcik(false)
             }
@@ -3459,7 +3508,9 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
         />
         <button
           onClick={() => {
-            sayfayaGit(Math.min(Math.max(1, Number(sayfaGitInput)), toplamSayfa))
+            const n = Math.min(Math.max(1, Number(sayfaGitInput)), toplamSayfa)
+            donusBirak("sayfa", n)
+            sayfayaGit(n)
             setSayfaGitAcik(false)
           }}
           style={{
@@ -3475,10 +3526,12 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
         type="range" min={1} max={toplamSayfa} value={mevcutSayfa}
         onChange={e => setMevcutSayfa(Number(e.target.value))}
         onMouseUp={e => {
+          donusBirak("sayfa", parseInt(e.target.value))
           sayfayaGit(parseInt(e.target.value))
           setSayfaGitAcik(false)
         }}
         onTouchEnd={e => {
+          donusBirak("sayfa", parseInt(e.target.value))
           sayfayaGit(parseInt(e.target.value))
           setSayfaGitAcik(false)
         }}
@@ -4003,6 +4056,23 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
               ))}
             </div>
           )}
+        </div>
+
+        {/* GEZİNME — dönüş noktaları (3 Ekim 2026). Ayar OkumaEkrani ile ortak. */}
+        <div>
+          <div style={ayarEtiket}>GEZİNME</div>
+          <div onClick={() => setDonusAcik(!donusAcik)} role="button" aria-pressed={donusAcik} style={{
+            width: "100%", padding: "7px 10px", borderRadius: "8px", fontSize: `${Math.round((isMobile ? 12 : 13) * barUiOlcegi)}px`,
+            color: theme.text, boxSizing: "border-box",
+            cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px",
+          }}>
+            <span>Dönüş noktaları</span>
+            <IosSwitch acik={donusAcik} theme={theme} boyut={0.82} />
+          </div>
+          <div style={{ fontSize: `${Math.round((isMobile ? 10 : 11) * barUiOlcegi)}px`, color: theme.textSecondary, lineHeight: 1.5, padding: "0 10px" }}>
+            İçindekiler, arama, sayfaya git ya da işaretle başka yere gidince ayrıldığınız yer
+            saklanır; "Geri dön" ile oraya dönülür, birden fazlası listeden seçilir.
+          </div>
         </div>
 
         {/* Kârî — Görüntüleme ve Sade Mod'un altında, yatayda iki sütunu birden kaplar */}
@@ -4603,7 +4673,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
           kayitlar={kayitlar}
           mevcutSayfa={mevcutSayfa}
           scrollOran={scrollOranRef.current}
-          onSayfaGit={kayitSayfaGit}
+          onSayfaGit={(sayfa, scrollY, kayitId) => { donusBirak("isaret", sayfa); kayitSayfaGit(sayfa, scrollY, kayitId) }}
           onKonumSec={() => {
             setKayitKonumModu(true)
             setKayitPaneliAcik(false)
@@ -4826,7 +4896,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
                     : <ChevronRight size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />}
                 </button>
                 <button
-                  onClick={() => sayfayaGit(cuz.baslangic)}
+                  onClick={() => { donusBirak("icindekiler", cuz.baslangic); sayfayaGit(cuz.baslangic) }}
                   style={{
                     flex: 1,
                     display: "flex",
@@ -4865,7 +4935,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
                   {hizbSayfalari(cuz.no).map(h => (
                     <button
                       key={h.hizb}
-                      onClick={() => sayfayaGit(h.sayfa)}
+                      onClick={() => { donusBirak("icindekiler", h.sayfa); sayfayaGit(h.sayfa) }}
                       style={{
                         flex: 1,
                         height: "28px",
@@ -4964,7 +5034,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
                       }
                     </button>
                     <button
-                      onClick={() => sureGit(sure.id)}
+                      onClick={() => sureyeGitDonuslu("icindekiler", sure.id)}
                       style={{ 
                         flex: 1, 
                         display: "flex", 
@@ -5027,7 +5097,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
                             onKeyDown={e => {
                               if (e.key === "Enter") {
                                 const no = parseInt(ayetArama[sure.id])
-                                if (no >= 1 && no <= sure.ayetSayisi) sureGit(sure.id, no)
+                                if (no >= 1 && no <= sure.ayetSayisi) sureyeGitDonuslu("icindekiler", sure.id, no)
                               }
                             }}
                             style={{ 
@@ -5044,7 +5114,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
                             <button
                               onClick={() => { 
                                 const no = parseInt(ayetArama[sure.id]); 
-                                if (no >= 1 && no <= sure.ayetSayisi) sureGit(sure.id, no) 
+                                if (no >= 1 && no <= sure.ayetSayisi) sureyeGitDonuslu("icindekiler", sure.id, no) 
                               }}
                               style={{ 
                                 fontSize: `${Math.round((isMobile ? 11 : 12) * barUiOlcegi)}px`, 
@@ -5070,7 +5140,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
                         {Array.from({ length: sure.ayetSayisi }, (_, i) => i + 1).map(no => (
                           <button
                             key={no}
-                            onClick={() => sureGit(sure.id, no)}
+                            onClick={() => sureyeGitDonuslu("icindekiler", sure.id, no)}
                             style={{
                               width: "32px", 
                               height: "28px", 
@@ -5806,7 +5876,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
                               isMobile={isMobile}
                               arapcaFont={aktifArapcaFont.style}
                               sureAdi={sureAdiVer}
-                              git={(sureId, ayetNo) => { setBilgiAcik(false); sureGit(sureId, ayetNo) }}
+                              git={(sureId, ayetNo) => { setBilgiAcik(false); sureyeGitDonuslu("ornek", sureId, ayetNo) }}
                             />
                           )}
                         </span>
@@ -5869,6 +5939,18 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
         )}
 
         {barKonum === "alt" && Bar}
+
+        {/* GERİ DÖN — dönüş noktaları (solda; sağdaki "Aramaya dön" ile çakışmaz).
+            Hıfz şeridi alttayken onun üstüne binmesin diye hıfzda gizli (liste durur). */}
+        {donusAcik && !hifzAcik && (
+          <DonusDugmesi
+            theme={theme}
+            noktalar={donusNoktalari}
+            altta={barKonum === "alt"}
+            onGit={donuseGit}
+            onTemizle={() => setDonusNoktalari(noktalariTemizle("kuran"))}
+          />
+        )}
 
         {donusTip && (
           <div style={{

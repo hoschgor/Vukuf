@@ -160,6 +160,7 @@ export const KATEGORILER = [
       "vukuf-buton-sirasi", "vukuf-buton-taraf",
       "vukuf-okuma-buton-sirasi", "vukuf-okuma-buton-taraf",
       "vukuf-otomatik-gizleme", "vukuf-gizleme-suresi",
+      "vukuf-donus-noktalari",   // Gezinme → dönüş noktaları aç/kapa (liste sessionStorage'da)
       // Göster/gizle ve bilgi öğeleri
       "vukuf-btn-bilgi", "vukuf-btn-gorsel", "vukuf-btn-kayit", "vukuf-btn-otooynat",
       "vukuf-btn-sade", "vukuf-btn-sayfa", "vukuf-btn-sure", "vukuf-btn-tekrar",

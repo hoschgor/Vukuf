@@ -19,6 +19,8 @@ import kavramlarVerisi from "../data/kavramlar.json"
 import KitapAyraci from "../components/KitapAyraci"
 import YuklemeEkrani from "../components/YuklemeEkrani"
 import IosSwitch from "../components/IosSwitch"
+import DonusDugmesi from "../components/DonusDugmesi"
+import { useDonusAyari, donusAcikMi, noktalariOku, noktaEkle, noktayaKadarSil, noktalariTemizle } from "../data/donusNoktalari"
 import PanelAyirac, { PanelAcilir, panelBolumeHizala } from "../components/PanelAyirac"
 import GeriIkonu from "../components/GeriIkonu"
 import TemaSecici from "../components/TemaSecici"
@@ -1121,6 +1123,13 @@ const menuListeRef = useRef(null)
 const menuScrollRef = useRef(0)
 const konumYuklendiRef = useRef(false)
 const [donusTip, setDonusTip] = useState("")   // "arama" | "tefeul" — geldiği yere dönüş pill'i
+// DÖNÜŞ NOKTALARI (3 Ekim 2026) — İçindekiler/arama/sayfaya git/işaret ile
+// atlamadan önce okunan yer yığına konur; "Geri dön" oraya götürür. Her kitabın
+// listesi ayrı. Ayrıntı: data/donusNoktalari.js. Ayar KuranOkuma ile ortak.
+const donusKapsam = `okuma-${id}`
+const [donusAcik, setDonusAcik] = useDonusAyari()
+const [donusNoktalari, setDonusNoktalari] = useState(() => noktalariOku(donusKapsam))
+useEffect(() => { setDonusNoktalari(noktalariOku(donusKapsam)) }, [donusKapsam])
 const [mevcutSayfa, setMevcutSayfa] = useState(1)
 const [maxSayfa, setMaxSayfa] = useState(1)   // ulaşılan en derin sayfa (üstü hafif render edilir)
 const maxSayfaRef = useRef(1)
@@ -1681,6 +1690,11 @@ useEffect(() => {
     konumYuklendiRef.current = true
     try { localStorage.removeItem("vukuf-arama-hedef") } catch {}
     const sn = Math.min(Math.max(1, aramaHedef.sayfaNo || 1), kitapMetni.length)
+    // DÖNÜŞ NOKTASI: bu kitapta daha önce kalınan yer (kitabın başıysa bırakılmaz)
+    try {
+      const onceki = JSON.parse(localStorage.getItem(`vukuf_son_konum_${id}`) || "null")
+      if (onceki && onceki.sayfa && (onceki.sayfa > 1 || (onceki.oran || 0) > 0.02)) donusBirak("arama", sn, onceki)
+    } catch { /* yoksay */ }
     maxSayfaGuncelle(sn)
     setTimeout(() => {
       elemanaGit(sn,
@@ -2050,6 +2064,29 @@ function gidisPayi(tablo) {
 
 // `mutlakPay` verilirse bar/ekstra hesabı atlanır ve DOĞRUDAN o pay kullanılır
 // (kayda gidişte ortam ortam ayarlanan pay böyle geçiyor).
+/* ── DÖNÜŞ NOKTALARI ──────────────────────────────────────────────────────
+   Etiket: sayfa no + o sayfadaki (ya da öncesindeki) son İçindekiler başlığı. */
+function okumaKonumEtiketi(sayfa) {
+  let baslik = ""
+  for (const b of icindekiler || []) {
+    if (b && b.sayfa && b.sayfa <= sayfa) baslik = b.baslik || baslik
+  }
+  return baslik ? `s. ${sayfa} · ${baslik}` : `Sayfa ${sayfa}`
+}
+function donusBirak(kaynak, hedefSayfa = null, konum = null) {
+  if (!donusAcikMi()) return
+  const k = konum || sonKonumRef.current
+  if (!k || !k.sayfa) return
+  const nokta = { sayfa: k.sayfa, oran: k.oran || 0, kaynak, etiket: okumaKonumEtiketi(k.sayfa) }
+  setDonusNoktalari(noktaEkle(donusKapsam, nokta, hedefSayfa ? { sayfa: hedefSayfa } : null))
+}
+function donuseGit(i) {
+  const n = donusNoktalari[i]
+  if (!n) return
+  setDonusNoktalari(noktayaKadarSil(donusKapsam, i))
+  sayfayaGit(n.sayfa, n.oran || 0)
+}
+
 function sayfayaGit(sayfaNo, oran = 0, ekstra = 0, mutlakPay = null) {
   setSayfaGitAcik(false)
   setSayfaGitInput("")
@@ -2797,7 +2834,7 @@ const KayitPanel = kayitAcik && (
                   {/* ESKİDEN: ekstra: barKonum === "ust" ? (isMobile ? 40 : -8) : 20 — elle
                       tutturulmuş tek bir sayıydı, PWA'yı hiç ayırt etmiyordu. Artık pay
                       ortam ortam ayrı (dosya başındaki KAYIT_PAYI tablosu). */}
-                  <button onClick={() => { odakGit(k.sayfa, k.oran || 0, { cizgi: false, mutlakPay: gidisPayi(KAYIT_PAYI) }); setKayitAcik(false) }} title="İşarete git" style={{ fontSize: "11px", color: theme.accent, background: "none", border: "none", cursor: "pointer" }}><ChevronRight size={13} /></button>
+                  <button onClick={() => { donusBirak("isaret", k.sayfa); odakGit(k.sayfa, k.oran || 0, { cizgi: false, mutlakPay: gidisPayi(KAYIT_PAYI) }); setKayitAcik(false) }} title="İşarete git" style={{ fontSize: "11px", color: theme.accent, background: "none", border: "none", cursor: "pointer" }}><ChevronRight size={13} /></button>
                   <button onClick={() => kayitSil(k.id)} style={{ color: theme.textSecondary, background: "none", border: "none", cursor: "pointer" }}><X size={12} /></button>
                 </div>
               ))
@@ -2836,7 +2873,7 @@ const KayitPanel = kayitAcik && (
                   <div style={{ fontSize: "10px", color: theme.textSecondary, letterSpacing: "1px", marginBottom: "4px", display: "flex", alignItems: "center", gap: "6px" }}>
                     <div style={{ flex: 1, height: "1px", background: theme.border }} />
                     SAYFA {sayfaNo}
-                    <button onClick={() => sayfayaGit(Number(sayfaNo))} style={{ color: theme.accent, background: "none", border: "none", cursor: "pointer", fontSize: "10px" }}><ChevronRight size={13} /></button>
+                    <button onClick={() => { donusBirak("isaret", Number(sayfaNo)); sayfayaGit(Number(sayfaNo)) }} style={{ color: theme.accent, background: "none", border: "none", cursor: "pointer", fontSize: "10px" }}><ChevronRight size={13} /></button>
                     <div style={{ flex: 1, height: "1px", background: theme.border }} />
                   </div>
                   {sayfaNotlari.map(not => (
@@ -2875,7 +2912,7 @@ const KayitPanel = kayitAcik && (
                 <div style={{ fontSize: "10px", color: theme.textSecondary, letterSpacing: "1px", marginBottom: "4px", display: "flex", alignItems: "center", gap: "6px" }}>
                   <div style={{ flex: 1, height: "1px", background: theme.border }} />
                   SAYFA {sayfaNo}
-                  <button onClick={() => sayfayaGit(Number(sayfaNo))} style={{ color: theme.accent, background: "none", border: "none", cursor: "pointer", fontSize: "10px" }}><ChevronRight size={13} /></button>
+                  <button onClick={() => { donusBirak("isaret", Number(sayfaNo)); sayfayaGit(Number(sayfaNo)) }} style={{ color: theme.accent, background: "none", border: "none", cursor: "pointer", fontSize: "10px" }}><ChevronRight size={13} /></button>
                   <div style={{ flex: 1, height: "1px", background: theme.border }} />
                 </div>
                 {sayfaVurgulari.map(v => (
@@ -2897,7 +2934,7 @@ const KayitPanel = kayitAcik && (
                         </span>
                         <button onClick={() => { setDuzenleVurgu({ sayfaNo: Number(sayfaNo), vurguId: v.id }); setDuzenleVurguMetni(v.isim || "") }} title="İsim ver" style={{ color: theme.textSecondary, background: "none", border: "none", cursor: "pointer" }}><Pencil size={12} /></button>
                         <button onClick={() => { setVurguModu(true); setVurguDuzenle(true); vurguGit(Number(sayfaNo), v); setKayitAcik(false) }} title="Düzenle (kelime ekle/çıkar)" style={{ color: theme.textSecondary, background: "none", border: "none", cursor: "pointer" }}><Settings size={13} /></button>
-                        <button onClick={() => { vurguGit(Number(sayfaNo), v); setKayitAcik(false) }} style={{ fontSize: "11px", color: theme.accent, background: "none", border: "none", cursor: "pointer" }}><ChevronRight size={13} /></button>
+                        <button onClick={() => { donusBirak("isaret", Number(sayfaNo)); vurguGit(Number(sayfaNo), v); setKayitAcik(false) }} style={{ fontSize: "11px", color: theme.accent, background: "none", border: "none", cursor: "pointer" }}><ChevronRight size={13} /></button>
                         <button onClick={() => vurguSil(Number(sayfaNo), v.id)} style={{ color: theme.textSecondary, background: "none", border: "none", cursor: "pointer" }}><X size={12} /></button>
                       </>
                     )}
@@ -3116,6 +3153,23 @@ const AyarlarPanel = ayarlarAcik && (
           </div>
         )}
       </div>
+
+      {/* GEZİNME — dönüş noktaları (3 Ekim 2026). Ayar KuranOkuma ile ortak. */}
+      <div>
+        <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px" }}>GEZİNME</div>
+        <div onClick={() => setDonusAcik(!donusAcik)} role="button" aria-pressed={donusAcik} style={{
+          width: "100%", padding: "7px 10px", borderRadius: "8px", fontSize: "13px",
+          color: theme.text, boxSizing: "border-box",
+          cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px",
+        }}>
+          <span>Dönüş noktaları</span>
+          <IosSwitch acik={donusAcik} theme={theme} boyut={0.82} />
+        </div>
+        <div style={{ fontSize: "11px", color: theme.textSecondary, lineHeight: 1.5, padding: "0 10px" }}>
+          İçindekiler, arama, sayfaya git ya da işaretle başka yere gidince ayrıldığınız yer
+          saklanır; "Geri dön" ile oraya dönülür, birden fazlası listeden seçilir.
+        </div>
+      </div>
     </div>
     </>
 )
@@ -3327,6 +3381,7 @@ const AramaPanel = aramaAcik && (
                   const ls = sf ? Math.max(1, sf.metin.split("\n").length) : 1
                   const oran = Math.max(0, Math.min(0.95, (es.satirIdx || 0) / ls))
                   const aranan = aramaMetni
+                  donusBirak("arama", es.sayfaNo)
                   elemanaGit(es.sayfaNo, () => document.querySelector(`[data-satir="${es.sayfaNo}-${es.satirIdx}"]`), oran, false,
                     (el) => aramaVurgula(es.sayfaNo, el, aranan))
                   setAramaAcik(false)
@@ -3384,18 +3439,18 @@ const SayfaGitPopup = sayfaGitAcik && (
         <input
           type="number" min={1} max={kitapMetni.length}
           value={sayfaGitInput} onChange={e => setSayfaGitInput(e.target.value)}
-          onKeyDown={e => { if (e.key === "Enter") sayfayaGit(Math.min(Math.max(1, Number(sayfaGitInput)), kitapMetni.length)) }}
+          onKeyDown={e => { if (e.key === "Enter") { const n = Math.min(Math.max(1, Number(sayfaGitInput)), kitapMetni.length); donusBirak("sayfa", n); sayfayaGit(n) } }}
           placeholder="Sayfa no..." autoFocus
           style={{ flex: 1, padding: "8px 12px", borderRadius: "8px", border: `1px solid ${theme.border}`, background: theme.background, color: theme.text, fontSize: "14px", outline: "none" }}
         />
-        <button onClick={() => sayfayaGit(Math.min(Math.max(1, Number(sayfaGitInput)), kitapMetni.length))} style={{ padding: "8px 14px", borderRadius: "8px", background: theme.accent, color: "#fff", fontSize: "13px", border: "none", cursor: "pointer" }}>
+        <button onClick={() => { const n = Math.min(Math.max(1, Number(sayfaGitInput)), kitapMetni.length); donusBirak("sayfa", n); sayfayaGit(n) }} style={{ padding: "8px 14px", borderRadius: "8px", background: theme.accent, color: "#fff", fontSize: "13px", border: "none", cursor: "pointer" }}>
           Git
         </button>
       </div>
       <input type="range" min={1} max={kitapMetni.length} value={mevcutSayfa}
         onChange={e => setMevcutSayfa(Number(e.target.value))}
-        onMouseUp={e => sayfayaGit(Number(e.target.value))}
-        onTouchEnd={e => sayfayaGit(Number(e.target.value))}
+        onMouseUp={e => { donusBirak("sayfa", Number(e.target.value)); sayfayaGit(Number(e.target.value)) }}
+        onTouchEnd={e => { donusBirak("sayfa", Number(e.target.value)); sayfayaGit(Number(e.target.value)) }}
         style={{ width: "100%", accentColor: theme.accent }}
       />
       <div style={{ textAlign: "center", fontSize: "16px", fontWeight: "bold", color: theme.accent, marginTop: "6px" }}>{mevcutSayfa}</div>
@@ -3422,7 +3477,7 @@ const menuDugumRender = (node) => {
         ) : (
           <span style={{ width: `${Math.round(20 * mo)}px`, flexShrink: 0 }} />
         )}
-        <button onClick={() => { if (node.sayfa) basligaGit(node.sayfa, node.satir, node.oran || 0, node.baslik, node.seviye, node.aciklama); setMenuAcik(false) }}
+        <button onClick={() => { if (node.sayfa) { donusBirak("icindekiler", node.sayfa); basligaGit(node.sayfa, node.satir, node.oran || 0, node.baslik, node.seviye, node.aciklama) } setMenuAcik(false) }}
           title={node.aciklama || ""}
           style={{
             flex: 1, textAlign: "left", background: "transparent", border: "none", cursor: "pointer",
@@ -4065,6 +4120,18 @@ return (
     )}
 
     {barKonum === "alt" && Bar}
+
+    {/* GERİ DÖN — dönüş noktaları (solda; sağdaki "Aramaya dön" ile çakışmaz) */}
+    {donusAcik && (
+      <DonusDugmesi
+        theme={theme}
+        // Etiket gösterimde tazeleniyor: nokta bırakıldığında İçindekiler henüz yüklenmemiş olabilir
+        noktalar={donusNoktalari.map(n => ({ ...n, etiket: okumaKonumEtiketi(n.sayfa) }))}
+        altta={barKonum === "alt"}
+        onGit={donuseGit}
+        onTemizle={() => setDonusNoktalari(noktalariTemizle(donusKapsam))}
+      />
+    )}
 
     {donusTip && (
       <div style={{

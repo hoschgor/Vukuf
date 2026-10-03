@@ -2120,12 +2120,18 @@ const cokSatir = wrapAktif && barYuksekligi > tekSatirYuksekligi * 1.0
     if (!hedef) return
     hifzDevirRef.current = true
     try { localStorage.removeItem(HEDEF_ANAHTAR) } catch { /* yoksay */ }
-    // Biçim: "sûre:âyet" ya da "sûre:âyet|kapsam" (kapsam "sayfa" | "sure").
+    // Biçim: "sûre:âyet" ya da "sûre:âyet|kapsam" (kapsam "sayfa" | "sure" |
+    // "manuel:baş-son" — Hıfz ekranındaki tekrar aralığı, 3 Ekim 2026).
     const [konum, kapsam] = String(hedef).split("|")
     const [sn, an] = String(konum).split(":").map(Number)
     if (!sn || !an) return
     setHifzAcik(true)
-    setHifzKapsam(kapsam === "sure" ? "sure" : "sayfa")
+    if (kapsam && kapsam.startsWith("manuel:")) {
+      const [mb, ms] = kapsam.slice(7).split("-").map(Number)
+      const bas = mb || an, son = ms || bas
+      setHifzManuel({ sure: sn, bas: Math.min(bas, son), son: Math.max(bas, son) })
+      setHifzEzber("manuel")
+    } else setHifzKapsam(kapsam === "sure" ? "sure" : "sayfa")
     setHifzAktif(0)
     // Zincirdeki SIRASI burada bilinemiyor: kapsam mevcut sayfadan türüyor ve
     // hedefin sayfası daha gelmedi. Anahtar bekletiliyor, aşağıdaki efekt
@@ -5308,7 +5314,8 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
           }}
           onHepsiniAc={hifzIpuclariniSil}
           ipucu={hifzIpucu}
-          bekleyenTekrar={hifzAcik ? bekleyenTekrarlar().length : 0}
+          // Hıfz ekranında uyarılar kapatıldıysa (🔕) panel rozeti de gösterilmez
+          bekleyenTekrar={hifzAcik && !hifzOku().ayarlar.bildirimGizle ? bekleyenTekrarlar().length : 0}
         />
         {/* Akış modeli: tüm sayfalar normal belge akışında (SayfaBlok ile tembel içerik) */}
         <div

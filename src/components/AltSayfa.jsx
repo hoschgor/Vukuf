@@ -48,6 +48,35 @@
      bir fiske atıldıysa. Yalnız mesafeye bakmak hızlı kapatmayı imkânsız kılar,
      yalnız hıza bakmak yavaş ama uzun sürüklemeyi yok sayar.
    • Perde (backdrop) sürükledikçe SOLUYOR — panelin nereye gittiği görünsün.
+   • ★ TUTAMAK + BAŞLIK YAPIŞKAN (3 Ekim 2026). Kullanıcı: "bazı menülerde
+     (veri indirme kısmı) açılan bölümün kaydırması iyi ama çekmecenin üst
+     kısmından aşağı sürüklemek zor". Sebep: tutamak ve başlık içerikle BİRLİKTE
+     kayıyordu. Uzun bir bölüm açılıp içerik biraz kaydırılınca tutamak ekranın
+     üstünden çıkıyor, panelin tepesinde yalnız içerik kalıyordu; oradan aşağı
+     çekmek paneli değil içeriği kaydırıyordu (gövde sürüklemesi yalnız
+     scrollTop 0'da başlar). Artık tutamak + başlık şeridi `position: sticky`
+     ile panelin tepesinde DURUYOR ve şeridin TAMAMI tutamak: içerik ne kadar
+     kaydırılmış olursa olsun panel oradan her zaman aşağı çekilir.
+   • İÇ KAYDIRMA KUTULARI. Panel en üstteyken, kendi kaydırması olan bir iç
+     kutuda (ör. uzun liste) aşağı çekmek, kutu kaydırılmışsa önce KUTUYU
+     kaydırır; panel ancak kutu da en üstteyse sürüklenir.
+   • ★ "1 KEZ YUKARI KAYDIRINCA KİLİT AÇILIYOR" (3 Ekim 2026). Kullanıcı:
+     "çekmece açıkken menü aşağı kaydırılamıyor, bir kez yukarı kaydırdıktan
+     sonra kilit açılmış gibi kaydırılabiliyor". SEBEP: kaydırılabilirlik
+     (→ `touch-action`) yalnız AltSayfa YENİDEN ÇİZİLİNCE ölçülüyordu. Ama
+     içerik, AltSayfa'yı yeniden çizdirmeden de büyüyebiliyor: Veriler
+     bölümünün kendi akordiyonu (Depolama, Veri indirme…) KENDİ durumunu
+     tutuyor. Bölüm açılınca içerik uzuyor, ölçü eski kalıyor → panel hâlâ
+     "kaydırılamaz" sanılıp `touch-action: none` kalıyordu: parmak içeriği
+     kaydıramıyordu. Bir kez sürükleyince (yukarı direnç) AltSayfa yeniden
+     çiziliyor, ölçü tazeleniyor ve kaydırma "açılıyordu".
+     ARTIK: ölçü ResizeObserver ile — içerik kutusu ya da panelin kendisi
+     boyut değiştirdiği AN yeniden ölçülüyor; kimin durumu değiştiği önemsiz.
+   • PERDEDEN ARKA SAYFA KAYMASIN. iOS'ta sabit (fixed) perdenin üzerinde
+     parmak kaydırınca arkadaki sayfa kayıyordu ("çekmece harici kısımda aşağı
+     yukarı yapabiliyoruz"). Perdeye `touch-action: none` + pasif olmayan
+     touchmove ile engel. Gövdeye kilit (body position:fixed) BİLEREK
+     kullanılmadı — iOS'ta kapanışta sayfa konumunu zıplatıyor.
    • YATAY TELEFON (29 Eylül 2026): `yp-altsayfa` sınıfı — 520 px'lik dar sayfa
      ekranın ~430 px'lik boyunun %82'sine sıkışıyor, yanlarda yüzlerce piksel
      boş kalıyordu. Yatayda en ~780 px, boy çentik payı dışında ekranın tamamı
@@ -80,6 +109,8 @@ export default function AltSayfa({
   const bilgi = useRef({ basY: 0, basT: 0, id: null, aday: false })
   const zamanlayici = useRef(null)
   const sayfaRef = useRef(null)
+  const icerikRef = useRef(null)
+  const perdeRef = useRef(null)
   // Gerçek bir sürükleme olduysa arkasından gelen `click` yutulur.
   const suruklendi = useRef(false)
 
@@ -94,10 +125,20 @@ export default function AltSayfa({
 
   // Her render sonrası ölç: içerik değişince (arama açılması, liste büyümesi)
   // kaydırılabilirlik de değişir. setState aynı değerde ise React zaten durur.
-  useLayoutEffect(() => {
+  const olc = useCallback(() => {
     const el = sayfaRef.current
     if (el) setKaydirilabilir(el.scrollHeight > el.clientHeight + 1)
-  })
+  }, [])
+  useLayoutEffect(() => { olc() })
+  // İçerik AltSayfa'yı yeniden çizdirmeden büyüyüp küçülebilir (iç akordiyon
+  // kendi durumunu tutuyor) → boyut gözlemcisiyle de ölç. Bkz. baştaki not.
+  useEffect(() => {
+    if (typeof ResizeObserver === "undefined") return
+    const ro = new ResizeObserver(() => olc())
+    if (sayfaRef.current) ro.observe(sayfaRef.current)
+    if (icerikRef.current) ro.observe(icerikRef.current)
+    return () => ro.disconnect()
+  }, [olc])
 
   const kapanmayaBasla = useCallback(() => {
     setKapaniyor(true)
@@ -112,6 +153,16 @@ export default function AltSayfa({
     return () => window.removeEventListener("keydown", tus)
   }, [kapanmayaBasla])
 
+  // Perdede parmak kaydırması arka sayfaya geçmesin (iOS). Dokunma = kapat
+  // (onClick) ayrıca çalışmaya devam ediyor; yalnız kaydırma engelleniyor.
+  useEffect(() => {
+    const el = perdeRef.current
+    if (!el) return
+    const engel = (e) => { if (e.cancelable) e.preventDefault() }
+    el.addEventListener("touchmove", engel, { passive: false })
+    return () => el.removeEventListener("touchmove", engel)
+  }, [])
+
   // ★ Jesti tarayıcıya kaptırmamak için pasif OLMAYAN touchmove dinleyicisi.
   // React'in onTouchMove'u pasif eklendiğinden preventDefault işlemiyor; bu
   // yüzden doğrudan DOM'a bağlanıyor.
@@ -124,8 +175,10 @@ export default function AltSayfa({
       const t = e.touches && e.touches[0]
       if (!t) return
       const dy = t.clientY - bilgi.current.basY
+      // Tutamak şeridinden başlayan jest her zaman bizim
+      if (bilgi.current.tutamak) { e.preventDefault(); return }
       // Yalnızca AŞAĞI ve panel en üstteyken: kaydıracak bir şey yok, jest bizim.
-      if (dy > 0 && (el.scrollTop || 0) <= 0) e.preventDefault()
+      if (dy > 0 && (el.scrollTop || 0) <= 0 && !bilgi.current.icKutu) e.preventDefault()
     }
     el.addEventListener("touchmove", dokunHareket, { passive: false })
     return () => el.removeEventListener("touchmove", dokunHareket)
@@ -134,13 +187,28 @@ export default function AltSayfa({
   // `hemen`: tutamaktan başlanmışsa eşik beklenmez, içerik kaydırılmış olsa da
   // sürüklenir. Gövdeden başlanmışsa önce ADAY olunur, hareket eşiği aşınca
   // sürükleme gerçekten başlar.
+  // Dokunulan yer ile panel arasında, AŞAĞI kaydırılmış bir iç kutu var mı?
+  // Varsa aşağı çekmek önce o kutuyu kaydırmalı, paneli değil.
+  function icKutuKaydirilmis(hedef) {
+    const kok = sayfaRef.current
+    for (let d = hedef; d && d !== kok; d = d.parentElement) {
+      if (d.scrollTop > 0 && d.scrollHeight > d.clientHeight + 1) {
+        const oy = getComputedStyle(d).overflowY
+        if (oy === "auto" || oy === "scroll") return true
+      }
+    }
+    return false
+  }
+
   function inisBasla(e, hemen = false) {
     if (bilgi.current.id != null || kapaniyor) return
     const ustte = (sayfaRef.current?.scrollTop || 0) <= 0
     if (!hemen && !ustte) return              // içerik kaydırılıyor, karışma
+    const icKutu = !hemen && icKutuKaydirilmis(e.target)
+    if (icKutu) return                        // iç liste kaydırılıyor, karışma
     bilgi.current = {
       basY: e.clientY, basT: performance.now(),
-      id: e.pointerId, aday: !hemen,
+      id: e.pointerId, aday: !hemen, tutamak: hemen, icKutu,
     }
     suruklendi.current = false
     if (hemen) {
@@ -170,6 +238,7 @@ export default function AltSayfa({
     const aday = bilgi.current.aday
     bilgi.current.id = null
     bilgi.current.aday = false
+    bilgi.current.tutamak = false
     setSurukleniyor(false)
     if (aday) return                        // hiç sürüklenmedi, dokunuştu
     if (dy > ESIK_PX || dy / sure > HIZ_ESIGI) kapanmayaBasla()
@@ -183,9 +252,11 @@ export default function AltSayfa({
   return (
     <>
       <div
+        ref={perdeRef}
         onClick={kapanmayaBasla}
         style={{
           position: "fixed", inset: 0, zIndex: 300,
+          touchAction: "none", overscrollBehavior: "contain",
           background: `rgba(0,0,0,${0.35 * (acildi ? perdeOran : 0)})`,
           transition: surukleniyor ? "none" : "background 0.22s ease",
         }}
@@ -225,8 +296,10 @@ export default function AltSayfa({
           userSelect: surukleniyor ? "none" : undefined,
         }}
       >
-        {/* TUTAMAK — dokunma hedefi çizginin kendisinden büyük tutuluyor,
-            yoksa 4px'lik bir çizgiyi parmakla yakalamak zor. */}
+        {/* TUTAMAK ŞERİDİ — tutamak çizgisi + başlık. YAPIŞKAN: içerik
+            kaydırılsa da panelin tepesinde durur ve TAMAMI sürükleme alanıdır
+            (bkz. baştaki "tutamak + başlık yapışkan"). Dokunma hedefi çizginin
+            kendisinden büyük tutuluyor, yoksa 4px'lik çizgiyi yakalamak zor. */}
         <div
           onPointerDown={(e) => { e.stopPropagation(); inisBasla(e, true) }}
           onPointerMove={(e) => { e.stopPropagation(); inisHareket(e) }}
@@ -237,11 +310,15 @@ export default function AltSayfa({
           style={{
             touchAction: "none",          // burada her zaman: tutamak = sürükleme
             cursor: surukleniyor ? "grabbing" : "grab",
-            padding: "12px 0 8px",
+            position: "sticky", top: 0, zIndex: 5,
+            background: theme.surface,
+            borderRadius: "20px 20px 0 0",
             margin: "0 -20px",            // tam genişlik hedef
-            display: "flex", justifyContent: "center",
+            padding: "0 20px",
+            userSelect: "none", WebkitUserSelect: "none",
           }}
         >
+          <div style={{ display: "flex", justifyContent: "center", padding: "12px 0 8px" }}>
           <div style={{
             width: "40px", height: "4px", borderRadius: "2px",
             background: theme.border,
@@ -250,18 +327,22 @@ export default function AltSayfa({
             transform: surukleniyor ? "scaleX(1.25)" : "none",
             transition: "transform 0.15s ease, opacity 0.15s ease",
           }} />
+          </div>
+
+          {baslik && (
+            <div style={{
+              fontSize: "12px", color: theme.textSecondary,
+              letterSpacing: "1px", padding: "2px 4px 6px",
+            }}>
+              {baslik}
+            </div>
+          )}
         </div>
 
-        {baslik && (
-          <div style={{
-            fontSize: "12px", color: theme.textSecondary,
-            letterSpacing: "1px", padding: "2px 4px 6px",
-          }}>
-            {baslik}
-          </div>
-        )}
-
-        {children}
+        {/* İçerik kutusu — boyutu gözleniyor (kaydırılabilirlik ölçüsü) */}
+        <div ref={icerikRef}>
+          {children}
+        </div>
       </div>
     </>
   )

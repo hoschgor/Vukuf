@@ -97,6 +97,12 @@ const BOS = {
     donus: { bas: "son", sira: 0 },   // dönüşün başladığı uç + dizideki yer
     manuel: { sure: 1, bas: 1, son: 7 },   // elle yazılan sûre + âyet aralığı
     sureSira: "orijinal",  // sûre listesi: "orijinal" | "kisa" (kısadan uzuna) | "uzun" (uzundan kısaya)
+    // UYARILAR (3 Ekim 2026): kullanıcı "X gün gecikti" gibi uyarıları görmek istemeyebilir.
+    bildirimGizle: false,  // gecikme rozetleri, panel rozeti ve yedek hatırlatması gizli
+    yedekErtele: 0,        // yedek hatırlatması bu günden (bugun() sayısı) önce gösterilmez
+    // ZAMANLAMA (3 Ekim 2026) — ayrıntısı aşağıda "ZAMANLAMA" bölümünde
+    tekrarModu: "otomatik", // "otomatik": takvim + listem · "elle": yalnız listem
+    eskiTakvim: false,      // "Ezberlediklerimi ekle"de eklenenler takvime de girsin mi
   },
 }
 
@@ -147,6 +153,21 @@ export function ipucuAlindi(anahtar) {
   return yaz({ ...v, birimler: { ...v.birimler, [anahtar]: { ...b, i: (b.i || 0) + 1 } } })
 }
 
+/* ── ZAMANLAMA (3 Ekim 2026) ─────────────────────────────────────────────────
+   Kullanıcı: "zaten ezberinde olan kısımlar için tekrar gerekmez, yeni
+   ezberlenmişse gerekebilir. Kullanıcı isterse tekrar listesine alabilir;
+   isterse otomatik moddan devam eder, bugünün tekrarı otomatik oluşur."
+   Her ezberli birimin iki bağımsız bayrağı var:
+     p  TAKVİMDE Mİ  — otomatik tekrar planına giriyor mu. Mushafta "Ezberledim"
+        ile yeni ezberlenen → takvimde. "Ezberlediklerimi ekle" ile eklenen eski
+        ezber → varsayılan takvim DIŞI (istenirse takvime alınır).
+        Eski kayıtlarda alan yok → takvimde sayılır (önceki davranış).
+     l  TEKRAR LİSTEMDE — kullanıcının elle "Tekrara al" dediği; cevaplanınca
+        listeden düşer. Takvimden bağımsız.
+   Bugünün tekrarı = (otomatik modda) vadesi gelen takvimdekiler + listem.
+   Elle modda yalnız listem. c = son cevap günü (bugün kaç tane bitti). */
+export const takvimde = (b) => !!b && b.d === DURUM.EZBERLENDI && b.p !== false
+
 /* Ezberlendi: takvime ilk basamaktan girer (yarın tekrar). */
 export function ezberlendi(anahtarlar) {
   const v = hifzOku()
@@ -154,7 +175,45 @@ export function ezberlendi(anahtarlar) {
   const birimler = { ...v.birimler }
   for (const a of anahtarlar) {
     const b = birimAl(v, a)
-    birimler[a] = { ...b, d: DURUM.EZBERLENDI, g, a: 0, s: g + ARALIKLAR[0], t: (b.t || 0) + 1 }
+    birimler[a] = { ...b, d: DURUM.EZBERLENDI, g, a: 0, s: g + ARALIKLAR[0], t: (b.t || 0) + 1, p: true }
+  }
+  return yaz({ ...v, birimler })
+}
+
+/* Takvime al / takvimden çıkar (yalnız ezberliler). Takvime ilk kez giren eski
+   ezberin ilk tekrarları önümüzdeki 14 güne yayılır (hepsi yarına yığılmasın). */
+export function takvimAyarla(anahtarlar, acik) {
+  const v = hifzOku()
+  const g = bugun()
+  const birimler = { ...v.birimler }
+  const hedef = anahtarlar.filter(a => (birimler[a] || {}).d === DURUM.EZBERLENDI)
+  const yeni = hedef.filter(a => acik && !takvimde(birimler[a]))
+  hedef.forEach(a => { if (!acik) birimler[a] = { ...birimler[a], p: false } })
+  yeni.forEach((a, i) => {
+    const b = birimler[a]
+    const gun = 1 + Math.floor((i * 14) / Math.max(1, yeni.length))
+    birimler[a] = { ...b, p: true, a: typeof b.a === "number" && b.a >= 0 ? b.a : 2, s: (b.s || 0) > g ? b.s : g + gun }
+  })
+  return yaz({ ...v, birimler })
+}
+
+/* Tekrar listem — ekle/çıkar. Yalnız ezberli âyetler listeye girer. */
+export function listeyeEkle(anahtarlar) {
+  const v = hifzOku()
+  const g = bugun()
+  const birimler = { ...v.birimler }
+  for (const a of anahtarlar) {
+    const b = birimler[a]
+    if (b && b.d === DURUM.EZBERLENDI && !b.l) birimler[a] = { ...b, l: g }
+  }
+  return yaz({ ...v, birimler })
+}
+export function listedenCikar(anahtarlar) {
+  const v = hifzOku()
+  const birimler = { ...v.birimler }
+  for (const a of anahtarlar) {
+    const b = birimler[a]
+    if (b && b.l) { const { l: _l, ...kalan } = b; birimler[a] = kalan }
   }
   return yaz({ ...v, birimler })
 }
@@ -173,7 +232,7 @@ export function ezberleEksikleri(anahtarlar) {
    cüz) "bugün tekrar" listesini yüzlerce âyetle doldururdu. Bunun yerine:
    takvime 3. basamaktan (7 gün aralık) giriyor ve İLK tekrarları mushaf
    sırasıyla önümüzdeki 14 güne YAYILIYOR. Zaten ezberli âyete dokunulmuyor. */
-export function eskiEzberEkle(anahtarlar) {
+export function eskiEzberEkle(anahtarlar, { takvim = false } = {}) {
   const v = hifzOku()
   const g = bugun()
   const birimler = { ...v.birimler }
@@ -182,7 +241,11 @@ export function eskiEzberEkle(anahtarlar) {
   eksik.forEach((a, i) => {
     const b = birimAl(v, a)
     const gun = 1 + Math.floor((i * 14) / Math.max(1, n))          // 1..14
-    birimler[a] = { ...b, d: DURUM.EZBERLENDI, g, a: 2, s: g + gun, t: (b.t || 0) + 1 }
+    // Takvim dışı (3 Ekim 2026 varsayılanı): ezberli sayılır, yüzdeye katılır,
+    // ama kendiliğinden tekrara gelmez — istenirse listeye/takvime alınır.
+    birimler[a] = takvim
+      ? { ...b, d: DURUM.EZBERLENDI, g, a: 2, s: g + gun, t: (b.t || 0) + 1, p: true }
+      : { ...b, d: DURUM.EZBERLENDI, g, a: 2, s: 0, t: (b.t || 0) + 1, p: false }
   })
   return yaz({ ...v, birimler })
 }
@@ -261,19 +324,113 @@ export function ezberdenCikar(anahtarlar) {
   return yaz({ ...v, birimler })
 }
 
+/* Bellekteki kopyayı at ve depodan yeniden oku. Hıfz kaydı bu modülün
+   DIŞINDAN değiştiğinde (Ayarlar → Veriler → "Hıfz kaydı"nı sıfırla) çağrılır;
+   yoksa bellekteki eski kopya bir sonraki yazışta silinen veriyi geri yazardı. */
+export function hifzTazele() {
+  bellek = null
+  const v = hifzOku()
+  for (const f of aboneler) f(v)
+  return v
+}
+
+/* ── HIFZ YEDEĞİ (3 Ekim 2026) ───────────────────────────────────────────────
+   Hıfz kaydı yalnız bu cihazın tarayıcı deposunda duruyor; site verisi
+   temizlenir, uygulama silinir ya da telefon değişirse ilerleme gider.
+   Biçim GENEL VUKUF YEDEĞİYLE AYNI (uygulama/surum/tarih/veriler) ve içinde
+   yalnız "vukuf-hifz" anahtarı var → bu dosya Ayarlar → Veriler → "Geri yükle"
+   ile de yüklenebilir; tersine, genel yedek dosyası da burada okunabilir
+   (içinden yalnız hıfz kaydı alınır). */
+export function hifzYedekNesnesi() {
+  const v = hifzOku()
+  return {
+    uygulama: "vukuf", surum: 1, tur: "hifz",
+    tarih: new Date().toISOString(), adet: 1,
+    veriler: { [ANAHTAR]: JSON.stringify(v) },
+  }
+}
+export const hifzYedekMetni = () => JSON.stringify(hifzYedekNesnesi(), null, 2)
+export function hifzYedekDosyaAdi() {
+  const d = new Date()
+  const ik = (n) => String(n).padStart(2, "0")
+  return `vukuf-hifz-yedek-${d.getFullYear()}-${ik(d.getMonth() + 1)}-${ik(d.getDate())}.json`
+}
+export function hifzYedekIndir() {
+  try {
+    const blob = new Blob([hifzYedekMetni()], { type: "application/json" })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = hifzYedekDosyaAdi()
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    setTimeout(() => { try { URL.revokeObjectURL(url) } catch { /* yoksay */ } }, 4000)
+    return true
+  } catch { return false }
+}
+
+/* Yedek metnini çöz. Dönen: { tarih, veri, ezber, kayit } ya da { hata }. */
+export function hifzYedekCoz(metin) {
+  let d
+  try { d = JSON.parse(metin) } catch { return { hata: "Dosya okunamadı — geçerli bir JSON değil." } }
+  if (!d || typeof d !== "object" || d.uygulama !== "vukuf") return { hata: "Bu dosya bir Vukuf yedeği değil." }
+  const ham = d.veriler && d.veriler[ANAHTAR]
+  if (typeof ham !== "string") return { hata: "Bu yedekte hıfz kaydı yok." }
+  let veri
+  try { veri = JSON.parse(ham) } catch { return { hata: "Yedekteki hıfz kaydı bozuk." } }
+  if (!veri || typeof veri.birimler !== "object" || !veri.birimler) return { hata: "Yedekteki hıfz kaydı bozuk." }
+  const kayitlar = Object.values(veri.birimler)
+  return {
+    tarih: d.tarih || null,
+    veri,
+    ezber: kayitlar.filter(b => b && b.d === DURUM.EZBERLENDI).length,
+    kayit: kayitlar.length,
+  }
+}
+
+/* Yedeği uygula.
+     "degistir"  → bu cihazdaki hıfz kaydı (ayarlar dahil) yedektekiyle değişir.
+     "birlestir" → iki taraf birleşir: yalnız birinde olan âyet alınır; ikisinde
+                   de varsa EZBERLİ olan, ikisi de aynı durumdaysa SON ÇALIŞILAN
+                   (g) kazanır; ipucu sayacı büyük olan kalır. Ayarlar değişmez. */
+export function hifzYedekUygula(veri, kip = "birlestir") {
+  const v = hifzOku()
+  if (kip === "degistir") {
+    return yaz({ birimler: { ...veri.birimler }, ayarlar: { ...BOS.ayarlar, ...(veri.ayarlar || {}) } })
+  }
+  const birimler = { ...v.birimler }
+  for (const [a, y] of Object.entries(veri.birimler)) {
+    if (!y || typeof y !== "object") continue
+    const b = birimler[a]
+    if (!b) { birimler[a] = y; continue }
+    const yEz = y.d === DURUM.EZBERLENDI, bEz = b.d === DURUM.EZBERLENDI
+    let kazanan = b
+    if (yEz !== bEz) kazanan = yEz ? y : b
+    else if ((y.g || 0) > (b.g || 0)) kazanan = y
+    birimler[a] = { ...kazanan, i: Math.max(b.i || 0, y.i || 0) }
+  }
+  return yaz({ ...v, birimler })
+}
+
 /* Ezberli âyetleri sûre sûre ARDIŞIK ARALIKLARA topla — düzenleme listesi için.
    `sureler`: [{ id, isim, ayetSayisi }] (mushaf sırası). */
 export function ezberAraliklari(veri, sureler) {
   const sonuc = []
   for (const s of sureler) {
     const araliklar = []
-    let bas = null, n = 0
+    let bas = null, n = 0, takvimli = 0, listede = 0
     for (let a = 1; a <= s.ayetSayisi + 1; a++) {
-      const ezberli = a <= s.ayetSayisi && (veri.birimler[`${s.id}:${a}`] || {}).d === DURUM.EZBERLENDI
-      if (ezberli) { if (bas == null) bas = a; n++ }
-      else if (bas != null) { araliklar.push({ bas, son: a - 1 }); bas = null }
+      const b = a <= s.ayetSayisi ? veri.birimler[`${s.id}:${a}`] : null
+      const ezberli = !!b && b.d === DURUM.EZBERLENDI
+      if (ezberli) {
+        if (bas == null) bas = a
+        n++
+        if (takvimde(b)) takvimli++
+        if (b.l) listede++
+      } else if (bas != null) { araliklar.push({ bas, son: a - 1 }); bas = null }
     }
-    if (araliklar.length) sonuc.push({ ...s, ezberli: n, araliklar })
+    if (araliklar.length) sonuc.push({ ...s, ezberli: n, takvimli, listede, araliklar })
   }
   return sonuc
 }
@@ -287,16 +444,56 @@ export function cevapla(anahtar, zorluk) {
   if (zorluk === "kolay") a = Math.min(ARALIKLAR.length - 1, a + 1)
   else if (zorluk === "zor") a = 0
   // "orta" → basamak aynı kalır
-  const yeni = { ...b, d: DURUM.EZBERLENDI, a, g, t: (b.t || 0) + 1, s: g + ARALIKLAR[Math.max(0, a)] }
+  // "Zor" denen takvim dışı âyet takvime girer: zorlandıysa tekrar gerekiyor.
+  const p = zorluk === "zor" ? true : b.p
+  const { l: _l, ...kalan } = b                     // cevaplanan listeden düşer
+  const yeni = { ...kalan, d: DURUM.EZBERLENDI, a, g, c: g, p, t: (b.t || 0) + 1, s: g + ARALIKLAR[Math.max(0, a)] }
   return yaz({ ...v, birimler: { ...v.birimler, [anahtar]: yeni } })
 }
 
-/* Bugün (ve geçmişte) tekrarı gelenler — en geciken önce. */
+/* Toplu cevap — bir aralığın (grup) bütün âyetleri tek yazışta. */
+export function topluCevapla(anahtarlar, zorluk) {
+  for (const a of anahtarlar) cevapla(a, zorluk)
+  return hifzOku()
+}
+
+/* Bugünün tekrarı — en geciken önce. Kaynak: "liste" (elle eklenen) ya da
+   "takvim" (otomatik planda vadesi gelen). Elle modda takvim gösterilmez. */
 export function bekleyenTekrarlar(veri = hifzOku(), gun = bugun()) {
+  const otomatik = (veri.ayarlar && veri.ayarlar.tekrarModu) !== "elle"
   return Object.entries(veri.birimler)
-    .filter(([, b]) => b.d === DURUM.EZBERLENDI && (b.s || 0) <= gun)
-    .map(([a, b]) => ({ anahtar: a, ...anahtarCoz(a), gecikme: gun - (b.s || 0), ...b }))
+    .filter(([, b]) => b.d === DURUM.EZBERLENDI &&
+      (b.l || (otomatik && takvimde(b) && (b.s || 0) <= gun)))
+    .map(([a, b]) => ({
+      anahtar: a, ...anahtarCoz(a), ...b,
+      kaynak: b.l ? "liste" : "takvim",
+      gecikme: takvimde(b) && (b.s || 0) <= gun ? gun - (b.s || 0) : 0,
+    }))
     .sort((x, y) => y.gecikme - x.gecikme || x.sureNo - y.sureNo || x.ayetNo - y.ayetNo)
+}
+
+/* Bugün cevaplanan âyet sayısı — "bugün 4 / 10" ilerlemesi için. */
+export function bugunTamamlanan(veri = hifzOku(), gun = bugun()) {
+  let n = 0
+  for (const b of Object.values(veri.birimler)) if (b.c === gun) n++
+  return n
+}
+
+/* Bekleyenleri ARALIKLARA topla: aynı sûrede ardışık ve aynı kaynaktan olan
+   âyetler tek satır ("Yâsîn 1–12"). 83 âyetlik bir sûre 83 satır olmasın. */
+export function tekrarGruplari(liste) {
+  const sirali = [...liste].sort((x, y) => x.sureNo - y.sureNo || x.ayetNo - y.ayetNo)
+  const gruplar = []
+  for (const b of sirali) {
+    const o = gruplar[gruplar.length - 1]
+    if (o && o.sureNo === b.sureNo && o.son === b.ayetNo - 1 && o.kaynak === b.kaynak) {
+      o.son = b.ayetNo; o.anahtarlar.push(b.anahtar); o.gecikme = Math.max(o.gecikme, b.gecikme)
+    } else {
+      gruplar.push({ sureNo: b.sureNo, bas: b.ayetNo, son: b.ayetNo, kaynak: b.kaynak,
+        gecikme: b.gecikme, anahtarlar: [b.anahtar] })
+    }
+  }
+  return gruplar.sort((x, y) => y.gecikme - x.gecikme || x.sureNo - y.sureNo || x.bas - y.bas)
 }
 
 /* En çok ipucu alınan âyetler — "zor âyetler" listesi. */

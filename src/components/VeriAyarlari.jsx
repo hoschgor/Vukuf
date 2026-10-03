@@ -40,8 +40,9 @@ import {
 import {
   envanter, toplamBoyut, boyutMetni,
   yedekIndir, yedekMetni, yedekDosyaAdi,
-  dosyadanOku, yedekCozumle, yedekYaz, sifirla,
+  dosyadanOku, yedekCozumle, yedekYaz, sifirla, sonYedekYaz,
 } from "../data/vukufVeri"
+import { hifzTazele } from "../data/hifz"
 
 /* ── ÇEVRİMDIŞI İÇİN İNDİRİLECEK ADRESLER ───────────────────────────────────
    Liste ELLE YAZILMIYOR: katalogdan (kitaplar.js) türetiliyor. Yeni bir kitap
@@ -613,6 +614,7 @@ export default function VeriAyarlari({ theme }) {
   async function panoyaKopyala() {
     try {
       await navigator.clipboard.writeText(yedekMetni())
+      sonYedekYaz()            // Hıfz ekranının "yedek alınmadı" hatırlatması için
       setKopyalandi(true)
       setTimeout(() => setKopyalandi(false), 2500)
     } catch {
@@ -651,6 +653,9 @@ export default function VeriAyarlari({ theme }) {
 
   function kategoriSifirla(id, ad) {
     const silinen = sifirla(id)
+    // Hıfz modülü kaydı bellekte de tutuyor; tazelenmezse bir sonraki yazış
+    // silinen veriyi geri yazardı (3 Ekim 2026).
+    if (id === "hifz") hifzTazele()
     setTazele(x => x + 1)
     bilgiVer("iyi", `${ad}: ${silinen.length} kayıt silindi.`)
     if (id === "hepsi" || id === "tema") setTimeout(() => window.location.reload(), 600)

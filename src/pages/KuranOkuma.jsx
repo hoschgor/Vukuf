@@ -76,6 +76,7 @@ import MealPopup from "../components/MealPopup"
 import IzlemeModu from "../components/IzlemeModu"
 import HifzPaneli from "../components/HifzPaneli"
 import DonusDugmesi, { KopruDugmesi } from "../components/DonusDugmesi"
+import { useOkumaGecmisi } from "../data/gecmis"
 import { useDonusAyari, donusAcikMi, noktalariOku, noktaEkle, noktayaDon, noktalariTemizle } from "../data/donusNoktalari"
 import {
   hifzOku, ayarGuncelle as hifzAyarGuncelle, gizlemeHaritasi, perdeCss,
@@ -100,7 +101,7 @@ import {
   Settings, Circle, Clock, ChevronsUp, ChevronsDown,
   ChevronLeft, Bookmark, BookOpen, Feather,
   Layers, Check, Shuffle, Mic, Repeat, Gem, UnfoldHorizontal, GripVertical, RotateCcw, Save, AlignLeft, AlignRight,
-  Camera, FoldHorizontal, ChevronUp, ImagePlay, Brain,
+  Camera, FoldHorizontal, ChevronUp, ImagePlay, Brain, History,
 } from "lucide-react"
 
 // ── Arapça font listesi
@@ -1160,6 +1161,19 @@ export default function KuranOkuma({ kitap }) {
   const hifzDokunRef = useRef({ ac: hifzDokunAc, ses: hifzDokunSes })
   // Oynatıcı her render'da yeni nesne; sabit kimlikli kelimeTikla güncelini buradan okur
   const hifzPlayerRef = useRef(null)
+  /* GEÇMİŞ — okuma oturumu (Ayarlar → Geçmiş açıksa). Konum sonKonumRef'ten
+     (dönüş noktalarıyla aynı referans); ses çalarken etkileşim olmasa da süre
+     sayılır — dinlemek de okumadır. Ayrıntı: data/gecmis.js */
+  useOkumaGecmisi({
+    hazir: !yukleniyor && konumHazir,
+    kaynak: "kuran",
+    baslik: "Kur'ân-ı Kerîm",
+    konumOku: () => {
+      const k = sonKonumRef.current
+      return k && k.sayfa ? { sayfa: k.sayfa, oran: k.oran || 0, etiket: kuranKonumEtiketi(k.sayfa, k.oran || 0) } : null
+    },
+    etkinMi: () => hifzPlayerRef.current?.durum === "caliyor",
+  })
   hifzPlayerRef.current = player
   useEffect(() => { hifzDokunRef.current = { ac: hifzDokunAc, ses: hifzDokunSes } }, [hifzDokunAc, hifzDokunSes])
   // Okutma açıksa kelime eşleme tablosu hıfz açılır açılmaz önden isteniyor —
@@ -2281,7 +2295,7 @@ const cokSatir = wrapAktif && barYuksekligi > tekSatirYuksekligi * 1.0
   // Arama/Tefeül'den sure hedefi geldiyse restore ATLA (sureGit devralır).
   let h = null
   try { h = JSON.parse(localStorage.getItem("vukuf-kuran-hedef") || "null") } catch {}
-  if (h && h.sureNo) { geriYuklendiRef.current = true; return }
+  if (h && (h.sureNo || h.sayfa)) { geriYuklendiRef.current = true; return }
 
   geriYuklendiRef.current = true
   const sayfa = hedefSayfaRef.current
@@ -2328,6 +2342,28 @@ useEffect(() => {
       // Mobilde zaten gizli; masaüstünde ilk-açılış-atıf durumunda da bitir gösterecek.
       sureGit(h.sureNo, h.ayetNo || null)   // ayetNo varsa ayete, yoksa sure başlığına
     }, 180)
+  } else if (h && h.sayfa) {
+    /* GEÇMİŞ'TEN KÖPRÜ (4 Ekim 2026): { sayfa, oran } — okuma oturumunun
+       başlangıcı ya da bitişi. Konum dönüş noktalarıyla AYNI referansta
+       (kaydırma alanının üstünün 2 px altı) ölçüldü → `ust: 2` ile tam o yer. */
+    kuranHedefRef.current = true
+    try { localStorage.removeItem("vukuf-kuran-hedef") } catch {}
+    {
+      const k = sonKonumRef.current
+      if (k && (k.sayfa > 1 || (k.oran || 0) > 0.02)) donusBirak("gecmis", h.sayfa, { ...k })
+    }
+    const sayfa = Math.max(1, Math.min(toplamSayfa || h.sayfa, h.sayfa))
+    setTimeout(() => {
+      setMevcutSayfa(sayfa)
+      pencereHazirla(sayfa)
+      let tries = 0
+      const git = () => {
+        sayfayaHizala(sayfa, { ust: 2, oran: h.oran || 0 })
+        if (++tries < 6) setTimeout(git, 60)
+        else konumuGoster()
+      }
+      requestAnimationFrame(git)
+    }, 180)
   }
 }, [sayfaListesi.length])
 
@@ -2335,7 +2371,7 @@ useEffect(() => {
 useEffect(() => {
   try {
     const d = localStorage.getItem("vukuf-donus")
-    if (d === "arama" || d === "tefeul") {
+    if (d === "arama" || d === "tefeul" || d === "gecmis") {
       setDonusTip(d)
       localStorage.removeItem("vukuf-donus")
     } else if (d === "okuma") {
@@ -5975,11 +6011,12 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
             altta={barKonum === "alt"}
             // "Geri dön" hapı da görünüyorsa bir sıra yukarıda (dar ekranda yan yana sığmıyorlar)
             pay={donusAcik && !hifzAcik && donusNoktalari.length ? 110 : 58}
-            ikon={donusTip === "okuma" ? BookOpen : donusTip === "tefeul" ? Shuffle : Search}
-            baslik={donusTip === "okuma" ? "Okumaya dön" : donusTip === "tefeul" ? "Tefeüle dön" : "Aramaya dön"}
-            alt={donusTip === "okuma" ? (donusAd || "Kitaptaki yerinize") : donusTip === "tefeul" ? "Tefeül ekranına" : "Arama sonuçlarına"}
+            ikon={donusTip === "okuma" ? BookOpen : donusTip === "tefeul" ? Shuffle : donusTip === "gecmis" ? History : Search}
+            baslik={donusTip === "okuma" ? "Okumaya dön" : donusTip === "tefeul" ? "Tefeüle dön" : donusTip === "gecmis" ? "Geçmiş'e dön" : "Aramaya dön"}
+            alt={donusTip === "okuma" ? (donusAd || "Kitaptaki yerinize") : donusTip === "tefeul" ? "Tefeül ekranına" : donusTip === "gecmis" ? "Geçmiş listesine" : "Arama sonuçlarına"}
             onGit={() => {
               if (donusTip === "okuma") { navigate(donusYol || "/"); return }
+              if (donusTip === "gecmis") { navigate("/gecmis"); return }
               try { localStorage.setItem(`vukuf-${donusTip}-devam`, "1") } catch {}
               navigate(donusTip === "tefeul" ? "/okuma-tefeul" : "/arama")
             }}

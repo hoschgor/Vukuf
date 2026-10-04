@@ -20,6 +20,8 @@ import KitapAyraci from "../components/KitapAyraci"
 import YuklemeEkrani from "../components/YuklemeEkrani"
 import IosSwitch from "../components/IosSwitch"
 import DonusDugmesi, { KopruDugmesi } from "../components/DonusDugmesi"
+import { History as GecmisIkon } from "lucide-react"
+import { useOkumaGecmisi, OKUMA_HEDEF_ANAHTAR } from "../data/gecmis"
 import { useDonusAyari, donusAcikMi, noktalariOku, noktaEkle, noktayaDon, noktalariTemizle } from "../data/donusNoktalari"
 import PanelAyirac, { PanelAcilir, panelBolumeHizala } from "../components/PanelAyirac"
 import GeriIkonu from "../components/GeriIkonu"
@@ -1659,7 +1661,7 @@ const konumKaydet = useCallback(() => {
 useEffect(() => {
   try {
     const d = localStorage.getItem("vukuf-donus")
-    if (d === "arama" || d === "tefeul") {
+    if (d === "arama" || d === "tefeul" || d === "gecmis") {
       setDonusTip(d)
       localStorage.removeItem("vukuf-donus")
     }
@@ -1702,6 +1704,29 @@ useEffect(() => {
         0, false, (el) => aramaVurgula(sn, el, aramaHedef.aranan))
       okumayiGoster()   // hizalama oturdu → açılış örtüsü solar
     }, 200)
+    return
+  }
+
+  // 1a) GEÇMİŞ'TEN KÖPRÜ (4 Ekim 2026): { kitapId, sayfa, oran, merkez? } — okuma
+  //     oturumunun başlangıcı ya da bitişi. Konum dönüş noktalarıyla aynı üst
+  //     referansta ölçüldü (merkez: true ise ekran ortası referansı).
+  let gecmisHedef = null
+  try { gecmisHedef = JSON.parse(localStorage.getItem(OKUMA_HEDEF_ANAHTAR) || "null") } catch {}
+  if (gecmisHedef && gecmisHedef.kitapId === id && gecmisHedef.sayfa) {
+    konumYuklendiRef.current = true
+    try { localStorage.removeItem(OKUMA_HEDEF_ANAHTAR) } catch {}
+    const sn = Math.min(Math.max(1, gecmisHedef.sayfa), kitapMetni.length)
+    try {
+      const onceki = JSON.parse(localStorage.getItem(`vukuf_son_konum_${id}`) || "null")
+      if (onceki && onceki.sayfa && (onceki.sayfa > 1 || (onceki.oran || 0) > 0.02)) donusBirak("gecmis", sn, onceki)
+    } catch { /* yoksay */ }
+    maxSayfaGuncelle(sn)
+    setTimeout(() => {
+      const el = scrollRef.current
+      if (gecmisHedef.merkez && el) sayfayaGit(sn, gecmisHedef.oran || 0, 0, el.clientHeight / 2)
+      else sayfayaGit(sn, gecmisHedef.oran || 0)
+      okumayiGoster()
+    }, 160)
     return
   }
 
@@ -2083,11 +2108,23 @@ function ustKonumOku() {
   const el = scrollRef.current
   if (!el) return null
   const y = el.getBoundingClientRect().top + donusPayi()
+  /* ★ (4 Ekim 2026, "normal eserler geçmişe kaydolmuyor") İlk sürüm yalnız
+     y'yi İÇEREN sayfayı arıyordu; kitabın başında y kitap adı/başlık
+     bölgesine (ilk sayfanın üstüne) ya da iki sayfa arasındaki boşluğa denk
+     gelince hiçbir sayfa bulunmuyor ve konum "yok" sayılıyordu → geçmiş
+     oturumu hiç açılmıyordu (dönüş noktası da bırakılmıyordu). ARTIK: üstü
+     y'yi geçmeyen SON sayfa alınır (oran 0..1'e sıkıştırılır); y bütün
+     sayfaların üstündeyse ilk sayfanın başı. */
+  let enIyi = null, ilk = null
   for (const [no, ref] of Object.entries(sayfaRefs.current)) {
     if (!ref) continue
+    const n = Number(no)
     const r = ref.getBoundingClientRect()
-    if (r.top <= y && r.bottom > y) return { sayfa: Number(no), oran: Math.max(0, Math.min(1, (y - r.top) / Math.max(1, r.height))) }
+    if (!ilk || n < ilk.n) ilk = { n, r }
+    if (r.top <= y && (!enIyi || r.top > enIyi.r.top)) enIyi = { n, r }
   }
+  if (enIyi) return { sayfa: enIyi.n, oran: Math.max(0, Math.min(1, (y - enIyi.r.top) / Math.max(1, enIyi.r.height))) }
+  if (ilk) return { sayfa: ilk.n, oran: 0 }
   return null
 }
 function donusBirak(kaynak, hedefSayfa = null, konum = null) {
@@ -2109,6 +2146,20 @@ function donuseGit(i) {
   if (n.merkez && el) sayfayaGit(n.sayfa, n.oran || 0, 0, el.clientHeight / 2)
   else sayfayaGit(n.sayfa, n.oran || 0)
 }
+
+/* GEÇMİŞ — okuma oturumu (Ayarlar → Geçmiş açıksa). Konum dönüş noktalarıyla
+   aynı üst referanstan; ekran kapanırken DOM gitmişse son ölçülen kullanılır.
+   Ayrıntı: data/gecmis.js */
+useOkumaGecmisi({
+  hazir: !yukleniyor && okumaHazir && !!kitap && kitap.id !== "kuran",
+  kaynak: "kitap",
+  kitapId: id,
+  baslik: (kitap && kitap.baslik) || "Kitap",
+  konumOku: () => {
+    const k = ustKonumOku()
+    return k ? { ...k, etiket: okumaKonumEtiketi(k.sayfa) } : null
+  },
+})
 
 function sayfayaGit(sayfaNo, oran = 0, ekstra = 0, mutlakPay = null) {
   setSayfaGitAcik(false)
@@ -4165,10 +4216,14 @@ return (
         altta={barKonum === "alt"}
         // "Geri dön" hapı da görünüyorsa bir sıra yukarıda (dar ekranda yan yana sığmıyorlar)
         pay={donusAcik && donusNoktalari.length ? 110 : 58}
-        ikon={donusTip === "tefeul" ? Shuffle : Search}
-        baslik={donusTip === "tefeul" ? "Tefeüle dön" : "Aramaya dön"}
-        alt={donusTip === "tefeul" ? "Tefeül ekranına" : "Arama sonuçlarına"}
-        onGit={() => { try { localStorage.setItem(`vukuf-${donusTip}-devam`, "1") } catch {}; navigate(donusTip === "tefeul" ? "/okuma-tefeul" : "/arama") }}
+        ikon={donusTip === "tefeul" ? Shuffle : donusTip === "gecmis" ? GecmisIkon : Search}
+        baslik={donusTip === "tefeul" ? "Tefeüle dön" : donusTip === "gecmis" ? "Geçmiş'e dön" : "Aramaya dön"}
+        alt={donusTip === "tefeul" ? "Tefeül ekranına" : donusTip === "gecmis" ? "Geçmiş listesine" : "Arama sonuçlarına"}
+        onGit={() => {
+          if (donusTip === "gecmis") { navigate("/gecmis"); return }
+          try { localStorage.setItem(`vukuf-${donusTip}-devam`, "1") } catch {}
+          navigate(donusTip === "tefeul" ? "/okuma-tefeul" : "/arama")
+        }}
         onKapat={() => setDonusTip("")}
       />
     )}

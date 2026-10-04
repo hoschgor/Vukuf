@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { Link, useLocation } from "react-router-dom"
-import { BookOpen, Search, Shuffle, Menu, X, Palette, Info, Type, Sparkles, Settings, HardDrive, Brain } from "lucide-react"
+import { BookOpen, Search, Shuffle, Menu, X, Palette, Info, Type, Sparkles, Settings, HardDrive, Brain, History } from "lucide-react"
 import { useApp } from "../AppContext"
 import { useMediaQuery } from "../data/hooks/useMediaQuery"
 import IosSwitch from "./IosSwitch"
@@ -10,6 +10,7 @@ import Katlanir from "./Katlanir"
 import TemaSecici from "./TemaSecici"
 import { ypDegisken } from "./yatayDuzen"
 import { themes } from "../styles/themes"
+import { useGecmisAyari, gecmisOku } from "../data/gecmis"
 
 /* ═══════════════════════════════════════════════════════════════════════════
    AYARLARIN TEK KAPIDA TOPLANMASI (24 Eylül 2026)
@@ -112,6 +113,17 @@ export default function Navbar() {
     })
   }
 
+  /* GEÇMİŞ (4 Ekim 2026) — açıksa ana menüde "Geçmiş" sayfası. Kayıt varken
+     kapatılırsa geçmiş silinir; önce sorulur. Ayrıntı: data/gecmis.js */
+  const [gecmisAcik, setGecmisAcik] = useGecmisAyari()
+  function toggleGecmis() {
+    if (gecmisAcik) {
+      const n = gecmisOku().length
+      if (n && !window.confirm(`Geçmiş kapatılırsa kayıtlı ${n} işlem (aramalar ve okumalar) SİLİNECEK.\n\nKapatılsın mı?`)) return
+      setGecmisAcik(false)
+    } else setGecmisAcik(true)
+  }
+
   const [ozelPanelAcik, setOzelPanelAcik] = useState(false)
   const [ozelRenkler, setOzelRenkler] = useState(customTheme)
   const [aktifRenk, setAktifRenk] = useState(null)
@@ -124,6 +136,8 @@ export default function Navbar() {
     { path: "/hifz", label: "Hıfz", icon: Brain },
     { path: "/tefeul", label: "Söz Tefeülü", icon: Shuffle },
     { path: "/okuma-tefeul", label: "Okuma Tefeülü", icon: Shuffle },
+    // Geçmiş yalnız ayarı açıkken (Ayarlar → Geçmiş)
+    ...(gecmisAcik ? [{ path: "/gecmis", label: "Geçmiş", icon: History }] : []),
   ]
 
   // Alt menü öğesi (Hakkında)
@@ -265,6 +279,21 @@ export default function Navbar() {
             theme={theme}
           />
 
+          </Katlanir>
+
+          {/* ── GEÇMİŞ ────────────────────────────────────────────────── */}
+          <Katlanir
+            theme={theme} ikon={History} baslik="Geçmiş"
+            ozet={gecmisAcik ? "açık" : "kapalı"}
+            {...kapak("gecmis")}
+          >
+          <AyarSatiri
+            baslik="Geçmişi tut"
+            aciklama="Aramalarınız ve okuduğunuz yerler tarih ve süreleriyle kaydedilir; ana menüde Geçmiş sayfası açılır. Kapatınca kayıtlar silinir."
+            acik={gecmisAcik}
+            onToggle={toggleGecmis}
+            theme={theme}
+          />
           </Katlanir>
 
           {/* ── VERİLER ───────────────────────────────────────────────────

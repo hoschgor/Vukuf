@@ -39,6 +39,8 @@ const ONEKLER = ["vukuf-", "vukuf_"]
 const GECICI_ANAHTAR = new Set([
   "vukuf-arama-devam", "vukuf-arama-durum", "vukuf-arama-hedef",
   "vukuf-donus", "vukuf-donus-yol", "vukuf-donus-ad", "vukuf-kuran-hedef",
+  // Geçmiş sayfasından köprüler (okunur okunmaz siliniyorlar)
+  "vukuf-okuma-hedef", "vukuf-arama-baslat",
   "vukuf-tefeul-devam", "vukuf-tefeul-durum", "vukuf-okuma-devam",
   // Hıfz ekranı ↔ mushaf köprüsü (okunur okunmaz siliniyorlar)
   "vukuf-hifz-hedef", "vukuf-hifz-donus",
@@ -103,8 +105,9 @@ export const KATEGORILER = [
   {
     id: "gecmis",
     ad: "Okuma geçmişi",
-    aciklama: "Son konum, son sayfa ve günlük okuma süreleri",
+    aciklama: "Son konum, son sayfa, günlük okuma süreleri ve Geçmiş sayfası kayıtları",
     anahtarlar: [
+      "vukuf-gecmis",   // Geçmiş sayfası: aramalar + okuma oturumları (data/gecmis.js)
       "vukuf-son-konum", "vukuf-son-sayfa", "vukuf-son-scroll",
       "vukuf-okuma-zamani", "vukuf-okuma-istatistik", "vukuf-okuma-donus-odak",
     ],
@@ -161,6 +164,7 @@ export const KATEGORILER = [
       "vukuf-okuma-buton-sirasi", "vukuf-okuma-buton-taraf",
       "vukuf-otomatik-gizleme", "vukuf-gizleme-suresi",
       "vukuf-donus-noktalari",   // Gezinme → dönüş noktaları aç/kapa (liste sessionStorage'da)
+      "vukuf-gecmis-acik",       // Ayarlar → Geçmiş aç/kapa
       // Göster/gizle ve bilgi öğeleri
       "vukuf-btn-bilgi", "vukuf-btn-gorsel", "vukuf-btn-kayit", "vukuf-btn-otooynat",
       "vukuf-btn-sade", "vukuf-btn-sayfa", "vukuf-btn-sure", "vukuf-btn-tekrar",

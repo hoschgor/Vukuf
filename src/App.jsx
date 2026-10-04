@@ -52,6 +52,7 @@ const OkumaEkrani  = tembel(() => import("./pages/OkumaEkrani"))
 const Arama        = tembel(() => import("./pages/Arama"))
 const Hakkinda     = tembel(() => import("./pages/Hakkinda"))
 const KuranOkuma   = tembel(() => import("./pages/KuranOkuma"))
+const Gecmis       = tembel(() => import("./pages/Gecmis"))
 
 /* Parça HİÇ yüklenemezse (çevrimdışı ve önbellekte yok, ya da yenileme de
    yetmedi) beyaz ekran yerine açıklama + iki çıkış. Sayfa değişince sıfırlanır. */
@@ -240,6 +241,7 @@ export default function App() {
         <Route path="/hifz" element={<HifzEkrani />} />
         <Route path="/tefeul" element={<Tefeul />} />
         <Route path="/okuma-tefeul" element={<OkumaTefeulu />} />
+        <Route path="/gecmis" element={<Gecmis />} />
         <Route path="/kitap/:id" element={<OkumaEkrani />} />
         <Route path="/hakkinda" element={<Hakkinda />} />
       </Routes>

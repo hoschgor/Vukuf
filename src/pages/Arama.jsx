@@ -1,11 +1,13 @@
 import { useState, useEffect, useLayoutEffect, useRef, useMemo } from "react"
 import { useNavigate } from "react-router-dom"
-import { Search, X, BookOpen, ChevronRight, ChevronLeft, Loader, SlidersHorizontal, Asterisk } from "lucide-react"
+import { Search, X, BookOpen, ChevronRight, ChevronLeft, Loader, SlidersHorizontal, Asterisk, History } from "lucide-react"
 import { useApp } from "../AppContext"
 import { useMediaQuery } from "../data/hooks/useMediaQuery"
 import { normHarf } from "../data/okumaKayit"
 import KapsamSecici from "../components/KapsamSecici"
+import { KopruDugmesi } from "../components/DonusDugmesi"
 import { kategoriler } from "../data/kitaplar"
+import { gecmisAramaEkle, ARAMA_BASLAT_ANAHTAR } from "../data/gecmis"
 
 // ════════════════════════════════════════════════════════════════
 // Kur'an sure adları (Türkçe) — arama sadece isim üzerinden; gidiş no ile
@@ -150,6 +152,11 @@ async function kitapYukle(dosya) {
 // açılır — arama sonucu eksilmez, sadece görünen kısım artarak gelir.
 const SAYFA_ADIM = 50          // "Daha fazla" her basışta kaç sonuç daha gösterir
 
+// GEÇMİŞ (4 Ekim 2026): yazarken her harf kaydedilmesin diye arama ancak
+// sonuçlar geldikten sonra bu kadar durulunca geçmişe yazılır. Bir sonuca
+// dokununca ise beklemeden yazılır. Ayrıntı: data/gecmis.js
+const GECMIS_BEKLEME = 1500
+
 export default function Arama() {
   const { theme } = useApp()
   const navigate = useNavigate()
@@ -165,13 +172,23 @@ export default function Arama() {
     return null
   }, [])
 
-  const [sorgu, setSorgu] = useState(ilk?.sorgu || "")
+  // GEÇMİŞ'TEN KÖPRÜ: "Aramayı tekrarla" sorguyu bırakıp buraya gönderiyor.
+  // Okunur okunmaz silinir (aşağıdaki açılış efekti). Sorgu varsa "Aramaya dön"
+  // durumundan önce gelir — kullanıcı açıkça bu aramayı istedi.
+  const baslat = useMemo(() => {
+    try { return localStorage.getItem(ARAMA_BASLAT_ANAHTAR) || "" } catch { return "" }
+  }, [])
+  // Geçmiş'ten gelindi mi → sağ altta "Geçmiş'e dön". Bir sonuca gidip "Aramaya
+  // dön" ile gelinince de kalsın diye arama durumuyla birlikte saklanıyor.
+  const [gecmistenGeldi, setGecmistenGeldi] = useState(() => !!baslat || (!baslat && !!ilk?.gecmisten))
+
+  const [sorgu, setSorgu] = useState(baslat || ilk?.sorgu || "")
   const [tamArama, setTamArama] = useState(false)  // * : birebir (tam) arama — normalize yok
   const [yukleniyor, setYukleniyor] = useState(false)
   const [kitapGruplar, setKitapGruplar] = useState([])   // [{ kitapId, kitapAd, yazar, sonuclar: [...] }]
   // "Aramaya dön" ile gelindiyse acik kitap da geri yuklenir; yoksa kullanici sonuca
   // tikladiktan sonra geri donunce kitap listesine dusuyor ve yerini kaybediyor.
-  const [secilenKitap, setSecilenKitap] = useState(ilk?.acikKitap || null)
+  const [secilenKitap, setSecilenKitap] = useState(baslat ? null : (ilk?.acikKitap || null))
   const [gosterilen, setGosterilen] = useState(SAYFA_ADIM)
   const [sureSonuc, setSureSonuc] = useState([])
   const aramaIdRef = useRef(0)
@@ -185,12 +202,15 @@ export default function Arama() {
 
   // Açılışta dönüş bayraklarını temizle (durum zaten ilk'te okundu)
   useEffect(() => {
-    try { localStorage.removeItem("vukuf-arama-devam"); localStorage.removeItem("vukuf-donus") } catch {}
+    try {
+      localStorage.removeItem("vukuf-arama-devam"); localStorage.removeItem("vukuf-donus")
+      localStorage.removeItem(ARAMA_BASLAT_ANAHTAR)
+    } catch {}
   }, [])
 
   // Bir sonuca giderken o anki arama durumunu anlık kaydet (dönünce devam etsin)
   function durumKaydet() {
-    try { localStorage.setItem("vukuf-arama-durum", JSON.stringify({ sorgu, secimler: scope.secimler, acikKitap: secilenKitap })) } catch {}
+    try { localStorage.setItem("vukuf-arama-durum", JSON.stringify({ sorgu, secimler: scope.secimler, acikKitap: secilenKitap, gecmisten: gecmistenGeldi })) } catch {}
   }
 
   useEffect(() => {
@@ -262,6 +282,26 @@ export default function Arama() {
   const acikGrup = kitapGruplar.find(g => g.kitapId === secilenKitap) || null
   const toplamSonuc = kitapGruplar.reduce((t, g) => t + g.sonuclar.length, 0)
 
+  // GEÇMİŞE YAZ — aramanın kısa özeti ("Kur'ân 2 sûre · 103 sonuç / 9 kitap")
+  function aramaOzeti() {
+    const parca = []
+    if (sureSonuc.length) parca.push(`${sureSonuc.length} sûre`)
+    if (toplamSonuc) parca.push(`${toplamSonuc} sonuç / ${kitapGruplar.length} kitap`)
+    if (!parca.length) parca.push("sonuç yok")
+    if (filtreAktif && scope.etiket) parca.push(scope.etiket)
+    return parca.join(" · ")
+  }
+  function gecmiseYaz() { gecmisAramaEkle(sorgu.trim(), aramaOzeti()) }
+  // Sonuçlar geldikten sonra kullanıcı biraz durunca (yazmayı bitirdi sayılır)
+  useEffect(() => {
+    const q = sorgu.trim()
+    if (q.length < 2 || yukleniyor) return
+    const t = setTimeout(() => gecmisAramaEkle(q, aramaOzeti()), GECMIS_BEKLEME)
+    return () => clearTimeout(t)
+    // aramaOzeti sonuçlardan türüyor; sonuçlar değişince zaten yeniden kurulur
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sorgu, yukleniyor, kitapGruplar, sureSonuc, filtreAktif])
+
   // Kitap içi sonuca git: hedefi belleğe yaz, kitabı aç (OkumaEkrani açılışta okur)
   function kitabaGit(r) {
     try {
@@ -270,6 +310,7 @@ export default function Arama() {
       }))
       localStorage.setItem("vukuf-donus", "arama")   // okuma ekranında "Aramaya dön" göster
     } catch {}
+    gecmiseYaz()
     durumKaydet()
     navigate(`/kitap/${r.kitapId}`)
   }
@@ -281,6 +322,7 @@ export default function Arama() {
       localStorage.setItem("vukuf-kuran-hedef", JSON.stringify(s.ayetNo ? { sureNo: s.no, ayetNo: s.ayetNo } : { sureNo: s.no }))
       localStorage.setItem("vukuf-donus", "arama")
     } catch {}
+    gecmiseYaz()
     durumKaydet()
     navigate("/kuran")
   }
@@ -327,7 +369,7 @@ export default function Arama() {
         Arama
       </h1>
       <p style={{ fontSize: "13px", color: theme.textSecondary, marginBottom: "20px" }}>
-        Kitaplarda her şeyi, Kur'an-ı Kerîm' de sûre adlarını arayabilirsiniz.
+        Kitaplarda her şeyi, Kur'an'da sure adlarını arayabilirsiniz.
       </p>
 
       {/* ÜST BLOK — kaydırırken yerinde kalır.
@@ -336,7 +378,7 @@ export default function Arama() {
           Sayfanın yatay dolgusu negatif kenar boşluğuyla telafi edilir; yoksa
           altından geçen kartlar sticky bloğun iki yanından görünür. */}
       <div ref={ustRef} style={{
-        position: "sticky", top: "42px", zIndex: 50,
+        position: "sticky", top: "calc(42px + env(safe-area-inset-top))", zIndex: 50,
         background: theme.background,
         marginLeft: isMobile ? "-16px" : "-24px",
         marginRight: isMobile ? "-16px" : "-24px",
@@ -488,7 +530,7 @@ export default function Arama() {
                   Arka planı saydam OLAMAZ — altından geçen kartlar okunur hâle gelir. */}
               <button onClick={() => setSecilenKitap(null)}
                 style={{
-                  position: "sticky", top: `${42 + ustYuk}px`, zIndex: 40,
+                  position: "sticky", top: `calc(${42 + ustYuk}px + env(safe-area-inset-top))`, zIndex: 40,
                   display: "flex", alignItems: "center", gap: "8px", textAlign: "left",
                   padding: "9px 12px", borderRadius: "10px", cursor: "pointer",
                   // SEÇİLİ KİTAP, SONUÇ KARTLARINDAN AYRI RENKTE. Eskiden ikisi de
@@ -497,17 +539,13 @@ export default function Arama() {
                   //
                   // RENK NİÇİN GRADIENT KATMANIYLA VERİLİYOR: sticky başlığın arka
                   // planı SAYDAM OLAMAZ — altından geçen kartlar okunur hâle gelir.
-                  // `${theme.accent}38` doğrudan arka plan yapılırsa saydam olur.
+                  // `${theme.accent}1f` doğrudan arka plan yapılırsa saydam olur.
                   // Onun yerine opak `theme.surface` tabanın ÜSTÜNE aynı renk düz
                   // bir gradient katmanı olarak konuyor: sonuç opak ama vurgu
                   // renginde. Tema ne olursa olsun kendini ayarlar.
-                  //
-                  // YÜZDE: önce %12 (`1f`) denendi, sonuç kartlardan neredeyse
-                  // ayırt edilemiyordu. %22 (`38`) hem "bu satır farklı" diyecek
-                  // kadar belirgin hem de metni bastırmayacak kadar hafif.
                   backgroundColor: theme.surface,
-                  backgroundImage: `linear-gradient(${theme.accent}38, ${theme.accent}38)`,
-                  border: `1px solid ${theme.accent}80`,
+                  backgroundImage: `linear-gradient(${theme.accent}1f, ${theme.accent}1f)`,
+                  border: `1px solid ${theme.accent}55`,
                   color: theme.text,
                   boxShadow: "0 2px 10px rgba(0,0,0,0.06)",
                 }}>
@@ -563,6 +601,20 @@ export default function Arama() {
           </div>
         )}
       </div>
+
+      {/* GEÇMİŞ'E DÖN — Geçmiş sayfasındaki "Aramayı tekrarla"dan gelindiyse
+          (okuma ekranlarındaki köprü düğmesiyle aynı görünüm, sağ altta) */}
+      {gecmistenGeldi && (
+        <KopruDugmesi
+          theme={theme}
+          ikon={History}
+          baslik="Geçmiş'e dön"
+          alt="Geçmiş listesine"
+          pay={18}
+          onGit={() => navigate("/gecmis")}
+          onKapat={() => setGecmistenGeldi(false)}
+        />
+      )}
 
       <style>{`@keyframes arama-spin { to { transform: rotate(360deg) } } .arama-spin { animation: arama-spin 0.9s linear infinite }`}</style>
     </div>

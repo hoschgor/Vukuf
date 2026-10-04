@@ -8,10 +8,17 @@
 
    ── NASIL ────────────────────────────────────────────────────────────────────
    Bir ATLAMADAN hemen önce (İçindekiler, arama sonucu, sayfaya git, işaret…)
-   okunan yer bir "dönüş noktası" olarak yığına konuyor. "Geri dön" en son
-   noktaya götürüyor; liste açılınca daha eskilerine de gidilebiliyor. Bir
-   noktaya dönülünce o nokta ve ondan SONRAKİLER listeden düşüyor (tarayıcının
-   geri düğmesi gibi).
+   okunan yer bir "dönüş noktası" olarak listeye konuyor. "Geri dön" en son
+   noktaya götürüyor; liste açılınca daha eskilerine de gidilebiliyor.
+
+   ★ DÖNÜNCE HİÇBİR KAYIT SİLİNMİYOR (4 Ekim 2026). İlk sürümde bir noktaya
+   dönülünce o nokta ve sonrakiler listeden düşüyordu (tarayıcı gibi);
+   kullanıcı: "geri dön kullanılınca diğer kayıtlar silinip baştan
+   başlanıyor; döndüğü yer kayıtta kalmalı". ARTIK geri dönmek de bir
+   atlama sayılıyor: dönülen nokta listede KALIYOR, ayrılınan yer (ör. arama
+   sonucu) sona ekleniyor. Böylece "Geri dön" iki yer arasında gidip gelir;
+   liste ziyaret edilen yerlerin sırası olarak kalır. Aynı yer listede iki kez
+   bulunmaz — yeniden bırakılınca sona taşınır.
 
    • Kur'ân ve her kitap için AYRI liste (kapsam: "kuran", "okuma-<kitapId>").
    • Liste sessionStorage'da: Arama ekranına gidip dönünce, sayfa yenilenince
@@ -36,6 +43,7 @@ export const KAYNAK_ADI = {
   sayfa: "Sayfaya git",
   isaret: "İşaret",
   ornek: "Örnek âyet",
+  geri: "Geri dön",
 }
 
 const aboneler = new Set()
@@ -83,12 +91,21 @@ export function noktaEkle(kapsam, nokta, hedef = null) {
   const liste = noktalariOku(kapsam)
   if (!nokta || !nokta.sayfa) return liste
   if (hedef && hedef.sayfa === nokta.sayfa && (hedef.oran == null || ayniYer(hedef, nokta))) return liste
-  const son = liste[liste.length - 1]
-  const temel = ayniYer(son, nokta) ? liste.slice(0, -1) : liste
+  // Aynı yer listede tek kalsın: eskisi çıkar, yenisi sona (en güncel) gelir
+  const temel = liste.filter(n => !ayniYer(n, nokta))
   return yaz(kapsam, [...temel, { ...nokta, z: Date.now() }].slice(-EN_FAZLA))
 }
 
-/* i. noktaya dönüldü: o nokta ve sonrakiler düşer */
+/* i. noktaya DÖN. Dönülen nokta listede kalır; ayrılınan yer (`mevcut`) sona
+   eklenir — bir sonraki "Geri dön" oraya götürür. */
+export function noktayaDon(kapsam, i, mevcut) {
+  const liste = noktalariOku(kapsam)
+  const hedef = liste[i]
+  if (!hedef || !mevcut || !mevcut.sayfa || ayniYer(mevcut, hedef)) return liste
+  return noktaEkle(kapsam, { ...mevcut, kaynak: "geri" })
+}
+
+/* (Eski davranış — artık kullanılmıyor; geriye uyum için duruyor.) */
 export function noktayaKadarSil(kapsam, i) {
   return yaz(kapsam, noktalariOku(kapsam).slice(0, Math.max(0, i)))
 }

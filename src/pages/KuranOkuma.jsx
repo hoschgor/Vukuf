@@ -75,8 +75,8 @@ import AyetPopup from "../components/AyetPopup"
 import MealPopup from "../components/MealPopup"
 import IzlemeModu from "../components/IzlemeModu"
 import HifzPaneli from "../components/HifzPaneli"
-import DonusDugmesi from "../components/DonusDugmesi"
-import { useDonusAyari, donusAcikMi, noktalariOku, noktaEkle, noktayaKadarSil, noktalariTemizle } from "../data/donusNoktalari"
+import DonusDugmesi, { KopruDugmesi } from "../components/DonusDugmesi"
+import { useDonusAyari, donusAcikMi, noktalariOku, noktaEkle, noktayaDon, noktalariTemizle } from "../data/donusNoktalari"
 import {
   hifzOku, ayarGuncelle as hifzAyarGuncelle, gizlemeHaritasi, perdeCss,
   sayfaKismiSec, cuzSayfalari, donusDizisi, baglamaAdimlari, duzAdimlar, adimlariListele,
@@ -909,6 +909,7 @@ export default function KuranOkuma({ kitap }) {
   const kuranHedefRef = useRef(false)   // Arama'dan gelen sure hedefi işlendi mi
   const [donusTip, setDonusTip] = useState("")   // "arama" | "tefeul" | "okuma"
   const [donusYol, setDonusYol] = useState("")   // "okuma" için geri dönülecek kitap yolu
+  const [donusAd, setDonusAd] = useState("")     // "okuma" için kitabın adı (köprü düğmesinde)
   // DÖNÜŞ NOKTALARI (3 Ekim 2026) — İçindekiler/arama/sayfaya git/işaret ile
   // atlamadan önce okunan yer yığına konur; "Geri dön" oraya götürür.
   // Ayrıntı: data/donusNoktalari.js. Ayar iki okuma ekranında ortak.
@@ -2341,6 +2342,7 @@ useEffect(() => {
       // Okuma ekranındaki popup'tan ayete gelindi → "Okumaya dön" (kitaba geri git)
       setDonusTip("okuma")
       setDonusYol(localStorage.getItem("vukuf-donus-yol") || "/")
+      setDonusAd(localStorage.getItem("vukuf-donus-ad") || "")
       localStorage.removeItem("vukuf-donus")
     }
   } catch {}
@@ -2954,11 +2956,24 @@ function sureyeGitDonuslu(kaynak, sureId, ayetNo) {
   donusBirak(kaynak, hedef)
   sureGit(sureId, ayetNo)
 }
+/* Noktaya dön (4 Ekim 2026): dönülen nokta listede KALIR, ayrılınan yer sona
+   eklenir (bkz. donusNoktalari.js). Konum TAM geri gelsin diye kayıttaki
+   ölçüyle aynı referans kullanılıyor: sonKonumRef, kaydırma alanının üst
+   kenarının 2 px altındaki noktanın sayfa içi oranı → hizalama da `ust: 2`.
+   (kayitSayfaGit bar payı bırakıyordu; işaret için doğru, dönüş için değil.) */
 function donuseGit(i) {
   const n = donusNoktalari[i]
   if (!n) return
-  setDonusNoktalari(noktayaKadarSil("kuran", i))
-  kayitSayfaGit(n.sayfa, n.oran || 0)
+  const k = sonKonumRef.current
+  const mevcut = k && k.sayfa ? { sayfa: k.sayfa, oran: k.oran || 0, etiket: kuranKonumEtiketi(k.sayfa, k.oran || 0) } : null
+  setDonusNoktalari(noktayaDon("kuran", i, mevcut))
+  pencereHazirla(n.sayfa)
+  let tries = 0
+  const git = () => {
+    sayfayaHizala(n.sayfa, { ust: 2, oran: n.oran || 0 })
+    if (++tries < 6) setTimeout(git, 60)
+  }
+  requestAnimationFrame(git)
 }
 
 
@@ -5952,26 +5967,24 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
           />
         )}
 
+        {/* KÖPRÜ — başka ekrana dönüş (4 Ekim 2026: "Geri dön" hapıyla aynı
+            çerçeveli görünüm, SAĞDA). Tıklama davranışı değişmedi. */}
         {donusTip && (
-          <div style={{
-            position: "fixed", right: "14px", zIndex: 120,
-            [barKonum === "alt" ? "bottom" : "top"]: "58px",
-            display: "flex", alignItems: "center", gap: "6px",
-            background: theme.accent, color: "#fff", borderRadius: "22px",
-            padding: "8px 8px 8px 14px", boxShadow: "0 4px 16px rgba(0,0,0,0.25)",
-          }}>
-            <button onClick={() => {
-                if (donusTip === "okuma") { navigate(donusYol || "/"); return }
-                try { localStorage.setItem(`vukuf-${donusTip}-devam`, "1") } catch {}
-                navigate(donusTip === "tefeul" ? "/okuma-tefeul" : "/arama")
-              }} style={{ display: "flex", alignItems: "center", gap: "6px", background: "none", border: "none", color: "#fff", cursor: "pointer", fontSize: "13px", fontFamily: "inherit" }}>
-              {donusTip === "okuma" ? <BookOpen size={15} /> : donusTip === "tefeul" ? <Shuffle size={15} /> : <Search size={15} />}
-              {donusTip === "okuma" ? "Okumaya dön" : donusTip === "tefeul" ? "Tefeüle dön" : "Aramaya dön"}
-            </button>
-            <button onClick={() => setDonusTip("")} title="Kapat" style={{ display: "flex", background: "rgba(255,255,255,0.25)", border: "none", color: "#fff", cursor: "pointer", borderRadius: "50%", padding: "3px" }}>
-              <X size={13} />
-            </button>
-          </div>
+          <KopruDugmesi
+            theme={theme}
+            altta={barKonum === "alt"}
+            // "Geri dön" hapı da görünüyorsa bir sıra yukarıda (dar ekranda yan yana sığmıyorlar)
+            pay={donusAcik && !hifzAcik && donusNoktalari.length ? 110 : 58}
+            ikon={donusTip === "okuma" ? BookOpen : donusTip === "tefeul" ? Shuffle : Search}
+            baslik={donusTip === "okuma" ? "Okumaya dön" : donusTip === "tefeul" ? "Tefeüle dön" : "Aramaya dön"}
+            alt={donusTip === "okuma" ? (donusAd || "Kitaptaki yerinize") : donusTip === "tefeul" ? "Tefeül ekranına" : "Arama sonuçlarına"}
+            onGit={() => {
+              if (donusTip === "okuma") { navigate(donusYol || "/"); return }
+              try { localStorage.setItem(`vukuf-${donusTip}-devam`, "1") } catch {}
+              navigate(donusTip === "tefeul" ? "/okuma-tefeul" : "/arama")
+            }}
+            onKapat={() => setDonusTip("")}
+          />
         )}
       </div>
     </div>

@@ -38,7 +38,7 @@ const ONEKLER = ["vukuf-", "vukuf_"]
    tutulur; "Geçici veriler" kategorisiyle temizlenebilirler. */
 const GECICI_ANAHTAR = new Set([
   "vukuf-arama-devam", "vukuf-arama-durum", "vukuf-arama-hedef",
-  "vukuf-donus", "vukuf-donus-yol", "vukuf-kuran-hedef",
+  "vukuf-donus", "vukuf-donus-yol", "vukuf-donus-ad", "vukuf-kuran-hedef",
   "vukuf-tefeul-devam", "vukuf-tefeul-durum", "vukuf-okuma-devam",
   // Hıfz ekranı ↔ mushaf köprüsü (okunur okunmaz siliniyorlar)
   "vukuf-hifz-hedef", "vukuf-hifz-donus",

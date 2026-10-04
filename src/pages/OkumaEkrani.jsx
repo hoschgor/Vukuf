@@ -19,8 +19,8 @@ import kavramlarVerisi from "../data/kavramlar.json"
 import KitapAyraci from "../components/KitapAyraci"
 import YuklemeEkrani from "../components/YuklemeEkrani"
 import IosSwitch from "../components/IosSwitch"
-import DonusDugmesi from "../components/DonusDugmesi"
-import { useDonusAyari, donusAcikMi, noktalariOku, noktaEkle, noktayaKadarSil, noktalariTemizle } from "../data/donusNoktalari"
+import DonusDugmesi, { KopruDugmesi } from "../components/DonusDugmesi"
+import { useDonusAyari, donusAcikMi, noktalariOku, noktaEkle, noktayaDon, noktalariTemizle } from "../data/donusNoktalari"
 import PanelAyirac, { PanelAcilir, panelBolumeHizala } from "../components/PanelAyirac"
 import GeriIkonu from "../components/GeriIkonu"
 import TemaSecici from "../components/TemaSecici"
@@ -2073,18 +2073,41 @@ function okumaKonumEtiketi(sayfa) {
   }
   return baslik ? `s. ${sayfa} · ${baslik}` : `Sayfa ${sayfa}`
 }
+/* ★ "BARİZ AŞAĞIDA YAKALIYOR" (4 Ekim 2026). sonKonumRef ekranın ORTASINDAKİ
+   noktayı tutuyor (sayfa takibi merkeze bakıyor), sayfayaGit ise verilen oranı
+   ekranın ÜSTÜNE (bar payı kadar aşağı) koyuyor → dönüşte görünüm yarım ekran
+   aşağıdan başlıyordu. Dönüş noktası artık sayfayaGit'in kullandığı AYNI
+   referansla, ekranın üst payındaki noktadan ölçülüyor → aynı yere tam döner. */
+const donusPayi = () => (barKonum === "ust" ? 80 : 12)
+function ustKonumOku() {
+  const el = scrollRef.current
+  if (!el) return null
+  const y = el.getBoundingClientRect().top + donusPayi()
+  for (const [no, ref] of Object.entries(sayfaRefs.current)) {
+    if (!ref) continue
+    const r = ref.getBoundingClientRect()
+    if (r.top <= y && r.bottom > y) return { sayfa: Number(no), oran: Math.max(0, Math.min(1, (y - r.top) / Math.max(1, r.height))) }
+  }
+  return null
+}
 function donusBirak(kaynak, hedefSayfa = null, konum = null) {
   if (!donusAcikMi()) return
-  const k = konum || sonKonumRef.current
+  // `konum` yalnız aramadan gelişte verilir: kayıtlı son konum (ORTA referanslı) → merkez: true
+  const k = konum ? { ...konum, merkez: true } : ustKonumOku()
   if (!k || !k.sayfa) return
-  const nokta = { sayfa: k.sayfa, oran: k.oran || 0, kaynak, etiket: okumaKonumEtiketi(k.sayfa) }
+  const nokta = { sayfa: k.sayfa, oran: k.oran || 0, merkez: !!k.merkez, kaynak, etiket: okumaKonumEtiketi(k.sayfa) }
   setDonusNoktalari(noktaEkle(donusKapsam, nokta, hedefSayfa ? { sayfa: hedefSayfa } : null))
 }
+// Noktaya dön: dönülen nokta listede KALIR, ayrılınan yer sona eklenir (donusNoktalari.js)
 function donuseGit(i) {
   const n = donusNoktalari[i]
   if (!n) return
-  setDonusNoktalari(noktayaKadarSil(donusKapsam, i))
-  sayfayaGit(n.sayfa, n.oran || 0)
+  const m = ustKonumOku()
+  setDonusNoktalari(noktayaDon(donusKapsam, i, m ? { ...m, etiket: okumaKonumEtiketi(m.sayfa) } : null))
+  const el = scrollRef.current
+  // Merkez referanslı nokta (aramadan gelişte kayıtlı son konum) ekranın ORTASINA hizalanır
+  if (n.merkez && el) sayfayaGit(n.sayfa, n.oran || 0, 0, el.clientHeight / 2)
+  else sayfayaGit(n.sayfa, n.oran || 0)
 }
 
 function sayfayaGit(sayfaNo, oran = 0, ekstra = 0, mutlakPay = null) {
@@ -2377,6 +2400,7 @@ function ayeteGit(atif) {
     localStorage.setItem("vukuf-kuran-hedef", JSON.stringify({ sureNo: atif.sureNo, ayetNo: atif.ayetNo }))
     localStorage.setItem("vukuf-donus", "okuma")
     localStorage.setItem("vukuf-donus-yol", `/kitap/${id}`)
+    localStorage.setItem("vukuf-donus-ad", (kitap && kitap.baslik) || "")   // köprü düğmesinde kitabın adı
     // Geri dönüşte tam kaynağa odaklan
     if (atifKaynakRef.current && atifKaynakRef.current.satirKey)
       localStorage.setItem("vukuf-okuma-donus-odak", JSON.stringify({ kitapId: id, ...atifKaynakRef.current }))
@@ -4133,21 +4157,20 @@ return (
       />
     )}
 
+    {/* KÖPRÜ — başka ekrana dönüş (4 Ekim 2026: "Geri dön" hapıyla aynı
+        çerçeveli görünüm, SAĞDA). Tıklama davranışı değişmedi. */}
     {donusTip && (
-      <div style={{
-        position: "fixed", right: "14px", zIndex: 120,
-        [barKonum === "alt" ? "bottom" : "top"]: "58px",
-        display: "flex", alignItems: "center", gap: "6px",
-        background: theme.accent, color: "#fff", borderRadius: "22px",
-        padding: "8px 8px 8px 14px", boxShadow: "0 4px 16px rgba(0,0,0,0.25)",
-      }}>
-        <button onClick={() => { try { localStorage.setItem(`vukuf-${donusTip}-devam`, "1") } catch {}; navigate(donusTip === "tefeul" ? "/okuma-tefeul" : "/arama") }} style={{ display: "flex", alignItems: "center", gap: "6px", background: "none", border: "none", color: "#fff", cursor: "pointer", fontSize: "13px", fontFamily: "inherit" }}>
-          {donusTip === "tefeul" ? <Shuffle size={15} /> : <Search size={15} />} {donusTip === "tefeul" ? "Tefeüle dön" : "Aramaya dön"}
-        </button>
-        <button onClick={() => setDonusTip("")} title="Kapat" style={{ display: "flex", background: "rgba(255,255,255,0.25)", border: "none", color: "#fff", cursor: "pointer", borderRadius: "50%", padding: "3px" }}>
-          <X size={13} />
-        </button>
-      </div>
+      <KopruDugmesi
+        theme={theme}
+        altta={barKonum === "alt"}
+        // "Geri dön" hapı da görünüyorsa bir sıra yukarıda (dar ekranda yan yana sığmıyorlar)
+        pay={donusAcik && donusNoktalari.length ? 110 : 58}
+        ikon={donusTip === "tefeul" ? Shuffle : Search}
+        baslik={donusTip === "tefeul" ? "Tefeüle dön" : "Aramaya dön"}
+        alt={donusTip === "tefeul" ? "Tefeül ekranına" : "Arama sonuçlarına"}
+        onGit={() => { try { localStorage.setItem(`vukuf-${donusTip}-devam`, "1") } catch {}; navigate(donusTip === "tefeul" ? "/okuma-tefeul" : "/arama") }}
+        onKapat={() => setDonusTip("")}
+      />
     )}
   </div>
 )

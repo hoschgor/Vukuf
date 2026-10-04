@@ -81,7 +81,9 @@ const KENAR = 8       // px — dolu alanlardan / ekran kenarından en az boşlu
 function useHapKonumu({ ad, yan, altta, altPay = 0, ustPay = 0, ek = 0 }) {
   const ref = useRef(null)
   const [boyut, setBoyut] = useState({ w: 0, h: 0 })
-  const [ekran, setEkran] = useState(() => ({ vw: window.innerWidth, vh: window.innerHeight }))
+  // Ekran ölçüsü HER ÇİZİMDE pencereden okunur (bkz. aşağıdaki "dönme" notu);
+  // bu sayaç yalnız yeniden çizdirmek için.
+  const [, setEkranSurum] = useState(0)
   const [kayitli, setKayitli] = useState(() => konumOku(ad))
   const [canli, setCanli] = useState(null)              // sürüklenirken {x, y}
   const [gecis, setGecis] = useState(false)             // ilk ölçümden sonra açılır (yanlış yerden kaymasın)
@@ -102,19 +104,46 @@ function useHapKonumu({ ad, yan, altta, altPay = 0, ustPay = 0, ek = 0 }) {
     const t = requestAnimationFrame(() => setGecis(true))
     return () => { try { ro && ro.disconnect() } catch { /* yoksay */ }; cancelAnimationFrame(t) }
   }, [])
+  /* ★ DÖNME (4 Ekim 2026, kullanıcı: "yatay moda çevrilince butonlar yatayda
+     belirli sınırda sürüklenebiliyor"). Ekran ölçüsü bir duruma (state)
+     yazılıyor ve yalnız `resize`ta tazeleniyordu; iOS dönmede `resize`ı
+     innerWidth henüz ESKİ (dikey) değerdeyken gönderebiliyor → sınır dikeydeki
+     ~430 px'te kalıyor, hap ekranın sol kısmında hapsoluyordu. ARTIK ölçü her
+     çizimde ve sürüklemenin her adımında pencereden TAZE okunuyor; dönmeden
+     sonra da birkaç kez (gecikmeli) yeniden çizdiriliyor. */
   useEffect(() => {
-    const yenile = () => setEkran({ vw: window.innerWidth, vh: window.innerHeight })
+    const zamanlar = []
+    const yenile = () => {
+      setEkranSurum(n => n + 1)
+      // iOS ölçüyü geç oturtuyor: oturduktan sonra bir kez daha
+      zamanlar.push(setTimeout(() => setEkranSurum(n => n + 1), 350))
+      zamanlar.push(setTimeout(() => setEkranSurum(n => n + 1), 900))
+    }
     window.addEventListener("resize", yenile)
+    window.addEventListener("orientationchange", yenile)
+    const vv = window.visualViewport
+    if (vv) vv.addEventListener("resize", yenile)
     const sifirla = () => setKayitli(null)
     konumAboneleri.add(sifirla)
-    return () => { window.removeEventListener("resize", yenile); konumAboneleri.delete(sifirla) }
+    return () => {
+      window.removeEventListener("resize", yenile)
+      window.removeEventListener("orientationchange", yenile)
+      if (vv) vv.removeEventListener("resize", yenile)
+      zamanlar.forEach(clearTimeout)
+      konumAboneleri.delete(sifirla)
+    }
   }, [])
 
-  const g = guvenliAlan()
-  const { vw, vh } = ekran
-  const minX = g.sol + KENAR, maxX = Math.max(minX, vw - g.sag - KENAR - boyut.w)
-  const minY = Math.max(ustPay, g.ust) + KENAR
-  const maxY = Math.max(minY, vh - Math.max(altPay, g.alt) - KENAR - boyut.h)
+  // Sınırlar o anki pencereden (sürüklemede her adımda yeniden hesaplanır)
+  const sinirHesapla = () => {
+    const g = guvenliAlan()
+    const vw = window.innerWidth, vh = window.innerHeight
+    const minX = g.sol + KENAR, maxX = Math.max(minX, vw - g.sag - KENAR - boyut.w)
+    const minY = Math.max(ustPay, g.ust) + KENAR
+    const maxY = Math.max(minY, vh - Math.max(altPay, g.alt) - KENAR - boyut.h)
+    return { minX, maxX, minY, maxY, vw, vh }
+  }
+  const { minX, maxX, minY, maxY, vw, vh } = sinirHesapla()
   const sik = (v, a, b) => Math.max(a, Math.min(b, v))
   let x, y
   if (canli) { x = canli.x; y = canli.y }
@@ -127,7 +156,7 @@ function useHapKonumu({ ad, yan, altta, altPay = 0, ustPay = 0, ek = 0 }) {
 
   // Sınırlar her çizimde güncel; pencere dinleyicileri bunları buradan okur
   const sinir = useRef({})
-  sinir.current = { minX, maxX, minY, maxY, vw, vh }
+  sinir.current = sinirHesapla   // sürükleme adımlarında TAZE sınır için
   const canliRef = useRef(null)
   canliRef.current = canli
 
@@ -149,7 +178,7 @@ function useHapKonumu({ ad, yan, altta, altPay = 0, ustPay = 0, ek = 0 }) {
         }
         suruklendi.current = true
         if (ev.cancelable) ev.preventDefault()
-        const s = sinir.current
+        const s = sinir.current()
         setCanli({ x: sik(b.x0 + dx, s.minX, s.maxX), y: sik(b.y0 + dy, s.minY, s.maxY) })
       }
       const bitti = (ev) => {
@@ -159,7 +188,7 @@ function useHapKonumu({ ad, yan, altta, altPay = 0, ustPay = 0, ek = 0 }) {
         window.removeEventListener("pointercancel", bitti)
         const c = canliRef.current
         if (!b.aday && c && ev.type === "pointerup") {
-          const s = sinir.current
+          const s = sinir.current()
           const yeni = { fx: c.x / s.vw, fy: c.y / s.vh }
           try { localStorage.setItem(KONUM_ONEK + ad, JSON.stringify(yeni)) } catch { /* kota */ }
           setKayitli(yeni)

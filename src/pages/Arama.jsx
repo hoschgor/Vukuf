@@ -610,7 +610,8 @@ export default function Arama() {
           ikon={History}
           baslik="Geçmiş'e dön"
           alt="Geçmiş listesine"
-          pay={18}
+          // Üstte yapışkan Navbar (42 px + çentik); altta dolu alan yok
+          ustPay={42}
           onGit={() => navigate("/gecmis")}
           onKapat={() => setGecmistenGeldi(false)}
         />

@@ -101,6 +101,24 @@ ${Y} .yp-iki {
   align-items: start;
 }
 ${Y} .yp-tam { grid-column: 1 / -1; }
+/* İki sütunu kaplayan bölümün BAŞLIĞI satırın ortasında, iki yanında ince
+   çizgi (4 Ekim 2026, kullanıcı: "satırı kaplayan bir şey varsa başlığı da
+   satırı ortalamalı ya da o bölüme ait olduğu belli olmalı"). Sola yaslı
+   kalınca sol sütunun başlığı sanılıyordu. Dikeyde etkisiz. */
+${Y} .yp-tam-baslik {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  text-align: center;
+}
+${Y} .yp-tam-baslik::before,
+${Y} .yp-tam-baslik::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--yp-cizgi, rgba(128,128,128,.28));
+}
 
 /* ── Tema paneli: başlık + seçici tam genişlik (yp-tam), renk ayarları yan yana ── */
 ${Y} .yp-tema {

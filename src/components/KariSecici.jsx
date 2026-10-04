@@ -16,7 +16,9 @@ export default function KariSecici({ kariId, setKariId, theme, barUiOlcegi = 1, 
     <div style={{ position: "relative" }}>
       {/* Büyük harf (29 Eylül 2026) — ayarlar panelindeki öbür bölüm
           başlıklarıyla (BAR KONUMU, OTOMATİK GİZLEME…) aynı görünüm */}
-      <div style={{
+      {/* yp-tam-baslik: yatay telefonda Kârî iki sütunu kapladığında başlık
+          satırın ortasında, iki yanı çizgili (bkz. yatayDuzen.js) */}
+      <div className="yp-tam-baslik" style={{
         fontSize: `${Math.round(11 * barUiOlcegi)}px`,
         color: theme.textSecondary,
         marginBottom: "8px",

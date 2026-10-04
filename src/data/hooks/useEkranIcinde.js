@@ -31,7 +31,7 @@ const ARA = 12         // dokunulan nokta ile baloncuk arası
 // Güvenli alan payları env() ile yalnız CSS'ten okunabiliyor → gizli bir
 // ölçü kutusu bir kez kuruluyor, değerler her yerleşimde (dönmede değişir) okunuyor.
 let olcuKutusu = null
-function guvenliAlan() {
+export function guvenliAlan() {   // DonusDugmesi de kullanıyor (hap konumu)
   if (typeof document === "undefined") return { ust: 0, sag: 0, alt: 0, sol: 0 }
   if (!olcuKutusu) {
     olcuKutusu = document.createElement("div")

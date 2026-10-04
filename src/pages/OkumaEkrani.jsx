@@ -19,7 +19,7 @@ import kavramlarVerisi from "../data/kavramlar.json"
 import KitapAyraci from "../components/KitapAyraci"
 import YuklemeEkrani from "../components/YuklemeEkrani"
 import IosSwitch from "../components/IosSwitch"
-import DonusDugmesi, { KopruDugmesi } from "../components/DonusDugmesi"
+import DonusDugmesi, { KopruDugmesi, hapKonumlariniSifirla } from "../components/DonusDugmesi"
 import { History as GecmisIkon } from "lucide-react"
 import { useOkumaGecmisi, OKUMA_HEDEF_ANAHTAR } from "../data/gecmis"
 import { useDonusAyari, donusAcikMi, noktalariOku, noktaEkle, noktayaDon, noktalariTemizle } from "../data/donusNoktalari"
@@ -3037,7 +3037,7 @@ const TemaPanel = temaAcik && (
     {/* Ton anahtarı ve Otomatik'teki iki grup paneli uzatabiliyor → kısa ekranda kaydırılsın */}
     {/* YATAY TELEFON: yp-tema → tema satırları 2-3 sütun, renk ayarları yan yana */}
     <div className="okuma-panel yp-panel yp-genis yp-sag yp-tema" style={{ ...panelStil("right", 600), width: "240px", maxHeight: "80vh", overflowY: "auto" }}>
-      <div className="yp-tam" style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "10px", letterSpacing: "1px" }}>TEMA</div>
+      <div className="yp-tam yp-tam-baslik" style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "10px", letterSpacing: "1px" }}>TEMA</div>
       {/* Ton anahtarı + önizlemeli liste — ortak bileşen (components/TemaSecici.jsx).
           Hazır tema seçilince panel eskisi gibi kapanır; yalnız Otomatik modda
           ekrana yansımayan (öbür tonun) seçimde açık kalır ki işaret görülsün. */}
@@ -3096,7 +3096,7 @@ const AyarlarPanel = ayarlarAcik && (
         <div style={{ display: "flex", gap: "6px" }}>
           {["ust", "alt"].map(k => (
             <button key={k} onClick={() => setBarKonum(k)} style={{
-              flex: 1, padding: "8px", borderRadius: "8px", fontSize: "12px",
+              flex: 1, padding: "8px", borderRadius: "8px", fontSize: "13px", fontFamily: "inherit",
               background: barKonum === k ? theme.accent : `${theme.accent}15`,
               color: barKonum === k ? "#fff" : theme.text,
               display: "flex", alignItems: "center", justifyContent: "center", gap: "4px",
@@ -3173,7 +3173,7 @@ const AyarlarPanel = ayarlarAcik && (
         <button onClick={() => setGorunumAcik(v => !v)} style={{
           width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
           background: "transparent", border: "none", cursor: "pointer", padding: "2px 0",
-          fontSize: "11px", color: theme.textSecondary, letterSpacing: "1px",
+          fontSize: "11px", color: theme.textSecondary, letterSpacing: "1px", fontFamily: "inherit",
         }}>
           <span>GÖRÜNTÜLE</span>
           {gorunumAcik ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
@@ -3186,7 +3186,7 @@ const AyarlarPanel = ayarlarAcik && (
                 width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
                 gap: "8px", padding: "9px 10px", marginBottom: "10px",
                 background: `${theme.accent}12`, border: `1px solid ${theme.accent}33`,
-                borderRadius: "9px", cursor: "pointer", color: theme.text, fontSize: "12px",
+                borderRadius: "9px", cursor: "pointer", color: theme.text, fontSize: "13px", fontFamily: "inherit",
               }}
             >
               <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
@@ -3210,7 +3210,7 @@ const AyarlarPanel = ayarlarAcik && (
         <button onClick={() => setSadeIcerikAcik(v => !v)} style={{
           width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
           background: "transparent", border: "none", cursor: "pointer", padding: "2px 0",
-          fontSize: "11px", color: theme.textSecondary, letterSpacing: "1px",
+          fontSize: "11px", color: theme.textSecondary, letterSpacing: "1px", fontFamily: "inherit",
         }}>
           <span>SADE MOD İÇERİKLERİ</span>
           {sadeIcerikAcik ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
@@ -3229,20 +3229,34 @@ const AyarlarPanel = ayarlarAcik && (
         )}
       </div>
 
-      {/* GEZİNME — dönüş noktaları (3 Ekim 2026). Ayar KuranOkuma ile ortak. */}
-      <div>
-        <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px" }}>GEZİNME</div>
-        <div onClick={() => setDonusAcik(!donusAcik)} role="button" aria-pressed={donusAcik} style={{
-          width: "100%", padding: "7px 10px", borderRadius: "8px", fontSize: "13px",
-          color: theme.text, boxSizing: "border-box",
-          cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px",
+      {/* GEZİNME — dönüş noktaları (3 Ekim 2026). Ayar öbür okuma ekranıyla ortak.
+          4 Ekim 2026 (kullanıcı): yatayda açıklama sağ sütuna, SADE MOD'un altına
+          düşüyor ve onun açıklaması sanılıyordu. ARTIK tek bir çerçeveli kutu:
+          başlık + kısa alt yazı + "Düğme konumlarını sıfırla" bağlantısı solda,
+          anahtar sağda. Yatayda iki sütunu birden kaplar (yp-tam); kutu kendi
+          içinde bütün olduğundan hiçbir sütuna ait görünmez. */}
+      <div className="yp-tam">
+        <div className="yp-tam-baslik" style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px" }}>GEZİNME</div>
+        <div style={{
+          display: "flex", alignItems: "center", gap: "12px", padding: "10px 12px",
+          borderRadius: "10px", background: `${theme.accent}0d`, border: `1px solid ${theme.border}`,
         }}>
-          <span>Dönüş noktaları</span>
-          <IosSwitch acik={donusAcik} theme={theme} boyut={0.82} />
-        </div>
-        <div style={{ fontSize: "11px", color: theme.textSecondary, lineHeight: 1.5, padding: "0 10px" }}>
-          İçindekiler, arama, sayfaya git ya da işaretle başka yere gidince ayrıldığınız yer
-          saklanır; "Geri dön" ile oraya dönülür, birden fazlası listeden seçilir.
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div onClick={() => setDonusAcik(!donusAcik)} role="button" style={{ fontSize: "13px", color: theme.text, cursor: "pointer" }}>
+              Dönüş noktaları
+            </div>
+            <div style={{ fontSize: "11px", color: theme.textSecondary, lineHeight: 1.45, marginTop: "2px" }}>
+              Başka yere gitmeden önce okuduğunuz yere "Geri dön" ile dönülür.
+            </div>
+            <button onClick={hapKonumlariniSifirla} style={{
+              marginTop: "6px", padding: 0, background: "none", border: "none", cursor: "pointer",
+              fontSize: "11px", fontFamily: "inherit", color: theme.accent,
+              textDecoration: "underline", textUnderlineOffset: "2px",
+            }}>Düğme konumlarını sıfırla</button>
+          </div>
+          <div onClick={() => setDonusAcik(!donusAcik)} role="button" aria-pressed={donusAcik} aria-label="Dönüş noktaları" style={{ cursor: "pointer", flexShrink: 0 }}>
+            <IosSwitch acik={donusAcik} theme={theme} boyut={0.82} />
+          </div>
         </div>
       </div>
     </div>
@@ -4200,6 +4214,9 @@ return (
     {donusAcik && (
       <DonusDugmesi
         theme={theme}
+        // Dolu alan: bar (hap onun üstünde/altında kalır, onu örtmez)
+        altPay={barKonum === "alt" && barGorunur ? barYuk : 0}
+        ustPay={barKonum === "ust" && barGorunur ? barYuk : 0}
         // Etiket gösterimde tazeleniyor: nokta bırakıldığında İçindekiler henüz yüklenmemiş olabilir
         noktalar={donusNoktalari.map(n => ({ ...n, etiket: okumaKonumEtiketi(n.sayfa) }))}
         altta={barKonum === "alt"}
@@ -4215,7 +4232,9 @@ return (
         theme={theme}
         altta={barKonum === "alt"}
         // "Geri dön" hapı da görünüyorsa bir sıra yukarıda (dar ekranda yan yana sığmıyorlar)
-        pay={donusAcik && donusNoktalari.length ? 110 : 58}
+        altPay={barKonum === "alt" && barGorunur ? barYuk : 0}
+        ustPay={barKonum === "ust" && barGorunur ? barYuk : 0}
+        ustuste={donusAcik && donusNoktalari.length > 0}
         ikon={donusTip === "tefeul" ? Shuffle : donusTip === "gecmis" ? GecmisIkon : Search}
         baslik={donusTip === "tefeul" ? "Tefeüle dön" : donusTip === "gecmis" ? "Geçmiş'e dön" : "Aramaya dön"}
         alt={donusTip === "tefeul" ? "Tefeül ekranına" : donusTip === "gecmis" ? "Geçmiş listesine" : "Arama sonuçlarına"}

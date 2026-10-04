@@ -75,7 +75,7 @@ import AyetPopup from "../components/AyetPopup"
 import MealPopup from "../components/MealPopup"
 import IzlemeModu from "../components/IzlemeModu"
 import HifzPaneli from "../components/HifzPaneli"
-import DonusDugmesi, { KopruDugmesi } from "../components/DonusDugmesi"
+import DonusDugmesi, { KopruDugmesi, hapKonumlariniSifirla } from "../components/DonusDugmesi"
 import { useOkumaGecmisi } from "../data/gecmis"
 import { useDonusAyari, donusAcikMi, noktalariOku, noktaEkle, noktayaDon, noktalariTemizle } from "../data/donusNoktalari"
 import {
@@ -2471,6 +2471,12 @@ const hizbSayfalari = (cuzNo) => {
   const playerBarYuksekligi = (playerYuk || (isMobile
   ? 41 + Math.max(0, Math.round((1 - barUiOlcegi) * 1))
   : 40 + Math.max(0, Math.round((1 - barUiOlcegi) * 8))))
+  /* Dönüş/köprü haplarının varsayılan yeri ve sınırı için DOLU alanlar (4 Ekim
+     2026: "geri dön düğmesi playerbar'ın üzerine çıkabiliyor"). Bar ve oynatıcı
+     aynı kenarda duruyor; bar gizlenince oynatıcı kenara iner, hap da onu izler. */
+  const hapDolu = (barGorunur ? barYuksekligi : 0) + (player.durum !== "kapali" ? playerBarYuksekligi : 0)
+  const hapAltPay = barKonum === "alt" ? hapDolu : 0
+  const hapUstPay = barKonum === "ust" ? hapDolu : 0
 
   // ════════════════════════════════════════════════════
   // Font/boyut değişiminde OKUMA YERİNİ KORU (sayfa atlamasın)
@@ -3765,7 +3771,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
         ...panelStil("right", 600), width: "240px", zIndex: 200,
         maxHeight: "80vh", overflowY: "auto", overscrollBehavior: "contain",
       }}>
-        <div className="yp-tam" style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "10px", letterSpacing: "1px" }}>TEMA</div>
+        <div className="yp-tam yp-tam-baslik" style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "10px", letterSpacing: "1px" }}>TEMA</div>
         {/* Ton anahtarı + önizlemeli liste — ortak bileşen (components/TemaSecici.jsx).
             Hazır tema seçilince panel eskisi gibi kapanır; yalnız Otomatik modda
             ekrana yansımayan (öbür tonun) seçimde açık kalır ki işaret görülsün. */}
@@ -3953,6 +3959,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
               BAR KONUMU        | OTOMATİK GİZLEME
               ARAYÜZ BOYUTU     | MEAL PENCERESİ BOYUTU
               GÖRÜNTÜLEME       | SADE MOD İÇERİKLERİ
+              GEZİNME (tam genişlik; içi: anahtar | açıklama)
               KÂRÎ (tam genişlik)
             Dikeyde aynı sırayla alt alta; yatay telefonda iki sütun (yp-iki).
             Etiketler de OkumaEkrani gibi büyük harf, değer sağda yüzde. */}
@@ -3961,7 +3968,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
           <div style={{ display: "flex", gap: "6px" }}>
             {["ust", "alt"].map(k => (
               <button key={k} onClick={() => setBarKonum(k)} style={{
-                flex: 1, padding: "8px", borderRadius: "8px", fontSize: `${Math.round((isMobile ? 11 : 12) * barUiOlcegi)}px`,
+                flex: 1, padding: "8px", borderRadius: "8px", fontSize: `${Math.round((isMobile ? 11 : 12) * barUiOlcegi)}px`, fontFamily: "inherit",
                 background: barKonum === k ? theme.accent : `${theme.accent}15`,
                 color: barKonum === k ? "#fff" : theme.text,
                 display: "flex", alignItems: "center", justifyContent: "center", gap: "4px",
@@ -4025,7 +4032,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
             cursor: "pointer", display: "flex", alignItems: "center",
             justifyContent: "space-between",
             fontSize: `${Math.round((isMobile ? 11 : 12) * barUiOlcegi)}px`,
-            color: theme.textSecondary, letterSpacing: "1px",
+            color: theme.textSecondary, letterSpacing: "1px", fontFamily: "inherit",
           }}
         >
           <span>GÖRÜNTÜLEME</span>
@@ -4045,7 +4052,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
                 gap: "8px", padding: "9px 10px", marginBottom: "10px",
                 background: `${theme.accent}12`, border: `1px solid ${theme.accent}33`,
                 borderRadius: "9px", cursor: "pointer", color: theme.text,
-                fontSize: `${Math.round((isMobile ? 12 : 13) * barUiOlcegi)}px`,
+                fontSize: `${Math.round((isMobile ? 12 : 13) * barUiOlcegi)}px`, fontFamily: "inherit",
               }}
             >
               <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
@@ -4088,7 +4095,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
               cursor: "pointer", display: "flex", alignItems: "center",
               justifyContent: "space-between",
               fontSize: `${Math.round((isMobile ? 11 : 12) * barUiOlcegi)}px`,
-              color: theme.textSecondary, letterSpacing: "1px",
+              color: theme.textSecondary, letterSpacing: "1px", fontFamily: "inherit",
             }}
           >
             <span>SADE MOD İÇERİKLERİ</span>
@@ -4109,20 +4116,34 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
           )}
         </div>
 
-        {/* GEZİNME — dönüş noktaları (3 Ekim 2026). Ayar OkumaEkrani ile ortak. */}
-        <div>
-          <div style={ayarEtiket}>GEZİNME</div>
-          <div onClick={() => setDonusAcik(!donusAcik)} role="button" aria-pressed={donusAcik} style={{
-            width: "100%", padding: "7px 10px", borderRadius: "8px", fontSize: `${Math.round((isMobile ? 12 : 13) * barUiOlcegi)}px`,
-            color: theme.text, boxSizing: "border-box",
-            cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px",
+        {/* GEZİNME — dönüş noktaları (3 Ekim 2026). Ayar öbür okuma ekranıyla ortak.
+            4 Ekim 2026 (kullanıcı): yatayda açıklama sağ sütuna, SADE MOD'un altına
+            düşüyor ve onun açıklaması sanılıyordu. ARTIK tek bir çerçeveli kutu:
+            başlık + kısa alt yazı + "Düğme konumlarını sıfırla" bağlantısı solda,
+            anahtar sağda. Yatayda iki sütunu birden kaplar (yp-tam); kutu kendi
+            içinde bütün olduğundan hiçbir sütuna ait görünmez. */}
+        <div className="yp-tam">
+          <div className="yp-tam-baslik" style={ayarEtiket}>GEZİNME</div>
+          <div style={{
+            display: "flex", alignItems: "center", gap: "12px", padding: "10px 12px",
+            borderRadius: "10px", background: `${theme.accent}0d`, border: `1px solid ${theme.border}`,
           }}>
-            <span>Dönüş noktaları</span>
-            <IosSwitch acik={donusAcik} theme={theme} boyut={0.82} />
-          </div>
-          <div style={{ fontSize: `${Math.round((isMobile ? 10 : 11) * barUiOlcegi)}px`, color: theme.textSecondary, lineHeight: 1.5, padding: "0 10px" }}>
-            İçindekiler, arama, sayfaya git ya da işaretle başka yere gidince ayrıldığınız yer
-            saklanır; "Geri dön" ile oraya dönülür, birden fazlası listeden seçilir.
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div onClick={() => setDonusAcik(!donusAcik)} role="button" style={{ fontSize: `${Math.round((isMobile ? 12 : 13) * barUiOlcegi)}px`, color: theme.text, cursor: "pointer" }}>
+                Dönüş noktaları
+              </div>
+              <div style={{ fontSize: `${Math.round((isMobile ? 10 : 11) * barUiOlcegi)}px`, color: theme.textSecondary, lineHeight: 1.45, marginTop: "2px" }}>
+                Başka yere gitmeden önce okuduğunuz yere "Geri dön" ile dönülür.
+              </div>
+              <button onClick={hapKonumlariniSifirla} style={{
+                marginTop: "6px", padding: 0, background: "none", border: "none", cursor: "pointer",
+                fontSize: `${Math.round((isMobile ? 10 : 11) * barUiOlcegi)}px`, fontFamily: "inherit", color: theme.accent,
+                textDecoration: "underline", textUnderlineOffset: "2px",
+              }}>Düğme konumlarını sıfırla</button>
+            </div>
+            <div onClick={() => setDonusAcik(!donusAcik)} role="button" aria-pressed={donusAcik} aria-label="Dönüş noktaları" style={{ cursor: "pointer", flexShrink: 0 }}>
+              <IosSwitch acik={donusAcik} theme={theme} boyut={0.82} />
+            </div>
           </div>
         </div>
 
@@ -5998,6 +6019,9 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
             theme={theme}
             noktalar={donusNoktalari}
             altta={barKonum === "alt"}
+            // Dolu alanlar: bar + oynatıcı (hap onların üstünde/altında kalır, onları örtmez)
+            altPay={hapAltPay}
+            ustPay={hapUstPay}
             onGit={donuseGit}
             onTemizle={() => setDonusNoktalari(noktalariTemizle("kuran"))}
           />
@@ -6010,7 +6034,9 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
             theme={theme}
             altta={barKonum === "alt"}
             // "Geri dön" hapı da görünüyorsa bir sıra yukarıda (dar ekranda yan yana sığmıyorlar)
-            pay={donusAcik && !hifzAcik && donusNoktalari.length ? 110 : 58}
+            altPay={hapAltPay}
+            ustPay={hapUstPay}
+            ustuste={donusAcik && !hifzAcik && donusNoktalari.length > 0}
             ikon={donusTip === "okuma" ? BookOpen : donusTip === "tefeul" ? Shuffle : donusTip === "gecmis" ? History : Search}
             baslik={donusTip === "okuma" ? "Okumaya dön" : donusTip === "tefeul" ? "Tefeüle dön" : donusTip === "gecmis" ? "Geçmiş'e dön" : "Aramaya dön"}
             alt={donusTip === "okuma" ? (donusAd || "Kitaptaki yerinize") : donusTip === "tefeul" ? "Tefeül ekranına" : donusTip === "gecmis" ? "Geçmiş listesine" : "Arama sonuçlarına"}

@@ -3,8 +3,15 @@ import {
   X, Download, Share2, Plus, Check, Loader2,
   Square, RectangleHorizontal, RectangleVertical, Image as ImageIcon, Pipette,
   ImagePlay, Film, Volume2, VolumeX, CircleStop, Smartphone, Monitor,
+  Ratio, LayoutTemplate, Frame, Eye, Wind, Sun, Palette, Layers, Move, Gauge, Timer,
 } from "lucide-react"
 import { DESENLER, GORSELLER } from "../data/arkaplanlar"
+// İzleme modunun sahnesi (hareket / hava / ışık) ve ortak galeri — 7 Ekim 2026'da
+// görsel oluşturmaya da aktarıldı (kullanıcı: "görsel oluşturmada olmayan kısımları aktaralım").
+import { HAREKETLER as SAHNE_HAREKETLERI, HIZLAR, HAVALAR, ISIKLAR, resimCiz, havaKur, havaCiz, isikCiz } from "../data/izlemeSahne"
+import { galeriyeEkle, galeridenSil, galeriBlobu } from "../data/izlemeGaleri"
+import { useIzlemeAyar, ayarOku, ayarYaz } from "../data/izlemeAyar"
+import { Secim, Anahtar, AyarBaslik, ArkaPlanIzgara, desenOnizleme, useGaleriUrlleri } from "./AyarOgeleri"
 // Özel okuyuş işaretlerinin (kasr/medd/nûn-i sağîre) kuralı TEK YERDE, mushaf
 // sayfasıyla aynı tabloda duruyor. Burada yalnız ÇİZİM var, kural yok.
 import { ozelOkuyusAyikla } from "./MushafKelime"
@@ -267,15 +274,24 @@ function sureAdiOlcusu(glif) {
     const taban = REF * 2
     c.fillText(glif, cv.width / 2, taban)
     const d = c.getImageData(0, 0, cv.width, cv.height).data
-    let ust = -1, alt = -1
+    let ust = -1, alt = -1, sol = -1, sag = -1
     for (let y = 0; y < cv.height; y++) {
       let dolu = false
       for (let x = 0; x < cv.width; x++) {
-        if (d[(y * cv.width + x) * 4 + 3] > 8) { dolu = true; break }
+        if (d[(y * cv.width + x) * 4 + 3] > 8) {
+          dolu = true
+          if (sol < 0 || x < sol) sol = x
+          if (x > sag) sag = x
+        }
       }
       if (dolu) { if (ust < 0) ust = y; alt = y }
     }
-    if (ust >= 0) sonuc = { asc: (taban - ust) / REF, desc: (alt - taban) / REF }
+    // sol/sag: mürekkebin, çizim noktasına (ortalı) göre yatay taşması — sûre adını
+    // kaynak satırının YANINA koyarken genişlik ve hizalama için (7 Ekim 2026).
+    if (ust >= 0) sonuc = {
+      asc: (taban - ust) / REF, desc: (alt - taban) / REF,
+      sol: (sol - cv.width / 2) / REF, sag: (sag + 1 - cv.width / 2) / REF,
+    }
   } catch { /* tuval okunamadı → metriklere düşülür */ }
   sureAdiOlcuBellek.set(glif, sonuc)
   return sonuc
@@ -448,83 +464,21 @@ const SURELER = [
   { id: 15, ad: "15 sn" },
   { id: 20, ad: "20 sn" },
 ]
-const EFEKTLER = [
-  { id: "yok",     ad: "Yok" },
-  { id: "kar",     ad: "Kar" },
-  { id: "yagmur",  ad: "Yağmur" },
-  { id: "yildiz",  ad: "Yıldız" },
-  { id: "toz",     ad: "Altın Toz" },
-]
+// Videonun süresine yayılan Ken Burns hareketleri + izleme modunun sürekli
+// hareketleri (gezinti / yakınlaş-uzaklaş / sonsuz akış — hızı seçilebilir).
 const HAREKETLER = [
   { id: "yok",       ad: "Sabit" },
-  { id: "yakinlas",  ad: "Yavaş Yakınlaş" },
-  { id: "uzaklas",   ad: "Yavaş Uzaklaş" },
-  { id: "kaydir",    ad: "Yavaş Kaydır" },
+  { id: "yakinlas",  ad: "Yakınlaş" },
+  { id: "uzaklas",   ad: "Uzaklaş" },
+  { id: "kaydir",    ad: "Kaydır" },
+  ...SAHNE_HAREKETLERI.filter(h => ["gezinti", "nefes", "akis"].includes(h.id)),
 ]
+const SAHNE_HAREKETI = new Set(["gezinti", "nefes", "akis"])
+// Fotoğrafta efektler DONDURULMUŞ bir an olarak çizilir (bu saniyedeki hâli)
+const FOTO_EFEKT_ANI = 4.2
 
-// Belirlenimci rastgele — her açılışta aynı görünsün, kayıt ile önizleme birebir olsun
-function rastgeleUret(tohum) {
-  let t = tohum >>> 0
-  return () => { t = (t * 1103515245 + 12345) & 0x7fffffff; return t / 0x7fffffff }
-}
-
-// Parçacıkları bir kez üret; her karede konumları zamandan HESAPLANIR (durum tutulmaz →
-// önizleme ile kayıt birebir aynı, kare atlansa bile akış bozulmaz).
-export function parcacikUret(efekt, W, H, tohum = 20260906) {
-  if (efekt === "yok") return []
-  const r = rastgeleUret(tohum)
-  const S = Math.min(W, H)
-  const adet = efekt === "yildiz" ? 90 : efekt === "toz" ? 70 : efekt === "yagmur" ? 140 : 110
-  const p = []
-  for (let i = 0; i < adet; i++) {
-    p.push({
-      x: r(), y: r(),
-      b: 0.35 + r() * 0.9,                 // boyut çarpanı
-      h: 0.35 + r() * 0.85,                // hız çarpanı
-      s: r() * Math.PI * 2,                // salınım fazı
-      o: 0.25 + r() * 0.6,                 // saydamlık
-      k: S / 900,                          // ölçek
-    })
-  }
-  return p
-}
-
-export function parcacikCiz(ctx, efekt, parcaciklar, W, H, t) {
-  if (!parcaciklar.length) return
-  const S = Math.min(W, H)
-  ctx.save()
-  for (const p of parcaciklar) {
-    if (efekt === "kar") {
-      const y = ((p.y + t * 0.045 * p.h) % 1.1) * H - H * 0.05
-      const x = (p.x * W) + Math.sin(t * 0.9 * p.h + p.s) * S * 0.035
-      ctx.globalAlpha = p.o * 0.9
-      ctx.fillStyle = "#ffffff"
-      ctx.beginPath(); ctx.arc(x, y, p.b * 3.2 * p.k, 0, Math.PI * 2); ctx.fill()
-    } else if (efekt === "yagmur") {
-      const y = ((p.y + t * 0.42 * p.h) % 1.15) * H - H * 0.1
-      const x = p.x * W + t * 6 * p.h
-      const uz = S * 0.028 * p.b
-      ctx.globalAlpha = p.o * 0.55
-      ctx.strokeStyle = "#dbe9f5"
-      ctx.lineWidth = Math.max(1, 1.4 * p.b * p.k)
-      ctx.beginPath(); ctx.moveTo(x % W, y); ctx.lineTo((x % W) - uz * 0.18, y + uz); ctx.stroke()
-    } else if (efekt === "yildiz") {
-      // Yerinde duran, nefes alır gibi parlayan yıldızlar
-      const par = 0.35 + 0.65 * (0.5 + 0.5 * Math.sin(t * 1.6 * p.h + p.s))
-      ctx.globalAlpha = p.o * par
-      ctx.fillStyle = "#fff6dc"
-      ctx.beginPath(); ctx.arc(p.x * W, p.y * H * 0.85, p.b * 2.1 * p.k, 0, Math.PI * 2); ctx.fill()
-    } else if (efekt === "toz") {
-      // Yukarı doğru yavaşça süzülen altın zerreler
-      const y = ((p.y - t * 0.03 * p.h) % 1 + 1) % 1
-      const x = p.x * W + Math.sin(t * 0.5 * p.h + p.s) * S * 0.05
-      ctx.globalAlpha = p.o * (0.35 + 0.35 * Math.sin(t * 1.1 + p.s))
-      ctx.fillStyle = "#e8c877"
-      ctx.beginPath(); ctx.arc(x, y * H, p.b * 2.4 * p.k, 0, Math.PI * 2); ctx.fill()
-    }
-  }
-  ctx.restore()
-}
+// Parçacık (hava) ve ışık efektleri artık data/izlemeSahne.js'te — izleme modu ile
+// görsel/video AYNI motoru kullanıyor (7 Ekim 2026).
 
 // Arka planın hareketi (Ken Burns). t saniye, sure toplam süre.
 export function hareketKutusu(hareket, W, H, t, sure) {
@@ -533,6 +487,20 @@ export function hareketKutusu(hareket, W, H, t, sure) {
   if (hareket === "uzaklas")  { const z = 1.10 - 0.10 * o; return { sw: W / z, sh: H / z, sx: (W - W / z) / 2, sy: (H - H / z) / 2 } }
   if (hareket === "kaydir")   { const z = 1.08; const kx = (W - W / z) * o; return { sw: W / z, sh: H / z, sx: kx, sy: (H - H / z) / 2 } }
   return { sw: W, sh: H, sx: 0, sy: 0 }
+}
+
+/* KARARTMA — fotoğraf üstünde yazı okunsun diye dikey yumuşak perde. Dışa açık:
+   izleme modu arka planı her karede kendisi çizdiği için karartmayı da (hava
+   efektlerinin ALTINA) kendisi koyuyor; aynı işlev → iki yüzey ayrışmaz. */
+export function karartmaCiz(ctx, W, H, karartma, koyuZemin = true) {
+  const kar = KARARTMALAR.find(k => k.id === karartma) || KARARTMALAR[2]
+  if (!(kar.guc > 0)) return
+  const g = ctx.createLinearGradient(0, 0, 0, H)
+  const renk = koyuZemin ? "0,0,0" : "255,255,255"
+  g.addColorStop(0,   `rgba(${renk},${kar.guc * 0.75})`)
+  g.addColorStop(0.5, `rgba(${renk},${kar.guc})`)
+  g.addColorStop(1,   `rgba(${renk},${kar.guc * 0.85})`)
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H)
 }
 
 // Metni verilen genişliğe göre satırlara böler. Arapça'da bitişme kelime İÇİNDE
@@ -569,6 +537,9 @@ export async function gorselCiz(ctx, ayar) {
   // sureNo: kaynak satırının üstüne SÛRE BAŞLIĞINDAKİ hat fontuyla sûre adı yazılır.
   const sureNo = Number(ayar.sureNo) || 0
   const rahle = !!ayar.rahle
+  // rahleDipte: rahle yazı akışında değil, içerik kutusunun DİBİNDE ortalı durur
+  // (izleme modu, 7 Ekim 2026). Yazı bloğu kalan alanda ortalanır.
+  const rahleDipte = rahle && !!ayar.rahleDipte
   /* GÜVENLİ ALAN — yalnız TAM EKRANDA kullanılıyor (izleme modu). Arka plan bütün
      ekranı kaplamaya devam ediyor, çerçeve ve yazı bu paylar kadar içeri alınıyor;
      böylece çentiğin/ana ekran çizgisinin altında yazı kalmıyor ama kenarlarda
@@ -607,17 +578,9 @@ export async function gorselCiz(ctx, ayar) {
   }
 
   // 2) KARARTMA (fotoğraf üstünde yazının okunması için)
-  const kar = KARARTMALAR.find(k => k.id === karartma) || KARARTMALAR[2]
   const koyuZemin = arka.koyu !== false
   if (!onCiz) return { olcek: 1 }
-  if (kar.guc > 0) {
-    const g = ctx.createLinearGradient(0, 0, 0, H)
-    const renk = koyuZemin ? "0,0,0" : "255,255,255"
-    g.addColorStop(0,   `rgba(${renk},${kar.guc * 0.75})`)
-    g.addColorStop(0.5, `rgba(${renk},${kar.guc})`)
-    g.addColorStop(1,   `rgba(${renk},${kar.guc * 0.85})`)
-    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H)
-  }
+  karartmaCiz(ctx, W, H, karartma, koyuZemin)
 
   // Kullanıcı bir renk seçtiyse o kullanılır; seçmediyse zemine göre otomatik.
   const yaziRenk  = yaziRengi || (koyuZemin ? "#f6f1e6" : "#1d1a14")
@@ -766,9 +729,43 @@ export async function gorselCiz(ctx, ayar) {
       bloklar.push({ tip: "bosluk", yuk: bo })
       toplam += bo
     }
-    /* SIRA (kullanıcı kararı): önce SÛRE BİLGİSİ (kaynak satırı), altında SÛRE ADI
+    /* SÛRE ADI KAYNAK SATIRININ SOLUNDA (7 Ekim 2026, kullanıcı: "dengeli durmaları
+       için Arapça sûre ismini Türkçe ismin soluna alabilirsin"). Kaynak TEK satıra
+       sığıyor ve hat yanına sığıyorsa ikisi aynı satırda: [hat] [Âl-i İmrân sûresi,
+       104. âyet]. Sığmıyorsa (uzun kitap kaynağı, dar ekran) eski düzen: önce kaynak,
+       altında hat. */
+    let yanYana = false
+    if (kaynakVar && sureAdiVar) {
+      let b = S * 0.028 * olcek
+      ctx.font = kucukFontYap(b)
+      const sat = satirlaraBol(ctx, kaynak, kutuW)
+      const o = sureAdiOlcusu(sureAdiGlif)
+      if (sat.length === 1 && o && o.sag > o.sol) {
+        // Dar ekranda (dikey telefon) satır biraz taşıyorsa ikisi birlikte en çok
+        // %30 küçültülüp yine yan yana konuyor; daha fazlası gerekiyorsa alt alta.
+        const tw0 = ctx.measureText(sat[0]).width
+        const ham = (o.sag - o.sol) * b * 2.05 + b * 0.85 + tw0
+        const f = Math.min(1, kutuW / ham)
+        if (f >= 0.7) {
+          b *= f
+          ctx.font = kucukFontYap(b)
+        }
+        const tw = ctx.measureText(sat[0]).width
+        const gb = b * 2.05                       // hattın puntosu (yazının ~2 katı)
+        const gw = (o.sag - o.sol) * gb
+        const ara = b * 0.85
+        if (gw + ara + tw <= kutuW + 0.5) {
+          const gAsc = o.asc * gb, gDesc = o.desc * gb
+          const yuk = Math.max(b * 1.4, gAsc + gDesc) + b * 0.3
+          bloklar.push({ tip: "kaynakHat", boy: b, metin: sat[0], tw, gb, gw, ara, gAsc, gDesc, sol: o.sol, yuk })
+          toplam += yuk
+          yanYana = true
+        }
+      }
+    }
+    /* Eski SIRA (sığmayınca): önce SÛRE BİLGİSİ (kaynak satırı), altında SÛRE ADI
        hattı, en altta RAHLE. Yani hat, rahlenin hemen üzerinde duruyor. */
-    if (kaynakVar) {
+    if (kaynakVar && !yanYana) {
       const b = S * 0.028 * olcek
       ctx.font = kucukFontYap(b)
       // Kaynak uzun olabilir (kitap · kısım yolu · sayfa) → KAÇ SATIR GEREKİYORSA o kadar
@@ -785,7 +782,7 @@ export async function gorselCiz(ctx, ayar) {
        Bu yüzden üç ölçünün EN BÜYÜĞÜ alınıyor: gerçek glif kutusu, fontun kendi
        ascent/descent'i ve punto oranından bir taban. Fazla boşluk kalması,
        üst üste binmeye göre kat kat iyi. */
-    if (sureAdiVar) {
+    if (sureAdiVar && !yanYana) {
       const b = S * 0.062 * olcek
       const o = sureAdiOlcusu(sureAdiGlif)
       let asc, desc
@@ -804,9 +801,14 @@ export async function gorselCiz(ctx, ayar) {
       toplam += yuk
     }
     if (rahle) {
-      const gen = Math.min(kutuW * 0.34, S * 0.15) * olcek
-      const yuk = gen * RAHLE_ORAN + S * 0.014 * olcek   // çizim + üstünde ince nefes
-      bloklar.push({ tip: "rahle", gen, yuk })
+      /* KÜÇÜLTÜLDÜ (7 Ekim 2026, kullanıcı: "rahle çok büyük kalıyor"). Eskiden
+         min(kutu×0,34, kısa kenar×0,15)×ölçek idi; uzun ekranlarda ölçek 1,7'ye
+         çıkınca kısa kenarın dörtte biri kadar oluyordu. Artık ölçeğin büyütmesi
+         de sınırlı. */
+      const gen = Math.min(kutuW * 0.2, S * 0.088) * Math.min(olcek, 1.15)
+      const ara = rahleDipte ? S * 0.035 * olcek : S * 0.014 * olcek
+      const yuk = gen * RAHLE_ORAN + ara                  // çizim + üstünde nefes
+      bloklar.push({ tip: "rahle", gen, yuk, dipte: rahleDipte })
       toplam += yuk
     }
     return { bloklar, toplam }
@@ -822,7 +824,11 @@ export async function gorselCiz(ctx, ayar) {
   }
   const sonuc = duzen(olcek)
 
-  let y = Math.max(icPayUst, icPayUst + (kutuH - sonuc.toplam) / 2)
+  // Rahle dipteyse yazı bloğu, rahlenin üstünde KALAN alanda ortalanır.
+  const dipRahle = sonuc.bloklar.find(b => b.tip === "rahle" && b.dipte)
+  const akisToplam = sonuc.toplam - (dipRahle ? dipRahle.yuk : 0)
+  const akisH = kutuH - (dipRahle ? dipRahle.yuk : 0)
+  let y = Math.max(icPayUst, icPayUst + (akisH - akisToplam) / 2)
   ctx.textAlign = "center"
   ctx.textBaseline = "top"
   for (const b of sonuc.bloklar) {
@@ -896,10 +902,33 @@ export async function gorselCiz(ctx, ayar) {
       try { ctx.direction = "ltr" } catch { /* yoksay */ }
       ctx.textBaseline = "top"
       y += b.yuk
+    } else if (b.tip === "kaynakHat") {
+      // [hat] [kaynak] — ikisi satırın ortasına göre dikeyde ortalı
+      const toplamW = b.gw + b.ara + b.tw
+      const x0 = W / 2 - toplamW / 2
+      const orta = y + b.yuk / 2
+      ctx.font = `${Math.round(b.gb)}px ${SURE_ADI_FONT}`
+      ctx.fillStyle = vurguRenk
+      ctx.textAlign = "center"; ctx.textBaseline = "alphabetic"
+      try { ctx.direction = "rtl" } catch { /* eski tarayıcı */ }
+      // Mürekkebin sol kenarı x0'a otursun: çizim noktası = x0 − sol taşma
+      ctx.fillText(sureAdiGlif, x0 - b.sol * b.gb, orta + (b.gAsc - b.gDesc) / 2)
+      try { ctx.direction = "ltr" } catch { /* yoksay */ }
+      ctx.font = kucukFontYap(b.boy)
+      ctx.textAlign = "left"; ctx.textBaseline = "middle"
+      ctx.fillText(b.metin, x0 + b.gw + b.ara, orta)
+      ctx.textAlign = "center"; ctx.textBaseline = "top"
+      y += b.yuk
     } else if (b.tip === "rahle") {
       const cizYuk = b.gen * RAHLE_ORAN
-      rahleCiz(ctx, W / 2, y + (b.yuk - cizYuk), b.gen, vurguRenk, Math.max(1.2, S * 0.0022))
-      y += b.yuk
+      const kalin = Math.max(1.1, S * 0.0018)
+      if (b.dipte) {
+        // İçerik kutusunun dibinde, ortalı — yazı akışını ilerletmez
+        rahleCiz(ctx, W / 2, icPayUst + kutuH - cizYuk, b.gen, vurguRenk, kalin)
+      } else {
+        rahleCiz(ctx, W / 2, y + (b.yuk - cizYuk), b.gen, vurguRenk, kalin)
+        y += b.yuk
+      }
     } else if (b.tip === "rozet") {
       // Süslemeyi metin rengine boya (source-in) ve ortala; rakamı Scheherazade ile yaz.
       const rh = b.rh
@@ -971,13 +1000,16 @@ export default function GorselOlustur({
   kariler, kariId, onKari, sesUrlAl, ayet, ayetListesiAl, azamiAyet = 25, sureBilgi,
 }) {
   const canvasRef = useRef(null)
-  const dosyaRef = useRef(null)
   // Âyet sonu rozeti süslemesi — bir kez yüklenir, canvas'a senkron çizilir.
   const rozetImgRef = useRef(null)
   const [varliklarSurum, setVarliklarSurum] = useState(0)   // görseller yüklenince yeniden çiz
   const [oran, setOran] = useState("4:5")
   const [arkaId, setArkaId] = useState("zumrut")
-  const [ozelGorsel, setOzelGorsel] = useState(null)     // kullanıcının galeriden seçtiği (dataURL)
+  // Galeri İZLEME MODUYLA ORTAK (IndexedDB): birinde eklenen resim öbüründe de görünür
+  const [izAyar] = useIzlemeAyar()
+  const galeri = izAyar.izleme.galeri || []
+  const galeriUrl = useGaleriUrlleri(acik ? galeri : [], galeriBlobu)
+  const [ekleniyor, setEkleniyor] = useState(false)
   const [cerceve, setCerceve] = useState("ince")
   const [karartma, setKarartma] = useState("orta")
   const [arapcaAcik, setArapcaAcik] = useState(!!arapca)
@@ -996,7 +1028,10 @@ export default function GorselOlustur({
   // ── VİDEO
   const [mod, setMod] = useState("foto")                     // "foto" | "video"
   const [videoSure, setVideoSure] = useState(6)
-  const [efekt, setEfekt] = useState("yok")
+  // Efektler (izleme modundan aktarıldı) — fotoğrafta da, videoda da
+  const [hava, setHava] = useState("yok")
+  const [isik, setIsik] = useState("yok")
+  const [hiz, setHiz] = useState("yavas")
   const [hareket, setHareket] = useState("yakinlas")
   // Video VARSAYILAN SESSİZ üretilir; kullanıcı isterse önizlemedeki ses ikonundan açar.
   const [sesAcik, setSesAcik] = useState(false)
@@ -1164,12 +1199,15 @@ export default function GorselOlustur({
   }, [acik])
 
   const secili = useMemo(() => {
-    if (ozelGorsel && arkaId === "ozel") return { id: "ozel", ad: "Galeriden", src: ozelGorsel, koyu: true, tip: "gorsel" }
+    if (String(arkaId).startsWith("g:")) {
+      const u = galeriUrl[arkaId.slice(2)]
+      if (u) return { id: arkaId, ad: "Galeri", src: u, koyu: true, tip: "gorsel" }
+    }
     const g = gecerliGorseller.find(x => x.id === arkaId)
     if (g) return { ...g, tip: "gorsel" }
     const d = DESENLER.find(x => x.id === arkaId) || DESENLER[0]
     return { ...d, tip: "desen" }
-  }, [arkaId, ozelGorsel, gecerliGorseller])
+  }, [arkaId, galeriUrl, gecerliGorseller])
 
   // Hazır oranlar + cihazın tam ekranı
   const oranListesi = useMemo(() => [...ORANLAR, ekranOlcusuAl()], [])
@@ -1217,14 +1255,29 @@ export default function GorselOlustur({
     const W = olcu.w, H = olcu.h
     const gizli = document.createElement("canvas")
     gizli.width = W; gizli.height = H
-    const { olcek } = await gorselCiz(gizli.getContext("2d"), cizAyari())
+    let olcek
+    if (hava !== "yok" || isik !== "yok") {
+      // EFEKTLİ: arka plan → karartma → ışık → hava → yazı (izleme modunun sırası;
+      // kar/yağmur karartmanın altında solmasın, yazının altında kalsın)
+      const g = gizli.getContext("2d")
+      await gorselCiz(g, cizAyari({ katman: "arka" }))
+      if (benim !== cizNoRef.current) return
+      karartmaCiz(g, W, H, karartma, secili.koyu !== false)
+      isikCiz(g, isik, W, H, FOTO_EFEKT_ANI)
+      havaCiz(g, hava, havaKur(hava, W, H), W, H, FOTO_EFEKT_ANI)
+      const on = document.createElement("canvas"); on.width = W; on.height = H
+      olcek = (await gorselCiz(on.getContext("2d"), cizAyari({ katman: "on", karartma: "yok" }))).olcek
+      g.drawImage(on, 0, 0)
+    } else {
+      olcek = (await gorselCiz(gizli.getContext("2d"), cizAyari())).olcek
+    }
     if (benim !== cizNoRef.current || !canvasRef.current) return   // eskimiş çizim → basma
     cv.width = W; cv.height = H
     cv.getContext("2d").drawImage(gizli, 0, 0)
     setUyari(olcek <= 0.46
       ? "Metin uzun olduğu için yazı en küçük okunur boyuta indi. Daha kısa bir bölüm seçerseniz daha güzel görünecektir."
       : "")
-  }, [olcu, cizAyari])
+  }, [olcu, cizAyari, hava, isik, karartma, secili])
 
   // ── VİDEO PARÇALARI ────────────────────────────────────────────
   // Tek âyet → tek parça. Çoklu seçimde KuranOkuma'nın listesi kullanılır
@@ -1258,6 +1311,7 @@ export default function GorselOlustur({
     }
     gorselCiz(cv.getContext("2d"), cizAyari({
       katman: "on",
+      karartma: "yok",                     // karartma videoKare'de, efektlerin altında
       arapca: arapcaAcik ? p.arapca : null,
       meal:   mealAcik   ? p.meal   : null,
       kaynak: kaynakAcik ? p.etiket : null,
@@ -1293,12 +1347,12 @@ export default function GorselOlustur({
     await gorselCiz(arkaCv.getContext("2d"), cizAyari({ katman: "arka" }))
     if (benim !== cizNoRef.current) return toplamSureRef.current || videoSure   // eskimiş
     arkaCvRef.current = arkaCv
-    parcacikRef.current = parcacikUret(efekt, W, H)
+    parcacikRef.current = havaKur(hava, W, H)
     parcaIdxRef.current = -1
     parcaCiz(0)
     const toplam = cizelgeKur()
     return toplam
-  }, [olcu, cizAyari, efekt, parcaCiz, cizelgeKur, videoSure])
+  }, [olcu, cizAyari, hava, parcaCiz, cizelgeKur, videoSure])
 
   // Tek kare: arka plan (hareketli) → parçacıklar → o anki âyetin yazı katmanı
   const videoKare = useCallback((ctx, t, toplam) => {
@@ -1306,9 +1360,16 @@ export default function GorselOlustur({
     const arkaCv = arkaCvRef.current
     if (!arkaCv) return
     ctx.clearRect(0, 0, W, H)
-    const k = hareketKutusu(hareket, W, H, t, toplam)
-    ctx.drawImage(arkaCv, k.sx, k.sy, k.sw, k.sh, 0, 0, W, H)
-    parcacikCiz(ctx, efekt, parcacikRef.current, W, H, t)
+    if (SAHNE_HAREKETI.has(hareket)) {
+      resimCiz(ctx, W, H, { img: arkaCv, w: W, h: H }, hareket, hiz, t, 0)
+    } else {
+      const k = hareketKutusu(hareket, W, H, t, toplam)
+      ctx.drawImage(arkaCv, k.sx, k.sy, k.sw, k.sh, 0, 0, W, H)
+    }
+    // Sıra izleme moduyla aynı: karartma → ışık → hava → yazı
+    karartmaCiz(ctx, W, H, karartma, secili.koyu !== false)
+    isikCiz(ctx, isik, W, H, t)
+    havaCiz(ctx, hava, parcacikRef.current, W, H, t)
 
     // Hangi âyetteyiz?
     const cizelge = cizelgeRef.current
@@ -1326,7 +1387,7 @@ export default function GorselOlustur({
     ctx.globalAlpha = Math.max(0, Math.min(1, gir * cik))
     ctx.drawImage(cv, 0, 0)
     ctx.globalAlpha = 1
-  }, [olcu, hareket, efekt, parcaCiz])
+  }, [olcu, hareket, hiz, hava, isik, karartma, secili, parcaCiz])
 
   // Döngünün kullandığı GÜNCEL işlevler — bağımlılık kirlenmesin diye ref üzerinden okunur
   const hazirlaRef = useRef(null)
@@ -1386,7 +1447,7 @@ export default function GorselOlustur({
       if (rafRef.current) cancelAnimationFrame(rafRef.current)
       rafRef.current = null
     }
-  }, [acik, mod, olcu.w, olcu.h, efekt, hareket, videoSure, icerikImza])
+  }, [acik, mod, olcu.w, olcu.h, hava, isik, hiz, hareket, videoSure, icerikImza])
 
   // ── İNDİR / PAYLAŞ ──────────────────────────────────────────
   const dosyaAdi = useMemo(() => {
@@ -1637,13 +1698,25 @@ export default function GorselOlustur({
     setCalisiyor(false)
   }
 
-  const dosyaSec = (e) => {
-    const f = e.target.files && e.target.files[0]
-    if (!f) return
-    const okuyucu = new FileReader()
-    okuyucu.onload = () => { setOzelGorsel(String(okuyucu.result)); setArkaId("ozel") }
-    okuyucu.readAsDataURL(f)
-    e.target.value = ""
+  // Galeriye resim ekle (izleme moduyla ortak); eklenen ilk resim seçilir
+  const dosyaEkle = async (dosyalar) => {
+    setEkleniyor(true)
+    try {
+      const yeni = await galeriyeEkle(dosyalar)
+      if (yeni.length) {
+        const iz = ayarOku().izleme
+        ayarYaz("izleme", { galeri: [...(iz.galeri || []), ...yeni] })
+        setArkaId("g:" + yeni[0])
+      }
+    } finally { setEkleniyor(false) }
+  }
+  const galeridenKaldir = (id) => {
+    galeridenSil(id)
+    const iz = ayarOku().izleme
+    const kalan = (iz.galeri || []).filter(x => x !== id)
+    ayarYaz("izleme", kalan.length ? { galeri: kalan }
+      : { galeri: [], arka: iz.arka === "galeri" ? (DESENLER[0]?.id || "zumrut") : iz.arka })
+    if (arkaId === "g:" + id) setArkaId(DESENLER[0]?.id || "zumrut")
   }
 
   if (!acik) return null
@@ -1812,62 +1885,54 @@ export default function GorselOlustur({
             }}>{uyari}</div>
           )}
 
+          {/* ── 7 Ekim 2026: yana kayan çip şeritleri yerine hıfz panelindeki gibi
+              bölünmüş düğmeler (Secim) ve aç/kapa satırları (Anahtar) — ortak
+              AyarOgeleri.jsx. Seçenekler satıra sarılır, hiçbiri kesik kalmaz. ── */}
+
           {/* ORAN */}
-          <p style={kucukBaslik}>Boyut</p>
-          <div className="vukuf-serit" style={{ ...seritStil, marginBottom: "12px" }}>
-            {oranListesi.map(o => {
-              const I = o.Ikon
-              return (
-                <button key={o.id} onClick={() => setOran(o.id)} style={cipStil(oran === o.id)}>
-                  <I size={12} /> {o.ad} <span style={{ opacity: 0.6 }}>{o.etiket || o.id}</span>
-                </button>
-              )
-            })}
-          </div>
+          <AyarBaslik theme={theme} ikon={Ratio} ust={2}>Boyut</AyarBaslik>
+          <Secim theme={theme} kucuk deger={oran} onSec={setOran} sutun={isMobile ? 3 : oranListesi.length}
+            secenekler={oranListesi.map(o => ({ id: o.id, ad: o.ad, Ikon: o.Ikon, alt: o.etiket || o.id }))} />
 
           {/* İÇERİK ANAHTARLARI */}
-          <p style={kucukBaslik}>İçerik</p>
-          <div className="vukuf-serit" style={{ ...seritStil, marginBottom: "12px" }}>
-            {anahtar("Âyet (Arapça)", arapcaAcik, setArapcaAcik, !arapca)}
-            {anahtar("Meal / Metin", mealAcik, setMealAcik, !meal)}
-            {anahtar("Kaynak", kaynakAcik, setKaynakAcik, !kaynak)}
-            {anahtar("Rahle süsü", rahleAcik, setRahleAcik, false)}
+          <AyarBaslik theme={theme} ikon={LayoutTemplate}>İçerik</AyarBaslik>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", columnGap: "6px" }}>
+            <Anahtar theme={theme} baslik="Âyet (Arapça)" acik={arapcaAcik} onDegis={setArapcaAcik} kapali={!arapca} />
+            <Anahtar theme={theme} baslik="Meal / Metin" acik={mealAcik} onDegis={setMealAcik} kapali={!meal} />
+            <Anahtar theme={theme} baslik="Kaynak" acik={kaynakAcik} onDegis={setKaynakAcik} kapali={!kaynak} />
+            <Anahtar theme={theme} baslik="Rahle süsü" acik={rahleAcik} onDegis={setRahleAcik} />
           </div>
 
-          {/* ARKA PLAN */}
-          <p style={kucukBaslik}>Arka Plan</p>
-          <div className="vukuf-serit" style={{ ...seritStil, marginBottom: "12px" }}>
-            <button onClick={() => dosyaRef.current?.click()} style={cipStil(arkaId === "ozel")} title="Galeriden seç">
-              <Plus size={13} /> Galeriden
-            </button>
-            <input ref={dosyaRef} type="file" accept="image/*" onChange={dosyaSec} style={{ display: "none" }} />
-            {gecerliGorseller.map(g => (
-              <button key={g.id} onClick={() => setArkaId(g.id)} style={cipStil(arkaId === g.id)}>{g.ad}</button>
-            ))}
-            {DESENLER.map(d => (
-              <button key={d.id} onClick={() => setArkaId(d.id)} style={cipStil(arkaId === d.id)}>{d.ad}</button>
-            ))}
-          </div>
+          {/* ARKA PLAN — galeri izleme moduyla ortak */}
+          <AyarBaslik theme={theme} ikon={ImageIcon} not={galeri.length ? "galeri izleme moduyla ortak" : null}>Arka plan</AyarBaslik>
+          <ArkaPlanIzgara theme={theme} onSec={setArkaId} ekle={{ onDosyalar: dosyaEkle, ekleniyor }}
+            ogeler={[
+              ...galeri.map((id, i) => ({
+                id: "g:" + id, ad: galeri.length > 1 ? `${i + 1}. resim` : "Resmim",
+                resim: galeriUrl[id] || "", secili: arkaId === "g:" + id, onSil: () => galeridenKaldir(id),
+              })),
+              ...gecerliGorseller.map(g => ({ id: g.id, ad: g.ad, resim: g.src, secili: arkaId === g.id })),
+              ...DESENLER.map(d => ({ id: d.id, ad: d.ad, resim: desenOnizleme(d), secili: arkaId === d.id })),
+            ]} />
 
           {/* ÇERÇEVE */}
-          <p style={kucukBaslik}>Çerçeve</p>
-          <div className="vukuf-serit" style={{ ...seritStil, marginBottom: "12px" }}>
-            {CERCEVELER.map(c => (
-              <button key={c.id} onClick={() => setCerceve(c.id)} style={cipStil(cerceve === c.id)}>{c.ad}</button>
-            ))}
-          </div>
+          <AyarBaslik theme={theme} ikon={Frame}>Çerçeve</AyarBaslik>
+          <Secim theme={theme} kucuk deger={cerceve} onSec={setCerceve} sutun={3}
+            secenekler={CERCEVELER.map(c => ({ id: c.id, ad: c.ad.replace(" Çizgi", "").replace(" Süsü", "") }))} />
 
           {/* KARARTMA */}
-          <p style={kucukBaslik}>Karartma <span style={{ textTransform: "none", letterSpacing: 0 }}>(yazının okunurluğu)</span></p>
-          <div className="vukuf-serit" style={{ ...seritStil, marginBottom: "12px" }}>
-            {KARARTMALAR.map(k => (
-              <button key={k.id} onClick={() => setKarartma(k.id)} style={cipStil(karartma === k.id)}>{k.ad}</button>
-            ))}
-          </div>
+          <AyarBaslik theme={theme} ikon={Eye} not="yazının okunurluğu">Karartma</AyarBaslik>
+          <Secim theme={theme} kucuk deger={karartma} onSec={setKarartma} secenekler={KARARTMALAR} />
+
+          {/* EFEKTLER — izleme modundan aktarıldı; fotoğrafta donmuş bir an, videoda canlı */}
+          <AyarBaslik theme={theme} ikon={Wind} not={mod === "foto" && (hava !== "yok" || isik !== "yok") ? "fotoğrafta donmuş an" : null}>Hava</AyarBaslik>
+          <Secim theme={theme} kucuk deger={hava} onSec={setHava} secenekler={HAVALAR} />
+          <AyarBaslik theme={theme} ikon={Sun}>Işık</AyarBaslik>
+          <Secim theme={theme} kucuk deger={isik} onSec={setIsik} secenekler={ISIKLAR} />
 
           {/* YAZI RENGİ — otomatik + öneriler + son 5 renk + özel renk */}
-          <p style={kucukBaslik}>Yazı Rengi</p>
-          <div className="vukuf-serit" style={{ ...seritStil, marginBottom: "4px", alignItems: "center" }}>
+          <AyarBaslik theme={theme} ikon={Palette}>Yazı rengi</AyarBaslik>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginBottom: "4px", alignItems: "center" }}>
             <button onClick={() => setYaziRengi(null)} style={cipStil(yaziRengi === null)}>Otomatik</button>
 
             {/* ÖZEL RENK — input'un KENDİSİ düğme; tıklanınca tarayıcının renk paleti açılır.
@@ -1921,13 +1986,12 @@ export default function GorselOlustur({
               {/* KAPSAM — birden fazla âyet ya da sûrenin tamamı */}
               {ayet && ayetListesiAl && (
                 <>
-                  <p style={{ ...kucukBaslik, marginTop: "14px" }}>Kapsam</p>
-                  <div className="vukuf-serit" style={{ ...seritStil, marginBottom: "6px" }}>
-                    {[{ id: "tek", ad: "Tek âyet" }, { id: 3, ad: "3 âyet" }, { id: 5, ad: "5 âyet" },
-                      { id: 10, ad: "10 âyet" }, { id: "sayfa", ad: "Tek sayfa" },
-                      { id: "sure", ad: "Sûrenin tamamı" }, { id: "ozel", ad: "Özel…" }].map(k => (
-                      <button key={String(k.id)} onClick={() => setKapsam(k.id)} style={cipStil(kapsam === k.id)}>{k.ad}</button>
-                    ))}
+                  <AyarBaslik theme={theme} ikon={Layers} ust={18}>Kapsam</AyarBaslik>
+                  <div style={{ marginBottom: "8px" }}>
+                    <Secim theme={theme} kucuk deger={kapsam} onSec={setKapsam}
+                      secenekler={[{ id: "tek", ad: "Tek âyet" }, { id: 3, ad: "3 âyet" }, { id: 5, ad: "5 âyet" },
+                        { id: 10, ad: "10 âyet" }, { id: "sayfa", ad: "Tek sayfa" },
+                        { id: "sure", ad: "Sûrenin tamamı" }, { id: "ozel", ad: "Özel…" }]} />
                   </div>
 
                   {/* ÖZEL ARALIK — başlangıç / bitiş âyeti (en fazla azamiAyet âyet) */}
@@ -2011,58 +2075,39 @@ export default function GorselOlustur({
                 </>
               )}
 
-              <p style={{ ...kucukBaslik, marginTop: ayet && ayetListesiAl ? 0 : "14px" }}>Hareket</p>
-              <div className="vukuf-serit" style={{ ...seritStil, marginBottom: "12px" }}>
-                {HAREKETLER.map(h => (
-                  <button key={h.id} onClick={() => setHareket(h.id)} style={cipStil(hareket === h.id)}>{h.ad}</button>
-                ))}
-              </div>
-
-              <p style={kucukBaslik}>Efekt</p>
-              <div className="vukuf-serit" style={{ ...seritStil, marginBottom: "12px" }}>
-                {EFEKTLER.map(e => (
-                  <button key={e.id} onClick={() => setEfekt(e.id)} style={cipStil(efekt === e.id)}>{e.ad}</button>
-                ))}
-              </div>
+              <AyarBaslik theme={theme} ikon={Move} ust={ayet && ayetListesiAl ? 4 : 18}>Resim hareketi</AyarBaslik>
+              <Secim theme={theme} kucuk deger={hareket} onSec={setHareket} secenekler={HAREKETLER} />
+              {SAHNE_HAREKETI.has(hareket) && (
+                <>
+                  <AyarBaslik theme={theme} ikon={Gauge}>Hız</AyarBaslik>
+                  <Secim theme={theme} kucuk deger={hiz} onSec={setHiz} secenekler={HIZLAR} />
+                </>
+              )}
 
               {/* Kâri sesi yalnız âyet bilgisi geldiğinde (KuranOkuma) anlamlı */}
               {ayet && sesUrlAl && (
                 <>
-                  <p style={kucukBaslik}>Âyeti Okusun</p>
-                  <div className="vukuf-serit" style={{ ...seritStil, marginBottom: kariler && kariler.length && sesAcik ? "8px" : "12px" }}>
-                    <button onClick={() => setSesAcik(true)} style={cipStil(sesAcik)}>
-                      <Volume2 size={12} /> Kâri okusun
-                    </button>
-                    <button onClick={() => setSesAcik(false)} style={cipStil(!sesAcik)}>
-                      <VolumeX size={12} /> Sessiz
-                    </button>
-                  </div>
+                  <AyarBaslik theme={theme} ikon={Volume2}>Ses</AyarBaslik>
+                  <Secim theme={theme} kucuk deger={sesAcik ? "kari" : "sessiz"} onSec={v => setSesAcik(v === "kari")}
+                    secenekler={[{ id: "kari", ad: "Kâri okusun", Ikon: Volume2 }, { id: "sessiz", ad: "Sessiz", Ikon: VolumeX }]} />
                   {sesAcik && kariler && kariler.length > 0 && (
-                    <div className="vukuf-serit" style={{ ...seritStil, marginBottom: "12px" }}>
-                      {kariler.map(k => (
-                        <button
-                          key={k.id}
-                          onClick={() => onKari && onKari(k.id)}
-                          style={cipStil(kariId === k.id)}
-                        >{k.label || k.ad || k.id}</button>
-                      ))}
+                    <div style={{ marginTop: "6px" }}>
+                      <Secim theme={theme} kucuk deger={kariId} onSec={id => onKari && onKari(id)}
+                        secenekler={kariler.map(k => ({ id: k.id, ad: k.label || k.ad || k.id }))} />
                     </div>
                   )}
                   {sesAcik && (
-                    <div style={{ fontSize: "10px", color: theme.textSecondary, opacity: 0.7, marginBottom: "12px" }}>
+                    <div style={{ fontSize: "10.5px", color: theme.textSecondary, opacity: 0.8, margin: "6px 2px 0" }}>
                       Videonun süresi âyetin okunuş süresi kadar olur.
                     </div>
                   )}
                 </>
               )}
 
-              <p style={kucukBaslik}>Çözünürlük</p>
-              <div className="vukuf-serit" style={{ ...seritStil, marginBottom: "6px" }}>
-                {[{ id: 720, ad: "720p · hızlı" }, { id: 1080, ad: "1080p · net" }].map(k => (
-                  <button key={k.id} onClick={() => setVideoKalite(k.id)} style={cipStil(videoKalite === k.id)}>{k.ad}</button>
-                ))}
-              </div>
-              <div style={{ fontSize: "10px", color: theme.textSecondary, opacity: 0.75, marginBottom: "12px", lineHeight: 1.45 }}>
+              <AyarBaslik theme={theme} ikon={Film}>Çözünürlük</AyarBaslik>
+              <Secim theme={theme} kucuk deger={videoKalite} onSec={setVideoKalite}
+                secenekler={[{ id: 720, ad: "720p", alt: "hızlı" }, { id: 1080, ad: "1080p", alt: "net" }]} />
+              <div style={{ fontSize: "10.5px", color: theme.textSecondary, opacity: 0.8, margin: "6px 2px 0", lineHeight: 1.45 }}>
                 Kayıt gerçek zamanlıdır: video ne kadar sürüyorsa hazırlanması da o kadar sürer.
                 720p telefonlarda gözle görülür biçimde daha akıcı kaydeder.
               </div>
@@ -2070,12 +2115,8 @@ export default function GorselOlustur({
               {/* Ses yoksa süre seçilir (çoklu âyette süre seslerden gelir) */}
               {(!ayet || !sesUrlAl || !sesAcik) && videoParcalari.length === 1 && (
                 <>
-                  <p style={kucukBaslik}>Süre</p>
-                  <div className="vukuf-serit" style={{ ...seritStil, marginBottom: "4px" }}>
-                    {SURELER.map(sr => (
-                      <button key={sr.id} onClick={() => setVideoSure(sr.id)} style={cipStil(videoSure === sr.id)}>{sr.ad}</button>
-                    ))}
-                  </div>
+                  <AyarBaslik theme={theme} ikon={Timer}>Süre</AyarBaslik>
+                  <Secim theme={theme} kucuk deger={videoSure} onSec={setVideoSure} secenekler={SURELER} />
                 </>
               )}
             </>

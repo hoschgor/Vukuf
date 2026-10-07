@@ -25,7 +25,7 @@
 
 import { useState } from "react"
 import { useLocation, useNavigate } from "react-router-dom"
-import { Play, SkipForward, BookOpen, ChevronDown, Square, Music2 } from "lucide-react"
+import { SkipForward, BookOpen, ChevronDown, Square } from "lucide-react"
 import { useApp } from "../AppContext"
 import { useOynatici } from "../data/oynatici"
 import { sureAdi } from "../data/sureAdlari"
@@ -39,7 +39,69 @@ const KUCUK_ANAHTAR = "vukuf-mini-kucuk"
    kaydırılırken iPhone'da akıcılığı düşürebilirdi. */
 const NABIZ_CSS = `@keyframes vukuf-mini-nabiz{0%{transform:scale(1);opacity:.55}75%{transform:scale(1.42);opacity:0}100%{transform:scale(1.42);opacity:0}}
 .vukuf-mini-nabiz{position:absolute;inset:-1.5px;border-radius:50%;border:2px solid var(--mini-ac);pointer-events:none;animation:vukuf-mini-nabiz 1.8s ease-out infinite;will-change:transform,opacity}
-@media (prefers-reduced-motion: reduce){.vukuf-mini-nabiz{animation:none;opacity:0}}`
+@media (prefers-reduced-motion: reduce){.vukuf-mini-nabiz{animation:none;opacity:0}}
+@keyframes vukuf-amb-don{to{transform:rotate(360deg)}}
+@keyframes vukuf-amb-ters{to{transform:rotate(-360deg)}}
+@keyframes vukuf-amb-dalga{0%,100%{transform:scaleY(.38)}50%{transform:scaleY(1)}}
+@keyframes vukuf-amb-isil{0%,100%{opacity:.35}50%{opacity:1}}
+.vukuf-amb-don{transform-box:fill-box;transform-origin:center;animation:vukuf-amb-don 16s linear infinite}
+.vukuf-amb-ters{transform-box:fill-box;transform-origin:center;animation:vukuf-amb-ters 24s linear infinite}
+.vukuf-amb-dalga{transform-box:fill-box;transform-origin:center;animation:vukuf-amb-dalga 1.1s ease-in-out infinite}
+.vukuf-amb-isil{animation:vukuf-amb-isil 2.2s ease-in-out infinite}
+@media (prefers-reduced-motion: reduce){.vukuf-amb-don,.vukuf-amb-ters,.vukuf-amb-dalga,.vukuf-amb-isil{animation:none}}`
+
+/* ── KÜÇÜK HÂLİN AMBLEMİ (7 Ekim 2026) ─────────────────────────────────────
+   Kullanıcı: "küçültülmüş oynatma barındaki nota işareti bizim yapıya hiç uygun
+   durmuyor; tezhip çizgileriyle bir şey çizebilir miyiz, içi hareket edebilir,
+   dışında efekt olabilir."
+   Nota yerine ŞEMSE: iki kareden örülmüş sekiz köşeli yıldız (Rub'u'l-hizb
+   yıldızı, mushaf kenar süslerinin aynısı), uçlarının arasında sekiz inci ve
+   ortada madalyon.
+     • Çalarken: yıldız yavaşça döner, inciler ters yönde döner ve sırayla ışır;
+       madalyonun içinde üç "ses dalgası" (uçları yuvarlak, elif gibi ince) nefes
+       alır gibi uzayıp kısalır. Dışta nabız halkası (NABIZ_CSS).
+     • Duraklatılmışken: hepsi durur, madalyonda oynat üçgeni.
+   Yalnız transform/opacity canlandırılıyor (boyama yok) → kaydırmayı yormaz. */
+function SemseAmblem({ ac, zemin, calar, boy = 40 }) {
+  const uclar = Array.from({ length: 8 }, (_, i) => {
+    const a = (Math.PI / 4) * i + Math.PI / 8
+    return { x: Math.cos(a) * 45, y: Math.sin(a) * 45, gecik: (i * 0.275).toFixed(2) }
+  })
+  const don = (ad) => (calar ? ad : undefined)
+  return (
+    <svg width={boy} height={boy} viewBox="-50 -50 100 100" aria-hidden="true" style={{ display: "block", overflow: "visible" }}>
+      {/* Sekiz köşeli yıldız — iki kare */}
+      <g className={don("vukuf-amb-don")}>
+        <rect x="-27" y="-27" width="54" height="54" fill={`${ac}1c`} stroke={ac} strokeWidth="3.2" strokeLinejoin="round" />
+        <rect x="-27" y="-27" width="54" height="54" fill={`${ac}1c`} stroke={ac} strokeWidth="3.2" strokeLinejoin="round" transform="rotate(45)" />
+        {/* yıldızın içinde ince ikinci çizgi (tezhip "tahrir"i) */}
+        <rect x="-21" y="-21" width="42" height="42" fill="none" stroke={ac} strokeWidth="1" opacity="0.55" />
+        <rect x="-21" y="-21" width="42" height="42" fill="none" stroke={ac} strokeWidth="1" opacity="0.55" transform="rotate(45)" />
+      </g>
+      {/* Uçların arasındaki inciler */}
+      <g className={don("vukuf-amb-ters")}>
+        {uclar.map((u, i) => (
+          <circle key={i} cx={u.x} cy={u.y} r="3" fill={ac}
+            className={calar ? "vukuf-amb-isil" : undefined}
+            style={calar ? { animationDelay: `${u.gecik}s` } : { opacity: 0.6 }} />
+        ))}
+      </g>
+      {/* Madalyon */}
+      <circle r="21" fill={zemin} stroke={ac} strokeWidth="2.2" />
+      <circle r="17.5" fill="none" stroke={ac} strokeWidth="0.8" opacity="0.5" />
+      {calar ? (
+        <g fill={ac}>
+          {[-8, 0, 8].map((x, i) => (
+            <rect key={x} x={x - 2.5} y="-11" width="5" height="22" rx="2.5"
+              className="vukuf-amb-dalga" style={{ animationDelay: `${[0.15, 0, 0.3][i]}s` }} />
+          ))}
+        </g>
+      ) : (
+        <path d="M-6 -10 L11 0 L-6 10 Z" fill={ac} strokeLinejoin="round" stroke={ac} strokeWidth="2" />
+      )}
+    </svg>
+  )
+}
 
 export default function MiniOynatici() {
   const player = useOynatici()
@@ -102,11 +164,11 @@ function MiniHap({ player, kitapta }) {
               position: "relative",
               width: "44px", height: "44px", borderRadius: "50%", padding: 0, cursor: "pointer",
               display: "flex", alignItems: "center", justifyContent: "center",
-              background: theme.surface, border: `1.5px solid ${ac}`, color: ac,
+              background: theme.surface, border: `1px solid ${ac}`, color: ac,
               boxShadow: k.surukleniyor ? "0 10px 28px rgba(0,0,0,0.32)" : "0 4px 16px rgba(0,0,0,0.22)",
             }}>
             {calar && <span className="vukuf-mini-nabiz" aria-hidden="true" />}
-            {calar ? <Music2 size={18} /> : <Play size={17} style={{ marginLeft: "2px" }} />}
+            <SemseAmblem ac={ac} zemin={theme.surface} calar={calar} />
           </button>
         ) : (
           /* AÇIK — sade hap */

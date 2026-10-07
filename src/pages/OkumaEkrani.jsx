@@ -3045,7 +3045,9 @@ const TemaPanel = temaAcik && (
         theme={theme}
         duzen="satir"
         onOzel={() => { setTemaAcik(false); setOzelTemaPanelAcik(true) }}
-        onSec={(id, uygulandi) => { if (uygulandi) setTemaAcik(false) }}
+        // Seçimden sonra panel AÇIK kalır (7 Ekim 2026, kullanıcı: "seçim sonrası
+        // panel açık dursun ki okuma ekranında önizleme gibi görülsün") — ana menüdeki gibi.
+        onSec={() => {}}
       />
 
       {/* Arapça harf rengi */}

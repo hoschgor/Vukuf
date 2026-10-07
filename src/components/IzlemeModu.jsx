@@ -15,16 +15,28 @@
    tuvaline alınıyor (fotoğraf yüklemesi asenkron). Her âyette yalnız `katman:"on"`
    çiziliyor — o dal senkron çalışıyor — ve iki tuval görünür tuvale bindiriliyor.
    Görünür tuval İKİ TANE: yeni âyet gizli olana çizilip opaklıkla değiştiriliyor,
-   böylece geçiş sırasında ekran bir kare bile boş kalmıyor. */
+   böylece geçiş sırasında ekran bir kare bile boş kalmıyor.
+
+   ── HAREKETLİ SAHNE (7 Ekim 2026) ─────────────────────────────────────────
+   Arka plan artık AYRI ve CANLI bir tuvalde (en altta): resim, kamera hareketi
+   (gezinti / yakınlaş-uzaklaş / kayma / sonsuz akış), slayt geçişleri, karartma,
+   ışık ve hava efektleri her karede `data/izlemeSahne.js` ile çiziliyor. Âyet
+   tuvalleri (A/B) yalnız YAZI katmanını taşıyor ve saydam; âyet değişince yalnız
+   onlar takas ediliyor — sahnenin saati bileşen açık kaldıkça kesintisiz işlediği
+   için resim de efekt de kaldığı yerden sürüyor. Karartma sahnede çiziliyor ki
+   kar/yağmur karartmanın ALTINDA solmasın, yazının altında parlak kalsın. */
 
 import { useEffect, useMemo, useRef, useState } from "react"
 import { X, Settings2, SkipBack, SkipForward, Play, Pause } from "lucide-react"
 import { DESENLER, GORSELLER } from "../data/arkaplanlar"
-import { gorselCiz, rozetGorseliUret } from "./GorselOlustur"
+import { gorselCiz, rozetGorseliUret, karartmaCiz } from "./GorselOlustur"
 import { useIzlemeAyar } from "../data/izlemeAyar"
+import { resimCiz, gecisCiz, havaKur, havaCiz, isikCiz, kareHizi, GECIS_SN } from "../data/izlemeSahne"
+import { galeriBlobu, eskiGorselVarsaTasi } from "../data/izlemeGaleri"
 import MealIzlemeAyarlari from "./MealIzlemeAyarlari"
 
 const AZAMI_DPR = 2          // 3× tuval telefonda belleği zorluyor, görünür fayda yok
+const SAHNE_DPR = 1.5        // canlı arka plan tuvali: her karede çizildiği için daha düşük (pil)
 const KONTROL_SURESI = 3500  // ms — dokunulmazsa düğmeler solar
 const SURUKLE_ESIK = 46      // px — bu kadar kayma bir "sürükleme" sayılır
 const DOKUNUS_ESIK = 12      // px — bu kadarın altı hâlâ "dokunuş"
@@ -43,11 +55,12 @@ export default function IzlemeModu({
   const cvB = useRef(null)
   const [ustte, setUstte] = useState(0)          // 0 = A görünür, 1 = B
   const ilkCizimRef = useRef(true)               // ilk kare takas beklemeden görünsün
-  const arkaRef = useRef(null)                   // yalnız arka plan
+  const sahneCv = useRef(null)                   // canlı arka plan (resim + efektler)
   const onRef = useRef(null)                     // yalnız yazı katmanı
   const rozetRef = useRef(null)
-  const [olcu, setOlcu] = useState(null)         // { w, h, gUst, gAlt } — tuval pikseli
-  const [arkaSurum, setArkaSurum] = useState(0)  // arka plan hazırlandıkça artar
+  const [olcu, setOlcu] = useState(null)         // { w, h, gUst, gAlt, bw, bh } — tuval pikseli
+  const [arkaSurum, setArkaSurum] = useState(0)  // âyet rozeti yüklenince artar (yazı yeniden çizilsin)
+  const [kaynaklar, setKaynaklar] = useState([]) // sahnede dönen resimler [{ img, w, h }]
   const [hatVar, setHatVar] = useState(false)
 
   const aktif = player?.aktifAyet || null
@@ -55,6 +68,7 @@ export default function IzlemeModu({
 
   /* Arka plan tanımı — görsel modundaki çözümlemenin aynısı. */
   const arka = useMemo(() => {
+    if (iz.arka === "galeri") return { id: "galeri", ad: "Galeriden", koyu: true, tip: "galeri" }
     if (iz.arka === "ozel" && iz.ozelGorsel) {
       return { id: "ozel", ad: "Galeriden", src: iz.ozelGorsel, koyu: true, tip: "gorsel" }
     }
@@ -106,8 +120,11 @@ export default function IzlemeModu({
       const h = Math.max(2, Math.round(window.innerHeight * dpr))
       const gUst = Math.round((ustKutu.getBoundingClientRect().height || 0) * dpr)
       const gAlt = Math.round((altKutu.getBoundingClientRect().height || 0) * dpr)
-      setOlcu(o => (o && o.w === w && o.h === h && o.gUst === gUst && o.gAlt === gAlt
-        ? o : { w, h, gUst, gAlt }))
+      const sd = Math.min(Math.max(window.devicePixelRatio || 1, 1), SAHNE_DPR)
+      const bw = Math.max(2, Math.round(window.innerWidth * sd))
+      const bh = Math.max(2, Math.round(window.innerHeight * sd))
+      setOlcu(o => (o && o.w === w && o.h === h && o.gUst === gUst && o.gAlt === gAlt && o.bw === bw && o.bh === bh
+        ? o : { w, h, gUst, gAlt, bw, bh }))
     }
     oku()
     window.addEventListener("resize", oku)
@@ -119,32 +136,115 @@ export default function IzlemeModu({
     }
   }, [acik])
 
-  /* ARKA PLAN KATMANI — ölçü ya da arka plan değişince BİR KEZ. */
+  /* ESKİ TEK RESİM (ayardaki dataURL) → galeriye taşınır, localStorage boşalır. */
+  useEffect(() => { if (acik) eskiGorselVarsaTasi() }, [acik])
+
+  /* SAHNE KAYNAKLARI — gösterilecek resimler. Galeride 2+ resim varsa slayt. */
+  const galeriAnahtar = (iz.galeri || []).join(",")
+  const desenOlcu = arka.tip === "desen" && olcu ? `${olcu.bw}x${olcu.bh}` : ""
   useEffect(() => {
-    if (!acik || !olcu) return
+    if (!acik) return
     let iptal = false
-    const cv = document.createElement("canvas")
-    cv.width = olcu.w; cv.height = olcu.h
-    gorselCiz(cv.getContext("2d"), {
-      W: olcu.w, H: olcu.h, arka, katman: "arka",
-      cerceve: iz.cerceve, karartma: iz.karartma,
-      guvenliUst: olcu.gUst, guvenliAlt: olcu.gAlt,
-    }).then(() => {
-      if (iptal) return
-      arkaRef.current = cv
-      setArkaSurum(v => v + 1)
-    }).catch(() => {})
-    return () => { iptal = true }
-  }, [acik, olcu, arka, iz.cerceve, iz.karartma])
+    const urller = []
+    const yukle = (src) => new Promise(cz => {
+      const im = new Image()
+      im.onload = () => cz({ img: im, w: im.naturalWidth, h: im.naturalHeight })
+      im.onerror = () => cz(null)
+      im.src = src
+    })
+    ;(async () => {
+      let liste = []
+      if (arka.tip === "galeri") {
+        for (const id of (iz.galeri || [])) {
+          const b = await galeriBlobu(id)
+          if (iptal) return
+          if (!b) continue                       // silinmiş ya da başka cihazdan gelen yedek
+          const u = URL.createObjectURL(b); urller.push(u)
+          const k = await yukle(u)
+          if (iptal) return
+          if (k) liste.push(k)
+          if (liste.length === 1) setKaynaklar([k])   // ilk resim beklemeden görünsün
+        }
+      } else if (arka.tip === "gorsel") {
+        const k = await yukle(arka.src)
+        if (k) liste = [k]
+      } else if (desenOlcu) {
+        // Desen (renk geçişi) bir kez tuvale çizilip resim gibi kullanılıyor
+        const [bw, bh] = desenOlcu.split("x").map(Number)
+        const cv = document.createElement("canvas")
+        cv.width = bw; cv.height = bh
+        try { arka.ciz(cv.getContext("2d"), bw, bh) } catch { /* yoksay */ }
+        liste = [{ img: cv, w: bw, h: bh }]
+      }
+      if (!iptal) setKaynaklar(liste)
+    })()
+    return () => { iptal = true; urller.forEach(u => { try { URL.revokeObjectURL(u) } catch { /* yoksay */ } }) }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [acik, arka, galeriAnahtar, desenOlcu])
+
+  /* SAHNE DÖNGÜSÜ — ölçü değişmedikçe bir kez kurulur; ayarları her karede
+     ref'ten okur (ayar değişince döngü yeniden başlamaz, saat sıfırlanmaz). */
+  const sahneRef = useRef({})
+  sahneRef.current = {
+    kaynaklar, hareket: iz.hareket, hiz: iz.hiz, hava: iz.hava, isik: iz.isik,
+    karartma: iz.karartma, koyu: arka.koyu !== false,
+    slaytSure: iz.slaytSure, slaytGecis: iz.slaytGecis,
+  }
+  const slaytRef = useRef({ idx: 0, bas: -1, onceki: -1, gecisBas: 0, sira: 0 })
+  const sahneW = olcu ? olcu.bw : 0, sahneH = olcu ? olcu.bh : 0
+  useEffect(() => {
+    if (!acik || !sahneW || !sahneH) return
+    const cv = sahneCv.current
+    if (!cv) return
+    cv.width = sahneW; cv.height = sahneH
+    const ctx = cv.getContext("2d")
+    const W = sahneW, H = sahneH
+    const t0 = performance.now()
+    slaytRef.current.bas = -1
+    let id = 0, son = -1e9, havaAd = null, parca = []
+    const kare = (an) => {
+      id = requestAnimationFrame(kare)
+      const d = sahneRef.current
+      if (an - son < 1000 / kareHizi(d.hava, d.isik) - 4) return
+      son = an
+      const t = (an - t0) / 1000
+      if (havaAd !== d.hava) { havaAd = d.hava; parca = havaKur(d.hava, W, H) }
+      const ks = d.kaynaklar || []
+      const sl = slaytRef.current
+      if (ks.length >= 2) {
+        if (sl.idx >= ks.length) { sl.idx = 0; sl.onceki = -1 }
+        if (sl.bas < 0) sl.bas = t
+        if (sl.onceki < 0 && t - sl.bas >= (Number(d.slaytSure) || 15)) {
+          sl.onceki = sl.idx; sl.idx = (sl.idx + 1) % ks.length
+          sl.gecisBas = t; sl.bas = t; sl.sira++
+        }
+      } else { sl.idx = 0; sl.onceki = -1; sl.bas = -1 }
+
+      ctx.globalAlpha = 1; ctx.globalCompositeOperation = "source-over"
+      ctx.fillStyle = "#0a0d14"; ctx.fillRect(0, 0, W, H)
+      const ciz = (i) => () => resimCiz(ctx, W, H, ks[i], d.hareket, d.hiz, t, i * 1.7)
+      if (ks.length) {
+        if (sl.onceki >= 0 && ks[sl.onceki]) {
+          const p = (t - sl.gecisBas) / GECIS_SN
+          if (p >= 1) { sl.onceki = -1; ciz(sl.idx)() }
+          else gecisCiz(ctx, W, H, ciz(sl.onceki), ciz(sl.idx), d.slaytGecis, p, sl.sira)
+        } else ciz(sl.idx)()
+      }
+      karartmaCiz(ctx, W, H, d.karartma, d.koyu)
+      isikCiz(ctx, d.isik, W, H, t)
+      havaCiz(ctx, d.hava, parca, W, H, t)
+    }
+    id = requestAnimationFrame(kare)
+    return () => cancelAnimationFrame(id)
+  }, [acik, sahneW, sahneH])
 
   /* ÂYET KATMANI — âyet ya da ayar değişince gizli tuvale çizilip öne alınır. */
   useEffect(() => {
-    if (!acik || !olcu || !arkaRef.current || !aktif) return
+    if (!acik || !olcu || !aktif) return
     const veri = icerikAl ? icerikAl(aktif) : null
     if (!veri) return
 
-    // Yazı katmanı ayrı tuvalde: `gorselCiz` her çağrıda `clearRect` yaptığı için
-    // arka planı önce çizip üstüne çağırmak arka planı siler.
+    // Yazı katmanı SAYDAM: arka plan ve karartma alttaki canlı sahnede.
     let onCv = onRef.current
     if (!onCv || onCv.width !== olcu.w || onCv.height !== olcu.h) {
       onCv = document.createElement("canvas")
@@ -153,12 +253,13 @@ export default function IzlemeModu({
     }
     gorselCiz(onCv.getContext("2d"), {
       W: olcu.w, H: olcu.h, arka, katman: "on",
-      cerceve: iz.cerceve, karartma: iz.karartma,
+      cerceve: iz.cerceve, karartma: "yok",       // karartma sahnede
       arapca: veri.arapca,
       meal: iz.meal ? veri.meal : null,
       kaynak: veri.kaynak,
       sureNo: hatVar ? (veri.sureNo || 0) : 0,
       rahle: true,
+      rahleDipte: true,                           // rahle altta ortalı, küçük
       arapcaFont,
       rozetNo: veri.ayetNo || null,
       secde: !!veri.secde,
@@ -176,14 +277,14 @@ export default function IzlemeModu({
     if (!hedef) return
     hedef.width = olcu.w; hedef.height = olcu.h
     const ctx = hedef.getContext("2d")
-    ctx.drawImage(arkaRef.current, 0, 0)
+    ctx.clearRect(0, 0, olcu.w, olcu.h)
     ctx.drawImage(onCv, 0, 0)
     if (ilk) ilkCizimRef.current = false
     else setUstte(u => (u === 0 ? 1 : 0))
     // `ustte` bilerek bağımlılıkta DEĞİL: onu burada değiştiriyoruz, listeye
     // girerse efekt kendi kendini tetikleyip sonsuz takas yapardı.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [acik, olcu, arkaSurum, aktif, icerikAl, arka, iz.cerceve, iz.karartma, iz.meal, iz.gizliDugme, arapcaFont, hatVar])
+  }, [acik, olcu, arkaSurum, aktif, icerikAl, arka, iz.cerceve, iz.meal, iz.gizliDugme, arapcaFont, hatVar])
 
   /* Gerçek tam ekran: destekleyen tarayıcıda (masaüstü, Android) sistem çubukları
      da kalkar. iOS bunu video dışı öğelerde desteklemiyor; orada kurulu uygulama
@@ -339,6 +440,7 @@ export default function IzlemeModu({
           touchAction: "none", overscrollBehavior: "none",
         }}
       >
+        <canvas ref={sahneCv} style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }} />
         {tuval(cvA, ustte === 0)}
         {tuval(cvB, ustte === 1)}
 

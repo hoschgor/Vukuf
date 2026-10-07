@@ -25,7 +25,15 @@ export const VARSAYILAN = {
     karartma: "orta",
     meal: true,          // tam ekranda mealı da göster
     gizliDugme: false,   // düğmeleri gizle, her şey hareketle (sürükle/dokun)
-    ozelGorsel: null,    // galeriden seçilen (dataURL)
+    ozelGorsel: null,    // ESKİ: galeriden seçilen tek resim (dataURL) — açılışta galeriye taşınır
+    // ── Hareketli sahne (7 Ekim 2026) — seçenekler data/izlemeSahne.js'te ──
+    hareket: "gezinti",  // sabit | gezinti | nefes | kaydir | akis
+    hiz: "yavas",        // yavas | orta | hizli
+    hava: "yok",         // yok | kar | tipi | yagmur | ruzgar | yaprak | yildiz | atesbocegi | toz
+    isik: "yok",         // yok | huzme | nur | sis | bokeh
+    galeri: [],          // galeriden seçilen resimlerin kimlikleri (IndexedDB, data/izlemeGaleri.js)
+    slaytSure: 15,       // sn — 2+ resimde her resmin ekranda kalma süresi
+    slaytGecis: "solma", // solma | yakinlas | kayma | silme | daire | perde | karisik
   },
 }
 

@@ -3,26 +3,55 @@
 
    Tek panel, iki bölüm. PlayerBar'a üçüncü bir düğme eklemek yerine buraya iki
    yerden giriliyor: meal popup'ının kenarındaki dişli ve izleme modundaki dişli.
-   Hangi yerden açıldıysa o bölüm üstte duruyor. Ayarlar `data/izlemeAyar.js`de. */
+   Hangi yerden açıldıysa o bölüm seçili açılıyor. Ayarlar `data/izlemeAyar.js`de.
 
-import { useEffect, useState } from "react"
-import { X, Plus } from "lucide-react"
+   7 Ekim 2026 (kullanıcı: "butonları daha kullanışlı yapalım, hıfz modundaki gibi"):
+   • Yana kayan çip şeritleri yerine hıfz panelindeki BÖLÜNMÜŞ DÜĞMELER (Secim) ve
+     AÇ/KAPA SATIRLARI (Anahtar) — ortak `AyarOgeleri.jsx`. Seçenekler satıra
+     sarıldığı için telefonda hiçbiri kesik kalmıyor.
+   • İzleme bölümü üç sekmeye ayrıldı: Arka plan · Hareket ve efekt · Görünüm.
+     Panel kısaldı, aranan ayar bir dokunuşta bulunuyor.
+   • Arka planlar küçük resimli kutular: galeri resimleri, hazır resimler, desenler. */
+
+import { useEffect, useMemo, useState } from "react"
+import {
+  X, Image as ImageIcon, Sparkles, LayoutTemplate, MonitorPlay, Languages,
+  Eye, Hand, Type, Move, Wind, Sun, Timer, Shuffle, Frame, Layers,
+} from "lucide-react"
 import { DESENLER, GORSELLER } from "../data/arkaplanlar"
-import { useIzlemeAyar } from "../data/izlemeAyar"
+import { useIzlemeAyar, ayarOku } from "../data/izlemeAyar"
+import { HAREKETLER, HIZLAR, HAVALAR, ISIKLAR, GECISLER, SLAYT_SURELERI } from "../data/izlemeSahne"
+import { galeriyeEkle, galeridenSil, galeriBlobu, eskiGorselVarsaTasi } from "../data/izlemeGaleri"
+import { Secim, Anahtar, AyarBaslik, ArkaPlanIzgara, desenOnizleme, useGaleriUrlleri } from "./AyarOgeleri"
 
 const KONUMLAR   = [{ id: "ust", ad: "Üst" }, { id: "orta", ad: "Orta" }, { id: "alt", ad: "Alt" }]
 const GENISLIKLER = [{ id: "dar", ad: "Dar" }, { id: "orta", ad: "Orta" }, { id: "genis", ad: "Geniş" }]
 const CERCEVELER = [
-  { id: "yok", ad: "Çerçevesiz" }, { id: "ince", ad: "İnce Çizgi" }, { id: "cift", ad: "Çift Çizgi" },
-  { id: "kose", ad: "Köşe Süsü" }, { id: "kemer", ad: "Kemer" }, { id: "kartus", ad: "Kartuş" },
+  { id: "yok", ad: "Yok" }, { id: "ince", ad: "İnce" }, { id: "cift", ad: "Çift" },
+  { id: "kose", ad: "Köşe" }, { id: "kemer", ad: "Kemer" }, { id: "kartus", ad: "Kartuş" },
 ]
 const KARARTMALAR = [
   { id: "yok", ad: "Yok" }, { id: "az", ad: "Az" }, { id: "orta", ad: "Orta" }, { id: "cok", ad: "Çok" },
 ]
-const YAZI_BOYLARI = [12, 13, 14, 15, 16, 18]
+const YAZI_BOYLARI = [12, 13, 14, 15, 16, 18].map(b => ({ id: b, ad: String(b) }))
+const SUSLER = [{ id: "dal", ad: "Dallar" }, { id: "tezhip", ad: "Tezhip" }]
+const BOLUMLER = [
+  { id: "izleme", ad: "İzleme modu", Ikon: MonitorPlay },
+  { id: "meal", ad: "Meal penceresi", Ikon: Languages },
+]
+const SEKMELER = [
+  { id: "arka", ad: "Arka plan", Ikon: ImageIcon },
+  { id: "efekt", ad: "Hareket", Ikon: Sparkles },
+  { id: "gorunum", ad: "Görünüm", Ikon: LayoutTemplate },
+]
 
 export default function MealIzlemeAyarlari({ acik, kapat, theme, isMobile, odak = "meal" }) {
   const [ayar, guncelle] = useIzlemeAyar()
+  const iz = ayar.izleme
+  const [bolum, setBolum] = useState(odak)
+  const [sekme, setSekme] = useState("arka")
+  useEffect(() => { if (acik) setBolum(odak) }, [acik, odak])
+
   // Dosyası gerçekten olan hazır fotoğraflar (yoksa listede hiç görünmesin)
   const [gorseller, setGorseller] = useState([])
   useEffect(() => {
@@ -35,6 +64,9 @@ export default function MealIzlemeAyarlari({ acik, kapat, theme, isMobile, odak 
     return () => { iptal = true }
   }, [acik])
 
+  // Eski tek resim (dataURL) varsa galeriye taşınsın — panel izleme açılmadan da açılabiliyor
+  useEffect(() => { if (acik) eskiGorselVarsaTasi() }, [acik])
+
   useEffect(() => {
     if (!acik) return
     const tus = (e) => { if (e.key === "Escape") kapat?.() }
@@ -42,115 +74,124 @@ export default function MealIzlemeAyarlari({ acik, kapat, theme, isMobile, odak 
     return () => document.removeEventListener("keydown", tus)
   }, [acik, kapat])
 
+  const galeri = iz.galeri || []
+  const urller = useGaleriUrlleri(acik ? galeri : [], galeriBlobu)
+  const [ekleniyor, setEkleniyor] = useState(false)
+  const galeriSecili = iz.arka === "galeri" || iz.arka === "ozel"
+
+  const arkaOgeleri = useMemo(() => [
+    ...galeri.map((id, i) => ({
+      id: "g:" + id, ad: galeri.length > 1 ? `${i + 1}. resim` : "Resmim", resim: urller[id] || "",
+      secili: galeriSecili, onSil: () => galeridenKaldir(id),
+    })),
+    ...gorseller.map(g => ({ id: g.id, ad: g.ad, resim: g.src, secili: iz.arka === g.id })),
+    ...DESENLER.map(d => ({ id: d.id, ad: d.ad, resim: desenOnizleme(d), secili: iz.arka === d.id })),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  ], [galeri.join(","), urller, gorseller, iz.arka, galeriSecili])
+
   if (!acik) return null
 
-  const cip = (secili) => ({
-    display: "inline-flex", alignItems: "center", gap: "5px", whiteSpace: "nowrap",
-    padding: "6px 11px", borderRadius: "999px", cursor: "pointer", flexShrink: 0,
-    fontSize: "12px", fontWeight: 600, fontFamily: "inherit",
-    border: `1px solid ${secili ? theme.accent : theme.border}`,
-    background: secili ? theme.accent : "transparent",
-    color: secili ? "#fff" : theme.textSecondary,
-  })
-  const serit = { display: "flex", gap: "6px", overflowX: "auto", paddingBottom: "2px", marginBottom: "12px" }
-  const baslik = { fontSize: "11px", fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase", color: theme.textSecondary, margin: "0 0 6px" }
-  const bolumBaslik = { fontSize: "13px", fontWeight: 700, color: theme.accent, margin: "4px 0 10px" }
-
-  const dosyaSec = (e) => {
-    const f = e.target.files && e.target.files[0]
-    if (!f) return
-    const okuyucu = new FileReader()
-    okuyucu.onload = () => guncelle("izleme", { ozelGorsel: String(okuyucu.result), arka: "ozel" })
-    okuyucu.readAsDataURL(f)
+  // Galeriden BİR YA DA BİRDEN ÇOK resim: mevcut listenin sonuna eklenir
+  async function dosyaEkle(dosyalar) {
+    setEkleniyor(true)
+    try {
+      const yeni = await galeriyeEkle(dosyalar)
+      if (yeni.length) {
+        const mevcut = ayarOku().izleme.galeri || []
+        guncelle("izleme", { galeri: [...mevcut, ...yeni], arka: "galeri" })
+      }
+    } finally { setEkleniyor(false) }
   }
+  function galeridenKaldir(id) {
+    galeridenSil(id)
+    const kalan = (ayarOku().izleme.galeri || []).filter(x => x !== id)
+    guncelle("izleme", kalan.length ? { galeri: kalan } : { galeri: [], arka: DESENLER[0] ? DESENLER[0].id : "zumrut" })
+  }
+  const arkaSec = (id) => guncelle("izleme", { arka: String(id).startsWith("g:") ? "galeri" : id })
 
-  const anahtar = (etiket, deger, ayarla) => (
-    <button onClick={() => ayarla(!deger)} style={cip(deger)}>{etiket}</button>
-  )
+  const ipucu = { fontSize: "11px", color: theme.textSecondary, lineHeight: 1.5, margin: "8px 2px 0" }
 
-  const mealBolum = (
-    <div key="meal">
-      <p style={bolumBaslik}>Meal penceresi</p>
-      <p style={baslik}>Konum</p>
-      <div style={serit}>
-        {KONUMLAR.map(k => (
-          <button key={k.id} onClick={() => guncelle("meal", { konum: k.id, kaydir: 0 })} style={cip(ayar.meal.konum === k.id)}>{k.ad}</button>
-        ))}
-        {ayar.meal.kaydir !== 0 && (
-          <button onClick={() => guncelle("meal", { kaydir: 0 })} style={cip(false)}>İnce ayarı sıfırla</button>
-        )}
-      </div>
-      <p style={baslik}>Genişlik</p>
-      <div style={serit}>
-        {GENISLIKLER.map(g => (
-          <button key={g.id} onClick={() => guncelle("meal", { genislik: g.id })} style={cip(ayar.meal.genislik === g.id)}>{g.ad}</button>
-        ))}
-      </div>
-      <p style={baslik}>Yazı boyu</p>
-      <div style={serit}>
-        {YAZI_BOYLARI.map(b => (
-          <button key={b} onClick={() => guncelle("meal", { yaziBoyu: b })} style={cip(ayar.meal.yaziBoyu === b)}>{b}px</button>
-        ))}
-      </div>
-      <p style={baslik}>Görünüm</p>
-      <div style={serit}>
-        {anahtar("Sûre adı hattı", ayar.meal.hat, v => guncelle("meal", { hat: v }))}
-      </div>
-      <p style={baslik}>Süs</p>
-      <div style={serit}>
-        {[{ id: "dal", ad: "Dallar" }, { id: "tezhip", ad: "Tezhip" }].map(x => (
-          <button key={x.id} onClick={() => guncelle("meal", { sus: x.id })}
-            style={cip((ayar.meal.sus || "dal") === x.id)}>{x.ad}</button>
-        ))}
-      </div>
-    </div>
-  )
-
-  const izlemeBolum = (
-    <div key="izleme">
-      <p style={bolumBaslik}>İzleme modu</p>
-      <p style={baslik}>Arka plan</p>
-      <div style={serit}>
-        <label style={{ ...cip(ayar.izleme.arka === "ozel") }}>
-          <Plus size={13} /> Galeriden
-          <input type="file" accept="image/*" onChange={dosyaSec} style={{ display: "none" }} />
-        </label>
-        {gorseller.map(g => (
-          <button key={g.id} onClick={() => guncelle("izleme", { arka: g.id })} style={cip(ayar.izleme.arka === g.id)}>{g.ad}</button>
-        ))}
-        {DESENLER.map(d => (
-          <button key={d.id} onClick={() => guncelle("izleme", { arka: d.id })} style={cip(ayar.izleme.arka === d.id)}>{d.ad}</button>
-        ))}
-      </div>
-      <p style={baslik}>Çerçeve</p>
-      <div style={serit}>
-        {CERCEVELER.map(c => (
-          <button key={c.id} onClick={() => guncelle("izleme", { cerceve: c.id })} style={cip(ayar.izleme.cerceve === c.id)}>{c.ad}</button>
-        ))}
-      </div>
-      <p style={baslik}>Karartma</p>
-      <div style={serit}>
-        {KARARTMALAR.map(k => (
-          <button key={k.id} onClick={() => guncelle("izleme", { karartma: k.id })} style={cip(ayar.izleme.karartma === k.id)}>{k.ad}</button>
-        ))}
-      </div>
-      <p style={baslik}>İçerik</p>
-      <div style={serit}>
-        {anahtar("Meali de göster", ayar.izleme.meal, v => guncelle("izleme", { meal: v }))}
-      </div>
-      <p style={baslik}>Görünüm</p>
-      <div style={serit}>
-        {anahtar("Gizli butonlar", ayar.izleme.gizliDugme, v => guncelle("izleme", { gizliDugme: v }))}
-      </div>
-      <p style={{ fontSize: "11px", color: theme.textSecondary, lineHeight: 1.6, marginTop: "-6px" }}>
-        Gizli butonlar açıkken ekranda düğme durmaz: <b>sola sürükle</b> önceki âyet,
-        <b> sağa sürükle</b> sonraki âyet, <b>aşağı sürükle</b> çıkış,
-        <b> ortaya bir kez dokun</b> duraklat/devam.
+  /* ── İZLEME: ARKA PLAN ─────────────────────────────────────────────── */
+  const arkaSekmesi = (
+    <>
+      <AyarBaslik theme={theme} ikon={ImageIcon} ust={4}
+        not={galeriSecili && galeri.length >= 2 ? `Slayt · ${galeri.length} resim` : null}>Arka plan</AyarBaslik>
+      <ArkaPlanIzgara theme={theme} ogeler={arkaOgeleri} onSec={arkaSec}
+        ekle={{ onDosyalar: dosyaEkle, ekleniyor }} />
+      <p style={ipucu}>
+        {galeri.length >= 2
+          ? "Galerideki resimler sırayla gösterilir (slayt). Âyet değişse de resim ve efekt kesintisiz sürer."
+          : "Birden çok resim eklerseniz slayt gösterisi olur. Tek resimde âyet değişse de resim ve efekt aynen sürer."}
       </p>
-    </div>
+      {galeriSecili && galeri.length >= 2 && (
+        <>
+          <AyarBaslik theme={theme} ikon={Timer}>Her resim</AyarBaslik>
+          <Secim theme={theme} kucuk deger={Number(iz.slaytSure)} onSec={v => guncelle("izleme", { slaytSure: v })}
+            secenekler={SLAYT_SURELERI.map(sn => ({ id: sn, ad: `${sn} sn` }))} />
+          <AyarBaslik theme={theme} ikon={Shuffle}>Geçiş</AyarBaslik>
+          <Secim theme={theme} kucuk deger={iz.slaytGecis} onSec={v => guncelle("izleme", { slaytGecis: v })}
+            secenekler={GECISLER} />
+        </>
+      )}
+    </>
   )
 
-  const bolumler = odak === "izleme" ? [izlemeBolum, mealBolum] : [mealBolum, izlemeBolum]
+  /* ── İZLEME: HAREKET VE EFEKT ───────────────────────────────────────── */
+  const efektSekmesi = (
+    <>
+      <AyarBaslik theme={theme} ikon={Move} ust={4}>Resim hareketi</AyarBaslik>
+      <Secim theme={theme} kucuk deger={iz.hareket} onSec={v => guncelle("izleme", { hareket: v })} secenekler={HAREKETLER} />
+      {iz.hareket !== "sabit" && (
+        <>
+          <AyarBaslik theme={theme} ikon={Layers}>Hız</AyarBaslik>
+          <Secim theme={theme} kucuk deger={iz.hiz} onSec={v => guncelle("izleme", { hiz: v })} secenekler={HIZLAR} />
+        </>
+      )}
+      <AyarBaslik theme={theme} ikon={Wind}>Hava</AyarBaslik>
+      <Secim theme={theme} kucuk deger={iz.hava} onSec={v => guncelle("izleme", { hava: v })} secenekler={HAVALAR} />
+      <AyarBaslik theme={theme} ikon={Sun}>Işık</AyarBaslik>
+      <Secim theme={theme} kucuk deger={iz.isik} onSec={v => guncelle("izleme", { isik: v })} secenekler={ISIKLAR} />
+    </>
+  )
+
+  /* ── İZLEME: GÖRÜNÜM ─────────────────────────────────────────────────── */
+  const gorunumSekmesi = (
+    <>
+      <AyarBaslik theme={theme} ikon={Frame} ust={4}>Çerçeve</AyarBaslik>
+      <Secim theme={theme} kucuk deger={iz.cerceve} onSec={v => guncelle("izleme", { cerceve: v })} secenekler={CERCEVELER} sutun={3} />
+      <AyarBaslik theme={theme} ikon={Eye} not="yazının okunurluğu">Karartma</AyarBaslik>
+      <Secim theme={theme} kucuk deger={iz.karartma} onSec={v => guncelle("izleme", { karartma: v })} secenekler={KARARTMALAR} />
+      <div style={{ height: "12px" }} />
+      <Anahtar theme={theme} ikon={Languages} acik={!!iz.meal} onDegis={v => guncelle("izleme", { meal: v })}
+        baslik="Meali de göster" aciklama="Arapçanın altında Türkçe meal." />
+      <Anahtar theme={theme} ikon={Hand} acik={!!iz.gizliDugme} onDegis={v => guncelle("izleme", { gizliDugme: v })}
+        baslik="Gizli butonlar"
+        aciklama="Ekranda düğme durmaz. Sola sürükle: önceki · sağa: sonraki · aşağı: çıkış · yukarı: ayarlar · ortaya dokun: duraklat/devam." />
+    </>
+  )
+
+  /* ── MEAL PENCERESİ ──────────────────────────────────────────────────── */
+  const mealBolum = (
+    <>
+      <AyarBaslik theme={theme} ust={4}
+        not={ayar.meal.kaydir !== 0 ? (
+          <button onClick={() => guncelle("meal", { kaydir: 0 })} style={{
+            border: "none", background: "none", padding: 0, cursor: "pointer", fontFamily: "inherit",
+            fontSize: "10.5px", fontWeight: 600, color: theme.accent,
+          }}>İnce ayarı sıfırla</button>
+        ) : null}>Konum</AyarBaslik>
+      <Secim theme={theme} kucuk deger={ayar.meal.konum} onSec={v => guncelle("meal", { konum: v, kaydir: 0 })} secenekler={KONUMLAR} />
+      <AyarBaslik theme={theme}>Genişlik</AyarBaslik>
+      <Secim theme={theme} kucuk deger={ayar.meal.genislik} onSec={v => guncelle("meal", { genislik: v })} secenekler={GENISLIKLER} />
+      <AyarBaslik theme={theme} ikon={Type} not="px">Yazı boyu</AyarBaslik>
+      <Secim theme={theme} kucuk deger={ayar.meal.yaziBoyu} onSec={v => guncelle("meal", { yaziBoyu: v })} secenekler={YAZI_BOYLARI} sutun={6} />
+      <AyarBaslik theme={theme}>Süs</AyarBaslik>
+      <Secim theme={theme} kucuk deger={ayar.meal.sus || "dal"} onSec={v => guncelle("meal", { sus: v })} secenekler={SUSLER} />
+      <div style={{ height: "12px" }} />
+      <Anahtar theme={theme} acik={!!ayar.meal.hat} onDegis={v => guncelle("meal", { hat: v })}
+        baslik="Sûre adı hattı" aciklama="Pencere başlığında sûre adı, sûre başlığındaki hat yazısıyla." />
+    </>
+  )
 
   return (
     <>
@@ -162,26 +203,36 @@ export default function MealIzlemeAyarlari({ acik, kapat, theme, isMobile, odak 
         left: "50%", transform: "translateX(-50%)",
         bottom: isMobile ? 0 : "6vh",
         width: isMobile ? "100%" : "min(560px, 92vw)",
-        maxHeight: "78vh", overflowY: "auto",
+        maxHeight: "78vh", overflowY: "auto", overscrollBehavior: "contain",
         background: theme.surface,
         border: `1px solid ${theme.border}`,
         borderRadius: isMobile ? "16px 16px 0 0" : "16px",
         boxShadow: "0 -6px 28px rgba(0,0,0,0.28)",
-        padding: "14px 16px calc(18px + env(safe-area-inset-bottom))",
+        padding: "12px 14px calc(18px + env(safe-area-inset-bottom))",
         boxSizing: "border-box",
       }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px" }}>
           <span style={{ fontSize: "14px", fontWeight: 600, color: theme.text }}>Meal ve izleme ayarları</span>
-          <button onClick={kapat} style={{
+          <button onClick={kapat} aria-label="Kapat" style={{
             display: "flex", padding: "4px", border: "none", background: "none",
             cursor: "pointer", color: theme.textSecondary,
           }}><X size={16} /></button>
         </div>
-        {bolumler.map((b, i) => (
-          <div key={i} style={i ? { borderTop: `1px solid ${theme.border}`, paddingTop: "12px", marginTop: "6px" } : undefined}>
-            {b}
-          </div>
-        ))}
+
+        <Secim theme={theme} deger={bolum} onSec={setBolum} secenekler={BOLUMLER} />
+
+        {bolum === "izleme" ? (
+          <>
+            <div style={{ marginTop: "10px" }}>
+              <Secim theme={theme} kucuk deger={sekme} onSec={setSekme} secenekler={SEKMELER} />
+            </div>
+            <div style={{ marginTop: "10px" }}>
+              {sekme === "arka" ? arkaSekmesi : sekme === "efekt" ? efektSekmesi : gorunumSekmesi}
+            </div>
+          </>
+        ) : (
+          <div style={{ marginTop: "10px" }}>{mealBolum}</div>
+        )}
       </div>
     </>
   )

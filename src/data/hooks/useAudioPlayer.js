@@ -121,6 +121,24 @@ const oncuMs = () => Math.min(500, Math.max(10, olculenBaslama))
 let erkenIzinli = true
 let erkenKapanma = ""          // TEŞHİS: kapandıysa neden
 
+/* ── ARKA PLANDA ÖRTÜŞMELİ GEÇİŞ (7 Ekim 2026) ─────────────────────────────
+   Kullanıcı: "ses %100, uygulamadan çıkınca birkaç âyet sonra ses kesilebiliyor;
+   dönünce âyeti sessiz okuyor, durdurup devam edince ses geliyor."
+   SEBEP (iOS kuralı): arka plandaki bir uygulama ses oturumunu SÜRDÜREBİLİR ama
+   yeniden BAŞLATAMAZ. Arka planda geçiş "ended" yolundan yapılıyordu: çıkan âyet
+   biter, bir an HİÇBİR ŞEY çalmaz, sonra yenisine play() denir. Bu boşluk biraz
+   uzarsa (iPhone "ended"i geç veriyor) iOS oturumu kapatıyor; yeni âyet "çalıyor"
+   görünür, konumu ilerler ama SES ÇIKMAZ — ön plana dönülse bile, ta ki yeni bir
+   play() (durdur→devam) oturumu yeniden açana dek.
+   ÇÖZÜM: arka planda da ÖRTÜŞMELİ geçiş. Zamanlayıcılar arkada kısıldığı için
+   ön plandaki erken başlatma kullanılamıyor; onun yerine çalan elemanın kendi
+   "timeupdate" olayına (ses motorundan gelir, ~4/sn) bakılıyor: kalan süre bu
+   eşiğin altına inince sıradaki âyet başlatılıyor, çıkan âyet KESİLMEDEN
+   sonuna kadar çalıyor → arada sessiz an olmuyor, oturum hiç kapanmıyor.
+   iPhone'da yeni elemanın sesi play()'den ~300 ms sonra geldiği için (ölçüldü)
+   pratikte üst üste binme ya hiç olmaz ya da âyet sonunun nefes payına denk gelir. */
+const ARKA_ONCU_SN = 0.45
+
 /* ══ GEÇİCİ: SES GEÇİŞ TEŞHİSİ ═════════════════════════════════════════════
    iPhone'da âyet geçişinin nereye harcandığını CİHAZIN KENDİSİNE ölçtürmek için.
    (Önden bayt indirme masaüstünde işe yaradı, iPhone'da belirgin fark etmedi —
@@ -320,6 +338,7 @@ export default function useAudioPlayer() {
   // Arkada sessizleşme kurtarması (aşağıda "ARKA PLANDA SESSİZLEŞME")
   const sessizRef = useRef(null)   // { url, t } — bağlam düştüğü anda çalan âyet ve konum
   const bekleyenRef = useRef(false) // oynatmayı KULLANICI değil biz duraklattık → dönüşte sür
+  const arkaBoslukRef = useRef(false) // arkadayken örtüşmesiz geçiş oldu (iOS oturumu düşmüş olabilir)
 
   // Kazanç zincirini kur (yalnız gerektiğinde, yalnız bir kez).
   const kazancKur = useCallback(() => {
@@ -680,6 +699,9 @@ export default function useAudioPlayer() {
     }
 
     if (!elle && tekAyetRef.current) { bitir(); return }
+    // Arkada BOŞLUKLU geçiş (örtüşmesiz, "ended" yolu) → iOS ses oturumu kapanmış
+    // olabilir; ön plana dönünce çalan âyet bir kez "dürtülür" (bkz. senkronla).
+    if (!elle && !erken && typeof document !== "undefined" && document.visibilityState !== "visible") arkaBoslukRef.current = true
 
     const j = sonrakiIndeks(kuyrukIndisRef.current)
     if (j < 0) { bitir(); return }
@@ -733,6 +755,7 @@ export default function useAudioPlayer() {
         // TEŞHİS: konumun sona vardığı anı yakala (sessizliğin gerçek başlangıcı).
         // Uzaktayken seyrek, son 0,6 sn'de 4 ms'de bir bakılıyor.
         a.__sonAn = 0; a.__endedAn = 0
+        a.__arkaGecti = false        // yeni başlangıç: arka plan örtüşmeli geçişi yeniden kurulabilir
         a.__teshis = null            // yeni âyete başladı: eski geçişin kaydı artık ona ait değil
         const sonIzle = () => {
           if (!SES_TESHIS) return
@@ -767,6 +790,23 @@ export default function useAudioPlayer() {
       for (const olay of ["ratechange", "seeked", "durationchange"]) {
         a.addEventListener(olay, () => { if (a === aktifEl() && !a.paused) erkenKurRef.current() })
       }
+      // ARKA PLANDA ÖRTÜŞMELİ GEÇİŞ (yukarıdaki not): yalnız ekran KAPALIYKEN
+      a.addEventListener("timeupdate", () => {
+        if (typeof document === "undefined" || document.visibilityState === "visible") return
+        if (a.__arkaGecti || a !== aktifEl() || a.paused || a.ended) return
+        if (!erkenIzinli || tekAyetRef.current) return
+        const d = a.duration
+        if (!Number.isFinite(d) || d <= 0) return
+        const kalan = (d - a.currentTime) / (a.playbackRate || 1)
+        if (kalan > ARKA_ONCU_SN || kalan <= 0.02) return
+        const j = sonrakiIndeks(kuyrukIndisRef.current)
+        const it = j >= 0 ? kuyrukRef.current[j] : null
+        const b = bostaEl()
+        // Sıradaki âyet boştaki tamponda hazır değilse "ended" yoluna bırak
+        if (!it || !b || b.dataset.url !== mp3Url(kariIdRef.current, it.sureNo, it.ayetNo)) return
+        a.__arkaGecti = true
+        sonrakiAyetCalRef.current(false, true)
+      })
       a.addEventListener("error", () => {
         // Yalnız aktif eleman hata verirse kullanıcıya bildir (boşta ön-yükleme hatası sessiz)
         if (a === aktifEl() && a.dataset.url) { setHata("Ses yüklenemedi"); setDurum("kapali") }
@@ -817,10 +857,11 @@ export default function useAudioPlayer() {
        • Ekrana dönünce bağlamı uyandır, saklanan konumdan KENDİLİĞİNDEN devam
          et. Uyanmazsa duraklatılmış kalır; oynat'a dokunmak yeter (devamEt
          artık her askı hâlini uyandırıyor).
-       • Kazanç zinciri yoksa (ses hiç kısılmadıysa) ve uygulama 20 sn'den uzun
-         arkada kaldıysa: dönüşte çalan elemana kısa bir duraklat→oynat
-         ("dürtme") — kullanıcının elle yaptığının aynısı; sesi takılı kalan
-         <audio> çıkışını yeniden bağlar. */
+       • Kazanç zinciri yoksa (ses %100 — iPhone'daki olağan durum): arkadayken
+         örtüşmesiz ("ended" yolundan) bir geçiş olduysa ya da uygulama 20 sn'den
+         uzun arkada kaldıysa, dönüşte çalan elemana kısa bir duraklat→oynat
+         ("dürtme") — kullanıcının elle yaptığının aynısı; düşmüş ses oturumunu
+         yeniden açar. Asıl önlem ise arkada örtüşmeli geçiş (ARKA_ONCU_SN). */
   useEffect(() => {
     let zaman = 0
     let gizlendi = 0
@@ -877,7 +918,7 @@ export default function useAudioPlayer() {
       // Arka planda zamanlayıcılar kısılıyor → erken başlatma kapanır, "ended" yolu işler.
       if (document.visibilityState !== "visible") {
         erkenIptalRef.current()
-        if (!gizlendi) gizlendi = Date.now()
+        if (!gizlendi) { gizlendi = Date.now(); arkaBoslukRef.current = false }
         return
       }
       const arkadaKaldi = gizlendi ? Date.now() - gizlendi : 0
@@ -911,8 +952,11 @@ export default function useAudioPlayer() {
         } catch { /* yoksay */ }
         return
       }
-      // (3) Zincir yok, uzun süre arkada kaldı, çalıyor → kısa dürtme
-      if (!c && durumRef.current === "caliyor" && !a.paused && arkadaKaldi > 20000) {
+      // (3) Zincir yok, çalıyor ve arkadayken BOŞLUKLU geçiş olduysa (ya da uzun
+      // süre arkada kaldıysa) → kısa dürtme: kullanıcının elle yaptığı durdur→devam
+      const boslukVardi = arkaBoslukRef.current
+      arkaBoslukRef.current = false
+      if (!c && durumRef.current === "caliyor" && !a.paused && (boslukVardi || arkadaKaldi > 20000)) {
         try {
           a.pause()
           const p = a.play()

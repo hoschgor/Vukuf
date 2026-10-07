@@ -163,6 +163,7 @@ function rafPaleti(theme) {
     // yatay çubuk (üst ray, levha bandı, taç)
     yatay: `${DAMAR_Y}linear-gradient(180deg, ${c3} 0%, ${c2} 22%, ${c1} 70%, ${c0} 100%)`,
     band: `${DAMAR_Y}linear-gradient(180deg, ${c2} 0%, ${c1} 55%, ${c0} 100%)`,
+    zemin: theme?.background || "transparent",   // direğin yanındaki boşluk: sayfanın kendi rengi
     blok: `linear-gradient(90deg, ${c1} 0%, ${c3} 40%, ${c4} 50%, ${c2} 72%, ${c0} 100%)`,
     oymaSoluk: hsl(h, Math.min(0.6, as), koyuTema ? 0.72 : 0.86, 0.3),
     oyma: hsl(h, Math.min(0.6, as), koyuTema ? 0.72 : 0.86, 0.55),   // çerçevedeki ince oyma çizgileri
@@ -245,38 +246,195 @@ function RafKapakSemse({ p, tohum }) {
   )
 }
 
-// Bölmenin içi: arka pano, kenar ışıkları, kitap sırtları, (açıkken) ön kapak
-function RafIci({ p, yuk, tam, detay, sirtlar, kapak, onSirt, canli }) {
-  const zincir = Math.max(8, Math.round(yuk * 0.36))
+// ── IŞIK DÜZENİ (8 Ekim 2026) ──────────────────────────────────────────────
+// Her raf için rafın kimliğinden türeyen ama raftan rafa değişen bir düzen:
+// kandil solda/sağda kısa zincirle, ya da direğin dibinden uzun zincirle sarkar;
+// mumlar tek / çift / üç kollu şamdan, boyları farklı. Kandilin olduğu yana mum
+// konmaz (çakışmasın); kandil yoksa iki yana da mum gelebilir. Kimlik aynı kaldıkça
+// düzen de aynı kalır (her açılışta yer değiştirmez).
+const SAMDAN_EN = { tek: 20, cift: 40, uclu: 54 }
+// Raf içindeki mumlar: her rafta değil; bazı raflarda tek bir şamdan, bazılarında iki yanda,
+// bazılarında hiç (o raf direkten sarkan kandille aydınlanır). Kimlikten türer → hep aynı kalır.
+function isikDuzeni(tohum) {
+  const h = sayiKaristir(String(tohum) + "·ışık")
+  const r = (b, n) => Math.floor(h / b) % n
+  const tipler = ["tek", "cift", "uclu", "cift", "tek"]
+  const boylar = (k) => [16 + r(k, 13), 14 + r(k * 3 + 1, 12), 13 + r(k * 5 + 2, 11)]
+  const secim = ["sag", "yok", "sol", "ikisi", "sag", "yok", "sol"][r(1, 7)]
+  const mumlar = []
+  if (secim === "sag" || secim === "ikisi") mumlar.push({ yer: "sag", tip: tipler[r(13, 5)], boylar: boylar(29) })
+  if (secim === "sol" || secim === "ikisi") mumlar.push({ yer: "sol", tip: tipler[r(41, 5)], boylar: boylar(43) })
+  return { mumlar }
+}
+
+// ── DİREKTEN SARKAN KANDİLLER ─────────────────────────────────────────────
+// Sütun başlığındaki kancadan gerçek halkalı zincirle sarkar; uzunluk, cam rengi ve
+// salınım her direkte farklı. Her direk yalnız bir bölmeye ait (sol direk o bölmenin,
+// satır sonundaki sağ direk de son bölmenin) → aynı direğe iki kandil düşmez.
+const CAM_RENKLERI = [
+  [236, 156, 58],   // kehribar
+  [196, 58, 62],    // yakut
+  [58, 150, 110],   // zümrüt
+  [70, 110, 196],   // safir
+  [214, 118, 150],  // gül
+  [246, 214, 150],  // buzlu
+]
+function direkKandilleri(tohum, sagDirek) {
+  const h = sayiKaristir(String(tohum) + "·kandil")
+  const r = (b, n) => Math.floor(h / b) % n
+  const yap = (k) => ({
+    cam: CAM_RENKLERI[r(k * 7 + 3, CAM_RENKLERI.length)],
+    oran: 0.3 + r(k * 11 + 5, 7) * 0.1,          // zincirin ulaşabileceği boyun ne kadarı
+    sure: 6 + r(k * 13 + 1, 5),                   // salınım süresi (sn)
+    gecik: r(k * 17 + 2, 9) * 0.7,
+  })
+  return {
+    sol: r(3, 5) < 2 ? yap(1) : null,
+    sag: sagDirek && r(19, 5) < 2 ? yap(2) : null,
+  }
+}
+
+// Zincir boyu ve kandilin iç bölmeye göre ışık merkezi (iç panoyu aydınlatmak için)
+const KANDIL_GOVDE = 42, KANDIL_KANCA = 4
+function kandilYerlestir(lambalar, rayH, yuk) {
+  const sonuc = {}
+  ;["sol", "sag"].forEach(y => {
+    const k = lambalar[y]
+    if (!k) { sonuc[y] = null; return }
+    // Kandil direğin önünde sarktığı için levha bandının hizasına kadar inebilir
+    const alan = rayH + yuk + 46
+    const zincir = Math.max(10, Math.round((alan - KANDIL_GOVDE - KANDIL_KANCA - 4) * k.oran))
+    sonuc[y] = { ...k, zincir, merkezY: KANDIL_KANCA + zincir + 21 - rayH }
+  })
+  return sonuc
+}
+
+function DirekKandili({ p, k, yer, en, canli }) {
+  const GOVDE = KANDIL_GOVDE, KANCA = KANDIL_KANCA
+  const zincir = k.zincir
+  const [cr, cg, cb] = k.cam
+  const cam = `rgb(${cr},${cg},${cb})`
+  const halka = "#b8954a"
+  return (
+    <div aria-hidden="true" style={{
+      position: "absolute", top: 0, [yer === "sag" ? "right" : "left"]: `${en / 2 - 11}px`,
+      width: "22px", height: `${KANCA + zincir + GOVDE}px`, zIndex: 3, pointerEvents: "none",
+    }}>
+      {/* kanca: direk başlığına çakılı küçük halka */}
+      <div style={{ position: "absolute", left: "8px", top: "-1px", width: "6px", height: "5px", borderRadius: "50%", border: `1.5px solid ${halka}`, boxSizing: "border-box" }} />
+      <div className="vk-salin" style={{ position: "absolute", left: 0, top: `${KANCA}px`, width: "22px", height: `${zincir + GOVDE}px`, transformOrigin: "50% 0", animationDuration: `${k.sure}s`, animationDelay: `-${k.gecik}s` }}>
+        {/* zincir: yüzü görünen halkalar + yandan görünen halkalar, sırayla */}
+        <div style={{
+          position: "absolute", left: "8px", top: 0, width: "6px", height: `${zincir}px`,
+          background: `radial-gradient(ellipse 2.4px 3.3px at 50% 4px, transparent 52%, ${halka} 58%, #6e5524 86%, transparent 94%) 0 0 / 6px 9px repeat-y,
+                       linear-gradient(90deg, transparent 2.3px, #8a6a2c 2.3px, ${halka} 3px, #6e5524 3.7px, transparent 3.7px) 0 7px / 6px 9px repeat-y`,
+        }} />
+        {/* kandil: üç askı kolu, kapak, renkli cam gövde, alev, alt topuz */}
+        <svg width="22" height={GOVDE} viewBox="0 0 22 42" style={{ position: "absolute", left: 0, top: `${zincir}px`, overflow: "visible" }}>
+          <path d="M11 0 L3.5 10 M11 0 L18.5 10 M11 0 V9" stroke={halka} strokeWidth="0.8" fill="none" />
+          <ellipse cx="11" cy="10.5" rx="8.2" ry="1.8" fill={p.gold} />
+          <path d="M3.4 11 Q-1.2 20 5.5 28 Q8 30.5 11 30.5 Q14 30.5 16.5 28 Q23.2 20 18.6 11 Z" fill={cam} fillOpacity="0.78" stroke={p.gold} strokeWidth="0.7" />
+          <path d="M5.2 13 Q2.8 19 6.4 25" stroke="rgba(255,255,255,0.45)" strokeWidth="1.1" fill="none" strokeLinecap="round" />
+          <path className={canli ? "vk-alev" : undefined} d="M11 15 q-3 4.6 0 8 q3-3.4 0-8z" fill="#ffd98a" />
+          <circle cx="11" cy="21.5" r="5" fill="rgba(255,220,150,0.35)" />
+          <path d="M8 30.5 h6 l-1.6 3 h-2.8 z" fill={p.gold} />
+          <circle cx="11" cy="36" r="2" fill={p.gold} />
+          <path d="M11 38 v4" stroke={p.gold} strokeWidth="1" />
+        </svg>
+      </div>
+    </div>
+  )
+}
+
+// Mum: x (orta), alt (gövdenin dibi), en, boy → alev + fitil + gövde
+function MumCiz({ p, x, alt, en, boy, canli, gecik }) {
+  const ust = alt - boy
+  return (
+    <>
+      <path className={canli ? (gecik ? "vk-alev vk-alev2" : "vk-alev") : undefined}
+        d={`M${x} ${ust - 11} q-3 5 0 8 q3-3 0-8z`} fill={p.alev} stroke="none" />
+      <path d={`M${x} ${ust - 3} v3`} />
+      <rect x={x - en / 2} y={ust} width={en} height={boy} rx="1" fill={p.mum}
+        stroke={p.koyuTema ? "none" : "rgba(110,70,30,0.45)"} strokeWidth="0.8" />
+    </>
+  )
+}
+
+// Şamdan: tek / çift / üç kollu. viewBox yüksekliği 58, taban 43'ten aşağı.
+function Samdan({ p, tip, boylar, yukseklik, canli, stil }) {
+  const en = SAMDAN_EN[tip] || 40
+  const H = Math.min(58, yukseklik)
+  const W = Math.round(H * en / 58)
+  const [b0, b1, b2] = boylar
+  return (
+    <svg width={W} height={H} viewBox={`0 0 ${en} 58`} aria-hidden="true"
+      style={{ position: "absolute", bottom: 0, pointerEvents: "none", ...stil }}
+      stroke={p.gold} strokeWidth="1" strokeLinejoin="round">
+      {tip === "tek" && (
+        <>
+          <MumCiz p={p} x={10} alt={43} en={6} boy={Math.min(28, b0 + 4)} canli={canli} />
+          <path d="M3 43 h14 l-2 4 H5 z" fill={p.gold} fillOpacity="0.55" />
+          <path d="M8 47 h4 v4 h-4 z M4 51 h12 l1 3 H3 z" fill={p.gold} fillOpacity="0.45" />
+        </>
+      )}
+      {tip === "cift" && (
+        <>
+          <MumCiz p={p} x={13} alt={43} en={6} boy={Math.min(28, b0 + 6)} canli={canli} />
+          <MumCiz p={p} x={28} alt={43} en={5} boy={Math.min(26, b1)} canli={canli} gecik />
+          <path d="M5 43 h30 l-3 4 H8 z" fill={p.gold} fillOpacity="0.55" />
+          <path d="M17 47 h6 v4 h-6 z M11 51 h18 l1 3 H10 z" fill={p.gold} fillOpacity="0.45" />
+        </>
+      )}
+      {tip === "uclu" && (
+        <>
+          <MumCiz p={p} x={27} alt={27} en={5} boy={Math.min(14, b0 - 4)} canli={canli} />
+          <MumCiz p={p} x={9} alt={33} en={5} boy={Math.min(14, b1 - 2)} canli={canli} gecik />
+          <MumCiz p={p} x={45} alt={33} en={5} boy={Math.min(14, b2 - 2)} canli={canli} gecik />
+          <path d="M24 27 h6 l-1 2 h-4 z M5 33 h8 l-1 2 h-6 z M41 33 h8 l-1 2 h-6 z" fill={p.gold} fillOpacity="0.6" />
+          <path d="M9 35 Q9 43 27 43 Q45 43 45 35" fill="none" strokeWidth="1.4" />
+          <path d="M27 29 V47" strokeWidth="1.6" />
+          <path d="M22 47 h10 l-1 4 h-8 z M15 51 h24 l1 3 H14 z" fill={p.gold} fillOpacity="0.5" />
+        </>
+      )}
+    </svg>
+  )
+}
+
+// Bölmenin içi: arka pano, ışıklar, kitap sırtları, (açıkken) ön kapak
+function RafIci({ p, yuk, tam, detay, sirtlar, kapak, onSirt, canli, tohum, lambalar }) {
+  const duzen = isikDuzeni(tohum || "raf")
   const mumH = Math.min(58, yuk - 8)
-  const mumW = Math.round(mumH * 40 / 58)
-  const alevSinif = canli ? "vk-alev" : undefined
+  // Kenarlarda dolu alan → kitapların payı
+  const kenarPay = (yer) => {
+    const m = duzen.mumlar.find(x => x.yer === yer)
+    return m ? 10 + Math.round(mumH * SAMDAN_EN[m.tip] / 58) + 8 : 22
+  }
+  // Işık halkaları: mumların ve direkten sarkan kandillerin bulunduğu kenarlar
+  const isiklar = []
+  duzen.mumlar.forEach(m => isiklar.push({ s: { [m.yer === "sag" ? "right" : "left"]: "-50px", bottom: "-60px" }, bg: p.isik }))
+  ;["sol", "sag"].forEach(y => {
+    const k = lambalar?.[y]
+    if (!k) return
+    const [cr, cg, cb] = k.cam
+    isiklar.push({
+      s: { [y === "sag" ? "right" : "left"]: "-78px", top: `${Math.min(yuk - 30, k.merkezY) - 75}px` },
+      bg: `radial-gradient(circle, rgba(${cr},${cg},${cb},0.26), rgba(${cr},${cg},${cb},0.07) 45%, rgba(${cr},${cg},${cb},0) 70%)`,
+    })
+  })
   return (
     <div style={{
       position: "relative", height: `${yuk}px`, flexShrink: 0, overflow: "hidden",
       background: p.ic, boxShadow: "inset 0 10px 16px rgba(0,0,0,0.55)", transition: "height 0.3s ease",
     }}>
-      <div style={{ position: "absolute", left: "-30px", top: tam ? "-10px" : "-62px", width: "150px", height: "150px", borderRadius: "50%", background: p.isik, pointerEvents: "none", transition: "top 0.3s ease" }} />
-      <div style={{ position: "absolute", right: "-36px", bottom: "-44px", width: "170px", height: "160px", borderRadius: "50%", background: p.isik, pointerEvents: "none" }} />
+      {isiklar.map((k, i) => (
+        <div key={i} style={{ position: "absolute", width: "150px", height: "150px", borderRadius: "50%", background: k.bg, pointerEvents: "none", ...k.s }} />
+      ))}
       <KemerKosesi p={p} buyuk={yuk > 120} />
       <KemerKosesi p={p} sag buyuk={yuk > 120} />
 
-      {/* Sol: zincirle asılı kandil */}
-      <svg width="26" height={zincir + 31} viewBox={`0 0 26 ${zincir + 31}`} aria-hidden="true"
-        style={{ position: "absolute", left: "12px", top: 0, pointerEvents: "none", zIndex: 2 }}
-        fill="none" stroke={p.gold} strokeWidth="1.1" strokeLinejoin="round">
-        <path d={`M13 0 V${zincir}`} strokeDasharray="2 2" />
-        <g transform={`translate(0 ${zincir})`}>
-          <path d="M9 0h8l-1 3h-6z" fill={p.gold} fillOpacity="0.4" />
-          <path d="M8 3 Q2 13 8 22 h10 Q24 13 18 3 Z" fill={p.alev} fillOpacity="0.35" />
-          <path className={alevSinif} d="M13 8 q-3.5 5 0 9 q3.5-4 0-9z" fill={p.alev} stroke="none" />
-          <path d="M8 22h10l-2 4h-6z" fill={p.gold} fillOpacity="0.4" />
-          <path d="M13 26v4" />
-        </g>
-      </svg>
 
       {/* Orta: kitap sırtları (sığmazsa orantılı incelir) + açıkken ön kapak */}
-      <div style={{ position: "absolute", left: "44px", right: "54px", top: "8px", bottom: 0, display: "flex", alignItems: "flex-end", justifyContent: "center", gap: "2px", overflow: "hidden" }}>
+      <div style={{ position: "absolute", left: `${kenarPay("sol")}px`, right: `${kenarPay("sag")}px`, top: "8px", bottom: 0, display: "flex", alignItems: "flex-end", justifyContent: "center", gap: "2px", overflow: "hidden" }}>
         {sirtlar.map(s => {
           const tiklanir = detay && onSirt && s.ad
           return (
@@ -301,19 +459,10 @@ function RafIci({ p, yuk, tam, detay, sirtlar, kapak, onSirt, canli }) {
         {detay && kapak?.tip === "semse" && <RafKapakSemse p={p} tohum={kapak.tohum} />}
       </div>
 
-      {/* Sağ: pirinç şamdanda iki mum */}
-      <svg width={mumW} height={mumH} viewBox="0 0 40 58" aria-hidden="true"
-        style={{ position: "absolute", right: "10px", bottom: 0, pointerEvents: "none" }}
-        stroke={p.gold} strokeWidth="1" strokeLinejoin="round">
-        <path className={alevSinif} d="M13 4 q-3 5 0 8 q3-3 0-8z" fill={p.alev} stroke="none" />
-        <path d="M13 12 v3" />
-        <rect x="10" y="15" width="6" height="28" rx="1" fill={p.mum} stroke="none" />
-        <path className={canli ? "vk-alev vk-alev2" : undefined} d="M28 14 q-2.6 4.4 0 7 q2.6-2.6 0-7z" fill={p.alev} stroke="none" />
-        <path d="M28 21 v3" />
-        <rect x="25.5" y="24" width="5" height="19" rx="1" fill={p.mum} stroke="none" />
-        <path d="M5 43 h30 l-3 4 H8 z" fill={p.gold} fillOpacity="0.55" />
-        <path d="M17 47 h6 v4 h-6 z M11 51 h18 l1 3 H10 z" fill={p.gold} fillOpacity="0.45" />
-      </svg>
+      {duzen.mumlar.map(m => (
+        <Samdan key={m.yer} p={p} tip={m.tip} boylar={m.boylar} yukseklik={mumH} canli={canli}
+          stil={{ [m.yer === "sag" ? "right" : "left"]: "10px" }} />
+      ))}
     </div>
   )
 }
@@ -345,7 +494,9 @@ function RafDirek({ p, en }) {
   }
   const halka = { display: "block", width: "60%", height: "3px", flexShrink: 0, borderRadius: "2px", background: p.silindir, boxShadow: "0 1px 0 rgba(0,0,0,0.35)" }
   return (
-    <div aria-hidden="true" style={{ width: `${en}px`, flexShrink: 0, alignSelf: "stretch", display: "flex", flexDirection: "column", alignItems: "center", position: "relative", zIndex: 1 }}>
+    // Gövdenin yanlarındaki boşluk TEMANIN ZEMİN RENGİNİ alır (saydam bırakınca bazı
+    // sayfalarda arkadaki beyaz görünüyordu; koyu pano ise ağır duruyordu).
+    <div aria-hidden="true" style={{ width: `${en}px`, flexShrink: 0, alignSelf: "stretch", display: "flex", flexDirection: "column", alignItems: "center", position: "relative", zIndex: 1, background: p.zemin }}>
       <DirekDilimleri p={p} liste={DIREK_BASLIK} />
       <span style={{ ...govde, flex: "1 1 0" }} />
       <span style={halka} />
@@ -374,10 +525,12 @@ function KemerKosesi({ p, sag, buyuk }) {
 // Bölme = [direk] [üst ray + iç + levha bandı] [direk]. Yan yana bölmeler direği PAYLAŞIR:
 // her bölme sol direğini çizer, satırın sonundaki bölme sağ direği de çizer.
 function RafBolmesi({ p, theme, isMobile, acik, satirAcik, gizli, sirtlar, kapak, onSirt, onToggle,
-  setNodeRef, sortStil, suruklemeProps, duzenlemeMode, sira, sagDirek, children }) {
+  setNodeRef, sortStil, suruklemeProps, duzenlemeMode, sira, sagDirek, tohum, children }) {
   const tam = acik || satirAcik
   const yuk = icYuksekligi(tam, isMobile)
   const en = direkEni(isMobile)
+  const rayH = isMobile ? 8 : 11
+  const lambalar = kandilYerlestir(direkKandilleri(tohum || "raf", sagDirek), rayH, yuk)
   return (
     <div
       ref={setNodeRef}
@@ -391,10 +544,12 @@ function RafBolmesi({ p, theme, isMobile, acik, satirAcik, gizli, sirtlar, kapak
       }}
     >
       <RafDirek p={p} en={en} />
+      {lambalar.sol && <DirekKandili p={p} k={lambalar.sol} yer="sol" en={en} canli={tam} />}
+      {lambalar.sag && <DirekKandili p={p} k={lambalar.sag} yer="sag" en={en} canli={tam} />}
       <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
         {/* üst ray */}
-        <div style={{ height: isMobile ? "8px" : "11px", flexShrink: 0, background: p.yatay, boxShadow: `inset 0 -1px 0 ${p.oyma}` }} />
-        <RafIci p={p} yuk={yuk} tam={tam} detay={acik && !duzenlemeMode} sirtlar={sirtListesi(sirtlar, tam)} kapak={kapak} onSirt={onSirt} canli={tam} />
+        <div style={{ height: `${rayH}px`, flexShrink: 0, background: p.yatay, boxShadow: `inset 0 -1px 0 ${p.oyma}` }} />
+        <RafIci p={p} yuk={yuk} tam={tam} detay={acik && !duzenlemeMode} sirtlar={sirtListesi(sirtlar, tam)} kapak={kapak} onSirt={onSirt} canli={tam} tohum={tohum} lambalar={lambalar} />
         {/* raf dudağı + levha bandı */}
         <div style={{ height: "4px", flexShrink: 0, background: p.c3, boxShadow: "0 1px 0 rgba(0,0,0,0.4)" }} />
         <div style={{ flexGrow: 1, background: p.band, padding: isMobile ? "5px 4px 6px" : "6px 6px 8px" }}>
@@ -418,7 +573,7 @@ function RafBolmesi({ p, theme, isMobile, acik, satirAcik, gizli, sirtlar, kapak
 // Dolabın tacı: profilli korniş + diş sırası + ince oyma; kaide: basamaklı ayak
 function DolapTaci({ p, isMobile }) {
   return (
-    <div aria-hidden="true">
+    <div aria-hidden="true" style={{ position: "relative" }}>
       <div style={{ height: isMobile ? "7px" : "9px", margin: "0 -5px", borderRadius: "5px 5px 0 0", background: p.yatay, boxShadow: `inset 0 1px 0 ${p.oyma}` }} />
       <div style={{ height: "4px", margin: "0 -2px", background: p.c0 }} />
       <div style={{ height: isMobile ? "18px" : "24px", position: "relative", background: p.band }}>
@@ -440,14 +595,18 @@ function DolapKaidesi({ p, isMobile }) {
 }
 
 // Son satır eksikse boşluğu dolduran boş bölme (dolap yarım kalmasın) — tıklanmaz, sürüklenmez
-function BosBolme({ p, theme, isMobile, satirAcik, sira, sagDirek }) {
+function BosBolme({ p, theme, isMobile, satirAcik, sira, sagDirek, tohum }) {
   const en = direkEni(isMobile)
+  const yuk = icYuksekligi(satirAcik, isMobile)
+  const lambalar = kandilYerlestir(direkKandilleri(tohum, sagDirek), isMobile ? 8 : 11, yuk)
   return (
-    <div aria-hidden="true" style={{ order: sira, minWidth: 0, display: "flex" }}>
+    <div aria-hidden="true" style={{ order: sira, minWidth: 0, display: "flex", position: "relative" }}>
       <RafDirek p={p} en={en} />
+      {lambalar.sol && <DirekKandili p={p} k={lambalar.sol} yer="sol" en={en} canli={satirAcik} />}
+      {lambalar.sag && <DirekKandili p={p} k={lambalar.sag} yer="sag" en={en} canli={satirAcik} />}
       <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
         <div style={{ height: isMobile ? "8px" : "11px", flexShrink: 0, background: p.yatay, boxShadow: `inset 0 -1px 0 ${p.oyma}` }} />
-        <RafIci p={p} yuk={icYuksekligi(satirAcik, isMobile)} tam={satirAcik} detay={false} sirtlar={[]} kapak={null} canli={false} />
+        <RafIci p={p} yuk={yuk} tam={satirAcik} detay={false} sirtlar={[]} kapak={null} canli={satirAcik} tohum={tohum} lambalar={lambalar} />
         <div style={{ height: "4px", flexShrink: 0, background: p.c3, boxShadow: "0 1px 0 rgba(0,0,0,0.4)" }} />
         <div style={{ flexGrow: 1, minHeight: isMobile ? "55px" : "58px", background: p.band }} />
       </div>
@@ -1365,7 +1524,7 @@ function SortableKategori({ kategori,
     <>
       <RafBolmesi
         p={yer.p} theme={theme} isMobile={isMobile} acik={acik} satirAcik={yer.satirAcik} gizli={gizli}
-        sirtlar={sirtlar} kapak={kapak}
+        sirtlar={sirtlar} kapak={kapak} tohum={kategori.id}
         onSirt={alimSirtlari.length && !duzenlemeMode ? (s) => onAlimSec(kategori.id, s.id) : undefined}
         onToggle={toggle}
         setNodeRef={setNodeRef} sortStil={style}
@@ -1692,7 +1851,7 @@ function OzelKategori({ raf, havuz, theme, dinamikMod, duzenlemeMode, gizlemeMod
     <>
       <RafBolmesi
         p={yer.p} theme={theme} isMobile={isMobile} acik={acik} satirAcik={yer.satirAcik} gizli={gizli}
-        sirtlar={sirtlar} kapak={{ tip: "semse", tohum: raf.id }}
+        sirtlar={sirtlar} kapak={{ tip: "semse", tohum: raf.id }} tohum={raf.id}
         onSirt={rafKitaplari.length && !duzenlemeMode ? (s) => s.veri && navigate(kitapYolu(s.veri)) : undefined}
         onToggle={isimDuzen != null ? undefined : toggle}
         setNodeRef={setNodeRef} sortStil={sstyle}
@@ -1860,7 +2019,7 @@ function OtomatikKategori({ rafId, baslik, Ikon, kitaplar: liste, theme, dinamik
     <>
       <RafBolmesi
         p={yer.p} theme={theme} isMobile={isMobile} acik={acik} satirAcik={yer.satirAcik} gizli={gizli}
-        sirtlar={sirtlar} kapak={{ tip: "semse", tohum: rafId }}
+        sirtlar={sirtlar} kapak={{ tip: "semse", tohum: rafId }} tohum={rafId}
         onSirt={liste.length && !duzenlemeMode ? (s) => s.veri && navigate(kitapYolu(s.veri)) : undefined}
         onToggle={toggle}
         setNodeRef={setNodeRef} sortStil={sstyle}
@@ -2394,8 +2553,10 @@ export default function Kutuphane() {
         }
         .vk-alev { transform-box: fill-box; transform-origin: 50% 100%; animation: vk-alev 2.4s ease-in-out infinite; }
         .vk-alev2 { animation-duration: 3.1s; animation-delay: -1.2s; }
+        @keyframes vk-salin { 0%, 100% { transform: rotate(-1.4deg); } 50% { transform: rotate(1.4deg); } }
+        .vk-salin { animation: vk-salin 7s ease-in-out infinite; will-change: transform; }
         @media (hover: hover) { .vk-sirt:hover { transform: translateY(-5px); } }
-        @media (prefers-reduced-motion: reduce) { .vk-alev { animation: none; } }
+        @media (prefers-reduced-motion: reduce) { .vk-alev, .vk-salin { animation: none; } }
       `}</style>
 
       {/* Dinamik mod ipucu — Kitaplık başlığının üstünde (yer açmadan) */}
@@ -2414,13 +2575,17 @@ export default function Kutuphane() {
       <div style={{ marginBottom: "32px" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px", flexWrap: "wrap", gap: "10px" }}>
           <h1 style={{ fontSize: "28px", color: theme.textSecondary, letterSpacing: "1px", fontFamily: "PlayfairDisplay, serif", display: "flex", alignItems: "center", gap: "10px" }}>
-            <svg width="1.15em" height="1.15em" viewBox="0 0 24 26" fill="none" stroke={theme.textSecondary} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-              <line x1="2.5" y1="3" x2="21.5" y2="3" />
-              <line x1="2.5" y1="23" x2="21.5" y2="23" />
-              <line x1="2.5" y1="3" x2="2.5" y2="23" />
-              <rect x="5" y="6" width="3" height="14" rx="0.6" />
-              <rect x="10" y="6" width="3" height="14" rx="0.6" />
-              <rect x="15" y="6" width="3" height="14" rx="0.6" />
+            {/* Kitaplık simgesi: iki dik kitap + bir yaslanmış kitap, raf çizgisi */}
+            <svg width="1.2em" height="1.2em" viewBox="0 0 40 40" aria-hidden="true" style={{ flexShrink: 0 }}>
+              <g fill={`${theme.accent}26`} stroke={theme.accent} strokeWidth="1.8" strokeLinejoin="round">
+                <rect x="5" y="9" width="7" height="25" rx="1" />
+                <rect x="13.5" y="6" width="7" height="28" rx="1" />
+                <path d="M23 10.5 l6.4 -1.8 l6.4 23.4 l-6.4 1.8 z" />
+              </g>
+              <g stroke={theme.accent} strokeWidth="1.3">
+                <path d="M5 14h7M5 29h7M13.5 11h7M13.5 29h7M24.4 15.6l6.4-1.8M27.8 27.8l6.4-1.8" />
+              </g>
+              <path d="M3 36h34" stroke={theme.accent} strokeWidth="1.8" strokeLinecap="round" />
             </svg>
             Kitaplık
           </h1>
@@ -2613,7 +2778,7 @@ export default function Kutuphane() {
       </div>
 
       {/* ═══ KİTAPLIK DOLABI: taç + bölmeler (direkleri paylaşır) + kaide ═══ */}
-      <div style={{ filter: "none", boxShadow: "0 18px 30px -12px rgba(0,0,0,0.5)", borderRadius: "6px 6px 4px 4px" }}>
+      <div style={{ boxShadow: "0 18px 30px -12px rgba(0,0,0,0.5)", borderRadius: "6px 6px 4px 4px" }}>
         <DolapTaci p={ahsap} isMobile={isMobile} />
         <div>
           <div
@@ -2713,7 +2878,7 @@ export default function Kutuphane() {
       </DndContext>
       {Array.from({ length: bosSayisi }, (_, k) => {
         const y = yerlesim(gorunenIdler.length + k)
-        return <BosBolme key={`bos-${k}`} p={ahsap} theme={theme} isMobile={isMobile} satirAcik={y.satirAcik} sira={y.sira} sagDirek={y.sagDirek} />
+        return <BosBolme key={`bos-${k}`} p={ahsap} theme={theme} isMobile={isMobile} satirAcik={y.satirAcik} sira={y.sira} sagDirek={y.sagDirek} tohum={`bos-${k}`} />
       })}
           </div>
         </div>

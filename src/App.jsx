@@ -5,6 +5,9 @@ import MushafYukleniyorRozeti from "./components/MushafYukleniyorRozeti"
 import Kutuphane from "./pages/Kutuphane"
 import { useApp } from "./AppContext"
 import { swKaydet, swGuncelle } from "./data/cevrimdisi"
+// Uygulama geneli oynatıcı (6 Ekim 2026): ses Kur'ân ekranından çıkınca da sürebilsin
+import { OynaticiSaglayici } from "./data/oynatici"
+import MiniOynatici from "./components/MiniOynatici"
 
 /* ═══════════════════════════════════════════════════════════════════════════
    SAYFALAR GEREKTİĞİNDE YÜKLENİYOR (29 Eylül 2026)
@@ -231,6 +234,9 @@ export default function App() {
       )}
 
       {!okumadaMiyiz && <Navbar />}
+      {/* OYNATICI KÖKTE — KuranOkuma ve mini oynatıcı aynı oynatıcıyı paylaşır;
+          sayfa değişince ses kesilmez ("devamlı oynatma" açıksa). */}
+      <OynaticiSaglayici>
       <ParcaHatasi theme={theme} yol={location.pathname}>
       <Suspense fallback={<SayfaYukleniyor theme={theme} />}>
       <Routes>
@@ -247,6 +253,9 @@ export default function App() {
       </Routes>
       </Suspense>
       </ParcaHatasi>
+      {/* Kur'ân ekranı dışında ses sürüyorsa minimal oynatıcı */}
+      <MiniOynatici />
+      </OynaticiSaglayici>
     </div>
   )
 }

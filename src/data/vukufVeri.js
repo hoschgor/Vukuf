@@ -166,6 +166,8 @@ export const KATEGORILER = [
       "vukuf-donus-noktalari",   // Gezinme → dönüş noktaları aç/kapa (liste sessionStorage'da)
       "vukuf-gecmis-acik",       // Ayarlar → Geçmiş aç/kapa
       "vukuf-hap-konum-geri", "vukuf-hap-konum-kopru",   // sürüklenen dönüş/köprü düğmelerinin yeri
+      "vukuf-hap-konum-mini", "vukuf-mini-kucuk",        // mini oynatıcının yeri / küçük hâli
+      "vukuf-arka-calma",                                // PlayerBar → Devamlı oynatma
       // Göster/gizle ve bilgi öğeleri
       "vukuf-btn-bilgi", "vukuf-btn-gorsel", "vukuf-btn-kayit", "vukuf-btn-otooynat",
       "vukuf-btn-sade", "vukuf-btn-sayfa", "vukuf-btn-sure", "vukuf-btn-tekrar",

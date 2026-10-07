@@ -87,7 +87,9 @@ import {
 import { barSatirOlc } from "../components/BarSiraPaneli"
 import GorselOlustur from "../components/GorselOlustur"
 import { useMushaf, sureBaslangicSayfasi, ayetSayfasi } from "../data/hooks/useMushaf"
-import useAudioPlayer, { BESMELE_OKUYANLAR } from "../data/hooks/useAudioPlayer"
+import { BESMELE_OKUYANLAR } from "../data/hooks/useAudioPlayer"
+// Oynatıcı artık uygulama kökünde (src/data/oynatici.jsx) — ekrandan çıkınca da sürebilsin
+import { useOynatici, arkaCalmaAcikMi } from "../data/oynatici"
 import { useMediaQuery } from "../data/hooks/useMediaQuery"
 import usePanelKilidi from "../data/hooks/usePanelKilidi"
 import useZoomOnar from "../data/hooks/useZoomOnar"
@@ -942,7 +944,7 @@ export default function KuranOkuma({ kitap }) {
   const [kayitPaneliAcik, setKayitPaneliAcik] = useState(false)
 
   // ── Ses sistemi
-  const player = useAudioPlayer()
+  const player = useOynatici()
 
   // ── Veri
   const [mushafData, setMushafData] = useState([])
@@ -1161,6 +1163,12 @@ export default function KuranOkuma({ kitap }) {
   const hifzDokunRef = useRef({ ac: hifzDokunAc, ses: hifzDokunSes })
   // Oynatıcı her render'da yeni nesne; sabit kimlikli kelimeTikla güncelini buradan okur
   const hifzPlayerRef = useRef(null)
+  /* DEVAMLI OYNATMA KAPALIYSA ekrandan çıkınca ses durur (eski davranış). Oynatıcı
+     artık uygulama kökünde yaşadığı için bunu kendisi yapmıyor; açıksa ses sürer
+     ve başka ekranlarda mini oynatıcı görünür (components/MiniOynatici.jsx). */
+  useEffect(() => () => {
+    if (!arkaCalmaAcikMi()) { try { hifzPlayerRef.current?.durdur() } catch { /* yoksay */ } }
+  }, [])
   /* GEÇMİŞ — okuma oturumu (Ayarlar → Geçmiş açıksa). Konum sonKonumRef'ten
      (dönüş noktalarıyla aynı referans); ses çalarken etkileşim olmasa da süre
      sayılır — dinlemek de okumadır. Ayrıntı: data/gecmis.js */
@@ -2334,7 +2342,7 @@ useEffect(() => {
     {
       const k = sonKonumRef.current
       if (k && (k.sayfa > 1 || (k.oran || 0) > 0.02)) {
-        donusBirak("arama", ayetSayfasi(h.sureNo, h.ayetNo || 1, ayetSayfaLookup), { ...k })
+        donusBirak(h.kaynak || "arama", ayetSayfasi(h.sureNo, h.ayetNo || 1, ayetSayfaLookup), { ...k })
       }
     }
     setTimeout(() => {

@@ -63,22 +63,70 @@ function konumOku(ad) {
     return k && typeof k.fx === "number" && typeof k.fy === "number" ? k : null
   } catch { return null }
 }
+const HAP_ADLARI = ["geri", "kopru", "mini"]     // mini: uygulama geneli mini oynatıcı
 export function hapKonumuVarMi() {
-  return !!(konumOku("geri") || konumOku("kopru"))
+  return HAP_ADLARI.some(a => !!konumOku(a))
 }
 export function hapKonumlariniSifirla() {
-  try { localStorage.removeItem(KONUM_ONEK + "geri"); localStorage.removeItem(KONUM_ONEK + "kopru") } catch { /* yoksay */ }
+  try { for (const a of HAP_ADLARI) localStorage.removeItem(KONUM_ONEK + a) } catch { /* yoksay */ }
   for (const f of konumAboneleri) f()
 }
 
 const ESIK = 6        // px — bunu aşmadan sürükleme başlamaz
 const KENAR = 8       // px — dolu alanlardan / ekran kenarından en az boşluk
+const BEKLE_SURUKLE = 280   // ms — kaydırma geçiren hapta dikey sürükleme için basılı tutma
+
+/* ── KAYDIRMAYI ALTTAKİ SAYFAYA GEÇİR (7 Ekim 2026) ──
+   Kullanıcı: "oynatıcı açıkken diğer eserler içinde gezme işlemi scrollde
+   zorlaştı." Sabit (fixed) hap parmağın kaydırdığı bölgede duruyor; üstünden
+   başlayan kaydırma hapı sürüklüyor ya da hiçbir şeyi kaydırmıyordu (fixed
+   öğenin kaydırma zinciri kitabın iç kaydırıcısına ulaşmaz).
+   ÇÖZÜM (yalnız `kaydirGecir` verilen hapta — mini oynatıcı):
+     • Dokunmatikte hızlı DİKEY kaydırma → alttaki kaydırıcı kaydırılır,
+       parmak kalkınca doğal bir ataletle süzülür.
+     • YATAY çekiş ya da kısa basılı tutup (~0,3 sn) çekiş → hap sürüklenir.
+     • Fare tekerleği hap üzerindeyken de alttaki sayfayı kaydırır. */
+function altindakiKaydirici(x, y, kendi) {
+  try {
+    const liste = document.elementsFromPoint(x, y)
+    for (const el of liste) {
+      if (kendi && kendi.contains(el)) continue
+      let e = el
+      while (e && e !== document.body && e !== document.documentElement) {
+        const st = getComputedStyle(e)
+        if (/(auto|scroll)/.test(st.overflowY) && e.scrollHeight > e.clientHeight + 1) return e
+        e = e.parentElement
+      }
+      break
+    }
+  } catch { /* yoksay */ }
+  return document.scrollingElement || document.documentElement
+}
+let ataletIptal = null
+function ataletDurdur() { if (ataletIptal) { ataletIptal(); ataletIptal = null } }
+function ataletBaslat(el, hiz) {   // hiz: px/ms, kaydırma yönünde
+  ataletDurdur()
+  if (!el || Math.abs(hiz) < 0.05) return
+  let v = Math.max(-6, Math.min(6, hiz)), son = performance.now(), id = 0
+  const adim = (an) => {
+    const dt = Math.min(40, an - son); son = an
+    const once = el.scrollTop
+    el.scrollTop = once + v * dt
+    v *= Math.pow(0.9975, dt)
+    if (Math.abs(v) < 0.02 || el.scrollTop === once) { ataletIptal = null; return }
+    id = requestAnimationFrame(adim)
+  }
+  id = requestAnimationFrame(adim)
+  const dur = () => { cancelAnimationFrame(id); window.removeEventListener("pointerdown", dur, true) }
+  window.addEventListener("pointerdown", dur, true)   // ekrana dokununca atalet durur
+  ataletIptal = dur
+}
 
 /* Sürüklenebilir hap konumu.
-   yan: "sol" | "sag" (varsayılan yatay yer) · altta: varsayılan alt mı üst mü
+   yan: "sol" | "sag" | "orta" (varsayılan yatay yer) · altta: varsayılan alt mı üst mü
    altPay / ustPay: alttaki / üstteki DOLU alanın yüksekliği (bar + oynatıcı)
    ek: varsayılan yerde ek kayma (iki hap üst üste gelmesin) */
-function useHapKonumu({ ad, yan, altta, altPay = 0, ustPay = 0, ek = 0 }) {
+export function useHapKonumu({ ad, yan, altta, altPay = 0, ustPay = 0, ek = 0, kaydirGecir = false }) {
   const ref = useRef(null)
   const [boyut, setBoyut] = useState({ w: 0, h: 0 })
   // Ekran ölçüsü HER ÇİZİMDE pencereden okunur (bkz. aşağıdaki "dönme" notu);
@@ -149,7 +197,7 @@ function useHapKonumu({ ad, yan, altta, altPay = 0, ustPay = 0, ek = 0 }) {
   if (canli) { x = canli.x; y = canli.y }
   else if (kayitli) { x = kayitli.fx * vw; y = kayitli.fy * vh }
   else {
-    x = yan === "sol" ? minX + 6 : maxX - 6
+    x = yan === "sol" ? minX + 6 : yan === "orta" ? (minX + maxX) / 2 : maxX - 6
     y = altta ? maxY - 2 - ek : minY + 2 + ek
   }
   x = sik(x, minX, maxX); y = sik(y, minY, maxY)
@@ -166,18 +214,32 @@ function useHapKonumu({ ad, yan, altta, altPay = 0, ustPay = 0, ek = 0 }) {
   const olaylar = {
     onPointerDown: (e) => {
       if (e.button != null && e.button > 0) return
-      const b = { id: e.pointerId, x0: x, y0: y, sx: e.clientX, sy: e.clientY, aday: true }
+      const b = { id: e.pointerId, x0: x, y0: y, sx: e.clientX, sy: e.clientY, aday: true,
+        t0: performance.now(), kay: null, st0: 0, ornek: [] }
       bilgi.current = b
       suruklendi.current = false
+      const gecir = kaydirGecir && e.pointerType !== "mouse"
       const hareket = (ev) => {
         if (ev.pointerId !== b.id) return
         const dx = ev.clientX - b.sx, dy = ev.clientY - b.sy
         if (b.aday) {
           if (Math.hypot(dx, dy) <= ESIK) return
           b.aday = false
+          // Hızlı ve dikey çekiş → sayfayı kaydır (hap yerinde kalır)
+          if (gecir && Math.abs(dy) > Math.abs(dx) && performance.now() - b.t0 < BEKLE_SURUKLE) {
+            b.kay = altindakiKaydirici(b.sx, b.sy, ref.current)
+            b.st0 = b.kay ? b.kay.scrollTop : 0
+          }
         }
         suruklendi.current = true
         if (ev.cancelable) ev.preventDefault()
+        if (b.kay) {
+          b.kay.scrollTop = b.st0 - dy
+          const an = performance.now()
+          b.ornek.push({ an, y: ev.clientY })
+          while (b.ornek.length > 2 && an - b.ornek[0].an > 90) b.ornek.shift()
+          return
+        }
         const s = sinir.current()
         setCanli({ x: sik(b.x0 + dx, s.minX, s.maxX), y: sik(b.y0 + dy, s.minY, s.maxY) })
       }
@@ -186,6 +248,14 @@ function useHapKonumu({ ad, yan, altta, altPay = 0, ustPay = 0, ek = 0 }) {
         window.removeEventListener("pointermove", hareket)
         window.removeEventListener("pointerup", bitti)
         window.removeEventListener("pointercancel", bitti)
+        if (b.kay) {
+          // Parmak kalktı: son ~90 ms'nin hızıyla süzül
+          const o = b.ornek, ilk = o[0], son = o[o.length - 1]
+          const dt = ilk && son ? son.an - ilk.an : 0
+          if (ev.type === "pointerup" && dt > 0 && performance.now() - son.an < 80) ataletBaslat(b.kay, -(son.y - ilk.y) / dt)
+          b.kay = null
+          return
+        }
         const c = canliRef.current
         if (!b.aday && c && ev.type === "pointerup") {
           const s = sinir.current()
@@ -199,6 +269,13 @@ function useHapKonumu({ ad, yan, altta, altPay = 0, ustPay = 0, ek = 0 }) {
       window.addEventListener("pointerup", bitti)
       window.addEventListener("pointercancel", bitti)
     },
+    // Fare tekerleği: hap üzerindeyken de alttaki sayfa kaysın
+    ...(kaydirGecir ? {
+      onWheel: (e) => {
+        const k = altindakiKaydirici(e.clientX, e.clientY, ref.current)
+        if (k) k.scrollTop += e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY
+      },
+    } : {}),
     // Sürüklemenin ardından gelen tıklama düğmeyi tetiklemesin
     onClickCapture: (e) => {
       if (suruklendi.current) { e.stopPropagation(); e.preventDefault() }

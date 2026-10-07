@@ -4,6 +4,8 @@ import {
   Volume2, Volume1, VolumeX, SlidersHorizontal,
 } from "lucide-react"
 import { KARILAR } from "../data/hooks/useAudioPlayer"
+import { useArkaCalma } from "../data/oynatici"
+import { Headphones } from "lucide-react"
 import { useMediaQuery } from "../data/hooks/useMediaQuery"
 import MushafPlayButton from "./MushafPlayButton"
 
@@ -67,6 +69,9 @@ export default function PlayerBar({
   // sağında tek düğme, yukarı doğru açılan ince menü. Döngü düğmesi de bardan
   // kalktı (aşağıdaki ana barda zaten var).
   const [ayarAcik, setAyarAcik] = useState(false)
+  // DEVAMLI OYNATMA (6 Ekim 2026): açıksa Kur'ân ekranından çıkınca ses sürer,
+  // öbür ekranlarda mini oynatıcı görünür (components/MiniOynatici.jsx)
+  const [arkaCalma, setArkaCalma] = useArkaCalma()
   // Sessize alınca eski seviyeyi hatırla → tekrar dokununca aynı seviyeye dön
   const oncekiSesRef = useRef(ses > 0 ? ses : 1)
   useEffect(() => { if (ses > 0) oncekiSesRef.current = ses }, [ses])
@@ -254,6 +259,27 @@ export default function PlayerBar({
             <button onClick={() => hizAyarla && hizAyarla(1)} title="1×'e getir" style={sifirStil}>
               <RotateCcw size={12} />
             </button>
+          </div>
+          <div style={{ height: "1px", background: theme.border, opacity: 0.6, margin: "0 2px" }} />
+          {/* DEVAMLI OYNATMA — satırın tamamı dokunulabilir; sağda küçük anahtar */}
+          <div role="switch" aria-checked={arkaCalma} onClick={() => setArkaCalma(!arkaCalma)}
+            title="Kur'ân ekranından çıkınca da çalmaya devam etsin (öbür ekranlarda küçük oynatıcı görünür)"
+            style={{ ...satirStil, cursor: "pointer" }}>
+            <span style={{ ...ikonDugme, cursor: "pointer" }}><Headphones size={16} color={arkaCalma ? theme.accent : theme.textSecondary} /></span>
+            <span style={{ flex: 1, minWidth: 0, fontSize: "12px", color: theme.text, lineHeight: 1.25 }}>
+              Devamlı oynatma
+              <span style={{ display: "block", fontSize: "10px", color: theme.textSecondary }}>Ekrandan çıkınca da çalsın</span>
+            </span>
+            <span aria-hidden="true" style={{
+              width: "30px", height: "18px", borderRadius: "999px", flexShrink: 0, position: "relative",
+              background: arkaCalma ? theme.accent : `${theme.textSecondary}44`, transition: "background .15s ease",
+            }}>
+              <span style={{
+                position: "absolute", top: "2px", left: arkaCalma ? "14px" : "2px",
+                width: "14px", height: "14px", borderRadius: "50%", background: "#fff",
+                boxShadow: "0 1px 3px rgba(0,0,0,0.25)", transition: "left .15s ease",
+              }} />
+            </span>
           </div>
         </div>
       )}

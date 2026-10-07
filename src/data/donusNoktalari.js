@@ -45,6 +45,7 @@ export const KAYNAK_ADI = {
   ornek: "Örnek âyet",
   geri: "Geri dön",
   gecmis: "Geçmiş",
+  oynatici: "Oynatıcı",
 }
 
 const aboneler = new Set()

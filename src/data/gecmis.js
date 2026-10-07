@@ -36,8 +36,13 @@ const ARAMA_BIRLESTIR = 2 * 60 * 1000     // aynı arama bu süre içinde tekrar
 
 /* ── AYAR ─────────────────────────────────────────────────────────────────── */
 const ayarAboneleri = new Set()
+/* VARSAYILAN AÇIK (8 Ekim 2026, kullanıcı kararı). Hiç dokunulmamışsa (anahtar
+   yok) açık sayılır; kullanıcı kapattıysa "0" yazılı olduğu için kapalı kalır. */
 export function gecmisAcikMi() {
-  try { return localStorage.getItem(GECMIS_AYAR) === "1" } catch { return false }
+  try {
+    const v = localStorage.getItem(GECMIS_AYAR)
+    return v === null ? true : v === "1"
+  } catch { return false }
 }
 /* Kapatınca geçmiş SİLİNİR (onayı arayüz alır). */
 export function gecmisAyarla(acik) {

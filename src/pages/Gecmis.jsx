@@ -19,7 +19,7 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import {
   History, BookOpen, BookMarked, Search, Trash2, CheckSquare, Square, CheckCircle2,
-  CircleDot, Bookmark, ChevronRight, X, RotateCcw,
+  CircleDot, Bookmark, ChevronRight, X, RotateCcw, Info, Settings,
 } from "lucide-react"
 import { useApp } from "../AppContext"
 import {
@@ -66,6 +66,7 @@ export default function Gecmis() {
   const liste = useGecmis()
   const [acik, setAcik] = useGecmisAyari()
   const [filtre, setFiltre] = useState("hepsi")
+  const [kapatSor, setKapatSor] = useState(false)    // boş sayfada "Geçmişi kapat" onayı
   const [acilan, setAcilan] = useState(null)         // açık (genişletilmiş) kaydın id'si
   const [secim, setSecim] = useState(null)           // null = seçim kipi kapalı; Set = seçilenler
   const [geriAl, setGeriAl] = useState(null)         // { kayitlar, metin }
@@ -268,10 +269,49 @@ export default function Gecmis() {
             </div>
           )}
 
-          {!gorunen.length && (
+          {/* Liste BOŞKEN kısa bilgi (8 Ekim 2026, kullanıcı: "çok fazla bilgi var; başlık
+              ve tek cümle yeter"). Kapatma yolu yalnız "Geçmişi kapat"a dokununca, onay
+              kutusunun içinde gösteriliyor. */}
+          {!liste.length && (
+            <div style={{ ...kart, padding: "16px", fontSize: "13px", lineHeight: 1.6, color: theme.textSecondary }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px", color: theme.text, fontWeight: 600, fontSize: "14px", marginBottom: "4px" }}>
+                <History size={17} color={ac} /> Henüz kayıt yok
+              </div>
+              <p style={{ margin: 0 }}>
+                Arama yaptıkça ve okudukça kayıtlarınız burada, tarihe göre listelenir.
+                Kayıtlarınız cihazınız üzerinde tutulur.
+              </p>
+              {!kapatSor ? (
+                <div style={{ marginTop: "12px" }}>
+                  <button onClick={() => setKapatSor(true)} style={hap(false)}>
+                    <Info size={13} /> Geçmişi kapat
+                  </button>
+                </div>
+              ) : (
+                <div style={{
+                  marginTop: "12px", padding: "12px", borderRadius: "10px",
+                  border: `1px solid ${ac}55`, background: `${ac}0d`,
+                }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "7px", color: theme.text, fontWeight: 600, marginBottom: "4px" }}>
+                    <Settings size={14} color={ac} /> Geçmiş kapatılsın mı?
+                  </div>
+                  <p style={{ margin: "0 0 10px" }}>
+                    Kapatınca yeni kayıt tutulmaz ve ana menüdeki Geçmiş sayfası gizlenir.
+                    Bu ayar ana ekrandaki <b>Ayarlar (dişli) → Geçmiş → "Geçmişi tut"</b> bölümündedir;
+                    yeniden açmak için oradan açabilirsiniz.
+                  </p>
+                  <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                    <button onClick={() => { setKapatSor(false); setAcik(false) }} style={hap(true)}>Kapat</button>
+                    <button onClick={() => setKapatSor(false)} style={hap(false)}>Vazgeç</button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+          {liste.length > 0 && !gorunen.length && (
             <div style={{ ...kart, padding: "18px 16px", fontSize: "13px", color: theme.textSecondary, display: "flex", gap: "8px", alignItems: "center" }}>
               <CheckCircle2 size={16} color={ac} />
-              {liste.length ? "Bu türde kayıt yok." : "Henüz kayıt yok. Arama yaptıkça ve okudukça burada görünecek."}
+              Bu türde kayıt yok.
             </div>
           )}
 

@@ -29,11 +29,16 @@ export function useOynatici() {
   return useContext(OynaticiBaglami)
 }
 
-/* ── DEVAMLI OYNATMA AYARI ("vukuf-arka-calma", varsayılan KAPALI) ────────── */
+/* ── DEVAMLI OYNATMA AYARI ("vukuf-arka-calma", varsayılan AÇIK) ────────────
+   8 Ekim 2026 (kullanıcı kararı): hiç dokunulmamışsa (anahtar yok) açık sayılır;
+   PlayerBar'dan kapatılırsa "0" yazılı kalır. */
 const ARKA_ANAHTAR = "vukuf-arka-calma"
 const aboneler = new Set()
 export function arkaCalmaAcikMi() {
-  try { return localStorage.getItem(ARKA_ANAHTAR) === "1" } catch { return false }
+  try {
+    const v = localStorage.getItem(ARKA_ANAHTAR)
+    return v === null ? true : v === "1"
+  } catch { return true }
 }
 export function arkaCalmaAyarla(acik) {
   try { localStorage.setItem(ARKA_ANAHTAR, acik ? "1" : "0") } catch { /* kota */ }

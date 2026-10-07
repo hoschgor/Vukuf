@@ -16,13 +16,14 @@
 import { useEffect, useMemo, useState } from "react"
 import {
   X, Image as ImageIcon, Sparkles, LayoutTemplate, MonitorPlay, Languages,
-  Eye, Hand, Type, Move, Wind, Sun, Timer, Shuffle, Frame, Layers,
+  Eye, Hand, Type, Move, Wind, Sun, Timer, Shuffle, Frame, Layers, Palette, Highlighter, Pipette,
 } from "lucide-react"
 import { DESENLER, GORSELLER } from "../data/arkaplanlar"
 import { useIzlemeAyar, ayarOku } from "../data/izlemeAyar"
 import { HAREKETLER, HIZLAR, HAVALAR, ISIKLAR, GECISLER, SLAYT_SURELERI } from "../data/izlemeSahne"
 import { galeriyeEkle, galeridenSil, galeriBlobu, eskiGorselVarsaTasi } from "../data/izlemeGaleri"
-import { Secim, Anahtar, AyarBaslik, ArkaPlanIzgara, desenOnizleme, useGaleriUrlleri } from "./AyarOgeleri"
+import { Secim, Anahtar, AyarBaslik, ArkaPlanIzgara, desenOnizleme, useGaleriUrlleri, RenkSecici } from "./AyarOgeleri"
+import { ONERILEN_RENKLER, sonRenkleriOku, sonRenkEkle, ISARET_RENKLERI } from "./GorselOlustur"
 
 const KONUMLAR   = [{ id: "ust", ad: "Üst" }, { id: "orta", ad: "Orta" }, { id: "alt", ad: "Alt" }]
 const GENISLIKLER = [{ id: "dar", ad: "Dar" }, { id: "orta", ad: "Orta" }, { id: "genis", ad: "Geniş" }]
@@ -77,6 +78,7 @@ export default function MealIzlemeAyarlari({ acik, kapat, theme, isMobile, odak 
   const galeri = iz.galeri || []
   const urller = useGaleriUrlleri(acik ? galeri : [], galeriBlobu)
   const [ekleniyor, setEkleniyor] = useState(false)
+  const [sonRenkler, setSonRenkler] = useState(() => sonRenkleriOku())   // görsel oluşturmayla ortak
   const galeriSecili = iz.arka === "galeri" || iz.arka === "ozel"
 
   const arkaOgeleri = useMemo(() => [
@@ -161,6 +163,24 @@ export default function MealIzlemeAyarlari({ acik, kapat, theme, isMobile, odak 
       <Secim theme={theme} kucuk deger={iz.cerceve} onSec={v => guncelle("izleme", { cerceve: v })} secenekler={CERCEVELER} sutun={3} />
       <AyarBaslik theme={theme} ikon={Eye} not="yazının okunurluğu">Karartma</AyarBaslik>
       <Secim theme={theme} kucuk deger={iz.karartma} onSec={v => guncelle("izleme", { karartma: v })} secenekler={KARARTMALAR} />
+      {/* 8 Ekim 2026: izlemede de yazı rengi + vakıf işaretlerini renklendirme */}
+      <AyarBaslik theme={theme} ikon={Palette} not="otomatik: zemine göre">Yazı rengi</AyarBaslik>
+      <RenkSecici theme={theme} deger={iz.yaziRengi || null} onSec={v => guncelle("izleme", { yaziRengi: v })}
+        oneriler={ONERILEN_RENKLER} sonRenkler={sonRenkler} onSonEkle={r => setSonRenkler(sonRenkEkle(r))} />
+      <AyarBaslik theme={theme} ikon={Highlighter} not="vakıf işaretleri">İşaret rengi</AyarBaslik>
+      <Secim theme={theme} kucuk deger={iz.isaretRenk || "kapali"} onSec={v => guncelle("izleme", { isaretRenk: v })} secenekler={ISARET_RENKLERI} />
+      {iz.isaretRenk === "ozel" && (
+        <label style={{
+          position: "relative", display: "inline-flex", alignItems: "center", gap: "6px", marginTop: "6px",
+          padding: "6px 11px", borderRadius: "999px", border: `1px solid ${theme.border}`,
+          fontSize: "12px", fontWeight: 600, color: theme.textSecondary, cursor: "pointer", overflow: "hidden",
+        }}>
+          <Pipette size={13} /> İşaret rengini seç
+          <span style={{ width: "16px", height: "16px", borderRadius: "50%", background: iz.isaretOzel || "#e0503c", border: `1px solid ${theme.border}` }} />
+          <input type="color" value={iz.isaretOzel || "#e0503c"} onChange={e => guncelle("izleme", { isaretOzel: e.target.value })}
+            style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer", border: "none", padding: 0 }} />
+        </label>
+      )}
       <div style={{ height: "12px" }} />
       <Anahtar theme={theme} ikon={Languages} acik={!!iz.meal} onDegis={v => guncelle("izleme", { meal: v })}
         baslik="Meali de göster" aciklama="Arapçanın altında Türkçe meal." />

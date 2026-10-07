@@ -261,6 +261,8 @@ export default function IzlemeModu({
       rahle: true,
       rahleDipte: true,                           // rahle altta ortalı, küçük
       arapcaFont,
+      yaziRengi: iz.yaziRengi || null,            // 8 Ekim 2026: izlemede de yazı rengi
+      isaretRenk: iz.isaretRenk, isaretOzel: iz.isaretOzel,
       rozetNo: veri.ayetNo || null,
       secde: !!veri.secde,
       rozetImg: rozetRef.current,
@@ -284,7 +286,7 @@ export default function IzlemeModu({
     // `ustte` bilerek bağımlılıkta DEĞİL: onu burada değiştiriyoruz, listeye
     // girerse efekt kendi kendini tetikleyip sonsuz takas yapardı.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [acik, olcu, arkaSurum, aktif, icerikAl, arka, iz.cerceve, iz.meal, iz.gizliDugme, arapcaFont, hatVar])
+  }, [acik, olcu, arkaSurum, aktif, icerikAl, arka, iz.cerceve, iz.meal, iz.gizliDugme, iz.yaziRengi, iz.isaretRenk, iz.isaretOzel, arapcaFont, hatVar])
 
   /* Gerçek tam ekran: destekleyen tarayıcıda (masaüstü, Android) sistem çubukları
      da kalkar. iOS bunu video dışı öğelerde desteklemiyor; orada kurulu uygulama

@@ -3,7 +3,7 @@ import {
   X, Download, Share2, Plus, Check, Loader2,
   Square, RectangleHorizontal, RectangleVertical, Image as ImageIcon, Pipette,
   ImagePlay, Film, Volume2, VolumeX, CircleStop, Smartphone, Monitor,
-  Ratio, LayoutTemplate, Frame, Eye, Wind, Sun, Palette, Layers, Move, Gauge, Timer,
+  Ratio, LayoutTemplate, Frame, Eye, Wind, Sun, Palette, Layers, Move, Gauge, Timer, Highlighter,
 } from "lucide-react"
 import { DESENLER, GORSELLER } from "../data/arkaplanlar"
 // İzleme modunun sahnesi (hareket / hava / ışık) ve ortak galeri — 7 Ekim 2026'da
@@ -362,7 +362,7 @@ const KARARTMALAR = [
 // ── YAZI RENGİ ────────────────────────────────────────────────────────────────
 // "oto" = zemin koyuysa fildişi, açıksa koyu (varsayılan davranış).
 // Yanında hazır öneriler, kullanıcının seçtiği ÖZEL renk ve SON 5 renk durur.
-const ONERILEN_RENKLER = [
+export const ONERILEN_RENKLER = [
   { id: "beyaz",    ad: "Beyaz",       renk: "#ffffff" },
   { id: "fildisi",  ad: "Fildişi",     renk: "#f6f1e6" },
   { id: "krem",     ad: "Krem",        renk: "#eadfc4" },
@@ -393,13 +393,13 @@ function seritStiliKur() {
 }
 
 const SON_RENK_ANAHTAR = "vukuf-gorsel-son-renkler"
-const sonRenkleriOku = () => {
+export const sonRenkleriOku = () => {
   try {
     const d = JSON.parse(localStorage.getItem(SON_RENK_ANAHTAR) || "[]")
     return Array.isArray(d) ? d.filter(x => typeof x === "string" && /^#[0-9a-fA-F]{6}$/.test(x)).slice(0, 5) : []
   } catch { return [] }
 }
-const sonRenkEkle = (renk) => {
+export const sonRenkEkle = (renk) => {
   try {
     const yeni = [renk, ...sonRenkleriOku().filter(r => r.toLowerCase() !== renk.toLowerCase())].slice(0, 5)
     localStorage.setItem(SON_RENK_ANAHTAR, JSON.stringify(yeni))
@@ -503,6 +503,59 @@ export function karartmaCiz(ctx, W, H, karartma, koyuZemin = true) {
   ctx.fillStyle = g; ctx.fillRect(0, 0, W, H)
 }
 
+/* ── İŞARET RENGİ (8 Ekim 2026) ─────────────────────────────────────────────
+   Kullanıcı: "izleme modu ya da görüntü modunda vakıf işaretleri gibi işaretleri
+   renklendirmeyi seçenek olarak sunsak". Boyanan işaretler mushaf sayfasında
+   boyananlarla AYNI: MushafKelime.jsx'teki VAKIF_CPS + CIM_CPS (o dosyada da
+   değişirse burası birlikte güncellenmeli).
+   YÖNTEM — işaretlerin yerini font belirliyor, bozulmasın diye satır yine TEK
+   PARÇA çiziliyor; üstüne yalnız işaretlerden oluşan bir katman bindiriliyor:
+   ayrı tuvale satır işaret renginde çizilir, işaretleri ÇIKARILMIŞ satır
+   "destination-out" ile (ince bir kenar çizgisiyle birlikte) silinir → geriye
+   yalnız işaretler kalır. Vakıf işaretleri genişlik kaplamadığı için iki çizim
+   piksel piksel çakışıyor; harflerin dizilişi değişmiyor. */
+export const ISARET_CPS = new Set([0x615, 0x617, 0x06D6, 0x06D8, 0x06D9, 0x06DB, 0x08D5, 0x08D6, 0x08D7, 0x08DE, 0x06DA])
+export const ISARET_RENKLERI = [
+  { id: "kapali", ad: "Kapalı" },
+  { id: "mushaf", ad: "Mushaftaki gibi" },
+  { id: "vurgu",  ad: "Vurgu rengi" },
+  { id: "ozel",   ad: "Özel" },
+]
+// Seçimi gerçek renge çevirir (null = boyama yok). Koyu zeminde mushaf kırmızısı
+// kaybolduğu için biraz açık tonu kullanılır.
+export function isaretRengiCoz(secim, ozel, koyuZemin, vurguRenk) {
+  if (!secim || secim === "kapali") return null
+  if (secim === "mushaf") return koyuZemin ? "#ff7a66" : "#c0392b"
+  if (secim === "vurgu") return vurguRenk
+  if (secim === "ozel") return /^#[0-9a-fA-F]{6}$/.test(ozel || "") ? ozel : (koyuZemin ? "#ff7a66" : "#c0392b")
+  return /^#[0-9a-fA-F]{6}$/.test(secim) ? secim : null
+}
+function isaretKatmaniCiz(ctx, satir, x, y, boy, font, renk) {
+  const isaretsiz = [...satir].filter(c => !ISARET_CPS.has(c.codePointAt(0))).join("")
+  if (isaretsiz === satir) return
+  try {
+    ctx.font = font
+    const gen = Math.ceil(ctx.measureText(satir).width + boy * 2)
+    const yuk = Math.ceil(boy * 3.2)
+    const cv = document.createElement("canvas")
+    cv.width = Math.max(1, gen); cv.height = Math.max(1, yuk)
+    const c = cv.getContext("2d")
+    c.font = font
+    c.textAlign = "center"; c.textBaseline = "top"
+    try { c.direction = "rtl" } catch { /* eski tarayıcı */ }
+    const ox = gen / 2, oy = boy * 1.1
+    c.fillStyle = renk
+    c.fillText(satir, ox, oy)
+    c.globalCompositeOperation = "destination-out"
+    c.fillStyle = "#000"; c.strokeStyle = "#000"
+    c.lineWidth = Math.max(1, boy * 0.04)            // kenar yumuşatma kalıntısı da silinsin
+    c.lineJoin = "round"
+    c.fillText(isaretsiz, ox, oy)
+    c.strokeText(isaretsiz, ox, oy)
+    ctx.drawImage(cv, x - ox, y - oy)
+  } catch { /* boyanamazsa işaretler yazı renginde kalır */ }
+}
+
 // Metni verilen genişliğe göre satırlara böler. Arapça'da bitişme kelime İÇİNDE
 // olduğundan boşluktan bölmek şekillenmeyi bozmaz.
 function satirlaraBol(ctx, metin, maxW) {
@@ -585,6 +638,8 @@ export async function gorselCiz(ctx, ayar) {
   // Kullanıcı bir renk seçtiyse o kullanılır; seçmediyse zemine göre otomatik.
   const yaziRenk  = yaziRengi || (koyuZemin ? "#f6f1e6" : "#1d1a14")
   const vurguRenk = koyuZemin ? "#d9b45a" : "#8a6a1f"
+  // İşaret rengi (vakıf vb.) — ayar.isaretRenk: "kapali"|"mushaf"|"vurgu"|"ozel"|"#rrggbb"
+  const isaretRenk = isaretRengiCoz(ayar.isaretRenk, ayar.isaretOzel, koyuZemin, vurguRenk)
   const solukRenk = koyuZemin ? "rgba(246,241,230,0.62)" : "rgba(29,26,20,0.62)"
 
   // 3) ÇERÇEVE
@@ -850,6 +905,12 @@ export async function gorselCiz(ctx, ayar) {
         const { metin: sade, ozeller } = ozelOkuyusAyikla(st)
         const ty = y + (b.satirYuk - b.boy) / 2
         ctx.fillText(sade, W / 2, ty)
+        if (isaretRenk) {
+          isaretKatmaniCiz(ctx, sade, W / 2, ty, b.boy, arapcaFontYap(b.boy), isaretRenk)
+          ctx.font = arapcaFontYap(b.boy); ctx.fillStyle = yaziRenk
+          ctx.textAlign = "center"; ctx.textBaseline = "top"
+          try { ctx.direction = "rtl" } catch { /* yoksay */ }
+        }
         if (ozeller.length) {
           // Satır ortalanmış çizildiği için sol kenar = merkez − genişlik/2.
           // `sol` yüzdesi soldan ölçülüyor (taban harf sayımı), doğrudan uygulanır.
@@ -1025,6 +1086,9 @@ export default function GorselOlustur({
   const kaydirRef = useRef(null)                       // panelin dikey kaydırma kutusu
   const [uyari, setUyari] = useState("")
   const [yaziRengi, setYaziRengi] = useState(null)          // null = otomatik
+  // Vakıf vb. işaretlerin rengi (8 Ekim 2026) — "kapali" | "mushaf" | "vurgu" | "ozel"
+  const [isaretRenk, setIsaretRenk] = useState("kapali")
+  const [isaretOzel, setIsaretOzel] = useState("#e0503c")
   // ── VİDEO
   const [mod, setMod] = useState("foto")                     // "foto" | "video"
   const [videoSure, setVideoSure] = useState(6)
@@ -1236,12 +1300,13 @@ export default function GorselOlustur({
     rahle: rahleAcik,
     arapcaFont,
     yaziRengi,
+    isaretRenk, isaretOzel,
     // Âyet sonu rozeti (foto: prop'tan; video: parça kendi rozetNo'sunu ek ile geçer)
     rozetNo: arapcaAcik ? (ayet?.ayetNo || null) : null,
     secde: arapcaAcik ? secde : false,
     rozetImg: rozetImgRef.current,
     ...ek,
-  }), [olcu, secili, cerceve, karartma, arapca, meal, kaynak, arapcaAcik, mealAcik, kaynakAcik, rahleAcik, sureAdiNo, sureAdiHazir, arapcaFont, yaziRengi, ayet, secde, varliklarSurum])
+  }), [olcu, secili, cerceve, karartma, arapca, meal, kaynak, arapcaAcik, mealAcik, kaynakAcik, rahleAcik, sureAdiNo, sureAdiHazir, arapcaFont, yaziRengi, isaretRenk, isaretOzel, ayet, secde, varliklarSurum])
 
   // ÇİZİM SIRA NUMARASI — `gorselCiz` asenkron (arka plan fotoğrafını bekliyor). Art arda
   // ayar değiştirilince ESKİ çizim SONRA bitip canvas'a basabiliyordu: kullanıcı ayarı
@@ -1397,7 +1462,7 @@ export default function GorselOlustur({
   // Önizlemenin yeniden kurulmasını gerektiren AYAR imzası (ilkel değerlerden)
   const icerikImza = `${arapcaAcik ? 1 : 0}${mealAcik ? 1 : 0}${kaynakAcik ? 1 : 0}${rahleAcik ? 1 : 0}`
     + `|${kapsam}|${(arapca || "").length}|${(meal || "").length}|${kaynak || ""}`
-    + `|${secili.id}|${cerceve}|${karartma}|${yaziRengi || "oto"}|${arapcaFont || ""}|${videoParcalari.length}|${varliklarSurum}`
+    + `|${secili.id}|${cerceve}|${karartma}|${yaziRengi || "oto"}|${isaretRenk}${isaretRenk === "ozel" ? isaretOzel : ""}|${arapcaFont || ""}|${videoParcalari.length}|${varliklarSurum}`
 
   // Fontlar yüklenmeden çizersek canvas yedek fontla çizer → önce fonts.ready bekle
   useEffect(() => {
@@ -1979,6 +2044,26 @@ export default function GorselOlustur({
           <div style={{ fontSize: "10px", color: theme.textSecondary, opacity: 0.7 }}>
             Otomatik: koyu zeminde açık, açık zeminde koyu yazı.
           </div>
+
+          {/* İŞARET RENGİ — vakıf işaretleri mushaf sayfasındaki gibi boyanabilir */}
+          {arapca && (
+            <>
+              <AyarBaslik theme={theme} ikon={Highlighter} not="vakıf işaretleri">İşaret rengi</AyarBaslik>
+              <Secim theme={theme} kucuk deger={isaretRenk} onSec={setIsaretRenk} secenekler={ISARET_RENKLERI} />
+              {isaretRenk === "ozel" && (
+                <label style={{
+                  position: "relative", display: "inline-flex", alignItems: "center", gap: "6px", marginTop: "6px",
+                  padding: "6px 11px", borderRadius: "999px", border: `1px solid ${theme.border}`,
+                  fontSize: "12px", fontWeight: 600, color: theme.textSecondary, cursor: "pointer", overflow: "hidden",
+                }}>
+                  <Pipette size={13} /> İşaret rengini seç
+                  <span style={{ width: "16px", height: "16px", borderRadius: "50%", background: isaretOzel, border: `1px solid ${theme.border}` }} />
+                  <input type="color" value={isaretOzel} onChange={e => setIsaretOzel(e.target.value)}
+                    style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer", border: "none", padding: 0 }} />
+                </label>
+              )}
+            </>
+          )}
 
           {/* ── VİDEO SEÇENEKLERİ ───────────────────────────── */}
           {mod === "video" && (

@@ -34,6 +34,10 @@ export const VARSAYILAN = {
     galeri: [],          // galeriden seçilen resimlerin kimlikleri (IndexedDB, data/izlemeGaleri.js)
     slaytSure: 15,       // sn — 2+ resimde her resmin ekranda kalma süresi
     slaytGecis: "solma", // solma | yakinlas | kayma | silme | daire | perde | karisik
+    // ── Renkler (8 Ekim 2026) ──
+    yaziRengi: null,     // null = otomatik (koyu zeminde açık, açıkta koyu) | "#rrggbb"
+    isaretRenk: "kapali",// vakıf vb. işaretler: kapali | mushaf | vurgu | ozel
+    isaretOzel: "#e0503c",
   },
 }
 

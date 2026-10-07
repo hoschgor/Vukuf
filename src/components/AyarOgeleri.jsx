@@ -11,7 +11,7 @@
    edilmiyordu. Secim çok seçenekte SATIRA SARIYOR: hepsi aynı anda görünür. */
 
 import { useEffect, useRef, useState } from "react"
-import { Plus, X, Check, Loader2 } from "lucide-react"
+import { Plus, X, Check, Loader2, Pipette } from "lucide-react"
 
 /* Bölünmüş düğme. Az seçenekte (≤4) eşit sütunlar, çokta satıra sarılır.
    secenekler: [{ id, ad, Ikon?, alt? }] — alt: düğmede küçük ikinci satır */
@@ -205,4 +205,47 @@ export function useGaleriUrlleri(ids, blobAl) {
     Object.values(eldeRef.current).forEach(u => { try { URL.revokeObjectURL(u) } catch { /* yoksay */ } })
   }, [])
   return urller
+}
+
+/* RENK SEÇİCİ — Otomatik · Özel (tarayıcı paleti) · son kullanılanlar · öneriler.
+   Görsel oluşturmadaki yazı rengi satırının ortak hâli (8 Ekim 2026: izleme
+   modunda da yazı rengi seçilebilsin diye buraya alındı).
+   deger: null = otomatik | "#rrggbb". oneriler: [{ id, ad, renk }] */
+export function RenkSecici({ theme, deger, onSec, oneriler = [], sonRenkler = [], onSonEkle, otomatikYok }) {
+  const ac = theme.accent
+  const ozelMi = !!deger && !oneriler.some(r => r.renk === deger) && !sonRenkler.includes(deger)
+  const hap = (sec) => ({
+    position: "relative", display: "inline-flex", alignItems: "center", gap: "5px",
+    padding: "6px 11px", borderRadius: "999px", cursor: "pointer", fontFamily: "inherit",
+    border: `1px solid ${sec ? ac : theme.border}`, background: sec ? `${ac}1e` : "transparent",
+    color: sec ? ac : theme.textSecondary, fontSize: "12px", fontWeight: 600, whiteSpace: "nowrap",
+    overflow: "hidden",
+  })
+  const kutu = (renk, sec) => ({
+    width: "26px", height: "26px", borderRadius: "50%", flexShrink: 0, cursor: "pointer", padding: 0,
+    background: renk, border: sec ? `3px solid ${ac}` : `1px solid ${theme.border}`,
+    boxShadow: sec ? `0 0 0 2px ${ac}33` : "none",
+  })
+  const ayrac = <span style={{ width: "1px", height: "22px", background: theme.border, flexShrink: 0 }} />
+  return (
+    <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", alignItems: "center" }}>
+      {!otomatikYok && <button onClick={() => onSec(null)} style={hap(deger === null)}>Otomatik</button>}
+      <label title="Özel renk seç" style={hap(ozelMi)}>
+        <Pipette size={13} /> Özel
+        <span style={{ width: "14px", height: "14px", borderRadius: "50%", background: deger || "#f6f1e6", border: `1px solid ${theme.border}` }} />
+        <input type="color" value={deger || "#f6f1e6"}
+          onChange={e => onSec(e.target.value)}
+          onBlur={e => onSonEkle && onSonEkle(e.target.value)}
+          style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer", border: "none", padding: 0 }} />
+      </label>
+      {sonRenkler.length > 0 && ayrac}
+      {sonRenkler.map(r => (
+        <button key={`son-${r}`} onClick={() => onSec(r)} title={`Son kullanılan: ${r}`} style={kutu(r, deger === r)} />
+      ))}
+      {oneriler.length > 0 && ayrac}
+      {oneriler.map(r => (
+        <button key={r.id} onClick={() => { onSec(r.renk); onSonEkle && onSonEkle(r.renk) }} title={r.ad} style={kutu(r.renk, deger === r.renk)} />
+      ))}
+    </div>
+  )
 }

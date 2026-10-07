@@ -122,6 +122,7 @@ function kapaklariOnbellekle(urls) {
 // SONUNA yerleşir (DOM sırası değişmez → sürükle-bırak ve durumlar etkilenmez).
 // Kandil ve mumlar kenarlarda: ileride rafa resim gelirse ortası boş kalır.
 // ════════════════════════════════════════════════════════════════
+const DAMAR_D = "repeating-linear-gradient(180deg,rgba(0,0,0,0.06) 0 2px,transparent 2px 9px,rgba(255,255,255,0.03) 9px 10px,transparent 10px 17px), "
 const DAMAR_Y = "repeating-linear-gradient(90deg,rgba(0,0,0,0.06) 0 1px,transparent 1px 6px,rgba(255,255,255,0.03) 6px 7px,transparent 7px 13px), "
 
 // ── RENKLER TEMADAN (8 Ekim 2026) ──────────────────────────────────────────
@@ -163,7 +164,8 @@ function rafPaleti(theme) {
     // yatay çubuk (üst ray, levha bandı, taç)
     yatay: `${DAMAR_Y}linear-gradient(180deg, ${c3} 0%, ${c2} 22%, ${c1} 70%, ${c0} 100%)`,
     band: `${DAMAR_Y}linear-gradient(180deg, ${c2} 0%, ${c1} 55%, ${c0} 100%)`,
-    zemin: theme?.background || "transparent",   // direğin yanındaki boşluk: sayfanın kendi rengi
+    // Direğin oturduğu yan tahta: çerçeveyle aynı ahşap tonu (boşluk/beyaz kalmasın)
+    yanTahta: `${DAMAR_D}linear-gradient(90deg, ${c1} 0%, ${c2} 28%, ${hsl(h, s, (L[1] + L[2]) / 2 + 0.03)} 50%, ${c2} 72%, ${c1} 100%)`,
     blok: `linear-gradient(90deg, ${c1} 0%, ${c3} 40%, ${c4} 50%, ${c2} 72%, ${c0} 100%)`,
     oymaSoluk: hsl(h, Math.min(0.6, as), koyuTema ? 0.72 : 0.86, 0.3),
     oyma: hsl(h, Math.min(0.6, as), koyuTema ? 0.72 : 0.86, 0.55),   // çerçevedeki ince oyma çizgileri
@@ -253,8 +255,12 @@ function RafKapakSemse({ p, tohum }) {
 // konmaz (çakışmasın); kandil yoksa iki yana da mum gelebilir. Kimlik aynı kaldıkça
 // düzen de aynı kalır (her açılışta yer değiştirmez).
 const SAMDAN_EN = { tek: 20, cift: 40, uclu: 54 }
-// Raf içindeki mumlar: her rafta değil; bazı raflarda tek bir şamdan, bazılarında iki yanda,
-// bazılarında hiç (o raf direkten sarkan kandille aydınlanır). Kimlikten türer → hep aynı kalır.
+// ── IŞIK DÜZENİ ─────────────────────────────────────────────────────────────
+// Raftan rafa değişen ama kimlikten türediği için hep aynı kalan düzen:
+//  • mumlar: bazı raflarda tek şamdan, bazılarında iki yanda, bazılarında hiç;
+//  • kandil: rafın tavanından (üst raydan) gerçek bir zincirle içeri sarkar. Yeri
+//    kitapların yanındaki boşlukta; mum olan yana düşerse şamdanın iç tarafına kayar.
+// Kandil hep aynı pirinç + kehribar cam (renk oyunu yok, doğal dursun).
 function isikDuzeni(tohum) {
   const h = sayiKaristir(String(tohum) + "·ışık")
   const r = (b, n) => Math.floor(h / b) % n
@@ -264,84 +270,52 @@ function isikDuzeni(tohum) {
   const mumlar = []
   if (secim === "sag" || secim === "ikisi") mumlar.push({ yer: "sag", tip: tipler[r(13, 5)], boylar: boylar(29) })
   if (secim === "sol" || secim === "ikisi") mumlar.push({ yer: "sol", tip: tipler[r(41, 5)], boylar: boylar(43) })
-  return { mumlar }
-}
-
-// ── DİREKTEN SARKAN KANDİLLER ─────────────────────────────────────────────
-// Sütun başlığındaki kancadan gerçek halkalı zincirle sarkar; uzunluk, cam rengi ve
-// salınım her direkte farklı. Her direk yalnız bir bölmeye ait (sol direk o bölmenin,
-// satır sonundaki sağ direk de son bölmenin) → aynı direğe iki kandil düşmez.
-const CAM_RENKLERI = [
-  [236, 156, 58],   // kehribar
-  [196, 58, 62],    // yakut
-  [58, 150, 110],   // zümrüt
-  [70, 110, 196],   // safir
-  [214, 118, 150],  // gül
-  [246, 214, 150],  // buzlu
-]
-function direkKandilleri(tohum, sagDirek) {
-  const h = sayiKaristir(String(tohum) + "·kandil")
-  const r = (b, n) => Math.floor(h / b) % n
-  const yap = (k) => ({
-    cam: CAM_RENKLERI[r(k * 7 + 3, CAM_RENKLERI.length)],
-    oran: 0.3 + r(k * 11 + 5, 7) * 0.1,          // zincirin ulaşabileceği boyun ne kadarı
-    sure: 6 + r(k * 13 + 1, 5),                   // salınım süresi (sn)
-    gecik: r(k * 17 + 2, 9) * 0.7,
-  })
-  return {
-    sol: r(3, 5) < 2 ? yap(1) : null,
-    sag: sagDirek && r(19, 5) < 2 ? yap(2) : null,
+  // Kandil: mumsuz rafta neredeyse her zaman, mumlu rafta yarı yarıya
+  let kandil = null
+  if (r(59, 10) < (mumlar.length ? 5 : 9)) {
+    const tekYan = mumlar.length === 1 ? mumlar[0].yer : null
+    const yer = tekYan ? (r(61, 5) === 0 ? tekYan : (tekYan === "sag" ? "sol" : "sag")) : (r(67, 2) ? "sag" : "sol")
+    kandil = { yer, kay: r(71, 5) * 7, oran: 0.3 + r(73, 6) * 0.1, sure: 6 + r(79, 5), gecik: r(83, 9) * 0.7 }
   }
+  return { mumlar, kandil }
 }
 
-// Zincir boyu ve kandilin iç bölmeye göre ışık merkezi (iç panoyu aydınlatmak için)
-const KANDIL_GOVDE = 42, KANDIL_KANCA = 4
-function kandilYerlestir(lambalar, rayH, yuk) {
-  const sonuc = {}
-  ;["sol", "sag"].forEach(y => {
-    const k = lambalar[y]
-    if (!k) { sonuc[y] = null; return }
-    // Kandil direğin önünde sarktığı için levha bandının hizasına kadar inebilir
-    const alan = rayH + yuk + 46
-    const zincir = Math.max(10, Math.round((alan - KANDIL_GOVDE - KANDIL_KANCA - 4) * k.oran))
-    sonuc[y] = { ...k, zincir, merkezY: KANDIL_KANCA + zincir + 21 - rayH }
-  })
-  return sonuc
+// Gerçek zincir: yüzü dönük halka (elips) ile yandan görünen halka (çubuk) sırayla
+function Zincir({ x, boy, renk, koyu }) {
+  const parcalar = []
+  const ADIM = 4.6
+  for (let i = 0, y = 2.4; y < boy - 1; i++, y += ADIM) {
+    parcalar.push(i % 2 === 0
+      ? <ellipse key={i} cx={x} cy={y} rx="1.7" ry="2.7" fill="none" stroke={renk} strokeWidth="1" />
+      : <path key={i} d={`M${x} ${y - 2.6} V${y + 2.6}`} stroke={koyu} strokeWidth="1.6" strokeLinecap="round" />)
+  }
+  return <>{parcalar}</>
 }
 
-function DirekKandili({ p, k, yer, en, canli }) {
-  const GOVDE = KANDIL_GOVDE, KANCA = KANDIL_KANCA
-  const zincir = k.zincir
-  const [cr, cg, cb] = k.cam
-  const cam = `rgb(${cr},${cg},${cb})`
-  const halka = "#b8954a"
+// Raf tavanından sarkan kandil (pirinç kapak, üç askı, kehribar cam, alt topuz)
+function RafKandili({ p, zincir, canli, stil, sure, gecik }) {
+  const GOVDE = 34
+  const halka = "#c9a458", koyu = "#7a5c26"
   return (
-    <div aria-hidden="true" style={{
-      position: "absolute", top: 0, [yer === "sag" ? "right" : "left"]: `${en / 2 - 11}px`,
-      width: "22px", height: `${KANCA + zincir + GOVDE}px`, zIndex: 3, pointerEvents: "none",
+    <div aria-hidden="true" className="vk-salin" style={{
+      position: "absolute", top: 0, width: "20px", height: `${zincir + GOVDE}px`, pointerEvents: "none", zIndex: 2,
+      transformOrigin: "50% 0", animationDuration: `${sure}s`, animationDelay: `-${gecik}s`, ...stil,
     }}>
-      {/* kanca: direk başlığına çakılı küçük halka */}
-      <div style={{ position: "absolute", left: "8px", top: "-1px", width: "6px", height: "5px", borderRadius: "50%", border: `1.5px solid ${halka}`, boxSizing: "border-box" }} />
-      <div className="vk-salin" style={{ position: "absolute", left: 0, top: `${KANCA}px`, width: "22px", height: `${zincir + GOVDE}px`, transformOrigin: "50% 0", animationDuration: `${k.sure}s`, animationDelay: `-${k.gecik}s` }}>
-        {/* zincir: yüzü görünen halkalar + yandan görünen halkalar, sırayla */}
-        <div style={{
-          position: "absolute", left: "8px", top: 0, width: "6px", height: `${zincir}px`,
-          background: `radial-gradient(ellipse 2.4px 3.3px at 50% 4px, transparent 52%, ${halka} 58%, #6e5524 86%, transparent 94%) 0 0 / 6px 9px repeat-y,
-                       linear-gradient(90deg, transparent 2.3px, #8a6a2c 2.3px, ${halka} 3px, #6e5524 3.7px, transparent 3.7px) 0 7px / 6px 9px repeat-y`,
-        }} />
-        {/* kandil: üç askı kolu, kapak, renkli cam gövde, alev, alt topuz */}
-        <svg width="22" height={GOVDE} viewBox="0 0 22 42" style={{ position: "absolute", left: 0, top: `${zincir}px`, overflow: "visible" }}>
-          <path d="M11 0 L3.5 10 M11 0 L18.5 10 M11 0 V9" stroke={halka} strokeWidth="0.8" fill="none" />
-          <ellipse cx="11" cy="10.5" rx="8.2" ry="1.8" fill={p.gold} />
-          <path d="M3.4 11 Q-1.2 20 5.5 28 Q8 30.5 11 30.5 Q14 30.5 16.5 28 Q23.2 20 18.6 11 Z" fill={cam} fillOpacity="0.78" stroke={p.gold} strokeWidth="0.7" />
-          <path d="M5.2 13 Q2.8 19 6.4 25" stroke="rgba(255,255,255,0.45)" strokeWidth="1.1" fill="none" strokeLinecap="round" />
-          <path className={canli ? "vk-alev" : undefined} d="M11 15 q-3 4.6 0 8 q3-3.4 0-8z" fill="#ffd98a" />
-          <circle cx="11" cy="21.5" r="5" fill="rgba(255,220,150,0.35)" />
-          <path d="M8 30.5 h6 l-1.6 3 h-2.8 z" fill={p.gold} />
-          <circle cx="11" cy="36" r="2" fill={p.gold} />
-          <path d="M11 38 v4" stroke={p.gold} strokeWidth="1" />
-        </svg>
-      </div>
+      <svg width="20" height={zincir + GOVDE} viewBox={`0 0 20 ${zincir + GOVDE}`} style={{ overflow: "visible" }}>
+        {/* tavana çakılı küçük kanca */}
+        <path d="M6 0 h8 l-1.5 2 h-5 z" fill={koyu} />
+        <Zincir x={10} boy={zincir} renk={halka} koyu={koyu} />
+        <g transform={`translate(0 ${zincir})`}>
+          <path d="M10 0 L3.2 8 M10 0 L16.8 8 M10 0 V7.4" stroke={halka} strokeWidth="0.7" fill="none" />
+          <ellipse cx="10" cy="8.4" rx="7.4" ry="1.6" fill={p.gold} />
+          <path d="M3 9 Q-1 16 5 23 Q7.4 25 10 25 Q12.6 25 15 23 Q21 16 17 9 Z" fill="rgb(232,150,58)" fillOpacity="0.8" stroke={p.gold} strokeWidth="0.7" />
+          <path d="M4.8 11 Q2.6 16 5.6 21" stroke="rgba(255,255,255,0.4)" strokeWidth="1" fill="none" strokeLinecap="round" />
+          <path className={canli ? "vk-alev" : undefined} d="M10 12.5 q-2.6 4 0 7 q2.6-3 0-7z" fill="#ffd98a" />
+          <path d="M7.4 25 h5.2 l-1.4 2.6 h-2.4 z" fill={p.gold} />
+          <circle cx="10" cy="29.6" r="1.7" fill={p.gold} />
+          <path d="M10 31.3 v2.7" stroke={p.gold} strokeWidth="0.9" />
+        </g>
+      </svg>
     </div>
   )
 }
@@ -401,34 +375,41 @@ function Samdan({ p, tip, boylar, yukseklik, canli, stil }) {
 }
 
 // Bölmenin içi: arka pano, ışıklar, kitap sırtları, (açıkken) ön kapak
-function RafIci({ p, yuk, tam, detay, sirtlar, kapak, onSirt, canli, tohum, lambalar }) {
+function RafIci({ p, yuk, tam, detay, sirtlar, kapak, onSirt, canli, tohum }) {
   const duzen = isikDuzeni(tohum || "raf")
   const mumH = Math.min(58, yuk - 8)
+  const samdanEni = (yer) => {
+    const m = duzen.mumlar.find(x => x.yer === yer)
+    return m ? 10 + Math.round(mumH * SAMDAN_EN[m.tip] / 58) : 0
+  }
+  // Kandil: kitapların yanındaki boşlukta; o yanda şamdan varsa onun iç tarafında
+  const k = duzen.kandil
+  let kandilX = 0, zincir = 0
+  if (k) {
+    kandilX = Math.max(12, samdanEni(k.yer) + 6) + k.kay
+    zincir = Math.max(4, Math.round((yuk - 34 - 8) * k.oran))
+  }
   // Kenarlarda dolu alan → kitapların payı
   const kenarPay = (yer) => {
-    const m = duzen.mumlar.find(x => x.yer === yer)
-    return m ? 10 + Math.round(mumH * SAMDAN_EN[m.tip] / 58) + 8 : 22
+    let pay = Math.max(22, samdanEni(yer) + 8)
+    if (k && k.yer === yer) pay = Math.max(pay, kandilX + 20 + 8)
+    return pay
   }
-  // Işık halkaları: mumların ve direkten sarkan kandillerin bulunduğu kenarlar
-  const isiklar = []
-  duzen.mumlar.forEach(m => isiklar.push({ s: { [m.yer === "sag" ? "right" : "left"]: "-50px", bottom: "-60px" }, bg: p.isik }))
-  ;["sol", "sag"].forEach(y => {
-    const k = lambalar?.[y]
-    if (!k) return
-    const [cr, cg, cb] = k.cam
-    isiklar.push({
-      s: { [y === "sag" ? "right" : "left"]: "-78px", top: `${Math.min(yuk - 30, k.merkezY) - 75}px` },
-      bg: `radial-gradient(circle, rgba(${cr},${cg},${cb},0.26), rgba(${cr},${cg},${cb},0.07) 45%, rgba(${cr},${cg},${cb},0) 70%)`,
-    })
-  })
+  // Işık halkaları: şamdanların ve kandilin bulunduğu yerler
+  const isiklar = duzen.mumlar.map(m => ({ [m.yer === "sag" ? "right" : "left"]: "-50px", bottom: "-60px" }))
+  if (k) isiklar.push({ [k.yer === "sag" ? "right" : "left"]: `${kandilX + 10 - 75}px`, top: `${zincir + 17 - 75}px` })
   return (
     <div style={{
       position: "relative", height: `${yuk}px`, flexShrink: 0, overflow: "hidden",
       background: p.ic, boxShadow: "inset 0 10px 16px rgba(0,0,0,0.55)", transition: "height 0.3s ease",
     }}>
-      {isiklar.map((k, i) => (
-        <div key={i} style={{ position: "absolute", width: "150px", height: "150px", borderRadius: "50%", background: k.bg, pointerEvents: "none", ...k.s }} />
+      {isiklar.map((yer, i) => (
+        <div key={i} style={{ position: "absolute", width: "150px", height: "150px", borderRadius: "50%", background: p.isik, pointerEvents: "none", ...yer }} />
       ))}
+      {k && (
+        <RafKandili p={p} zincir={zincir} canli={canli} sure={k.sure} gecik={k.gecik}
+          stil={{ [k.yer === "sag" ? "right" : "left"]: `${kandilX}px` }} />
+      )}
       <KemerKosesi p={p} buyuk={yuk > 120} />
       <KemerKosesi p={p} sag buyuk={yuk > 120} />
 
@@ -494,9 +475,9 @@ function RafDirek({ p, en }) {
   }
   const halka = { display: "block", width: "60%", height: "3px", flexShrink: 0, borderRadius: "2px", background: p.silindir, boxShadow: "0 1px 0 rgba(0,0,0,0.35)" }
   return (
-    // Gövdenin yanlarındaki boşluk TEMANIN ZEMİN RENGİNİ alır (saydam bırakınca bazı
-    // sayfalarda arkadaki beyaz görünüyordu; koyu pano ise ağır duruyordu).
-    <div aria-hidden="true" style={{ width: `${en}px`, flexShrink: 0, alignSelf: "stretch", display: "flex", flexDirection: "column", alignItems: "center", position: "relative", zIndex: 1, background: p.zemin }}>
+    // Sütun, dolabın ahşap yan tahtasının önünde durur: gövdenin yanlarında boşluk
+    // kalmaz (saydamken açık temada sayfa zemini beyaz şeritler gibi görünüyordu).
+    <div aria-hidden="true" style={{ width: `${en}px`, flexShrink: 0, alignSelf: "stretch", display: "flex", flexDirection: "column", alignItems: "center", position: "relative", zIndex: 1, background: p.yanTahta, boxShadow: "inset 1px 0 0 rgba(0,0,0,0.3), inset -1px 0 0 rgba(0,0,0,0.3)" }}>
       <DirekDilimleri p={p} liste={DIREK_BASLIK} />
       <span style={{ ...govde, flex: "1 1 0" }} />
       <span style={halka} />
@@ -530,7 +511,6 @@ function RafBolmesi({ p, theme, isMobile, acik, satirAcik, gizli, sirtlar, kapak
   const yuk = icYuksekligi(tam, isMobile)
   const en = direkEni(isMobile)
   const rayH = isMobile ? 8 : 11
-  const lambalar = kandilYerlestir(direkKandilleri(tohum || "raf", sagDirek), rayH, yuk)
   return (
     <div
       ref={setNodeRef}
@@ -544,12 +524,10 @@ function RafBolmesi({ p, theme, isMobile, acik, satirAcik, gizli, sirtlar, kapak
       }}
     >
       <RafDirek p={p} en={en} />
-      {lambalar.sol && <DirekKandili p={p} k={lambalar.sol} yer="sol" en={en} canli={tam} />}
-      {lambalar.sag && <DirekKandili p={p} k={lambalar.sag} yer="sag" en={en} canli={tam} />}
       <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
         {/* üst ray */}
         <div style={{ height: `${rayH}px`, flexShrink: 0, background: p.yatay, boxShadow: `inset 0 -1px 0 ${p.oyma}` }} />
-        <RafIci p={p} yuk={yuk} tam={tam} detay={acik && !duzenlemeMode} sirtlar={sirtListesi(sirtlar, tam)} kapak={kapak} onSirt={onSirt} canli={tam} tohum={tohum} lambalar={lambalar} />
+        <RafIci p={p} yuk={yuk} tam={tam} detay={acik && !duzenlemeMode} sirtlar={sirtListesi(sirtlar, tam)} kapak={kapak} onSirt={onSirt} canli={tam} tohum={tohum} />
         {/* raf dudağı + levha bandı */}
         <div style={{ height: "4px", flexShrink: 0, background: p.c3, boxShadow: "0 1px 0 rgba(0,0,0,0.4)" }} />
         <div style={{ flexGrow: 1, background: p.band, padding: isMobile ? "5px 4px 6px" : "6px 6px 8px" }}>
@@ -598,15 +576,13 @@ function DolapKaidesi({ p, isMobile }) {
 function BosBolme({ p, theme, isMobile, satirAcik, sira, sagDirek, tohum }) {
   const en = direkEni(isMobile)
   const yuk = icYuksekligi(satirAcik, isMobile)
-  const lambalar = kandilYerlestir(direkKandilleri(tohum, sagDirek), isMobile ? 8 : 11, yuk)
   return (
     <div aria-hidden="true" style={{ order: sira, minWidth: 0, display: "flex", position: "relative" }}>
       <RafDirek p={p} en={en} />
-      {lambalar.sol && <DirekKandili p={p} k={lambalar.sol} yer="sol" en={en} canli={satirAcik} />}
-      {lambalar.sag && <DirekKandili p={p} k={lambalar.sag} yer="sag" en={en} canli={satirAcik} />}
+
       <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
         <div style={{ height: isMobile ? "8px" : "11px", flexShrink: 0, background: p.yatay, boxShadow: `inset 0 -1px 0 ${p.oyma}` }} />
-        <RafIci p={p} yuk={yuk} tam={satirAcik} detay={false} sirtlar={[]} kapak={null} canli={satirAcik} tohum={tohum} lambalar={lambalar} />
+        <RafIci p={p} yuk={yuk} tam={satirAcik} detay={false} sirtlar={[]} kapak={null} canli={satirAcik} tohum={tohum} />
         <div style={{ height: "4px", flexShrink: 0, background: p.c3, boxShadow: "0 1px 0 rgba(0,0,0,0.4)" }} />
         <div style={{ flexGrow: 1, minHeight: isMobile ? "55px" : "58px", background: p.band }} />
       </div>

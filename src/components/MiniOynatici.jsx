@@ -23,7 +23,7 @@
    • "Okumaya dön": çalınan âyet hedef olarak bırakılır, Kur'ân o âyette açılır.
    ═══════════════════════════════════════════════════════════════════════════ */
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useLocation, useNavigate } from "react-router-dom"
 import { SkipForward, BookOpen, ChevronDown, Square } from "lucide-react"
 import { useApp } from "../AppContext"
@@ -121,6 +121,17 @@ function MiniHap({ player, kitapta }) {
     setKucukDurum(v)
     try { localStorage.setItem(KUCUK_ANAHTAR, v ? "1" : "0") } catch { /* kota */ }
   }
+  /* KENDİLİĞİNDEN KÜÇÜL (8 Ekim 2026, kullanıcı: "10 sn sonra en küçültülmüş moda
+     geçsin"). Açık hapta 10 sn dokunulmazsa tek yuvarlak düğmeye iner. Hapa her
+     dokunuş (düğmeler, sürükleme) süreyi baştan başlatır → kullanırken kapanmaz. */
+  const [dokunus, setDokunus] = useState(0)
+  useEffect(() => {
+    if (kucuk) return
+    const t = setTimeout(() => setKucuk(true), 10000)
+    return () => clearTimeout(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [kucuk, dokunus])
+
   // Kitap ekranında alttaki bar (~56 px) + dönüş hapları sırası; başka ekranlarda kenar
   const k = useHapKonumu({ ad: "mini", yan: "orta", altta: true, altPay: kitapta ? 64 : 0, ek: kitapta ? 50 : 0, kaydirGecir: true })
 
@@ -153,7 +164,9 @@ function MiniHap({ player, kitapta }) {
   return (
     <>
       <style>{NABIZ_CSS}</style>
-      <div ref={k.ref} className="vukuf-hap" {...k.olaylar} style={{
+      <div ref={k.ref} className="vukuf-hap" {...k.olaylar}
+        onPointerDownCapture={() => { if (!kucuk) setDokunus(n => n + 1) }}
+        style={{
         ...k.stil, zIndex: k.surukleniyor ? 130 : 126,
         "--hap-kay": "8px", "--mini-ac": ac,
       }}>

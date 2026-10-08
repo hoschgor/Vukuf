@@ -312,8 +312,17 @@ function SemseIkon({ renk, boy = 20 }) {
 // Resmi olmayan raf bugünkü çizimde (koyu ahşap pano) kalır.
 // konum: object-position — ekran oranı değişince kırpmanın hangi noktaya göre
 // yapılacağı (asıl motif bu noktada kalır).
-const RAF_RESIMLERI = {
-  tasavvuf: { src: "/raflar/tasavvuf.webp", konum: "50% 46%" },
+// Eşleşme: kategorinin kimliği YA DA başlığı (kimlikler veriye göre değişebildiği için
+// ikisine birden bakılır). Yalnız asıl Kısım raflarına uygulanır, özel raflara değil.
+const RAF_RESIMLERI = [
+  { esle: /kur.?[aâ]n/i,       src: "/raflar/kuran.webp",    konum: "50% 38%" },
+  { esle: /evr[aâ]d|ezk[aâ]r/i, src: "/raflar/evrad.webp",    konum: "50% 62%" },
+  { esle: /ris[aâ]le/i,        src: "/raflar/risale.webp",   konum: "50% 55%" },
+  { esle: /tasavvuf/i,         src: "/raflar/tasavvuf.webp", konum: "50% 46%" },
+  { esle: /^di[gğ]er/i,        src: "/raflar/diger.webp",    konum: "50% 55%" },
+]
+function rafResmiBul(id, baslik) {
+  return RAF_RESIMLERI.find(r => r.esle.test(String(id || "")) || r.esle.test(String(baslik || ""))) || null
 }
 
 const SAMDAN_EN = { tek: 20, cift: 40, uclu: 54 }
@@ -437,13 +446,14 @@ function Samdan({ p, tip, boylar, yukseklik, canli, stil }) {
 }
 
 // Bölmenin içi: arka pano, ışıklar, kitap sırtları, (açıkken) ön kapak
-function RafIci({ p, yuk, tam, detay, sirtlar, yataylar = [], kapak, onSirt, onYatay, canli, tohum }) {
-  const resim = RAF_RESIMLERI[tohum]
+function RafIci({ p, yuk, tam, detay, sirtlar, yataylar = [], kapak, onSirt, onYatay, canli, tohum, resim = null }) {
+  // resim: yalnız Kısım raflarında (rafResmiBul) gelir
   // Resimli rafta kapalıyken kitap sırtları gösterilmez (resim görünsün); açıkken
   // âlim sırtları resmin önünde, rafın tabanında durur (tıklanabilir kalsın).
   if (resim && !detay) { sirtlar = []; yataylar = [] }
   const olc = Math.max(0.55, Math.min(1.25, yuk / 132))
-  const duzen = isikDuzeni(tohum || "raf")
+  // Resimli rafta mum ve kandil çizilmez: ışık ve süs resmin kendisinde (kandil, mum, tesbih…)
+  const duzen = resim ? { mumlar: [], kandil: null } : isikDuzeni(tohum || "raf")
   const mumH = Math.min(58, yuk - 8)
   const samdanEni = (yer) => {
     const m = duzen.mumlar.find(x => x.yer === yer)
@@ -586,7 +596,7 @@ function KemerKosesi({ p, sag, buyuk }) {
 
 // Bölme = [direk] [üst ray + iç + levha bandı] [direk]. Yan yana bölmeler direği PAYLAŞIR:
 // her bölme sol direğini çizer, satırın sonundaki bölme sağ direği de çizer.
-function RafBolmesi({ p, theme, isMobile, acik, satirAcik, gizli, sirtlar, yataylar = [], kapak, onSirt, onYatay, onToggle,
+function RafBolmesi({ p, theme, isMobile, acik, satirAcik, gizli, sirtlar, yataylar = [], kapak, resim = null, onSirt, onYatay, onToggle,
   setNodeRef, sortStil, suruklemeProps, duzenlemeMode, sira, sagDirek, tohum, children }) {
   const tam = acik || satirAcik
   const yuk = icYuksekligi(tam, isMobile)
@@ -608,7 +618,7 @@ function RafBolmesi({ p, theme, isMobile, acik, satirAcik, gizli, sirtlar, yatay
       <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
         {/* üst ray */}
         <div style={{ height: `${rayH}px`, flexShrink: 0, background: p.yatay, boxShadow: `inset 0 -1px 0 ${p.oyma}` }} />
-        <RafIci p={p} yuk={yuk} tam={tam} detay={acik && !duzenlemeMode} sirtlar={sirtListesi(sirtlar, tam)} yataylar={yatayListesi(yataylar)} kapak={kapak} onSirt={onSirt} onYatay={onYatay} canli={tam} tohum={tohum} />
+        <RafIci p={p} yuk={yuk} tam={tam} detay={acik && !duzenlemeMode} sirtlar={sirtListesi(sirtlar, tam)} yataylar={yatayListesi(yataylar)} kapak={kapak} onSirt={onSirt} onYatay={onYatay} canli={tam} tohum={tohum} resim={resim} />
         {/* raf dudağı + levha bandı */}
         <div style={{ height: "4px", flexShrink: 0, background: p.c3, boxShadow: "0 1px 0 rgba(0,0,0,0.4)" }} />
         <div style={{ flexGrow: 1, background: p.band, padding: isMobile ? "5px 4px 6px" : "6px 6px 8px" }}>
@@ -1591,7 +1601,7 @@ function SortableKategori({ kategori,
     <>
       <RafBolmesi
         p={yer.p} theme={theme} isMobile={isMobile} acik={acik} satirAcik={yer.satirAcik} gizli={gizli}
-        sirtlar={sirtlar} kapak={kapak} tohum={kategori.id}
+        sirtlar={sirtlar} kapak={kapak} tohum={kategori.id} resim={rafResmiBul(kategori.id, kategori.baslik)}
         yataylar={alimSirtlari}
         onSirt={eserler.length && !duzenlemeMode ? (s) => s.veri && navigate(kitapYolu(s.veri)) : undefined}
         onYatay={alimSirtlari.length && !duzenlemeMode ? (y) => onAlimSec(kategori.id, y.id) : undefined}

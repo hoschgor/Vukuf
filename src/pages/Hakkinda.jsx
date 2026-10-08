@@ -1,7 +1,9 @@
 import { useApp } from "../AppContext"
-import { useEffect, useId, useState } from "react"
+import { useEffect, useId, useMemo, useState } from "react"
 import { Mail, BookOpen, Globe, Sparkles } from "lucide-react"
 import MealPopup from "../components/MealPopup"
+import MushafKelime from "../components/MushafKelime"
+import { mushafYukle } from "../data/mushafVerisi"
 import { useMediaQuery } from "../data/hooks/useMediaQuery"
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -15,6 +17,42 @@ import { useMediaQuery } from "../data/hooks/useMediaQuery"
 
 const BESMELE = "بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ"
 const TEVFIK = "وَمَا تَوْفِيقِي إِلَّا بِاللَّهِ"
+
+/* ── MUSHAFTAKİ GİBİ GÖRÜNÜM (8 Ekim 2026) ─────────────────────────────────
+   Kullanıcı: "Besmele yanlış görünüyor, âyet kısmı da mushaftaki gibi olmalı."
+   Önce tüm Arapça `arabicHighlight` (mavi) ile tek renk yazılıyordu. Artık:
+   • Kelimeler MUSHAF VERİSİNDEN (kuran-mushaf.json — Fâtiha 1 ve Hûd 88) alınıp
+     mushafın kendi `MushafKelime` bileşeniyle çiziliyor: aynı yazım, aynı
+     lafzatullah/besmele rengi, aynı vakıf işareti, aynı yazı tipi.
+   • Veri yüklenene kadar (ya da çevrimdışı yüklenemezse) yukarıdaki metinler
+     AYNI RENK KURALIYLA gösteriliyor: lafzatullah/besmele vurgu renginde, gerisi
+     metin renginde.
+   • Yazı tipi: Kur'ân ekranında seçili olan (vukuf-kuran-arapca-font). */
+const KURAN_FONTLARI = {
+  kfgqpc: "'KFGQPC Uthmanic', serif",
+  uc_ondokuz: "'uc_ondokuz', serif",
+  "me-quran": "'me_quran', serif",
+  IndopakNastaleeq: "'IndopakNastaleeq', serif",
+}
+function kuranFontu() {
+  try { return KURAN_FONTLARI[localStorage.getItem("vukuf-kuran-arapca-font")] || KURAN_FONTLARI.kfgqpc }
+  catch { return KURAN_FONTLARI.kfgqpc }
+}
+// Harekesiz karşılaştırma: hareke, işaret, tatvîl atılır; elif/yâ biçimleri birleşir
+const sadeHarf = (s) => String(s || "")
+  .replace(/[\u0671\u0622\u0623\u0625]/g, "\u0627").replace(/\u0649/g, "\u064A")
+  .replace(/[\u0640\u064B-\u065F\u0670\u06D6-\u06ED]/g, "").trim()
+const lafzMi = (w) => { const t = sadeHarf(w); return t === "\u0627\u0644\u0644\u0647" || t.includes("\u0644\u0644\u0647") }
+// Âyetin kelimeleri içinde aranan ifadenin ardışık kelimelerini bulur (yoksa null)
+function ifadeyiBul(mushaf, sureNo, ayetNo, ifade) {
+  const ks = mushaf?.find(x => x.id === sureNo)?.ayetler?.find(a => a.no === ayetNo)?.kelimeler
+  if (!Array.isArray(ks)) return null
+  const hedef = ifade.split(/\s+/).map(sadeHarf)
+  for (let i = 0; i + hedef.length <= ks.length; i++) {
+    if (hedef.every((h, j) => sadeHarf(ks[i + j].arabic) === h)) return ks.slice(i, i + hedef.length)
+  }
+  return null
+}
 
 // Meal penceresine giden bilgi: sûre (hat glifi için no + ad), âyet no, meal
 const AYETLER = {
@@ -78,7 +116,7 @@ function Kose({ ac, style }) {
 }
 
 export default function Hakkinda() {
-  const { theme, arapcaFont } = useApp()
+  const { theme } = useApp()
   const isMobile = useMediaQuery("(max-width: 768px)")
   const [secili, setSecili] = useState(null)
   const ac = theme.accent
@@ -88,7 +126,46 @@ export default function Hakkinda() {
   const [ipucu, setIpucu] = useState(true)
   useEffect(() => { const t = setTimeout(() => setIpucu(false), 3000); return () => clearTimeout(t) }, [])
   const veri = secili ? AYETLER[secili] : null
-  const arapcaYazi = arapcaFont || "'KFGQPC Uthmanic', 'Amiri', 'Traditional Arabic', serif"
+  const kuranYazi = kuranFontu()
+
+  // Mushaf verisi (servis işçisi önbelleğinde; Kur'ân ekranı açıldıysa bellekte)
+  const [mushaf, setMushaf] = useState(null)
+  useEffect(() => {
+    let iptal = false
+    mushafYukle().then(m => { if (!iptal) setMushaf(m) }).catch(() => {})
+    return () => { iptal = true }
+  }, [])
+  const besmeleKelimeleri = useMemo(() => ifadeyiBul(mushaf, 1, 1, BESMELE), [mushaf])
+  const tevfikKelimeleri = useMemo(() => ifadeyiBul(mushaf, 11, 88, TEVFIK), [mushaf])
+
+  // Besmele telefonda tek satıra sığsın: ekran enine göre (eski clamp(20px, 7.2vw, 32px))
+  const [ekranEn, setEkranEn] = useState(() => (typeof window !== "undefined" ? window.innerWidth : 400))
+  useEffect(() => {
+    const r = () => setEkranEn(window.innerWidth)
+    window.addEventListener("resize", r)
+    return () => window.removeEventListener("resize", r)
+  }, [])
+  const besmeleBoyu = isMobile ? Math.round(Math.max(20, Math.min(32, ekranEn * 0.068))) : 38
+
+  // Mushaftaki gibi Arapça satır. Veri varsa MushafKelime, yoksa aynı renk kuralı.
+  // (bileşen değil düz işlev: her çizimde yeni bileşen türü doğup kelimeler baştan kurulmasın)
+  const mushafMetin = ({ metin, kelimeler, besmele = false, boyut }) => (
+    <span style={{
+      direction: "rtl", display: "inline-block", fontFamily: kuranYazi,
+      fontSize: `${boyut}px`, lineHeight: 1.9, color: theme.text, whiteSpace: "nowrap",
+    }}>
+      {kelimeler
+        ? kelimeler.map(k => (
+            <MushafKelime key={k.id} kelime={k} theme={theme} arapcaFont={kuranYazi}
+              yaziBoyutu={boyut} lineHeight={1.9} isMobile={isMobile} />
+          ))
+        : metin.split(" ").map((w, i) => (
+            <span key={i} style={{ color: besmele || lafzMi(w) ? (theme.lugatHighlight || theme.accent) : theme.text }}>
+              {i ? " " : ""}{w}
+            </span>
+          ))}
+    </span>
+  )
 
   const ayetStil = (aktif) => ({
     cursor: "pointer", display: "inline-block", transition: "opacity 0.2s, transform 0.2s",
@@ -142,19 +219,12 @@ export default function Hakkinda() {
           <Kose ac={ac} style={{ right: 0, top: 0, transform: "scaleX(-1)" }} />
           <Kose ac={ac} style={{ left: 0, bottom: 0, transform: "scaleY(-1)" }} />
           <Kose ac={ac} style={{ right: 0, bottom: 0, transform: "scale(-1,-1)" }} />
-          <div style={{
-            fontFamily: arapcaYazi, direction: "rtl", textAlign: "center",
-            color: theme.arabicHighlight, lineHeight: 1.9,
-            // Telefonda tek satıra sığsın: ekran enine göre küçülür
-            fontSize: isMobile ? "clamp(20px, 7.2vw, 32px)" : "38px", whiteSpace: "nowrap",
-          }}>
+          <div style={{ textAlign: "center", whiteSpace: "nowrap" }}>
             <span
               onClick={() => ayetTikla(BESMELE)}
               style={ayetStil(secili === BESMELE)}
-              onMouseEnter={e => { e.currentTarget.style.opacity = "0.75" }}
-              onMouseLeave={e => { e.currentTarget.style.opacity = "1" }}
             >
-              {BESMELE}
+              {mushafMetin({ metin: BESMELE, kelimeler: besmeleKelimeleri, besmele: true, boyut: besmeleBoyu })}
             </span>
           </div>
         </div>
@@ -219,18 +289,12 @@ export default function Hakkinda() {
         {/* ── KAPANIŞ: ve mâ tevfîkî illâ billâh ──────────────────────── */}
         <div style={{ marginTop: "34px" }}>
           <Ayrac ac={ac} en={180} />
-          <div style={{
-            fontFamily: arapcaYazi, direction: "rtl", textAlign: "center",
-            color: theme.arabicHighlight, lineHeight: 1.9, marginTop: "10px",
-            fontSize: isMobile ? "24px" : "28px",
-          }}>
+          <div style={{ textAlign: "center", marginTop: "10px" }}>
             <span
               onClick={() => ayetTikla(TEVFIK)}
               style={ayetStil(secili === TEVFIK)}
-              onMouseEnter={e => { e.currentTarget.style.opacity = "0.75" }}
-              onMouseLeave={e => { e.currentTarget.style.opacity = "1" }}
             >
-              {TEVFIK}
+              {mushafMetin({ metin: TEVFIK, kelimeler: tevfikKelimeleri, boyut: isMobile ? 24 : 28 })}
             </span>
           </div>
         </div>

@@ -318,6 +318,28 @@ function SemseIkon({ renk, boy = 20 }) {
 // için minik Mescid-i Nebevî, Risale için katran ağacı gibi, Ezkâr için tesbih…".
 // Hepsi 24×24, çizgi tarzı (temanın vurgu renginde), levhada 20 px. Eşleşme raf
 // resimleriyle aynı: kimlik YA DA başlık. Eşleşmeyen (özel raf vb.) şemse kalır.
+// Asimetrik, sarkık tesbih ilmeği: kontrol noktalarından Catmull-Rom eğrisi, eşit aralıklı taneler
+function tesbihTaneleri() {
+  const K = [[9.4,15.2],[7.2,13.2],[5.0,10.6],[4.2,7.2],[6.0,4.0],[9.6,2.6],[13.4,3.4],[15.8,6.2],[15.6,9.6],[14.2,12.0],[15.6,14.0],[19.0,14.4],[20.8,17.2],[19.2,20.2],[15.6,20.8],[12.6,19.2],[10.8,17.0]]
+  const cr = (p0,p1,p2,p3,t) => { const t2=t*t,t3=t2*t; return [0,1].map(k => 0.5*((2*p1[k])+(-p0[k]+p2[k])*t+(2*p0[k]-5*p1[k]+4*p2[k]-p3[k])*t2+(-p0[k]+3*p1[k]-3*p2[k]+p3[k])*t3)) }
+  const yol = []
+  for (let i = 0; i < K.length - 1; i++) {
+    const p0 = K[Math.max(0,i-1)], p1 = K[i], p2 = K[i+1], p3 = K[Math.min(K.length-1,i+2)]
+    for (let t = 0; t < 1; t += 0.02) yol.push(cr(p0,p1,p2,p3,t))
+  }
+  yol.push(K[K.length-1])
+  const uz = [0]; for (let i = 1; i < yol.length; i++) uz.push(uz[i-1] + Math.hypot(yol[i][0]-yol[i-1][0], yol[i][1]-yol[i-1][1]))
+  const N = 25, top = uz[uz.length-1], cik = []
+  for (let n = 0; n < N; n++) {
+    const hedef = (n + 0.5) * top / N
+    let i = uz.findIndex(u => u >= hedef); if (i < 1) i = 1
+    const [x1,y1] = yol[i-1], [x2,y2] = yol[i]
+    cik.push({ x: (x1+x2)/2, y: (y1+y2)/2, a: Math.atan2(y2-y1, x2-x1) * 180 / Math.PI, r: 1 + ((n * 7) % 5) * 0.03 })
+  }
+  return cik
+}
+const TESBIH_TANELERI = tesbihTaneleri()
+
 const SIMGE_CIZGI = { fill: "none", stroke: "currentColor", strokeWidth: 1.6, strokeLinecap: "round", strokeLinejoin: "round" }
 const RAF_SIMGELERI = [
   { esle: /kur.?[aâ]n/i, ad: "rahle", ciz: () => (   // rahlede açık mushaf, önden-yukarıdan bakış
@@ -333,14 +355,17 @@ const RAF_SIMGELERI = [
       <path d="M5.2 21 Q12 23.6 18.8 21 M6.4 21.5 V23 M17.6 21.5 V23" strokeWidth="1.3" />
     </>
   ) },
-  { esle: /evr[aâ]d|ezk[aâ]r/i, ad: "tesbih", ciz: () => (   // tesbih + imame + püskül
+  { esle: /evr[aâ]d|ezk[aâ]r/i, ad: "tesbih", ciz: () => (   // serbestçe bırakılmış tesbih: kıvrık ilmek + imame + püskül
     <>
-      {Array.from({ length: 13 }, (_, i) => {
-        const a = (i / 13) * Math.PI * 2 + Math.PI / 2 + 0.24
-        return <circle key={i} cx={12 + Math.cos(a) * 6.2} cy={9.6 + Math.sin(a) * 6.2} r="1.15" fill="currentColor" stroke="none" />
-      })}
-      <path d="M12 15.8 V18.2" />
-      <path d="M10.7 18.2 h2.6 l.8 3.6 h-4.2 z" fill="currentColor" fillOpacity="0.35" />
+      {TESBIH_TANELERI.map((t, i) => (
+        <ellipse key={i} cx={t.x} cy={t.y} rx={0.95 * t.r} ry={0.78 * t.r}
+          transform={`rotate(${t.a.toFixed(1)} ${t.x.toFixed(2)} ${t.y.toFixed(2)})`} fill="currentColor" stroke="none" />
+      ))}
+      <path d="M9.4 15.2 L10 16.2 M10.8 17 L10 16.2" strokeWidth="0.6" />
+      <circle cx="9.5" cy="16.9" r="0.5" fill="currentColor" stroke="none" />
+      <path d="M9.4 17.1 L8.3 18.7" strokeWidth="0.7" />
+      <ellipse cx="7.7" cy="19.6" rx="1.55" ry="0.72" transform="rotate(-54 7.7 19.6)" fill="currentColor" stroke="none" />
+      <path d="M6.9 20.6 L5.5 22.5 M6.9 20.6 L4.7 22 M6.9 20.6 L6.1 22.9 M6.9 20.6 L4 21.3" strokeWidth="0.8" />
     </>
   ) },
   { esle: /ris[aâ]le/i, ad: "agac", ciz: () => (   // dağ başındaki yaşlı, çıplak katran ağacı
@@ -352,13 +377,15 @@ const RAF_SIMGELERI = [
       <path d="M6.5 21.5 Q12 19.6 17.5 21.5" />
     </>
   ) },
-  { esle: /tasavvuf/i, ad: "gul", ciz: () => (   // gül
+  { esle: /tasavvuf/i, ad: "semazen", ciz: () => (   // dönen semazen: sikke, açık kollar, savrulan tennure
     <>
-      <path d="M6.6 7.6 C6.4 11.8 8.6 14.4 12 14.4 C15.4 14.4 17.6 11.8 17.4 7.6 C15.6 8.8 13.6 8.2 12 6 C10.4 8.2 8.4 8.8 6.6 7.6 Z" />
-      <path d="M9.4 4.6 C10.4 3.4 13.6 3.4 14.6 4.6 C14 6.4 12.9 7.2 12 7.6 C11.1 7.2 10 6.4 9.4 4.6 Z" fill="currentColor" fillOpacity="0.3" />
-      <path d="M9.6 10.2 C10.4 11.8 13.6 11.8 14.4 10.2" />
-      <path d="M12 14.4 V21.6" />
-      <path d="M12 18.4 c-2.2-.2-3.6-1.4-4-3.1 c2 .1 3.5 1.2 4 3.1 z M12 16.8 c2-.3 3.2-1.4 3.5-2.9 c-1.8 .1-3.1 1.1-3.5 2.9 z" fill="currentColor" fillOpacity="0.3" />
+      <path d="M11.0 2.3 L12.8 1.7 L13.9 5.2 L12.0 5.8 Z" fill="currentColor" strokeWidth="0.9" />
+      <circle cx="12.7" cy="6.9" r="1.15" fill="currentColor" stroke="none" />
+      <path d="M11.5 8.1 C11.1 9.6 11.1 10.9 11.3 12 L13.9 12 C14 10.9 13.9 9.5 13.5 8.1 Z" fill="currentColor" strokeWidth="0.9" />
+      <path d="M13.3 8.7 C15.6 7.9 17.5 6.3 19.4 3.6 L20.7 3.2" strokeWidth="1.4" />
+      <path d="M11.7 8.9 C9.5 9.7 7.2 9.8 5 8.9 L3.8 9.5" strokeWidth="1.4" />
+      <path d="M11.2 12 C9.4 14.6 6.6 17.6 3 19.8 C4.6 21.1 6.4 20.6 8.2 21.6 C10 22.6 11.6 21.8 13.4 22.4 C15.4 23 17 21.8 18.8 21.9 C20 22 20.9 21.2 21.4 20.4 C18.6 17.8 15.8 14.6 14 12 Z" fill="currentColor" fillOpacity="0.32" />
+      <path d="M12.1 12.4 C10.8 15.6 9.8 18.4 7.6 21.3 M13.1 12.4 C13.8 15.6 12.6 18.9 13.2 22.3 M13.8 12.4 C16.4 14.9 16.6 18.2 18.8 21.7" strokeWidth="1.05" />
     </>
   ) },
   { esle: /kel[aâ]m/i, ad: "divit", ciz: () => (   // hokka + kamış kalem

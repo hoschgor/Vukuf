@@ -313,13 +313,22 @@ function SemseIkon({ renk, boy = 20 }) {
 // konum: object-position — ekran oranı değişince kırpmanın hangi noktaya göre
 // yapılacağı (asıl motif bu noktada kalır).
 // Eşleşme: kategorinin kimliği YA DA başlığı (kimlikler veriye göre değişebildiği için
-// ikisine birden bakılır). Yalnız asıl Kısım raflarına uygulanır, özel raflara değil.
+// ikisine birden bakılır). Kısım rafları ve Son/Sık Okunanlar; kullanıcının özel rafları hariç.
 const RAF_RESIMLERI = [
   { esle: /kur.?[aâ]n/i,       src: "/raflar/kuran.webp",    konum: "50% 38%" },
   { esle: /evr[aâ]d|ezk[aâ]r/i, src: "/raflar/evrad.webp",    konum: "50% 62%" },
   { esle: /ris[aâ]le/i,        src: "/raflar/risale.webp",   konum: "50% 55%" },
   { esle: /tasavvuf/i,         src: "/raflar/tasavvuf.webp", konum: "50% 46%" },
   { esle: /^di[gğ]er/i,        src: "/raflar/diger.webp",    konum: "50% 55%" },
+  { esle: /kel[aâ]m/i,         src: "/raflar/kelam.webp",    konum: "50% 50%" },
+  { esle: /f[ıi]k[ıi]h/i,      src: "/raflar/fikih.webp",    konum: "50% 48%" },
+  { esle: /tefs[iî]r/i,        src: "/raflar/tefsir.webp",   konum: "50% 50%" },
+  { esle: /had[iî]s/i,         src: "/raflar/hadis.webp",    konum: "50% 50%" },
+  { esle: /ak[aâ][iî]d/i,      src: "/raflar/akaid.webp",    konum: "50% 52%" },
+  { esle: /us[uû]l/i,          src: "/raflar/usul.webp",     konum: "50% 55%" },
+  // Otomatik raflar: yalnız kimlikle eşleşir (rafResmiBul(rafId))
+  { esle: /^son-okunanlar$/,   src: "/raflar/son-okunanlar.webp", konum: "50% 55%" },
+  { esle: /^sik-okunanlar$/,   src: "/raflar/sik-okunanlar.webp", konum: "50% 55%" },
 ]
 function rafResmiBul(id, baslik) {
   return RAF_RESIMLERI.find(r => r.esle.test(String(id || "")) || r.esle.test(String(baslik || ""))) || null
@@ -2099,7 +2108,7 @@ function OtomatikKategori({ rafId, baslik, Ikon, kitaplar: liste, theme, dinamik
     <>
       <RafBolmesi
         p={yer.p} theme={theme} isMobile={isMobile} acik={acik} satirAcik={yer.satirAcik} gizli={gizli}
-        sirtlar={sirtlar} kapak={{ tip: "semse", tohum: rafId }} tohum={rafId}
+        sirtlar={sirtlar} kapak={{ tip: "semse", tohum: rafId }} tohum={rafId} resim={rafResmiBul(rafId, null)}
         onSirt={liste.length && !duzenlemeMode ? (s) => s.veri && navigate(kitapYolu(s.veri)) : undefined}
         onToggle={toggle}
         setNodeRef={setNodeRef} sortStil={sstyle}

@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { Link, useLocation } from "react-router-dom"
-import { BookOpen, Search, Shuffle, Menu, X, Palette, Info, Type, Sparkles, Settings, HardDrive, Brain, History } from "lucide-react"
+import { BookOpen, Search, Shuffle, Menu, X, Palette, Info, Type, Sparkles, Settings, HardDrive, Brain, History, HelpCircle } from "lucide-react"
 import { useApp } from "../AppContext"
 import { useMediaQuery } from "../data/hooks/useMediaQuery"
 import IosSwitch from "./IosSwitch"
@@ -11,6 +11,7 @@ import TemaSecici from "./TemaSecici"
 import { ypDegisken } from "./yatayDuzen"
 import { themes } from "../styles/themes"
 import { useGecmisAyari, gecmisOku } from "../data/gecmis"
+import YardimPaneli from "./YardimPaneli"
 
 /* ═══════════════════════════════════════════════════════════════════════════
    AYARLARIN TEK KAPIDA TOPLANMASI (24 Eylül 2026)
@@ -81,6 +82,8 @@ export default function Navbar() {
   const isMobile = useMediaQuery("(max-width: 768px)")
   const [menuAcik, setMenuAcik] = useState(false)
   const [ayarlarAcik, setAyarlarAcik] = useState(false)
+  // YARDIM (8 Ekim 2026) — ayarların yanındaki (?) düğmesi; kullanım rehberi (YardimPaneli.jsx)
+  const [yardimAcik, setYardimAcik] = useState(false)
   // Ayarlar paneli de akordiyon: aynı anda tek bölüm açık, panel kısa kalıyor.
   // TEMA varsayılan olarak açık — en sık dokunulan yer orası.
   const [acikBolum, setAcikBolum] = useState("tema")
@@ -201,22 +204,41 @@ export default function Navbar() {
         top: 0,
         zIndex: 100,
       }}>
-        {/* Hamburger */}
+        {/* Hamburger — sol grup, sağ grupla aynı esneklikte: logo tam ortada kalsın */}
+        <div style={{ flex: 1, display: "flex", alignItems: "center" }}>
         <button
-          onClick={() => { setMenuAcik(!menuAcik); setAyarlarAcik(false) }}
+          onClick={() => { setMenuAcik(!menuAcik); setAyarlarAcik(false); setYardimAcik(false) }}
           style={{ color: theme.textSecondary, padding: "6px", borderRadius: "8px", display: "flex", alignItems: "center" }}
         >
           {menuAcik ? <X size={20} /> : <Menu size={20} />}
         </button>
+        </div>
 
         {/* Logo */}
         <Link to="/" style={{ color: theme.accent, fontSize: "20px", fontWeight: "bold", letterSpacing: "3px" }}>
           VUKUF
         </Link>
 
+        {/* SAĞ GRUP: Yardım (?) + Ayarlar */}
+        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "flex-end", gap: "2px" }}>
+        <button
+          onClick={() => { setYardimAcik(true); setMenuAcik(false); setAyarlarAcik(false) }}
+          title="Yardım — nasıl kullanılır"
+          aria-label="Yardım"
+          style={{
+            color: yardimAcik ? theme.accent : theme.textSecondary,
+            padding: "6px",
+            borderRadius: "8px",
+            display: "flex",
+            alignItems: "center",
+            background: yardimAcik ? `${theme.accent}15` : "transparent",
+          }}
+        >
+          <HelpCircle size={18} />
+        </button>
         {/* TEK AYARLAR DÜĞMESİ — eski Sparkles + Palette ikilisinin yerine */}
         <button
-          onClick={() => { setAyarlarAcik(true); setMenuAcik(false) }}
+          onClick={() => { setAyarlarAcik(true); setMenuAcik(false); setYardimAcik(false) }}
           title="Ayarlar"
           aria-label="Ayarlar"
           style={{
@@ -230,7 +252,11 @@ export default function Navbar() {
         >
           <Settings size={18} />
         </button>
+        </div>
       </nav>
+
+      {/* ═══ YARDIM PANELİ ════════════════════════════════════════════════ */}
+      {yardimAcik && <YardimPaneli kapat={() => setYardimAcik(false)} theme={theme} />}
 
       {/* ═══ AYARLAR PANELİ ═══════════════════════════════════════════════ */}
       {ayarlarAcik && (

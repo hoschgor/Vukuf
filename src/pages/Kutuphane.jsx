@@ -159,14 +159,13 @@ function rafPaleti(theme) {
   const p = {
     koyuTema,
     c0, c1, c2, c3, c4,
-    // dikey silindir (sütun, topuz): kenarlar koyu, ortada parlama
-    silindir: `linear-gradient(90deg, ${c0} 0%, ${c1} 14%, ${c3} 38%, ${c4} 47%, ${c2} 62%, ${c1} 82%, ${c0} 100%)`,
     // yatay çubuk (üst ray, levha bandı, taç)
     yatay: `${DAMAR_Y}linear-gradient(180deg, ${c3} 0%, ${c2} 22%, ${c1} 70%, ${c0} 100%)`,
     band: `${DAMAR_Y}linear-gradient(180deg, ${c2} 0%, ${c1} 55%, ${c0} 100%)`,
-    // Direğin oturduğu yan tahta: çerçeveyle aynı ahşap tonu (boşluk/beyaz kalmasın)
-    yanTahta: `${DAMAR_D}linear-gradient(90deg, ${c1} 0%, ${c2} 28%, ${hsl(h, s, (L[1] + L[2]) / 2 + 0.03)} 50%, ${c2} 72%, ${c1} 100%)`,
-    blok: `linear-gradient(90deg, ${c1} 0%, ${c3} 40%, ${c4} 50%, ${c2} 72%, ${c0} 100%)`,
+    // köşeli pilaster gövdesi: solda pah ışığı, sağda gölge, dikey damar
+    pilaster: `${DAMAR_D}linear-gradient(90deg, ${c0} 0%, ${c3} 7%, ${c2} 14%, ${c2} 80%, ${c1} 90%, ${c0} 100%)`,
+    panel: `${DAMAR_D}linear-gradient(90deg, ${c1} 0%, ${c2} 50%, ${c1} 100%)`,
+    blok: `${DAMAR_Y}linear-gradient(90deg, ${c1} 0%, ${c4} 6%, ${c3} 14%, ${c3} 30%, ${c2} 80%, ${c1} 92%, ${c0} 100%)`,
     oymaSoluk: hsl(h, Math.min(0.6, as), koyuTema ? 0.72 : 0.86, 0.3),
     oyma: hsl(h, Math.min(0.6, as), koyuTema ? 0.72 : 0.86, 0.55),   // çerçevedeki ince oyma çizgileri
     disler: `repeating-linear-gradient(90deg, ${c3} 0 6px, transparent 6px 11px)`,
@@ -183,7 +182,10 @@ function rafPaleti(theme) {
 
 const RAF_MIN_EN = 340          // bir bölmenin en dar hâli → sütun sayısı (en çok 2)
 const RAF_EN_COK_SUTUN = 2
-const icYuksekligi = (tam, isMobile) => tam ? (isMobile ? 132 : 168) : (isMobile ? 60 : 74)
+// İç yükseklik AÇIK/KAPALI AYNI (8 Ekim 2026, kullanıcı: "açılınca kitaplar hâlâ çok uzun,
+// resim olsa ekranı kaplayacak; dikey sütunlar raf açılınca uzamasın"). Raf açılınca
+// yalnız levha vurgulanır ve çekmece açılır; bölmenin boyu değişmez → direk de uzamaz.
+const icYuksekligi = (tam, isMobile) => (isMobile ? 76 : 92)
 const direkEni = (isMobile) => (isMobile ? 20 : 30)
 const DERILER = ["#4a1720", "#1d2b3d", "#3d2a18", "#24301f", "#2c2440", "#3d1f24", "#22333a", "#4a3320"]
 
@@ -193,18 +195,94 @@ function sayiKaristir(s) {
   return h
 }
 
-// ogeler: [{ id, ad, n }] — n: âlimin eser sayısı (sırt kalınlığı) ya da 1 (tek kitap)
+// ogeler: [{ id, ad, veri }] — her biri bir ESER (dikey sırt)
 function sirtListesi(ogeler, tam) {
-  return ogeler.slice(0, tam ? 40 : 16).map(o => {
+  return ogeler.slice(0, tam ? 48 : 20).map(o => {
     const h = sayiKaristir(o.id)
     return {
       id: o.id, ad: o.ad, veri: o.veri,
-      en: tam ? [9, 9, 12, 14, 16][Math.min(4, Math.max(1, o.n || 1))] : 9 + (h % 4) * 2,
-      boy: tam ? 72 + (h % 20) : 62 + (h % 22),            // iç yüksekliğin yüzdesi
+      en: (tam ? 9 : 8) + (h % 4) * 2,
+      // iç yüksekliğin yüzdesi — açık rafta gerçekçi boy (eskiden %72-92, fazla uzundu)
+      boy: tam ? 50 + (h % 19) : 56 + (h % 22),
       renk: kitapSirtiRengi(o.id),
     }
   })
 }
+// ── RAFIN DİZİLİŞİ (8 Ekim 2026) ───────────────────────────────────────────
+// Kullanıcı: "dikey kitaplar raftaki toplam eserleri, yatay kitaplar âlimleri temsil
+// etsin; raflar iyice dolu olmak zorunda değil". Dikey sırtlar = eserler (tıklayınca
+// o eser açılır), yatay yığın = âlimler (her âlim bir yatık cilt, kalınlığı eser
+// sayısına göre; tıklayınca âlimin rafı açılır). Yığın en çok 5 cilt; fazlası yan
+// yana ikinci yığına geçer. Yığının sırtların solunda mı sağında mı duracağı ve
+// son kitabın yaslanıp yaslanmayacağı raftan rafa değişir ama hep aynı kalır.
+// (Rahle, tesbih, açık kitap gibi süsler artık raf RESİMLERİNE bırakıldı.)
+function rafDizisi(sirtlar, yataylar, tohum) {
+  const dizi = []
+  const h = sayiKaristir(String(tohum) + "·dizi")
+  const r = (b, n) => Math.floor(h / b) % n
+  const yigilar = []
+  for (let i = 0; i < yataylar.length; i += 5) yigilar.push(yataylar.slice(i, i + 5))
+  const yiginOgeleri = yigilar.map((l, i) => ({ tip: "yatay", liste: l, anahtar: `yigin-${i}` }))
+  const once = r(3, 3) === 0                       // yığın çoğunlukla sırtların sağında
+  if (once) dizi.push(...yiginOgeleri)
+  sirtlar.forEach(s => dizi.push({ tip: "sirt", s }))
+  if (sirtlar.length >= 4 && !once) {
+    const son = dizi[dizi.length - 1]
+    if (r(7, 3) === 0) son.egik = true             // son kitap yanındakine yaslanır
+    else if (yiginOgeleri.length && r(11, 2) === 0) dizi.push({ tip: "dayak", anahtar: "dayak" })
+  }
+  if (!once) dizi.push(...yiginOgeleri)
+  return dizi
+}
+
+// Yatay âlim ciltleri: n → kalınlık; en: hafif farklı; renk kimlikten
+function yatayListesi(ogeler) {
+  return ogeler.map(o => {
+    const hh = sayiKaristir(o.id + "·y")
+    return { id: o.id, ad: o.ad, veri: o.veri, n: o.n || 1, en: 40 + (hh % 4) * 5, kay: (hh % 5) - 2, renk: kitapSirtiRengi(o.id + "y") }
+  })
+}
+
+function YatayYigin({ p, liste, olc, detay, onYatay }) {
+  return (
+    <span style={{ flexShrink: 0, alignSelf: "flex-end", display: "flex", flexDirection: "column-reverse", alignItems: "center", margin: `0 ${Math.round(4 * olc) + 3}px` }}>
+      {liste.map(y => {
+        const tiklanir = detay && onYatay && y.ad
+        const kalin = Math.max(4, Math.round((6.5 + Math.min(4, y.n) * 1.4) * olc))
+        return (
+          <span
+            key={y.id}
+            title={y.ad || undefined}
+            className={tiklanir ? "vk-yatay" : undefined}
+            data-nodrag={tiklanir ? "1" : undefined}
+            onClick={tiklanir ? (e) => { e.stopPropagation(); onYatay(y) } : undefined}
+            style={{
+              display: "block", width: `${Math.round(y.en * olc) + 8}px`, height: `${kalin}px`,
+              marginLeft: `${y.kay * 2}px`, borderRadius: "1px 2px 2px 1px",
+              background: `linear-gradient(90deg, transparent 3px, ${p.altin} 3px 4px, transparent 4px calc(100% - 4px), ${p.altin} calc(100% - 4px) calc(100% - 3px), transparent calc(100% - 3px)), linear-gradient(rgba(0,0,0,0.2),rgba(0,0,0,0.2)), ${y.renk}`,
+              boxShadow: "inset 0 1px 0 rgba(255,255,255,0.12), inset 0 -1px 0 rgba(0,0,0,0.45), 0 1px 1px rgba(0,0,0,0.35)",
+              cursor: tiklanir ? "pointer" : "inherit", transition: "transform 0.2s",
+            }}
+          />
+        )
+      })}
+    </span>
+  )
+}
+
+// Pirinç kitap dayağı (dikey sırtların ucunda)
+function KitapDayagi({ p, olc }) {
+  const W = Math.round(12 * olc) + 2, H = Math.round(46 * olc)
+  return (
+    <svg aria-hidden="true" width={W} height={H} viewBox="0 0 12 46" preserveAspectRatio="none"
+      style={{ flexShrink: 0, alignSelf: "flex-end", pointerEvents: "none", margin: `0 ${Math.round(6 * olc) + 3}px 0 1px` }}>
+      <path d="M1 0 h3.6 v41 h7.4 v5 H1 Z" fill={p.gold} />
+      <path d="M2 1 v42" stroke="rgba(255,255,255,0.35)" strokeWidth="0.8" />
+      <path d="M1 46 H12" stroke="rgba(0,0,0,0.35)" strokeWidth="1" />
+    </svg>
+  )
+}
+
 const susSirtlar = (rafId, adet = 6) =>
   Array.from({ length: adet }, (_, i) => ({ id: `${rafId}-${i}`, ad: "", n: 2 }))
 
@@ -220,33 +298,6 @@ function SemseIkon({ renk, boy = 20 }) {
   )
 }
 
-// Kur'ân bölmesinde ön kapak: asıl kapak görseli (net küçültülmüş kopya)
-function RafKapakGorsel({ src }) {
-  const net = useNetKapak(src, 54, 82, "cover")
-  return (
-    <span style={{
-      width: "54px", height: "82px", flexShrink: 0, marginLeft: "10px", borderRadius: "2px 4px 4px 2px",
-      background: `url(${net}) center/cover no-repeat`,
-      boxShadow: "-3px 4px 8px rgba(0,0,0,0.5), inset 3px 0 0 rgba(0,0,0,0.25)",
-    }} />
-  )
-}
-
-function RafKapakSemse({ p, tohum }) {
-  const deri = DERILER[sayiKaristir(tohum) % DERILER.length]
-  return (
-    <span style={{
-      width: "54px", height: "82px", flexShrink: 0, marginLeft: "10px", borderRadius: "2px 4px 4px 2px",
-      background: `linear-gradient(135deg, ${deri}, rgba(0,0,0,0.55)), ${deri}`,
-      boxShadow: "-3px 4px 8px rgba(0,0,0,0.5), inset 3px 0 0 rgba(0,0,0,0.3)",
-      display: "flex", alignItems: "center", justifyContent: "center",
-    }}>
-      <span style={{ width: "42px", height: "70px", border: `1px solid ${p.gold}`, borderRadius: "2px", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <SemseIkon renk={p.gold} boy={26} />
-      </span>
-    </span>
-  )
-}
 
 // ── IŞIK DÜZENİ (8 Ekim 2026) ──────────────────────────────────────────────
 // Her raf için rafın kimliğinden türeyen ama raftan rafa değişen bir düzen:
@@ -254,6 +305,17 @@ function RafKapakSemse({ p, tohum }) {
 // mumlar tek / çift / üç kollu şamdan, boyları farklı. Kandilin olduğu yana mum
 // konmaz (çakışmasın); kandil yoksa iki yana da mum gelebilir. Kimlik aynı kaldıkça
 // düzen de aynı kalır (her açılışta yer değiştirmez).
+// ── RAF RESİMLERİ ──────────────────────────────────────────────────────────
+// Dosyalar public/raflar/<raf-id>.webp (önerilen 2400×600, 4:1; 3:1 de olur — bölme
+// webde ~7:1, telefonda ~4:1 göründüğü için ortadaki yatay bant esas). Yalnız burada
+// listelenen raflar resim kullanır → olmayan dosya için boşuna istek atılmaz.
+// Resmi olmayan raf bugünkü çizimde (koyu ahşap pano) kalır.
+// konum: object-position — ekran oranı değişince kırpmanın hangi noktaya göre
+// yapılacağı (asıl motif bu noktada kalır).
+const RAF_RESIMLERI = {
+  tasavvuf: { src: "/raflar/tasavvuf.webp", konum: "50% 46%" },
+}
+
 const SAMDAN_EN = { tek: 20, cift: 40, uclu: 54 }
 // ── IŞIK DÜZENİ ─────────────────────────────────────────────────────────────
 // Raftan rafa değişen ama kimlikten türediği için hep aynı kalan düzen:
@@ -375,7 +437,12 @@ function Samdan({ p, tip, boylar, yukseklik, canli, stil }) {
 }
 
 // Bölmenin içi: arka pano, ışıklar, kitap sırtları, (açıkken) ön kapak
-function RafIci({ p, yuk, tam, detay, sirtlar, kapak, onSirt, canli, tohum }) {
+function RafIci({ p, yuk, tam, detay, sirtlar, yataylar = [], kapak, onSirt, onYatay, canli, tohum }) {
+  const resim = RAF_RESIMLERI[tohum]
+  // Resimli rafta kapalıyken kitap sırtları gösterilmez (resim görünsün); açıkken
+  // âlim sırtları resmin önünde, rafın tabanında durur (tıklanabilir kalsın).
+  if (resim && !detay) { sirtlar = []; yataylar = [] }
+  const olc = Math.max(0.55, Math.min(1.25, yuk / 132))
   const duzen = isikDuzeni(tohum || "raf")
   const mumH = Math.min(58, yuk - 8)
   const samdanEni = (yer) => {
@@ -403,8 +470,16 @@ function RafIci({ p, yuk, tam, detay, sirtlar, kapak, onSirt, canli, tohum }) {
       position: "relative", height: `${yuk}px`, flexShrink: 0, overflow: "hidden",
       background: p.ic, boxShadow: "inset 0 10px 16px rgba(0,0,0,0.55)", transition: "height 0.3s ease",
     }}>
+      {resim && (
+        <>
+          <img src={resim.src} alt="" aria-hidden="true" loading="lazy" decoding="async" draggable={false}
+            style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: resim.konum || "50% 50%", pointerEvents: "none", userSelect: "none" }} />
+          {/* tavan gölgesi + tabana doğru hafif karartma: ahşap çerçeveyle kaynaşsın, sırtlar okunsun */}
+          <div style={{ position: "absolute", inset: 0, pointerEvents: "none", background: "linear-gradient(180deg, rgba(0,0,0,0.38) 0%, rgba(0,0,0,0.06) 26%, rgba(0,0,0,0.05) 60%, rgba(0,0,0,0.42) 100%)" }} />
+        </>
+      )}
       {isiklar.map((yer, i) => (
-        <div key={i} style={{ position: "absolute", width: "150px", height: "150px", borderRadius: "50%", background: p.isik, pointerEvents: "none", ...yer }} />
+        <div key={i} style={{ position: "absolute", width: "150px", height: "150px", borderRadius: "50%", background: p.isik, pointerEvents: "none", opacity: resim ? 0.6 : 1, ...yer }} />
       ))}
       {k && (
         <RafKandili p={p} zincir={zincir} canli={canli} sure={k.sure} gecik={k.gecik}
@@ -415,9 +490,14 @@ function RafIci({ p, yuk, tam, detay, sirtlar, kapak, onSirt, canli, tohum }) {
 
 
       {/* Orta: kitap sırtları (sığmazsa orantılı incelir) + açıkken ön kapak */}
-      <div style={{ position: "absolute", left: `${kenarPay("sol")}px`, right: `${kenarPay("sag")}px`, top: "8px", bottom: 0, display: "flex", alignItems: "flex-end", justifyContent: "center", gap: "2px", overflow: "hidden" }}>
-        {sirtlar.map(s => {
+      <div style={{ position: "absolute", left: `${kenarPay("sol")}px`, right: `${kenarPay("sag")}px`, top: "8px", bottom: 0, display: "flex", alignItems: "flex-end", justifyContent: resim ? "flex-start" : "center", gap: "2px", overflow: "hidden" }}>
+        {rafDizisi(sirtlar, yataylar, tohum).map(oge => {
+          if (oge.tip === "yatay") return <YatayYigin key={oge.anahtar} p={p} liste={oge.liste} olc={olc} detay={detay} onYatay={onYatay} />
+          if (oge.tip === "dayak") return <KitapDayagi key={oge.anahtar} p={p} olc={olc} />
+          const s = oge.s
           const tiklanir = detay && onSirt && s.ad
+          // Yaslanan kitap: dibi biraz açılır, tepesi önceki kitaba dayanır
+          const egikPay = oge.egik ? Math.round((s.boy / 100) * (yuk - 8) * 0.17) : 0
           return (
             <span
               key={s.id}
@@ -432,12 +512,11 @@ function RafIci({ p, yuk, tam, detay, sirtlar, kapak, onSirt, canli, tohum }) {
                 boxShadow: "inset -2px 0 0 rgba(0,0,0,0.28), inset 1px 0 0 rgba(255,255,255,0.07)",
                 cursor: tiklanir ? "pointer" : "inherit",
                 transition: "transform 0.2s",
+                ...(oge.egik ? { transform: "rotate(-10deg)", transformOrigin: "0 100%", marginLeft: `${egikPay}px`, flexShrink: 0 } : null),
               }}
             />
           )
         })}
-        {detay && kapak?.tip === "gorsel" && kapak.src && <RafKapakGorsel src={kapak.src} />}
-        {detay && kapak?.tip === "semse" && <RafKapakSemse p={p} tohum={kapak.tohum} />}
       </div>
 
       {duzen.mumlar.map(m => (
@@ -448,45 +527,47 @@ function RafIci({ p, yuk, tam, detay, sirtlar, kapak, onSirt, canli, tohum }) {
   )
 }
 
-// ── DİREK (tornalanmış sütun) ──────────────────────────────────────────────
-// Yalnız CSS: her parça silindir gölgeli bir dilim; genişlikleri ve yuvarlaklıkları
-// başlık → gövde → topuz → gövde → kaide boyunca değişerek torna izlenimi verir.
-// Gövde esner (flex), başlık/topuz/kaide sabit → her yükseklikte orantı bozulmaz.
-// [en %, yükseklik px, köşe px (50 → elips), "k" = kare blok]
-const DIREK_BASLIK = [[100, 7, 1, "k"], [90, 3, 1], [78, 3, 3], [66, 5, 50], [54, 2, 1]]
-const DIREK_TOPUZ = [[56, 3, 2], [70, 4, 4], [84, 11, 50], [70, 4, 4], [56, 3, 2]]
-const DIREK_KAIDE = [[60, 2, 1], [72, 5, 50], [84, 3, 2], [92, 3, 1], [100, 9, 1, "k"]]
-function DirekDilimleri({ p, liste }) {
-  return liste.map(([w, hgt, r, tip], i) => (
+// ── DİREK (köşeli ahşap pilaster, 8 Ekim 2026) ─────────────────────────────
+// Kullanıcı: "sütunların arka kısmı kötü duruyor; oval yerine köşeli, daha çok ağaca
+// benzesin". Tornalanmış (yuvarlak, daralan) parçalar yerine TAM GENİŞLİKTE köşeli
+// ahşap: basamaklı başlık → içinde gömme panel olan gövde → ortada kare kuşak (baklava
+// kakmalı) → ikinci gövde → basamaklı kaide. Her parça direğin tamamını kapladığı için
+// arkada boşluk / yan tahta görünmez. Yan yüzlerde pah (eğim) gölgesi, gövdede dikey damar.
+// [yükseklik px, tür, yandan taşma px] — "b": blok (açık yüz), "o": oluk (koyu ara çizgi)
+const DIREK_BASLIK = [[6, "b", 2], [2, "o", 1], [4, "b", 1], [2, "o", 0], [3, "b", 0]]
+const DIREK_KAIDE = [[3, "b", 0], [2, "o", 0], [4, "b", 1], [2, "o", 1], [8, "b", 2]]
+function DirekKatlari({ p, liste }) {
+  return liste.map(([hgt, tur, tas], i) => (
     <span key={i} style={{
-      display: "block", width: `${w}%`, height: `${hgt}px`, flexShrink: 0,
-      borderRadius: r === 50 ? "50%" : `${r}px`,
-      background: tip === "k" ? p.blok : p.silindir,
-      boxShadow: tip === "k"
-        ? `inset 0 0 0 1px rgba(0,0,0,0.35), inset 0 0 0 2px ${p.oymaSoluk}, 0 1px 0 rgba(0,0,0,0.4)`
-        : "0 1px 0 rgba(0,0,0,0.35)",
+      display: "block", height: `${hgt}px`, flexShrink: 0, alignSelf: "stretch",
+      margin: `0 -${tas}px`,
+      background: tur === "b" ? p.blok : p.c0,
+      boxShadow: tur === "b" ? `inset 0 1px 0 ${p.oymaSoluk}, inset 0 -1px 0 rgba(0,0,0,0.4)` : "none",
     }} />
   ))
 }
-function RafDirek({ p, en }) {
-  const govde = {
-    display: "block", width: "50%", minHeight: "4px", background:
-      `repeating-linear-gradient(90deg, rgba(0,0,0,0.10) 0 1px, transparent 1px 3px), ${p.silindir}`,
-  }
-  const halka = { display: "block", width: "60%", height: "3px", flexShrink: 0, borderRadius: "2px", background: p.silindir, boxShadow: "0 1px 0 rgba(0,0,0,0.35)" }
+function DirekGovdesi({ p, flex }) {
   return (
-    // Sütun, dolabın ahşap yan tahtasının önünde durur: gövdenin yanlarında boşluk
-    // kalmaz (saydamken açık temada sayfa zemini beyaz şeritler gibi görünüyordu).
-    <div aria-hidden="true" style={{ width: `${en}px`, flexShrink: 0, alignSelf: "stretch", display: "flex", flexDirection: "column", alignItems: "center", position: "relative", zIndex: 1, background: p.yanTahta, boxShadow: "inset 1px 0 0 rgba(0,0,0,0.3), inset -1px 0 0 rgba(0,0,0,0.3)" }}>
-      <DirekDilimleri p={p} liste={DIREK_BASLIK} />
-      <span style={{ ...govde, flex: "1 1 0" }} />
-      <span style={halka} />
-      <span style={{ ...govde, flex: "0.35 1 0" }} />
-      <DirekDilimleri p={p} liste={DIREK_TOPUZ} />
-      <span style={{ ...govde, flex: "0.45 1 0" }} />
-      <span style={halka} />
-      <span style={{ ...govde, flex: "1.2 1 0" }} />
-      <DirekDilimleri p={p} liste={DIREK_KAIDE} />
+    <span style={{
+      display: "block", flex: `${flex} 1 0`, minHeight: "10px", alignSelf: "stretch", position: "relative",
+      background: p.pilaster,
+    }}>
+      {/* gömme panel: içe göçük dikey tahta */}
+      <span style={{
+        position: "absolute", left: "26%", right: "26%", top: "5px", bottom: "5px",
+        background: p.panel,
+        boxShadow: `inset 1px 1px 0 rgba(0,0,0,0.45), inset -1px -1px 0 ${p.oymaSoluk}`,
+      }} />
+      <span style={{ position: "absolute", left: "50%", top: "50%", width: "5px", height: "5px", margin: "-2.5px 0 0 -2.5px", transform: "rotate(45deg)", background: p.oyma, boxShadow: "0 0 0 1px rgba(0,0,0,0.35)" }} />
+    </span>
+  )
+}
+function RafDirek({ p, en }) {
+  return (
+    <div aria-hidden="true" style={{ width: `${en}px`, flexShrink: 0, alignSelf: "stretch", display: "flex", flexDirection: "column", position: "relative", zIndex: 1 }}>
+      <DirekKatlari p={p} liste={DIREK_BASLIK} />
+      <DirekGovdesi p={p} flex={1} />
+      <DirekKatlari p={p} liste={DIREK_KAIDE} />
     </div>
   )
 }
@@ -505,7 +586,7 @@ function KemerKosesi({ p, sag, buyuk }) {
 
 // Bölme = [direk] [üst ray + iç + levha bandı] [direk]. Yan yana bölmeler direği PAYLAŞIR:
 // her bölme sol direğini çizer, satırın sonundaki bölme sağ direği de çizer.
-function RafBolmesi({ p, theme, isMobile, acik, satirAcik, gizli, sirtlar, kapak, onSirt, onToggle,
+function RafBolmesi({ p, theme, isMobile, acik, satirAcik, gizli, sirtlar, yataylar = [], kapak, onSirt, onYatay, onToggle,
   setNodeRef, sortStil, suruklemeProps, duzenlemeMode, sira, sagDirek, tohum, children }) {
   const tam = acik || satirAcik
   const yuk = icYuksekligi(tam, isMobile)
@@ -527,7 +608,7 @@ function RafBolmesi({ p, theme, isMobile, acik, satirAcik, gizli, sirtlar, kapak
       <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
         {/* üst ray */}
         <div style={{ height: `${rayH}px`, flexShrink: 0, background: p.yatay, boxShadow: `inset 0 -1px 0 ${p.oyma}` }} />
-        <RafIci p={p} yuk={yuk} tam={tam} detay={acik && !duzenlemeMode} sirtlar={sirtListesi(sirtlar, tam)} kapak={kapak} onSirt={onSirt} canli={tam} tohum={tohum} />
+        <RafIci p={p} yuk={yuk} tam={tam} detay={acik && !duzenlemeMode} sirtlar={sirtListesi(sirtlar, tam)} yataylar={yatayListesi(yataylar)} kapak={kapak} onSirt={onSirt} onYatay={onYatay} canli={tam} tohum={tohum} />
         {/* raf dudağı + levha bandı */}
         <div style={{ height: "4px", flexShrink: 0, background: p.c3, boxShadow: "0 1px 0 rgba(0,0,0,0.4)" }} />
         <div style={{ flexGrow: 1, background: p.band, padding: isMobile ? "5px 4px 6px" : "6px 6px 8px" }}>
@@ -1457,7 +1538,17 @@ function SortableKategori({ kategori,
       id: a.id, ad: a.isim,
       n: a.altKategoriler ? a.altKategoriler.reduce((t, x) => t + x.kitaplar.length, 0) : (a.kitaplar || []).length,
     }))
-  const sirtlar = alimSirtlari.length ? alimSirtlari : susSirtlar(kategori.id, 5)
+  // Dikey sırtlar = rafın bütün eserleri (âlim sırasıyla); Kur'ân rafında mushafın kendisi
+  const eserler = [
+    ...(kategori.kuran ? [{ id: kategori.kuran.id || "kuran", ad: "Kur'ân-ı Kerîm", veri: { ...kategori.kuran, kuran: true } }] : []),
+    ...(alimSira[kategori.id] || kategori.alimler.map(a => a.id))
+      .map(id => kategori.alimler.find(a => a.id === id))
+      .filter(Boolean)
+      .flatMap(a => (a.altKategoriler ? a.altKategoriler.flatMap(x => x.kitaplar) : (a.kitaplar || [])))
+      .map(k => ({ id: k.id, ad: k.baslik, veri: k })),
+  ]
+  const sirtlar = eserler.length ? eserler : susSirtlar(kategori.id, 5)
+  const navigate = useNavigate()
   const kapak = kategori.kuran?.gorsel ? { tip: "gorsel", src: kategori.kuran.gorsel } : { tip: "semse", tohum: kategori.id }
 
   useEffect(() => {
@@ -1501,7 +1592,9 @@ function SortableKategori({ kategori,
       <RafBolmesi
         p={yer.p} theme={theme} isMobile={isMobile} acik={acik} satirAcik={yer.satirAcik} gizli={gizli}
         sirtlar={sirtlar} kapak={kapak} tohum={kategori.id}
-        onSirt={alimSirtlari.length && !duzenlemeMode ? (s) => onAlimSec(kategori.id, s.id) : undefined}
+        yataylar={alimSirtlari}
+        onSirt={eserler.length && !duzenlemeMode ? (s) => s.veri && navigate(kitapYolu(s.veri)) : undefined}
+        onYatay={alimSirtlari.length && !duzenlemeMode ? (y) => onAlimSec(kategori.id, y.id) : undefined}
         onToggle={toggle}
         setNodeRef={setNodeRef} sortStil={style}
         suruklemeProps={surukleProps(duzenlemeMode, attributes, listeners)}
@@ -1828,6 +1921,7 @@ function OzelKategori({ raf, havuz, theme, dinamikMod, duzenlemeMode, gizlemeMod
       <RafBolmesi
         p={yer.p} theme={theme} isMobile={isMobile} acik={acik} satirAcik={yer.satirAcik} gizli={gizli}
         sirtlar={sirtlar} kapak={{ tip: "semse", tohum: raf.id }} tohum={raf.id}
+        yataylar={(raf.altRaflar || []).length > 1 ? raf.altRaflar.map(a => ({ id: a.id, ad: a.baslik, n: (a.kitapIdler || []).length })) : []}
         onSirt={rafKitaplari.length && !duzenlemeMode ? (s) => s.veri && navigate(kitapYolu(s.veri)) : undefined}
         onToggle={isimDuzen != null ? undefined : toggle}
         setNodeRef={setNodeRef} sortStil={sstyle}
@@ -2531,7 +2625,7 @@ export default function Kutuphane() {
         .vk-alev2 { animation-duration: 3.1s; animation-delay: -1.2s; }
         @keyframes vk-salin { 0%, 100% { transform: rotate(-1.4deg); } 50% { transform: rotate(1.4deg); } }
         .vk-salin { animation: vk-salin 7s ease-in-out infinite; will-change: transform; }
-        @media (hover: hover) { .vk-sirt:hover { transform: translateY(-5px); } }
+        @media (hover: hover) { .vk-sirt:hover { transform: translateY(-5px); } .vk-yatay:hover { transform: translateX(4px); } }
         @media (prefers-reduced-motion: reduce) { .vk-alev, .vk-salin { animation: none; } }
       `}</style>
 

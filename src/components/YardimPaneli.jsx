@@ -12,7 +12,7 @@
    • Üstte arama kutusu: başlık, özet, metin ve gizli anahtar kelimelerde arar
      (aksan/büyük-küçük harf duyarsız, `normHarf`). Arama varken bölüm süzgeci
      devre dışı kalır, bütün rehberde arar.
-   • Bölüm çipleri: Tümü · Kitaplık · Kur'ân · Dinleme · Hıfz · Görsel ve İzleme ·
+   • Bölüm çipleri: Tümü · Kitaplık · Kur'ân-ı Kerîm · Dinleme · Hıfz · Görsel ve İzleme ·
      Kitap Okuma · Arama ve Lügat · Ayarlar.
    • Her konu bir kart: simge + başlık + kısa özet; dokununca ayrıntı açılır.
      "Nerede" satırı o özelliğin bulunduğu yolu gösterir (ör. Ayarlar → Görünüm).
@@ -27,7 +27,7 @@ import {
   Gem, Feather, Play, Circle, Palette, Settings, Layers, Undo2, Headphones, Volume2,
   MessageSquareText, Brain, ImagePlay, MonitorPlay, List, Eye, Highlighter, Type, Shuffle,
   History, HardDrive, Smartphone, Hash, ChevronDown, X, MousePointerClick, Library, Star,
-  RotateCcw, Info,
+  RotateCcw, Info, LayoutGrid,
 } from "lucide-react"
 import AltSayfa from "./AltSayfa"
 import { useMediaQuery } from "../data/hooks/useMediaQuery"
@@ -36,7 +36,7 @@ import { normHarf } from "../data/okumaKayit"
 const BOLUMLER = [
   { id: "tumu",    ad: "Tümü" },
   { id: "kitaplik", ad: "Kitaplık" },
-  { id: "kuran",   ad: "Kur'ân" },
+  { id: "kuran",   ad: "Kur'ân-ı Kerîm" },
   { id: "dinleme", ad: "Dinleme" },
   { id: "hifz",    ad: "Hıfz" },
   { id: "gorsel",  ad: "Görsel ve İzleme" },
@@ -117,6 +117,17 @@ const KONULAR = [
     anahtar: "coverflow kapak akan görünüm kaydır",
   },
   {
+    bolum: "kitaplik", ikon: LayoutGrid, baslik: "Raf görünümü (resimli, çizimli, sade)",
+    ozet: "Rafların içinin nasıl görüneceğini seçmek.",
+    nerede: "Ayarlar → Görünüm → Raf Görünümü",
+    metin: [
+      "Resimli görünümde her bölümün rafında o bölüme özel bir resim yer alır; resim, ekran genişliğine göre aynı oranda gösterilir.",
+      "Çizimli görünümde raflar resimsizdir; içlerinde eserleri temsil eden dikey kitaplar, âlimleri temsil eden yatay ciltler, kandil ve mumlar bulunur.",
+      "Sade görünümde rafların içi gösterilmez, yalnız raf levhaları kalır; liste en kısa hâline gelir.",
+    ],
+    anahtar: "resim görsel resimsiz sade çizim raf görünüm mod",
+  },
+  {
     bolum: "kitaplik", ikon: RotateCcw, baslik: "Kitaplığı sıfırlama",
     ozet: "Sıralamayı ve özel rafları başlangıç hâline döndürmek.",
     nerede: "Kitaplık → Düzenle → Sıfırla",
@@ -130,7 +141,7 @@ const KONULAR = [
   {
     bolum: "kuran", ikon: Menu, baslik: "Sûre menüsü",
     ozet: "Sûre, cüz ve hizb arasında hızlı geçiş.",
-    nerede: "Kur'ân → bardaki menü simgesi",
+    nerede: "Kur'ân-ı Kerîm → bardaki menü simgesi",
     metin: [
       "Menüde Sûre ve Cüz olarak iki başlık bulunur; bir cüz açıldığında hizbleri de listelenir. Bir sûreye, cüze ya da hizbe dokunulduğunda doğrudan oraya gidilir.",
       "Menünün üstündeki kutuya sûre adı yazılarak arama yapılabilir.",
@@ -140,7 +151,7 @@ const KONULAR = [
   {
     bolum: "kuran", ikon: Hash, baslik: "Sayfa bilgisi ve sayfaya gitme",
     ozet: "Bulunulan sayfayı görmek, istenen sayfaya geçmek.",
-    nerede: "Kur'ân → bardaki kitap simgesi",
+    nerede: "Kur'ân-ı Kerîm → bardaki kitap simgesi",
     metin: [
       "Kitap simgesi bulunulan sayfayı gösterir; dokunulduğunda açılan kutuya sayfa numarası yazılarak istenen sayfaya geçilebilir.",
     ],
@@ -158,7 +169,7 @@ const KONULAR = [
   {
     bolum: "kuran", ikon: Bookmark, baslik: "Kayıtlar (ayraç)",
     ozet: "Kaldığınız satırı işaretlemek ve oraya dönmek.",
-    nerede: "Kur'ân → bardaki ayraç simgesi",
+    nerede: "Kur'ân-ı Kerîm → bardaki ayraç simgesi",
     metin: [
       "Yeni kayıt eklenirken ekranda bir satıra dokunmanız istenir; o satır kaydedilir.",
       "Kayıtlar yeniden adlandırılabilir ya da silinebilir. Bir kayda dokunulduğunda tam o satıra gidilir.",
@@ -168,7 +179,7 @@ const KONULAR = [
   {
     bolum: "kuran", ikon: Repeat, baslik: "Tekrar (döngü)",
     ozet: "Bir âyeti, aralığı, sayfayı ya da sûreyi tekrar tekrar dinlemek.",
-    nerede: "Kur'ân → bardaki döngü simgesi",
+    nerede: "Kur'ân-ı Kerîm → bardaki döngü simgesi",
     metin: [
       "Döngü simgesiyle bir âyet, bir âyet aralığı, bir sayfa ya da bir sûre istenen sayıda tekrar dinlenebilir. Ezber ve dinleme çalışmalarında kolaylık sağlar.",
     ],
@@ -177,7 +188,7 @@ const KONULAR = [
   {
     bolum: "kuran", ikon: Gem, baslik: "İşaretler ve tecvid bilgisi",
     ozet: "Vakıf ve tecvid işaretlerinin anlamları.",
-    nerede: "Kur'ân → bardaki mücevher simgesi",
+    nerede: "Kur'ân-ı Kerîm → bardaki mücevher simgesi",
     metin: [
       "Mücevher simgesi, mushaftaki vakıf (durak) ve tecvid işaretlerinin ne anlama geldiğini anlatan bilgi panelini açar.",
     ],
@@ -186,7 +197,7 @@ const KONULAR = [
   {
     bolum: "kuran", ikon: Feather, baslik: "Yazı tercihleri",
     ozet: "Yazı tipi, boyutu ve renkleri.",
-    nerede: "Kur'ân → bardaki kuş tüyü simgesi",
+    nerede: "Kur'ân-ı Kerîm → bardaki kuş tüyü simgesi",
     metin: [
       "Arapça yazı tipi, yazı boyutu ve satır aralığının yanı sıra yazı ve âyet numarası renkleri buradan ayarlanabilir. Değişiklikler önizlemede hemen görünür.",
     ],
@@ -195,7 +206,7 @@ const KONULAR = [
   {
     bolum: "kuran", ikon: Play, baslik: "Otomatik kaydırma",
     ozet: "Sayfanın kendiliğinden ilerlemesi.",
-    nerede: "Kur'ân → bardaki oynat simgesi",
+    nerede: "Kur'ân-ı Kerîm → bardaki oynat simgesi",
     metin: [
       "Oynat simgesi sayfayı kendiliğinden kaydırır; tekrar dokunulduğunda durur. Kaydırma hızı ayarlardan değiştirilebilir.",
     ],
@@ -204,7 +215,7 @@ const KONULAR = [
   {
     bolum: "kuran", ikon: Circle, baslik: "Sade mod",
     ozet: "Barı sadeleştirip yalnız metne odaklanmak.",
-    nerede: "Kur'ân → bardaki daire simgesi",
+    nerede: "Kur'ân-ı Kerîm → bardaki daire simgesi",
     metin: [
       "Daire simgesi barı sadeleştirir. Sade modda hangi öğelerin gizleneceği Ayarlar → Sade Mod İçerikleri bölümünden seçilebilir.",
     ],
@@ -213,7 +224,7 @@ const KONULAR = [
   {
     bolum: "kuran", ikon: Palette, baslik: "Okurken tema değiştirme",
     ozet: "Ekrandan çıkmadan renkleri değiştirmek.",
-    nerede: "Kur'ân ve kitaplar → bardaki palet simgesi",
+    nerede: "Kur'ân-ı Kerîm ve kitaplar → bardaki palet simgesi",
     metin: [
       "Palet simgesi okuma ekranından çıkmadan temayı değiştirmeye yarar; panel seçimden sonra açık kalır, böylece temalar arasında rahatça karşılaştırma yapılabilir.",
     ],
@@ -222,7 +233,7 @@ const KONULAR = [
   {
     bolum: "kuran", ikon: Settings, baslik: "Barın ayarları",
     ozet: "Konum, gizlenme, boyut ve hangi öğelerin görüneceği.",
-    nerede: "Kur'ân → bardaki dişli simgesi",
+    nerede: "Kur'ân-ı Kerîm → bardaki dişli simgesi",
     metin: [
       "Barın üstte mi altta mı duracağı, kaydırırken kendiliğinden gizlenip gizlenmeyeceği ve arayüz boyutu buradan seçilebilir.",
       "Görüntüleme bölümünde bardaki öğeler tek tek açılıp kapatılabilir. \"Bardaki görünüm tipi\" ile öğelerin sırası ve sağa ya da sola yaslanması da düzenlenebilir.",
@@ -232,7 +243,7 @@ const KONULAR = [
   {
     bolum: "kuran", ikon: Layers, baslik: "Bardaki bilgiler",
     ozet: "Okuma süresi, sûre ve cüz/hizb bilgisi.",
-    nerede: "Kur'ân → barın sağ tarafı",
+    nerede: "Kur'ân-ı Kerîm → barın sağ tarafı",
     metin: [
       "Barın sağında bugünkü okuma süresi, bulunulan sûre ve cüz/hizb bilgisi yer alır. Her biri Ayarlar → Görüntüleme bölümünden açılıp kapatılabilir.",
     ],
@@ -262,7 +273,7 @@ const KONULAR = [
   {
     bolum: "dinleme", ikon: Volume2, baslik: "Kârî, ses ve hız",
     ozet: "Okuyucuyu seçmek, sesi ve okuma hızını ayarlamak.",
-    nerede: "Kârî: Kur'ân → Ayarlar · Ses ve hız: oynatıcı",
+    nerede: "Kârî: Kur'ân-ı Kerîm → Ayarlar · Ses ve hız: oynatıcı",
     metin: [
       "Kârî (okuyucu) seçimi Kur'ân ekranının ayarlarında yer alır.",
       "Ses seviyesi ve okuma hızı oynatıcının ayar kısmından değiştirilebilir; yanlarındaki küçük düğmeler değerleri tek dokunuşla varsayılana döndürür.",
@@ -294,7 +305,7 @@ const KONULAR = [
   {
     bolum: "hifz", ikon: Brain, baslik: "Hıfz modu (mushafta çalışma)",
     ozet: "Sayfayı perdeleyerek ezberden okumak.",
-    nerede: "Kur'ân → bardaki beyin simgesi",
+    nerede: "Kur'ân-ı Kerîm → bardaki beyin simgesi",
     metin: [
       "Beyin simgesiyle sayfa perdelenir; kelimeler gizlenir ve ezberden okumaya çalışılır. Perdeli bir kelimeye dokunulduğunda açılır; dilenirse kelimenin okunması da sağlanabilir (Hıfz panelindeki \"dokununca\" ayarları).",
       "Çalışmanın sonunda âyetler Kolay, Orta ya da Zor olarak değerlendirilir; tekrar zamanları bu değerlendirmeye göre belirlenir.",
@@ -316,7 +327,7 @@ const KONULAR = [
   {
     bolum: "gorsel", ikon: ImagePlay, baslik: "Görsel ve video oluşturma",
     ozet: "Âyeti paylaşılabilir bir görsele ya da kısa videoya dönüştürmek.",
-    nerede: "Kur'ân → bardaki görsel simgesi",
+    nerede: "Kur'ân-ı Kerîm → bardaki görsel simgesi",
     metin: [
       "Görsel simgesine dokunulduktan sonra âyet numarası seçilir; âyetin yazısı, meali ve kaynağıyla bir görsel ya da kısa video hazırlanır.",
       "Arka plan, renkler, hareket ve hava efektleri panelden değiştirilebilir; vakıf işaretleri ayrı bir renkle gösterilebilir.",
@@ -620,8 +631,9 @@ export default function YardimPaneli({ kapat, theme }) {
             return (
               <div key={anahtar}>
                 {baslikGoster && (
-                  <div style={{ fontSize: "11px", letterSpacing: "1.5px", color: theme.textSecondary, margin: i ? "14px 4px 8px" : "2px 4px 8px", textTransform: "uppercase" }}>
-                    {bolumAdi(k.bolum)}
+                  <div style={{ fontSize: "11px", letterSpacing: "1.5px", color: theme.textSecondary, margin: i ? "14px 4px 8px" : "2px 4px 8px" }}>
+                    {/* CSS uppercase Türkçe bilmez (Kitaplık → KITAPLIK); tr-TR ile çevriliyor */}
+                    {bolumAdi(k.bolum).toLocaleUpperCase("tr-TR")}
                   </div>
                 )}
                 <KonuKarti

@@ -108,6 +108,22 @@ export default function Navbar() {
     })
   }
 
+  /* RAF GÖRÜNÜMÜ (8 Ekim 2026) — Kitaplık raflarının içi: resimli · çizimli · sade.
+     Kutuphane.jsx aynı anahtarı okur, değişince olayla hemen güncellenir. */
+  const RAF_GORUNUMLERI = [
+    { id: "resimli", ad: "Resimli" },
+    { id: "cizimli", ad: "Çizimli" },
+    { id: "sade",    ad: "Sade" },
+  ]
+  const [rafGorunum, setRafGorunum] = useState(() => {
+    try { const v = localStorage.getItem("vukuf-raf-gorunum"); return v === "cizimli" || v === "sade" ? v : "resimli" } catch { return "resimli" }
+  })
+  function rafGorunumSec(v) {
+    setRafGorunum(v)
+    try { localStorage.setItem("vukuf-raf-gorunum", v) } catch {}
+    window.dispatchEvent(new CustomEvent("vukuf-raf-gorunum", { detail: v }))
+  }
+
   function toggleGirisAnim() {
     setGirisAnim(prev => {
       const yeni = !prev
@@ -286,7 +302,7 @@ export default function Navbar() {
           {/* ── GÖRÜNÜM ───────────────────────────────────────────────── */}
           <Katlanir
             theme={theme} ikon={Sparkles} baslik="Görünüm"
-            ozet={[dinamik && "dinamik", girisAnim && "giriş"].filter(Boolean).join(" · ") || "kapalı"}
+            ozet={[RAF_GORUNUMLERI.find(r => r.id === rafGorunum)?.ad.toLocaleLowerCase("tr-TR"), dinamik && "dinamik", girisAnim && "giriş"].filter(Boolean).join(" · ")}
             {...kapak("gorunum")}
           >
           <AyarSatiri
@@ -296,6 +312,34 @@ export default function Navbar() {
             onToggle={toggleDinamik}
             theme={theme}
           />
+          <div style={{ height: "1px", background: theme.border, opacity: 0.6, margin: "2px 0" }} />
+          {/* Raf görünümü — üç seçenekli */}
+          <div style={{ padding: "12px 4px" }}>
+            <div style={{ fontSize: "15px", color: theme.text, fontWeight: 500 }}>Raf Görünümü</div>
+            <div style={{ fontSize: "12px", color: theme.textSecondary, marginTop: "2px" }}>
+              {rafGorunum === "resimli" ? "Raflarda bölümlere özel resimler"
+                : rafGorunum === "cizimli" ? "Resimsiz; kitap sırtları, kandil ve mumlar"
+                : "Yalnız raf levhaları; en sade görünüm"}
+            </div>
+            <div role="radiogroup" aria-label="Raf görünümü" style={{
+              display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: "4px", marginTop: "10px",
+              padding: "3px", borderRadius: "12px", border: `1px solid ${theme.border}`, background: `${theme.accent}0d`,
+            }}>
+              {RAF_GORUNUMLERI.map(r => {
+                const secili = rafGorunum === r.id
+                return (
+                  <button key={r.id} role="radio" aria-checked={secili} onClick={() => rafGorunumSec(r.id)}
+                    style={{
+                      height: "32px", borderRadius: "9px", border: "none", cursor: "pointer",
+                      background: secili ? theme.accent : "transparent",
+                      color: secili ? "#fff" : theme.textSecondary, fontSize: "13px", fontWeight: 600,
+                    }}>
+                    {r.ad}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
           <div style={{ height: "1px", background: theme.border, opacity: 0.6, margin: "2px 0" }} />
           <AyarSatiri
             baslik="Giriş Animasyonu"

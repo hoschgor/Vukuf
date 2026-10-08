@@ -186,6 +186,21 @@ const RAF_EN_COK_SUTUN = 2
 // resim olsa ekranı kaplayacak; dikey sütunlar raf açılınca uzamasın"). Raf açılınca
 // yalnız levha vurgulanır ve çekmece açılır; bölmenin boyu değişmez → direk de uzamaz.
 const icYuksekligi = (tam, isMobile) => (isMobile ? 76 : 92)
+
+/* ── RAF GÖRÜNÜMÜ (8 Ekim 2026) ─────────────────────────────────────────────
+   Kullanıcı: "resimli kısmı moda çevirelim; ana menüde Dinamik'in altına bir ayar,
+   en sade modda görsel kısmı da olmasın". Ayarlar → Görünüm → Raf görünümü:
+     resimli : Kısım raflarında resim. Bölmenin içi ENİNE GÖRE yükselir (en/4.2)
+               → resim her ekranda aynı oranda görünür, ekran genişledikçe kırpılmaz.
+     cizimli : resimsiz; kitap sırtları, kandil ve mumlar (sabit alçak bölme).
+     sade    : bölmenin içi hiç yok; yalnız raf tahtası ve levha.
+   Değer localStorage'da; Navbar değiştirince "vukuf-raf-gorunum" olayı yayılır.
+   Açık/kapalı rafın boyu her modda AYNI (direkler raf açılınca uzamaz). */
+export const RAF_GORUNUM_ANAHTAR = "vukuf-raf-gorunum"
+function rafGorunumOku() {
+  try { const v = localStorage.getItem(RAF_GORUNUM_ANAHTAR); return v === "cizimli" || v === "sade" ? v : "resimli" } catch { return "resimli" }
+}
+const RESIM_ORANI = 4.2
 const direkEni = (isMobile) => (isMobile ? 20 : 30)
 const DERILER = ["#4a1720", "#1d2b3d", "#3d2a18", "#24301f", "#2c2440", "#3d1f24", "#22333a", "#4a3320"]
 
@@ -298,6 +313,126 @@ function SemseIkon({ renk, boy = 20 }) {
   )
 }
 
+// ── RAF SİMGELERİ (8 Ekim 2026) ────────────────────────────────────────────
+// Kullanıcı: "Levhalardaki simge hepsinde aynı; bölüm alanına göre olsun — Hadis
+// için minik Mescid-i Nebevî, Risale için katran ağacı gibi, Ezkâr için tesbih…".
+// Hepsi 24×24, çizgi tarzı (temanın vurgu renginde), levhada 20 px. Eşleşme raf
+// resimleriyle aynı: kimlik YA DA başlık. Eşleşmeyen (özel raf vb.) şemse kalır.
+const SIMGE_CIZGI = { fill: "none", stroke: "currentColor", strokeWidth: 1.6, strokeLinecap: "round", strokeLinejoin: "round" }
+const RAF_SIMGELERI = [
+  { esle: /kur.?[aâ]n/i, ad: "rahle", ciz: () => (   // rahlede açık mushaf, önden-yukarıdan bakış
+    <>
+      {/* rahlenin iki yan kanadı (kitabın arkasında yükselen) */}
+      <path d="M3.2 6.4 L2.4 5.2 V18.6 L3.2 19.6 M20.8 6.4 L21.6 5.2 V18.6 L20.8 19.6" strokeWidth="1.2" />
+      {/* sayfalar */}
+      <path d="M12 6.2 C10 4.7 7.2 4.3 4.6 4.7 V17 C7.2 16.6 10 17 12 18.5 Z" fill="currentColor" fillOpacity="0.16" />
+      <path d="M12 6.2 C14 4.7 16.8 4.3 19.4 4.7 V17 C16.8 16.6 14 17 12 18.5 Z" fill="currentColor" fillOpacity="0.16" />
+      {/* cilt kalınlığı */}
+      <path d="M4.6 6.6 H3.2 V19 C6.4 18.6 9.6 19.2 12 20.6 C14.4 19.2 17.6 18.6 20.8 19 V6.6 H19.4" />
+      {/* rahlenin önden görünen ayakları */}
+      <path d="M5.2 21 Q12 23.6 18.8 21 M6.4 21.5 V23 M17.6 21.5 V23" strokeWidth="1.3" />
+    </>
+  ) },
+  { esle: /evr[aâ]d|ezk[aâ]r/i, ad: "tesbih", ciz: () => (   // tesbih + imame + püskül
+    <>
+      {Array.from({ length: 13 }, (_, i) => {
+        const a = (i / 13) * Math.PI * 2 + Math.PI / 2 + 0.24
+        return <circle key={i} cx={12 + Math.cos(a) * 6.2} cy={9.6 + Math.sin(a) * 6.2} r="1.15" fill="currentColor" stroke="none" />
+      })}
+      <path d="M12 15.8 V18.2" />
+      <path d="M10.7 18.2 h2.6 l.8 3.6 h-4.2 z" fill="currentColor" fillOpacity="0.35" />
+    </>
+  ) },
+  { esle: /ris[aâ]le/i, ad: "agac", ciz: () => (   // dağ başındaki yaşlı, çıplak katran ağacı
+    <>
+      <path d="M12 21.5 V12.5" />
+      <path d="M12 16 L8.2 12.2 L7.4 7.6 M8.2 12.2 L4.8 11.2" />
+      <path d="M12 14.2 L15.6 10 L16.2 5.4 M15.6 10 L18.8 9" />
+      <path d="M12 12.5 L11.6 7.4 L10 4.4 M11.6 7.4 L13.4 5" />
+      <path d="M6.5 21.5 Q12 19.6 17.5 21.5" />
+    </>
+  ) },
+  { esle: /tasavvuf/i, ad: "gul", ciz: () => (   // gül
+    <>
+      <path d="M6.6 7.6 C6.4 11.8 8.6 14.4 12 14.4 C15.4 14.4 17.6 11.8 17.4 7.6 C15.6 8.8 13.6 8.2 12 6 C10.4 8.2 8.4 8.8 6.6 7.6 Z" />
+      <path d="M9.4 4.6 C10.4 3.4 13.6 3.4 14.6 4.6 C14 6.4 12.9 7.2 12 7.6 C11.1 7.2 10 6.4 9.4 4.6 Z" fill="currentColor" fillOpacity="0.3" />
+      <path d="M9.6 10.2 C10.4 11.8 13.6 11.8 14.4 10.2" />
+      <path d="M12 14.4 V21.6" />
+      <path d="M12 18.4 c-2.2-.2-3.6-1.4-4-3.1 c2 .1 3.5 1.2 4 3.1 z M12 16.8 c2-.3 3.2-1.4 3.5-2.9 c-1.8 .1-3.1 1.1-3.5 2.9 z" fill="currentColor" fillOpacity="0.3" />
+    </>
+  ) },
+  { esle: /kel[aâ]m/i, ad: "divit", ciz: () => (   // hokka + kamış kalem
+    <>
+      <path d="M6.4 15 h8 l-1 6.2 H7.4 z" />
+      <path d="M8.4 15 v-1.8 h4 V15" />
+      <path d="M10.4 13.4 L19.4 3.6" />
+      <path d="M19.4 3.6 L20.4 2.8 L19.9 4.1 z" fill="currentColor" />
+    </>
+  ) },
+  { esle: /f[ıi]k[ıi]h/i, ad: "terazi", ciz: () => (   // terazi
+    <>
+      <path d="M12 4.4 V20.4 M8.4 21 h7.2" />
+      <circle cx="12" cy="3.4" r="1" />
+      <path d="M4.4 7 H19.6" />
+      <path d="M4.4 7 L2.3 13 M4.4 7 L6.5 13 M19.6 7 L17.5 13 M19.6 7 L21.7 13" />
+      <path d="M1.9 13 a2.5 1.7 0 0 0 5 0 z M17.1 13 a2.5 1.7 0 0 0 5 0 z" fill="currentColor" fillOpacity="0.3" />
+    </>
+  ) },
+  { esle: /tefs[iî]r/i, ad: "kitap-nur", ciz: () => (   // açık kitap, üstünde nur
+    <>
+      <path d="M12 10.4 C9 8.9 5.6 8.9 3 9.9 V19.2 C5.6 18.2 9 18.2 12 19.7 C15 18.2 18.4 18.2 21 19.2 V9.9 C18.4 8.9 15 8.9 12 10.4 Z M12 10.4 V19.7" />
+      <path d="M12 2.8 V6.2 M7.4 4.4 L8.9 6.8 M16.6 4.4 L15.1 6.8" />
+    </>
+  ) },
+  { esle: /had[iî]s/i, ad: "mescid", ciz: () => (   // Mescid-i Nebevî: yeşil kubbe + minare
+    <>
+      <path d="M2 21.4 H22" />
+      <path d="M4.6 21.4 V14.6 H16 V21.4" />
+      <path d="M6.6 14.6 C6.6 11 8.6 9 10.3 9 C12 9 14 11 14 14.6" fill="currentColor" fillOpacity="0.28" />
+      <path d="M10.3 9 V6.8" />
+      <circle cx="10.3" cy="6.2" r=".6" fill="currentColor" />
+      <path d="M9.3 21.4 v-2.6 a1 1 0 0 1 2 0 v2.6" />
+      <path d="M19.2 21.4 V8.4 M18.1 8.4 h2.2 M18.4 12.4 h1.6 M19.2 8.4 L19.2 4.4" />
+      <path d="M18.6 6 L19.2 3.6 L19.8 6" />
+    </>
+  ) },
+  { esle: /ak[aâ][iî]d/i, ad: "kandil", ciz: () => (   // asılı kandil
+    <>
+      <path d="M12 2 L6.2 9.4 M12 2 L17.8 9.4 M12 2 V9.4" strokeWidth="1.1" />
+      <path d="M4.6 9.4 H19.4 C19 13.8 16 16.4 12 16.4 C8 16.4 5 13.8 4.6 9.4 Z" />
+      <path d="M12 10.6 c-1.2 1.5-1.2 2.8 0 3.6 c1.2-.8 1.2-2.1 0-3.6 z" fill="currentColor" stroke="none" />
+      <path d="M12 16.4 V18.6" />
+      <path d="M10.9 18.6 h2.2 L12 21.6 z" fill="currentColor" />
+    </>
+  ) },
+  { esle: /us[uû]l/i, ad: "kemer", ciz: () => (   // sütunlu kemer
+    <>
+      <path d="M3 21.2 H21" />
+      <path d="M5 21.2 V11 M19 21.2 V11 M4 11 h2 M18 11 h2" />
+      <path d="M5 11 C5 6 8 3.4 12 3.4 C16 3.4 19 6 19 11" />
+      <path d="M8.6 21.2 V12.4 C8.6 9.4 10.1 7.8 12 7.8 C13.9 7.8 15.4 9.4 15.4 12.4 V21.2" />
+    </>
+  ) },
+  { esle: /^di[gğ]er/i, ad: "yigin", ciz: () => (   // kitap yığını
+    <>
+      <path d="M3.6 18.4 h16.8 v3 H3.6 z" />
+      <path d="M5 14.8 h14 v3.6 H5 z" />
+      <path d="M6.6 11.2 h10.8 v3.6 H6.6 z" />
+      <path d="M8 8.4 L16.6 5.6 L17.4 8 L8.8 10.8 z" />
+    </>
+  ) },
+]
+function RafSimgesi({ id, baslik, renk, boy = 20 }) {
+  const s = RAF_SIMGELERI.find(x => x.esle.test(String(id || "")) || x.esle.test(String(baslik || "")))
+  if (!s) return <SemseIkon renk={renk} boy={boy} />
+  return (
+    <svg width={boy} height={boy} viewBox="0 0 24 24" aria-hidden="true" style={{ flexShrink: 0, color: renk }} {...SIMGE_CIZGI}>
+      {s.ciz()}
+    </svg>
+  )
+}
+
+
 
 // ── IŞIK DÜZENİ (8 Ekim 2026) ──────────────────────────────────────────────
 // Her raf için rafın kimliğinden türeyen ama raftan rafa değişen bir düzen:
@@ -317,7 +452,7 @@ function SemseIkon({ renk, boy = 20 }) {
 const RAF_RESIMLERI = [
   { esle: /kur.?[aâ]n/i,       src: "/raflar/kuran.webp",    konum: "50% 38%" },
   { esle: /evr[aâ]d|ezk[aâ]r/i, src: "/raflar/evrad.webp",    konum: "50% 62%" },
-  { esle: /ris[aâ]le/i,        src: "/raflar/risale.webp",   konum: "50% 55%" },
+  { esle: /ris[aâ]le/i,        src: "/raflar/risale.webp",   konum: "50% 40%" },
   { esle: /tasavvuf/i,         src: "/raflar/tasavvuf.webp", konum: "50% 46%" },
   { esle: /^di[gğ]er/i,        src: "/raflar/diger.webp",    konum: "50% 55%" },
   { esle: /kel[aâ]m/i,         src: "/raflar/kelam.webp",    konum: "50% 50%" },
@@ -525,7 +660,7 @@ function RafIci({ p, yuk, tam, detay, sirtlar, yataylar = [], kapak, onSirt, onY
               data-nodrag={tiklanir ? "1" : undefined}
               onClick={tiklanir ? (e) => { e.stopPropagation(); onSirt(s) } : undefined}
               style={{
-                flex: `0 1 ${s.en}px`, minWidth: "4px", height: `${s.boy}%`,
+                flex: `0 1 ${s.en}px`, minWidth: "4px", height: `min(${s.boy}%, ${Math.round(s.boy * 0.9)}px)`,
                 borderRadius: "1.5px 1.5px 0 0",
                 background: `linear-gradient(${p.altin},${p.altin}) 0 7px / 100% 2px no-repeat, linear-gradient(${p.altin},${p.altin}) 0 calc(100% - 8px) / 100% 2px no-repeat, linear-gradient(rgba(0,0,0,0.22),rgba(0,0,0,0.22)), ${s.renk}`,
                 boxShadow: "inset -2px 0 0 rgba(0,0,0,0.28), inset 1px 0 0 rgba(255,255,255,0.07)",
@@ -606,9 +741,9 @@ function KemerKosesi({ p, sag, buyuk }) {
 // Bölme = [direk] [üst ray + iç + levha bandı] [direk]. Yan yana bölmeler direği PAYLAŞIR:
 // her bölme sol direğini çizer, satırın sonundaki bölme sağ direği de çizer.
 function RafBolmesi({ p, theme, isMobile, acik, satirAcik, gizli, sirtlar, yataylar = [], kapak, resim = null, onSirt, onYatay, onToggle,
-  setNodeRef, sortStil, suruklemeProps, duzenlemeMode, sira, sagDirek, tohum, children }) {
+  setNodeRef, sortStil, suruklemeProps, duzenlemeMode, sira, sagDirek, tohum, icYuk, gorunum = "resimli", children }) {
   const tam = acik || satirAcik
-  const yuk = icYuksekligi(tam, isMobile)
+  const yuk = icYuk || icYuksekligi(tam, isMobile)
   const en = direkEni(isMobile)
   const rayH = isMobile ? 8 : 11
   return (
@@ -627,9 +762,13 @@ function RafBolmesi({ p, theme, isMobile, acik, satirAcik, gizli, sirtlar, yatay
       <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
         {/* üst ray */}
         <div style={{ height: `${rayH}px`, flexShrink: 0, background: p.yatay, boxShadow: `inset 0 -1px 0 ${p.oyma}` }} />
-        <RafIci p={p} yuk={yuk} tam={tam} detay={acik && !duzenlemeMode} sirtlar={sirtListesi(sirtlar, tam)} yataylar={yatayListesi(yataylar)} kapak={kapak} onSirt={onSirt} onYatay={onYatay} canli={tam} tohum={tohum} resim={resim} />
-        {/* raf dudağı + levha bandı */}
-        <div style={{ height: "4px", flexShrink: 0, background: p.c3, boxShadow: "0 1px 0 rgba(0,0,0,0.4)" }} />
+        {gorunum !== "sade" && (
+          <>
+            <RafIci p={p} yuk={yuk} tam={tam} detay={acik && !duzenlemeMode} sirtlar={sirtListesi(sirtlar, tam)} yataylar={yatayListesi(yataylar)} kapak={kapak} onSirt={onSirt} onYatay={onYatay} canli={tam} tohum={tohum} resim={gorunum === "resimli" ? resim : null} />
+            {/* raf dudağı */}
+            <div style={{ height: "4px", flexShrink: 0, background: p.c3, boxShadow: "0 1px 0 rgba(0,0,0,0.4)" }} />
+          </>
+        )}
         <div style={{ flexGrow: 1, background: p.band, padding: isMobile ? "5px 4px 6px" : "6px 6px 8px" }}>
           <div style={{
             minHeight: "44px", height: "100%", boxSizing: "border-box", borderRadius: "5px",
@@ -673,17 +812,21 @@ function DolapKaidesi({ p, isMobile }) {
 }
 
 // Son satır eksikse boşluğu dolduran boş bölme (dolap yarım kalmasın) — tıklanmaz, sürüklenmez
-function BosBolme({ p, theme, isMobile, satirAcik, sira, sagDirek, tohum }) {
+function BosBolme({ p, theme, isMobile, satirAcik, sira, sagDirek, tohum, icYuk, gorunum = "resimli" }) {
   const en = direkEni(isMobile)
-  const yuk = icYuksekligi(satirAcik, isMobile)
+  const yuk = icYuk || icYuksekligi(satirAcik, isMobile)
   return (
     <div aria-hidden="true" style={{ order: sira, minWidth: 0, display: "flex", position: "relative" }}>
       <RafDirek p={p} en={en} />
 
       <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
         <div style={{ height: isMobile ? "8px" : "11px", flexShrink: 0, background: p.yatay, boxShadow: `inset 0 -1px 0 ${p.oyma}` }} />
-        <RafIci p={p} yuk={yuk} tam={satirAcik} detay={false} sirtlar={[]} kapak={null} canli={satirAcik} tohum={tohum} />
-        <div style={{ height: "4px", flexShrink: 0, background: p.c3, boxShadow: "0 1px 0 rgba(0,0,0,0.4)" }} />
+        {gorunum !== "sade" && (
+          <>
+            <RafIci p={p} yuk={yuk} tam={satirAcik} detay={false} sirtlar={[]} kapak={null} canli={satirAcik} tohum={tohum} />
+            <div style={{ height: "4px", flexShrink: 0, background: p.c3, boxShadow: "0 1px 0 rgba(0,0,0,0.4)" }} />
+          </>
+        )}
         <div style={{ flexGrow: 1, minHeight: isMobile ? "55px" : "58px", background: p.band }} />
       </div>
       {sagDirek && <RafDirek p={p} en={en} />}
@@ -1617,7 +1760,7 @@ function SortableKategori({ kategori,
         onToggle={toggle}
         setNodeRef={setNodeRef} sortStil={style}
         suruklemeProps={surukleProps(duzenlemeMode, attributes, listeners)}
-        duzenlemeMode={duzenlemeMode} sira={yer.sira} sagDirek={yer.sagDirek}
+        duzenlemeMode={duzenlemeMode} sira={yer.sira} sagDirek={yer.sagDirek} icYuk={yer.icYuk} gorunum={yer.gorunum}
       >
         <div style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0, flex: 1 }}>
           {duzenlemeMode && (
@@ -1626,7 +1769,7 @@ function SortableKategori({ kategori,
             </span>
           )}
           {gizlemeMod && <GozBtn gizli={gizli} onClick={() => onGizle(kategori.id)} theme={theme} />}
-          {!duzenlemeMode && !gizlemeMod && <SemseIkon renk={theme.accent} />}
+          {!duzenlemeMode && !gizlemeMod && <RafSimgesi id={kategori.id} baslik={kategori.baslik} renk={theme.accent} />}
           <span style={rafAdiStil(theme, isMobile)}>
             {kategori.baslik.toLocaleUpperCase('tr-TR')}
           </span>
@@ -1945,7 +2088,7 @@ function OzelKategori({ raf, havuz, theme, dinamikMod, duzenlemeMode, gizlemeMod
         onToggle={isimDuzen != null ? undefined : toggle}
         setNodeRef={setNodeRef} sortStil={sstyle}
         suruklemeProps={surukleProps(duzenlemeMode, attributes, listeners)}
-        duzenlemeMode={duzenlemeMode} sira={yer.sira} sagDirek={yer.sagDirek}
+        duzenlemeMode={duzenlemeMode} sira={yer.sira} sagDirek={yer.sagDirek} icYuk={yer.icYuk} gorunum={yer.gorunum}
       >
         <div style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0, flex: 1 }}>
           {duzenlemeMode && (
@@ -2113,7 +2256,7 @@ function OtomatikKategori({ rafId, baslik, Ikon, kitaplar: liste, theme, dinamik
         onToggle={toggle}
         setNodeRef={setNodeRef} sortStil={sstyle}
         suruklemeProps={surukleProps(duzenlemeMode, attributes, listeners)}
-        duzenlemeMode={duzenlemeMode} sira={yer.sira} sagDirek={yer.sagDirek}
+        duzenlemeMode={duzenlemeMode} sira={yer.sira} sagDirek={yer.sagDirek} icYuk={yer.icYuk} gorunum={yer.gorunum}
       >
         <div style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0, flex: 1 }}>
           {duzenlemeMode && (
@@ -2346,6 +2489,13 @@ export default function Kutuphane() {
   // Dolabın sütun sayısı: ızgara eninden (telefonda 1, geniş ekranda ekrana göre)
   const izgaraRef = useRef(null)
   const [sutunSayisi, setSutunSayisi] = useState(1)
+  const [izgaraEn, setIzgaraEn] = useState(0)
+  const [rafGorunum, setRafGorunum] = useState(rafGorunumOku)
+  useEffect(() => {
+    const h = (e) => setRafGorunum(typeof e.detail === "string" ? e.detail : rafGorunumOku())
+    window.addEventListener("vukuf-raf-gorunum", h)
+    return () => window.removeEventListener("vukuf-raf-gorunum", h)
+  }, [])
   const izgaraAralik = 0     // bölmeler direklerini paylaşır, arada boşluk yok
   useEffect(() => {
     const el = izgaraRef.current
@@ -2354,6 +2504,7 @@ export default function Kutuphane() {
       const w = el.clientWidth
       const n = Math.max(1, Math.min(RAF_EN_COK_SUTUN, Math.floor((w + izgaraAralik) / (RAF_MIN_EN + izgaraAralik))))
       setSutunSayisi(s => (s === n ? s : n))
+      setIzgaraEn(e => (Math.abs(e - w) < 1 ? e : w))
     }
     hesapla()
     if (typeof ResizeObserver === "undefined") {
@@ -2443,12 +2594,19 @@ export default function Kutuphane() {
   // Son satırı tamamlayan boş bölmeler de yuva sayılır (çekmece onların arkasına düşer)
   const bosSayisi = gorunenIdler.length ? (sutunSayisi - (gorunenIdler.length % sutunSayisi)) % sutunSayisi : 0
   const yuvaSayisi = gorunenIdler.length + bosSayisi
+  // Bölme içi yüksekliği: resimli modda enine göre (resim her ekranda aynı oranda), diğerinde sabit
+  const bolmeEn = izgaraEn ? izgaraEn / sutunSayisi - direkEni(isMobile) : 0
+  const icYukHesap = rafGorunum === "sade" ? 0
+    : rafGorunum === "resimli" && bolmeEn
+      ? Math.max(isMobile ? 76 : 92, Math.min(170, Math.round(bolmeEn / RESIM_ORANI)))
+      : (isMobile ? 76 : 92)
   const yerlesim = (i) => {
     const satir = Math.floor(i / sutunSayisi)
     const satirSonu = Math.min(yuvaSayisi - 1, satir * sutunSayisi + sutunSayisi - 1)
     return {
       p: ahsap, sira: i * 2, cekmeceSira: satirSonu * 2 + 1, satirAcik: acikSatirlar.has(satir),
       sagDirek: i === satirSonu,          // satırın son yuvası sağ direği de çizer
+      icYuk: icYukHesap, gorunum: rafGorunum,
     }
   }
 
@@ -2967,7 +3125,7 @@ export default function Kutuphane() {
       </DndContext>
       {Array.from({ length: bosSayisi }, (_, k) => {
         const y = yerlesim(gorunenIdler.length + k)
-        return <BosBolme key={`bos-${k}`} p={ahsap} theme={theme} isMobile={isMobile} satirAcik={y.satirAcik} sira={y.sira} sagDirek={y.sagDirek} tohum={`bos-${k}`} />
+        return <BosBolme key={`bos-${k}`} p={ahsap} theme={theme} isMobile={isMobile} satirAcik={y.satirAcik} sira={y.sira} sagDirek={y.sagDirek} tohum={`bos-${k}`} icYuk={y.icYuk} gorunum={y.gorunum} />
       })}
           </div>
         </div>

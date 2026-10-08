@@ -31,6 +31,7 @@ import {
   RotateCcw, Info, LayoutGrid,
 } from "lucide-react"
 import AltSayfa from "./AltSayfa"
+import { Secim } from "./AyarOgeleri"
 import { useMediaQuery } from "../data/hooks/useMediaQuery"
 import { normHarf } from "../data/okumaKayit"
 
@@ -595,26 +596,19 @@ export default function YardimPaneli({ kapat, theme }) {
         )}
       </div>
 
-      {/* Bölüm çipleri (aramada gizli) */}
+      {/* Bölümler (aramada gizli) — 8 Ekim 2026: yana kayan çip şeridi yerine
+          hıfz paneli ve görsel oluşturmadaki gibi bölünmüş düğme (AyarOgeleri
+          Secim). Telefonda 3 sütun, geniş ekranda satıra sarılır; sağa
+          kaydırmaya gerek kalmaz, hiçbir bölüm kesik görünmez. */}
       {!q && (
-        <div style={{ display: "flex", flexWrap: isMobile ? "nowrap" : "wrap", gap: "6px", overflowX: isMobile ? "auto" : "visible", paddingBottom: "4px", marginBottom: "10px", WebkitOverflowScrolling: "touch" }}>
-          {BOLUMLER.map(b => {
-            const secili = bolum === b.id
-            return (
-              <button
-                key={b.id}
-                onClick={() => { setBolum(b.id); setAcikKonu(null) }}
-                style={{
-                  flexShrink: 0, padding: "6px 12px", borderRadius: "999px", fontSize: "13px", cursor: "pointer",
-                  border: `1px solid ${secili ? theme.accent : theme.border}`,
-                  background: secili ? theme.accent : "transparent",
-                  color: secili ? "#fff" : theme.text, whiteSpace: "nowrap",
-                }}
-              >
-                {b.ad}
-              </button>
-            )
-          })}
+        <div style={{ marginBottom: "12px" }}>
+          <Secim
+            theme={theme}
+            deger={bolum}
+            onSec={(id) => { setBolum(id); setAcikKonu(null) }}
+            sutun={isMobile ? 3 : undefined}
+            secenekler={BOLUMLER.map(b => ({ id: b.id, ad: b.ad }))}
+          />
         </div>
       )}
 

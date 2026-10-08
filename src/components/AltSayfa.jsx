@@ -42,6 +42,26 @@
      `pointercancel` yine de gelirse (sistem jesti, çağrı vb.) artık geri
      yaylanmak yerine normal bitiş kuralları uygulanıyor.
 
+   • ★ "NADİREN KAYDIRILAMIYOR, BİR SÜRE SONRA DÜZELİYOR" (8 Ekim 2026,
+     Yardım paneli, mobil). SEBEP: panel en üstteyken, parmak içeriği yukarı
+     kaydırmaya başlarken ilk karede 1-2 px AŞAĞI titreyebiliyor. Pasif olmayan
+     touchmove dinleyicisi bunu "aşağı çekme" sanıp hemen preventDefault
+     ediyordu; iOS'ta ilk touchmove'u engellemek o dokunuşun kaydırmasını
+     baştan sona iptal eder → parmak kayıyor, içerik kımıldamıyor. Sonraki
+     dokunuş titremesiz başlayınca "düzelmiş" görünüyordu.
+     ARTIK: YON_ESIGI (3 px) aşılmadan hiçbir şey engellenmiyor; yukarı yön
+     belirlenirse jest tümüyle içerik kaydırmasına bırakılıyor. Ayrıca bitişi
+     kaçmış (pointerup/cancel gelmemiş) eski bir dokunuş kaydı, sürükleme
+     yokken yeni dokunuşu kilitlemiyor.
+   • ★ "EN ALTA İNİNCE / KART AÇINCA KAYDIRMA KİLİTLENİYOR" (8 Ekim 2026,
+     mobil). Panel kaydırmanın SONUNDAYKEN parmak aynı yöne itilince
+     kaydıracak bir şey kalmıyor; iOS bu jesti arkadaki sayfaya (Kitaplık)
+     zincirliyor. Arka sayfa momentumla kayarken sonraki dokunuşlar da ona
+     bağlanıyor → panel bir süre "donuyor", momentum bitince düzeliyor.
+     ARTIK KENAR KORUMASI: sürükleme jestimiz olmayan dokunuşlarda yön (yine
+     YON_ESIGI'nden sonra) belirlenir; panel o yönde sondaysa ve parmağın
+     altında o yöne kayabilen bir iç kutu yoksa jest engellenir. Ters yöne
+     (geri kaydırma) ve yatay şeritlere hiç karışılmaz.
    • YUKARI ÇEKMEDE DİRENÇ var (katsayı 0.25): panel yukarı fırlamaz ama parmak
      da "tutmuyor" hissi vermez.
    • Kapanma kararı İKİ ÖLÇÜTTEN biri: yeterince aşağı indiyse (eşik) ya da hızlı
@@ -91,6 +111,7 @@ const KAPANMA_SURESI = 220          // ms — çıkış geçişiyle aynı olmal�
 const ESIK_PX = 90                  // bu kadar aşağı inerse kapanır
 const HIZ_ESIGI = 0.5               // px/ms — fiske ile kapanma
 const BASLAMA_ESIGI = 6             // px — bunu aşmadan sürükleme başlamaz
+const YON_ESIGI = 3                 // px — dokunuşun yönü bundan sonra belirlenir
 
 export default function AltSayfa({
   kapat,
@@ -169,19 +190,64 @@ export default function AltSayfa({
   useEffect(() => {
     const el = sayfaRef.current
     if (!el) return
+    // Kenar koruması için dokunuşun başlangıcı (bkz. baştaki "en altta kilit").
+    const kenar = { x: 0, y: 0, yon: null, engelle: false }
+    const dokunBasla = (e) => {
+      const t = e.touches && e.touches[0]
+      if (!t) return
+      kenar.x = t.clientX; kenar.y = t.clientY; kenar.yon = null; kenar.engelle = false
+    }
+    // Dokunulan yerle panel arasında, istenen yönde HÂLÂ kayabilen bir iç kutu var mı?
+    const icKutuKayabilir = (hedef, yon) => {
+      for (let d = hedef; d && d !== el; d = d.parentElement) {
+        if (d.nodeType !== 1 || d.scrollHeight <= d.clientHeight + 1) continue
+        const oy = getComputedStyle(d).overflowY
+        if (oy !== "auto" && oy !== "scroll") continue
+        if (yon > 0 ? d.scrollTop < d.scrollHeight - d.clientHeight - 1 : d.scrollTop > 0) return true
+      }
+      return false
+    }
     const dokunHareket = (e) => {
-      if (bilgi.current.id == null) return          // bizim jestimiz değil
       if (!e.cancelable) return                     // tarayıcı çoktan devraldı
       const t = e.touches && e.touches[0]
       if (!t) return
-      const dy = t.clientY - bilgi.current.basY
+      if (bilgi.current.id == null) {
+        // ── KENAR KORUMASI: bizim sürükleme jestimiz değil. Panel kaydırmanın
+        // SONUNDAYSA (en alt / içerik kısa) ve parmak o yöne gidiyorsa kaydıracak
+        // bir şey yok; jest engellenir ki iOS onu arkadaki sayfaya zincirleyip
+        // paneli "kilitlemesin". Yön yine eşikten sonra belirlenir (titreme payı).
+        if (kenar.yon == null) {
+          const dx = t.clientX - kenar.x, dy = t.clientY - kenar.y
+          if (Math.max(Math.abs(dx), Math.abs(dy)) < YON_ESIGI) return
+          kenar.yon = Math.abs(dx) > Math.abs(dy) ? "yatay" : dy < 0 ? "yukari" : "asagi"
+          const enAlt = el.scrollTop >= el.scrollHeight - el.clientHeight - 1
+          kenar.engelle =
+            (kenar.yon === "yukari" && enAlt && !icKutuKayabilir(e.target, 1)) ||
+            (kenar.yon === "asagi" && el.scrollTop <= 0 && !icKutuKayabilir(e.target, -1))
+        }
+        if (kenar.engelle) e.preventDefault()
+        return
+      }
+      const b = bilgi.current
+      const dy = t.clientY - b.basY
       // Tutamak şeridinden başlayan jest her zaman bizim
-      if (bilgi.current.tutamak) { e.preventDefault(); return }
-      // Yalnızca AŞAĞI ve panel en üstteyken: kaydıracak bir şey yok, jest bizim.
-      if (dy > 0 && (el.scrollTop || 0) <= 0 && !bilgi.current.icKutu) e.preventDefault()
+      if (b.tutamak) { e.preventDefault(); return }
+      // Jest bir kez "içerik kaydırma" diye belirlendiyse artık karışılmaz.
+      if (b.kaydirma) return
+      // ★ YÖN EŞİĞİ (bkz. baştaki "nadiren kaydırılamıyor"): parmak yukarı
+      // kaydırmaya başlarken ilk anda 1-2 px AŞAĞI titreyebiliyor. Eskiden bu
+      // titreme hemen preventDefault ediliyordu; iOS'ta ilk touchmove'un
+      // engellenmesi o dokunuşun kaydırmasını BÜTÜNÜYLE iptal ediyor.
+      if (dy < -YON_ESIGI) { b.kaydirma = true; return }   // yukarı: içerik kayar
+      // Yalnızca belirgin AŞAĞI ve panel en üstteyken: kaydıracak bir şey yok, jest bizim.
+      if (dy > YON_ESIGI && (el.scrollTop || 0) <= 0 && !b.icKutu) e.preventDefault()
     }
+    el.addEventListener("touchstart", dokunBasla, { passive: true })
     el.addEventListener("touchmove", dokunHareket, { passive: false })
-    return () => el.removeEventListener("touchmove", dokunHareket)
+    return () => {
+      el.removeEventListener("touchstart", dokunBasla)
+      el.removeEventListener("touchmove", dokunHareket)
+    }
   }, [])
 
   // `hemen`: tutamaktan başlanmışsa eşik beklenmez, içerik kaydırılmış olsa da
@@ -201,14 +267,18 @@ export default function AltSayfa({
   }
 
   function inisBasla(e, hemen = false) {
-    if (bilgi.current.id != null || kapaniyor) return
+    if (kapaniyor) return
+    // Sürmekte olan bir sürükleme varsa ikinci parmak karışmasın. Ama sürükleme
+    // YOKKEN dolu kalmış (bitişi kaçmış) eski bir kayıt yeni dokunuşu
+    // kilitlemesin: eski kimlik bırakılıp yeni dokunuş alınır.
+    if (bilgi.current.id != null && (surukleniyor || bilgi.current.id === e.pointerId)) return
     const ustte = (sayfaRef.current?.scrollTop || 0) <= 0
     if (!hemen && !ustte) return              // içerik kaydırılıyor, karışma
     const icKutu = !hemen && icKutuKaydirilmis(e.target)
     if (icKutu) return                        // iç liste kaydırılıyor, karışma
     bilgi.current = {
       basY: e.clientY, basT: performance.now(),
-      id: e.pointerId, aday: !hemen, tutamak: hemen, icKutu,
+      id: e.pointerId, aday: !hemen, tutamak: hemen, icKutu, kaydirma: false,
     }
     suruklendi.current = false
     if (hemen) {

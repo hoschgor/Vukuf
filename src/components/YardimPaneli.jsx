@@ -22,6 +22,7 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 import { useMemo, useState } from "react"
+import { useNavigate } from "react-router-dom"
 import {
   BookOpen, Search, Pencil, FolderPlus, EyeOff, Sparkles, Menu, Bookmark, Repeat,
   Gem, Feather, Play, Circle, Palette, Settings, Layers, Undo2, Headphones, Volume2,
@@ -191,8 +192,9 @@ const KONULAR = [
     nerede: "Kur'ân-ı Kerîm → bardaki mücevher simgesi",
     metin: [
       "Mücevher simgesi, mushaftaki vakıf (durak) ve tecvid işaretlerinin ne anlama geldiğini anlatan bilgi panelini açar.",
+      "Her işaretin altında geçtiği örnek âyetler yer alır; istenirse bir örneğe dokunularak o âyete gidilebilir. Önceki yere dönüş noktası üzerinden geri dönülebilir.",
     ],
-    anahtar: "vakıf durak tecvid işaret lazım caiz",
+    anahtar: "vakıf durak tecvid işaret lazım caiz örnek âyete git",
   },
   {
     bolum: "kuran", ikon: Feather, baslik: "Yazı tercihleri",
@@ -222,11 +224,11 @@ const KONULAR = [
     anahtar: "sade odak gizle bar",
   },
   {
-    bolum: "kuran", ikon: Palette, baslik: "Okurken tema değiştirme",
-    ozet: "Ekrandan çıkmadan renkleri değiştirmek.",
+    bolum: "kuran", ikon: Palette, baslik: "Tema değiştirme",
+    ozet: "Yazı ve ekran öğelerinin renkleri.",
     nerede: "Kur'ân-ı Kerîm ve kitaplar → bardaki palet simgesi",
     metin: [
-      "Palet simgesi okuma ekranından çıkmadan temayı değiştirmeye yarar; panel seçimden sonra açık kalır, böylece temalar arasında rahatça karşılaştırma yapılabilir.",
+      "Palet simgesi, yazının ve ekran öğelerinin temasını değiştirmeye yarar.",
     ],
     anahtar: "tema renk gece gündüz karanlık",
   },
@@ -547,6 +549,9 @@ export default function YardimPaneli({ kapat, theme }) {
   const [arama, setArama] = useState("")
   const [bolum, setBolum] = useState("tumu")
   const [acikKonu, setAcikKonu] = useState(null)
+  const navigate = useNavigate()
+  // Bir sayfaya geçilirken panel kapanır; geçilen sayfa altta kalmasın.
+  const sayfayaGit = (yol) => { kapat?.(); navigate(yol) }
 
   const q = normHarf(arama.trim())
   const liste = useMemo(() => {
@@ -648,6 +653,20 @@ export default function YardimPaneli({ kapat, theme }) {
           })}
         </div>
       )}
+
+      {/* Alt bilgi: Hakkında sayfasına kısa yol */}
+      <div style={{ display: "flex", justifyContent: "center", marginTop: "18px" }}>
+        <button
+          onClick={() => sayfayaGit("/hakkinda")}
+          style={{
+            display: "inline-flex", alignItems: "center", gap: "6px", padding: "6px 10px",
+            background: "none", border: "none", cursor: "pointer",
+            fontSize: "12.5px", color: theme.textSecondary,
+          }}
+        >
+          <Info size={14} color={theme.accent} /> Vukuf hakkında
+        </button>
+      </div>
 
       <div style={{ height: "10px" }} />
     </AltSayfa>

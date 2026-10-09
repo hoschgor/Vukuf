@@ -419,12 +419,18 @@ const RAF_SIMGELERI = [
       <path d="M12.1 12.4 C10.8 15.6 9.8 18.4 7.6 21.3 M13.1 12.4 C13.8 15.6 12.6 18.9 13.2 22.3 M13.8 12.4 C16.4 14.9 16.6 18.2 18.8 21.7" strokeWidth="1.05" />
     </>
   ) },
-  { esle: /kel[aâ]m/i, ad: "divit", ciz: () => (   // hokka + kamış kalem
+  { esle: /kel[aâ]m/i, ad: "hokka", ciz: () => (   // 9 Ekim 2026: yuvarlak omuzlu hokka + içinde duran tüy kalem
     <>
-      <path d="M6.4 15 h8 l-1 6.2 H7.4 z" />
-      <path d="M8.4 15 v-1.8 h4 V15" />
-      <path d="M10.4 13.4 L19.4 3.6" />
-      <path d="M19.4 3.6 L20.4 2.8 L19.9 4.1 z" fill="currentColor" />
+      {/* hokkanın gövdesi (omuzlu, tabanı düz) */}
+      <path d="M8.4 14.6 C6 14.8 5 15.9 5 17.6 V19.6 C5 20.9 5.9 21.6 7.2 21.6 H12.8 C14.1 21.6 15 20.9 15 19.6 V17.6 C15 15.9 14 14.8 11.6 14.6 Z" fill="currentColor" fillOpacity="0.2" />
+      {/* boyun ve ağız kenarı */}
+      <path d="M8.4 14.6 V12.8 M11.6 14.6 V12.8 M7.7 12.5 H12.3" />
+      {/* camdaki ışık */}
+      <path d="M6.9 19 V17.8 C6.9 17.1 7.3 16.6 8 16.4" strokeWidth="1" />
+      {/* tüyün sapı */}
+      <path d="M10 13.2 C12.6 9.6 15.8 5.8 20.6 2.4" strokeWidth="1.2" />
+      {/* tüy: dış kenarda iki çentik */}
+      <path d="M12.2 12.2 C12.5 8 15.8 4.1 20.6 2.4 L19.9 5.3 L18.3 7.3 L17.1 7.3 L17.3 8.5 L15.6 9.9 L14.5 9.8 L14.7 10.9 Z" fill="currentColor" fillOpacity="0.9" strokeWidth="1" />
     </>
   ) },
   { esle: /f[ıi]k[ıi]h/i, ad: "terazi", ciz: () => (   // terazi

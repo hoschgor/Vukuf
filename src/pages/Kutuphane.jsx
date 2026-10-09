@@ -342,6 +342,21 @@ const TESBIH_TANELERI = tesbihTaneleri()
 
 const SIMGE_CIZGI = { fill: "none", stroke: "currentColor", strokeWidth: 1.6, strokeLinecap: "round", strokeLinejoin: "round" }
 const RAF_SIMGELERI = [
+  { esle: /^alimler$|^[aâ]limler$/i, ad: "sarik", ciz: () => (   // âlim sarığı: kubbeli kavuk, çapraz sarılı tülbent
+    <>
+      {/* kavuğun kubbesi */}
+      <path d="M4.2 15.2 C3.8 9.6 7.6 6 12 6 C16.4 6 20.2 9.6 19.8 15.2" fill="currentColor" fillOpacity="0.14" />
+      {/* tülbendin çapraz sargıları */}
+      <path d="M5.4 11.6 C8.6 9.2 12.8 8.6 17.4 9.6" />
+      <path d="M4.4 14 C8.4 11.4 13.6 10.9 19.4 12.4" />
+      {/* alt kenar (alına oturan sargı) */}
+      <path d="M4.2 15.2 C7.6 17.4 16.4 17.4 19.8 15.2" />
+      <path d="M4.2 15.2 L4.8 18 C8.2 20 15.8 20 19.2 18 L19.8 15.2" fill="currentColor" fillOpacity="0.22" />
+      {/* tepedeki tâc düğmesi */}
+      <path d="M12 6 V4.4" />
+      <circle cx="12" cy="3.6" r="0.9" fill="currentColor" stroke="none" />
+    </>
+  ) },
   { esle: /kur.?[aâ]n/i, ad: "rahle", ciz: () => (   // rahlede açık mushaf, önden-yukarıdan bakış
     <>
       {/* rahlenin iki yan kanadı (kitabın arkasında yükselen) */}
@@ -449,6 +464,70 @@ const RAF_SIMGELERI = [
     </>
   ) },
 ]
+// ── ÂLİMLER RAFI (9 Ekim 2026) ─────────────────────────────────────────────
+// Kullanıcı: "Kitaplık içindeki âlimleri buraya alalım ve eserlerini bir arada
+// verelim; âlim âlim incelemek isteyen buradan da bakabilsin."
+// • Bütün kısımların âlimleri tek rafta, Türkçe alfabe sırasıyla.
+// • Aynı âlim birden çok kısımda geçiyorsa (adı aynı) TEK sırtta birleşir; eserleri
+//   tekrar etmeden bir araya gelir. Kısımları ayrı ayrıysa her kısım bir alt bölüm.
+// • Risale-i Nûr kısmında "âlimler" aslında ESER TÜRLERİ (Sözler, Mektubat…);
+//   orası tek âlim — Bediüzzaman — olarak alınır, eser türleri onun alt bölümleri.
+// • Eserler aynı nesneler: açılış yolu, kayıtlar, okuma istatistiği değişmez.
+const sadeIsim = (s) => String(s || "").toLocaleLowerCase("tr-TR")
+  .normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9ğüşıöç]/g, "")
+function alimlerRafiKur(kategoriler) {
+  const gruplar = new Map()
+  const ekle = (kat, a) => {
+    const anahtar = sadeIsim(a.isim) || String(a.id)
+    if (!gruplar.has(anahtar)) gruplar.set(anahtar, [])
+    gruplar.get(anahtar).push({ kat, a })
+  }
+  const risaleMi = (k) => /ris[aâ]le/i.test(String(k.id)) || /ris[aâ]le/i.test(String(k.baslik))
+  // Risale kısmının sahibi: başka bir kısımda "Nursî" geçen âlim varsa onun adı (birleşsin diye)
+  const nursi = kategoriler.flatMap(k => (risaleMi(k) ? [] : (k.alimler || []))).find(a => /nurs[iî]/i.test(String(a.isim)))
+  for (const kat of kategoriler) {
+    const liste = kat.alimler || []
+    if (!liste.length) continue
+    if (risaleMi(kat)) {
+      ekle(kat, {
+        id: nursi?.id || `${kat.id}-sahibi`,
+        isim: nursi?.isim || "Bediüzzaman Said Nursî",
+        altKategoriler: liste.map(a => ({
+          id: a.id, baslik: a.isim,
+          kitaplar: a.altKategoriler ? a.altKategoriler.flatMap(x => x.kitaplar || []) : (a.kitaplar || []),
+        })),
+      })
+      continue
+    }
+    liste.forEach(a => ekle(kat, a))
+  }
+  const alimler = [...gruplar.values()].map(liste => {
+    if (liste.length === 1) return liste[0].a
+    const ilk = liste[0].a
+    const gorulen = new Set()
+    const tekil = (ks) => (ks || []).filter(k => k && !gorulen.has(k.id) && gorulen.add(k.id))
+    if (liste.some(x => x.a.altKategoriler)) {
+      const altKategoriler = liste.flatMap(({ kat, a }) => (a.altKategoriler
+        ? a.altKategoriler.map(x => ({ ...x, id: `${kat.id}-${x.id}`, kitaplar: tekil(x.kitaplar) }))
+        : [{ id: `${kat.id}-${a.id}`, baslik: kat.baslik, kitaplar: tekil(a.kitaplar) }]))
+        .filter(x => x.kitaplar.length)
+      const { kitaplar: _yok, ...digeri } = ilk
+      return { ...digeri, altKategoriler }
+    }
+    return { ...ilk, kitaplar: liste.flatMap(x => tekil(x.a.kitaplar)) }
+  })
+  alimler.sort((x, y) => String(x.isim).localeCompare(String(y.isim), "tr"))
+  return { id: "alimler", baslik: "Âlimler", alimler }
+}
+
+// Kayıtlı âlim sırası + sonradan eklenen âlimler (kayıtta yoksa sona). Kayıtlı sıra
+// eskiyse yeni âlimler kaybolmasın — Âlimler rafına veri eklendikçe gerekli.
+function alimIdSirasi(kategori, kayitli) {
+  const tum = (kategori?.alimler || []).map(a => a.id)
+  if (!Array.isArray(kayitli)) return tum
+  return [...kayitli.filter(id => tum.includes(id)), ...tum.filter(id => !kayitli.includes(id))]
+}
+
 function RafSimgesi({ id, baslik, renk, boy = 20 }) {
   const s = RAF_SIMGELERI.find(x => x.esle.test(String(id || "")) || x.esle.test(String(baslik || "")))
   if (!s) return <SemseIkon renk={renk} boy={boy} />
@@ -488,6 +567,8 @@ const RAF_RESIMLERI = [
   { esle: /had[iî]s/i,         src: "/raflar/hadis.webp",    konum: "50% 50%" },
   { esle: /ak[aâ][iî]d/i,      src: "/raflar/akaid.webp",    konum: "50% 52%" },
   { esle: /us[uû]l/i,          src: "/raflar/usul.webp",     konum: "50% 55%" },
+  // Âlimler rafı (9 Ekim 2026): bütün kısımların âlimleri bir arada
+  { esle: /^alimler$/,         src: "/raflar/alimler.webp",  konum: "50% 52%" },
   // Otomatik raflar: yalnız kimlikle eşleşir (rafResmiBul(rafId))
   { esle: /^son-okunanlar$/,   src: "/raflar/son-okunanlar.webp", konum: "50% 55%" },
   { esle: /^sik-okunanlar$/,   src: "/raflar/sik-okunanlar.webp", konum: "50% 55%" },
@@ -1718,9 +1799,10 @@ function SortableKategori({ kategori,
   const acik = acikKategori === kategori.id
 
   const aramaAcik = kategoriArama[kategori.id] !== undefined
+  const siraIdleri = alimIdSirasi(kategori, alimSira[kategori.id])
 
   // Bölmedeki sırtlar: âlimler (kalınlık eser sayısına göre), sıralama kullanıcınınki
-  const alimSirtlari = (alimSira[kategori.id] || kategori.alimler.map(a => a.id))
+  const alimSirtlari = siraIdleri
     .map(id => kategori.alimler.find(a => a.id === id))
     .filter(Boolean)
     .map(a => ({
@@ -1730,7 +1812,7 @@ function SortableKategori({ kategori,
   // Dikey sırtlar = rafın bütün eserleri (âlim sırasıyla); Kur'ân rafında mushafın kendisi
   const eserler = [
     ...(kategori.kuran ? [{ id: kategori.kuran.id || "kuran", ad: "Kur'ân-ı Kerîm", veri: { ...kategori.kuran, kuran: true } }] : []),
-    ...(alimSira[kategori.id] || kategori.alimler.map(a => a.id))
+    ...siraIdleri
       .map(id => kategori.alimler.find(a => a.id === id))
       .filter(Boolean)
       .flatMap(a => (a.altKategoriler ? a.altKategoriler.flatMap(x => x.kitaplar) : (a.kitaplar || [])))
@@ -1819,7 +1901,7 @@ function SortableKategori({ kategori,
             </button>
           )}
           <SayacOk theme={theme} acik={acik}>
-            {kategori.kuran ? null : `${kategori.alimler.length} ${kategori.id === "risale" ? "Eser Türü" : "alim"}`}
+            {kategori.kuran ? null : `${kategori.alimler.length} ${kategori.id === "risale" ? "Eser Türü" : kategori.id === "alimler" ? "âlim" : "alim"}`}
           </SayacOk>
         </div>
       </RafBolmesi>
@@ -1903,12 +1985,12 @@ function SortableKategori({ kategori,
             )}
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={(e) => handleAlimDragEnd(e, kategori.id)}>
               <SortableContext
-                items={alimSira[kategori.id] || kategori.alimler.map(a => a.id)}
+                items={siraIdleri}
                 strategy={isMobile ? verticalListSortingStrategy : rectSortingStrategy}
               >
                 {/* Geniş ekranda âlimler yan yana; açılan âlim satırın tamamını kaplar */}
                 <div style={isMobile ? undefined : { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", columnGap: "10px", alignItems: "start" }}>
-                {(alimSira[kategori.id] || kategori.alimler.map(a => a.id))
+                {siraIdleri
                   .map(alimId => kategori.alimler.find(a => a.id === alimId))
                   .filter(Boolean)
                   .filter(alim => {
@@ -2487,7 +2569,7 @@ export default function Kutuphane() {
       const ks = JSON.parse(localStorage.getItem("vukuf-kategori-sira") || "null")
       if (Array.isArray(ks)) kat = [...ks.filter(id => kategoriler.some(k => k.id === id)), ...kat.filter(id => !ks.includes(id))]
     } catch {}
-    return [...kat, ...ozelRaflarOku().map(r => r.id), "son-okunanlar", "sik-okunanlar"]
+    return [...kat, ...ozelRaflarOku().map(r => r.id), "alimler", "son-okunanlar", "sik-okunanlar"]
   })
   const [alimSira, setAlimSira] = useState(() => {
     const kayitli = localStorage.getItem("vukuf-alim-sira")
@@ -2591,24 +2673,33 @@ export default function Kutuphane() {
   }, [isMobile])
 
   // ── Birleşik üst seviye raf listesi (Kısım + özel + Son/Sık)
-  const kategoriMap = useMemo(() => new Map(kategoriler.map(k => [k.id, k])), [])
+  const alimlerRafi = useMemo(() => alimlerRafiKur(kategoriler), [])
+  const kategoriMap = useMemo(() => new Map([...kategoriler, alimlerRafi].map(k => [k.id, k])), [alimlerRafi])
   const ozelMap = useMemo(() => new Map(ozelRaflar.map(r => [r.id, r])), [ozelRaflar])
 
   const varsayilanUst = [
     ...kategoriler.map(k => k.id),
     ...ozelRaflar.map(r => r.id),
-    "son-okunanlar", "sik-okunanlar",
+    "alimler", "son-okunanlar", "sik-okunanlar",
   ]
   const mevcutIdler = new Set([
     ...kategoriler.map(k => k.id),
     ...ozelRaflar.map(r => r.id),
+    ...(alimlerRafi.alimler.length ? ["alimler"] : []),
     ...(sonListe.length ? ["son-okunanlar"] : []),
     ...(sikListe.length ? ["sik-okunanlar"] : []),
   ])
-  // Tam sıra (gizliler dahil) → kalıcılık ve DnD için
+  // Tam sıra (gizliler dahil) → kalıcılık ve DnD için.
+  // Âlimler rafı sonradan geldi: kayıtlı sırada yoksa Son Okunanlar'ın hemen ÜSTÜNE girer
+  // (sona eklenseydi Son/Sık'ın altında kalırdı).
+  const kayitliSira = ustSira.includes("alimler") ? ustSira : (() => {
+    const a = ustSira.slice(), i = a.indexOf("son-okunanlar")
+    if (i >= 0) a.splice(i, 0, "alimler"); else a.push("alimler")
+    return a
+  })()
   const tamSira = [
-    ...ustSira.filter(id => mevcutIdler.has(id)),
-    ...varsayilanUst.filter(id => mevcutIdler.has(id) && !ustSira.includes(id)),
+    ...kayitliSira.filter(id => mevcutIdler.has(id)),
+    ...varsayilanUst.filter(id => mevcutIdler.has(id) && !kayitliSira.includes(id)),
   ]
   const hepsiGoster = duzenlemeMode && gizlemeMod
   const gorunenIdler = tamSira.filter(id => hepsiGoster || !gizliRaflar.includes(id))
@@ -2692,7 +2783,8 @@ export default function Kutuphane() {
     const { active, over } = event
     if (active.id !== over?.id) {
       setAlimSira(prev => {
-        const liste = prev[kategoriId] || []
+        // Kayıtta yoksa ya da eskiyse varsayılan/eksiksiz sıradan başlanır
+        const liste = alimIdSirasi(kategoriMap.get(kategoriId), prev[kategoriId])
         const eskiIndex = liste.indexOf(active.id)
         const yeniIndex = liste.indexOf(over.id)
         const yeni = { ...prev, [kategoriId]: arrayMove(liste, eskiIndex, yeniIndex) }
@@ -2787,7 +2879,7 @@ export default function Kutuphane() {
     if (sifirlaSayac < 2) { setSifirlaSayac(s => s + 1); return }
     ;["vukuf-ust-sira", "vukuf-kategori-sira", "vukuf-alim-sira", "vukuf-kitap-sira", "vukuf-acik-kategori"].forEach(k => { try { localStorage.removeItem(k) } catch {} })
     gizliRaflarYaz([]); ozelRaflarYaz([]); okumaKayitSil()
-    setUstSira([...kategoriler.map(k => k.id), "son-okunanlar", "sik-okunanlar"])
+    setUstSira([...kategoriler.map(k => k.id), "alimler", "son-okunanlar", "sik-okunanlar"])
     setAlimSira(Object.fromEntries(kategoriler.map(k => [k.id, k.alimler.map(a => a.id)])))
     setKitapSiralama({})
     setAcikKategori(null)

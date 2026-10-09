@@ -302,9 +302,17 @@ export default function Navbar() {
           {/* ── GÖRÜNÜM ───────────────────────────────────────────────── */}
           <Katlanir
             theme={theme} ikon={Sparkles} baslik="Görünüm"
-            ozet={[RAF_GORUNUMLERI.find(r => r.id === rafGorunum)?.ad.toLocaleLowerCase("tr-TR"), dinamik && "dinamik", girisAnim && "giriş"].filter(Boolean).join(" · ")}
+            ozet={[girisAnim && "giriş", dinamik && "dinamik", RAF_GORUNUMLERI.find(r => r.id === rafGorunum)?.ad.toLocaleLowerCase("tr-TR")].filter(Boolean).join(" · ")}
             {...kapak("gorunum")}
           >
+          <AyarSatiri
+            baslik="Giriş Animasyonu"
+            aciklama="Açılışta tezhipli giriş ekranı (sonraki açılışta geçerli)"
+            acik={girisAnim}
+            onToggle={toggleGirisAnim}
+            theme={theme}
+          />
+          <div style={{ height: "1px", background: theme.border, opacity: 0.6, margin: "2px 0" }} />
           <AyarSatiri
             baslik="Dinamik Mod"
             aciklama="Kitaplıkta akan (coverflow) kapak görünümü"
@@ -340,14 +348,6 @@ export default function Navbar() {
               })}
             </div>
           </div>
-          <div style={{ height: "1px", background: theme.border, opacity: 0.6, margin: "2px 0" }} />
-          <AyarSatiri
-            baslik="Giriş Animasyonu"
-            aciklama="Açılışta tezhipli giriş ekranı (sonraki açılışta geçerli)"
-            acik={girisAnim}
-            onToggle={toggleGirisAnim}
-            theme={theme}
-          />
 
           </Katlanir>
 

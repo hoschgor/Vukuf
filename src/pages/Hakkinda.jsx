@@ -1,6 +1,6 @@
 import { useApp } from "../AppContext"
 import { useEffect, useId, useMemo, useState } from "react"
-import { Mail, BookOpen, Globe, Sparkles } from "lucide-react"
+import { Mail, BookOpen, Globe } from "lucide-react"
 import MealPopup from "../components/MealPopup"
 import MushafKelime from "../components/MushafKelime"
 import { mushafYukle } from "../data/mushafVerisi"
@@ -100,6 +100,20 @@ function Ayrac({ ac, en = 240 }) {
         <circle r="2.4" fill="none" stroke={ac} strokeWidth="0.8" strokeOpacity="0.9" />
         <circle r="1.1" fill={ac} />
       </g>
+    </svg>
+  )
+}
+
+// Alt bilgideki küçük gül — ayracın ortasındaki sekiz yapraklı gülün minik hâli
+// (eskiden genel "ışıltı" simgesiydi; tezhip diliyle uyumlu olsun diye değişti)
+function MiniGul({ ac, boy = 14 }) {
+  return (
+    <svg width={boy} height={boy} viewBox="-10 -10 20 20" aria-hidden="true" style={{ flexShrink: 0 }}>
+      {[0, 45, 90, 135, 180, 225, 270, 315].map(d => (
+        <path key={d} d={d % 90 === 0 ? "M0 -3 C2 -4.8 1.7 -8 0 -9.6 C-1.7 -8 -2 -4.8 0 -3 Z" : "M0 -3 C1.4 -4.2 1.2 -6.4 0 -7.4 C-1.2 -6.4 -1.4 -4.2 0 -3 Z"}
+          transform={`rotate(${d})`} fill={ac} fillOpacity={d % 90 === 0 ? 0.3 : 0.16} stroke={ac} strokeWidth="0.9" />
+      ))}
+      <circle r="1.6" fill={ac} />
     </svg>
   )
 }
@@ -305,7 +319,7 @@ export default function Hakkinda() {
           display: "flex", justifyContent: "center", alignItems: "center", gap: "8px", flexWrap: "wrap",
           fontSize: "12px", color: theme.textSecondary,
         }}>
-          <Sparkles size={13} color={ac} />
+          <MiniGul ac={ac} />
           <span>Geliştirilmeye devam ediyor</span>
           <span style={{ opacity: 0.5 }}>·</span>
           <span>Vukuf v1.0.0 · 2026</span>

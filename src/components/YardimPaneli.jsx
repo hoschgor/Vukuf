@@ -56,8 +56,9 @@ const KONULAR = [
     metin: [
       "Her raf bir ilim dalını temsil eder. Rafa dokunulduğunda altında bir çekmece açılır ve o dalın âlimleri listelenir; âlimin adına dokunulunca eserleri görünür, bir esere dokunulduğunda okuma ekranı açılır.",
       "Rafın içindeki dikey kitaplar raftaki eserleri, yatay kitaplar ise âlimleri temsil eder. Bir dikey kitaba dokunarak doğrudan o esere, bir yatay cilde dokunarak da o âlimin bölümüne geçilebilir.",
+      "Âlimler rafında bütün âlimler alfabe sırasıyla bir arada bulunur. Bir âlimin farklı raflardaki eserleri burada birlikte görülebilir; eserler yine aynı şekilde açılır.",
     ],
-    anahtar: "raf çekmece alim âlim eser kitap aç kategori kısım",
+    anahtar: "raf çekmece alim âlim âlimler eser kitap aç kategori kısım alfabe",
   },
   {
     bolum: "kitaplik", ikon: Search, baslik: "Kitaplıkta arama",

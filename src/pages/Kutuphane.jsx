@@ -122,8 +122,6 @@ function kapaklariOnbellekle(urls) {
 // SONUNA yerleşir (DOM sırası değişmez → sürükle-bırak ve durumlar etkilenmez).
 // Kandil ve mumlar kenarlarda: ileride rafa resim gelirse ortası boş kalır.
 // ════════════════════════════════════════════════════════════════
-const DAMAR_D = "repeating-linear-gradient(180deg,rgba(0,0,0,0.06) 0 2px,transparent 2px 9px,rgba(255,255,255,0.03) 9px 10px,transparent 10px 17px), "
-const DAMAR_Y = "repeating-linear-gradient(90deg,rgba(0,0,0,0.06) 0 1px,transparent 1px 6px,rgba(255,255,255,0.03) 6px 7px,transparent 7px 13px), "
 
 // ── RENKLER TEMADAN (8 Ekim 2026) ──────────────────────────────────────────
 // Sabit kahverengi yerine çerçeve, temanın vurgu renginin TONUNDA üretilir; açıklık
@@ -152,23 +150,37 @@ function rafPaleti(theme) {
   const [bh, bs, bl] = hexHsl(theme?.background)
   const [ah, as] = hexHsl(theme?.accent)
   const koyuTema = bl < 0.5
-  const h = ah, s = koyuTema ? Math.min(0.42, as * 0.62) : Math.min(0.5, as * 0.85)
-  // Çerçeve açıklık basamakları: koyu temada derin, açık temada orta tonlar
-  const L = koyuTema ? [0.10, 0.19, 0.29, 0.42, 0.62] : [0.24, 0.36, 0.48, 0.62, 0.80]
+  // ── SADE ÇERÇEVE (9 Ekim 2026) ──────────────────────────────────────────
+  // Kullanıcı: "açık tonlarda raf fazla meydanda, arka plan beyaz, raf çok farklı
+  // kalıyor; koyu tonlarda sütun çiziminde sorun var; üst yatay kısım fazla detaylı,
+  // dikey çizgiler çok fazla, daha sade olmalı."
+  // • TON: sarı/altın vurgulu temalarda (ton 30–70°) koyulaşınca zeytin-haki çıkıyordu;
+  //   o aralık sıcak ceviz tonuna çekiliyor. Öbür temalar (pembe, mavi…) kendi tonunda kalır.
+  // • AÇIK TEMA: çerçeve sayfa zeminine yakın, açık meşe/kum tonu (eski orta kahve
+  //   açık zeminde ağır bir blok gibi duruyordu). Doygunluk her iki temada düşük.
+  // • DAMAR DESENLERİ KALDIRILDI: ters yönde ve düzenli tekrar eden ince çizgiler
+  //   ahşabı oluklu sac gibi gösteriyordu. Yüzeyler yalnız yumuşak geçişli.
+  //   Açık temada kırmızımsı kahveler (ör. sepya 26°) açılınca pembe-gri (taupe)
+  //   kalıyordu → açık temada sıcak tonlar 30–36° bandına alınıyor (meşe/kum).
+  //   Koyu temada sarı/altın tonlar 28°'ye (koyulaşınca 36° bile zeytine kaçıyordu).
+  const sicak = ah <= 70
+  const h = !sicak ? ah : koyuTema ? (ah > 30 ? 28 : ah) : Math.min(36, Math.max(30, ah))
+  const s = koyuTema ? Math.min(0.38, as * 0.6) : Math.min(0.36, as * 0.7)
+  // Çerçeve açıklık basamakları: koyu temada derin ve yumuşak, açık temada açık meşe
+  const L = koyuTema ? [0.10, 0.17, 0.25, 0.34, 0.48] : [0.47, 0.57, 0.65, 0.73, 0.85]
   const [c0, c1, c2, c3, c4] = L.map(l => hsl(h, s, l))
   const p = {
     koyuTema,
     c0, c1, c2, c3, c4,
     // yatay çubuk (üst ray, levha bandı, taç)
-    yatay: `${DAMAR_Y}linear-gradient(180deg, ${c3} 0%, ${c2} 22%, ${c1} 70%, ${c0} 100%)`,
-    band: `${DAMAR_Y}linear-gradient(180deg, ${c2} 0%, ${c1} 55%, ${c0} 100%)`,
+    yatay: `linear-gradient(180deg, ${c3} 0%, ${c2} 35%, ${c1} 100%)`,
+    band: `linear-gradient(180deg, ${c2} 0%, ${c1} 100%)`,
     // köşeli pilaster gövdesi: solda pah ışığı, sağda gölge, dikey damar
-    pilaster: `${DAMAR_D}linear-gradient(90deg, ${c0} 0%, ${c3} 7%, ${c2} 14%, ${c2} 80%, ${c1} 90%, ${c0} 100%)`,
-    panel: `${DAMAR_D}linear-gradient(90deg, ${c1} 0%, ${c2} 50%, ${c1} 100%)`,
-    blok: `${DAMAR_Y}linear-gradient(90deg, ${c1} 0%, ${c4} 6%, ${c3} 14%, ${c3} 30%, ${c2} 80%, ${c1} 92%, ${c0} 100%)`,
-    oymaSoluk: hsl(h, Math.min(0.6, as), koyuTema ? 0.72 : 0.86, 0.3),
-    oyma: hsl(h, Math.min(0.6, as), koyuTema ? 0.72 : 0.86, 0.55),   // çerçevedeki ince oyma çizgileri
-    disler: `repeating-linear-gradient(90deg, ${c3} 0 6px, transparent 6px 11px)`,
+    // köşeli direk: solda yumuşak pah ışığı, sağda gölge — çizgisiz düz tahta
+    pilaster: `linear-gradient(90deg, ${c1} 0%, ${c3} 9%, ${c2} 24%, ${c2} 78%, ${c1} 93%, ${c0} 100%)`,
+    blok: `linear-gradient(180deg, ${c3} 0%, ${c2} 100%)`,
+    oymaSoluk: hsl(h, Math.min(0.5, as), koyuTema ? 0.70 : 0.92, 0.18),
+    oyma: hsl(h, Math.min(0.5, as), koyuTema ? 0.70 : 0.92, 0.32),   // çerçevedeki ince çizgiler (soluk)
     // iç: temanın zemin tonunda, hafif karartılmış arka pano
     ic: koyuTema
       ? `repeating-linear-gradient(90deg,rgba(255,255,255,0.025) 0 1px,transparent 1px 9px,rgba(0,0,0,0.12) 9px 10px,transparent 10px 17px), linear-gradient(180deg, ${hsl(bh, Math.min(0.35, bs), 0.04)}, ${hsl(bh, Math.min(0.35, bs), 0.10)})`
@@ -796,32 +808,28 @@ function RafIci({ p, yuk, tam, detay, sirtlar, yataylar = [], kapak, onSirt, onY
 // kakmalı) → ikinci gövde → basamaklı kaide. Her parça direğin tamamını kapladığı için
 // arkada boşluk / yan tahta görünmez. Yan yüzlerde pah (eğim) gölgesi, gövdede dikey damar.
 // [yükseklik px, tür, yandan taşma px] — "b": blok (açık yüz), "o": oluk (koyu ara çizgi)
-const DIREK_BASLIK = [[6, "b", 2], [2, "o", 1], [4, "b", 1], [2, "o", 0], [3, "b", 0]]
-const DIREK_KAIDE = [[3, "b", 0], [2, "o", 0], [4, "b", 1], [2, "o", 1], [8, "b", 2]]
+// Sade (9 Ekim 2026): beş katlı başlık/kaide yerine tek blok + tek ince oluk;
+// her satır geçişinde üst üste binen "bilezikler" kalabalık görünüyordu.
+const DIREK_BASLIK = [[5, "b", 2], [2, "o", 0]]
+const DIREK_KAIDE = [[2, "o", 0], [6, "b", 2]]
 function DirekKatlari({ p, liste }) {
   return liste.map(([hgt, tur, tas], i) => (
     <span key={i} style={{
       display: "block", height: `${hgt}px`, flexShrink: 0, alignSelf: "stretch",
       margin: `0 -${tas}px`,
       background: tur === "b" ? p.blok : p.c0,
-      boxShadow: tur === "b" ? `inset 0 1px 0 ${p.oymaSoluk}, inset 0 -1px 0 rgba(0,0,0,0.4)` : "none",
+      boxShadow: tur === "b" ? `inset 0 1px 0 ${p.oymaSoluk}, inset 0 -1px 0 rgba(0,0,0,${p.koyuTema ? 0.35 : 0.12})` : "none",
     }} />
   ))
 }
 function DirekGovdesi({ p, flex }) {
   return (
+    // Sade (9 Ekim 2026): gömme panel ve ortadaki baklava kaldırıldı — direkte
+    // dikey çizgi kalmadı; yalnız pah ışığı/gölgesi olan düz, köşeli tahta.
     <span style={{
-      display: "block", flex: `${flex} 1 0`, minHeight: "10px", alignSelf: "stretch", position: "relative",
+      display: "block", flex: `${flex} 1 0`, minHeight: "10px", alignSelf: "stretch",
       background: p.pilaster,
-    }}>
-      {/* gömme panel: içe göçük dikey tahta */}
-      <span style={{
-        position: "absolute", left: "26%", right: "26%", top: "5px", bottom: "5px",
-        background: p.panel,
-        boxShadow: `inset 1px 1px 0 rgba(0,0,0,0.45), inset -1px -1px 0 ${p.oymaSoluk}`,
-      }} />
-      <span style={{ position: "absolute", left: "50%", top: "50%", width: "5px", height: "5px", margin: "-2.5px 0 0 -2.5px", transform: "rotate(45deg)", background: p.oyma, boxShadow: "0 0 0 1px rgba(0,0,0,0.35)" }} />
-    </span>
+    }} />
   )
 }
 function RafDirek({ p, en }) {
@@ -895,17 +903,15 @@ function RafBolmesi({ p, theme, isMobile, acik, satirAcik, gizli, sirtlar, yatay
   )
 }
 
-// Dolabın tacı: profilli korniş + diş sırası + ince oyma; kaide: basamaklı ayak
+// Dolabın tacı: profilli korniş + düz friz; kaide: basamaklı ayak
 function DolapTaci({ p, isMobile }) {
   return (
     <div aria-hidden="true" style={{ position: "relative" }}>
       <div style={{ height: isMobile ? "7px" : "9px", margin: "0 -5px", borderRadius: "5px 5px 0 0", background: p.yatay, boxShadow: `inset 0 1px 0 ${p.oyma}` }} />
       <div style={{ height: "4px", margin: "0 -2px", background: p.c0 }} />
-      <div style={{ height: isMobile ? "18px" : "24px", position: "relative", background: p.band }}>
-        <div style={{ position: "absolute", left: "8px", right: "8px", top: "4px", height: "1px", background: p.oyma }} />
-        <div style={{ position: "absolute", left: "10px", right: "10px", bottom: "4px", height: isMobile ? "6px" : "8px", background: p.disler }} />
-      </div>
-      <div style={{ height: "5px", background: p.yatay, boxShadow: "0 2px 3px rgba(0,0,0,0.35)" }} />
+      {/* Sade (9 Ekim 2026): diş sırası ve iç oyma çizgisi kaldırıldı — düz friz */}
+      <div style={{ height: isMobile ? "12px" : "16px", background: p.band }} />
+      <div style={{ height: "4px", background: p.yatay, boxShadow: `0 2px 3px rgba(0,0,0,${p.koyuTema ? 0.35 : 0.12})` }} />
     </div>
   )
 }

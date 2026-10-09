@@ -165,12 +165,15 @@ function rafPaleti(theme) {
   //   Koyu temada sarı/altın tonlar 28°'ye (koyulaşınca 36° bile zeytine kaçıyordu).
   const sicak = ah <= 70
   const h = !sicak ? ah : koyuTema ? (ah > 30 ? 28 : ah) : Math.min(36, Math.max(30, ah))
-  const s = koyuTema ? Math.min(0.38, as * 0.6) : Math.min(0.42, as * 0.85)
+  const s = koyuTema ? Math.min(0.42, as * 0.7) : Math.min(0.46, as * 0.95)
   // Çerçeve açıklık basamakları: koyu temada derin ve yumuşak, açık temada açık meşe
   // Açık temada da koyu ceviz (kullanıcı: "koyu tonlara alsak daha iyi") — açık meşe
   // denendi, sayfayla kaynaşıyordu ama dolap kimliğini yitiriyordu.
   // Telefon ekranlarında (parlak/OLED) aynı ton daha açık görünüyor → bir kademe daha koyu.
-  const L = koyuTema ? [0.10, 0.17, 0.25, 0.34, 0.48] : [0.11, 0.165, 0.225, 0.30, 0.43]
+  // 9 Ekim 2026: kullanıcı "tek monitörde iyi, mobilde ve diğer monitörlerde açık
+  // görünüyor; koyu kahve olsun" → çoğu ekran (parlak/OLED, yüksek gama) koyu tonları
+  // açtığı için temel ton belirgin biçimde koyulaştırıldı; doygunluk kahve kalsın diye arttı.
+  const L = koyuTema ? [0.07, 0.12, 0.175, 0.24, 0.36] : [0.07, 0.11, 0.155, 0.21, 0.32]
   const [c0, c1, c2, c3, c4] = L.map(l => hsl(h, s, l))
   const p = {
     koyuTema,

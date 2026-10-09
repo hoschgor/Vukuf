@@ -167,7 +167,9 @@ function rafPaleti(theme) {
   const h = !sicak ? ah : koyuTema ? (ah > 30 ? 28 : ah) : Math.min(36, Math.max(30, ah))
   const s = koyuTema ? Math.min(0.38, as * 0.6) : Math.min(0.36, as * 0.7)
   // Çerçeve açıklık basamakları: koyu temada derin ve yumuşak, açık temada açık meşe
-  const L = koyuTema ? [0.10, 0.17, 0.25, 0.34, 0.48] : [0.47, 0.57, 0.65, 0.73, 0.85]
+  // Açık temada da koyu ceviz (kullanıcı: "koyu tonlara alsak daha iyi") — açık meşe
+  // denendi, sayfayla kaynaşıyordu ama dolap kimliğini yitiriyordu.
+  const L = koyuTema ? [0.10, 0.17, 0.25, 0.34, 0.48] : [0.17, 0.24, 0.32, 0.41, 0.56]
   const [c0, c1, c2, c3, c4] = L.map(l => hsl(h, s, l))
   const p = {
     koyuTema,
@@ -213,7 +215,8 @@ function rafGorunumOku() {
   try { const v = localStorage.getItem(RAF_GORUNUM_ANAHTAR); return v === "cizimli" || v === "sade" ? v : "resimli" } catch { return "resimli" }
 }
 const RESIM_ORANI = 4.2
-const direkEni = (isMobile) => (isMobile ? 20 : 30)
+// 9 Ekim 2026: %15 inceltildi (30 → 26, telefonda 20 → 17)
+const direkEni = (isMobile) => (isMobile ? 17 : 26)
 const DERILER = ["#4a1720", "#1d2b3d", "#3d2a18", "#24301f", "#2c2440", "#3d1f24", "#22333a", "#4a3320"]
 
 function sayiKaristir(s) {
@@ -746,8 +749,16 @@ function RafIci({ p, yuk, tam, detay, sirtlar, yataylar = [], kapak, onSirt, onY
     }}>
       {resim && (
         <>
+          {/* RENK EŞİTLEME (9 Ekim 2026): resimler farklı kaynaklardan, tonları birbirini
+              tutmuyordu (biri turuncu, biri yeşil, biri soğuk). Hepsine aynı hafif
+              derecelendirme: doygunluk biraz kısılır, ılık bir sepya katılır; üstüne
+              çerçeve tonunda %18'lik "renk" katmanı → raflar tek bir ışıkta görünür. */}
           <img src={resim.src} alt="" aria-hidden="true" loading="lazy" decoding="async" draggable={false}
-            style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: resim.konum || "50% 50%", pointerEvents: "none", userSelect: "none" }} />
+            style={{
+              position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: resim.konum || "50% 50%", pointerEvents: "none", userSelect: "none",
+              filter: p.koyuTema ? "saturate(0.8) sepia(0.14) brightness(0.92)" : "saturate(0.8) sepia(0.14) brightness(1.03) contrast(0.95)",
+            }} />
+          <div style={{ position: "absolute", inset: 0, pointerEvents: "none", background: p.c2, mixBlendMode: "color", opacity: 0.18 }} />
           {/* tavan gölgesi + tabana doğru hafif karartma: ahşap çerçeveyle kaynaşsın, sırtlar okunsun */}
           <div style={{ position: "absolute", inset: 0, pointerEvents: "none", background: "linear-gradient(180deg, rgba(0,0,0,0.38) 0%, rgba(0,0,0,0.06) 26%, rgba(0,0,0,0.05) 60%, rgba(0,0,0,0.42) 100%)" }} />
         </>
@@ -764,7 +775,11 @@ function RafIci({ p, yuk, tam, detay, sirtlar, yataylar = [], kapak, onSirt, onY
 
 
       {/* Orta: kitap sırtları (sığmazsa orantılı incelir) + açıkken ön kapak */}
-      <div style={{ position: "absolute", left: `${kenarPay("sol")}px`, right: `${kenarPay("sag")}px`, top: "8px", bottom: 0, display: "flex", alignItems: "flex-end", justifyContent: resim ? "flex-start" : "center", gap: "2px", overflow: "hidden" }}>
+      {/* RESİMLİ RAFTA KİTAPLAR (9 Ekim 2026): kullanıcı "çizdiğimiz kitaplar resmi
+          engelliyor, belki transparan olabilir". Raf açıkken kitaplar resmin ALT
+          kısmında, kısa ve yarı saydam (renkleri de kısık) duruyor; fareyle üzerine
+          gelince belirginleşiyor. Dokunmatikte de seçilebilecek kadar görünür. */}
+      <div className={resim ? "vk-resim-kitap" : undefined} style={{ position: "absolute", left: `${kenarPay("sol")}px`, right: `${kenarPay("sag")}px`, top: resim ? "46%" : "8px", bottom: 0, display: "flex", alignItems: "flex-end", justifyContent: resim ? "flex-start" : "center", gap: "2px", overflow: "hidden" }}>
         {rafDizisi(sirtlar, yataylar, tohum).map(oge => {
           if (oge.tip === "yatay") return <YatayYigin key={oge.anahtar} p={p} liste={oge.liste} olc={olc} detay={detay} onYatay={onYatay} />
           if (oge.tip === "dayak") return <KitapDayagi key={oge.anahtar} p={p} olc={olc} />
@@ -2928,6 +2943,8 @@ export default function Kutuphane() {
         @keyframes vk-salin { 0%, 100% { transform: rotate(-1.4deg); } 50% { transform: rotate(1.4deg); } }
         .vk-salin { animation: vk-salin 7s ease-in-out infinite; will-change: transform; }
         @media (hover: hover) { .vk-sirt:hover { transform: translateY(-5px); } .vk-yatay:hover { transform: translateX(4px); } }
+        .vk-resim-kitap { opacity: 0.5; filter: saturate(0.55); transition: opacity 0.25s ease, filter 0.25s ease; }
+        @media (hover: hover) { .vk-resim-kitap:hover { opacity: 0.95; filter: none; } }
         @media (prefers-reduced-motion: reduce) { .vk-alev, .vk-salin { animation: none; } }
       `}</style>
 

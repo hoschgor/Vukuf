@@ -1647,6 +1647,25 @@ function SortableAlimRafi({ alim, duzenlemeMode, theme, sensors, kitapSiralama, 
     ? alim.altKategoriler.flatMap(a => a.kitaplar)
     : alim.kitaplar
 
+  // ── ESER TÜRÜ BÖLÜMLERİ AÇ/KAPA (9 Ekim 2026) ─────────────────────────
+  // Kullanıcı: "âlimin birden fazla eser türü varsa eser raflarının tamamı açık
+  // kalıyor, kapanabilmeli de". Her alt bölüm başlığı artık aç/kapa düğmesi;
+  // durum âlim + bölüm başına kalıcı. Varsayılan: en çok 2 bölüm varsa açık,
+  // daha fazlaysa kapalı (uzun listeler bir anda yayılmasın). Arama sürerken
+  // eşleşen bölümler her durumda açık görünür.
+  const altAnahtar = (altId) => `vukuf-alt-acik-${alim.id}-${altId}`
+  const [altAcik, setAltAcik] = useState({})
+  const altAcikMi = (altId) => {
+    if (altId in altAcik) return altAcik[altId]
+    try { const v = localStorage.getItem(altAnahtar(altId)); if (v != null) return JSON.parse(v) } catch {}
+    return (alim.altKategoriler?.length || 0) <= 2
+  }
+  const altToggle = (altId) => {
+    const y = !altAcikMi(altId)
+    setAltAcik(o => ({ ...o, [altId]: y }))
+    try { localStorage.setItem(altAnahtar(altId), JSON.stringify(y)) } catch {}
+  }
+
   const toggleAlimRafi = () => {
     const yeniDurum = !acik
     setAcik(yeniDurum)
@@ -1771,12 +1790,29 @@ function SortableAlimRafi({ alim, duzenlemeMode, theme, sensors, kitapSiralama, 
                   : alt.kitaplar
 
                 if (filtrelenmisKitaplar.length === 0 && filtreTerim) return null
+                const altGorunur = !!filtreTerim || altAcikMi(alt.id)
 
                 return (
                   <div key={alt.id}>
-                    <div style={{ padding: "8px 16px", fontSize: "12px", color: theme.accent, fontWeight: "bold", letterSpacing: "1px", borderBottom: `1px solid ${theme.border}` }}>
-                      {alt.baslik.toLocaleUpperCase('tr-TR')}
-                    </div>
+                    <button
+                      type="button"
+                      data-nodrag="1"
+                      aria-expanded={altGorunur}
+                      onClick={(e) => { e.stopPropagation(); if (!filtreTerim) altToggle(alt.id) }}
+                      style={{
+                        width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px",
+                        padding: "8px 16px", fontSize: "12px", color: theme.accent, fontWeight: "bold", letterSpacing: "1px",
+                        background: "none", border: "none", borderBottom: `1px solid ${theme.border}`,
+                        cursor: filtreTerim ? "default" : "pointer", textAlign: "left", fontFamily: "inherit",
+                      }}
+                    >
+                      <span>{alt.baslik.toLocaleUpperCase('tr-TR')}</span>
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: "6px", color: theme.textSecondary, fontWeight: 400, letterSpacing: 0 }}>
+                        {filtrelenmisKitaplar.length}
+                        <ChevronDown size={14} style={{ transform: altGorunur ? "rotate(180deg)" : "none", transition: "transform 0.2s" }} />
+                      </span>
+                    </button>
+                    {altGorunur && (<>
                     <KitapRafi
                       kitaplar={filtrelenmisKitaplar}
                       rafId={alt.id}
@@ -1789,6 +1825,7 @@ function SortableAlimRafi({ alim, duzenlemeMode, theme, sensors, kitapSiralama, 
                       dinamikMod={dinamikMod}
                     />
                     <div style={{ height: "8px", background: `linear-gradient(to bottom, ${theme.accent}40, ${theme.accent}20)`, borderTop: `2px solid ${theme.accent}60`, margin: "0 0 4px" }} />
+                    </>)}
                   </div>
                 )
               })}

@@ -170,6 +170,12 @@ function dalUret(t, R) {
   return { govde: govdeYolu(n), yapraklar, surgunler, filizler, cicekler }
 }
 
+/* NOT (Android, 10 Ekim 2026): öğelerde `opacity` YERİNE fillOpacity/strokeOpacity.
+   SVG'de bir öğeye `opacity` verilince Chrome onu kendi sınır kutusu boyutunda ayrı
+   bir saydamlık katmanında çiziyor; Android'de nadiren bu katman temizlenmeden
+   birleşiyor ve dalların sınır kutuları kenarlarda koyu, lekeli dikey şeritler
+   olarak görünüyordu (kullanıcı ekran görüntüsü). Tek boyalı şekillerde görüntü
+   aynı, ama ara katman oluşmuyor. */
 function Dallar({ R, canli = true }) {
   const dallar = useMemo(() => (R ? DALLAR.map(t => dalUret(t, R)) : []), [R])
   if (!R) return null
@@ -177,19 +183,19 @@ function Dallar({ R, canli = true }) {
     <svg aria-hidden="true" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", overflow: "visible", animation: canli ? "vkDalBelir 1.4s ease 0.9s both" : "none" }}>
       {dallar.map((d, i) => (
         <g key={i}>
-          {d.surgunler.map((s, j) => <path key={`s${j}`} d={s.d} fill="none" stroke="currentColor" strokeWidth={s.k} strokeLinecap="round" opacity="0.75" />)}
-          {d.filizler.map((f, j) => <path key={`f${j}`} d={f} fill="none" stroke="currentColor" strokeWidth="0.6" strokeLinecap="round" opacity="0.6" />)}
-          <path d={d.govde} fill="currentColor" opacity="0.8" />
+          {d.surgunler.map((s, j) => <path key={`s${j}`} d={s.d} fill="none" stroke="currentColor" strokeWidth={s.k} strokeLinecap="round" strokeOpacity="0.75" />)}
+          {d.filizler.map((f, j) => <path key={`f${j}`} d={f} fill="none" stroke="currentColor" strokeWidth="0.6" strokeLinecap="round" strokeOpacity="0.6" />)}
+          <path d={d.govde} fill="currentColor" fillOpacity="0.8" />
           {d.yapraklar.map((y, j) => (
             <g key={`y${j}`}>
-              <path d={y.govde} fill="currentColor" opacity="0.55" />
-              <path d={y.damar} stroke="currentColor" strokeWidth="0.45" opacity="0.7" />
+              <path d={y.govde} fill="currentColor" fillOpacity="0.55" />
+              <path d={y.damar} fill="none" stroke="currentColor" strokeWidth="0.45" strokeOpacity="0.7" />
             </g>
           ))}
           {d.cicekler.map((c, j) => (
             <g key={`c${j}`} transform={`translate(${f2(c.x)} ${f2(c.y)}) rotate(${f2(c.don)})`}>
               {[0, 72, 144, 216, 288].map(a => (
-                <ellipse key={a} cx="0" cy={-c.r * 0.62} rx={c.r * 0.42} ry={c.r * 0.62} transform={`rotate(${a})`} fill="currentColor" opacity="0.6" />
+                <ellipse key={a} cx="0" cy={-c.r * 0.62} rx={c.r * 0.42} ry={c.r * 0.62} transform={`rotate(${a})`} fill="currentColor" fillOpacity="0.6" />
               ))}
               <circle r={c.r * 0.32} fill="currentColor" />
             </g>
@@ -225,7 +231,7 @@ function Kosebent({ uid, konum, canli = true }) {
       {/* köşeden içeri bakan kafesli badem (geniş ucu köşede) */}
       <g transform="translate(76.8 76.8) rotate(-45) scale(0.8)">
         <g clipPath={`url(#${id}-badem)`}>
-          <path d={KAFES} fill="none" stroke="currentColor" strokeWidth="1.4" opacity="0.8" />
+          <path d={KAFES} fill="none" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.8" />
         </g>
         <path d={BADEM} fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
       </g>
@@ -236,8 +242,8 @@ function Kosebent({ uid, konum, canli = true }) {
       </g>
       {/* köşe düğümü (cetvellerin birleştiği yer) */}
       <rect x="6.6" y="6.6" width="6.8" height="6.8" transform="rotate(45 10 10)" fill="currentColor" />
-      <circle cx="74" cy="12.2" r="1.3" fill="currentColor" opacity="0.6" />
-      <circle cx="12.2" cy="74" r="1.3" fill="currentColor" opacity="0.6" />
+      <circle cx="74" cy="12.2" r="1.3" fill="currentColor" fillOpacity="0.6" />
+      <circle cx="12.2" cy="74" r="1.3" fill="currentColor" fillOpacity="0.6" />
     </svg>
   )
 }

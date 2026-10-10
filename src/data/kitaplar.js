@@ -1,7 +1,7 @@
 export const kategoriler = [
   {
     id: "orijinal-eserler",
-    baslik: "Kur'an-ı Kerim",
+    baslik: "Kur'an-ı Kerîm",
     kuran: {
       id: "kuran",
       baslik: "Kur'ân-ı Kerîm",
@@ -14,11 +14,7 @@ export const kategoriler = [
   
   {
     id: "evrad-ezkar",
-    baslik: "Evrad ve Ezkar",
-    // ── Evrad ve Ezkar (Arapça) ────────────────────────────────────────────────
-    //   NOT: Bu kitapların JSON'ları (dosya alanı) henüz üretilmedi; Arapça örnek
-    //   ile çıkarıcı doğrulanıp kitap-metin/'e konulana kadar okuma açıldığında
-    //   boş/hatalı gelebilir. İsimler kütüphanede görünsün diye şimdiden eklendi.
+    baslik: "Evrâd u Ezkâr",
     alimler: [
       {
         id: "evrad-ezkar-liste",

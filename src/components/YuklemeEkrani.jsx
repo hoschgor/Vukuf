@@ -1,4 +1,5 @@
 import MushafYukleniyorRozeti from "./MushafYukleniyorRozeti"
+import GirisCercevesi from "./GirisCercevesi"
 
 // Bekleme/yükleme ekranı — tezhipli Vukuf rozeti ile ortalanmış, tema-uyumlu.
 // Kitap ilk açılışları (KuranOkuma / OkumaEkrani / RisaleOkuma) ve benzeri bekleme
@@ -10,10 +11,16 @@ export default function YuklemeEkrani({
   yukseklik = "78vh",
   arkaplan = true,
   fade = true,             // giriş fade animasyonu (örtü olarak kullanılınca kapatılır → çift flaş olmaz)
+  // Kenarlardaki mushaf çerçevesi (cetvel + köşebent + dallar). Yalnızca tam ekran
+  // kullanımda anlamlı; 78vh gibi sayfa içi bir kutuda kutunun kenarına çizilirdi.
+  // Durağan (canli={false}): kitap açılırken art arda gelen yükleme ekranlarında
+  // çizim animasyonu her seferinde baştan başlayıp yanıp sönmesin.
+  cerceve = yukseklik === "100vh" || yukseklik === "100%",
 }) {
   return (
     <div
       style={{
+        position: "relative",
         minHeight: yukseklik,
         width: "100%",
         display: "flex",
@@ -35,6 +42,8 @@ export default function YuklemeEkrani({
           .vukuf-yuk-nefes { animation: none !important; }
         }
       `}</style>
+
+      {cerceve && <GirisCercevesi ac={theme?.accent || "currentColor"} canli={false} />}
 
       <div
         className="vukuf-yuk-nefes"

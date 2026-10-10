@@ -2,6 +2,7 @@ import { useEffect, useState, lazy, Suspense, Component } from "react"
 import { Routes, Route, useLocation } from "react-router-dom"
 import Navbar from "./components/Navbar"
 import MushafYukleniyorRozeti from "./components/MushafYukleniyorRozeti"
+import GirisCercevesi from "./components/GirisCercevesi"
 import Kutuphane from "./pages/Kutuphane"
 import { useApp } from "./AppContext"
 import { swKaydet, swGuncelle } from "./data/cevrimdisi"
@@ -92,7 +93,7 @@ class ParcaHatasi extends Component {
   }
 }
 
-/* Parça yüklenirken: ortada rozet. 180 ms gecikmeli beliriyor — önbellekten
+/* Parça yüklenirken: ortada rozet, kenarlarda durağan mushaf çerçevesi. 180 ms gecikmeli beliriyor — önbellekten
    anında gelen geçişlerde ekran bir kare yanıp sönmesin. */
 function SayfaYukleniyor({ theme }) {
   return (
@@ -103,6 +104,7 @@ function SayfaYukleniyor({ theme }) {
       opacity: 0, animation: "vukufParcaBelir .25s ease .18s forwards",
     }}>
       <style>{`@keyframes vukufParcaBelir { to { opacity: 1 } }`}</style>
+      <GirisCercevesi ac={theme.accent} canli={false} />
       <MushafYukleniyorRozeti size={96} ac={theme.accent} />
     </div>
   )
@@ -135,8 +137,10 @@ export default function App() {
   }, [])
   useEffect(() => {
     if (!girisVar) return
-    const t1 = setTimeout(() => setGirisSoluyor(true), 2000)   // 2 sn görün
-    const t2 = setTimeout(() => setGirisVar(false), 2620)      // 0.6 sn sol → DOM'dan kalk
+    // 10 Ekim 2026: 2 → 3,2 sn (çerçeve, köşebentler ve dallar sırayla belirebilsin;
+    // kullanıcı: "süre kısa, dallar tam oturmuyor"). Dokununca hemen geçilebilir.
+    const t1 = setTimeout(() => setGirisSoluyor(true), 3200)   // 3,2 sn görün
+    const t2 = setTimeout(() => setGirisVar(false), 3820)      // 0.6 sn sol → DOM'dan kalk
     return () => { clearTimeout(t1); clearTimeout(t2) }
     // eslint-disable-next-line
   }, [])
@@ -183,7 +187,9 @@ export default function App() {
   return (
     <div style={{ minHeight: "100vh", background: theme.background }}>
       {girisVar && (
-        <div style={{
+        <div
+          onClick={() => { if (!girisSoluyor) { setGirisSoluyor(true); setTimeout(() => setGirisVar(false), 620) } }}
+          style={{
           position: "fixed", inset: 0, zIndex: 9999,
           background: theme.background,
           display: "flex", alignItems: "center", justifyContent: "center",
@@ -192,8 +198,10 @@ export default function App() {
           pointerEvents: girisSoluyor ? "none" : "auto",
         }}>
           <style>{`@keyframes vukufGirisBelir { from { opacity: 0; transform: scale(0.9) } to { opacity: 1; transform: scale(1) } }`}</style>
+          {/* 10 Ekim 2026: mushaf sayfası çerçevesi (cetvel + köşebent + sarılan dallar) */}
+          <GirisCercevesi ac={theme.accent} />
           <div style={{ animation: "vukufGirisBelir 0.7s cubic-bezier(.22,.61,.36,1)" }}>
-            <MushafYukleniyorRozeti size={172} ac={theme.accent} halka={false} />
+            <MushafYukleniyorRozeti size={172} ac={theme.accent} halka={false} don />
           </div>
         </div>
       )}

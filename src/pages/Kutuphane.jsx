@@ -489,57 +489,81 @@ const RAF_SIMGELERI = [
     </>
   ) },
 ]
-// ── ÂLİMLER RAFI (9 Ekim 2026) ─────────────────────────────────────────────
+// ── ÂLİMLER RAFI (9 Ekim 2026; 10 Ekim gerçek veriyle düzeltildi) ───────────
 // Kullanıcı: "Kitaplık içindeki âlimleri buraya alalım ve eserlerini bir arada
 // verelim; âlim âlim incelemek isteyen buradan da bakabilsin."
 // • Bütün kısımların âlimleri tek rafta, Türkçe alfabe sırasıyla.
-// • Aynı âlim birden çok kısımda geçiyorsa (adı aynı) TEK sırtta birleşir; eserleri
-//   tekrar etmeden bir araya gelir. Kısımları ayrı ayrıysa her kısım bir alt bölüm.
-// • Risale-i Nûr kısmında "âlimler" aslında ESER TÜRLERİ (Sözler, Mektubat…);
-//   orası tek âlim — Bediüzzaman — olarak alınır, eser türleri onun alt bölümleri.
+// • Aynı âlim birden çok kısımda geçiyorsa (adı aynı) TEK kayıtta birleşir; eserleri
+//   tekrar etmeden bir araya gelir (ör. İmam Gazâlî: Tasavvuf + Kelam + Usûl).
+//   Farklı yazılan aynı kişiler AYNI_KISI ile eşlenir (İbn Arabî = Muhyiddin-i Arabî).
+// • KİŞİ OLMAYAN GRUPLAR (Evrâd listesi, "Diğer", Risale'nin eser türleri, "Hanefî
+//   Hadis Usûlü"): kendileri âlim sayılmaz. İçlerindeki eserler `yazar` alanına göre
+//   dağıtılır — yazarı olan eser o yazarın kaydına (Nursî → Bediüzzaman, grup adı alt
+//   bölüm olur; Badıllı, Ömer Nasuhi Bilmen… kendi adıyla), yazarı boş olan eser bu
+//   rafa girmez (kendi kısmında duruyor).
 // • Eserler aynı nesneler: açılış yolu, kayıtlar, okuma istatistiği değişmez.
 const sadeIsim = (s) => String(s || "").toLocaleLowerCase("tr-TR")
   .normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9ğüşıöç]/g, "")
+// Aynı kişinin farklı yazımları → tek anahtar
+const AYNI_KISI = { ibnarabi: "muhyiddiniarabi" }
+const kisiAnahtari = (isim) => { const k = sadeIsim(isim); return AYNI_KISI[k] || k }
+// Kişi olmayan grup kayıtları (kimlikle) ve tümüyle grup olan kısımlar
+const GRUP_KAYITLARI = new Set(["evrad-ezkar-liste", "diger-kitaplar", "hanefi-usul"])
+const grupKismiMi = (k) => /ris[aâ]le/i.test(String(k.id)) || /ris[aâ]le/i.test(String(k.baslik))
+// Yazar adı → âlim kaydı adı (Risale'nin müellifi tam adıyla, kimliği yazı tipi için)
+const yazarKaydi = (yazar) => (/nurs[iî]/i.test(yazar)
+  ? { id: "bediuzzaman", isim: "Bediüzzaman Said Nursî" }
+  : { id: `yazar-${sadeIsim(yazar)}`, isim: yazar })
+
 function alimlerRafiKur(kategoriler) {
   const gruplar = new Map()
   const ekle = (kat, a) => {
-    const anahtar = sadeIsim(a.isim) || String(a.id)
+    const anahtar = kisiAnahtari(a.isim) || String(a.id)
     if (!gruplar.has(anahtar)) gruplar.set(anahtar, [])
     gruplar.get(anahtar).push({ kat, a })
   }
-  const risaleMi = (k) => /ris[aâ]le/i.test(String(k.id)) || /ris[aâ]le/i.test(String(k.baslik))
-  // Risale kısmının sahibi: başka bir kısımda "Nursî" geçen âlim varsa onun adı (birleşsin diye)
-  const nursi = kategoriler.flatMap(k => (risaleMi(k) ? [] : (k.alimler || []))).find(a => /nurs[iî]/i.test(String(a.isim)))
   for (const kat of kategoriler) {
     const liste = kat.alimler || []
-    if (!liste.length) continue
-    if (risaleMi(kat)) {
-      ekle(kat, {
-        id: nursi?.id || `${kat.id}-sahibi`,
-        isim: nursi?.isim || "Bediüzzaman Said Nursî",
-        altKategoriler: liste.map(a => ({
-          id: a.id, baslik: a.isim,
-          kitaplar: a.altKategoriler ? a.altKategoriler.flatMap(x => x.kitaplar || []) : (a.kitaplar || []),
-        })),
+    const butunGrup = grupKismiMi(kat)
+    for (const a of liste) {
+      if (!butunGrup && !GRUP_KAYITLARI.has(a.id)) { ekle(kat, a); continue }
+      // Grup: eserleri yazarlarına dağıt (yazarsızlar bu rafa girmez)
+      const eserler = a.altKategoriler ? a.altKategoriler.flatMap(x => x.kitaplar || []) : (a.kitaplar || [])
+      const yazarlara = new Map()
+      eserler.forEach(k => {
+        const y = String(k.yazar || "").trim()
+        if (!y) return
+        if (!yazarlara.has(y)) yazarlara.set(y, [])
+        yazarlara.get(y).push(k)
       })
-      continue
+      yazarlara.forEach((ks, y) => {
+        const kayit = yazarKaydi(y)
+        ekle(kat, { ...kayit, altKategoriler: [{ id: `${kat.id}-${a.id}`, baslik: a.isim, kitaplar: ks }] })
+      })
     }
-    liste.forEach(a => ekle(kat, a))
   }
   const alimler = [...gruplar.values()].map(liste => {
-    if (liste.length === 1) return liste[0].a
     const ilk = liste[0].a
+    if (liste.length === 1 && !(ilk.altKategoriler && ilk.altKategoriler.length === 1)) return ilk
     const gorulen = new Set()
     const tekil = (ks) => (ks || []).filter(k => k && !gorulen.has(k.id) && gorulen.add(k.id))
+    let sonuc
     if (liste.some(x => x.a.altKategoriler)) {
       const altKategoriler = liste.flatMap(({ kat, a }) => (a.altKategoriler
-        ? a.altKategoriler.map(x => ({ ...x, id: `${kat.id}-${x.id}`, kitaplar: tekil(x.kitaplar) }))
+        ? a.altKategoriler.map(x => ({ ...x, kitaplar: tekil(x.kitaplar) }))
         : [{ id: `${kat.id}-${a.id}`, baslik: kat.baslik, kitaplar: tekil(a.kitaplar) }]))
         .filter(x => x.kitaplar.length)
       const { kitaplar: _yok, ...digeri } = ilk
-      return { ...digeri, altKategoriler }
+      sonuc = { ...digeri, altKategoriler }
+    } else {
+      sonuc = { ...ilk, kitaplar: liste.flatMap(x => tekil(x.a.kitaplar)) }
     }
-    return { ...ilk, kitaplar: liste.flatMap(x => tekil(x.a.kitaplar)) }
+    // Tek alt bölüm kaldıysa bölüm başlığına gerek yok: düz eser listesi
+    if (sonuc.altKategoriler && sonuc.altKategoriler.length <= 1) {
+      const { altKategoriler, ...d } = sonuc
+      sonuc = { ...d, kitaplar: altKategoriler[0]?.kitaplar || [] }
+    }
+    return sonuc
   })
   alimler.sort((x, y) => String(x.isim).localeCompare(String(y.isim), "tr"))
   return { id: "alimler", baslik: "Âlimler", alimler }
@@ -1867,6 +1891,9 @@ function SortableKategori({ kategori,
   const acik = acikKategori === kategori.id
 
   const aramaAcik = kategoriArama[kategori.id] !== undefined
+  // Tek kaydı kişi olmayan bir grup olan raf (Evrâd u Ezkâr): âlim listesi yerine
+  // doğrudan eserler (10 Ekim 2026, kullanıcı: "alt başlık açılmayıp direkt eserler görünsün")
+  const duzRaf = !kategori.kuran && kategori.alimler.length === 1 && GRUP_KAYITLARI.has(kategori.alimler[0].id) && !kategori.alimler[0].altKategoriler
   const siraIdleri = alimIdSirasi(kategori, alimSira[kategori.id])
 
   // Bölmedeki sırtlar: âlimler (kalınlık eser sayısına göre), sıralama kullanıcınınki
@@ -1931,7 +1958,7 @@ function SortableKategori({ kategori,
       <RafBolmesi
         p={yer.p} theme={theme} isMobile={isMobile} acik={acik} satirAcik={yer.satirAcik} gizli={gizli}
         sirtlar={sirtlar} kapak={kapak} tohum={kategori.id} resim={rafResmiBul(kategori.id, kategori.baslik)}
-        yataylar={alimSirtlari}
+        yataylar={duzRaf ? [] : alimSirtlari}
         onSirt={eserler.length && !duzenlemeMode ? (s) => s.veri && navigate(kitapYolu(s.veri)) : undefined}
         onYatay={alimSirtlari.length && !duzenlemeMode ? (y) => onAlimSec(kategori.id, y.id) : undefined}
         onToggle={toggle}
@@ -1953,7 +1980,8 @@ function SortableKategori({ kategori,
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: "10px", flexShrink: 0 }}>
-          {acik && (
+          {/* Kur'ân rafında tek eser var → arama merceği yok (10 Ekim 2026) */}
+          {acik && !kategori.kuran && (
             <button
               onClick={handleAramaClick}
               aria-label="Bu rafta ara"
@@ -1969,7 +1997,8 @@ function SortableKategori({ kategori,
             </button>
           )}
           <SayacOk theme={theme} acik={acik}>
-            {kategori.kuran ? null : `${kategori.alimler.length} ${kategori.id === "risale" ? "Eser Türü" : kategori.id === "alimler" ? "âlim" : "alim"}`}
+            {/* Kur'ân ve Evrâd u Ezkâr rafında âlim yok → sayaç yazılmaz (10 Ekim 2026) */}
+            {kategori.kuran || kategori.id === "evrad-ezkar" ? null : `${kategori.alimler.length} ${kategori.id === "risale" ? "Eser Türü" : kategori.id === "alimler" ? "âlim" : "alim"}`}
           </SayacOk>
         </div>
       </RafBolmesi>
@@ -2003,7 +2032,7 @@ function SortableKategori({ kategori,
                 )}
               </div>
               <div style={{ fontSize: "11px", color: theme.textSecondary, marginTop: "6px", marginLeft: "8px" }}>
-                Âlim veya kitap ismi giriniz...
+                {duzRaf ? "Kitap ismi giriniz..." : "Âlim veya kitap ismi giriniz..."}
               </div>
             </div>
           )}
@@ -2051,6 +2080,25 @@ function SortableKategori({ kategori,
                 </Link>
               </div>
             )}
+            {duzRaf ? (
+              // Evrâd u Ezkâr gibi tek "grup" kaydı olan raf: ara başlık açılmaz, eserler
+              // doğrudan görünür; raf araması doğrudan kitap adlarında yapılır.
+              <KitapRafi
+                kitaplar={(() => {
+                  const q = trLower((kategoriArama[kategori.id] || "").trim())
+                  const ks = kategori.alimler[0].kitaplar || []
+                  return q ? ks.filter(k => trLower(k.baslik).includes(q)) : ks
+                })()}
+                rafId={kategori.alimler[0].id}
+                duzenlemeMode={duzenlemeMode}
+                theme={theme}
+                sensors={sensors}
+                kitapSiralama={kitapSiralama}
+                setKitapSiralama={setKitapSiralama}
+                alimId={kategori.alimler[0].id}
+                dinamikMod={dinamikMod}
+              />
+            ) : (
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={(e) => handleAlimDragEnd(e, kategori.id)}>
               <SortableContext
                 items={siraIdleri}
@@ -2094,6 +2142,7 @@ function SortableKategori({ kategori,
                 </div>
               </SortableContext>
             </DndContext>
+            )}
           </div>
         </div>
         </RafCekmecesi>

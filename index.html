@@ -2,9 +2,14 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
-    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png" />
-    <link rel="apple-touch-icon" href="/icon-192.png" />
+    <!-- SEKME SİMGESİ (10 Ekim 2026): cihaz/tarayıcı koyu temadaysa koyu, açık
+         temadaysa açık simge. Ana ekran simgesi ise kurulumda bir kez alınıp
+         saklandığı için tek (koyu) simge: apple-touch-icon + manifest. -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" media="(prefers-color-scheme: light)" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png" media="(prefers-color-scheme: light)" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-koyu-32.png" media="(prefers-color-scheme: dark)" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-koyu-16.png" media="(prefers-color-scheme: dark)" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <!-- MANIFEST BAĞLANTISI — bu satır YOKTU, yani public/manifest.webmanifest
          hiç yüklenmiyordu (24 Eylül'de dosya yolları incelenirken fark edildi).
          Uygulamanın ana ekrandan standalone açılması tamamen aşağıdaki

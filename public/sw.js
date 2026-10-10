@@ -35,7 +35,7 @@
      de çalışır ama eski varlıklar önbellekte birikir.
    ═══════════════════════════════════════════════════════════════════════════ */
 
-const SURUM = "11-10-2026-3"
+const SURUM = "11-10-2026-4"
 
 const KABUK = `vukuf-kabuk-${SURUM}`
 const VARLIK = `vukuf-varlik-${SURUM}`
@@ -43,7 +43,12 @@ const VERI = "vukuf-veri"          // SÜRÜMSÜZ — bilerek
 const SES = "vukuf-ses"            // SÜRÜMSÜZ ve AYRI — aşağıdaki nota bak
 
 // Veri sayılan uzantılar (bayatken tazele ile yönetilir)
-const VERI_DESENI = /\.(json|webmanifest|ttf|otf|woff2?|png|jpe?g|svg|ico)$/i
+// `.webmanifest` BURADA YOK (11 Ekim 2026): uygulama ayar dosyası sürümsüz veri
+// önbelleğinden "bayatken tazele" ile veriliyordu; Android kurulumda sayfanın
+// o an elindeki manifest'i kullandığı için `display: fullscreen` değişikliği
+// sürüm atlansa, uygulama silinip yüklense bile görülmüyordu (eski manifest).
+// Artık manifest işçiden hiç geçmiyor, doğrudan ağdan geliyor.
+const VERI_DESENI = /\.(json|ttf|otf|woff2?|png|jpe?g|svg|ico)$/i
 
 /* ── YÖNLENDİRME TUZAĞI ───────────────────────────────────────────────────
    Sunucu `/` için yönlendirme yapıyorsa (nginx/Netlify/Vercel çok yapar) gelen
@@ -142,6 +147,13 @@ self.addEventListener("activate", (olay) => {
       if (ad === KABUK || ad === VARLIK || ad === VERI || ad === SES) return null
       return caches.delete(ad)
     }))
+    // Eski işçilerin veri önbelleğine koyduğu bayat manifest kaydını sil.
+    try {
+      const kv = await caches.open(VERI)
+      for (const r of await kv.keys()) {
+        if (new URL(r.url).pathname.endsWith(".webmanifest")) await kv.delete(r)
+      }
+    } catch { /* temizlik başarısızsa da sorun değil — artık okunmuyor */ }
     await self.clients.claim()
     // Kurulum sırasında ağ yoksa kabuk boş kalmış olabilir; burada telafi et.
     if (!(await kabukBul(null))) await kabugaAl()
@@ -318,6 +330,8 @@ self.addEventListener("fetch", (olay) => {
   if (istek.mode === "navigate") { olay.respondWith(agOnce(istek)); return }
   // Parça listesi her zaman ağdan (veri önbelleğine girip bayatlamasın)
   if (url.pathname === LISTE) return
+  // Uygulama ayar dosyası her zaman ağdan (bkz. VERI_DESENI notu)
+  if (url.pathname.endsWith(".webmanifest")) return
   if (url.pathname.startsWith("/assets/")) { olay.respondWith(oncePreOnbellek(istek, VARLIK)); return }
   if (VERI_DESENI.test(url.pathname)) { olay.respondWith(bayatIkenTazele(istek, VERI)); return }
 })

@@ -36,6 +36,24 @@ const PAY = 12   // ekran kenarından cetvele uzaklık (güvenli alana ek)
    kodumuzla kaldırılamıyor). Çerçevenin üst kenarı ve üst köşebentler o bölgede
    kalınca soluk görünüyordu → yalnız bu kipte üst kenar biraz aşağı alınıyor. */
 const IOS_UST_EK = 0   // 30 denendi; kullanıcı: "üst çizgi çok aşağı geldi, çerçeveye göre olmalı" → kaldırıldı
+/* ALT GÜVENLİ ALAN (11 Ekim 2026): iPhone'da alt güvenli alan ~34 px (ana ekran
+   çizgisi). Tamamı eklenince alt cetvel ekranın altından fark edilir derecede
+   yukarıda kalıyordu; Android'de (tam ekran, alt pay 0) cetvel kenara iniyor.
+   Güvenli alanın yalnız bu oranı ekleniyor → iPhone'da alt cetvel ~24 px'e iner,
+   çizginin üstünde kalır. Android/masaüstünde pay 0 olduğu için etkisi yok.
+   Daha aşağı: oranı küçült (0.2 → ~19 px); daha yukarı: büyüt (1 = eski hâl). */
+const ALT_ORAN = 0.35
+const ALT_GUVENLI = `env(safe-area-inset-bottom) * ${ALT_ORAN}`
+/* OVAL KÖŞELER (11 Ekim 2026): Face ID'li bütün iPhone'larda (X ve sonrası, 16e
+   dahil) ekran köşeleri yuvarlak; köşe yarıçapı ~39–62 pt. Ev tuşlu modellerde
+   (SE 2/3, 8) köşe düz ve alt güvenli alan 0. Yani alt güvenli alanın VARLIĞI
+   yuvarlak köşenin işareti. Alt cetvel aşağı inince alt köşe düğümleri (kenardan
+   ~10, ~22 px) büyük yarıçaplı Pro modellerde eğrinin dışında kalıp kesiliyordu
+   (r > ~53 pt). Yanlar da aynı orandan içeri alınıyor (~+10 px): düğüm ~(20, 22)
+   px'e geliyor, r ≈ 71 pt'ye kadar güvenli; çerçeve payı da dört yanda eşitleniyor.
+   Android ve masaüstünde alt güvenli alan 0 → değişiklik yok. */
+const YAN_ORAN = 0.3
+const YAN_GUVENLI = `env(safe-area-inset-bottom) * ${YAN_ORAN}`
 
 /* ── CETVELE SARILAN DALLAR (10 Ekim 2026) ─────────────────────────────────
    Kullanıcı: "çizgiler üzerinde rastgele dallar (meal penceresindeki gibi ama
@@ -215,8 +233,8 @@ function Kosebent({ uid, konum, canli = true }) {
     <svg width="96" height="96" viewBox="0 0 96 96" aria-hidden="true"
       style={{
         position: "absolute",
-        [alt ? "bottom" : "top"]: `calc(env(safe-area-inset-${alt ? "bottom" : "top"}) + ${PAY - 10 + (alt ? 0 : IOS_UST_EK)}px)`,
-        [sag ? "right" : "left"]: `calc(env(safe-area-inset-${sag ? "right" : "left"}) + ${PAY - 10}px)`,
+        [alt ? "bottom" : "top"]: alt ? `calc(${ALT_GUVENLI} + ${PAY - 10}px)` : `calc(env(safe-area-inset-top) + ${PAY - 10 + IOS_UST_EK}px)`,
+        [sag ? "right" : "left"]: `calc(env(safe-area-inset-${sag ? "right" : "left"}) + ${YAN_GUVENLI} + ${PAY - 10}px)`,
         transform: `scale(${sag ? -1 : 1}, ${alt ? -1 : 1})`,
         overflow: "visible",
         animation: canli ? "vkKoseBelir 0.9s ease 0.45s both" : "none",
@@ -289,9 +307,9 @@ export default function GirisCercevesi({ ac = "currentColor", dallar = true, can
   const cizgi = (ic, kalin, op) => ({
     position: "absolute",
     top: `calc(env(safe-area-inset-top) + ${PAY + ic + IOS_UST_EK}px)`,
-    bottom: `calc(env(safe-area-inset-bottom) + ${PAY + ic}px)`,
-    left: `calc(env(safe-area-inset-left) + ${PAY + ic}px)`,
-    right: `calc(env(safe-area-inset-right) + ${PAY + ic}px)`,
+    bottom: `calc(${ALT_GUVENLI} + ${PAY + ic}px)`,
+    left: `calc(env(safe-area-inset-left) + ${YAN_GUVENLI} + ${PAY + ic}px)`,
+    right: `calc(env(safe-area-inset-right) + ${YAN_GUVENLI} + ${PAY + ic}px)`,
     border: `${kalin}px solid currentColor`,
     opacity: op,
     pointerEvents: "none",

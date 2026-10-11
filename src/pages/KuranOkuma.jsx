@@ -2,7 +2,7 @@ import { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo, } f
 import { createPortal } from "react-dom"
 import { useNavigate } from "react-router-dom"
 import { useApp } from "../AppContext"
-import { okumaKaydet, KURAN_ID, normHarf } from "../data/okumaKayit"
+import { okumaKaydet, KURAN_ID } from "../data/okumaKayit"
 import arapcaLugat from "../data/arapca-lugat.json"
 // KONUMA BAĞLI kelime anlamları (quran.com word-by-word, Türkçe) — wbw.py üretir.
 // Kelime kimliğine göre değil, kelimenin ÂYETTEKİ YERİNE göre anlam verir.
@@ -117,12 +117,15 @@ const ARAPCA_FONTLAR = [
 ]
 
 // Sûre adı araması için normalize: büyük/küçük + şapka/aksan duyarsız (â→a, İ/I, ş→s…)
+// Kesme, tire ve BOŞLUK da yok sayılıyor (11 Ekim 2026, kullanıcı: "Ra'd yazmaya gerek
+// olmadan rad yazılarak da ulaşılabilmeli") → "rad" = Ra'd, "aliimran" / "al-i imran"
+// / "ali imran" = Âl-i İmrân. Sûre menüsü ve tekrar/hıfz sûre kutusu bunu kullanıyor.
 function srNorm(s) {
   return (s || "").replace(/İ/g, "i").replace(/I/g, "ı").toLowerCase()
     .replace(/[âàáäā]/g, "a").replace(/[îïíìī]/g, "i").replace(/[ûüúùū]/g, "u")
     .replace(/[ôöóòō]/g, "o").replace(/[êëéèē]/g, "e")
     .replace(/ç/g, "c").replace(/ş/g, "s").replace(/ğ/g, "g").replace(/ı/g, "i")
-    .replace(/['`’‘-]/g, "").trim()
+    .replace(/['`´’‘ʼʻʿʾ\-‐–.\s]/g, "")
 }
 
 // ── Özel tema sabitleri
@@ -2277,9 +2280,10 @@ const cokSatir = wrapAktif && barYuksekligi > tekSatirYuksekligi * 1.0
 
   const filtreliSureler = useMemo(() => {
     if (!menuArama) return sureler
-    const q = normHarf(menuArama)  // şapka/aksan + büyük-küçük duyarsız
+    const q = srNorm(menuArama)  // şapka/aksan, büyük-küçük, kesme/tire/boşluk duyarsız
+    if (!q) return sureler
     return sureler.filter(s =>
-      normHarf(s.isim).includes(q) ||
+      srNorm(s.isim).includes(q) ||
       String(s.id).includes(menuArama.trim())
     )
   }, [sureler, menuArama])

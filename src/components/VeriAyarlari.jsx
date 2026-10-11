@@ -43,6 +43,8 @@ import {
   dosyadanOku, yedekCozumle, yedekYaz, sifirla, sonYedekYaz,
 } from "../data/vukufVeri"
 import { hifzTazele } from "../data/hifz"
+import DepolamaGorunumu from "./DepolamaGorunumu"
+import { boyutYaz } from "../data/depolamaOlcum"
 
 /* ── ÇEVRİMDIŞI İÇİN İNDİRİLECEK ADRESLER ───────────────────────────────────
    Liste ELLE YAZILMIYOR: katalogdan (kitaplar.js) türetiliyor. Yeni bir kitap
@@ -669,65 +671,24 @@ export default function VeriAyarlari({ theme }) {
     <div>
       <Katlanir
         theme={theme} ikon={HardDrive} baslik="Depolama"
-        ozet={depolama && !depolama.hata ? `${boyutMetni(depolama.kota)} ayrıldı` : null}
+        ozet={depolama && !depolama.hata && depolama.kota > 0 ? `${boyutYaz(depolama.kullanilan)} / ${boyutYaz(depolama.kota)}` : null}
         {...kapak("depolama")}
       >
-        <div style={{
-          padding: "10px 12px", borderRadius: "10px", marginBottom: "8px",
-          background: `${theme.accent}0d`, border: `1px solid ${theme.border}`,
-          fontSize: "12px", color: theme.textSecondary, lineHeight: 1.5,
-        }}>
-          Bu cihazda <b style={{ color: theme.text }}>{doluKutular.reduce((t, k) => t + k.adet, 0)}</b> kayıt
-          {" "}(<b style={{ color: theme.text }}>{boyutMetni(toplam)}</b>) saklı.
-          Veriler yalnız bu tarayıcıda durur; uygulamayı silmek ya da site verilerini
-          temizlemek hepsini götürür.
-        </div>
-      <div style={{
-        padding: "10px 12px", borderRadius: "10px",
-        border: `1px solid ${theme.border}`, background: theme.background,
-        fontSize: "12px", color: theme.textSecondary, lineHeight: 1.6,
-      }}>
-        {!depolama && "Ölçülüyor…"}
+        {/* 11 Ekim 2026: bölüm bölüm kullanım + toplam/ayrılan/boş (DepolamaGorunumu) */}
         {depolama?.hata === "guvensiz" && (
-          <>
+          <div style={{
+            padding: "10px 12px", borderRadius: "10px", marginBottom: "8px",
+            border: `1px solid ${theme.border}`, background: theme.background,
+            fontSize: "12px", color: theme.textSecondary, lineHeight: 1.6,
+          }}>
             <b style={{ color: "#c0392b" }}>Güvenli bağlam değil.</b> Bu sayfa{" "}
             <code style={{ fontSize: "11px" }}>{location.protocol}//{location.host}</code>{" "}
             adresinden açıldı; tarayıcı depolama bilgisini yalnız HTTPS ya da
             localhost üzerinde veriyor. <b>Çevrimdışı özelliği de</b> aynı sebeple
             burada çalışmaz — kurulu uygulama (HTTPS) üzerinden bakın.
-          </>
+          </div>
         )}
-        {depolama?.hata === "yok" && "Bu tarayıcı depolama bilgisi vermiyor."}
-        {depolama && !depolama.hata && (
-          <>
-            <div>
-              Kullanılan: <b style={{ color: theme.text }}>{boyutMetni(depolama.kullanilan)}</b>
-              {depolama.kota > 0 && <> · Ayrılan: <b style={{ color: theme.text }}>{boyutMetni(depolama.kota)}</b></>}
-            </div>
-            {depolama.kota > 0 && (
-              <div style={{
-                height: "6px", borderRadius: "3px", marginTop: "7px",
-                background: `${theme.accent}20`, overflow: "hidden",
-              }}>
-                <div style={{
-                  height: "100%", borderRadius: "3px", background: theme.accent,
-                  width: `${Math.min(100, Math.max(1, (depolama.kullanilan / depolama.kota) * 100))}%`,
-                }} />
-              </div>
-            )}
-            <div style={{ marginTop: "8px", display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
-              <span>Kalıcı depolama: <b style={{ color: theme.text }}>{kalici === null ? "bilinmiyor" : kalici ? "açık" : "kapalı"}</b></span>
-              {kalici === false && (
-                <button onClick={kaliciYap} style={{
-                  padding: "5px 10px", borderRadius: "8px", fontSize: "11px",
-                  background: "transparent", border: `1px solid ${theme.accent}`,
-                  color: theme.accent, fontFamily: "inherit", cursor: "pointer",
-                }}>Kalıcı yap</button>
-              )}
-            </div>
-          </>
-        )}
-      </div>
+        <DepolamaGorunumu theme={theme} tazele={tazele} kalici={kalici} onKaliciYap={kaliciYap} />
 
       </Katlanir>
 

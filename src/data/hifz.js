@@ -657,22 +657,28 @@ export function sureListesiSirala(liste, sira = "orijinal") {
 
 /* MANUEL ARAMA — "bakara 5-10", "2:5-10", "yasin", "36 1-12", "fussilet, 44".
    Dönüş: [{ id, isim, ayetSayisi, bas, son }] (en çok `sinir` öneri).
-   normla: harf normalleştirici (şapka/aksan/büyük-küçük duyarsız). */
+   normla: harf normalleştirici (şapka/aksan/büyük-küçük duyarsız).
+   AYRAÇ DUYARSIZ (11 Ekim 2026, sûre menüsüyle aynı): sûre adında kesme, tire,
+   nokta ve boşluk yok sayılıyor → "rad" = Ra'd, "aliimran" / "al-i imran" /
+   "ali imran 5-10" = Âl-i İmrân, "mumin" = Mü'min (normla ü→u yapıyorsa). */
+const AYRAC_SURE = /['`´‘’ʻʼʾʿ‐-―.\s-]/g
 export function manuelOneriler(sorgu, sureler, normla = (s) => s.toLowerCase(), sinir = 8) {
   const q = String(sorgu || "").trim()
   if (!q) return []
+  const sik = (x) => normla(String(x || "")).replace(AYRAC_SURE, "")
   // Aralık: sondaki "5", "5-10", "5–10", ":5-10", ", 5-10"
   const m = q.match(/^(.*?)[\s,:]*?(\d+)(?:\s*[-–]\s*(\d+))?\s*$/)
   let ad = q, a1 = null, a2 = null
   if (m && m[1].trim()) { ad = m[1].trim(); a1 = parseInt(m[2], 10); a2 = m[3] ? parseInt(m[3], 10) : null }
   else if (m && !m[1].trim() && !m[3]) { ad = m[2]; }          // yalnız sayı → sûre no
   else if (m && !m[1].trim() && m[3]) { ad = m[2]; a1 = parseInt(m[3], 10) }   // "2 5" gibi değil; "2-5" sûre 2 âyet 5
-  const nq = normla(ad.replace(/[.:,]+$/, "").trim())
+  const nq = sik(ad.replace(/[.:,]+$/, "").trim())
   const sayi = /^\d+$/.test(ad.trim()) ? parseInt(ad, 10) : null
+  if (sayi == null && !nq) return []          // yalnız kesme/tire yazıldıysa öneri yok
   const eslesen = sureler.filter(s =>
-    sayi != null ? s.id === sayi : (normla(s.isim).startsWith(nq) || normla(s.isim).includes(nq)))
+    sayi != null ? s.id === sayi : (sik(s.isim).startsWith(nq) || sik(s.isim).includes(nq)))
   // Başla eşleşenler önce
-  eslesen.sort((x, y) => (normla(y.isim).startsWith(nq) - normla(x.isim).startsWith(nq)) || (x.id - y.id))
+  eslesen.sort((x, y) => (sik(y.isim).startsWith(nq) - sik(x.isim).startsWith(nq)) || (x.id - y.id))
   return eslesen.slice(0, sinir).map(s => {
     const n = s.ayetSayisi || 1
     let bas, son

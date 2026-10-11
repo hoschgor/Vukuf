@@ -4,6 +4,7 @@ import { Search, X, BookOpen, ChevronRight, ChevronLeft, Loader, SlidersHorizont
 import { useApp } from "../AppContext"
 import { useMediaQuery } from "../data/hooks/useMediaQuery"
 import { normHarf } from "../data/okumaKayit"
+import { esnekBul, esnekHazirla } from "../data/esnekArama"
 import KapsamSecici from "../components/KapsamSecici"
 import { KopruDugmesi } from "../components/DonusDugmesi"
 import { kategoriler } from "../data/kitaplar"
@@ -224,10 +225,12 @@ export default function Arama() {
     //    İsim kısmıyla eşleştir; eşleşen surelere ayetNo iliştir (varsa o ayete gider).
     const vp = q.split(/[,،]/)
     const isimTerim = kucult(vp[0].trim())
+    // Ayraç duyarsız (11 Ekim 2026): "rad" → Ra'd, "aliimran" → Âl-i İmrân
+    const isimSikisik = esnekHazirla(vp[0].trim(), trLower).sikisik
     const ayetStr = (vp[1] || "").trim()
     const ayetNo = /^\d+$/.test(ayetStr) ? parseInt(ayetStr, 10) : null
     setSureSonuc(filtreAktif ? [] : SURELER
-      .filter(s => kucult(s.ad).includes(isimTerim))
+      .filter(s => tamArama ? s.ad.includes(isimTerim) : (isimSikisik && esnekHazirla(s.ad, trLower).sikisik.includes(isimSikisik)))
       .slice(0, 15)
       .map(s => ({ ...s, ayetNo })))
 
@@ -240,6 +243,9 @@ export default function Arama() {
       if (benimId !== aramaIdRef.current) return   // yeni arama başladı
 
       // Sonuclar KITAP KITAP toplanir; hicbir yerde kesilmez.
+      // Esnek arama (11 Ekim 2026): "lisanıhal" / "lisan ı hal" / "lisan - ı hal"
+      // → "lisan-ı hâl" (data/esnekArama.js). Birebir (*) aramada eski davranış.
+      const sorguHazir = tamArama ? null : esnekHazirla(q, trLower)
       const gruplar = []
       for (const { k, d } of yuklu) {
         const sonuclar = []
@@ -248,10 +254,17 @@ export default function Arama() {
           for (let si = 0; si < satirlar.length; si++) {
             const satir = satirlar[si]
             if (!satir || satir.startsWith("§")) continue
-            const idx = (tamArama ? satir : trLower(satir)).indexOf(norm)
-            if (idx === -1) continue
+            let idx, uzunluk
+            if (tamArama) {
+              idx = satir.indexOf(norm); uzunluk = norm.length
+              if (idx === -1) continue
+            } else {
+              const b = esnekBul(satir, sorguHazir, trLower)
+              if (!b) continue
+              idx = b.bas; uzunluk = b.son - b.bas
+            }
             const bas = Math.max(0, idx - 30)
-            const son = idx + norm.length + 55
+            const son = idx + uzunluk + 55
             const onizleme = (bas > 0 ? "…" : "") + satir.slice(bas, son).trim() + (satir.length > son ? "…" : "")
             sonuclar.push({ kitapId: k.id, kitapAd: k.baslik, yazar: k.yazar, sayfaNo: sayfa.sayfa, satirIdx: si, onizleme })
           }

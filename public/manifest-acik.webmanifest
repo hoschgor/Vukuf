@@ -1,0 +1,33 @@
+{
+  "id": "/",
+  "name": "Vukuf",
+  "short_name": "Vukuf",
+  "description": "Kur'ân-ı Kerîm ve İslâmî metinler okuyucusu",
+  "start_url": "/",
+  "scope": "/",
+  "display": "fullscreen",
+  "display_override": [
+    "fullscreen"
+  ],
+  "background_color": "#f4ecd8",
+  "lang": "tr",
+  "dir": "ltr",
+  "icons": [
+    {
+      "src": "/icon-acik-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-acik-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-acik-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

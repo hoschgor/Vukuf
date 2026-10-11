@@ -124,6 +124,29 @@ export default function Navbar() {
     window.dispatchEvent(new CustomEvent("vukuf-raf-gorunum", { detail: v }))
   }
 
+  /* UYGULAMA SİMGESİ (11 Ekim 2026) — ana ekrana / bilgisayara yüklerken kullanılacak simge.
+     Manifestte "any" simgeler ŞEFFAF (bilgisayarda görev çubuğu/menü kendi zemininde),
+     "maskable" ve apple-touch-icon ZEMİNLİ (Android ve iPhone şeffafı siyah/beyazla dolduruyor).
+     index.html açılışta bu anahtara göre manifest ve apple-touch-icon bağlantısını
+     seçiyor; burada seçim anında da bağlantılar değiştiriliyor (sayfa yenilenmeden
+     "Ana ekrana ekle" yeni simgeyi alsın). Eklenmiş simge DEĞİŞMEZ. */
+  const SIMGELER = [
+    { id: "koyu", ad: "Koyu", src: "/icon-192.png", manifest: "/manifest.webmanifest", apple: "/apple-touch-icon.png" },
+    { id: "acik", ad: "Açık", src: "/icon-acik-192.png", manifest: "/manifest-acik.webmanifest", apple: "/apple-touch-icon-acik.png" },
+  ]
+  const [uygSimge, setUygSimge] = useState(() => {
+    try { return localStorage.getItem("vukuf-uygulama-simgesi") === "acik" ? "acik" : "koyu" } catch { return "koyu" }
+  })
+  function uygSimgeSec(id) {
+    setUygSimge(id)
+    try { localStorage.setItem("vukuf-uygulama-simgesi", id) } catch {}
+    const s = SIMGELER.find(x => x.id === id)
+    try {
+      const m = document.querySelector('link[rel="manifest"]'); if (m && s) m.href = s.manifest
+      const a = document.querySelector('link[rel="apple-touch-icon"]'); if (a && s) a.href = s.apple
+    } catch {}
+  }
+
   function toggleGirisAnim() {
     setGirisAnim(prev => {
       const yeni = !prev
@@ -302,7 +325,7 @@ export default function Navbar() {
           {/* ── GÖRÜNÜM ───────────────────────────────────────────────── */}
           <Katlanir
             theme={theme} ikon={Sparkles} baslik="Görünüm"
-            ozet={[girisAnim && "giriş", dinamik && "dinamik", RAF_GORUNUMLERI.find(r => r.id === rafGorunum)?.ad.toLocaleLowerCase("tr-TR")].filter(Boolean).join(" · ")}
+            ozet={[girisAnim && "giriş", dinamik && "dinamik", RAF_GORUNUMLERI.find(r => r.id === rafGorunum)?.ad.toLocaleLowerCase("tr-TR"), `${uygSimge === "acik" ? "açık" : "koyu"} simge`].filter(Boolean).join(" · ")}
             {...kapak("gorunum")}
           >
           <AyarSatiri
@@ -343,6 +366,38 @@ export default function Navbar() {
                       color: secili ? "#fff" : theme.textSecondary, fontSize: "13px", fontWeight: 600,
                     }}>
                     {r.ad}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+          <div style={{ height: "1px", background: theme.border, opacity: 0.6, margin: "2px 0" }} />
+          {/* Uygulama simgesi — iki seçenek, simgenin kendisiyle */}
+          <div style={{ padding: "12px 4px" }}>
+            <div style={{ fontSize: "15px", color: theme.text, fontWeight: 500 }}>Uygulama Simgesi</div>
+            <div style={{ fontSize: "12px", color: theme.textSecondary, marginTop: "2px", lineHeight: 1.45 }}>
+              Ana ekrana ya da bilgisayara yüklerken kullanılacak simge (telefonda zeminli,
+              bilgisayarda zeminsiz). Yüklenmiş uygulamanın simgesi değişmez; yeni simge için
+              uygulamayı kaldırıp yeniden yükleyebilirsiniz.
+            </div>
+            <div role="radiogroup" aria-label="Uygulama simgesi" style={{
+              display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "8px", marginTop: "10px",
+            }}>
+              {SIMGELER.map(s => {
+                const secili = uygSimge === s.id
+                return (
+                  <button key={s.id} role="radio" aria-checked={secili} onClick={() => uygSimgeSec(s.id)}
+                    style={{
+                      display: "flex", alignItems: "center", gap: "10px", padding: "8px 10px",
+                      borderRadius: "12px", cursor: "pointer", fontFamily: "inherit", textAlign: "left",
+                      border: `1.5px solid ${secili ? theme.accent : theme.border}`,
+                      background: secili ? `${theme.accent}12` : "transparent",
+                    }}>
+                    <img src={s.src} alt="" width={40} height={40} style={{
+                      width: "40px", height: "40px", borderRadius: "10px", flexShrink: 0,
+                      boxShadow: "0 1px 4px rgba(0,0,0,0.25)",
+                    }} />
+                    <span style={{ fontSize: "13px", fontWeight: 600, color: secili ? theme.accent : theme.text }}>{s.ad}</span>
                   </button>
                 )
               })}

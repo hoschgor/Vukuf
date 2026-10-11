@@ -32,6 +32,21 @@
      • Saklanan yer de dolu alanlara SIKIŞTIRILIR: hap nereye bırakılmış olursa
        olsun oynatıcının/barın altında kalmaz, ekrandan taşmaz.
      • Sıfırlama: Ayarlar → Gezinme → "Düğme konumlarını sıfırla".
+
+   ENGELLERDEN KAÇMA (11 Ekim 2026). Kullanıcı: "köprü butonları meal
+   penceresini de tanımalı, üstüne gelememeli; kendi çerçeveleri de üst üste
+   gelememeli. Meal penceresi büyüyüp küçülünce barda olduğu gibi üstünü takip
+   etmeli."
+     • ENGEL: `useHapEngeli(ref, acik)` ile kaydolan öğeler (meal penceresi).
+       Hap bir engelle kesişirse en yakın boş yere — engelin üstüne/altına, sığmazsa
+       yanına — kayar. Engel büyüyüp küçüldükçe (ResizeObserver) ya da yer
+       değiştirdikçe hap da yumuşak geçişle onu izler.
+     • HAPLAR BİRBİRİNİ TANIR: öncelik sırası geri → kopru → mini. Her hap,
+       kendinden ÖNCELİKLİ hapları da engel sayar (eşit öncelik yok → birbirini
+       iterek salınmazlar).
+     • Kayıtlı konum DEĞİŞMİYOR: kaçma yalnız görüntüde. Engel kalkınca hap
+       kullanıcının bıraktığı yere döner. Sürüklerken kaçma yok (parmağın altından
+       kaçmasın); bırakınca uygulanıyor.
    ═══════════════════════════════════════════════════════════════════════════ */
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react"
@@ -70,6 +85,61 @@ export function hapKonumuVarMi() {
 export function hapKonumlariniSifirla() {
   try { for (const a of HAP_ADLARI) localStorage.removeItem(KONUM_ONEK + a) } catch { /* yoksay */ }
   for (const f of konumAboneleri) f()
+}
+
+/* ── ENGEL KAYDI ────────────────────────────────────────────────────────── */
+const engelElleri = new Map()      // anahtar → { el, pay } (meal penceresi vb.)
+const hapAlanlari = new Map()      // hap adı → { x, y, w, h } (dinlenme yeri)
+const engelAboneleri = new Set()
+function engelBildir() { for (const f of engelAboneleri) f() }
+
+/* Bir öğeyi haplar için ENGEL olarak kaydeder. `aktif` false iken (pencere
+   kapalı) kayıt yok. Boyut değişimi ResizeObserver ile, yer değişimi (sürükleme,
+   ekrana sığdırma düzeltmesi) her çizimde bildiriliyor.
+   pay: öğenin kutusundan taşan süs için ek boşluk (meal penceresinin dalları). */
+export function useHapEngeli(ref, aktif = true, pay = 0) {
+  useLayoutEffect(() => {
+    if (!aktif) return
+    const el = ref.current
+    if (!el) return
+    const anahtar = {}
+    engelElleri.set(anahtar, { el, pay })
+    engelBildir()
+    let ro = null
+    try { ro = new ResizeObserver(() => engelBildir()); ro.observe(el) } catch { ro = null }
+    return () => {
+      try { ro && ro.disconnect() } catch { /* yoksay */ }
+      engelElleri.delete(anahtar)
+      engelBildir()
+    }
+  }, [aktif, ref, pay])
+  useLayoutEffect(() => { if (aktif) engelBildir() })
+}
+
+function kesisir(a, b, pay) {
+  return a.x < b.r + pay && a.x + a.w > b.l - pay && a.y < b.b + pay && a.y + a.h > b.t - pay
+}
+/* Hap dikdörtgeni engellerden birine değiyorsa en yakın boş yere taşı.
+   Adaylar: engelin üstü, altı, solu, sağı — sınırlar içinde kalan ve HİÇBİR
+   engelle kesişmeyen aday arasından ilk yere en yakın olanı. */
+function engeldenKac(x0, y0, w, h, s, engeller) {
+  if (!engeller.length || !w || !h) return [x0, y0]
+  let x = x0, y = y0
+  for (let tur = 0; tur < 4; tur++) {
+    const e = engeller.find(e => kesisir({ x, y, w, h }, e, KENAR))
+    if (!e) break
+    const adaylar = [
+      [x, e.t - KENAR - h], [x, e.b + KENAR],
+      [e.l - KENAR - w, y], [e.r + KENAR, y],
+    ].filter(([ax, ay]) => ax >= s.minX - 0.5 && ax <= s.maxX + 0.5 && ay >= s.minY - 0.5 && ay <= s.maxY + 0.5)
+    const temiz = adaylar.filter(([ax, ay]) => !engeller.some(g => kesisir({ x: ax, y: ay, w, h }, g, KENAR - 0.5)))
+    const secim = (temiz.length ? temiz : adaylar)
+      .sort((p, q) => Math.hypot(p[0] - x0, p[1] - y0) - Math.hypot(q[0] - x0, q[1] - y0))[0]
+    if (!secim) break
+    x = secim[0]; y = secim[1]
+    if (temiz.length) break
+  }
+  return [x, y]
 }
 
 const ESIK = 6        // px — bunu aşmadan sürükleme başlamaz
@@ -134,6 +204,7 @@ export function useHapKonumu({ ad, yan, altta, altPay = 0, ustPay = 0, ek = 0, k
   const [, setEkranSurum] = useState(0)
   const [kayitli, setKayitli] = useState(() => konumOku(ad))
   const [canli, setCanli] = useState(null)              // sürüklenirken {x, y}
+  const [, setEngelSurum] = useState(0)                 // engel değişince yeniden çiz
   const [gecis, setGecis] = useState(false)             // ilk ölçümden sonra açılır (yanlış yerden kaymasın)
   const bilgi = useRef({ id: null, x0: 0, y0: 0, sx: 0, sy: 0, aday: false })
   const suruklendi = useRef(false)
@@ -173,14 +244,18 @@ export function useHapKonumu({ ad, yan, altta, altPay = 0, ustPay = 0, ek = 0, k
     if (vv) vv.addEventListener("resize", yenile)
     const sifirla = () => setKayitli(null)
     konumAboneleri.add(sifirla)
+    const engelDegisti = () => setEngelSurum(n => (n + 1) % 1000000)
+    engelAboneleri.add(engelDegisti)
     return () => {
       window.removeEventListener("resize", yenile)
       window.removeEventListener("orientationchange", yenile)
       if (vv) vv.removeEventListener("resize", yenile)
       zamanlar.forEach(clearTimeout)
       konumAboneleri.delete(sifirla)
+      engelAboneleri.delete(engelDegisti)
+      if (hapAlanlari.delete(ad)) engelBildir()
     }
-  }, [])
+  }, [ad])
 
   // Sınırlar o anki pencereden (sürüklemede her adımda yeniden hesaplanır)
   const sinirHesapla = () => {
@@ -201,6 +276,31 @@ export function useHapKonumu({ ad, yan, altta, altPay = 0, ustPay = 0, ek = 0, k
     y = altta ? maxY - 2 - ek : minY + 2 + ek
   }
   x = sik(x, minX, maxX); y = sik(y, minY, maxY)
+
+  // ENGELLER: kayıtlı öğeler (meal penceresi) + bu haptan ÖNCELİKLİ haplar
+  if (!canli) {
+    const sira = HAP_ADLARI.indexOf(ad)
+    const engeller = []
+    for (const { el, pay } of engelElleri.values()) {
+      const r = el.getBoundingClientRect()
+      if (r.width > 0 && r.height > 0) engeller.push({ l: r.left - pay, t: r.top - pay, r: r.right + pay, b: r.bottom + pay })
+    }
+    for (const [hAd, a] of hapAlanlari) {
+      if (hAd === ad) continue
+      const hs = HAP_ADLARI.indexOf(hAd)
+      if (hs >= 0 && (sira < 0 || hs < sira)) engeller.push({ l: a.x, t: a.y, r: a.x + a.w, b: a.y + a.h })
+    }
+    ;[x, y] = engeldenKac(x, y, boyut.w, boyut.h, { minX, maxX, minY, maxY }, engeller)
+  }
+
+  // Dinlenme yerini diğer haplara bildir (sürüklerken değil; değişmişse)
+  useLayoutEffect(() => {
+    if (canli || !boyut.w) return
+    const o = hapAlanlari.get(ad)
+    if (o && Math.abs(o.x - x) < 0.5 && Math.abs(o.y - y) < 0.5 && Math.abs(o.w - boyut.w) < 0.5 && Math.abs(o.h - boyut.h) < 0.5) return
+    hapAlanlari.set(ad, { x, y, w: boyut.w, h: boyut.h })
+    engelBildir()
+  })
 
   // Sınırlar her çizimde güncel; pencere dinleyicileri bunları buradan okur
   const sinir = useRef({})

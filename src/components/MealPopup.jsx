@@ -13,9 +13,10 @@
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react"
 import { X, Settings2 } from "lucide-react"
-import { useIzlemeAyar } from "../data/izlemeAyar"
+import { useIzlemeAyar, VARSAYILAN } from "../data/izlemeAyar"
 import MealIzlemeAyarlari from "./MealIzlemeAyarlari"
 import DalSusu from "./DalSusu"
+import { useHapEngeli } from "./DonusDugmesi"
 
 // [en (px), ekranın en fazla yüzdesi] — en, MEAL PENCERESİ BOYUTU oranıyla çarpılıyor
 const GENISLIK = {
@@ -62,6 +63,10 @@ function UstSemse({ ac, zemin }) {
 export default function MealPopup({
   acik, sure, ayetNo, meal, besmeleMi = false,
   theme, isMobile, altBosluk = 96, ustBosluk = 0, onOlcum, onKapat,
+  // SABİT (9 Ekim 2026, Hakkında sayfası): ayar düğmesi YOK, pencere kullanıcının
+  // Kur'ân ekranındaki meal ayarlarından etkilenmez — varsayılan görünüm (dallarla
+  // sarılı, altta, orta en). Sürükleme de kapalı; Kur'ân'daki kayıtlı konumu bozmasın.
+  sabit = false,
 }) {
   const [ayar, guncelle] = useIzlemeAyar()
   const [ayarAcik, setAyarAcik] = useState(false)
@@ -91,7 +96,7 @@ export default function MealPopup({
   // yoksa pencere ÜSTTEYKEN odaklanan âyet pencerenin arkasında kalıyor.
   // Aynı değer tekrar bildirilmiyor — her render'da yeni nesne göndermek sonsuz
   // güncelleme döngüsü açardı.
-  const m = ayar.meal
+  const m = sabit ? VARSAYILAN.meal : ayar.meal
   const kokRef = useRef(null)
   const sonOlcuRef = useRef(null)
   // Dal süsü pencerenin gerçek ölçüsüyle çiziliyor (meal uzunluğu âyetten âyete değişir).
@@ -121,6 +126,10 @@ export default function MealPopup({
   }, [acik, m.konum, m.genislik, m.yaziBoyu, m.olcek])
   // Bileşen tamamen kalkarsa ölçüm de düşsün (pay kilitli kalmasın).
   useEffect(() => () => { olcumRef.current?.(null) }, [])
+  // Köprü / geri dön hapları pencerenin üstüne gelmesin: pencere ENGEL olarak
+  // kaydoluyor; büyüyüp küçüldükçe ya da sürüklendikçe haplar onu izliyor (11 Ekim 2026).
+  // 10 px pay: pencereyi saran dal/tezhip süsü kutunun dışına taşıyor.
+  useHapEngeli(kokRef, acik, 10)
 
   // ── EKRAN İÇİNDE KAL (29 Eylül 2026) ─────────────────────────────────────
   // Sürükleme payı (kaydir) dikeyde ekran boyunun %40'ına kadar kaydediliyor
@@ -179,7 +188,7 @@ export default function MealPopup({
 
   function suruklemeBasla(e) {
     // Sürükleme yalnız başlık satırından; metin kutusu kendi kaydırmasını korusun.
-    if (e.button === 2) return
+    if (sabit || e.button === 2) return
     // DÜĞMEDEN BAŞLAMAZ: `setPointerCapture` başlığa alınınca pointerup da başlığa
     // gidiyor ve alttaki düğmenin `click` olayı HİÇ oluşmuyordu — dişli ve kapat
     // çalışmıyordu (testte yakalandı).
@@ -257,7 +266,7 @@ export default function MealPopup({
           onPointerCancel={suruklemeBitir}
           style={{
             display: "flex", alignItems: "center", gap: "8px",
-            cursor: "grab", touchAction: "none", userSelect: "none",
+            cursor: sabit ? "default" : "grab", touchAction: sabit ? "auto" : "none", userSelect: "none",
             paddingBottom: "6px", marginBottom: "6px",
             borderBottom: `1px solid ${theme.border}`,
           }}
@@ -274,7 +283,7 @@ export default function MealPopup({
               <span style={{ fontSize: px(11.5), color: theme.textSecondary, marginLeft: "6px" }}>{ayetNo}. âyet</span>
             ) : null}
           </span>
-          {dugme("Meal ve izleme ayarları", Settings2, () => setAyarAcik(true))}
+          {!sabit && dugme("Meal ve izleme ayarları", Settings2, () => setAyarAcik(true))}
           {dugme("Meal penceresini kapat", X, onKapat)}
         </div>
 
@@ -294,10 +303,12 @@ export default function MealPopup({
         </div>
       </div>
 
-      <MealIzlemeAyarlari
-        acik={ayarAcik} kapat={() => setAyarAcik(false)}
-        theme={theme} isMobile={isMobile} odak="meal"
-      />
+      {!sabit && (
+        <MealIzlemeAyarlari
+          acik={ayarAcik} kapat={() => setAyarAcik(false)}
+          theme={theme} isMobile={isMobile} odak="meal"
+        />
+      )}
     </>
   )
 }

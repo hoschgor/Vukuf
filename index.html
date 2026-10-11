@@ -19,6 +19,18 @@
          daha önce çıkarıldı; geriye yalnız ad, simgeler, background_color ve
          display kaldı. Servis işçisi eklendiğinde bu satır zaten şart olacak. -->
     <link rel="manifest" href="/manifest.webmanifest" />
+    <!-- UYGULAMA SİMGESİ SEÇİMİ (11 Ekim 2026) — Ayarlar → Görünüm → Uygulama Simgesi.
+         Ana ekran simgesi, uygulama EKLENİRKEN bir kez alınıyor (iOS: apple-touch-icon,
+         Android: manifest). Seçim "acik" ise eklemeden önce iki bağlantı açık simgeli
+         dosyalara çevriliyor. Eklenmiş simge değişmez; yeniden eklemek gerekir. -->
+    <script>
+      try {
+        if (localStorage.getItem("vukuf-uygulama-simgesi") === "acik") {
+          document.querySelector('link[rel="manifest"]').href = "/manifest-acik.webmanifest"
+          document.querySelector('link[rel="apple-touch-icon"]').href = "/apple-touch-icon-acik.png"
+        }
+      } catch (e) { /* depolama kapalı — varsayılan (koyu) kalır */ }
+    </script>
     <!-- VIEWPORT — viewport-fit=cover BURADA, SABİT OLMAK ZORUNDA.
          Telefonda ölçülerek bulundu: bu satırda `viewport-fit=cover` YOKKEN iOS'ta
          web görünümü yan çevrildiğinde hiç dönmüyordu (win 440x894 sabit kalıyor,

@@ -4,6 +4,7 @@ import { useParams, useNavigate } from "react-router-dom"
 import { useApp } from "../AppContext"
 import { kitaplar, kategoriler } from "../data/kitaplar"
 import { okumaKaydet, trFold } from "../data/okumaKayit"
+import { esnekBul, esnekHazirla } from "../data/esnekArama"
 import lugatVerisi from "../data/lugat.json"
 /* ── risale-lugat.json IMPORT'U KALDIRILDI (24 Eylül 2026) ──────────────────
    `veri_denetim.py --ikizler` iki dosyanın sha256'sının AYNI olduğunu gösterdi:
@@ -353,13 +354,12 @@ const bnormR = (s) => (s || "").toLowerCase().replace(/\s+/g, " ").trim().replac
 const trLower = trFold
 
 // Bir k\u00F6k eleman\u0131n metninde aranan ifadeyi bulup Range d\u00F6nd\u00FCr\u00FCr (span'lar aras\u0131 da).
+// Ayraç duyarsız (11 Ekim 2026): "lisanıhal" aranınca metindeki "lisan-ı hâl" bulunur.
 function araliktaBul(kok, aranan) {
-  const hedef = trLower(aranan).trim()
-  if (!kok || !hedef) return null
-  const tam = trLower(kok.textContent || "")
-  const bas = tam.indexOf(hedef)
-  if (bas < 0) return null
-  const son = bas + hedef.length
+  if (!kok || !(aranan || "").trim()) return null
+  const bulunan = esnekBul(kok.textContent || "", aranan, trLower)
+  if (!bulunan) return null
+  const bas = bulunan.bas, son = bulunan.son
   const tw = document.createTreeWalker(kok, NodeFilter.SHOW_TEXT)
   const r = document.createRange()
   let node, sayac = 0, basAyar = false
@@ -1808,16 +1808,26 @@ useEffect(() => {
   if (!aramaMetni.trim() || !kitapMetni.length) { setAramaEslesmeler([]); return }
   // tamArama: birebir (büyük/küçük + şapka/aksan duyarlı); değilse trLower ile normalize
   const aranan = tamArama ? aramaMetni : trLower(aramaMetni)
+  // Esnek arama (11 Ekim 2026): "lisanıhal" / "lisan ı hal" / "lisan - ı hal" →
+  // "lisan-ı hâl" (data/esnekArama.js). Birebir (*) aramada eski davranış.
+  const sorguHazir = tamArama ? null : esnekHazirla(aramaMetni, trLower)
   const eslesmeler = []
   for (const sayfa of kitapMetni) {
     const satirlar = sayfa.metin.split("\n")
     for (let si = 0; si < satirlar.length; si++) {
       const satir = satirlar[si].replace(/^⟦C⟧/, "")
       if (satir.startsWith("§")) continue
-      const idx = (tamArama ? satir : trLower(satir)).indexOf(aranan)
-      if (idx === -1) continue
+      let idx, uzunluk
+      if (tamArama) {
+        idx = satir.indexOf(aranan); uzunluk = aranan.length
+        if (idx === -1) continue
+      } else {
+        const b = esnekBul(satir, sorguHazir, trLower)
+        if (!b) continue
+        idx = b.bas; uzunluk = b.son - b.bas
+      }
       const bas = Math.max(0, idx - 30)
-      const son = idx + aranan.length + 50
+      const son = idx + uzunluk + 50
       const onizleme = (bas > 0 ? "…" : "") + satir.slice(bas, son).trim() + (satir.length > son ? "…" : "")
       eslesmeler.push({ sayfaNo: sayfa.sayfa, satirIdx: si, onizleme })
       if (eslesmeler.length >= 300) break

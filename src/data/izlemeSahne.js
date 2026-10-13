@@ -111,6 +111,74 @@ export function resimCiz(ctx, W, H, kaynak, hareket, hiz, t, faz = 0) {
   ctx.drawImage(img, cx - vw / 2, cy - vh / 2, vw, vh, 0, 0, W, H)
 }
 
+/* ── VİDEO YERLEŞİMİ (13 Ekim 2026) ─────────────────────────────────────────
+   Kullanıcı: "videolar dikeyse ve ekran yataysa ya da tersi durumda (mobilde
+   yatay video gelirse) ne yapabiliriz?"
+     kapla  : ekranı doldurur (kenarlar kırpılır — yön farklıysa çok şey kaybolur)
+     sigdir : video bütünüyle ortada; boşluklar AYNI videonun bulanık, koyulaştırılmış
+              hâliyle dolar (siyah bant yok)
+     oto    : en/boy oranı ekranınkinden belirgin farklıysa (yön farkı) sığdır, değilse kapla
+   Telefon döndürülünce karar her karede yeniden verilir. Bulanıklık ucuz: video
+   küçük bir tuvale (≈48 px) çizilip büyütülüyor; filtre destekleniyorsa ayrıca bulanıklaştırılıyor. */
+export const VIDEO_YERLESIMLERI = [
+  { id: "oto", ad: "Otomatik" },
+  { id: "kapla", ad: "Ekranı doldur" },
+  { id: "sigdir", ad: "Tamamı görünsün" },
+]
+const SIGDIR_ESIK = 1.3
+export function videoSigar(vw, vh, W, H, yerlesim) {
+  if (yerlesim === "kapla" || !vw || !vh || !W || !H) return false
+  if (yerlesim === "sigdir") return true
+  const r = (vw / vh) / (W / H)
+  return r > SIGDIR_ESIK || r < 1 / SIGDIR_ESIK
+}
+let zeminCv = null, zeminFiltre = null
+function kaplaKutusu(vw, vh, W, H) {
+  const o1 = vw / vh, o2 = W / H
+  let sw = vw, sh = vh, sx = 0, sy = 0
+  if (o1 > o2) { sw = vh * o2; sx = (vw - sw) / 2 } else { sh = vw / o2; sy = (vh - sh) / 2 }
+  return { sx, sy, sw, sh }
+}
+/* Videonun o anki karesini (W×H) alana yerleşime göre çizer. Çizdiyse true. */
+export function videoCiz(ctx, W, H, v, yerlesim = "oto") {
+  const vw = v && v.videoWidth, vh = v && v.videoHeight
+  if (!vw || !vh) return false
+  try {
+    if (!videoSigar(vw, vh, W, H, yerlesim)) {
+      const k = kaplaKutusu(vw, vh, W, H)
+      ctx.drawImage(v, k.sx, k.sy, k.sw, k.sh, 0, 0, W, H)
+      return true
+    }
+    // 1) Zemin: aynı kare, küçük tuvalde bulanık → ekrana büyütülür
+    if (!zeminCv) zeminCv = document.createElement("canvas")
+    const KISA = 48
+    const kw = W >= H ? Math.round(KISA * W / H) : KISA
+    const kh = W >= H ? KISA : Math.round(KISA * H / W)
+    if (zeminCv.width !== kw || zeminCv.height !== kh) { zeminCv.width = kw; zeminCv.height = kh }
+    const z = zeminCv.getContext("2d")
+    if (zeminFiltre === null) zeminFiltre = typeof z.filter === "string"
+    const k = kaplaKutusu(vw, vh, kw, kh)
+    const pay = 4
+    if (zeminFiltre) z.filter = "blur(2.5px)"
+    z.drawImage(v, k.sx, k.sy, k.sw, k.sh, -pay, -pay, kw + pay * 2, kh + pay * 2)
+    if (zeminFiltre) z.filter = "none"
+    ctx.save()
+    ctx.imageSmoothingEnabled = true
+    try { ctx.imageSmoothingQuality = "high" } catch { /* yoksay */ }
+    ctx.drawImage(zeminCv, 0, 0, kw, kh, 0, 0, W, H)
+    ctx.fillStyle = "rgba(0,0,0,0.38)"
+    ctx.fillRect(0, 0, W, H)
+    // 2) Video bütünüyle ortada, kenarına çok hafif gölge
+    const s = Math.min(W / vw, H / vh)
+    const dw = vw * s, dh = vh * s
+    ctx.shadowColor = "rgba(0,0,0,0.45)"
+    ctx.shadowBlur = Math.min(W, H) * 0.03
+    ctx.drawImage(v, (W - dw) / 2, (H - dh) / 2, dw, dh)
+    ctx.restore()
+    return true
+  } catch { return false }   // kare henüz hazır değil
+}
+
 /* ── SLAYT GEÇİŞİ ───────────────────────────────────────────────────────────
    ciz1: çıkan, ciz2: gelen (ikisi de tuvali baştan sona boyar). p: 0→1 */
 export function gecisCiz(ctx, W, H, ciz1, ciz2, tip, p, sira = 0) {

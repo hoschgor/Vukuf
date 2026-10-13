@@ -34,11 +34,18 @@ export const VARSAYILAN = {
     galeri: [],          // galeriden seçilen resimlerin kimlikleri (IndexedDB, data/izlemeGaleri.js)
     slaytSure: 15,       // sn — 2+ resimde her resmin ekranda kalma süresi
     slaytKip: "sure",    // resim ne zaman değişir: "sure" (süre dolunca) | "ayet" (âyet değişince) — 13 Ekim 2026
+    videoYerlesim: "oto",  // video ekran yönüne uymazsa: "oto" | "kapla" | "sigdir" (izlemeSahne.videoCiz) — 13 Ekim 2026
+    videoHareket: "sabit", // galerideki VİDEOLAR: "sabit" (kamera zaten hareketli) | "resim" (resim hareketiyle aynı) — 13 Ekim 2026
+    slaytVideo: "sonuna", // âyet kipinde VİDEO: "sonuna" (bitince sonraki âyetle geçer) | "ayetle" (her âyette geçer, dönünce kaldığı yerden) — 13 Ekim 2026
     slaytGecis: "solma", // solma | yakinlas | kayma | silme | daire | perde | karisik
     // ── Renkler (8 Ekim 2026) ──
     yaziRengi: null,     // null = otomatik (koyu zeminde açık, açıkta koyu) | "#rrggbb"
     isaretRenk: "kapali",// vakıf vb. işaretler: kapali | mushaf | vurgu | ozel
     isaretOzel: "#e0503c",
+    // ── Süs renkleri (13 Ekim 2026) — null = otomatik (çerçevenin vurgu rengi) ──
+    sureAdiRengi: null,  // Arapça sûre adı hattı
+    kaynakRengi: null,   // Türkçe kaynak satırı ("Bakara sûresi, 255. âyet")
+    rahleRengi: null,    // rahle süsü
   },
 }
 

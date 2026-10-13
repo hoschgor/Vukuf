@@ -287,3 +287,39 @@ export function RenkSecici({ theme, deger, onSec, oneriler = [], sonRenkler = []
     </div>
   )
 }
+
+/* SÜS RENKLERİ (13 Ekim 2026) — kullanıcı: "âyet isimleri (Arapça ve Türkçe) ve
+   rahle görselinin de rengi değiştirilebilmeli." Üç ayrı renk için üç ayrı satır
+   yerine TEK satır: üstte hangi öğenin boyandığı (renk noktasıyla), altında
+   aynı renk seçici. Otomatik = çerçevenin vurgu rengi (altın).
+   degerler: { sureAdi, kaynak, rahle } (null = otomatik) · onSec(alan, renk) */
+const SUS_ALANLARI = [
+  { id: "sureAdi", ad: "Sûre adı", alt: "Arapça" },
+  { id: "kaynak",  ad: "Kaynak",   alt: "Türkçe" },
+  { id: "rahle",   ad: "Rahle",    alt: "süs" },
+]
+export function SusRenkleri({ theme, degerler = {}, onSec, oneriler = [], sonRenkler = [], onSonEkle }) {
+  const [alan, setAlan] = useState("sureAdi")
+  const nokta = (renk) => function Nokta() {
+    return (
+      <span style={{
+        width: "10px", height: "10px", borderRadius: "50%", flexShrink: 0,
+        background: renk || "linear-gradient(135deg, #d9b45a, #8a6a1f)",
+        boxShadow: "0 0 0 1px rgba(0,0,0,0.18)",
+      }} />
+    )
+  }
+  return (
+    <>
+      <Secim theme={theme} kucuk deger={alan} onSec={setAlan}
+        secenekler={SUS_ALANLARI.map(a => ({ ...a, Ikon: nokta(degerler[a.id]) }))} />
+      <div style={{ marginTop: "8px" }}>
+        <RenkSecici theme={theme} deger={degerler[alan] || null} onSec={v => onSec?.(alan, v)}
+          oneriler={oneriler} sonRenkler={sonRenkler} onSonEkle={onSonEkle} />
+      </div>
+      <div style={{ fontSize: "10.5px", color: theme.textSecondary, opacity: 0.8, margin: "6px 2px 0" }}>
+        Otomatik: çerçeveyle aynı altın tonu.
+      </div>
+    </>
+  )
+}

@@ -23,14 +23,90 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 import { useEffect, useMemo, useRef, useState } from "react"
-import { X, Plus, Loader2, Film, Pencil, Timer, Layers, Shuffle, GripHorizontal, Image as ImageIcon } from "lucide-react"
+import { X, Plus, Loader2, Film, Pencil, Timer, Layers, Shuffle, GripHorizontal, Trash2, FileVideo, Image as ImageIcon } from "lucide-react"
 import {
   DndContext, closestCenter, MouseSensor, TouchSensor, KeyboardSensor, useSensor, useSensors,
 } from "@dnd-kit/core"
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, rectSortingStrategy } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
 import { useIzlemeAyar, ayarOku, ayarYaz } from "../data/izlemeAyar"
-import { galeriyeEkle, galeridenSil, galeriBlobu, AZAMI_VIDEO_MB } from "../data/izlemeGaleri"
+import { galeriyeEkle, galeridenSil, galeriBlobu, AZAMI_VIDEO_MB, VIDEO_UZANTILARI } from "../data/izlemeGaleri"
+import { useDonusturme, donusturVeEkle, donusturmeyiDurdur, donusturmeSonucunuTemizle, DONUSTURUCU_MB } from "../data/videoDonustur"
+
+// Dosya seçicide video/* bazı sistemlerde AVI, MKV, MTS gibi dosyaları gizliyor → uzantılar da yazılıyor
+const KABUL = ["image/*", "video/*", ...VIDEO_UZANTILARI.map(u => "." + u)].join(",")
+
+/* DÖNÜŞTÜRME KARTI (13 Ekim 2026) — doğrudan eklenemeyen videolar için öneri,
+   sürerken ilerleme, bitince sonuç. Dönüştürme modül düzeyinde sürer. */
+function DonusturmeKarti({ theme, bekleyen, onVazgec, onBasla }) {
+  const d = useDonusturme()
+  const ac = theme.accent
+  const kart = {
+    marginTop: "12px", padding: "12px 12px 10px", borderRadius: "12px",
+    border: `1px solid ${theme.border}`, background: `${ac}0b`, fontSize: "12px", lineHeight: 1.5,
+  }
+  const dugme = (birincil) => ({
+    padding: "7px 14px", borderRadius: "999px", fontSize: "12px", fontWeight: 700, fontFamily: "inherit", cursor: "pointer",
+    border: birincil ? "none" : `1px solid ${theme.border}`, background: birincil ? ac : "transparent", color: birincil ? "#fff" : theme.text,
+  })
+  const baslik = (metin) => (
+    <div style={{ display: "flex", alignItems: "center", gap: "8px", fontWeight: 700, fontSize: "12.5px", color: theme.text }}>
+      <FileVideo size={15} style={{ color: ac, flexShrink: 0 }} />{metin}
+    </div>
+  )
+  if (d.calisiyor) {
+    const yuzde = Math.round((d.oran || 0) * 100)
+    const metin = d.asama === "indiriliyor" ? `Dönüştürücü indiriliyor · %${yuzde}`
+      : d.asama === "donusturuluyor" ? `Dönüştürülüyor${d.adet > 1 ? ` (${d.sira}/${d.adet})` : ""} · %${yuzde}`
+      : "Hazırlanıyor…"
+    return (
+      <div style={kart} role="status">
+        {baslik(metin)}
+        {d.ad && <div style={{ color: theme.textSecondary, marginTop: "2px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{d.ad}</div>}
+        <div style={{ height: "5px", borderRadius: "3px", background: `${ac}22`, margin: "8px 0", overflow: "hidden" }}>
+          <div style={{ width: `${yuzde}%`, height: "100%", background: ac, transition: "width .3s" }} />
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <span style={{ flex: 1, color: theme.textSecondary, fontSize: "11px" }}>Bu pencere kapatılsa da dönüştürme sürer.</span>
+          <button onClick={donusturmeyiDurdur} style={dugme(false)}>Durdur</button>
+        </div>
+      </div>
+    )
+  }
+  if (bekleyen.length) {
+    const format = bekleyen.filter(b => b.sebep === "format"), buyuk = bekleyen.filter(b => b.sebep === "buyuk")
+    return (
+      <div style={kart}>
+        {baslik(bekleyen.length > 1 ? `${bekleyen.length} video dönüştürülerek eklenebilir` : "Video dönüştürülerek eklenebilir")}
+        <div style={{ color: theme.textSecondary, margin: "4px 0 8px" }}>
+          {format.length > 0 && <div>{format.map(b => b.ad).join(", ")}: bu cihaz bu biçimi doğrudan oynatamıyor.</div>}
+          {buyuk.length > 0 && <div>{buyuk.map(b => b.ad).join(", ")}: {AZAMI_VIDEO_MB} MB'tan büyük.</div>}
+          <div style={{ marginTop: "4px" }}>
+            Uygun biçime çevrilip küçültülerek eklenebilir; videonun en çok ilk 2 dakikası sessiz olarak alınır.
+            İlk seferde yaklaşık {DONUSTURUCU_MB} MB'lık dönüştürücü indirilir; işlem videoya ve cihaza göre birkaç dakika sürebilir.
+          </div>
+        </div>
+        <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end" }}>
+          <button onClick={onVazgec} style={dugme(false)}>Vazgeç</button>
+          <button onClick={onBasla} style={dugme(true)}>Dönüştür ve ekle</button>
+        </div>
+      </div>
+    )
+  }
+  if (d.basarisiz.length || d.hata) {
+    return (
+      <div style={{ ...kart, display: "flex", alignItems: "flex-start", gap: "8px" }}>
+        <span style={{ flex: 1, color: "#c0392b" }}>
+          {d.hata ? "Dönüştürücü indirilemedi; internet bağlantısı varken yeniden denenebilir."
+            : `${d.basarisiz.join(", ")} dönüştürülemedi.`}
+          {d.biten > 0 ? ` ${d.biten} video eklendi.` : ""}
+        </span>
+        <button onClick={donusturmeSonucunuTemizle} aria-label="Kapat" style={{ border: "none", background: "transparent", color: theme.textSecondary, cursor: "pointer", padding: 0 }}><X size={15} /></button>
+      </div>
+    )
+  }
+  return null
+}
 import { GECISLER } from "../data/izlemeSahne"
 import { Secim, AyarBaslik, useGaleriOgeleri } from "./AyarOgeleri"
 
@@ -116,6 +192,8 @@ export function GaleriOzeti({ theme, galeri, ogeler, iz, not, onDuzenle }) {
   const slayt = galeri.length >= 2
     ? (iz.slaytKip === "ayet" ? "âyet değişince" : `${iz.slaytSure} sn`)
     : null
+  const don = useDonusturme()
+  const ekNot = [not, don.calisiyor ? `video dönüştürülüyor %${Math.round((don.oran || 0) * 100)}` : ""].filter(Boolean).join(" · ")
   return (
     <div style={{
       display: "flex", alignItems: "center", gap: "10px", marginTop: "10px",
@@ -126,7 +204,7 @@ export function GaleriOzeti({ theme, galeri, ogeler, iz, not, onDuzenle }) {
           {galeri.length >= 2 ? "Slayt gösterisi" : "Galerim"}
         </span>
         <span style={{ display: "block", fontSize: "11px", color: theme.textSecondary, marginTop: "1px", lineHeight: 1.35 }}>
-          {sayim}{slayt ? ` · ${slayt}` : ""}{not ? ` · ${not}` : ""}
+          {sayim}{slayt ? ` · ${slayt}` : ""}{ekNot ? ` · ${ekNot}` : ""}
         </span>
       </span>
       <button onClick={onDuzenle} style={{
@@ -201,9 +279,17 @@ export default function GaleriDuzenleyici({ acik, kapat, theme, isMobile, baglam
   const ogeler = useGaleriOgeleri(acik ? galeri : [], galeriBlobu)
   const [ekleniyor, setEkleniyor] = useState(false)
   const [bilgi, setBilgi] = useState("")
+  const [bekleyen, setBekleyen] = useState([])      // dönüştürülerek eklenebilecek videolar
   const [geriAl, setGeriAl] = useState(null)       // { id, sira } — kaldırılan, henüz silinmeyen
   const geriAlRef = useRef(null)
   const zamanRef = useRef(null)
+  // TÜMÜNÜ KALDIR (13 Ekim 2026, kullanıcı: "eklenen görsel ya da videoları tek seferde
+  // uyarı ile silebilmeliyiz"). Önce onay penceresi; onaylanınca dosyalar cihazdan
+  // hemen silinir (yer açılır). Tek tek kaldırmadaki "Geri al" burada yok — uyarı bunu söyler.
+  const [tumOnay, setTumOnay] = useState(false)
+  const [siliniyor, setSiliniyor] = useState(false)
+  const tumOnayRef = useRef(false)
+  tumOnayRef.current = tumOnay
   const ac = theme.accent
 
   const sensorler = useSensors(
@@ -221,12 +307,18 @@ export default function GaleriDuzenleyici({ acik, kapat, theme, isMobile, baglam
     setGeriAl(null)
     if (!(ayarOku().izleme.galeri || []).includes(g.id)) galeridenSil(g.id)
   }
-  useEffect(() => { if (!acik) kesinlestir() }, [acik])   // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (!acik) { kesinlestir(); setTumOnay(false); setBekleyen([]) } }, [acik])   // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => () => kesinlestir(), [])                // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!acik) return
-    const tus = (e) => { if (e.key === "Escape") { e.stopPropagation(); kapat?.() } }
+    // Onay penceresi açıksa Esc yalnız onu kapatır
+    const tus = (e) => {
+      if (e.key !== "Escape") return
+      e.stopPropagation()
+      if (tumOnayRef.current) setTumOnay(false)
+      else kapat?.()
+    }
     document.addEventListener("keydown", tus, true)
     return () => document.removeEventListener("keydown", tus, true)
   }, [acik, kapat])
@@ -252,6 +344,14 @@ export default function GaleriDuzenleyici({ acik, kapat, theme, isMobile, baglam
     clearTimeout(zamanRef.current)
     zamanRef.current = setTimeout(kesinlestir, 5000)
   }
+  const tumunuKaldir = async () => {
+    kesinlestir()                                  // bekleyen tek kaldırma da şimdi silinir
+    const hepsi = [...(ayarOku().izleme.galeri || [])]
+    setSiliniyor(true)
+    guncelle("izleme", { galeri: [], ...(ayarOku().izleme.arka === "galeri" ? { arka: "zumrut" } : {}) })
+    try { await Promise.all(hepsi.map(id => galeridenSil(id))) }
+    finally { setSiliniyor(false); setTumOnay(false) }
+  }
   const geriGetir = () => {
     const g = geriAlRef.current
     if (!g) return
@@ -272,8 +372,10 @@ export default function GaleriDuzenleyici({ acik, kapat, theme, isMobile, baglam
         onEklendi?.(yeni)
       }
       const at = yeni.atlanan || []
-      if (at.some(a => a.sebep === "buyuk")) setBilgi(`${AZAMI_VIDEO_MB} MB'tan büyük videolar eklenemedi.`)
-      else if (at.length) setBilgi("Bazı dosyalar okunamadı, eklenemedi.")
+      const donusur = at.filter(a => a.dosya && (a.sebep === "format" || a.sebep === "buyuk"))
+      if (donusur.length) setBekleyen(b => [...b, ...donusur])
+      const okunamayan = at.filter(a => !donusur.includes(a))
+      if (okunamayan.length) setBilgi(`${okunamayan.map(a => a.ad).join(", ")} okunamadı, eklenemedi.`)
     } finally { setEkleniyor(false) }
   }
 
@@ -333,7 +435,7 @@ export default function GaleriDuzenleyici({ acik, kapat, theme, isMobile, baglam
                   {ekleniyor ? <Loader2 size={20} className="gd-don" /> : <Plus size={20} />}
                   <span style={{ fontSize: "11px", fontWeight: 700 }}>{ekleniyor ? "Ekleniyor" : "Ekle"}</span>
                   {!ekleniyor && <span style={{ fontSize: "9.5px", color: theme.textSecondary }}>resim · video</span>}
-                  <input type="file" accept="image/*,video/*" multiple disabled={ekleniyor} style={{ display: "none" }}
+                  <input type="file" accept={KABUL} multiple disabled={ekleniyor} style={{ display: "none" }}
                     onChange={(e) => {
                       const fs = Array.from((e.target && e.target.files) || [])
                       try { e.target.value = "" } catch { /* yoksay */ }
@@ -351,6 +453,8 @@ export default function GaleriDuzenleyici({ acik, kapat, theme, isMobile, baglam
             </div>
           )}
           {bilgi && <div style={{ ...ipucu, color: "#c0392b" }}>{bilgi}</div>}
+          <DonusturmeKarti theme={theme} bekleyen={bekleyen} onVazgec={() => setBekleyen([])}
+            onBasla={() => { donusturVeEkle(bekleyen.map(b => b.dosya)); setBekleyen([]) }} />
 
           {/* GÖSTERİM — iki ya da daha fazla öğe varken */}
           {galeri.length >= 2 && (
@@ -365,6 +469,14 @@ export default function GaleriDuzenleyici({ acik, kapat, theme, isMobile, baglam
                     secenekler={SLAYT_SECENEKLERI.map(sn => ({ id: sn, ad: `${sn} sn` }))} />
                 </>
               )}
+              {/* Âyet kipinde video: sonuna kadar mı oynasın, âyetle mi değişsin (13 Ekim 2026) */}
+              {iz.slaytKip === "ayet" && videoVar && (
+                <>
+                  <AyarBaslik theme={theme} ikon={Film}>Videolar</AyarBaslik>
+                  <Secim theme={theme} kucuk deger={iz.slaytVideo === "ayetle" ? "ayetle" : "sonuna"} onSec={v => guncelle("izleme", { slaytVideo: v })}
+                    secenekler={[{ id: "sonuna", ad: "Sonuna kadar", Ikon: Film }, { id: "ayetle", ad: "Âyetle değişsin", Ikon: Layers }]} />
+                </>
+              )}
               <AyarBaslik theme={theme} ikon={Shuffle}>Geçiş</AyarBaslik>
               <Secim theme={theme} kucuk deger={iz.slaytGecis} onSec={v => guncelle("izleme", { slaytGecis: v })} secenekler={GECISLER} />
             </>
@@ -373,13 +485,62 @@ export default function GaleriDuzenleyici({ acik, kapat, theme, isMobile, baglam
           <p style={ipucu}>
             {videoVar
               ? (iz.slaytKip === "ayet"
-                ? "Videolar sessiz oynar; âyet sürdükçe başa sararak devam eder."
+                ? (iz.slaytVideo === "ayetle"
+                  ? "Videolar sessiz oynar ve her âyette sıradaki öğeye geçilir; video tekrar geldiğinde kaldığı yerden devam eder."
+                  : "Videolar sessiz oynar ve sonuna kadar ekranda kalır; bitince bir sonraki âyetle sıradaki öğeye geçilir. Resimler her âyette değişir.")
                 : "Videolar sessiz oynar ve kendi süresince ekranda kalır.")
               : "Videolar da eklenebilir; sesleri kullanılmaz, arka planda sessiz oynar."}
             {baglam === "gorsel" && galeri.length > 1 ? " Fotoğrafta ilk öğe (kapak) kullanılır; slayt videoda oynar." : ""}
             {" "}Galeri izleme modu ve görsel oluşturmada ortaktır.
           </p>
+
+          {/* TÜMÜNÜ KALDIR — iki ya da daha fazla öğede (tek öğe zaten ✕ ile kalkar) */}
+          {galeri.length >= 2 && (
+            <div style={{ display: "flex", justifyContent: "center", marginTop: "14px" }}>
+              <button onClick={() => setTumOnay(true)} style={{
+                display: "inline-flex", alignItems: "center", gap: "6px", padding: "7px 14px",
+                borderRadius: "999px", border: `1px solid ${theme.border}`, background: "transparent",
+                color: "#c0392b", fontSize: "12px", fontWeight: 600, fontFamily: "inherit", cursor: "pointer",
+              }}><Trash2 size={14} />Tümünü kaldır</button>
+            </div>
+          )}
         </div>
+
+        {/* TÜMÜNÜ KALDIR ONAYI */}
+        {tumOnay && (
+          <div onClick={() => !siliniyor && setTumOnay(false)} style={{
+            position: "absolute", inset: 0, zIndex: 2, background: "rgba(0,0,0,0.38)",
+            display: "flex", alignItems: "center", justifyContent: "center", padding: "20px",
+          }}>
+            <div role="alertdialog" aria-modal="true" aria-label="Galerinin tamamı kaldırılsın mı?" onClick={e => e.stopPropagation()} style={{
+              width: "min(340px, 100%)", background: theme.surface, borderRadius: "16px", padding: "18px 18px 14px",
+              boxShadow: "0 10px 32px rgba(0,0,0,0.35)", border: `1px solid ${theme.border}`,
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <span style={{
+                  width: "34px", height: "34px", borderRadius: "10px", flexShrink: 0, display: "flex",
+                  alignItems: "center", justifyContent: "center", background: "#c0392b18", color: "#c0392b",
+                }}><Trash2 size={17} /></span>
+                <span style={{ fontSize: "14.5px", fontWeight: 700 }}>Galerinin tamamı kaldırılsın mı?</span>
+              </div>
+              <p style={{ fontSize: "12.5px", color: theme.textSecondary, lineHeight: 1.55, margin: "10px 0 14px" }}>
+                {[sayim, boyutYaz(toplamBoyut)].filter(Boolean).join(" · ")} bu cihazdan silinecek. Bu işlem geri alınamaz;
+                dilediğiniz zaman yeniden ekleyebilirsiniz.
+              </p>
+              <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end" }}>
+                <button onClick={() => setTumOnay(false)} disabled={siliniyor} autoFocus style={{
+                  padding: "8px 16px", borderRadius: "999px", border: `1px solid ${theme.border}`, background: "transparent",
+                  color: theme.text, fontSize: "13px", fontWeight: 600, fontFamily: "inherit", cursor: "pointer",
+                }}>Vazgeç</button>
+                <button onClick={tumunuKaldir} disabled={siliniyor} style={{
+                  display: "inline-flex", alignItems: "center", gap: "6px",
+                  padding: "8px 16px", borderRadius: "999px", border: "none", background: "#c0392b",
+                  color: "#fff", fontSize: "13px", fontWeight: 700, fontFamily: "inherit", cursor: siliniyor ? "default" : "pointer",
+                }}>{siliniyor && <Loader2 size={14} className="gd-don" />}Tümünü kaldır</button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* GERİ AL */}
         {geriAl && (

@@ -81,11 +81,57 @@ async function kucult(dosya) {
    Video KÜÇÜLTÜLMÜYOR (tarayıcıda yeniden kodlamak hem çok yavaş hem pil yer);
    olduğu gibi saklanıyor, bu yüzden boyut sınırı var. Oynatırken hep SESSİZ. */
 export const AZAMI_VIDEO_MB = 150
-const VIDEO_UZANTI = /\.(mp4|m4v|mov|webm|3gp)$/i
+
+/* GENİŞ BİÇİM DESTEĞİ (13 Ekim 2026, kullanıcı: "farklı video formatları da
+   desteklenebilmeli, geniş bir skala sunmalı").
+   1) Uzantıdan tanınan her video kabul ediliyor (türü boş ya da tuhaf gelse de).
+   2) Saklamadan önce BU CİHAZDA OYNUYOR MU diye yoklanıyor (aynı Blob ile).
+      Oynamıyorsa ya da 150 MB'ı aşıyorsa `atlanan`a { sebep: "format" | "buyuk",
+      dosya } olarak dönüyor; düzenleyici bunları data/videoDonustur.js ile MP4'e
+      çevirip küçülterek eklemeyi öneriyor (AVI, WMV, FLV, MPEG, MKV, HEVC…). */
+export const VIDEO_UZANTILARI = ["mp4", "m4v", "mov", "qt", "webm", "mkv", "3gp", "3g2", "ogv", "avi", "wmv", "asf",
+  "flv", "f4v", "mpg", "mpeg", "mpe", "m2v", "ts", "mts", "m2ts", "vob", "mxf", "dv", "divx", "xvid", "rm", "rmvb", "hevc", "264", "265"]
+const VIDEO_UZANTI = new RegExp(`\\.(${VIDEO_UZANTILARI.join("|")})$`, "i")
+const UZANTI_TURU = {
+  mp4: "video/mp4", m4v: "video/mp4", mov: "video/quicktime", qt: "video/quicktime", webm: "video/webm",
+  mkv: "video/x-matroska", "3gp": "video/3gpp", "3g2": "video/3gpp2", ogv: "video/ogg", avi: "video/x-msvideo",
+  wmv: "video/x-ms-wmv", asf: "video/x-ms-asf", flv: "video/x-flv", mpg: "video/mpeg", mpeg: "video/mpeg", ts: "video/mp2t",
+  mts: "video/mp2t", m2ts: "video/mp2t",
+}
 export const videoMu = (b) => !!b && /^video\//.test(b.type || "")
+export const videoDosyasiMi = (f) => !!f && (/^video\//.test(f.type || "") || VIDEO_UZANTI.test(f.name || ""))
+const uzanti = (ad) => ((ad || "").match(/\.([a-z0-9]+)$/i)?.[1] || "").toLowerCase()
+
+/* Bu tarayıcı bu videoyu GÖSTEREBİLİYOR mu? İlk karenin boyutu gelirse evet.
+   Hata ya da görüntüsüz (yalnız ses / çözülemeyen kodek) → hayır. */
+export function videoOynarMi(blob) {
+  return new Promise((cz) => {
+    let bitti = false, url = ""
+    const v = document.createElement("video")
+    const son = (ok) => {
+      if (bitti) return
+      bitti = true; clearTimeout(zaman); clearTimeout(bekle)
+      try { v.removeAttribute("src"); v.load() } catch { /* yoksay */ }
+      try { URL.revokeObjectURL(url) } catch { /* yoksay */ }
+      cz(ok)
+    }
+    const zaman = setTimeout(() => son(false), 15000)
+    let bekle = 0
+    v.muted = true; v.playsInline = true; v.preload = "metadata"
+    v.onloadedmetadata = () => {
+      if (v.videoWidth > 0 && v.videoHeight > 0) son(true)
+      else bekle = setTimeout(() => son(v.videoWidth > 0), 2500)   // boyut geç gelebiliyor
+    }
+    v.onloadeddata = () => { if (v.videoWidth > 0) son(true) }
+    v.onerror = () => son(false)
+    try { url = URL.createObjectURL(blob); v.src = url } catch { son(false) }
+  })
+}
 
 /* Seçilen dosyaları ekler, eklenebilenlerin kimliklerini (seçim sırasıyla) döndürür.
-   Eklenemeyenler dizinin `atlanan` alanında: [{ ad, sebep: "buyuk" | "okunamadi" }]. */
+   Eklenemeyenler dizinin `atlanan` alanında:
+     [{ ad, sebep: "buyuk" | "format" | "okunamadi", dosya? }]
+   "buyuk" ve "format" olanlarda `dosya` var → dönüştürülerek eklenebilir. */
 export async function galeriyeEkle(dosyalar) {
   const kimlikler = []
   const atlanan = []
@@ -93,10 +139,12 @@ export async function galeriyeEkle(dosyalar) {
     if (!f) continue
     const tur = f.type || ""
     let b = null
-    if (/^video\//.test(tur) || (!tur && VIDEO_UZANTI.test(f.name || ""))) {
-      if (f.size > AZAMI_VIDEO_MB * 1024 * 1024) { atlanan.push({ ad: f.name, sebep: "buyuk" }); continue }
-      // Türü boş gelen dosyaya (bazı Android galerileri) tür verilir — oynatıcı tanısın
-      b = tur ? f : new Blob([f], { type: "video/mp4" })
+    if (videoDosyasiMi(f)) {
+      if (f.size > AZAMI_VIDEO_MB * 1024 * 1024) { atlanan.push({ ad: f.name, sebep: "buyuk", dosya: f }); continue }
+      // Türü boş ya da genel gelen dosyaya uzantısından tür verilir — oynatıcı tanısın
+      const dogruTur = /^video\//.test(tur) ? tur : (UZANTI_TURU[uzanti(f.name)] || "video/mp4")
+      b = dogruTur === tur ? f : new Blob([f], { type: dogruTur })
+      if (!(await videoOynarMi(b))) { atlanan.push({ ad: f.name, sebep: "format", dosya: f }); continue }
     } else if (/^image\//.test(tur || "image/")) {
       b = await kucult(f)
     }

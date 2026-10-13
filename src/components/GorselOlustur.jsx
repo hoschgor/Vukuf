@@ -8,10 +8,10 @@ import {
 import { DESENLER, GORSELLER } from "../data/arkaplanlar"
 // İzleme modunun sahnesi (hareket / hava / ışık) ve ortak galeri — 7 Ekim 2026'da
 // görsel oluşturmaya da aktarıldı (kullanıcı: "görsel oluşturmada olmayan kısımları aktaralım").
-import { HAREKETLER as SAHNE_HAREKETLERI, HIZLAR, HAVALAR, ISIKLAR, GECIS_SN, resimCiz, gecisCiz, havaKur, havaCiz, isikCiz } from "../data/izlemeSahne"
+import { HAREKETLER as SAHNE_HAREKETLERI, HIZLAR, HAVALAR, ISIKLAR, GECIS_SN, resimCiz, gecisCiz, havaKur, havaCiz, isikCiz, videoCiz, videoSigar, VIDEO_YERLESIMLERI } from "../data/izlemeSahne"
 import { galeriBlobu, videoKaresi } from "../data/izlemeGaleri"
 import { useIzlemeAyar, ayarOku, ayarYaz } from "../data/izlemeAyar"
-import { Secim, Anahtar, AyarBaslik, ArkaPlanIzgara, desenOnizleme, useGaleriOgeleri } from "./AyarOgeleri"
+import { Secim, Anahtar, AyarBaslik, ArkaPlanIzgara, desenOnizleme, useGaleriOgeleri, SusRenkleri } from "./AyarOgeleri"
 import GaleriDuzenleyici, { GaleriKolaj, GaleriOzeti } from "./GaleriDuzenleyici"
 // Özel okuyuş işaretlerinin (kasr/medd/nûn-i sağîre) kuralı TEK YERDE, mushaf
 // sayfasıyla aynı tabloda duruyor. Burada yalnız ÇİZİM var, kural yok.
@@ -593,7 +593,15 @@ export async function gorselCiz(ctx, ayar) {
   const rahle = !!ayar.rahle
   // rahleDipte: rahle yazı akışında değil, içerik kutusunun DİBİNDE ortalı durur
   // (izleme modu, 7 Ekim 2026). Yazı bloğu kalan alanda ortalanır.
-  const rahleDipte = rahle && !!ayar.rahleDipte
+  /* DİP SABİT (13 Ekim 2026, kullanıcı: "sûre adı ve kaynak metni takip ederek aşağı
+     iniyor; rahleye yakın sabit kalsın. Rahleyi daha aşağı alıp kaynakları hemen
+     üzerine alalım, değişen kısmı onun üstünden verelim; böylece âyet değişince
+     yalnız rakam değişir."). Açıkken kaynak satırı + sûre adı + rahle bir DİP GRUBU
+     olur: SABİT ölçekle çizilir ve çerçevenin dibine oturur. Âyet ve meal kalan
+     alanda (kendi ölçeğiyle) ortalanır. İzleme modunda (rahleDipte) ve videoda açık;
+     tek fotoğrafta eski akış sürer. */
+  const dipSabit = ayar.dipSabit !== undefined ? !!ayar.dipSabit : !!ayar.rahleDipte
+  const rahleDipte = rahle && !!ayar.rahleDipte && !dipSabit
   /* GÜVENLİ ALAN — yalnız TAM EKRANDA kullanılıyor (izleme modu). Arka plan bütün
      ekranı kaplamaya devam ediyor, çerçeve ve yazı bu paylar kadar içeri alınıyor;
      böylece çentiğin/ana ekran çizgisinin altında yazı kalmıyor ama kenarlarda
@@ -641,6 +649,12 @@ export async function gorselCiz(ctx, ayar) {
   const vurguRenk = koyuZemin ? "#d9b45a" : "#8a6a1f"
   // İşaret rengi (vakıf vb.) — ayar.isaretRenk: "kapali"|"mushaf"|"vurgu"|"ozel"|"#rrggbb"
   const isaretRenk = isaretRengiCoz(ayar.isaretRenk, ayar.isaretOzel, koyuZemin, vurguRenk)
+  // SÜS RENKLERİ (13 Ekim 2026): sûre adı hattı (Arapça), kaynak satırı (Türkçe sûre
+  // adı / âyet) ve rahle ayrı ayrı boyanabiliyor; seçilmemişse çerçeveyle aynı vurgu rengi.
+  const renkMi = (c) => (/^#[0-9a-fA-F]{6}$/.test(c || "") ? c : null)
+  const sureAdiRenk = renkMi(ayar.sureAdiRengi) || vurguRenk
+  const kaynakRenk  = renkMi(ayar.kaynakRengi)  || vurguRenk
+  const rahleRenk   = renkMi(ayar.rahleRengi)   || vurguRenk
   const solukRenk = koyuZemin ? "rgba(246,241,230,0.62)" : "rgba(29,26,20,0.62)"
 
   // 3) ÇERÇEVE
@@ -780,7 +794,7 @@ export async function gorselCiz(ctx, ayar) {
       bloklar.push({ tip: "meal", boy: b, satirlar: sat, yuk: sat.length * satirYuk, satirYuk })
       toplam += sat.length * satirYuk
     }
-    if (kaynakVar || sureAdiVar) {
+    if ((kaynakVar || sureAdiVar) && !dipSabit) {
       const bo = S * 0.05 * olcek
       bloklar.push({ tip: "bosluk", yuk: bo })
       toplam += bo
@@ -873,21 +887,45 @@ export async function gorselCiz(ctx, ayar) {
   // Üst sınır: çok uzun ekranlarda (tam ekran 9:19.5 gibi) yazı kutuda küçük kalmasın
   const enBoy = Math.max(W, H) / Math.min(W, H)
   const enBuyukOlcek = 1.35 + Math.min(0.35, Math.max(0, enBoy - 1.8) * 0.5)
+
+  // DİP GRUBU (dipSabit): SABİT ölçek → âyetten âyete aynı boy ve aynı yer
+  const DIP_OLCEK = 1.2
+  const DIP_TIPLERI = new Set(["kaynakHat", "kaynak", "sureAdi", "rahle"])
+  let dipBloklar = [], dipUst = 0
+  if (dipSabit) {
+    dipBloklar = duzen(DIP_OLCEK).bloklar.filter(b => DIP_TIPLERI.has(b.tip))
+    const dipYuk = dipBloklar.reduce((t, b) => t + b.yuk, 0)
+    // Rahle çerçeve çizgisine yakın: içerik kutusunun dibinden daha aşağıda
+    const dipAlt = H - gAlt - (cerceve === "yok" ? S * 0.07 : pay + S * 0.022)
+    dipUst = dipAlt - dipYuk
+  }
+  const akisSiniri = dipSabit ? Math.max(0, dipUst - S * 0.035 - icPayUst) : kutuH
+  const akisOlc = (o) => {
+    const d = duzen(o)
+    if (!dipSabit) return d
+    const bl = d.bloklar.filter(b => !DIP_TIPLERI.has(b.tip))
+    return { bloklar: bl, toplam: bl.reduce((t, b) => t + b.yuk, 0) }
+  }
   let alt = 0.45, ust = enBuyukOlcek, olcek = 0.45
   for (let i = 0; i < 26; i++) {
     const orta = (alt + ust) / 2
-    if (duzen(orta).toplam <= kutuH) { olcek = orta; alt = orta } else ust = orta
+    if (akisOlc(orta).toplam <= akisSiniri) { olcek = orta; alt = orta } else ust = orta
   }
-  const sonuc = duzen(olcek)
+  const sonuc = akisOlc(olcek)
+  // Dip grubu akışın sonuna "atla" işaretiyle eklenir: çizim y'yi dip grubunun üstüne taşır
+  if (dipSabit && dipBloklar.length) sonuc.bloklar.push({ tip: "atla", hedef: dipUst, yuk: 0 }, ...dipBloklar)
 
   // Rahle dipteyse yazı bloğu, rahlenin üstünde KALAN alanda ortalanır.
   const dipRahle = sonuc.bloklar.find(b => b.tip === "rahle" && b.dipte)
-  const akisToplam = sonuc.toplam - (dipRahle ? dipRahle.yuk : 0)
-  const akisH = kutuH - (dipRahle ? dipRahle.yuk : 0)
-  let y = Math.max(icPayUst, icPayUst + (akisH - akisToplam) / 2)
+  const akisToplam = dipSabit ? sonuc.bloklar.filter(b => !DIP_TIPLERI.has(b.tip)).reduce((t, b) => t + b.yuk, 0)
+    : sonuc.toplam - (dipRahle ? dipRahle.yuk : 0)
+  const akisH = dipSabit ? akisSiniri : kutuH - (dipRahle ? dipRahle.yuk : 0)
+  // Dip sabitken yazı kalan alanda göz ortasına (biraz yukarı) yerleşir
+  let y = Math.max(icPayUst, icPayUst + (akisH - akisToplam) * (dipSabit ? 0.46 : 0.5))
   ctx.textAlign = "center"
   ctx.textBaseline = "top"
   for (const b of sonuc.bloklar) {
+    if (b.tip === "atla") { y = b.hedef; continue }
     if (b.tip === "arapca") {
       // Satır TEK PARÇA çizilir; vakıf/uzatma/tecvid işaretleri metnin içindedir ve
       // konumlarını fontun kendi şekillendirmesi belirler (bizim hesabımız yok).
@@ -952,12 +990,12 @@ export async function gorselCiz(ctx, ayar) {
       y += b.yuk
     } else if (b.tip === "kaynak") {
       ctx.font = kucukFontYap(b.boy)
-      ctx.fillStyle = vurguRenk
+      ctx.fillStyle = kaynakRenk
       for (const st of b.satirlar) { ctx.fillText(st, W / 2, y + (b.satirYuk - b.boy) / 2); y += b.satirYuk }
     } else if (b.tip === "sureAdi") {
       // Ölçülen glif kutusu blok içine ortalanıyor; taban çizgisi ona göre bulunuyor.
       ctx.font = `${Math.round(b.boy)}px ${SURE_ADI_FONT}`
-      ctx.fillStyle = vurguRenk
+      ctx.fillStyle = sureAdiRenk
       ctx.textAlign = "center"; ctx.textBaseline = "alphabetic"
       try { ctx.direction = "rtl" } catch { /* eski tarayıcı */ }
       ctx.fillText(sureAdiGlif, W / 2, y + b.ustPay + b.asc)
@@ -970,13 +1008,14 @@ export async function gorselCiz(ctx, ayar) {
       const x0 = W / 2 - toplamW / 2
       const orta = y + b.yuk / 2
       ctx.font = `${Math.round(b.gb)}px ${SURE_ADI_FONT}`
-      ctx.fillStyle = vurguRenk
+      ctx.fillStyle = sureAdiRenk
       ctx.textAlign = "center"; ctx.textBaseline = "alphabetic"
       try { ctx.direction = "rtl" } catch { /* eski tarayıcı */ }
       // Mürekkebin sol kenarı x0'a otursun: çizim noktası = x0 − sol taşma
       ctx.fillText(sureAdiGlif, x0 - b.sol * b.gb, orta + (b.gAsc - b.gDesc) / 2)
       try { ctx.direction = "ltr" } catch { /* yoksay */ }
       ctx.font = kucukFontYap(b.boy)
+      ctx.fillStyle = kaynakRenk
       ctx.textAlign = "left"; ctx.textBaseline = "middle"
       ctx.fillText(b.metin, x0 + b.gw + b.ara, orta)
       ctx.textAlign = "center"; ctx.textBaseline = "top"
@@ -986,9 +1025,9 @@ export async function gorselCiz(ctx, ayar) {
       const kalin = Math.max(1.1, S * 0.0018)
       if (b.dipte) {
         // İçerik kutusunun dibinde, ortalı — yazı akışını ilerletmez
-        rahleCiz(ctx, W / 2, icPayUst + kutuH - cizYuk, b.gen, vurguRenk, kalin)
+        rahleCiz(ctx, W / 2, icPayUst + kutuH - cizYuk, b.gen, rahleRenk, kalin)
       } else {
-        rahleCiz(ctx, W / 2, y + (b.yuk - cizYuk), b.gen, vurguRenk, kalin)
+        rahleCiz(ctx, W / 2, y + (b.yuk - cizYuk), b.gen, rahleRenk, kalin)
         y += b.yuk
       }
     } else if (b.tip === "rozet") {
@@ -1082,13 +1121,9 @@ function sahneVideosu(url) {
     videoKutusu.appendChild(v)
   })
 }
-function videoKapla(cv, v) {
-  const W = cv.width, H = cv.height, vw = v.videoWidth, vh = v.videoHeight
-  if (!vw || !vh) return
-  const o1 = vw / vh, o2 = W / H
-  let sw = vw, sh = vh, sx = 0, sy = 0
-  if (o1 > o2) { sw = vh * o2; sx = (vw - sw) / 2 } else { sh = vw / o2; sy = (vh - sh) / 2 }
-  try { cv.getContext("2d").drawImage(v, sx, sy, sw, sh, 0, 0, W, H) } catch { /* kare hazır değil */ }
+// Video karesi tuvale yerleşime göre (kapla / sığdır + bulanık zemin) — izleme moduyla aynı işlev
+function videoKapla(cv, v, yerlesim) {
+  videoCiz(cv.getContext("2d"), cv.width, cv.height, v, yerlesim)
 }
 
 export default function GorselOlustur({
@@ -1103,7 +1138,7 @@ export default function GorselOlustur({
   const [oran, setOran] = useState("4:5")
   const [arkaId, setArkaId] = useState("zumrut")
   // Galeri İZLEME MODUYLA ORTAK (IndexedDB): birinde eklenen resim öbüründe de görünür
-  const [izAyar] = useIzlemeAyar()
+  const [izAyar, izGuncelle] = useIzlemeAyar()
   const galeri = izAyar.izleme.galeri || []
   // Galeri (resim + video) — ızgarada TEK "Galerim" kutusu; düzenleme GaleriDuzenleyici'de (13 Ekim 2026)
   const galeriOgeleri = useGaleriOgeleri(acik ? galeri : [], galeriBlobu)
@@ -1128,6 +1163,8 @@ export default function GorselOlustur({
   const kaydirRef = useRef(null)                       // panelin dikey kaydırma kutusu
   const [uyari, setUyari] = useState("")
   const [yaziRengi, setYaziRengi] = useState(null)          // null = otomatik
+  // Süs renkleri (13 Ekim 2026): sûre adı (Arapça) · kaynak (Türkçe) · rahle — null = otomatik
+  const [susRenk, setSusRenk] = useState({ sureAdi: null, kaynak: null, rahle: null })
   // Vakıf vb. işaretlerin rengi (8 Ekim 2026) — "kapali" | "mushaf" | "vurgu" | "ozel"
   const [isaretRenk, setIsaretRenk] = useState("kapali")
   const [isaretOzel, setIsaretOzel] = useState("#e0503c")
@@ -1147,6 +1184,9 @@ export default function GorselOlustur({
   const slaytKip = izOrtak.slaytKip === "ayet" ? "ayet" : "sure"
   const slaytSn = Math.max(1, Number(izOrtak.slaytSure) || 15)
   const slaytGecis = izOrtak.slaytGecis || "solma"
+  const slaytVideo = izOrtak.slaytVideo === "ayetle" ? "ayetle" : "sonuna"
+  const videoHareket = izOrtak.videoHareket === "resim" ? "resim" : "sabit"
+  const videoYerlesim = ["kapla", "sigdir"].includes(izOrtak.videoYerlesim) ? izOrtak.videoYerlesim : "oto"
   // Video VARSAYILAN SESSİZ üretilir; kullanıcı isterse önizlemedeki ses ikonundan açar.
   const [sesAcik, setSesAcik] = useState(false)
   // DİNLEME (monitör): kayıt SIRASINDA sesin hoparlörden duyulup duyulmayacağı. Kapalı başlar —
@@ -1388,15 +1428,18 @@ export default function GorselOlustur({
     // Sûre adı hattı kaynak satırının parçası — kaynak kapatılırsa o da kapanır.
     sureNo: kaynakAcik && sureAdiHazir ? sureAdiNo : 0,
     rahle: rahleAcik,
+    // Videoda âyetler akarken kaynak + sûre adı + rahle dipte sabit kalır (yalnız rakam değişir)
+    dipSabit: mod === "video",
     arapcaFont,
     yaziRengi,
     isaretRenk, isaretOzel,
+    sureAdiRengi: susRenk.sureAdi, kaynakRengi: susRenk.kaynak, rahleRengi: susRenk.rahle,
     // Âyet sonu rozeti (foto: prop'tan; video: parça kendi rozetNo'sunu ek ile geçer)
     rozetNo: arapcaAcik ? (ayet?.ayetNo || null) : null,
     secde: arapcaAcik ? secde : false,
     rozetImg: rozetImgRef.current,
     ...ek,
-  }), [olcu, arkaEtkin, cerceve, karartma, arapca, meal, kaynak, arapcaAcik, mealAcik, kaynakAcik, rahleAcik, sureAdiNo, sureAdiHazir, arapcaFont, yaziRengi, isaretRenk, isaretOzel, ayet, secde, varliklarSurum])
+  }), [olcu, arkaEtkin, cerceve, karartma, arapca, meal, kaynak, arapcaAcik, mealAcik, kaynakAcik, rahleAcik, sureAdiNo, sureAdiHazir, arapcaFont, yaziRengi, isaretRenk, isaretOzel, susRenk, ayet, secde, varliklarSurum, mod])
 
   // ÇİZİM SIRA NUMARASI — `gorselCiz` asenkron (arka plan fotoğrafını bekliyor). Art arda
   // ayar değiştirilince ESKİ çizim SONRA bitip canvas'a basabiliyordu: kullanıcı ayarı
@@ -1549,8 +1592,11 @@ export default function GorselOlustur({
     let idx = 0
     for (let i = 0; i < cizelge.length; i++) { if (t >= cizelge[i].bas) idx = i; else break }
 
-    const arkaCizici = (kaynakCv, faz) => () => {
-      if (SAHNE_HAREKETI.has(hareket)) {
+    // Video slaytı varsayılan SABİT (çekim zaten hareketli); "resim" seçiliyse resimlerle aynı.
+    // Sığdırılmış (yönü ekrana uymayan) videoya hareket uygulanmaz — izleme moduyla aynı.
+    const arkaCizici = (kaynakCv, faz, video) => () => {
+      if (video && (videoHareket !== "resim" || videoSigar(video.videoWidth, video.videoHeight, W, H, videoYerlesim))) ctx.drawImage(kaynakCv, 0, 0, W, H)
+      else if (SAHNE_HAREKETI.has(hareket)) {
         resimCiz(ctx, W, H, { img: kaynakCv, w: W, h: H }, hareket, hiz, t, faz)
       } else {
         const k = hareketKutusu(hareket, W, H, t, toplam)
@@ -1562,7 +1608,19 @@ export default function GorselOlustur({
       const n = slaytlar.length
       let sira = 0, bas = 0
       if (n === 1) { sira = 0; bas = 0 }
-      else if (slaytKip === "ayet") { sira = idx; bas = (cizelge[idx] || { bas: 0 }).bas }
+      else if (slaytKip === "ayet" && slaytVideo === "ayetle") { sira = idx; bas = (cizelge[idx] || { bas: 0 }).bas }
+      else if (slaytKip === "ayet") {
+        // Video SONUNA KADAR (izleme moduyla aynı kural): âyet sınırlarında ilerlenir;
+        // ekrandaki video bitmemişse o sınır atlanır. Çizelge sabit → sonuç her karede aynı.
+        let s = 0, b = 0
+        for (let k = 1; k <= idx; k++) {
+          const x = slaytlar[s % n]
+          const vs = x.video && x.sure > 0 ? Math.min(120, Math.max(2, x.sure)) : 0
+          if (vs && cizelge[k].bas - b < vs) continue
+          s++; b = cizelge[k].bas
+        }
+        sira = s; bas = b
+      }
       else {
         // Süreyle: resim slaytSn kadar, video KENDİ süresi kadar (2–120 sn)
         const sureler = slaytlar.map(x => (x.video && x.sure > 0 ? Math.min(120, Math.max(2, x.sure)) : slaytSn))
@@ -1577,7 +1635,9 @@ export default function GorselOlustur({
       if (sira !== videoSiraRef.current) {
         videoSiraRef.current = sira
         const yeni = slaytlar[i]
-        if (yeni.video) { try { yeni.video.currentTime = 0 } catch { /* yoksay */ } }
+        // "Âyetle değişsin" seçiliyse video tekrar geldiğinde KALDIĞI YERDEN sürer
+        const kaldigiYerden = slaytKip === "ayet" && slaytVideo === "ayetle" && sira > 0
+        if (yeni.video && !kaldigiYerden) { try { yeni.video.currentTime = 0 } catch { /* yoksay */ } }
       }
       const gecisVar = n > 1 && sira > 0 && (t - bas) < GECIS_SN
       slaytlar.forEach((x, j) => {
@@ -1586,10 +1646,10 @@ export default function GorselOlustur({
         if (gorunur && x.video.paused) { const pr = x.video.play(); if (pr && pr.catch) pr.catch(() => {}) }
         else if (!gorunur && !x.video.paused) x.video.pause()
       })
-      const hazirla = (x) => { if (x.video) videoKapla(x.cv, x.video); return x.cv }
+      const hazirla = (x) => { if (x.video) videoKapla(x.cv, x.video, videoYerlesim); return x.cv }
       if (gecisVar) {
-        gecisCiz(ctx, W, H, arkaCizici(hazirla(slaytlar[onceki]), onceki * 1.7), arkaCizici(hazirla(slaytlar[i]), i * 1.7), slaytGecis, (t - bas) / GECIS_SN, sira)
-      } else arkaCizici(hazirla(slaytlar[i]), i * 1.7)()
+        gecisCiz(ctx, W, H, arkaCizici(hazirla(slaytlar[onceki]), onceki * 1.7, slaytlar[onceki].video), arkaCizici(hazirla(slaytlar[i]), i * 1.7, slaytlar[i].video), slaytGecis, (t - bas) / GECIS_SN, sira)
+      } else arkaCizici(hazirla(slaytlar[i]), i * 1.7, slaytlar[i].video)()
     } else {
       arkaCizici(arkaCv, 0)()
     }
@@ -1609,7 +1669,7 @@ export default function GorselOlustur({
     ctx.globalAlpha = Math.max(0, Math.min(1, gir * cik))
     ctx.drawImage(cv, 0, 0)
     ctx.globalAlpha = 1
-  }, [olcu, hareket, hiz, hava, isik, karartma, arkaEtkin, parcaCiz, slaytKip, slaytSn, slaytGecis])
+  }, [olcu, hareket, hiz, hava, isik, karartma, arkaEtkin, parcaCiz, slaytKip, slaytSn, slaytGecis, slaytVideo, videoHareket, videoYerlesim])
 
   // Döngünün kullandığı GÜNCEL işlevler — bağımlılık kirlenmesin diye ref üzerinden okunur
   const hazirlaRef = useRef(null)
@@ -1619,7 +1679,7 @@ export default function GorselOlustur({
   // Önizlemenin yeniden kurulmasını gerektiren AYAR imzası (ilkel değerlerden)
   const icerikImza = `${arapcaAcik ? 1 : 0}${mealAcik ? 1 : 0}${kaynakAcik ? 1 : 0}${rahleAcik ? 1 : 0}`
     + `|${kapsam}|${(arapca || "").length}|${(meal || "").length}|${kaynak || ""}`
-    + `|${arkaEtkin.id}:${secili.src || ""}|${slaytAktif ? `${slaytKip}:${slaytSn}:${slaytGecis}:${slaytResimleri.join(",")}` : "-"}|${cerceve}|${karartma}|${yaziRengi || "oto"}|${isaretRenk}${isaretRenk === "ozel" ? isaretOzel : ""}|${arapcaFont || ""}|${videoParcalari.length}|${varliklarSurum}`
+    + `|${arkaEtkin.id}:${secili.src || ""}|${slaytAktif ? `${slaytKip}:${slaytVideo}:${videoHareket}:${videoYerlesim}:${slaytSn}:${slaytGecis}:${slaytResimleri.join(",")}` : "-"}|${cerceve}|${karartma}|${yaziRengi || "oto"}|${susRenk.sureAdi || "-"}${susRenk.kaynak || "-"}${susRenk.rahle || "-"}|${isaretRenk}${isaretRenk === "ozel" ? isaretOzel : ""}|${arapcaFont || ""}|${videoParcalari.length}|${varliklarSurum}`
 
   // Fontlar yüklenmeden çizersek canvas yedek fontla çizer → önce fonts.ready bekle
   useEffect(() => {
@@ -2192,6 +2252,16 @@ export default function GorselOlustur({
             Otomatik: koyu zeminde açık, açık zeminde koyu yazı.
           </div>
 
+          {/* SÜS RENKLERİ — sûre adı (Arapça), kaynak (Türkçe), rahle */}
+          {(kaynakAcik || rahleAcik) && (
+            <>
+              <AyarBaslik theme={theme} ikon={Palette} not="sûre adı · kaynak · rahle">Süs renkleri</AyarBaslik>
+              <SusRenkleri theme={theme} degerler={susRenk}
+                onSec={(alan, v) => setSusRenk(o => ({ ...o, [alan]: v }))}
+                oneriler={ONERILEN_RENKLER} sonRenkler={sonRenkler} onSonEkle={r => setSonRenkler(sonRenkEkle(r))} />
+            </>
+          )}
+
           {/* İŞARET RENGİ — vakıf işaretleri mushaf sayfasındaki gibi boyanabilir */}
           {arapca && (
             <>
@@ -2313,6 +2383,21 @@ export default function GorselOlustur({
                 <>
                   <AyarBaslik theme={theme} ikon={Gauge}>Hız</AyarBaslik>
                   <Secim theme={theme} kucuk deger={hiz} onSec={setHiz} secenekler={HIZLAR} />
+                </>
+              )}
+              {/* VİDEO YERLEŞİMİ — slaytta video varken (izleme moduyla ortak ayar) */}
+              {slaytAktif && slaytResimleri.some(id => galeriOgeleri[id]?.video) && (
+                <>
+                  <AyarBaslik theme={theme} ikon={Frame}>Video yerleşimi</AyarBaslik>
+                  <Secim theme={theme} kucuk deger={videoYerlesim} onSec={v => izGuncelle("izleme", { videoYerlesim: v })} secenekler={VIDEO_YERLESIMLERI} />
+                </>
+              )}
+              {/* VİDEO HAREKETİ — slaytta video varken (izleme moduyla ortak ayar) */}
+              {hareket !== "yok" && slaytAktif && slaytResimleri.some(id => galeriOgeleri[id]?.video) && (
+                <>
+                  <AyarBaslik theme={theme} ikon={Move}>Video hareketi</AyarBaslik>
+                  <Secim theme={theme} kucuk deger={videoHareket} onSec={v => izGuncelle("izleme", { videoHareket: v })}
+                    secenekler={[{ id: "sabit", ad: "Sabit" }, { id: "resim", ad: "Resimle aynı" }]} />
                 </>
               )}
 

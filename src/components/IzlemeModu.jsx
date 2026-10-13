@@ -31,7 +31,7 @@ import { X, Settings2, SkipBack, SkipForward, Play, Pause } from "lucide-react"
 import { DESENLER, GORSELLER } from "../data/arkaplanlar"
 import { gorselCiz, rozetGorseliUret, karartmaCiz } from "./GorselOlustur"
 import { useIzlemeAyar } from "../data/izlemeAyar"
-import { resimCiz, gecisCiz, havaKur, havaCiz, isikCiz, kareHizi, GECIS_SN } from "../data/izlemeSahne"
+import { resimCiz, gecisCiz, havaKur, havaCiz, isikCiz, kareHizi, GECIS_SN, videoCiz, videoSigar } from "../data/izlemeSahne"
 import { galeriBlobu, eskiGorselVarsaTasi } from "../data/izlemeGaleri"
 import MealIzlemeAyarlari from "./MealIzlemeAyarlari"
 
@@ -217,7 +217,8 @@ export default function IzlemeModu({
   sahneRef.current = {
     kaynaklar, hareket: iz.hareket, hiz: iz.hiz, hava: iz.hava, isik: iz.isik,
     karartma: iz.karartma, koyu: arka.koyu !== false,
-    slaytSure: iz.slaytSure, slaytGecis: iz.slaytGecis, slaytKip: iz.slaytKip,
+    slaytSure: iz.slaytSure, slaytGecis: iz.slaytGecis, slaytKip: iz.slaytKip, slaytVideo: iz.slaytVideo,
+    videoHareket: iz.videoHareket, videoYerlesim: iz.videoYerlesim,
   }
   const slaytRef = useRef({ idx: 0, bas: -1, onceki: -1, gecisBas: 0, sira: 0, ilerle: false })
 
@@ -262,13 +263,22 @@ export default function IzlemeModu({
         // Geçiş sürerken âyet değişirse bayrak bekler, geçiş bitince uygulanır.
         // VİDEO süre kipinde KENDİ SÜRESİ kadar kalır (2–120 sn arası).
         const ak = ks[sl.idx]
-        const kalis = ak && ak.video && ak.sure > 0 ? Math.min(120, Math.max(2, ak.sure)) : (Number(d.slaytSure) || 15)
+        const videoKalis = ak && ak.video && ak.sure > 0 ? Math.min(120, Math.max(2, ak.sure)) : 0
+        const kalis = videoKalis || (Number(d.slaytSure) || 15)
+        // VİDEO SONUNA KADAR (13 Ekim 2026, kullanıcı: "20 sn video ekliyoruz, ilk âyet
+        // 3 sn sürüyor, videoyu atlıyor"): âyet kipinde video bitmeden gelen âyet
+        // değişimleri yok sayılır; video bitince İLK âyet değişiminde sıradakine geçilir
+        // (geçiş yine âyetle aynı ana denk gelir). Beklerken video başa sarıp sürer.
+        // "ayetle" seçiliyse eski davranış: her âyette geçer, video dönünce kaldığı yerden.
+        const videoAyetle = d.slaytVideo === "ayetle"
+        if (d.slaytKip === "ayet" && videoKalis && !videoAyetle && t - sl.bas < videoKalis) sl.ilerle = false
         const vakit = d.slaytKip === "ayet" ? sl.ilerle : t - sl.bas >= kalis
         if (sl.onceki < 0 && vakit) {
           sl.onceki = sl.idx; sl.idx = (sl.idx + 1) % ks.length
           sl.gecisBas = t; sl.bas = t; sl.sira++; sl.ilerle = false
           const yeni = ks[sl.idx]
-          if (yeni && yeni.video) { try { yeni.img.currentTime = 0 } catch { /* yoksay */ } }
+          const kaldigiYerden = d.slaytKip === "ayet" && videoAyetle
+          if (yeni && yeni.video && !kaldigiYerden) { try { yeni.img.currentTime = 0 } catch { /* yoksay */ } }
         }
       } else { sl.idx = 0; sl.onceki = -1; sl.bas = -1; sl.ilerle = false }
       // Yalnız ekranda görünen video(lar) oynar; ötekiler durur (pil, işlemci)
@@ -283,7 +293,17 @@ export default function IzlemeModu({
 
       ctx.globalAlpha = 1; ctx.globalCompositeOperation = "source-over"
       ctx.fillStyle = "#0a0d14"; ctx.fillRect(0, 0, W, H)
-      const ciz = (i) => () => resimCiz(ctx, W, H, ks[i], d.hareket, d.hiz, t, i * 1.7)
+      // VİDEO HAREKETİ (13 Ekim 2026, kullanıcı: "videolar hareketsiz istenebilir, çeken
+      // kişi zaten hareket ettiriyor"): varsayılan SABİT; "resim" seçiliyse resimlerle aynı.
+      // VİDEO YERLEŞİMİ: video sabitken ya da sığdırılırken (yön farkı) videoCiz çizer;
+      // sığdırılmış videoya kamera hareketi uygulanmaz (bulanık zemin kayardı).
+      const ciz = (i) => () => {
+        const k = ks[i]
+        if (k && k.video && (d.videoHareket !== "resim" || videoSigar(k.img.videoWidth, k.img.videoHeight, W, H, d.videoYerlesim))) {
+          if (videoCiz(ctx, W, H, k.img, d.videoYerlesim)) return
+        }
+        resimCiz(ctx, W, H, k, k && k.video && d.videoHareket !== "resim" ? "sabit" : d.hareket, d.hiz, t, i * 1.7)
+      }
       if (ks.length) {
         if (sl.onceki >= 0 && ks[sl.onceki]) {
           const p = (t - sl.gecisBas) / GECIS_SN
@@ -323,6 +343,7 @@ export default function IzlemeModu({
       rahleDipte: true,                           // rahle altta ortalı, küçük
       arapcaFont,
       yaziRengi: iz.yaziRengi || null,            // 8 Ekim 2026: izlemede de yazı rengi
+      sureAdiRengi: iz.sureAdiRengi || null, kaynakRengi: iz.kaynakRengi || null, rahleRengi: iz.rahleRengi || null,
       isaretRenk: iz.isaretRenk, isaretOzel: iz.isaretOzel,
       rozetNo: veri.ayetNo || null,
       secde: !!veri.secde,
@@ -347,7 +368,7 @@ export default function IzlemeModu({
     // `ustte` bilerek bağımlılıkta DEĞİL: onu burada değiştiriyoruz, listeye
     // girerse efekt kendi kendini tetikleyip sonsuz takas yapardı.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [acik, olcu, arkaSurum, aktif, icerikAl, arka, iz.cerceve, iz.meal, iz.gizliDugme, iz.yaziRengi, iz.isaretRenk, iz.isaretOzel, arapcaFont, hatVar])
+  }, [acik, olcu, arkaSurum, aktif, icerikAl, arka, iz.cerceve, iz.meal, iz.gizliDugme, iz.yaziRengi, iz.isaretRenk, iz.isaretOzel, iz.sureAdiRengi, iz.kaynakRengi, iz.rahleRengi, arapcaFont, hatVar])
 
   /* Gerçek tam ekran: destekleyen tarayıcıda (masaüstü, Android) sistem çubukları
      da kalkar. iOS bunu video dışı öğelerde desteklemiyor; orada kurulu uygulama

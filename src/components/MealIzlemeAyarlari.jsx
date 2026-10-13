@@ -20,9 +20,9 @@ import {
 } from "lucide-react"
 import { DESENLER, GORSELLER } from "../data/arkaplanlar"
 import { useIzlemeAyar, ayarOku } from "../data/izlemeAyar"
-import { HAREKETLER, HIZLAR, HAVALAR, ISIKLAR } from "../data/izlemeSahne"
+import { HAREKETLER, HIZLAR, HAVALAR, ISIKLAR, VIDEO_YERLESIMLERI } from "../data/izlemeSahne"
 import { galeriBlobu, eskiGorselVarsaTasi } from "../data/izlemeGaleri"
-import { Secim, Anahtar, AyarBaslik, ArkaPlanIzgara, desenOnizleme, useGaleriOgeleri, RenkSecici } from "./AyarOgeleri"
+import { Secim, Anahtar, AyarBaslik, ArkaPlanIzgara, desenOnizleme, useGaleriOgeleri, RenkSecici, SusRenkleri } from "./AyarOgeleri"
 import GaleriDuzenleyici, { GaleriKolaj, GaleriOzeti } from "./GaleriDuzenleyici"
 import { ONERILEN_RENKLER, sonRenkleriOku, sonRenkEkle, ISARET_RENKLERI } from "./GorselOlustur"
 
@@ -133,6 +133,22 @@ export default function MealIzlemeAyarlari({ acik, kapat, theme, isMobile, odak 
           <Secim theme={theme} kucuk deger={iz.hiz} onSec={v => guncelle("izleme", { hiz: v })} secenekler={HIZLAR} />
         </>
       )}
+      {/* VİDEO YERLEŞİMİ ve HAREKETİ (13 Ekim 2026) — galeride video varken. Çekim çoğu
+          zaman zaten hareketli olduğu için hareket varsayılan sabit. */}
+      {galeri.some(id => ogeler[id]?.video) && (
+        <>
+          <AyarBaslik theme={theme} ikon={Frame}>Video yerleşimi</AyarBaslik>
+          <Secim theme={theme} kucuk deger={iz.videoYerlesim || "oto"} onSec={v => guncelle("izleme", { videoYerlesim: v })} secenekler={VIDEO_YERLESIMLERI} />
+          {(iz.videoYerlesim || "oto") === "oto" && <p style={ipucu}>Otomatik: ekranla aynı yöndeki video ekranı doldurur; yönü farklı olan (yatay ekranda dikey video gibi) bütünüyle ortada görünür, kenarlar videonun bulanık hâliyle dolar.</p>}
+        </>
+      )}
+      {iz.hareket !== "sabit" && galeri.some(id => ogeler[id]?.video) && (
+        <>
+          <AyarBaslik theme={theme} ikon={Move}>Video hareketi</AyarBaslik>
+          <Secim theme={theme} kucuk deger={iz.videoHareket === "resim" ? "resim" : "sabit"} onSec={v => guncelle("izleme", { videoHareket: v })}
+            secenekler={[{ id: "sabit", ad: "Sabit" }, { id: "resim", ad: "Resimle aynı" }]} />
+        </>
+      )}
       <AyarBaslik theme={theme} ikon={Wind}>Hava</AyarBaslik>
       <Secim theme={theme} kucuk deger={iz.hava} onSec={v => guncelle("izleme", { hava: v })} secenekler={HAVALAR} />
       <AyarBaslik theme={theme} ikon={Sun}>Işık</AyarBaslik>
@@ -150,6 +166,11 @@ export default function MealIzlemeAyarlari({ acik, kapat, theme, isMobile, odak 
       {/* 8 Ekim 2026: izlemede de yazı rengi + vakıf işaretlerini renklendirme */}
       <AyarBaslik theme={theme} ikon={Palette} not="otomatik: zemine göre">Yazı rengi</AyarBaslik>
       <RenkSecici theme={theme} deger={iz.yaziRengi || null} onSec={v => guncelle("izleme", { yaziRengi: v })}
+        oneriler={ONERILEN_RENKLER} sonRenkler={sonRenkler} onSonEkle={r => setSonRenkler(sonRenkEkle(r))} />
+      <AyarBaslik theme={theme} ikon={Palette} not="sûre adı · kaynak · rahle">Süs renkleri</AyarBaslik>
+      <SusRenkleri theme={theme}
+        degerler={{ sureAdi: iz.sureAdiRengi || null, kaynak: iz.kaynakRengi || null, rahle: iz.rahleRengi || null }}
+        onSec={(alan, v) => guncelle("izleme", { [`${alan}Rengi`]: v })}
         oneriler={ONERILEN_RENKLER} sonRenkler={sonRenkler} onSonEkle={r => setSonRenkler(sonRenkEkle(r))} />
       <AyarBaslik theme={theme} ikon={Highlighter} not="vakıf işaretleri">İşaret rengi</AyarBaslik>
       <Secim theme={theme} kucuk deger={iz.isaretRenk || "kapali"} onSec={v => guncelle("izleme", { isaretRenk: v })} secenekler={ISARET_RENKLERI} />

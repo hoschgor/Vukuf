@@ -75,18 +75,64 @@ async function kucult(dosya) {
   } catch { return null } finally { kapat() }
 }
 
-/* Seçilen dosyaları ekler, eklenebilenlerin kimliklerini (seçim sırasıyla) döndürür. */
+/* ── VİDEO (13 Ekim 2026) ───────────────────────────────────────────────────
+   Kullanıcı: "video eklenebilsin, sesini kullanmasın ama arka plana alınabilsin;
+   video ve resim aynı anda kullanılabilsin, sırası düzenlenebilsin."
+   Video KÜÇÜLTÜLMÜYOR (tarayıcıda yeniden kodlamak hem çok yavaş hem pil yer);
+   olduğu gibi saklanıyor, bu yüzden boyut sınırı var. Oynatırken hep SESSİZ. */
+export const AZAMI_VIDEO_MB = 150
+const VIDEO_UZANTI = /\.(mp4|m4v|mov|webm|3gp)$/i
+export const videoMu = (b) => !!b && /^video\//.test(b.type || "")
+
+/* Seçilen dosyaları ekler, eklenebilenlerin kimliklerini (seçim sırasıyla) döndürür.
+   Eklenemeyenler dizinin `atlanan` alanında: [{ ad, sebep: "buyuk" | "okunamadi" }]. */
 export async function galeriyeEkle(dosyalar) {
   const kimlikler = []
+  const atlanan = []
   for (const f of Array.from(dosyalar || [])) {
-    if (!f || !/^image\//.test(f.type || "image/")) continue
-    const b = await kucult(f)
-    if (!b) continue
+    if (!f) continue
+    const tur = f.type || ""
+    let b = null
+    if (/^video\//.test(tur) || (!tur && VIDEO_UZANTI.test(f.name || ""))) {
+      if (f.size > AZAMI_VIDEO_MB * 1024 * 1024) { atlanan.push({ ad: f.name, sebep: "buyuk" }); continue }
+      // Türü boş gelen dosyaya (bazı Android galerileri) tür verilir — oynatıcı tanısın
+      b = tur ? f : new Blob([f], { type: "video/mp4" })
+    } else if (/^image\//.test(tur || "image/")) {
+      b = await kucult(f)
+    }
+    if (!b) { atlanan.push({ ad: f.name, sebep: "okunamadi" }); continue }
     const id = yeniKimlik()
     await islem("readwrite", d => d.put(b, id))
     kimlikler.push(id)
   }
+  kimlikler.atlanan = atlanan
   return kimlikler
+}
+
+/* Videodan tek kare (fotoğraf modunda arka plan, küçük resim için). JPEG nesne
+   adresi döner; okunamazsa null. Çağıran işi bitince URL.revokeObjectURL yapmalı. */
+export function videoKaresi(url, an = 0.5) {
+  return new Promise((cz) => {
+    let bitti = false
+    const v = document.createElement("video")
+    const son = (sonuc) => { if (bitti) return; bitti = true; try { v.removeAttribute("src"); v.load() } catch { /* yoksay */ } cz(sonuc) }
+    const zaman = setTimeout(() => son(null), 8000)
+    v.muted = true; v.playsInline = true; v.preload = "auto"
+    v.onloadedmetadata = () => {
+      try { v.currentTime = Math.min(an, Math.max(0, (v.duration || 1) - 0.05)) } catch { son(null) }
+    }
+    v.onseeked = () => {
+      try {
+        const w = v.videoWidth, h = v.videoHeight
+        if (!w || !h) { clearTimeout(zaman); son(null); return }
+        const cv = document.createElement("canvas"); cv.width = w; cv.height = h
+        cv.getContext("2d").drawImage(v, 0, 0, w, h)
+        cv.toBlob(b => { clearTimeout(zaman); son(b ? URL.createObjectURL(b) : null) }, "image/jpeg", 0.88)
+      } catch { clearTimeout(zaman); son(null) }
+    }
+    v.onerror = () => { clearTimeout(zaman); son(null) }
+    v.src = url
+  })
 }
 
 export function galeridenSil(id) {

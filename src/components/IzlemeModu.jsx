@@ -152,6 +152,30 @@ export default function IzlemeModu({
       im.onerror = () => cz(null)
       im.src = src
     })
+    /* VİDEO (13 Ekim 2026): sessiz, satır içi, döngülü. iOS'ta tuvale çizilebilmesi
+       ve oynayabilmesi için görünmez bir kutuda DOM'a takılıyor. Hangi videonun
+       oynayacağına sahne döngüsü karar veriyor (yalnız ekrandaki oynar). */
+    const videolar = []
+    let kutu = null
+    const videoYukle = (src) => new Promise(cz => {
+      if (!kutu) {
+        kutu = document.createElement("div")
+        kutu.setAttribute("aria-hidden", "true")
+        kutu.style.cssText = "position:fixed;left:0;top:0;width:2px;height:2px;overflow:hidden;opacity:0;pointer-events:none"
+        document.body.appendChild(kutu)
+      }
+      const v = document.createElement("video")
+      v.muted = true; v.defaultMuted = true; v.playsInline = true; v.loop = true; v.preload = "auto"
+      v.setAttribute("muted", ""); v.setAttribute("playsinline", "")
+      let bitti = false
+      const son = (k) => { if (!bitti) { bitti = true; cz(k) } }
+      v.onloadeddata = () => son({ img: v, w: v.videoWidth || 16, h: v.videoHeight || 9, video: true, sure: v.duration || 0 })
+      v.onerror = () => son(null)
+      setTimeout(() => son(v.readyState >= 2 ? { img: v, w: v.videoWidth || 16, h: v.videoHeight || 9, video: true, sure: v.duration || 0 } : null), 10000)
+      v.src = src
+      kutu.appendChild(v)
+      videolar.push(v)
+    })
     ;(async () => {
       let liste = []
       if (arka.tip === "galeri") {
@@ -160,7 +184,7 @@ export default function IzlemeModu({
           if (iptal) return
           if (!b) continue                       // silinmiş ya da başka cihazdan gelen yedek
           const u = URL.createObjectURL(b); urller.push(u)
-          const k = await yukle(u)
+          const k = /^video\//.test(b.type || "") ? await videoYukle(u) : await yukle(u)
           if (iptal) return
           if (k) liste.push(k)
           if (liste.length === 1) setKaynaklar([k])   // ilk resim beklemeden görünsün
@@ -178,7 +202,12 @@ export default function IzlemeModu({
       }
       if (!iptal) setKaynaklar(liste)
     })()
-    return () => { iptal = true; urller.forEach(u => { try { URL.revokeObjectURL(u) } catch { /* yoksay */ } }) }
+    return () => {
+      iptal = true
+      videolar.forEach(v => { try { v.pause(); v.removeAttribute("src"); v.load() } catch { /* yoksay */ } })
+      if (kutu) kutu.remove()
+      urller.forEach(u => { try { URL.revokeObjectURL(u) } catch { /* yoksay */ } })
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [acik, arka, galeriAnahtar, desenOlcu])
 
@@ -231,12 +260,26 @@ export default function IzlemeModu({
         if (sl.bas < 0) sl.bas = t
         // Süre kipinde süre dolunca, âyet kipinde âyet değişince (bayrak) sıradaki resim.
         // Geçiş sürerken âyet değişirse bayrak bekler, geçiş bitince uygulanır.
-        const vakit = d.slaytKip === "ayet" ? sl.ilerle : t - sl.bas >= (Number(d.slaytSure) || 15)
+        // VİDEO süre kipinde KENDİ SÜRESİ kadar kalır (2–120 sn arası).
+        const ak = ks[sl.idx]
+        const kalis = ak && ak.video && ak.sure > 0 ? Math.min(120, Math.max(2, ak.sure)) : (Number(d.slaytSure) || 15)
+        const vakit = d.slaytKip === "ayet" ? sl.ilerle : t - sl.bas >= kalis
         if (sl.onceki < 0 && vakit) {
           sl.onceki = sl.idx; sl.idx = (sl.idx + 1) % ks.length
           sl.gecisBas = t; sl.bas = t; sl.sira++; sl.ilerle = false
+          const yeni = ks[sl.idx]
+          if (yeni && yeni.video) { try { yeni.img.currentTime = 0 } catch { /* yoksay */ } }
         }
       } else { sl.idx = 0; sl.onceki = -1; sl.bas = -1; sl.ilerle = false }
+      // Yalnız ekranda görünen video(lar) oynar; ötekiler durur (pil, işlemci)
+      for (let i = 0; i < ks.length; i++) {
+        const k = ks[i]
+        if (!k || !k.video) continue
+        const gorunur = i === sl.idx || i === sl.onceki
+        const v = k.img
+        if (gorunur && v.paused) { const p = v.play(); if (p && p.catch) p.catch(() => {}) }
+        else if (!gorunur && !v.paused) v.pause()
+      }
 
       ctx.globalAlpha = 1; ctx.globalCompositeOperation = "source-over"
       ctx.fillStyle = "#0a0d14"; ctx.fillRect(0, 0, W, H)

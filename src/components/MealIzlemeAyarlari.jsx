@@ -16,13 +16,14 @@
 import { useEffect, useMemo, useState } from "react"
 import {
   X, Image as ImageIcon, Sparkles, LayoutTemplate, MonitorPlay, Languages,
-  Eye, Hand, Type, Move, Wind, Sun, Timer, Shuffle, Frame, Layers, Palette, Highlighter, Pipette,
+  Eye, Hand, Type, Move, Wind, Sun, Frame, Layers, Palette, Highlighter, Pipette,
 } from "lucide-react"
 import { DESENLER, GORSELLER } from "../data/arkaplanlar"
 import { useIzlemeAyar, ayarOku } from "../data/izlemeAyar"
-import { HAREKETLER, HIZLAR, HAVALAR, ISIKLAR, GECISLER, SLAYT_SURELERI } from "../data/izlemeSahne"
-import { galeriyeEkle, galeridenSil, galeriBlobu, eskiGorselVarsaTasi } from "../data/izlemeGaleri"
-import { Secim, Anahtar, AyarBaslik, ArkaPlanIzgara, desenOnizleme, useGaleriUrlleri, RenkSecici } from "./AyarOgeleri"
+import { HAREKETLER, HIZLAR, HAVALAR, ISIKLAR } from "../data/izlemeSahne"
+import { galeriBlobu, eskiGorselVarsaTasi } from "../data/izlemeGaleri"
+import { Secim, Anahtar, AyarBaslik, ArkaPlanIzgara, desenOnizleme, useGaleriOgeleri, RenkSecici } from "./AyarOgeleri"
+import GaleriDuzenleyici, { GaleriKolaj, GaleriOzeti } from "./GaleriDuzenleyici"
 import { ONERILEN_RENKLER, sonRenkleriOku, sonRenkEkle, ISARET_RENKLERI } from "./GorselOlustur"
 
 const KONUMLAR   = [{ id: "ust", ad: "Üst" }, { id: "orta", ad: "Orta" }, { id: "alt", ad: "Alt" }]
@@ -76,73 +77,47 @@ export default function MealIzlemeAyarlari({ acik, kapat, theme, isMobile, odak 
   }, [acik, kapat])
 
   const galeri = iz.galeri || []
-  const urller = useGaleriUrlleri(acik ? galeri : [], galeriBlobu)
-  const [ekleniyor, setEkleniyor] = useState(false)
+  // Galeri (resim + video) — ızgarada TEK "Galerim" kutusu; düzenleme ayrı sayfada (13 Ekim 2026)
+  const ogeler = useGaleriOgeleri(acik ? galeri : [], galeriBlobu)
+  const [duzenleAcik, setDuzenleAcik] = useState(false)
   const [sonRenkler, setSonRenkler] = useState(() => sonRenkleriOku())   // görsel oluşturmayla ortak
-  const galeriSecili = iz.arka === "galeri" || iz.arka === "ozel"
+  const galeriSecili = (iz.arka === "galeri" || iz.arka === "ozel") && galeri.length > 0
 
   const arkaOgeleri = useMemo(() => [
-    ...galeri.map((id, i) => ({
-      id: "g:" + id, ad: galeri.length > 1 ? `${i + 1}. resim` : "Resmim", resim: urller[id] || "",
-      secili: galeriSecili, onSil: () => galeridenKaldir(id),
-    })),
+    {
+      id: "galeri", ad: galeri.length >= 2 ? "Slayt" : "Galerim", secili: galeriSecili,
+      icerik: <GaleriKolaj theme={theme} galeri={galeri} ogeler={ogeler} />,
+    },
     ...gorseller.map(g => ({ id: g.id, ad: g.ad, resim: g.src, secili: iz.arka === g.id })),
     ...DESENLER.map(d => ({ id: d.id, ad: d.ad, resim: desenOnizleme(d), secili: iz.arka === d.id })),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  ], [galeri.join(","), urller, gorseller, iz.arka, galeriSecili])
+  ], [galeri.join(","), ogeler, gorseller, iz.arka, galeriSecili, theme])
 
   if (!acik) return null
 
-  // Galeriden BİR YA DA BİRDEN ÇOK resim: mevcut listenin sonuna eklenir
-  async function dosyaEkle(dosyalar) {
-    setEkleniyor(true)
-    try {
-      const yeni = await galeriyeEkle(dosyalar)
-      if (yeni.length) {
-        const mevcut = ayarOku().izleme.galeri || []
-        guncelle("izleme", { galeri: [...mevcut, ...yeni], arka: "galeri" })
-      }
-    } finally { setEkleniyor(false) }
+  // Galerim boşken kutuya dokunmak düzenleyiciyi açar (ilk eklenen öğeyle seçilir)
+  const arkaSec = (id) => {
+    if (id === "galeri") {
+      if (!galeri.length) { setDuzenleAcik(true); return }
+      guncelle("izleme", { arka: "galeri" })
+      return
+    }
+    guncelle("izleme", { arka: id })
   }
-  function galeridenKaldir(id) {
-    galeridenSil(id)
-    const kalan = (ayarOku().izleme.galeri || []).filter(x => x !== id)
-    guncelle("izleme", kalan.length ? { galeri: kalan } : { galeri: [], arka: DESENLER[0] ? DESENLER[0].id : "zumrut" })
-  }
-  const arkaSec = (id) => guncelle("izleme", { arka: String(id).startsWith("g:") ? "galeri" : id })
 
   const ipucu = { fontSize: "11px", color: theme.textSecondary, lineHeight: 1.5, margin: "8px 2px 0" }
 
   /* ── İZLEME: ARKA PLAN ─────────────────────────────────────────────── */
   const arkaSekmesi = (
     <>
-      <AyarBaslik theme={theme} ikon={ImageIcon} ust={4}
-        not={galeriSecili && galeri.length >= 2 ? `Slayt · ${galeri.length} resim` : null}>Arka plan</AyarBaslik>
-      <ArkaPlanIzgara theme={theme} ogeler={arkaOgeleri} onSec={arkaSec}
-        ekle={{ onDosyalar: dosyaEkle, ekleniyor }} />
-      <p style={ipucu}>
-        {galeri.length >= 2
-          ? (iz.slaytKip === "ayet"
-            ? "Galerideki resimler sırayla gösterilir (slayt); her âyet değiştiğinde sıradaki resme geçilir."
-            : "Galerideki resimler sırayla gösterilir (slayt). Âyet değişse de resim ve efekt kesintisiz sürer.")
-          : "Birden çok resim eklerseniz slayt gösterisi olur. Tek resimde âyet değişse de resim ve efekt aynen sürer."}
-      </p>
-      {galeriSecili && galeri.length >= 2 && (
-        <>
-          <AyarBaslik theme={theme} ikon={Layers}>Resim değişimi</AyarBaslik>
-          <Secim theme={theme} kucuk deger={iz.slaytKip === "ayet" ? "ayet" : "sure"} onSec={v => guncelle("izleme", { slaytKip: v })}
-            secenekler={[{ id: "sure", ad: "Süreyle", Ikon: Timer }, { id: "ayet", ad: "Âyet değişince", Ikon: Layers }]} />
-          {iz.slaytKip !== "ayet" && (
-            <>
-              <AyarBaslik theme={theme} ikon={Timer}>Her resim</AyarBaslik>
-              <Secim theme={theme} kucuk deger={Number(iz.slaytSure)} onSec={v => guncelle("izleme", { slaytSure: v })}
-                secenekler={SLAYT_SURELERI.map(sn => ({ id: sn, ad: `${sn} sn` }))} />
-            </>
-          )}
-          <AyarBaslik theme={theme} ikon={Shuffle}>Geçiş</AyarBaslik>
-          <Secim theme={theme} kucuk deger={iz.slaytGecis} onSec={v => guncelle("izleme", { slaytGecis: v })}
-            secenekler={GECISLER} />
-        </>
+      <AyarBaslik theme={theme} ikon={ImageIcon} ust={4}>Arka plan</AyarBaslik>
+      <ArkaPlanIzgara theme={theme} ogeler={arkaOgeleri} onSec={arkaSec} />
+      {galeriSecili ? (
+        <GaleriOzeti theme={theme} galeri={galeri} ogeler={ogeler} iz={iz} onDuzenle={() => setDuzenleAcik(true)} />
+      ) : (
+        <p style={ipucu}>
+          Galerim kutusuyla kendi resim ve videolarınızı ekleyebilirsiniz; birden çok öğe slayt gösterisi olur.
+        </p>
       )}
     </>
   )
@@ -263,6 +238,8 @@ export default function MealIzlemeAyarlari({ acik, kapat, theme, isMobile, odak 
           <div style={{ marginTop: "10px" }}>{mealBolum}</div>
         )}
       </div>
+      <GaleriDuzenleyici acik={duzenleAcik} kapat={() => setDuzenleAcik(false)} theme={theme} isMobile={isMobile}
+        baglam="izleme" onEklendi={() => guncelle("izleme", { arka: "galeri" })} />
     </>
   )
 }

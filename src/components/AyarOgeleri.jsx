@@ -146,9 +146,11 @@ export function ArkaPlanIzgara({ theme, ogeler, onSec, ekle }) {
       {ogeler.map(o => (
         <div key={o.id} style={{ position: "relative" }}>
           <button onClick={() => onSec?.(o.id)} aria-pressed={!!o.secili} title={o.ad} style={kutu(o.secili)}>
-            {o.resim
-              ? <img src={o.resim} alt="" draggable={false} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
-              : <span style={{ fontSize: "10px", color: theme.textSecondary }}>{o.ad}</span>}
+            {o.icerik
+              ? o.icerik
+              : o.resim
+                ? <img src={o.resim} alt="" draggable={false} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                : <span style={{ fontSize: "10px", color: theme.textSecondary }}>{o.ad}</span>}
             <span style={{
               position: "absolute", left: 0, right: 0, bottom: 0, padding: "10px 4px 3px",
               background: "linear-gradient(transparent, rgba(0,0,0,0.65))",
@@ -205,6 +207,42 @@ export function useGaleriUrlleri(ids, blobAl) {
     Object.values(eldeRef.current).forEach(u => { try { URL.revokeObjectURL(u) } catch { /* yoksay */ } })
   }, [])
   return urller
+}
+
+/* Galeri öğeleri: { id: { url, video, boyut } } — useGaleriUrlleri'nin türü ve
+   boyutu da veren hâli (13 Ekim 2026, galeriye video eklenince). */
+export function useGaleriOgeleri(ids, blobAl) {
+  const anahtar = (ids || []).join(",")
+  const [ogeler, setOgeler] = useState({})
+  const eldeRef = useRef({})
+  useEffect(() => {
+    let iptal = false
+    const yeni = {}
+    ;(async () => {
+      for (const id of (ids || [])) {
+        // Zaten elde olan öğe yeniden okunmuyor (sıra değişince her şey baştan inmesin)
+        if (eldeRef.current[id]) { yeni[id] = eldeRef.current[id]; continue }
+        const b = await blobAl(id)
+        if (iptal) break
+        if (b) yeni[id] = { url: URL.createObjectURL(b), video: /^video\//.test(b.type || ""), boyut: b.size || 0 }
+      }
+      if (iptal) {
+        Object.entries(yeni).forEach(([id, o]) => { if (eldeRef.current[id] !== o) URL.revokeObjectURL(o.url) })
+        return
+      }
+      const eski = eldeRef.current
+      eldeRef.current = yeni
+      setOgeler(yeni)
+      const birak = Object.entries(eski).filter(([id]) => !yeni[id]).map(([, o]) => o.url)
+      setTimeout(() => birak.forEach(u => { try { URL.revokeObjectURL(u) } catch { /* yoksay */ } }), 1500)
+    })()
+    return () => { iptal = true }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [anahtar])
+  useEffect(() => () => {
+    Object.values(eldeRef.current).forEach(o => { try { URL.revokeObjectURL(o.url) } catch { /* yoksay */ } })
+  }, [])
+  return ogeler
 }
 
 /* RENK SEÇİCİ — Otomatik · Özel (tarayıcı paleti) · son kullanılanlar · öneriler.

@@ -8,10 +8,11 @@ import {
 import { DESENLER, GORSELLER } from "../data/arkaplanlar"
 // İzleme modunun sahnesi (hareket / hava / ışık) ve ortak galeri — 7 Ekim 2026'da
 // görsel oluşturmaya da aktarıldı (kullanıcı: "görsel oluşturmada olmayan kısımları aktaralım").
-import { HAREKETLER as SAHNE_HAREKETLERI, HIZLAR, HAVALAR, ISIKLAR, GECISLER, SLAYT_SURELERI, GECIS_SN, resimCiz, gecisCiz, havaKur, havaCiz, isikCiz } from "../data/izlemeSahne"
-import { galeriyeEkle, galeridenSil, galeriBlobu } from "../data/izlemeGaleri"
+import { HAREKETLER as SAHNE_HAREKETLERI, HIZLAR, HAVALAR, ISIKLAR, GECIS_SN, resimCiz, gecisCiz, havaKur, havaCiz, isikCiz } from "../data/izlemeSahne"
+import { galeriBlobu, videoKaresi } from "../data/izlemeGaleri"
 import { useIzlemeAyar, ayarOku, ayarYaz } from "../data/izlemeAyar"
-import { Secim, Anahtar, AyarBaslik, ArkaPlanIzgara, desenOnizleme, useGaleriUrlleri } from "./AyarOgeleri"
+import { Secim, Anahtar, AyarBaslik, ArkaPlanIzgara, desenOnizleme, useGaleriOgeleri } from "./AyarOgeleri"
+import GaleriDuzenleyici, { GaleriKolaj, GaleriOzeti } from "./GaleriDuzenleyici"
 // Özel okuyuş işaretlerinin (kasr/medd/nûn-i sağîre) kuralı TEK YERDE, mushaf
 // sayfasıyla aynı tabloda duruyor. Burada yalnız ÇİZİM var, kural yok.
 import { ozelOkuyusAyikla } from "./MushafKelime"
@@ -1055,6 +1056,41 @@ function videoMime() {
   } catch { return null }
 }
 
+/* ── GALERİ VİDEOLARI (13 Ekim 2026) ─────────────────────────────────────────
+   Sessiz, satır içi, döngülü <video>; iOS'ta oynayıp tuvale çizilebilmesi için
+   görünmez bir kutuda DOM'a takılıyor. Karesi her çizimde "cover" kırpılarak
+   kendi tuvaline basılıyor; sahne o tuvali resim gibi kullanıyor (hareket,
+   geçiş ve efektler resimlerle aynı yoldan geçer). */
+let videoKutusu = null
+function sahneVideosu(url) {
+  return new Promise(cz => {
+    if (!videoKutusu || !videoKutusu.isConnected) {
+      videoKutusu = document.createElement("div")
+      videoKutusu.setAttribute("aria-hidden", "true")
+      videoKutusu.style.cssText = "position:fixed;left:0;top:0;width:2px;height:2px;overflow:hidden;opacity:0;pointer-events:none"
+      document.body.appendChild(videoKutusu)
+    }
+    const v = document.createElement("video")
+    v.muted = true; v.defaultMuted = true; v.playsInline = true; v.loop = true; v.preload = "auto"
+    v.setAttribute("muted", ""); v.setAttribute("playsinline", "")
+    let bitti = false
+    const son = (x) => { if (!bitti) { bitti = true; cz(x) } }
+    v.onloadeddata = () => son(v)
+    v.onerror = () => { v.remove(); son(null) }
+    setTimeout(() => son(v.readyState >= 2 ? v : null), 10000)
+    v.src = url
+    videoKutusu.appendChild(v)
+  })
+}
+function videoKapla(cv, v) {
+  const W = cv.width, H = cv.height, vw = v.videoWidth, vh = v.videoHeight
+  if (!vw || !vh) return
+  const o1 = vw / vh, o2 = W / H
+  let sw = vw, sh = vh, sx = 0, sy = 0
+  if (o1 > o2) { sw = vh * o2; sx = (vw - sw) / 2 } else { sh = vw / o2; sy = (vh - sh) / 2 }
+  try { cv.getContext("2d").drawImage(v, sx, sy, sw, sh, 0, 0, W, H) } catch { /* kare hazır değil */ }
+}
+
 export default function GorselOlustur({
   acik, kapat, arapca, meal, kaynak, secde = false, arapcaFont, theme, isMobile,
   // Video için (KuranOkuma doldurur; yoksa video sessiz kaydedilir)
@@ -1069,8 +1105,14 @@ export default function GorselOlustur({
   // Galeri İZLEME MODUYLA ORTAK (IndexedDB): birinde eklenen resim öbüründe de görünür
   const [izAyar] = useIzlemeAyar()
   const galeri = izAyar.izleme.galeri || []
-  const galeriUrl = useGaleriUrlleri(acik ? galeri : [], galeriBlobu)
-  const [ekleniyor, setEkleniyor] = useState(false)
+  // Galeri (resim + video) — ızgarada TEK "Galerim" kutusu; düzenleme GaleriDuzenleyici'de (13 Ekim 2026)
+  const galeriOgeleri = useGaleriOgeleri(acik ? galeri : [], galeriBlobu)
+  const galeriUrl = useMemo(() => {
+    const m = {}
+    for (const [id, o] of Object.entries(galeriOgeleri)) m[id] = o.url
+    return m
+  }, [galeriOgeleri])
+  const [galeriDuzenleAcik, setGaleriDuzenleAcik] = useState(false)
   const [cerceve, setCerceve] = useState("ince")
   const [karartma, setKarartma] = useState("orta")
   const [arapcaAcik, setArapcaAcik] = useState(!!arapca)
@@ -1100,9 +1142,11 @@ export default function GorselOlustur({
   /* SLAYT GÖSTERİSİ (13 Ekim 2026) — yalnız videoda, galeride 2+ resim varken.
      "kapali": seçili tek arka plan · "sure": her resim belirli süre · "ayet": her
      âyette (video parçasında) sıradaki resim. Açıkken arka plan galeriden sırayla gelir. */
-  const [slaytKip, setSlaytKip] = useState("kapali")
-  const [slaytSn, setSlaytSn] = useState(8)
-  const [slaytGecis, setSlaytGecis] = useState("solma")
+  // Slayt ayarları izleme moduyla ORTAK (Galerim düzenleyicisinde değişiyor)
+  const izOrtak = izAyar.izleme
+  const slaytKip = izOrtak.slaytKip === "ayet" ? "ayet" : "sure"
+  const slaytSn = Math.max(1, Number(izOrtak.slaytSure) || 15)
+  const slaytGecis = izOrtak.slaytGecis || "solma"
   // Video VARSAYILAN SESSİZ üretilir; kullanıcı isterse önizlemedeki ses ikonundan açar.
   const [sesAcik, setSesAcik] = useState(false)
   // DİNLEME (monitör): kayıt SIRASINDA sesin hoparlörden duyulup duyulmayacağı. Kapalı başlar —
@@ -1140,7 +1184,18 @@ export default function GorselOlustur({
   const [ilerleme, setIlerleme] = useState(0)
   const [kalanSn, setKalanSn] = useState(0)
   const arkaCvRef = useRef(null)                             // ön-çizilmiş arka plan
-  const slaytCvRef = useRef(null)                            // slaytta her resmin ön-çizimi [canvas]
+  const slaytCvRef = useRef(null)                            // galeri sahnesi: [{ cv, video?, sure? }]
+  const videoElRef = useRef([])                              // sahnedeki <video>'lar (temizlik için)
+  const videoSiraRef = useRef(-1)                            // en son başa sarılan slayt sırası
+  const videoElleriniBirak = useCallback(() => {
+    for (const v of videoElRef.current) {
+      try { v.pause(); v.removeAttribute("src"); v.load(); v.remove() } catch { /* yoksay */ }
+    }
+    videoElRef.current = []
+  }, [])
+  // Panel kapanınca / videodan çıkınca sahne videoları bırakılır
+  useEffect(() => { if (!acik || mod !== "video") { videoElleriniBirak(); slaytCvRef.current = null } }, [acik, mod, videoElleriniBirak])
+  useEffect(() => () => videoElleriniBirak(), [videoElleriniBirak])
   const onCvRef = useRef(null)                               // ön-çizilmiş yazı katmanı
   const rafRef = useRef(null)
   const parcacikRef = useRef([])
@@ -1269,7 +1324,26 @@ export default function GorselOlustur({
     return () => { iptal = true }
   }, [acik])
 
+  // İlk galeri öğesi video ise fotoğraf için tek karesi çıkarılır
+  const [kapakKaresi, setKapakKaresi] = useState(null)
+  const ilkGaleriOge = galeri.length ? galeriOgeleri[galeri[0]] : null
+  const ilkVideoUrl = ilkGaleriOge && ilkGaleriOge.video ? ilkGaleriOge.url : null
+  useEffect(() => {
+    if (!ilkVideoUrl) { setKapakKaresi(null); return }
+    let iptal = false, uretilen = null
+    videoKaresi(ilkVideoUrl, 0.5).then(u => { uretilen = u; if (!iptal) setKapakKaresi(u); else if (u) URL.revokeObjectURL(u) })
+    return () => { iptal = true; if (uretilen) setTimeout(() => { try { URL.revokeObjectURL(uretilen) } catch { /* yoksay */ } }, 1500) }
+  }, [ilkVideoUrl])
+  // Galerim boşaldıysa (düzenleyicide hepsi kaldırıldı) varsayılan arka plana dön
+  useEffect(() => { if (arkaId === "galeri" && !galeri.length) setArkaId("zumrut") }, [arkaId, galeri.length])
+
   const secili = useMemo(() => {
+    // GALERİM: fotoğrafta ilk öğe (kapak); video ise ilk karesi
+    if (arkaId === "galeri" && galeri.length) {
+      const ilk = galeriOgeleri[galeri[0]]
+      if (ilk && !ilk.video) return { id: "galeri", ad: "Galerim", src: ilk.url, koyu: true, tip: "gorsel" }
+      if (ilk && ilk.video && kapakKaresi) return { id: "galeri", ad: "Galerim", src: kapakKaresi, koyu: true, tip: "gorsel" }
+    }
     if (String(arkaId).startsWith("g:")) {
       const u = galeriUrl[arkaId.slice(2)]
       if (u) return { id: arkaId, ad: "Galeri", src: u, koyu: true, tip: "gorsel" }
@@ -1278,14 +1352,16 @@ export default function GorselOlustur({
     if (g) return { ...g, tip: "gorsel" }
     const d = DESENLER.find(x => x.id === arkaId) || DESENLER[0]
     return { ...d, tip: "desen" }
-  }, [arkaId, galeriUrl, gecerliGorseller])
+  }, [arkaId, galeriUrl, gecerliGorseller, galeri, galeriOgeleri, kapakKaresi])
 
   // Slayt etkin mi + yazı katmanının dayandığı arka plan (slaytta galeri resmi → koyu zemin)
-  const slaytResimleri = useMemo(() => galeri.filter(id => galeriUrl[id]), [galeri, galeriUrl])
-  const slaytAktif = mod === "video" && slaytKip !== "kapali" && slaytResimleri.length >= 2
+  // GALERİ SAHNESİ (videoda): 2+ öğe → slayt; tek öğe video ise hareketli arka plan
+  const slaytResimleri = useMemo(() => galeri.filter(id => galeriOgeleri[id]), [galeri, galeriOgeleri])
+  const slaytAktif = mod === "video" && arkaId === "galeri" && (slaytResimleri.length >= 2
+    || (slaytResimleri.length === 1 && !!galeriOgeleri[slaytResimleri[0]]?.video))
   const arkaEtkin = useMemo(() => (slaytAktif
-    ? { id: "slayt", ad: "Galeri slaytı", src: galeriUrl[slaytResimleri[0]], koyu: true, tip: "gorsel" }
-    : secili), [slaytAktif, slaytResimleri, galeriUrl, secili])
+    ? { id: "slayt", ad: "Galeri slaytı", src: secili.src, koyu: true, tip: "gorsel" }
+    : secili), [slaytAktif, secili])
 
   // Hazır oranlar + cihazın tam ekranı
   const oranListesi = useMemo(() => [...ORANLAR, ekranOlcusuAl()], [])
@@ -1425,27 +1501,41 @@ export default function GorselOlustur({
     const arkaCv = document.createElement("canvas"); arkaCv.width = W; arkaCv.height = H
     await gorselCiz(arkaCv.getContext("2d"), cizAyari({ katman: "arka" }))
     if (benim !== cizNoRef.current) return toplamSureRef.current || videoSure   // eskimiş
-    // Slayt: galerideki her resim ayrı ön-çizilir (karede yalnız kopyalanır)
+    // Galeri sahnesi: her RESİM ayrı ön-çizilir (karede yalnız kopyalanır); her VİDEO
+    // sessiz bir <video> olarak hazırlanır, karesi her çizimde kendi tuvaline basılır.
+    videoElleriniBirak()
     let slaytlar = null
     if (slaytAktif) {
       slaytlar = []
       for (const id of slaytResimleri) {
+        const o = galeriOgeleri[id]
+        if (!o) continue
         const cv = document.createElement("canvas"); cv.width = W; cv.height = H
-        await gorselCiz(cv.getContext("2d"), cizAyari({
-          katman: "arka", arka: { id: "g:" + id, ad: "Galeri", src: galeriUrl[id], koyu: true, tip: "gorsel" },
-        }))
-        if (benim !== cizNoRef.current) return toplamSureRef.current || videoSure
-        slaytlar.push(cv)
+        if (o.video) {
+          const v = await sahneVideosu(o.url)
+          if (benim !== cizNoRef.current) { try { v && v.pause() } catch { /* yoksay */ } return toplamSureRef.current || videoSure }
+          if (!v) continue
+          videoElRef.current.push(v)
+          slaytlar.push({ cv, video: v, sure: v.duration || 0 })
+        } else {
+          await gorselCiz(cv.getContext("2d"), cizAyari({
+            katman: "arka", arka: { id: "g:" + id, ad: "Galeri", src: o.url, koyu: true, tip: "gorsel" },
+          }))
+          if (benim !== cizNoRef.current) return toplamSureRef.current || videoSure
+          slaytlar.push({ cv })
+        }
       }
+      if (!slaytlar.length) slaytlar = null
     }
     slaytCvRef.current = slaytlar
+    videoSiraRef.current = -1
     arkaCvRef.current = arkaCv
     parcacikRef.current = havaKur(hava, W, H)
     parcaIdxRef.current = -1
     parcaCiz(0)
     const toplam = cizelgeKur()
     return toplam
-  }, [olcu, cizAyari, hava, parcaCiz, cizelgeKur, videoSure, slaytAktif, slaytResimleri, galeriUrl])
+  }, [olcu, cizAyari, hava, parcaCiz, cizelgeKur, videoSure, slaytAktif, slaytResimleri, galeriOgeleri, videoElleriniBirak])
 
   // Tek kare: arka plan (hareketli) → parçacıklar → o anki âyetin yazı katmanı
   const videoKare = useCallback((ctx, t, toplam) => {
@@ -1468,16 +1558,38 @@ export default function GorselOlustur({
       }
     }
     const slaytlar = slaytCvRef.current
-    if (slaytlar && slaytlar.length >= 2) {
+    if (slaytlar && slaytlar.length) {
       const n = slaytlar.length
-      let sira, bas
-      if (slaytKip === "ayet") { sira = idx; bas = (cizelge[idx] || { bas: 0 }).bas }
-      else { const s = Math.max(1, Number(slaytSn) || 8); sira = Math.floor(t / s); bas = sira * s }
+      let sira = 0, bas = 0
+      if (n === 1) { sira = 0; bas = 0 }
+      else if (slaytKip === "ayet") { sira = idx; bas = (cizelge[idx] || { bas: 0 }).bas }
+      else {
+        // Süreyle: resim slaytSn kadar, video KENDİ süresi kadar (2–120 sn)
+        const sureler = slaytlar.map(x => (x.video && x.sure > 0 ? Math.min(120, Math.max(2, x.sure)) : slaytSn))
+        const tur = sureler.reduce((a, b) => a + b, 0) || 1
+        const kac = Math.floor(t / tur)
+        let kalan = t - kac * tur, i = 0
+        while (i < n - 1 && kalan >= sureler[i]) { kalan -= sureler[i]; i++ }
+        sira = kac * n + i; bas = t - kalan
+      }
       const i = sira % n, onceki = (sira - 1 + n) % n
-      const p = (t - bas) / GECIS_SN
-      if (sira > 0 && p < 1) {
-        gecisCiz(ctx, W, H, arkaCizici(slaytlar[onceki], onceki * 1.7), arkaCizici(slaytlar[i], i * 1.7), slaytGecis, p, sira)
-      } else arkaCizici(slaytlar[i], i * 1.7)()
+      // Video denetimi: yeni slaytın videosu baştan başlar; ekranda olmayanlar durur
+      if (sira !== videoSiraRef.current) {
+        videoSiraRef.current = sira
+        const yeni = slaytlar[i]
+        if (yeni.video) { try { yeni.video.currentTime = 0 } catch { /* yoksay */ } }
+      }
+      const gecisVar = n > 1 && sira > 0 && (t - bas) < GECIS_SN
+      slaytlar.forEach((x, j) => {
+        if (!x.video) return
+        const gorunur = j === i || (gecisVar && j === onceki)
+        if (gorunur && x.video.paused) { const pr = x.video.play(); if (pr && pr.catch) pr.catch(() => {}) }
+        else if (!gorunur && !x.video.paused) x.video.pause()
+      })
+      const hazirla = (x) => { if (x.video) videoKapla(x.cv, x.video); return x.cv }
+      if (gecisVar) {
+        gecisCiz(ctx, W, H, arkaCizici(hazirla(slaytlar[onceki]), onceki * 1.7), arkaCizici(hazirla(slaytlar[i]), i * 1.7), slaytGecis, (t - bas) / GECIS_SN, sira)
+      } else arkaCizici(hazirla(slaytlar[i]), i * 1.7)()
     } else {
       arkaCizici(arkaCv, 0)()
     }
@@ -1507,7 +1619,7 @@ export default function GorselOlustur({
   // Önizlemenin yeniden kurulmasını gerektiren AYAR imzası (ilkel değerlerden)
   const icerikImza = `${arapcaAcik ? 1 : 0}${mealAcik ? 1 : 0}${kaynakAcik ? 1 : 0}${rahleAcik ? 1 : 0}`
     + `|${kapsam}|${(arapca || "").length}|${(meal || "").length}|${kaynak || ""}`
-    + `|${arkaEtkin.id}|${slaytAktif ? `${slaytKip}:${slaytSn}:${slaytGecis}:${slaytResimleri.join(",")}` : "-"}|${cerceve}|${karartma}|${yaziRengi || "oto"}|${isaretRenk}${isaretRenk === "ozel" ? isaretOzel : ""}|${arapcaFont || ""}|${videoParcalari.length}|${varliklarSurum}`
+    + `|${arkaEtkin.id}:${secili.src || ""}|${slaytAktif ? `${slaytKip}:${slaytSn}:${slaytGecis}:${slaytResimleri.join(",")}` : "-"}|${cerceve}|${karartma}|${yaziRengi || "oto"}|${isaretRenk}${isaretRenk === "ozel" ? isaretOzel : ""}|${arapcaFont || ""}|${videoParcalari.length}|${varliklarSurum}`
 
   // Fontlar yüklenmeden çizersek canvas yedek fontla çizer → önce fonts.ready bekle
   useEffect(() => {
@@ -1808,25 +1920,10 @@ export default function GorselOlustur({
     setCalisiyor(false)
   }
 
-  // Galeriye resim ekle (izleme moduyla ortak); eklenen ilk resim seçilir
-  const dosyaEkle = async (dosyalar) => {
-    setEkleniyor(true)
-    try {
-      const yeni = await galeriyeEkle(dosyalar)
-      if (yeni.length) {
-        const iz = ayarOku().izleme
-        ayarYaz("izleme", { galeri: [...(iz.galeri || []), ...yeni] })
-        setArkaId("g:" + yeni[0])
-      }
-    } finally { setEkleniyor(false) }
-  }
-  const galeridenKaldir = (id) => {
-    galeridenSil(id)
-    const iz = ayarOku().izleme
-    const kalan = (iz.galeri || []).filter(x => x !== id)
-    ayarYaz("izleme", kalan.length ? { galeri: kalan }
-      : { galeri: [], arka: iz.arka === "galeri" ? (DESENLER[0]?.id || "zumrut") : iz.arka })
-    if (arkaId === "g:" + id) setArkaId(DESENLER[0]?.id || "zumrut")
+  // Galerim kutusu: boşken dokunmak düzenleyiciyi açar; doluyken arka plan olarak seçer
+  const arkaSec = (id) => {
+    if (id === "galeri" && !galeri.length) { setGaleriDuzenleAcik(true); return }
+    setArkaId(id)
   }
 
   if (!acik) return null
@@ -2015,15 +2112,20 @@ export default function GorselOlustur({
 
           {/* ARKA PLAN — galeri izleme moduyla ortak */}
           <AyarBaslik theme={theme} ikon={ImageIcon} not={galeri.length ? "galeri izleme moduyla ortak" : null}>Arka plan</AyarBaslik>
-          <ArkaPlanIzgara theme={theme} onSec={setArkaId} ekle={{ onDosyalar: dosyaEkle, ekleniyor }}
+          <ArkaPlanIzgara theme={theme} onSec={arkaSec}
             ogeler={[
-              ...galeri.map((id, i) => ({
-                id: "g:" + id, ad: galeri.length > 1 ? `${i + 1}. resim` : "Resmim",
-                resim: galeriUrl[id] || "", secili: arkaId === "g:" + id, onSil: () => galeridenKaldir(id),
-              })),
+              {
+                id: "galeri", ad: galeri.length >= 2 ? "Slayt" : "Galerim", secili: arkaId === "galeri" && galeri.length > 0,
+                icerik: <GaleriKolaj theme={theme} galeri={galeri} ogeler={galeriOgeleri} />,
+              },
               ...gecerliGorseller.map(g => ({ id: g.id, ad: g.ad, resim: g.src, secili: arkaId === g.id })),
               ...DESENLER.map(d => ({ id: d.id, ad: d.ad, resim: desenOnizleme(d), secili: arkaId === d.id })),
             ]} />
+          {arkaId === "galeri" && galeri.length > 0 && (
+            <GaleriOzeti theme={theme} galeri={galeri} ogeler={galeriOgeleri} iz={izOrtak}
+              not={mod === "foto" && galeri.length > 1 ? "fotoğrafta kapak" : null}
+              onDuzenle={() => setGaleriDuzenleAcik(true)} />
+          )}
 
           {/* ÇERÇEVE */}
           <AyarBaslik theme={theme} ikon={Frame}>Çerçeve</AyarBaslik>
@@ -2205,36 +2307,7 @@ export default function GorselOlustur({
                 </>
               )}
 
-              {/* SLAYT — galeride 2+ resim varsa arka plan sırayla değişebilir */}
-              {galeri.length >= 2 && (
-                <>
-                  <AyarBaslik theme={theme} ikon={Layers} ust={ayet && ayetListesiAl ? 4 : 18}
-                    not={slaytAktif ? `${slaytResimleri.length} resim` : null}>Slayt gösterisi</AyarBaslik>
-                  <Secim theme={theme} kucuk deger={slaytKip} onSec={setSlaytKip}
-                    secenekler={[{ id: "kapali", ad: "Kapalı" }, { id: "sure", ad: "Süreyle", Ikon: Timer },
-                      { id: "ayet", ad: "Âyet değişince", Ikon: Layers }]} />
-                  {slaytKip === "sure" && (
-                    <>
-                      <AyarBaslik theme={theme} ikon={Timer}>Her resim</AyarBaslik>
-                      <Secim theme={theme} kucuk deger={slaytSn} onSec={setSlaytSn}
-                        secenekler={[4, ...SLAYT_SURELERI.filter(sn => sn <= 30)].map(sn => ({ id: sn, ad: `${sn} sn` }))} />
-                    </>
-                  )}
-                  {slaytKip !== "kapali" && (
-                    <>
-                      <AyarBaslik theme={theme} ikon={Shuffle}>Geçiş</AyarBaslik>
-                      <Secim theme={theme} kucuk deger={slaytGecis} onSec={setSlaytGecis} secenekler={GECISLER} />
-                      <div style={{ fontSize: "10px", color: theme.textSecondary, opacity: 0.75, margin: "6px 2px 0", lineHeight: 1.45 }}>
-                        Arka plan galerideki resimlerden sırayla gelir{slaytKip === "ayet"
-                          ? (videoParcalari.length > 1 ? "; her âyette sıradaki resme geçilir." : "; tek âyette yalnız ilk resim görünür.")
-                          : "."}
-                      </div>
-                    </>
-                  )}
-                </>
-              )}
-
-              <AyarBaslik theme={theme} ikon={Move} ust={galeri.length >= 2 ? 18 : (ayet && ayetListesiAl ? 4 : 18)}>Resim hareketi</AyarBaslik>
+              <AyarBaslik theme={theme} ikon={Move} ust={ayet && ayetListesiAl ? 4 : 18}>Resim hareketi</AyarBaslik>
               <Secim theme={theme} kucuk deger={hareket} onSec={setHareket} secenekler={HAREKETLER} />
               {SAHNE_HAREKETI.has(hareket) && (
                 <>
@@ -2377,6 +2450,8 @@ export default function GorselOlustur({
           </>)}
         </div>
       </div>
+      <GaleriDuzenleyici acik={galeriDuzenleAcik} kapat={() => setGaleriDuzenleAcik(false)} theme={theme}
+        isMobile={isMobile} baglam="gorsel" onEklendi={() => setArkaId("galeri")} />
     </div>
   )
 }

@@ -3,12 +3,12 @@ import {
   X, Download, Share2, Plus, Check, Loader2,
   Square, RectangleHorizontal, RectangleVertical, Image as ImageIcon, Pipette,
   ImagePlay, Film, Volume2, VolumeX, CircleStop, Smartphone, Monitor,
-  Ratio, LayoutTemplate, Frame, Eye, Wind, Sun, Palette, Layers, Move, Gauge, Timer, Highlighter,
+  Ratio, LayoutTemplate, Frame, Eye, Wind, Sun, Palette, Layers, Move, Gauge, Timer, Highlighter, Shuffle,
 } from "lucide-react"
 import { DESENLER, GORSELLER } from "../data/arkaplanlar"
 // İzleme modunun sahnesi (hareket / hava / ışık) ve ortak galeri — 7 Ekim 2026'da
 // görsel oluşturmaya da aktarıldı (kullanıcı: "görsel oluşturmada olmayan kısımları aktaralım").
-import { HAREKETLER as SAHNE_HAREKETLERI, HIZLAR, HAVALAR, ISIKLAR, resimCiz, havaKur, havaCiz, isikCiz } from "../data/izlemeSahne"
+import { HAREKETLER as SAHNE_HAREKETLERI, HIZLAR, HAVALAR, ISIKLAR, GECISLER, SLAYT_SURELERI, GECIS_SN, resimCiz, gecisCiz, havaKur, havaCiz, isikCiz } from "../data/izlemeSahne"
 import { galeriyeEkle, galeridenSil, galeriBlobu } from "../data/izlemeGaleri"
 import { useIzlemeAyar, ayarOku, ayarYaz } from "../data/izlemeAyar"
 import { Secim, Anahtar, AyarBaslik, ArkaPlanIzgara, desenOnizleme, useGaleriUrlleri } from "./AyarOgeleri"
@@ -1097,6 +1097,12 @@ export default function GorselOlustur({
   const [isik, setIsik] = useState("yok")
   const [hiz, setHiz] = useState("yavas")
   const [hareket, setHareket] = useState("yakinlas")
+  /* SLAYT GÖSTERİSİ (13 Ekim 2026) — yalnız videoda, galeride 2+ resim varken.
+     "kapali": seçili tek arka plan · "sure": her resim belirli süre · "ayet": her
+     âyette (video parçasında) sıradaki resim. Açıkken arka plan galeriden sırayla gelir. */
+  const [slaytKip, setSlaytKip] = useState("kapali")
+  const [slaytSn, setSlaytSn] = useState(8)
+  const [slaytGecis, setSlaytGecis] = useState("solma")
   // Video VARSAYILAN SESSİZ üretilir; kullanıcı isterse önizlemedeki ses ikonundan açar.
   const [sesAcik, setSesAcik] = useState(false)
   // DİNLEME (monitör): kayıt SIRASINDA sesin hoparlörden duyulup duyulmayacağı. Kapalı başlar —
@@ -1134,6 +1140,7 @@ export default function GorselOlustur({
   const [ilerleme, setIlerleme] = useState(0)
   const [kalanSn, setKalanSn] = useState(0)
   const arkaCvRef = useRef(null)                             // ön-çizilmiş arka plan
+  const slaytCvRef = useRef(null)                            // slaytta her resmin ön-çizimi [canvas]
   const onCvRef = useRef(null)                               // ön-çizilmiş yazı katmanı
   const rafRef = useRef(null)
   const parcacikRef = useRef([])
@@ -1273,6 +1280,13 @@ export default function GorselOlustur({
     return { ...d, tip: "desen" }
   }, [arkaId, galeriUrl, gecerliGorseller])
 
+  // Slayt etkin mi + yazı katmanının dayandığı arka plan (slaytta galeri resmi → koyu zemin)
+  const slaytResimleri = useMemo(() => galeri.filter(id => galeriUrl[id]), [galeri, galeriUrl])
+  const slaytAktif = mod === "video" && slaytKip !== "kapali" && slaytResimleri.length >= 2
+  const arkaEtkin = useMemo(() => (slaytAktif
+    ? { id: "slayt", ad: "Galeri slaytı", src: galeriUrl[slaytResimleri[0]], koyu: true, tip: "gorsel" }
+    : secili), [slaytAktif, slaytResimleri, galeriUrl, secili])
+
   // Hazır oranlar + cihazın tam ekranı
   const oranListesi = useMemo(() => [...ORANLAR, ekranOlcusuAl()], [])
   const olcuTam = oranListesi.find(o => o.id === oran) || oranListesi[0]
@@ -1290,7 +1304,7 @@ export default function GorselOlustur({
   // Ortak ayar paketi (foto ve video aynı görünümü kullansın)
   const cizAyari = useCallback((ek) => ({
     W: olcu.w, H: olcu.h,
-    arka: secili,
+    arka: arkaEtkin,
     cerceve, karartma,
     arapca: arapcaAcik ? arapca : null,
     meal:   mealAcik   ? meal   : null,
@@ -1306,7 +1320,7 @@ export default function GorselOlustur({
     secde: arapcaAcik ? secde : false,
     rozetImg: rozetImgRef.current,
     ...ek,
-  }), [olcu, secili, cerceve, karartma, arapca, meal, kaynak, arapcaAcik, mealAcik, kaynakAcik, rahleAcik, sureAdiNo, sureAdiHazir, arapcaFont, yaziRengi, isaretRenk, isaretOzel, ayet, secde, varliklarSurum])
+  }), [olcu, arkaEtkin, cerceve, karartma, arapca, meal, kaynak, arapcaAcik, mealAcik, kaynakAcik, rahleAcik, sureAdiNo, sureAdiHazir, arapcaFont, yaziRengi, isaretRenk, isaretOzel, ayet, secde, varliklarSurum])
 
   // ÇİZİM SIRA NUMARASI — `gorselCiz` asenkron (arka plan fotoğrafını bekliyor). Art arda
   // ayar değiştirilince ESKİ çizim SONRA bitip canvas'a basabiliyordu: kullanıcı ayarı
@@ -1327,7 +1341,7 @@ export default function GorselOlustur({
       const g = gizli.getContext("2d")
       await gorselCiz(g, cizAyari({ katman: "arka" }))
       if (benim !== cizNoRef.current) return
-      karartmaCiz(g, W, H, karartma, secili.koyu !== false)
+      karartmaCiz(g, W, H, karartma, arkaEtkin.koyu !== false)
       isikCiz(g, isik, W, H, FOTO_EFEKT_ANI)
       havaCiz(g, hava, havaKur(hava, W, H), W, H, FOTO_EFEKT_ANI)
       const on = document.createElement("canvas"); on.width = W; on.height = H
@@ -1342,7 +1356,7 @@ export default function GorselOlustur({
     setUyari(olcek <= 0.46
       ? "Metin uzun olduğu için yazı en küçük okunur boyuta indi. Daha kısa bir bölüm seçerseniz daha güzel görünecektir."
       : "")
-  }, [olcu, cizAyari, hava, isik, karartma, secili])
+  }, [olcu, cizAyari, hava, isik, karartma, arkaEtkin])
 
   // ── VİDEO PARÇALARI ────────────────────────────────────────────
   // Tek âyet → tek parça. Çoklu seçimde KuranOkuma'nın listesi kullanılır
@@ -1411,13 +1425,27 @@ export default function GorselOlustur({
     const arkaCv = document.createElement("canvas"); arkaCv.width = W; arkaCv.height = H
     await gorselCiz(arkaCv.getContext("2d"), cizAyari({ katman: "arka" }))
     if (benim !== cizNoRef.current) return toplamSureRef.current || videoSure   // eskimiş
+    // Slayt: galerideki her resim ayrı ön-çizilir (karede yalnız kopyalanır)
+    let slaytlar = null
+    if (slaytAktif) {
+      slaytlar = []
+      for (const id of slaytResimleri) {
+        const cv = document.createElement("canvas"); cv.width = W; cv.height = H
+        await gorselCiz(cv.getContext("2d"), cizAyari({
+          katman: "arka", arka: { id: "g:" + id, ad: "Galeri", src: galeriUrl[id], koyu: true, tip: "gorsel" },
+        }))
+        if (benim !== cizNoRef.current) return toplamSureRef.current || videoSure
+        slaytlar.push(cv)
+      }
+    }
+    slaytCvRef.current = slaytlar
     arkaCvRef.current = arkaCv
     parcacikRef.current = havaKur(hava, W, H)
     parcaIdxRef.current = -1
     parcaCiz(0)
     const toplam = cizelgeKur()
     return toplam
-  }, [olcu, cizAyari, hava, parcaCiz, cizelgeKur, videoSure])
+  }, [olcu, cizAyari, hava, parcaCiz, cizelgeKur, videoSure, slaytAktif, slaytResimleri, galeriUrl])
 
   // Tek kare: arka plan (hareketli) → parçacıklar → o anki âyetin yazı katmanı
   const videoKare = useCallback((ctx, t, toplam) => {
@@ -1425,21 +1453,38 @@ export default function GorselOlustur({
     const arkaCv = arkaCvRef.current
     if (!arkaCv) return
     ctx.clearRect(0, 0, W, H)
-    if (SAHNE_HAREKETI.has(hareket)) {
-      resimCiz(ctx, W, H, { img: arkaCv, w: W, h: H }, hareket, hiz, t, 0)
-    } else {
-      const k = hareketKutusu(hareket, W, H, t, toplam)
-      ctx.drawImage(arkaCv, k.sx, k.sy, k.sw, k.sh, 0, 0, W, H)
-    }
-    // Sıra izleme moduyla aynı: karartma → ışık → hava → yazı
-    karartmaCiz(ctx, W, H, karartma, secili.koyu !== false)
-    isikCiz(ctx, isik, W, H, t)
-    havaCiz(ctx, hava, parcacikRef.current, W, H, t)
 
-    // Hangi âyetteyiz?
+    // Hangi âyetteyiz? (slayt "âyetle" kipinde resim de buna göre seçilir)
     const cizelge = cizelgeRef.current
     let idx = 0
     for (let i = 0; i < cizelge.length; i++) { if (t >= cizelge[i].bas) idx = i; else break }
+
+    const arkaCizici = (kaynakCv, faz) => () => {
+      if (SAHNE_HAREKETI.has(hareket)) {
+        resimCiz(ctx, W, H, { img: kaynakCv, w: W, h: H }, hareket, hiz, t, faz)
+      } else {
+        const k = hareketKutusu(hareket, W, H, t, toplam)
+        ctx.drawImage(kaynakCv, k.sx, k.sy, k.sw, k.sh, 0, 0, W, H)
+      }
+    }
+    const slaytlar = slaytCvRef.current
+    if (slaytlar && slaytlar.length >= 2) {
+      const n = slaytlar.length
+      let sira, bas
+      if (slaytKip === "ayet") { sira = idx; bas = (cizelge[idx] || { bas: 0 }).bas }
+      else { const s = Math.max(1, Number(slaytSn) || 8); sira = Math.floor(t / s); bas = sira * s }
+      const i = sira % n, onceki = (sira - 1 + n) % n
+      const p = (t - bas) / GECIS_SN
+      if (sira > 0 && p < 1) {
+        gecisCiz(ctx, W, H, arkaCizici(slaytlar[onceki], onceki * 1.7), arkaCizici(slaytlar[i], i * 1.7), slaytGecis, p, sira)
+      } else arkaCizici(slaytlar[i], i * 1.7)()
+    } else {
+      arkaCizici(arkaCv, 0)()
+    }
+    // Sıra izleme moduyla aynı: karartma → ışık → hava → yazı
+    karartmaCiz(ctx, W, H, karartma, arkaEtkin.koyu !== false)
+    isikCiz(ctx, isik, W, H, t)
+    havaCiz(ctx, hava, parcacikRef.current, W, H, t)
     if (idx !== parcaIdxRef.current) parcaCiz(idx)
     const cv = parcaCvRef.current
     if (!cv) return
@@ -1452,7 +1497,7 @@ export default function GorselOlustur({
     ctx.globalAlpha = Math.max(0, Math.min(1, gir * cik))
     ctx.drawImage(cv, 0, 0)
     ctx.globalAlpha = 1
-  }, [olcu, hareket, hiz, hava, isik, karartma, secili, parcaCiz])
+  }, [olcu, hareket, hiz, hava, isik, karartma, arkaEtkin, parcaCiz, slaytKip, slaytSn, slaytGecis])
 
   // Döngünün kullandığı GÜNCEL işlevler — bağımlılık kirlenmesin diye ref üzerinden okunur
   const hazirlaRef = useRef(null)
@@ -1462,7 +1507,7 @@ export default function GorselOlustur({
   // Önizlemenin yeniden kurulmasını gerektiren AYAR imzası (ilkel değerlerden)
   const icerikImza = `${arapcaAcik ? 1 : 0}${mealAcik ? 1 : 0}${kaynakAcik ? 1 : 0}${rahleAcik ? 1 : 0}`
     + `|${kapsam}|${(arapca || "").length}|${(meal || "").length}|${kaynak || ""}`
-    + `|${secili.id}|${cerceve}|${karartma}|${yaziRengi || "oto"}|${isaretRenk}${isaretRenk === "ozel" ? isaretOzel : ""}|${arapcaFont || ""}|${videoParcalari.length}|${varliklarSurum}`
+    + `|${arkaEtkin.id}|${slaytAktif ? `${slaytKip}:${slaytSn}:${slaytGecis}:${slaytResimleri.join(",")}` : "-"}|${cerceve}|${karartma}|${yaziRengi || "oto"}|${isaretRenk}${isaretRenk === "ozel" ? isaretOzel : ""}|${arapcaFont || ""}|${videoParcalari.length}|${varliklarSurum}`
 
   // Fontlar yüklenmeden çizersek canvas yedek fontla çizer → önce fonts.ready bekle
   useEffect(() => {
@@ -2160,7 +2205,36 @@ export default function GorselOlustur({
                 </>
               )}
 
-              <AyarBaslik theme={theme} ikon={Move} ust={ayet && ayetListesiAl ? 4 : 18}>Resim hareketi</AyarBaslik>
+              {/* SLAYT — galeride 2+ resim varsa arka plan sırayla değişebilir */}
+              {galeri.length >= 2 && (
+                <>
+                  <AyarBaslik theme={theme} ikon={Layers} ust={ayet && ayetListesiAl ? 4 : 18}
+                    not={slaytAktif ? `${slaytResimleri.length} resim` : null}>Slayt gösterisi</AyarBaslik>
+                  <Secim theme={theme} kucuk deger={slaytKip} onSec={setSlaytKip}
+                    secenekler={[{ id: "kapali", ad: "Kapalı" }, { id: "sure", ad: "Süreyle", Ikon: Timer },
+                      { id: "ayet", ad: "Âyet değişince", Ikon: Layers }]} />
+                  {slaytKip === "sure" && (
+                    <>
+                      <AyarBaslik theme={theme} ikon={Timer}>Her resim</AyarBaslik>
+                      <Secim theme={theme} kucuk deger={slaytSn} onSec={setSlaytSn}
+                        secenekler={[4, ...SLAYT_SURELERI.filter(sn => sn <= 30)].map(sn => ({ id: sn, ad: `${sn} sn` }))} />
+                    </>
+                  )}
+                  {slaytKip !== "kapali" && (
+                    <>
+                      <AyarBaslik theme={theme} ikon={Shuffle}>Geçiş</AyarBaslik>
+                      <Secim theme={theme} kucuk deger={slaytGecis} onSec={setSlaytGecis} secenekler={GECISLER} />
+                      <div style={{ fontSize: "10px", color: theme.textSecondary, opacity: 0.75, margin: "6px 2px 0", lineHeight: 1.45 }}>
+                        Arka plan galerideki resimlerden sırayla gelir{slaytKip === "ayet"
+                          ? (videoParcalari.length > 1 ? "; her âyette sıradaki resme geçilir." : "; tek âyette yalnız ilk resim görünür.")
+                          : "."}
+                      </div>
+                    </>
+                  )}
+                </>
+              )}
+
+              <AyarBaslik theme={theme} ikon={Move} ust={galeri.length >= 2 ? 18 : (ayet && ayetListesiAl ? 4 : 18)}>Resim hareketi</AyarBaslik>
               <Secim theme={theme} kucuk deger={hareket} onSec={setHareket} secenekler={HAREKETLER} />
               {SAHNE_HAREKETI.has(hareket) && (
                 <>

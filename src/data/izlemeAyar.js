@@ -33,6 +33,7 @@ export const VARSAYILAN = {
     isik: "yok",         // yok | huzme | nur | sis | bokeh
     galeri: [],          // galeriden seçilen resimlerin kimlikleri (IndexedDB, data/izlemeGaleri.js)
     slaytSure: 15,       // sn — 2+ resimde her resmin ekranda kalma süresi
+    slaytKip: "sure",    // resim ne zaman değişir: "sure" (süre dolunca) | "ayet" (âyet değişince) — 13 Ekim 2026
     slaytGecis: "solma", // solma | yakinlas | kayma | silme | daire | perde | karisik
     // ── Renkler (8 Ekim 2026) ──
     yaziRengi: null,     // null = otomatik (koyu zeminde açık, açıkta koyu) | "#rrggbb"

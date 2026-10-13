@@ -188,9 +188,24 @@ export default function IzlemeModu({
   sahneRef.current = {
     kaynaklar, hareket: iz.hareket, hiz: iz.hiz, hava: iz.hava, isik: iz.isik,
     karartma: iz.karartma, koyu: arka.koyu !== false,
-    slaytSure: iz.slaytSure, slaytGecis: iz.slaytGecis,
+    slaytSure: iz.slaytSure, slaytGecis: iz.slaytGecis, slaytKip: iz.slaytKip,
   }
-  const slaytRef = useRef({ idx: 0, bas: -1, onceki: -1, gecisBas: 0, sira: 0 })
+  const slaytRef = useRef({ idx: 0, bas: -1, onceki: -1, gecisBas: 0, sira: 0, ilerle: false })
+
+  /* ÂYETLE SLAYT (13 Ekim 2026): "Âyet değişince" kipinde okunan âyet değiştikçe
+     sıradaki resme geçilir. Döngüye yalnız bir bayrak bırakılıyor; geçişi döngü
+     yapıyor (süre kipindeki gibi). İlk âyette geçiş yok; aynı âyetin tekrarında
+     (tekrar modu) da resim değişmiyor — anahtar aynı kalıyor. */
+  const ayetAnahtar = aktif ? `${aktif.sureNo}:${aktif.ayetNo}${aktif.besmeleIcin ? ":b" : ""}` : ""
+  const oncekiAyetRef = useRef("")
+  useEffect(() => {
+    if (!acik) { oncekiAyetRef.current = ""; return }
+    if (!ayetAnahtar) return
+    if (oncekiAyetRef.current && oncekiAyetRef.current !== ayetAnahtar && iz.slaytKip === "ayet") {
+      slaytRef.current.ilerle = true
+    }
+    oncekiAyetRef.current = ayetAnahtar
+  }, [acik, ayetAnahtar, iz.slaytKip])
   const sahneW = olcu ? olcu.bw : 0, sahneH = olcu ? olcu.bh : 0
   useEffect(() => {
     if (!acik || !sahneW || !sahneH) return
@@ -214,11 +229,14 @@ export default function IzlemeModu({
       if (ks.length >= 2) {
         if (sl.idx >= ks.length) { sl.idx = 0; sl.onceki = -1 }
         if (sl.bas < 0) sl.bas = t
-        if (sl.onceki < 0 && t - sl.bas >= (Number(d.slaytSure) || 15)) {
+        // Süre kipinde süre dolunca, âyet kipinde âyet değişince (bayrak) sıradaki resim.
+        // Geçiş sürerken âyet değişirse bayrak bekler, geçiş bitince uygulanır.
+        const vakit = d.slaytKip === "ayet" ? sl.ilerle : t - sl.bas >= (Number(d.slaytSure) || 15)
+        if (sl.onceki < 0 && vakit) {
           sl.onceki = sl.idx; sl.idx = (sl.idx + 1) % ks.length
-          sl.gecisBas = t; sl.bas = t; sl.sira++
+          sl.gecisBas = t; sl.bas = t; sl.sira++; sl.ilerle = false
         }
-      } else { sl.idx = 0; sl.onceki = -1; sl.bas = -1 }
+      } else { sl.idx = 0; sl.onceki = -1; sl.bas = -1; sl.ilerle = false }
 
       ctx.globalAlpha = 1; ctx.globalCompositeOperation = "source-over"
       ctx.fillStyle = "#0a0d14"; ctx.fillRect(0, 0, W, H)

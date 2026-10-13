@@ -122,14 +122,23 @@ export default function MealIzlemeAyarlari({ acik, kapat, theme, isMobile, odak 
         ekle={{ onDosyalar: dosyaEkle, ekleniyor }} />
       <p style={ipucu}>
         {galeri.length >= 2
-          ? "Galerideki resimler sırayla gösterilir (slayt). Âyet değişse de resim ve efekt kesintisiz sürer."
+          ? (iz.slaytKip === "ayet"
+            ? "Galerideki resimler sırayla gösterilir (slayt); her âyet değiştiğinde sıradaki resme geçilir."
+            : "Galerideki resimler sırayla gösterilir (slayt). Âyet değişse de resim ve efekt kesintisiz sürer.")
           : "Birden çok resim eklerseniz slayt gösterisi olur. Tek resimde âyet değişse de resim ve efekt aynen sürer."}
       </p>
       {galeriSecili && galeri.length >= 2 && (
         <>
-          <AyarBaslik theme={theme} ikon={Timer}>Her resim</AyarBaslik>
-          <Secim theme={theme} kucuk deger={Number(iz.slaytSure)} onSec={v => guncelle("izleme", { slaytSure: v })}
-            secenekler={SLAYT_SURELERI.map(sn => ({ id: sn, ad: `${sn} sn` }))} />
+          <AyarBaslik theme={theme} ikon={Layers}>Resim değişimi</AyarBaslik>
+          <Secim theme={theme} kucuk deger={iz.slaytKip === "ayet" ? "ayet" : "sure"} onSec={v => guncelle("izleme", { slaytKip: v })}
+            secenekler={[{ id: "sure", ad: "Süreyle", Ikon: Timer }, { id: "ayet", ad: "Âyet değişince", Ikon: Layers }]} />
+          {iz.slaytKip !== "ayet" && (
+            <>
+              <AyarBaslik theme={theme} ikon={Timer}>Her resim</AyarBaslik>
+              <Secim theme={theme} kucuk deger={Number(iz.slaytSure)} onSec={v => guncelle("izleme", { slaytSure: v })}
+                secenekler={SLAYT_SURELERI.map(sn => ({ id: sn, ad: `${sn} sn` }))} />
+            </>
+          )}
           <AyarBaslik theme={theme} ikon={Shuffle}>Geçiş</AyarBaslik>
           <Secim theme={theme} kucuk deger={iz.slaytGecis} onSec={v => guncelle("izleme", { slaytGecis: v })}
             secenekler={GECISLER} />

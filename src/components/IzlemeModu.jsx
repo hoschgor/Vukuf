@@ -31,7 +31,7 @@ import { X, Settings2, SkipBack, SkipForward, Play, Pause } from "lucide-react"
 import { DESENLER, GORSELLER } from "../data/arkaplanlar"
 import { gorselCiz, rozetGorseliUret, karartmaCiz } from "./GorselOlustur"
 import { useIzlemeAyar } from "../data/izlemeAyar"
-import { resimCiz, gecisCiz, havaKur, havaCiz, isikCiz, kareHizi, GECIS_SN, videoCiz, videoSigar } from "../data/izlemeSahne"
+import { resimCiz, gecisCiz, havaKur, havaCiz, isikCiz, kareHizi, GECIS_SN, videoCiz, videoSigar, videoKalis } from "../data/izlemeSahne"
 import { galeriBlobu, eskiGorselVarsaTasi } from "../data/izlemeGaleri"
 import MealIzlemeAyarlari from "./MealIzlemeAyarlari"
 
@@ -259,26 +259,29 @@ export default function IzlemeModu({
       if (ks.length >= 2) {
         if (sl.idx >= ks.length) { sl.idx = 0; sl.onceki = -1 }
         if (sl.bas < 0) sl.bas = t
-        // Süre kipinde süre dolunca, âyet kipinde âyet değişince (bayrak) sıradaki resim.
+        // RESİM: süre kipinde süre dolunca, âyet kipinde YENİ ÂYETTE (bayrak) sıradakine.
         // Geçiş sürerken âyet değişirse bayrak bekler, geçiş bitince uygulanır.
-        // VİDEO süre kipinde KENDİ SÜRESİ kadar kalır (2–120 sn arası).
+        // VİDEO (13 Ekim 2026, kullanıcının tarifi): iki kipte de BİR KEZ sonuna kadar
+        // oynar ve BİTTİĞİ ANDA (âyetin ortası da olsa) sıradakine geçilir; video
+        // sürerken gelen âyet değişimleri sayılmaz. Başa sarmaz (loop kapalı).
+        // "Âyetle değişsin" seçiliyse eski davranış: her âyette geçer, kaldığı yerden sürer.
         const ak = ks[sl.idx]
-        const videoKalis = ak && ak.video && ak.sure > 0 ? Math.min(120, Math.max(2, ak.sure)) : 0
-        const kalis = videoKalis || (Number(d.slaytSure) || 15)
-        // VİDEO SONUNA KADAR (13 Ekim 2026, kullanıcı: "20 sn video ekliyoruz, ilk âyet
-        // 3 sn sürüyor, videoyu atlıyor"): âyet kipinde video bitmeden gelen âyet
-        // değişimleri yok sayılır; video bitince İLK âyet değişiminde sıradakine geçilir
-        // (geçiş yine âyetle aynı ana denk gelir). Beklerken video başa sarıp sürer.
-        // "ayetle" seçiliyse eski davranış: her âyette geçer, video dönünce kaldığı yerden.
-        const videoAyetle = d.slaytVideo === "ayetle"
-        if (d.slaytKip === "ayet" && videoKalis && !videoAyetle && t - sl.bas < videoKalis) sl.ilerle = false
-        const vakit = d.slaytKip === "ayet" ? sl.ilerle : t - sl.bas >= kalis
+        const ayetKip = d.slaytKip === "ayet"
+        const videoAyetle = ayetKip && d.slaytVideo === "ayetle"
+        let vakit
+        if (ak && ak.video && !videoAyetle) {
+          const v = ak.img
+          const sinir = videoKalis(v.duration || ak.sure)
+          vakit = v.ended || v.currentTime >= sinir || t - sl.bas >= sinir + 4   // +4: takılırsa yedek
+          if (ayetKip) sl.ilerle = false
+        } else {
+          vakit = ayetKip ? sl.ilerle : t - sl.bas >= (Number(d.slaytSure) || 15)
+        }
         if (sl.onceki < 0 && vakit) {
           sl.onceki = sl.idx; sl.idx = (sl.idx + 1) % ks.length
           sl.gecisBas = t; sl.bas = t; sl.sira++; sl.ilerle = false
           const yeni = ks[sl.idx]
-          const kaldigiYerden = d.slaytKip === "ayet" && videoAyetle
-          if (yeni && yeni.video && !kaldigiYerden) { try { yeni.img.currentTime = 0 } catch { /* yoksay */ } }
+          if (yeni && yeni.video && !videoAyetle) { try { yeni.img.currentTime = 0 } catch { /* yoksay */ } }
         }
       } else { sl.idx = 0; sl.onceki = -1; sl.bas = -1; sl.ilerle = false }
       // Yalnız ekranda görünen video(lar) oynar; ötekiler durur (pil, işlemci)
@@ -287,7 +290,11 @@ export default function IzlemeModu({
         if (!k || !k.video) continue
         const gorunur = i === sl.idx || i === sl.onceki
         const v = k.img
-        if (gorunur && v.paused) { const p = v.play(); if (p && p.catch) p.catch(() => {}) }
+        // Slaytta video başa SARMAZ (bitince son karede durur, o sırada geçiş başlamış olur).
+        // Tek öğede ya da "âyetle değişsin"de döngü sürer.
+        const dongu = ks.length < 2 || (d.slaytKip === "ayet" && d.slaytVideo === "ayetle")
+        if (v.loop !== dongu) v.loop = dongu
+        if (gorunur && v.paused && !v.ended) { const p = v.play(); if (p && p.catch) p.catch(() => {}) }
         else if (!gorunur && !v.paused) v.pause()
       }
 

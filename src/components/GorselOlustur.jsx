@@ -8,7 +8,7 @@ import {
 import { DESENLER, GORSELLER } from "../data/arkaplanlar"
 // İzleme modunun sahnesi (hareket / hava / ışık) ve ortak galeri — 7 Ekim 2026'da
 // görsel oluşturmaya da aktarıldı (kullanıcı: "görsel oluşturmada olmayan kısımları aktaralım").
-import { HAREKETLER as SAHNE_HAREKETLERI, HIZLAR, HAVALAR, ISIKLAR, GECIS_SN, resimCiz, gecisCiz, havaKur, havaCiz, isikCiz, videoCiz, videoSigar, VIDEO_YERLESIMLERI } from "../data/izlemeSahne"
+import { HAREKETLER as SAHNE_HAREKETLERI, HIZLAR, HAVALAR, ISIKLAR, GECIS_SN, resimCiz, gecisCiz, havaKur, havaCiz, isikCiz, videoCiz, videoSigar, videoKalis, VIDEO_YERLESIMLERI } from "../data/izlemeSahne"
 import { galeriBlobu, videoKaresi } from "../data/izlemeGaleri"
 import { useIzlemeAyar, ayarOku, ayarYaz } from "../data/izlemeAyar"
 import { Secim, Anahtar, AyarBaslik, ArkaPlanIzgara, desenOnizleme, useGaleriOgeleri, SusRenkleri } from "./AyarOgeleri"
@@ -1610,20 +1610,27 @@ export default function GorselOlustur({
       if (n === 1) { sira = 0; bas = 0 }
       else if (slaytKip === "ayet" && slaytVideo === "ayetle") { sira = idx; bas = (cizelge[idx] || { bas: 0 }).bas }
       else if (slaytKip === "ayet") {
-        // Video SONUNA KADAR (izleme moduyla aynı kural): âyet sınırlarında ilerlenir;
-        // ekrandaki video bitmemişse o sınır atlanır. Çizelge sabit → sonuç her karede aynı.
+        // İzleme moduyla AYNI kural (izlemeSahne.videoKalis): video bir kez sonuna kadar
+        // oynar, bittiği anda (âyet ortası da olsa) sıradakine; resim YENİ ÂYETTE değişir.
+        // Çizelge sabit → zaman çizgisi baştan yürütülür, sonuç her karede aynı.
         let s = 0, b = 0
-        for (let k = 1; k <= idx; k++) {
+        for (let guv = 0; guv < 10000; guv++) {
           const x = slaytlar[s % n]
-          const vs = x.video && x.sure > 0 ? Math.min(120, Math.max(2, x.sure)) : 0
-          if (vs && cizelge[k].bas - b < vs) continue
-          s++; b = cizelge[k].bas
+          let sonraki
+          if (x.video) sonraki = b + videoKalis(x.sure)
+          else {
+            const k = cizelge.findIndex(c => c.bas > b + 0.01)
+            if (k < 0) break                                   // son âyet: resim kalır
+            sonraki = cizelge[k].bas
+          }
+          if (sonraki > t) break
+          s++; b = sonraki
         }
         sira = s; bas = b
       }
       else {
-        // Süreyle: resim slaytSn kadar, video KENDİ süresi kadar (2–120 sn)
-        const sureler = slaytlar.map(x => (x.video && x.sure > 0 ? Math.min(120, Math.max(2, x.sure)) : slaytSn))
+        // Süreyle: resim slaytSn kadar, video bir kez sonuna kadar (izleme ile aynı)
+        const sureler = slaytlar.map(x => (x.video ? videoKalis(x.sure) : slaytSn))
         const tur = sureler.reduce((a, b) => a + b, 0) || 1
         const kac = Math.floor(t / tur)
         let kalan = t - kac * tur, i = 0
@@ -1643,7 +1650,10 @@ export default function GorselOlustur({
       slaytlar.forEach((x, j) => {
         if (!x.video) return
         const gorunur = j === i || (gecisVar && j === onceki)
-        if (gorunur && x.video.paused) { const pr = x.video.play(); if (pr && pr.catch) pr.catch(() => {}) }
+        // Slaytta video başa sarmaz; tek öğede ya da "âyetle değişsin"de döngü sürer
+        const dongu = n < 2 || (slaytKip === "ayet" && slaytVideo === "ayetle")
+        if (x.video.loop !== dongu) x.video.loop = dongu
+        if (gorunur && x.video.paused && !x.video.ended) { const pr = x.video.play(); if (pr && pr.catch) pr.catch(() => {}) }
         else if (!gorunur && !x.video.paused) x.video.pause()
       })
       const hazirla = (x) => { if (x.video) videoKapla(x.cv, x.video, videoYerlesim); return x.cv }

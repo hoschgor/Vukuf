@@ -487,8 +487,8 @@ export default function GaleriDuzenleyici({ acik, kapat, theme, isMobile, baglam
               ? (iz.slaytKip === "ayet"
                 ? (iz.slaytVideo === "ayetle"
                   ? "Videolar sessiz oynar ve her âyette sıradaki öğeye geçilir; video tekrar geldiğinde kaldığı yerden devam eder."
-                  : "Videolar sessiz oynar ve sonuna kadar ekranda kalır; bitince bir sonraki âyetle sıradaki öğeye geçilir. Resimler her âyette değişir.")
-                : "Videolar sessiz oynar ve kendi süresince ekranda kalır.")
+                  : "Her video bir kez, sonuna kadar sessiz oynar; biter bitmez (âyetin ortasında da olsa) sıradaki öğeye geçilir. Resimler yeni âyette değişir.")
+                : "Her video bir kez, sonuna kadar sessiz oynar; bitince sıradaki öğeye geçilir.")
               : "Videolar da eklenebilir; sesleri kullanılmaz, arka planda sessiz oynar."}
             {baglam === "gorsel" && galeri.length > 1 ? " Fotoğrafta ilk öğe (kapak) kullanılır; slayt videoda oynar." : ""}
             {" "}Galeri izleme modu ve görsel oluşturmada ortaktır.

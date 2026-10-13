@@ -111,6 +111,17 @@ export function resimCiz(ctx, W, H, kaynak, hareket, hiz, t, faz = 0) {
   ctx.drawImage(img, cx - vw / 2, cy - vh / 2, vw, vh, 0, 0, W, H)
 }
 
+/* ── SLAYTTA VİDEONUN EKRANDA KALIŞI (13 Ekim 2026) ─────────────────────────
+   Kullanıcı: "video tamamlanacak, o esnada geçtiği âyette sınır yok; bittiği yerde
+   (âyetin ortası da olsa) sıradaki video ya da resme geçecek. Resimden sonraki
+   öğeye ise yalnız yeni âyette geçilir." Video BİR KEZ oynar (başa sarmaz); geçiş
+   videonun son ~0,9 sn'sinde başlar ki çıkan video donmuş kare olmasın.
+   En çok 2 dk; çok kısa videoda en az 2 sn. İzleme ve video çıktısı aynı sayıyı kullanır. */
+export function videoKalis(sure) {
+  const s = Number(sure) > 0 ? Math.min(120, Number(sure)) : 8
+  return Math.max(2, s - GECIS_SN / 2)
+}
+
 /* ── VİDEO YERLEŞİMİ (13 Ekim 2026) ─────────────────────────────────────────
    Kullanıcı: "videolar dikeyse ve ekran yataysa ya da tersi durumda (mobilde
    yatay video gelirse) ne yapabiliriz?"

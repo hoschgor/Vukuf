@@ -662,17 +662,22 @@ export async function gorselCiz(ctx, ayar) {
   const pay = S * 0.075
   const cx0 = pay, cy0 = pay + gUst, cx1 = W - pay, cy1 = H - pay - gAlt
   const kalin = Math.max(2, S * 0.0035)
+  // ÖN BÖLÜM (14 Ekim 2026, video): "akis" → yalnız değişen kısım (âyet, rozet, meal);
+  // "sabit" → yalnız çerçeve + dip grubu (kaynak, sûre adı, rahle). Videoda bu ikisi ayrı
+  // çizilip sabit kısım âyet geçişinde SOLMADAN kalır; yalnız kaynaktaki rakam değişir.
+  const onBolum = ayar.onBolum || "hepsi"
+  const cizCerceve = onBolum === "akis" ? "yok" : cerceve
   ctx.save()
   ctx.strokeStyle = vurguRenk
   ctx.lineWidth = kalin
-  if (cerceve === "ince") {
+  if (cizCerceve === "ince") {
     ctx.strokeRect(cx0, cy0, cx1 - cx0, cy1 - cy0)
-  } else if (cerceve === "cift") {
+  } else if (cizCerceve === "cift") {
     ctx.strokeRect(cx0, cy0, cx1 - cx0, cy1 - cy0)
     ctx.lineWidth = kalin * 0.5
     const i = S * 0.018
     ctx.strokeRect(cx0 + i, cy0 + i, (cx1 - cx0) - 2 * i, (cy1 - cy0) - 2 * i)
-  } else if (cerceve === "kose") {
+  } else if (cizCerceve === "kose") {
     const u = S * 0.09
     ctx.beginPath()
     ctx.moveTo(cx0, cy0 + u); ctx.lineTo(cx0, cy0); ctx.lineTo(cx0 + u, cy0)
@@ -680,7 +685,7 @@ export async function gorselCiz(ctx, ayar) {
     ctx.moveTo(cx1, cy1 - u); ctx.lineTo(cx1, cy1); ctx.lineTo(cx1 - u, cy1)
     ctx.moveTo(cx0 + u, cy1); ctx.lineTo(cx0, cy1); ctx.lineTo(cx0, cy1 - u)
     ctx.stroke()
-  } else if (cerceve === "kemer") {
+  } else if (cizCerceve === "kemer") {
     // Mihrap kemeri: üstte kemer, altta düz kenarlar. Kemerin tepesi ÇERÇEVE KUTUSUNUN
     // içinde kalır (daha önce kutunun üstüne taşıp tuval kenarına dayanıyordu).
     const r = (cx1 - cx0) / 2
@@ -693,7 +698,7 @@ export async function gorselCiz(ctx, ayar) {
     ctx.lineTo(cx1, cy1)
     ctx.closePath()
     ctx.stroke()
-  } else if (cerceve === "kartus") {
+  } else if (cizCerceve === "kartus") {
     const rr = S * 0.045
     const yol = () => {
       ctx.beginPath()
@@ -925,8 +930,11 @@ export async function gorselCiz(ctx, ayar) {
   let y = Math.max(icPayUst, icPayUst + (akisH - akisToplam) * (dipSabit ? 0.46 : 0.5))
   ctx.textAlign = "center"
   ctx.textBaseline = "top"
+  let dipBolumu = false
   for (const b of sonuc.bloklar) {
-    if (b.tip === "atla") { y = b.hedef; continue }
+    if (b.tip === "atla") { y = b.hedef; dipBolumu = true; continue }
+    if (dipSabit && onBolum === "akis" && dipBolumu) continue
+    if (dipSabit && onBolum === "sabit" && !dipBolumu) continue
     if (b.tip === "arapca") {
       // Satır TEK PARÇA çizilir; vakıf/uzatma/tecvid işaretleri metnin içindedir ve
       // konumlarını fontun kendi şekillendirmesi belirler (bizim hesabımız yok).
@@ -1254,7 +1262,8 @@ export default function GorselOlustur({
   const [videoKalite, setVideoKalite] = useState(720)
   const iptalRef = useRef(null)                              // ses indirmelerini kesmek için
   const kayitDurumRef = useRef("hazir")
-  const parcaCvRef = useRef(null)                            // parça (âyet) yazı katmanı
+  const parcaCvRef = useRef(null)                            // parça (âyet) yazı katmanı — değişen kısım
+  const parcaSabitCvRef = useRef(null)                       // parçanın sabit kısmı: çerçeve + kaynak + sûre adı + rahle
   const parcaIdxRef = useRef(-1)                             // o an çizili parça
   const cizelgeRef = useRef([])                              // [{bas, sure}] saniye
   const tamponRef = useRef([])                               // AudioBuffer | null
@@ -1546,8 +1555,15 @@ export default function GorselOlustur({
       cv = document.createElement("canvas"); cv.width = olcu.w; cv.height = olcu.h
       parcaCvRef.current = cv
     }
-    // Söz döndürür: hızlı dışa aktarma yazı katmanı hazır olmadan kareyi çizmesin
-    const soz = gorselCiz(cv.getContext("2d"), cizAyari({
+    // SABİT BÖLÜM (14 Ekim 2026, kullanıcı: "süs kısımları ve âyet ismi yazan kısım efekt
+    // ile sonraki âyette değişmesin, sabit kalsın, sadece rakam değişebilir"): çerçeve ve
+    // dip grubu ayrı tuvale çizilir, videoKare onu soldurmadan basar.
+    let sabitCv = parcaSabitCvRef.current
+    if (!sabitCv || sabitCv.width !== olcu.w || sabitCv.height !== olcu.h) {
+      sabitCv = document.createElement("canvas"); sabitCv.width = olcu.w; sabitCv.height = olcu.h
+      parcaSabitCvRef.current = sabitCv
+    }
+    const ortak = {
       katman: "on",
       karartma: "yok",                     // karartma videoKare'de, efektlerin altında
       arapca: arapcaAcik ? p.arapca : null,
@@ -1555,7 +1571,13 @@ export default function GorselOlustur({
       kaynak: kaynakAcik ? p.etiket : null,
       rozetNo: arapcaAcik ? (p.ayetNo || null) : null,
       secde: arapcaAcik ? !!p.secde : false,
-    }))
+    }
+    const sabitG = sabitCv.getContext("2d")
+    // Söz döndürür: hızlı dışa aktarma yazı katmanı hazır olmadan kareyi çizmesin
+    const soz = Promise.all([
+      gorselCiz(cv.getContext("2d"), cizAyari({ ...ortak, onBolum: "akis" })),
+      gorselCiz(sabitG, cizAyari({ ...ortak, onBolum: "sabit" })),
+    ])
     parcaIdxRef.current = idx
     return soz
   }, [videoParcalari, olcu, cizAyari, arapcaAcik, mealAcik, kaynakAcik])
@@ -1689,8 +1711,10 @@ export default function GorselOlustur({
     if (idx !== parcaIdxRef.current) parcaCiz(idx)
     const cv = parcaCvRef.current
     if (!cv) return
+    // Sabit kısım (çerçeve, kaynak, sûre adı, rahle) hiç solmaz; âyet geçişinde yalnız rakam değişir
+    if (parcaSabitCvRef.current) ctx.drawImage(parcaSabitCvRef.current, 0, 0)
 
-    // Geçiş: her âyet 0,45 sn içinde belirir, bitmeden 0,3 sn önce soluklaşır
+    // Geçiş: değişen kısım her âyette 0,45 sn içinde belirir, bitmeden 0,3 sn önce soluklaşır
     const c = cizelge[idx] || { bas: 0, sure: toplam }
     const yerel = t - c.bas
     const gir = Math.min(1, yerel / 0.45)
@@ -1980,7 +2004,7 @@ export default function GorselOlustur({
             },
             ilerleme: (oran, kalan) => {
               setIlerleme(oran)
-              setDurum(`Video hazırlanıyor… %${Math.round(oran * 100)}${kalan != null ? ` · yaklaşık ${Math.max(1, Math.ceil(kalan))} sn` : ""}`)
+              setDurum(`Video hazırlanıyor… %${Math.round(oran * 100)}${kalan != null ? `\nyaklaşık ${Math.max(1, Math.ceil(kalan))} sn kaldı` : ""}`)
             },
             iptal: () => kayitIptalRef.current,
           })
@@ -2644,7 +2668,11 @@ export default function GorselOlustur({
           padding: "10px 14px", borderTop: `1px solid ${theme.border}`,
           display: "flex", alignItems: "center", gap: "10px", flexShrink: 0,
         }}>
-          <span style={{ flex: 1, fontSize: "11px", color: theme.textSecondary, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          <span style={{
+            flex: 1, fontSize: "11px", color: theme.textSecondary, minWidth: 0, overflow: "hidden", lineHeight: 1.35,
+            // Telefonda uzun durum metni (ör. kalan süre) ikinci satıra iner; en çok 2 satır
+            whiteSpace: "pre-line", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical",
+          }}>
             {durum || (mod === "video"
               ? (kayitDurum === "kayit"
                   ? `Kaydediliyor… ${kalanSn} sn kaldı`

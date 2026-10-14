@@ -387,8 +387,11 @@ export default function GaleriDuzenleyici({ acik, kapat, theme, isMobile, baglam
     <>
       <style>{`@keyframes gd-don{to{transform:rotate(360deg)}}.gd-don{animation:gd-don .9s linear infinite}
 @keyframes gd-gir{from{transform:translateY(24px);opacity:0}to{transform:none;opacity:1}}`}</style>
-      <div onClick={kapat} style={{ position: "fixed", inset: 0, zIndex: 1200, background: "rgba(0,0,0,0.45)" }} />
-      <div role="dialog" aria-label="Galerim" style={{
+      {/* Tıklamalar DIŞARI TAŞMASIN (14 Ekim 2026): düzenleyici Görsel Oluştur'un içinde
+          çiziliyor ve oranın kökü "dışına tıklanınca kapan" dinliyor; "Bitti"ye basmak
+          tıklamayı köke kadar taşıyıp bütün ayar penceresini kapatıyordu. */}
+      <div onClick={(e) => { e.stopPropagation(); kapat() }} style={{ position: "fixed", inset: 0, zIndex: 1200, background: "rgba(0,0,0,0.45)" }} />
+      <div role="dialog" aria-label="Galerim" onClick={(e) => e.stopPropagation()} style={{
         position: "fixed", zIndex: 1201,
         ...(isMobile
           ? { left: 0, right: 0, bottom: 0, maxHeight: "88dvh", borderRadius: "18px 18px 0 0" }

@@ -152,7 +152,8 @@ function kaplaKutusu(vw, vh, W, H) {
 }
 /* Videonun o anki karesini (W×H) alana yerleşime göre çizer. Çizdiyse true. */
 export function videoCiz(ctx, W, H, v, yerlesim = "oto") {
-  const vw = v && v.videoWidth, vh = v && v.videoHeight
+  // v: <video> ya da (hızlı dışa aktarmada) çözülmüş kare tuvali
+  const vw = v && (v.videoWidth || v.width), vh = v && (v.videoHeight || v.height)
   if (!vw || !vh) return false
   try {
     if (!videoSigar(vw, vh, W, H, yerlesim)) {

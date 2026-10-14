@@ -11,6 +11,7 @@ import { DESENLER, GORSELLER } from "../data/arkaplanlar"
 import { HAREKETLER as SAHNE_HAREKETLERI, HIZLAR, HAVALAR, ISIKLAR, GECIS_SN, resimCiz, gecisCiz, havaKur, havaCiz, isikCiz, videoCiz, videoSigar, videoKalis, VIDEO_YERLESIMLERI } from "../data/izlemeSahne"
 import { galeriBlobu, videoKaresi } from "../data/izlemeGaleri"
 import { useIzlemeAyar, ayarOku, ayarYaz } from "../data/izlemeAyar"
+import { hizliKayitOlasi, hizliKodekler, sesleriBirlestir, hizliKaydet, videoOkuyucuKur } from "../data/hizliKayit"
 import { Secim, Anahtar, AyarBaslik, ArkaPlanIzgara, desenOnizleme, useGaleriOgeleri, SusRenkleri } from "./AyarOgeleri"
 import GaleriDuzenleyici, { GaleriKolaj, GaleriOzeti } from "./GaleriDuzenleyici"
 // Özel okuyuş işaretlerinin (kasr/medd/nûn-i sağîre) kuralı TEK YERDE, mushaf
@@ -1121,6 +1122,42 @@ function sahneVideosu(url) {
     videoKutusu.appendChild(v)
   })
 }
+/* SLAYT KONUMU — t anında hangi slayt (sira) ve ne zaman başladı (bas)? Saf işlev:
+   hem kare çizimi hem hızlı dışa aktarmadaki video kare çözücüsü aynı sonucu kullanır.
+   Kurallar izleme moduyla aynı (izlemeSahne.videoKalis). */
+function slaytKonumu(t, slaytlar, cizelge, slaytKip, slaytVideo, slaytSn) {
+  const n = slaytlar.length
+  let idx = 0
+  for (let i = 0; i < cizelge.length; i++) { if (t >= cizelge[i].bas) idx = i; else break }
+  if (n <= 1) return { sira: 0, bas: 0 }
+  if (slaytKip === "ayet" && slaytVideo === "ayetle") return { sira: idx, bas: (cizelge[idx] || { bas: 0 }).bas }
+  if (slaytKip === "ayet") {
+    // Video bir kez sonuna kadar oynar, bittiği anda (âyet ortası da olsa) sıradakine;
+    // resim YENİ ÂYETTE değişir. Çizelge sabit → zaman çizgisi baştan yürütülür.
+    let s = 0, b = 0
+    for (let guv = 0; guv < 10000; guv++) {
+      const x = slaytlar[s % n]
+      let sonraki
+      if (x.video) sonraki = b + videoKalis(x.sure)
+      else {
+        const k = cizelge.findIndex(c => c.bas > b + 0.01)
+        if (k < 0) break                                   // son âyet: resim kalır
+        sonraki = cizelge[k].bas
+      }
+      if (sonraki > t) break
+      s++; b = sonraki
+    }
+    return { sira: s, bas: b }
+  }
+  // Süreyle: resim slaytSn kadar, video bir kez sonuna kadar
+  const sureler = slaytlar.map(x => (x.video ? videoKalis(x.sure) : slaytSn))
+  const tur = sureler.reduce((a, b) => a + b, 0) || 1
+  const kac = Math.floor(t / tur)
+  let kalan = t - kac * tur, i = 0
+  while (i < n - 1 && kalan >= sureler[i]) { kalan -= sureler[i]; i++ }
+  return { sira: kac * n + i, bas: t - kalan }
+}
+
 // Video karesi tuvale yerleşime göre (kapla / sığdır + bulanık zemin) — izleme moduyla aynı işlev
 function videoKapla(cv, v, yerlesim) {
   videoCiz(cv.getContext("2d"), cv.width, cv.height, v, yerlesim)
@@ -1193,6 +1230,7 @@ export default function GorselOlustur({
   // çıktı alırken kullanıcıya zorla ses çalmaz. Kâri sesinin videoya KAYDEDİLMESİ ayrı ayardır
   // (yukarıdaki `sesAcik`); dinlemeyi kapatmak kaydı sessizleştirmez.
   const [dinle, setDinle] = useState(false)
+  const [hizliSurer, setHizliSurer] = useState(false)          // hızlı (WebCodecs) dışa aktarma sürüyor
   const dinleRef = useRef(false)
   const monitorRef = useRef(null)
   useEffect(() => {
@@ -1227,6 +1265,7 @@ export default function GorselOlustur({
   const slaytCvRef = useRef(null)                            // galeri sahnesi: [{ cv, video?, sure? }]
   const videoElRef = useRef([])                              // sahnedeki <video>'lar (temizlik için)
   const videoSiraRef = useRef(-1)                            // en son başa sarılan slayt sırası
+  const hizliKareRef = useRef(null)                          // hızlı dışa aktarma: Map<slayt, çözülmüş kare tuvali>
   const videoElleriniBirak = useCallback(() => {
     for (const v of videoElRef.current) {
       try { v.pause(); v.removeAttribute("src"); v.load(); v.remove() } catch { /* yoksay */ }
@@ -1507,7 +1546,8 @@ export default function GorselOlustur({
       cv = document.createElement("canvas"); cv.width = olcu.w; cv.height = olcu.h
       parcaCvRef.current = cv
     }
-    gorselCiz(cv.getContext("2d"), cizAyari({
+    // Söz döndürür: hızlı dışa aktarma yazı katmanı hazır olmadan kareyi çizmesin
+    const soz = gorselCiz(cv.getContext("2d"), cizAyari({
       katman: "on",
       karartma: "yok",                     // karartma videoKare'de, efektlerin altında
       arapca: arapcaAcik ? p.arapca : null,
@@ -1517,6 +1557,7 @@ export default function GorselOlustur({
       secde: arapcaAcik ? !!p.secde : false,
     }))
     parcaIdxRef.current = idx
+    return soz
   }, [videoParcalari, olcu, cizAyari, arapcaAcik, mealAcik, kaynakAcik])
 
   // Zaman çizelgesi: ses yüklüyse gerçek süreler, değilse eşit paylaştırma
@@ -1559,7 +1600,7 @@ export default function GorselOlustur({
           if (benim !== cizNoRef.current) { try { v && v.pause() } catch { /* yoksay */ } return toplamSureRef.current || videoSure }
           if (!v) continue
           videoElRef.current.push(v)
-          slaytlar.push({ cv, video: v, sure: v.duration || 0 })
+          slaytlar.push({ cv, video: v, sure: v.duration || 0, url: o.url })
         } else {
           await gorselCiz(cv.getContext("2d"), cizAyari({
             katman: "arka", arka: { id: "g:" + id, ad: "Galeri", src: o.url, koyu: true, tip: "gorsel" },
@@ -1604,42 +1645,14 @@ export default function GorselOlustur({
       }
     }
     const slaytlar = slaytCvRef.current
+    // Hızlı dışa aktarmada video kareleri çözücüden gelir (slayt → tuval); <video> öğelerine dokunulmaz
+    const hizliKareler = hizliKareRef.current
     if (slaytlar && slaytlar.length) {
       const n = slaytlar.length
-      let sira = 0, bas = 0
-      if (n === 1) { sira = 0; bas = 0 }
-      else if (slaytKip === "ayet" && slaytVideo === "ayetle") { sira = idx; bas = (cizelge[idx] || { bas: 0 }).bas }
-      else if (slaytKip === "ayet") {
-        // İzleme moduyla AYNI kural (izlemeSahne.videoKalis): video bir kez sonuna kadar
-        // oynar, bittiği anda (âyet ortası da olsa) sıradakine; resim YENİ ÂYETTE değişir.
-        // Çizelge sabit → zaman çizgisi baştan yürütülür, sonuç her karede aynı.
-        let s = 0, b = 0
-        for (let guv = 0; guv < 10000; guv++) {
-          const x = slaytlar[s % n]
-          let sonraki
-          if (x.video) sonraki = b + videoKalis(x.sure)
-          else {
-            const k = cizelge.findIndex(c => c.bas > b + 0.01)
-            if (k < 0) break                                   // son âyet: resim kalır
-            sonraki = cizelge[k].bas
-          }
-          if (sonraki > t) break
-          s++; b = sonraki
-        }
-        sira = s; bas = b
-      }
-      else {
-        // Süreyle: resim slaytSn kadar, video bir kez sonuna kadar (izleme ile aynı)
-        const sureler = slaytlar.map(x => (x.video ? videoKalis(x.sure) : slaytSn))
-        const tur = sureler.reduce((a, b) => a + b, 0) || 1
-        const kac = Math.floor(t / tur)
-        let kalan = t - kac * tur, i = 0
-        while (i < n - 1 && kalan >= sureler[i]) { kalan -= sureler[i]; i++ }
-        sira = kac * n + i; bas = t - kalan
-      }
+      const { sira, bas } = slaytKonumu(t, slaytlar, cizelge, slaytKip, slaytVideo, slaytSn)
       const i = sira % n, onceki = (sira - 1 + n) % n
       // Video denetimi: yeni slaytın videosu baştan başlar; ekranda olmayanlar durur
-      if (sira !== videoSiraRef.current) {
+      if (!hizliKareler && sira !== videoSiraRef.current) {
         videoSiraRef.current = sira
         const yeni = slaytlar[i]
         // "Âyetle değişsin" seçiliyse video tekrar geldiğinde KALDIĞI YERDEN sürer
@@ -1647,7 +1660,7 @@ export default function GorselOlustur({
         if (yeni.video && !kaldigiYerden) { try { yeni.video.currentTime = 0 } catch { /* yoksay */ } }
       }
       const gecisVar = n > 1 && sira > 0 && (t - bas) < GECIS_SN
-      slaytlar.forEach((x, j) => {
+      if (!hizliKareler) slaytlar.forEach((x, j) => {
         if (!x.video) return
         const gorunur = j === i || (gecisVar && j === onceki)
         // Slaytta video başa sarmaz; tek öğede ya da "âyetle değişsin"de döngü sürer
@@ -1656,7 +1669,13 @@ export default function GorselOlustur({
         if (gorunur && x.video.paused && !x.video.ended) { const pr = x.video.play(); if (pr && pr.catch) pr.catch(() => {}) }
         else if (!gorunur && !x.video.paused) x.video.pause()
       })
-      const hazirla = (x) => { if (x.video) videoKapla(x.cv, x.video, videoYerlesim); return x.cv }
+      const hazirla = (x) => {
+        if (x.video) {
+          const kaynak = hizliKareler ? hizliKareler.get(x) : x.video
+          if (kaynak) videoKapla(x.cv, kaynak, videoYerlesim)
+        }
+        return x.cv
+      }
       if (gecisVar) {
         gecisCiz(ctx, W, H, arkaCizici(hazirla(slaytlar[onceki]), onceki * 1.7, slaytlar[onceki].video), arkaCizici(hazirla(slaytlar[i]), i * 1.7, slaytlar[i].video), slaytGecis, (t - bas) / GECIS_SN, sira)
       } else arkaCizici(hazirla(slaytlar[i]), i * 1.7, slaytlar[i].video)()
@@ -1754,40 +1773,102 @@ export default function GorselOlustur({
   // Artık ses DOSYA OLARAK indirilip (fetch) çözülüyor (decodeAudioData) ve AudioContext'te
   // ZAMANLANARAK çalınıyor. Böylece (a) gerçek süreler baştan bilinir → âyet-meal senkronu
   // birebir olur, (b) çoklu âyet kesintisiz sıralanır, (c) kaydedilen akışa doğrudan bağlanır.
+  // SES İNDİRME (14 Ekim 2026 sağlamlaştırma — kullanıcı: "âyetleri indirirken saniye
+  // verisini anlayıp âyetin ekranda değişme süresini ona göre belirleyip sesleri
+  // birleştirsin, sessiz kalarak değişim yapmasın"). Süre zaten ÖLÇÜLMÜYOR, ses
+  // çözülünce (decodeAudioData) KESİN biliniyor. Eksikler giderildi:
+  //   • Önce internetsiz dinleme için indirilmiş sesler (Cache "vukuf-ses") kullanılır.
+  //   • Eskiden TÜM indirmeler için toplam 8 sn vardı → uzun sûrede bir kısmı kesilip
+  //     video yer yer SESSİZ kalıyordu. Artık her dosyaya 25 sn, aynı anda en çok 6
+  //     indirme, başarısız olana bir kez daha deneme.
+  //   • İnen sesler bu pencere açık kaldıkça bellekte tutulur → yeniden denemede hızlı.
+  //   • Bir âyetin bile sesi alınamazsa kayıt BAŞLAMAZ (yarısı sessiz video çıkmasın).
+  const sesBellekRef = useRef(new Map())                      // url → ArrayBuffer (kopya)
   const sesleriYukle = useCallback(async (sesCtx) => {
     const n = videoParcalari.length
     const tamponlar = new Array(n).fill(null)
-    if (!sesAcik || !sesUrlAl || !ayet) { tamponRef.current = tamponlar; return { yuklenen: 0, hata: false } }
-    // PARALEL indirme + İPTAL EDİLEBİLİR (AbortController) + 15 sn zaman aşımı.
-    // Sırayla indirmek çoklu âyette çok yavaştı; ayrıca tek bir yavaş istek "Durdur"u
-    // etkisiz bırakıyordu — abort ile artık anında kesiliyor.
+    if (!sesAcik || !sesUrlAl || !ayet) { tamponRef.current = tamponlar; return { yuklenen: 0, eksik: 0 } }
     const kontrol = new AbortController()
     iptalRef.current = kontrol
-    const zamanAsimi = setTimeout(() => { try { kontrol.abort() } catch { /* yoksay */ } }, 8000)
-    let bitmis = 0, yuklenen = 0, hata = false
-    const isler = videoParcalari.map(async (p, i) => {
-      // Besmele için Fâtiha 1 kaydı kullanılır (besmelenin kendisidir)
-      const sn = p.tip === "besmele" ? 1 : (p.sureNo || ayet.sureNo)
-      const an = p.tip === "besmele" ? 1 : (p.ayetNo || ayet.ayetNo)
-      const url = sesUrlAl(sn, an)
-      if (!url) { hata = true; return }
-      try {
-        const c = await fetch(url, { mode: "cors", credentials: "omit", signal: kontrol.signal })
-        if (!c.ok) throw new Error(String(c.status))
-        const ab = await c.arrayBuffer()
-        tamponlar[i] = await sesCtx.decodeAudioData(ab)
-        yuklenen++
-      } catch { hata = true }
-      bitmis++
-      setIlerleme(bitmis / n)
-      setDurum(`Ses hazırlanıyor… ${bitmis}/${n}`)
-    })
-    await Promise.all(isler)
-    clearTimeout(zamanAsimi)
+    let onbellek = null
+    try { if (typeof caches !== "undefined") onbellek = await caches.open("vukuf-ses") } catch { onbellek = null }
+    const indir = async (url) => {
+      const bellekte = sesBellekRef.current.get(url)
+      if (bellekte) return bellekte.slice(0)
+      if (onbellek) {
+        try {
+          const y = await onbellek.match(url, { ignoreVary: true })
+          if (y && y.ok) { const ab = await y.arrayBuffer(); if (ab.byteLength) return ab }
+        } catch { /* ağdan denenecek */ }
+      }
+      for (let deneme = 0; deneme < 2; deneme++) {
+        if (kontrol.signal.aborted) throw new Error("iptal")
+        const tek = new AbortController()
+        const birak = () => tek.abort()
+        kontrol.signal.addEventListener("abort", birak)
+        const zaman = setTimeout(birak, 25000)
+        try {
+          const c = await fetch(url, { mode: "cors", credentials: "omit", signal: tek.signal })
+          if (!c.ok) throw new Error(String(c.status))
+          return await c.arrayBuffer()
+        } catch (e) {
+          if (deneme === 1 || kontrol.signal.aborted) throw e
+        } finally { clearTimeout(zaman); kontrol.signal.removeEventListener("abort", birak) }
+      }
+      throw new Error("indirilemedi")
+    }
+    let bitmis = 0, yuklenen = 0
+    const sira = videoParcalari.map((p, i) => i)
+    const isci = async () => {
+      while (sira.length && !kontrol.signal.aborted) {
+        const i = sira.shift()
+        const p = videoParcalari[i]
+        // Besmele için Fâtiha 1 kaydı kullanılır (besmelenin kendisidir)
+        const sn = p.tip === "besmele" ? 1 : (p.sureNo || ayet.sureNo)
+        const an = p.tip === "besmele" ? 1 : (p.ayetNo || ayet.ayetNo)
+        const url = sesUrlAl(sn, an)
+        if (url) {
+          try {
+            const ab = await indir(url)
+            if (!sesBellekRef.current.has(url)) sesBellekRef.current.set(url, ab.slice(0))
+            tamponlar[i] = await sesCtx.decodeAudioData(ab)   // ab burada tüketilir
+            yuklenen++
+          } catch { /* eksik kalır */ }
+        }
+        bitmis++
+        setIlerleme(bitmis / n)
+        setDurum(`Ses hazırlanıyor… ${bitmis}/${n}`)
+      }
+    }
+    await Promise.all(Array.from({ length: Math.min(6, n) }, isci))
     iptalRef.current = null
     tamponRef.current = tamponlar
-    return { yuklenen, hata }
+    return { yuklenen, eksik: n - yuklenen }
   }, [videoParcalari, sesAcik, sesUrlAl, ayet])
+  // SESLER CİHAZDA MI? (14 Ekim 2026) — indirilmiş bölümde video internetsiz ve daha
+  // hızlı hazırlanır; kullanıcıya bir satırla söylenir. null: bilinmiyor / gösterme.
+  const [sesCihazda, setSesCihazda] = useState(null)       // { var, toplam }
+  useEffect(() => {
+    if (!acik || mod !== "video" || !sesAcik || !sesUrlAl || !ayet || typeof caches === "undefined") { setSesCihazda(null); return }
+    let iptal = false
+    ;(async () => {
+      try {
+        const k = await caches.open("vukuf-ses")
+        let say = 0
+        for (const p of videoParcalari) {
+          const sn = p.tip === "besmele" ? 1 : (p.sureNo || ayet.sureNo)
+          const an = p.tip === "besmele" ? 1 : (p.ayetNo || ayet.ayetNo)
+          const u = sesUrlAl(sn, an)
+          if (u && await k.match(u, { ignoreVary: true })) say++
+        }
+        if (!iptal) setSesCihazda({ var: say, toplam: videoParcalari.length })
+      } catch { if (!iptal) setSesCihazda(null) }
+    })()
+    return () => { iptal = true }
+  }, [acik, mod, sesAcik, sesUrlAl, ayet, videoParcalari, kariId])
+  // Pencere kapanınca ya da kâri değişince bellekteki sesler bırakılır
+  useEffect(() => { if (!acik) sesBellekRef.current = new Map() }, [acik])
+  useEffect(() => { sesBellekRef.current = new Map() }, [kariId])
 
   const videoKaydet = async () => {
     const cv = canvasRef.current
@@ -1802,9 +1883,18 @@ export default function GorselOlustur({
       try {
         sesCtx = new AC()
         if (sesCtx.state === "suspended") await sesCtx.resume()
-        const { yuklenen, hata } = await sesleriYukle(sesCtx)
-        if (!yuklenen) { sesUyari = true; try { sesCtx.close() } catch { /* yoksay */ } sesCtx = null }
-        else if (hata) sesUyari = true
+        const { eksik } = await sesleriYukle(sesCtx)
+        if (eksik > 0 && !kayitIptalRef.current) {
+          // Yarısı sessiz video üretmek yerine kayıt başlatılmıyor; inenler bellekte kalıyor
+          try { sesCtx.close() } catch { /* yoksay */ }
+          setKayitDurum("hazir"); kayitDurumRef.current = "hazir"
+          setIlerleme(0); setKalanSn(0)
+          const n = videoParcalari.length
+          setDurum(eksik === n
+            ? "Kâri sesi alınamadı; internet bağlantısı varken yeniden denenebilir."
+            : `${n} âyetten ${eksik} tanesinin sesi alınamadı; yeniden denendiğinde inenler tekrar indirilmez.`)
+          return
+        }
       } catch { sesUyari = true; sesCtx = null }
     } else {
       tamponRef.current = new Array(videoParcalari.length).fill(null)
@@ -1821,6 +1911,101 @@ export default function GorselOlustur({
     const toplam = cizelgeKur()
     toplamSureRef.current = toplam
     setDurum(""); setIlerleme(0)
+
+    // 3a) HIZLI YOL (14 Ekim 2026) — kareler beklemeden çizilip kodlanır, sesler anında
+    // birleştirilir (data/hizliKayit.js). Galeri videoları da kare kare çözülür (2. adım).
+    // Tarayıcı uygun kodek bulamazsa, bir galeri videosu çözülemezse ya da bir hata
+    // olursa aşağıdaki gerçek zamanlı kayda dönülür.
+    if (hizliKayitOlasi() && !kayitIptalRef.current) {
+      const sesVar = !!(sesCtx && tamponRef.current.some(Boolean))
+      const kod = await hizliKodekler(cv.width, cv.height, sesVar)
+      const okuyucular = new Map()                       // slayt → videoOkuyucu
+      const okuyuculariKapat = () => { okuyucular.forEach(o => o.kapat()); okuyucular.clear(); hizliKareRef.current = null }
+      if (kod) {
+        try {
+          // Galeri videoları: <video>'lar durdurulur, her biri için kare çözücü kurulur
+          const slaytlar = slaytCvRef.current || []
+          for (const x of slaytlar) {
+            if (!x.video) continue
+            try { x.video.pause() } catch { /* yoksay */ }
+            const blob = await (await fetch(x.url)).blob()
+            const o = await videoOkuyucuKur(blob, Math.max(cv.width, cv.height))
+            if (!o) throw new Error("galeri videosu çözülemiyor")
+            okuyucular.set(x, o)
+          }
+          const kareler = new Map()
+          hizliKareRef.current = okuyucular.size ? kareler : null
+          // Görünen video slaytlarının o anki karesini çözücüden al
+          const cizelgeHizli = cizelgeRef.current
+          const n = slaytlar.length
+          const dongu = n < 2 || (slaytKip === "ayet" && slaytVideo === "ayetle")
+          const videoKareleriHazirla = async (t) => {
+            if (!okuyucular.size) return
+            const { sira, bas } = slaytKonumu(t, slaytlar, cizelgeHizli, slaytKip, slaytVideo, slaytSn)
+            const i = sira % n
+            const gorunen = [[i, sira, bas]]
+            if (n > 1 && sira > 0 && (t - bas) < GECIS_SN) {
+              const o = slaytKonumu(Math.max(0, bas - 0.0005), slaytlar, cizelgeHizli, slaytKip, slaytVideo, slaytSn)
+              gorunen.push([o.sira % n, o.sira, o.bas])
+            }
+            for (const [j, s, b] of gorunen) {
+              const x = slaytlar[j]
+              const ok = okuyucular.get(x)
+              if (!ok) continue
+              let yerel = t - b
+              // "Âyetle değişsin": video her gelişinde KALDIĞI YERDEN sürer → önceki görünüşler eklenir
+              if (slaytKip === "ayet" && slaytVideo === "ayetle" && n > 1) {
+                for (let k = j; k < s; k += n) yerel += ((cizelgeHizli[k + 1] || { bas: toplam }).bas - cizelgeHizli[k].bas)
+              }
+              const sure = x.sure > 0 ? x.sure : 0
+              if (sure) yerel = dongu ? yerel % sure : Math.min(yerel, sure - 0.001)
+              kareler.set(x, await ok.kare(Math.max(0, yerel)))
+            }
+          }
+          const birlesik = sesVar ? await sesleriBirlestir(tamponRef.current, cizelgeRef.current, toplam) : null
+          if (sesVar && !birlesik) throw new Error("ses birleştirilemedi")
+          if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null }
+          setHizliSurer(true); setKayitDurum("kayit"); kayitDurumRef.current = "kayit"
+          setDurum("Video hazırlanıyor…")
+          const ctx2 = cv.getContext("2d")
+          const blob = await hizliKaydet({
+            canvas: cv, W: cv.width, H: cv.height, toplam, kod, ses: birlesik,
+            kareCiz: async (t) => {
+              const cz = cizelgeRef.current
+              let iz = 0
+              for (let k = 0; k < cz.length; k++) { if (t >= cz[k].bas) iz = k; else break }
+              if (iz !== parcaIdxRef.current) await parcaCiz(iz)
+              await videoKareleriHazirla(t)
+              videoKare(ctx2, t, toplam)
+            },
+            ilerleme: (oran, kalan) => {
+              setIlerleme(oran)
+              setDurum(`Video hazırlanıyor… %${Math.round(oran * 100)}${kalan != null ? ` · yaklaşık ${Math.max(1, Math.ceil(kalan))} sn` : ""}`)
+            },
+            iptal: () => kayitIptalRef.current,
+          })
+          try { sesCtx && sesCtx.close() } catch { /* yoksay */ }
+          okuyuculariKapat()
+          setHizliSurer(false)
+          setIlerleme(0); setKalanSn(0); setKayitDurum("hazir"); kayitDurumRef.current = "hazir"
+          if (!blob) { setDurum("Kayıt durduruldu."); return }
+          setDurum("")
+          await dosyayiVer(blob, dosyaAdi.replace(/\.png$/, ".mp4"), "video/mp4")
+          return
+        } catch {
+          // Hızlı yol olmadı → gerçek zamanlı kayıtla devam (sesler hâlâ elde)
+          okuyuculariKapat()
+          videoSiraRef.current = -1
+          setHizliSurer(false); setDurum(""); setIlerleme(0)
+          if (kayitIptalRef.current) {
+            try { sesCtx && sesCtx.close() } catch { /* yoksay */ }
+            setKayitDurum("hazir"); kayitDurumRef.current = "hazir"; setDurum("Kayıt durduruldu.")
+            return
+          }
+          parcaIdxRef.current = -1
+        }
+      }
+    }
 
     // 3) Akış: canvas + (varsa) ses
     const akis = cv.captureStream(30)
@@ -2426,6 +2611,9 @@ export default function GorselOlustur({
                   {sesAcik && (
                     <div style={{ fontSize: "10.5px", color: theme.textSecondary, opacity: 0.8, margin: "6px 2px 0" }}>
                       Videonun süresi âyetin okunuş süresi kadar olur.
+                      {sesCihazda && sesCihazda.toplam > 0 && (sesCihazda.var === sesCihazda.toplam
+                        ? " Bu bölümün sesleri cihazda; internetsiz ve daha hızlı hazırlanır."
+                        : " Sesler indirilmiş olursa internetsiz ve daha hızlı hazırlanır.")}
                     </div>
                   )}
                 </>
@@ -2435,8 +2623,9 @@ export default function GorselOlustur({
               <Secim theme={theme} kucuk deger={videoKalite} onSec={setVideoKalite}
                 secenekler={[{ id: 720, ad: "720p", alt: "hızlı" }, { id: 1080, ad: "1080p", alt: "net" }]} />
               <div style={{ fontSize: "10.5px", color: theme.textSecondary, opacity: 0.8, margin: "6px 2px 0", lineHeight: 1.45 }}>
-                Kayıt gerçek zamanlıdır: video ne kadar sürüyorsa hazırlanması da o kadar sürer.
-                720p telefonlarda gözle görülür biçimde daha akıcı kaydeder.
+                {hizliKayitOlasi()
+                  ? "Bu cihazda video, süresinden çok daha kısa sürede hazırlanır."
+                  : "Kayıt gerçek zamanlıdır: video ne kadar sürüyorsa hazırlanması da o kadar sürer. 720p telefonlarda daha akıcı kaydeder."}
               </div>
 
               {/* Ses yoksa süre seçilir (çoklu âyette süre seslerden gelir) */}
@@ -2477,7 +2666,7 @@ export default function GorselOlustur({
               </span>
               {/* DİNLE — kayıt sürerken sesi hoparlörden duymak isteyen için. Kapalı başlar;
                   kapalı olması kâri sesinin videoya KAYDEDİLMESİNİ engellemez. */}
-              {sesAcik && (
+              {sesAcik && !hizliSurer && (
                 <button
                   onClick={() => setDinle(v => !v)}
                   title={dinle ? "Dinlemeyi kapat (kayda etkisi yok)" : "Kayıt sürerken sesi dinle"}

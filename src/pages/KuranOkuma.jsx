@@ -68,7 +68,7 @@ function useState(ilk) {
   }
   return sonuc
 }
-const KURAN_DURUM_ADLARI = ["odakAyet", "odakSure", "odakAyrac", "donusTip", "donusYol", "tekrarModu", "donguAyarAcik", "tmMod", "tmSayfaBas", "tmSayfaSon", "tmSure", "tmSureArama", "tmAyetBas", "tmAyetSon", "tmBesmele", "kariSecAcik", "sureUyari", "kayitPaneliAcik", "mushafData", "yukleniyor", "scrollKilitli", "popup", "mevcutSayfa", "?", "konumHazir", "acilisOrtu", "sayfaGirdi", "sayfaGirdiAcik", "kayitKonumModu", "gorselModu", "gorselVeri", "mealModu", "izlemeModu", "hifzAcik", "hifzEzber", "hifzKismi", "hifzYon", "hifzTekrarYontem", "hifzBagla", "hifzDonus", "hifzManuel", "hifzSureSira", "hifzEzberSurum", "hifzKademe", "hifzZincir", "hifzTekrar", "hifzBirim", "hifzAktif", "hifzIpucu", "hifzDokunAc", "hifzDokunSes", "kayitlar", "yaziBoyutu", "satirAraligi", "ustCentik", "mealOlcu", "tamGenislik", "kenarBosluk", "harfAraligi", "barGorunur", "barKonum", "sadeMode", "otomatikGizleme", "gizlemeSuresi", "sureGoster", "barKilitli", "sureBilgisiGoster", "cuzBilgisiGoster", "hizbBilgisiGoster", "sureMenuGoster", "kayitGoster", "sayfaGitGoster", "sadeModGoster", "temaGoster", "yaziTipiGoster", "otoOynatGoster", "tekrarBtnGoster", "bilgiGoster", "gorselGoster", "hifzGoster", "bilgiAcik", "butonSirasi", "butonTaraf", "siraAcik", "siraTaslak", "tarafTaslak", "sifirlaOnay", "sadeGizli", "sadeIcerikAcik", "gorunumAcik", "scrollbarGorunur", "aaAcik", "temaAcik", "ayarlarAcik", "ozelTemaPanelAcik", "sayfaGitAcik", "sayfaGitInput", "sayfaGosterim", "sayfaGosterimAcik", "ozelRenkler", "aktifRenk", "acikBolum", "aaSekme", "arapcaFontId", "yaziRengi", "ayetNoRengi", "bugunSure", "menuAcik", "menuArama", "acikSure", "anaBaslik", "cuzArama", "acikCuz", "ayetArama", "otomatikKaydirma", "kaydirmaHizi", "duraklatildi", "barYuksekligi", "barDugumu", "pwaModu", "playerYuk", "barCokSatir", "barSatirKes", "barUiOlcegi", "sarfSozluk"]
+const KURAN_DURUM_ADLARI = ["odakAyet", "odakSure", "odakAyrac", "donusTip", "donusYol", "tekrarModu", "donguAyarAcik", "tmMod", "tmSayfaBas", "tmSayfaSon", "tmSure", "tmSureArama", "tmAyetBas", "tmAyetSon", "tmBesmele", "kariSecAcik", "sureUyari", "kayitPaneliAcik", "mushafData", "yukleniyor", "scrollKilitli", "popup", "mevcutSayfa", "?", "konumHazir", "acilisOrtu", "sayfaGirdi", "sayfaGirdiAcik", "kayitKonumModu", "gorselModu", "gorselVeri", "mealModu", "izlemeModu", "hifzAcik", "hifzEzber", "hifzKismi", "hifzYon", "hifzTekrarYontem", "hifzBagla", "hifzDonus", "hifzManuel", "hifzSureSira", "hifzEzberSurum", "hifzKademe", "hifzZincir", "hifzTekrar", "hifzBirim", "hifzAktif", "hifzIpucu", "hifzDokunAc", "hifzDokunSes", "kayitlar", "yaziBoyutu", "satirAraligi", "ustCentik", "mealOlcu", "tamGenislik", "kenarBosluk", "harfAraligi", "barGorunur", "barKonum", "sadeMode", "otomatikGizleme", "gizlemeSuresi", "sureGoster", "barKilitli", "sureBilgisiGoster", "cuzBilgisiGoster", "hizbBilgisiGoster", "sureMenuGoster", "kayitGoster", "sayfaGitGoster", "sadeModGoster", "temaGoster", "yaziTipiGoster", "otoOynatGoster", "tekrarBtnGoster", "bilgiGoster", "gorselGoster", "hifzGoster", "bilgiAcik", "butonSirasi", "butonTaraf", "siraAcik", "siraTaslak", "tarafTaslak", "sifirlaOnay", "sadeGizli", "sadeIcerikAcik", "gorunumAcik", "scrollbarGorunur", "aaAcik", "temaAcik", "ayarlarAcik", "ozelTemaPanelAcik", "sayfaGitAcik", "sayfaGitInput", "sayfaGosterim", "sayfaGosterimAcik", "ozelRenkler", "aktifRenk", "acikBolum", "aaSekme", "arapcaFontId", "yaziRengi", "ayetNoRengi", "bugunSure", "menuAcik", "menuArama", "acikSure", "anaBaslik", "sureSira", "cuzArama", "acikCuz", "ayetArama", "otomatikKaydirma", "kaydirmaHizi", "duraklatildi", "barYuksekligi", "barDugumu", "pwaModu", "playerYuk", "barCokSatir", "barSatirKes", "barUiOlcegi", "sarfSozluk"]
 donmeDurumAdlari(KURAN_DURUM_ADLARI)
 */
 import AyetPopup from "../components/AyetPopup"
@@ -97,6 +97,8 @@ import { flushSync } from "react-dom"
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, TouchSensor, useSensor, useSensors } from "@dnd-kit/core"
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
+import SiraSecici from "../components/SiraSecici"
+import { SURE_SIRALARI, SURE_SIRA_ANAHTAR, sureleriSirala, nuzulSirasi, siraOku, siraYaz } from "../data/sureSirasi"
 import {
   ArrowLeft, Search, X, ChevronRight, ChevronDown, Menu,
   Play, Pause, Plus, Minus, Type, Palette,
@@ -1459,6 +1461,9 @@ const maxWidth = useMemo(() =>
   const [menuArama, setMenuArama] = useState("")
   const [acikSure, setAcikSure]   = useState(null)
   const [anaBaslik, setAnaBaslik] = useState(null)   // iki çekmece de KAPALI başlar; oturum içinde hatırlanır
+  // SÛRE SIRASI (15 Ekim 2026): mushaf | nüzul | alfabetik — seçim hatırlanır, "Sıfırla" onaysız
+  const [sureSira, setSureSiraHam] = useState(() => siraOku(SURE_SIRA_ANAHTAR, SURE_SIRALARI, "mushaf"))
+  const setSureSira = (v) => { setSureSiraHam(v); siraYaz(SURE_SIRA_ANAHTAR, v, "mushaf") }
   const [cuzArama, setCuzArama] = useState("")
   const [acikCuz, setAcikCuz]     = useState(null)
   const [ayetArama, setAyetArama] = useState({})
@@ -2279,14 +2284,16 @@ const cokSatir = wrapAktif && barYuksekligi > tekSatirYuksekligi * 1.0
   }, [player.aktifAyet, player.durum])
 
   const filtreliSureler = useMemo(() => {
-    if (!menuArama) return sureler
+    // Seçili sıra (mushaf / nüzul / alfabetik) aramadan SONRA uygulanır
+    const sirala = (liste) => (sureSira === "mushaf" ? liste : sureleriSirala(liste, sureSira, s => s.isim))
+    if (!menuArama) return sirala(sureler)
     const q = srNorm(menuArama)  // şapka/aksan, büyük-küçük, kesme/tire/boşluk duyarsız
-    if (!q) return sureler
-    return sureler.filter(s =>
+    if (!q) return sirala(sureler)
+    return sirala(sureler.filter(s =>
       srNorm(s.isim).includes(q) ||
       String(s.id).includes(menuArama.trim())
-    )
-  }, [sureler, menuArama])
+    ))
+  }, [sureler, menuArama, sureSira])
 
   
   // ── SAYFA LİSTESİ ──
@@ -4343,7 +4350,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
         <button
           onClick={() => { setPopup(null); hifzAcKapa() }}
           style={{ ...barButonStil(hifzAcik), flexShrink: 0, ...barOge("hifz") }}
-          title="Hıfz modu — bu sayfayı perdeleyerek çalış"
+          title="Hıfz modu — seçtiğiniz kısım perdelenerek ezberlenebilir"
         >
           <Brain size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />
         </button>
@@ -5093,6 +5100,13 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
                 </div>
               )}
 
+              {/* ── Sûre sırası: Mushaf · Nüzul · A–Z (15 Ekim 2026) */}
+              {anaBaslik === "sure" && (
+                <SiraSecici theme={theme} olcek={barUiOlcegi * (isMobile ? 0.95 : 1)}
+                  secenekler={SURE_SIRALARI} deger={sureSira} varsayilan="mushaf" onSec={setSureSira}
+                  not={sureSira === "nuzul" ? "Yaygın tertibe göre (1924 Mısır mushafı); rivayetlerde birkaç sûrede farklılık vardır." : null} />
+              )}
+
               {/* ── Sûre Listesi */}
               {anaBaslik === "sure" && filtreliSureler.map(sure => (
                 <div key={sure.id}>
@@ -5150,7 +5164,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
                         marginLeft: "auto", 
                         paddingRight: "8px" 
                       }}>
-                        {sure.ayetSayisi} Âyet
+                        {sureSira === "nuzul" ? `${nuzulSirasi(sure.id)}. nüzul · ` : ""}{sure.ayetSayisi} Âyet
                       </span>
                     </button>
                   </div>

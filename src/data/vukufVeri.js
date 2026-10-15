@@ -171,7 +171,7 @@ export const KATEGORILER = [
       // Göster/gizle ve bilgi öğeleri
       "vukuf-btn-bilgi", "vukuf-btn-gorsel", "vukuf-btn-kayit", "vukuf-btn-otooynat",
       "vukuf-btn-sade", "vukuf-btn-sayfa", "vukuf-btn-sure", "vukuf-btn-tekrar",
-      "vukuf-btn-tema", "vukuf-btn-yazitipi",
+      "vukuf-btn-tema", "vukuf-btn-yazitipi", "vukuf-sure-menu-sira", "vukuf-icindekiler-sira",
       "vukuf-sure-bilgisi", "vukuf-cuz-bilgisi", "vukuf-hizb-bilgisi",
       "vukuf-sayfa-gosterim", "vukuf-kuran-sayfa-gosterim",
       "vukuf-sade-mod", "vukuf-sade-mode", "vukuf-kuran-sade-gizli",

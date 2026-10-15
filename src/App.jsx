@@ -1,4 +1,5 @@
 import { useEffect, useState, lazy, Suspense, Component } from "react"
+import IpucuKatmani from "./components/IpucuKatmani"
 import { Routes, Route, useLocation } from "react-router-dom"
 import Navbar from "./components/Navbar"
 import MushafYukleniyorRozeti from "./components/MushafYukleniyorRozeti"
@@ -186,6 +187,7 @@ export default function App() {
   }, [theme])
   return (
     <div style={{ minHeight: "100vh", background: theme.background }}>
+      <IpucuKatmani />
       {girisVar && (
         <div
           onClick={() => { if (!girisSoluyor) { setGirisSoluyor(true); setTimeout(() => setGirisVar(false), 620) } }}

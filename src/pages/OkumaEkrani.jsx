@@ -5,6 +5,9 @@ import { useApp } from "../AppContext"
 import { kitaplar, kategoriler } from "../data/kitaplar"
 import { okumaKaydet, trFold } from "../data/okumaKayit"
 import { esnekBul, esnekHazirla } from "../data/esnekArama"
+import SiraSecici from "../components/SiraSecici"
+import SesliOkumaKontrol from "../components/SesliOkumaKontrol"
+import { ICINDEKILER_SIRALARI, ICINDEKILER_SIRA_ANAHTAR, agaciSirala, agaciDizinle, siraOku, siraYaz } from "../data/sureSirasi"
 import lugatVerisi from "../data/lugat.json"
 /* ── risale-lugat.json IMPORT'U KALDIRILDI (24 Eylül 2026) ──────────────────
    `veri_denetim.py --ikizler` iki dosyanın sha256'sının AYNI olduğunu gösterdi:
@@ -36,6 +39,7 @@ import {
   Search, Highlighter, ChevronDown, Clock, Settings,
   ChevronUp, ChevronRight, Edit2, Pencil, Circle, Feather, List, Check, Shuffle, Asterisk, ArrowRight,
   GripVertical, Eye as EyeIkon, UnfoldHorizontal, Camera, FoldHorizontal, ImagePlay, MoveVertical,
+  Headphones,
 } from "lucide-react"
 import { useMediaQuery } from '../data/hooks/useMediaQuery'
 import usePanelKilidi from "../data/hooks/usePanelKilidi"
@@ -121,6 +125,7 @@ const BAR_OGELERI = [
   { key: "arama", label: "Arama",             sadeVarsayilan: true },
   { key: "oto",   label: "Otomatik Kaydırma", sadeVarsayilan: true },
   { key: "gorsel", label: "Görsel / Video",   sadeVarsayilan: true },
+  { key: "sesli", label: "Sesli Okuma",       sadeVarsayilan: true },
   { key: "sure",  label: "Okuma Süresi",      sadeVarsayilan: true },
   { key: "kisim", label: "Kısım Bilgisi",     sadeVarsayilan: true },
   { key: "sade",  label: "Sade Mod",          sadeVarsayilan: false },
@@ -140,6 +145,7 @@ const BAR_SIRA_OGELERI = [
   { key: "arama",   label: "Arama",             Ikon: Search,      taraf: "sol" },
   { key: "oto",     label: "Otomatik Kaydırma", Ikon: Play,        taraf: "sol" },
   { key: "gorsel",  label: "Görsel / Video",    Ikon: ImagePlay,   taraf: "sol" },
+  { key: "sesli",   label: "Sesli Okuma",       Ikon: Headphones,  taraf: "sol" },
   { key: "sade",    label: "Sade Mod",          Ikon: Circle,      taraf: "sag" },
   { key: "tema",    label: "Tema",              Ikon: Palette,     taraf: "sag" },
   { key: "ayarlar", label: "Ayarlar",           Ikon: Settings,    taraf: "sag" },
@@ -1140,6 +1146,8 @@ const maxSayfaGuncelle = (n) => { if (n > maxSayfaRef.current) { maxSayfaRef.cur
 // ── Otomatik kaydırma
 const otomatikRef = useRef(null)
 const [otomatikKaydirma, setOtomatikKaydirma] = useState(false)
+// SESLİ OKUMA (15 Ekim 2026) — Web Speech API; denetim: components/SesliOkumaKontrol.jsx
+const [sesliAcik, setSesliAcik] = useState(false)
 const [kaydirmaHizi, setKaydirmaHizi]         = useState(1)
 const [duraklatildi, setDuraklatildi]         = useState(false)
 
@@ -1296,6 +1304,13 @@ const [butonTaraf, setButonTaraf] = useState(() => {
 })
 const [sadeIcerikAcik, setSadeIcerikAcik] = useState(false)
 const [menuAcikDugum, setMenuAcikDugum] = useState(() => new Set())
+// İÇİNDEKİLER SIRASI (15 Ekim 2026): kitap sırası | A–Z (ağaç korunur) | dizin (düz A–Z) —
+// seçim hatırlanır, "Sıfırla" onaysız olağan sıraya döndürür
+const [icSira, setIcSiraHam] = useState(() => siraOku(ICINDEKILER_SIRA_ANAHTAR, ICINDEKILER_SIRALARI, "kitap"))
+const setIcSira = (v) => { setIcSiraHam(v); siraYaz(ICINDEKILER_SIRA_ANAHTAR, v, "kitap") }
+// İÇİNDEKİLER ARAMASI (15 Ekim 2026): başlıklarda esnek arama (â=a, I/İ, ayraç duyarsız —
+// esnekArama + trFold; metin aramasıyla aynı kural)
+const [icArama, setIcArama] = useState("")
 const [duzenleNot, setDuzenleNot] = useState(null)   // { sayfaNo, notId }
 const [duzenleNotMetni, setDuzenleNotMetni] = useState("")
 const [duzenleVurgu, setDuzenleVurgu] = useState(null)   // { sayfaNo, vurguId }
@@ -3563,6 +3578,60 @@ const SayfaGitPopup = sayfaGitAcik && (
 // İÇİNDEKİLER MENÜSÜ (iskele — contents.json bağlanacak)
 // ════════════════════════════════════════════════════════════════
 
+// Başlığa git (ağaç ve dizin satırı ortak)
+const icindekilerdenGit = (node) => {
+  if (node.sayfa) { donusBirak("icindekiler", node.sayfa); basligaGit(node.sayfa, node.satir, node.oran || 0, node.baslik, node.seviye, node.aciklama) }
+  setMenuAcik(false)
+}
+// DİZİN satırı: başlık + altında soluk "Üst bölüm › Ara bölüm" yolu
+const dizinSatiriRender = ({ dugum, yol, bulunan }) => {
+  const mo = barUiOlcegi
+  // Aramada eşleşen kısım vurgulanır (bulunan: orijinal başlıktaki { bas, son })
+  const b = dugum.baslik || ""
+  const baslikIcerik = bulunan
+    ? <>{b.slice(0, bulunan.bas)}<mark style={{ background: `${theme.accent}2e`, color: "inherit", borderRadius: "3px", padding: "0 1px" }}>{b.slice(bulunan.bas, bulunan.son)}</mark>{b.slice(bulunan.son)}</>
+    : b
+  return (
+    <button key={dugum.idx} onClick={() => icindekilerdenGit(dugum)} title={dugum.aciklama || ""}
+      style={{
+        display: "block", width: "100%", textAlign: "left", background: "transparent", border: "none",
+        borderBottom: `1px solid ${theme.border}`, cursor: "pointer", color: theme.text,
+        padding: `${Math.round(8 * mo)}px ${Math.round(14 * mo)}px`,
+      }}>
+      <span style={{ display: "block", fontSize: `${Math.round(13.5 * mo)}px`, lineHeight: 1.35,
+        fontWeight: (dugum.seviye || 1) === 1 ? 600 : 400,
+        fontFamily: (dugum.seviye || 1) === 1 ? "'Souvenir', 'Souvenir Medium', serif" : "inherit" }}>{baslikIcerik}</span>
+      {yol && (
+        <span style={{ display: "block", fontSize: `${Math.round(11 * mo)}px`, color: theme.textSecondary, marginTop: "2px",
+          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{yol}</span>
+      )}
+    </button>
+  )
+}
+// Seçili sıraya göre içindekiler listesi (menü açıkken çağrılır; ucuz)
+const icindekilerListesi = () => {
+  const agac = icindekilerAgaci(icindekiler)
+  // Arama varsa: eşleşen başlıklar tek listede (kitap sırasında ya da seçiliyse alfabetik)
+  if (icArama.trim()) {
+    const hazir = esnekHazirla(icArama, trFold)
+    const sonuc = []
+    for (const x of agaciDizinle(agac, undefined, icSira !== "kitap")) {
+      const bulunan = esnekBul(x.dugum.baslik || "", hazir, trFold)
+      if (bulunan) sonuc.push({ ...x, bulunan })
+    }
+    if (!sonuc.length) {
+      return (
+        <div style={{ padding: "22px 16px", textAlign: "center", color: theme.textSecondary, fontSize: `${Math.round(12.5 * barUiOlcegi)}px`, lineHeight: 1.6 }}>
+          “{icArama.trim()}” ile eşleşen başlık bulunamadı.
+        </div>
+      )
+    }
+    return sonuc.map(dizinSatiriRender)
+  }
+  if (icSira === "dizin") return agaciDizinle(agac).map(dizinSatiriRender)
+  return (icSira === "alfabe" ? agaciSirala(agac) : agac).map(menuDugumRender)
+}
+
 const menuDugumRender = (node) => {
   const mo = barUiOlcegi
   const acik = menuAcikDugum.has(node.idx)
@@ -3578,7 +3647,7 @@ const menuDugumRender = (node) => {
         ) : (
           <span style={{ width: `${Math.round(20 * mo)}px`, flexShrink: 0 }} />
         )}
-        <button onClick={() => { if (node.sayfa) { donusBirak("icindekiler", node.sayfa); basligaGit(node.sayfa, node.satir, node.oran || 0, node.baslik, node.seviye, node.aciklama) } setMenuAcik(false) }}
+        <button onClick={() => icindekilerdenGit(node)}
           title={node.aciklama || ""}
           style={{
             flex: 1, textAlign: "left", background: "transparent", border: "none", cursor: "pointer",
@@ -3624,10 +3693,39 @@ const MenuPanel = menuAcik && (
         <span style={{ fontSize: `${Math.round(15 * barUiOlcegi)}px`, fontWeight: 600, color: theme.accent }}>İçindekiler</span>
         <button onClick={() => setMenuAcik(false)} style={{ background: "none", border: "none", cursor: "pointer", color: theme.textSecondary }}><X size={Math.round(16 * barUiOlcegi)} /></button>
       </div>
+      {/* Başlık araması (15 Ekim 2026) — mushaftaki sûre aramasıyla aynı görünüm */}
+      {icindekiler && icindekiler.length > 1 && (
+        <div style={{
+          display: "flex", alignItems: "center", gap: "8px",
+          padding: `${Math.round(9 * barUiOlcegi)}px 12px`, borderBottom: `1px solid ${theme.border}`,
+        }}>
+          <Search size={Math.round(15 * barUiOlcegi)} color={theme.accent} style={{ flexShrink: 0 }} />
+          <input
+            type="text" value={icArama} onChange={e => setIcArama(e.target.value)}
+            placeholder="Başlıklarda ara..." aria-label="Başlıklarda ara"
+            onKeyDown={e => { if (e.key === "Escape" && icArama) { e.stopPropagation(); setIcArama("") } }}
+            style={{
+              flex: 1, minWidth: 0, background: "transparent", border: "none", outline: "none",
+              fontSize: `${Math.round(13 * barUiOlcegi)}px`, color: theme.text, fontFamily: "inherit",
+            }}
+          />
+          {icArama && (
+            <button onClick={() => setIcArama("")} aria-label="Aramayı temizle"
+              style={{ color: theme.textSecondary, display: "flex", background: "none", border: "none", cursor: "pointer", padding: 0 }}>
+              <X size={Math.round(15 * barUiOlcegi)} />
+            </button>
+          )}
+        </div>
+      )}
+      {/* Sıra: Kitap sırası · A–Z · Dizin (15 Ekim 2026) — listeyle birlikte kaymaz */}
+      {icindekiler && icindekiler.length > 1 && (
+        <SiraSecici theme={theme} olcek={barUiOlcegi} secenekler={ICINDEKILER_SIRALARI}
+          deger={icSira} varsayilan="kitap" onSec={setIcSira} />
+      )}
       <div ref={menuListeRef} onScroll={e => { menuScrollRef.current = e.currentTarget.scrollTop }}
         style={{ flex: 1, overflowY: "auto", padding: "4px 0" }}>
         {(icindekiler && icindekiler.length > 0) ? (
-          icindekilerAgaci(icindekiler).map(menuDugumRender)
+          icindekilerListesi()
         ) : (
           <div style={{ padding: "24px 16px", textAlign: "center", color: theme.textSecondary, fontSize: "13px", lineHeight: "1.7", opacity: 0.8 }}>
             İçindekiler verisi henüz eklenmedi.
@@ -3789,6 +3887,13 @@ const Bar = (
       </button>
     )}
 
+    {gorunurMu("sesli") && (
+      <button onClick={() => setSesliAcik(v => !v)} style={{ ...barButonStil(sesliAcik), ...barOge("sesli") }}
+        title="Sesli okuma — metin cihazın sesiyle okunur">
+        <Headphones size={bIkon(15)} />
+      </button>
+    )}
+
     {gorunurMu("oto") && (
       <button onClick={() => setOtomatikKaydirma(!otomatikKaydirma)} style={{ ...barButonStil(otomatikKaydirma), ...barOge("oto") }} title="Otomatik kaydırma">
         {otomatikKaydirma ? <Pause size={bIkon(15)} /> : <Play size={bIkon(15)} />}
@@ -3937,6 +4042,20 @@ return (
     {GorselIpucu}
     {AramaPanel}
     {MenuPanel}
+    <SesliOkumaKontrol
+      acik={sesliAcik} kapat={() => setSesliAcik(false)}
+      theme={theme} isMobile={isMobile} olcek={barUiOlcegi}
+      kitapId={id} kitapMetni={kitapMetni}
+      baslangicAl={() => {
+        const u = ustSatirYakala()
+        if (!u || !u.satir) return { sayfa: mevcutSayfa, satir: 0 }
+        const [s, si] = String(u.satir).split("-").map(Number)
+        return { sayfa: s, satir: si || 0 }
+      }}
+      scrollEl={() => scrollRef.current}
+      onSayfayaGit={(sayfa, satir) => elemanaGit(sayfa, () => document.querySelector(`[data-satir="${sayfa}-${satir}"]`), 0, false)}
+      altPay={barKonum === "alt" && barGorunur ? barYuk + 12 : 16}
+    />
 
     {/* Dipnot popup */}
     {dipnotPopup && (

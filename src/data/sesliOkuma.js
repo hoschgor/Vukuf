@@ -27,13 +27,64 @@
    bazı tarayıcılar onu çöpe atıp `onend`i hiç çağırmıyor); ayrıca bekçi zamanlayıcı
    `onend` gelmezse sıradakine geçer. Ekran açık kalsın diye Wake Lock istenir
    (iPhone'da ekran kilitlenince konuşma durur).
+
+   ARAPÇA SES (16 Ekim 2026, kullanıcı: "ikili kombinasyon yapabiliriz"):
+     • Kaynağı bilinen âyet → "Neml Sûresi, 30. âyet." + HAFIZ KAYDI (everyayah, Kur'ân
+       bölümünde seçili kâri ya da burada seçilen) + meal. Kayıt önbellekte değilse ve
+       internet yoksa kayıt atlanır, meal okunur. (ayar.ayetSes: "hafiz" | "meal")
+     • Kaynağı bilinmeyen Arapça → "Arapça sesle oku" seçiliyse Kerîm (Vukuf sesi,
+       isteğe bağlı indirilir) ya da cihazın Arapça sesi (ayar.arSes: "kerim" | "cihaz").
    ═══════════════════════════════════════════════════════════════════════════ */
 
 import { sureAdi } from "./sureAdlari"
+import { mp3Url, KARILAR } from "./hooks/useAudioPlayer"
 
 export const SESLI_AYAR_ANAHTAR = "vukuf-sesli-okuma"
 export const SESLI_KONUM_ANAHTAR = "vukuf-sesli-konum"     // { kitap: { sayfa, satir } }
-export const SESLI_VARSAYILAN = { hiz: 1, sesTr: "", sesAr: "", arapca: "uyari", isaret: true, takip: true }
+// motor: "cihaz" (Web Speech) | "vukuf" (tarayıcı içi Piper — data/vukufSes.js); vukufSes: "fahrettin" | "fettah"
+export const SESLI_VARSAYILAN = {
+  hiz: 1, sesTr: "", sesAr: "", arapca: "uyari", isaret: true, takip: true, motor: "cihaz", vukufSes: "fettah",
+  ayetSes: "hafiz",      // kaynağı bilinen âyet: "hafiz" (kayıt + meal) | "meal"
+  kari: "",              // "" = Kur'ân bölümünde seçili kâri
+  arSes: "kerim",        // kaynağı bilinmeyen Arapça: "kerim" (Vukuf) | "cihaz"
+}
+/* Hafız kaydı hangi kâriden: sesli okumada seçilen, yoksa Kur'ân bölümündeki seçim */
+export function kariSec(ayar) {
+  let id = ayar?.kari || ""
+  if (!id) { try { id = localStorage.getItem("vukuf-kari") || "" } catch { /* yoksay */ } }
+  return KARILAR.some(k => k.id === id) ? id : KARILAR[0].id
+}
+export { KARILAR }
+
+/* iPhone: ses ancak kullanıcı dokunuşunun İÇİNDE açılabiliyor. Düğmelerin onClick'inde
+   çağrılır: hem konuşma motoru hem Vukuf sesi için kullanılan <audio> öğesi açılır. */
+let sesOgesi = null
+// 16 Ekim 2026: eski sessiz WAV'ın verisi BOŞTU (0 bayt) — iPhone boş sesi çalamayıp öğenin
+// kilidini açmayabiliyordu. Artık 0,1 sn gerçek sessizlik (8 kHz, 8 bit).
+let sessizUrl = ""
+function sessizWav() {
+  if (sessizUrl) return sessizUrl
+  const n = 800, v = new DataView(new ArrayBuffer(44 + n))
+  const yaz = (o, t) => { for (let i = 0; i < t.length; i++) v.setUint8(o + i, t.charCodeAt(i)) }
+  yaz(0, "RIFF"); v.setUint32(4, 36 + n, true); yaz(8, "WAVE"); yaz(12, "fmt ")
+  v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true)
+  v.setUint32(24, 8000, true); v.setUint32(28, 8000, true); v.setUint16(32, 1, true); v.setUint16(34, 8, true)
+  yaz(36, "data"); v.setUint32(40, n, true)
+  for (let i = 0; i < n; i++) v.setUint8(44 + i, 128)
+  // data: adresi (blob değil) — iPhone'da blob adresli ses ilerlemeyebiliyor (aşağıda veriUrlKullan)
+  let ikili = ""
+  const u8 = new Uint8Array(v.buffer)
+  for (let i = 0; i < u8.length; i++) ikili += String.fromCharCode(u8[i])
+  sessizUrl = "data:audio/wav;base64," + window.btoa(ikili)
+  return sessizUrl
+}
+export function sesKilidiAc() {
+  try {
+    if (!sesOgesi && typeof Audio !== "undefined") { sesOgesi = new Audio(); sesOgesi.preload = "auto" }
+    if (sesOgesi) { sesOgesi.src = sessizWav(); const p = sesOgesi.play(); if (p && p.catch) p.catch(() => {}) }
+  } catch { /* yoksay */ }
+  try { if (sesliDestekVar()) window.speechSynthesis.speak(new window.SpeechSynthesisUtterance("")) } catch { /* yoksay */ }
+}
 export const HIZLAR = [0.8, 1, 1.2, 1.5, 1.8]
 
 const ARAP = "\\u0600-\\u06FF\\u0750-\\u077F\\u08A0-\\u08FF\\uFB50-\\uFDFF\\uFE70-\\uFEFF"
@@ -223,7 +274,7 @@ function ayetAtiflari(text) {
 
 /* ── BİRİMLER ─────────────────────────────────────────────────────────────
    sayfa: { sayfa, metin, dipnotlar?, basliklar? }
-   secenek: { arapca: "uyari"|"atla"|"oku", arapcaSesVar, ayetMeal }
+   secenek: { arapca: "uyari"|"atla"|"oku", arapcaSesVar, ayetMeal, hafiz }
    → [{ sayfa, satir, satirlar?, tip, lang, soyle, goster, isaret }] */
 export function sayfaBirimleri(sayfa, secenek, basSatir = 0) {
   const birimler = []
@@ -269,6 +320,8 @@ export function sayfaBirimleri(sayfa, secenek, basSatir = 0) {
         atiflar.forEach((a, k) => {
           ekle({ satir: i, satirlar: blok, tip: "ayet", lang: "tr", isaret: k === 0, goster: "",
             soyle: `${sureAdi(a.sureNo)} Sûresi, ${a.ayetNo}. âyet.` })
+          // Hafız kaydı (yapay ses değil — gerçek tilâvet)
+          if (secenek.hafiz) ekle({ satir: i, satirlar: blok, tip: "kari", lang: "kari", goster: "", soyle: "", sureNo: a.sureNo, ayetNo: a.ayetNo })
           const meal = secenek.ayetMeal?.[a.sureNo]?.[a.ayetNo]
           const mealMetni = typeof meal === "string" ? meal : (meal && (meal.meal || meal.metin)) || ""
           if (mealMetni) {
@@ -322,6 +375,36 @@ export function sayfaBirimleri(sayfa, secenek, basSatir = 0) {
   return birimler
 }
 
+/* ── DOKUNULAN KELİMEDEN BAŞLAMA (16 Ekim 2026) ─────────────────────────────
+   sec: { satir, ofset, duz } — `duz`: satırın ekranda görünen metni (boşluklar teke
+   indirgenmiş, <sup> hariç), `ofset`: dokunulan harfin bu metindeki yeri.
+   Satırın cümleleri `duz` içinde sırayla aranır; dokunulan harfi içeren (ya da
+   ondan sonra gelen ilk) cümleden itibaren birimler döner. Arapça blokta (birim
+   birden çok satırı kapsar) bloğun başından okunur. */
+export function secimdenItibaren(liste, sec) {
+  const satir = Number(sec.satir) || 0
+  const ilk = liste.findIndex(b => b.satir === satir || (b.satirlar || []).includes(satir) || b.satir > satir)
+  if (ilk < 0) return []
+  if (liste[ilk].satir !== satir) return liste.slice(ilk)
+  const duz = String(sec.duz || ""), ofset = Number(sec.ofset) || 0
+  const tek = (t) => String(t || "").replace(/\s+/g, " ").trim()
+  let k = ilk, poz = 0, sonBulunan = ilk
+  while (k < liste.length && liste[k].satir === satir) {
+    const g = tek(liste[k].goster)
+    if (g) {
+      const j = duz.indexOf(g, poz)
+      if (j >= 0) {
+        if (j + g.length > ofset) break
+        poz = j + g.length; sonBulunan = k
+      }
+    }
+    k++
+  }
+  // Satırın son cümlesinden sonraki boşluğa dokunulduysa o satırın son cümlesi
+  if (k >= liste.length || liste[k].satir !== satir) k = sonBulunan
+  return liste.slice(k)
+}
+
 /* ── İŞARET SESİ — âyet/Arapça bölümden önce kısa, yumuşak bir çan ───────── */
 let sesBaglami = null
 function isaretCal() {
@@ -349,6 +432,8 @@ function isaretCal() {
   })
 }
 
+const hataMetni = (e) => String(e?.message || e?.name || e || "").slice(0, 240)
+
 /* ── MOTOR ────────────────────────────────────────────────────────────────── */
 function motorKur() {
   const dinleyiciler = new Set()
@@ -359,6 +444,43 @@ function motorKur() {
   let sayfalar = [], sonSayfaIdx = -1, secenek = null
   let sesTr = null, sesAr = null
   let konusma = null, bekci = 0, nesil = 0, kilit = null
+  let vs = null                                    // data/vukufSes.js (yalnız Vukuf sesi seçiliyse yüklenir)
+  let sentezler = new Map()                        // birim sırası → Promise<{pcm, ornekleme, sure}> (önden hazırlık)
+  let sentezNesli = 0                              // sentezler sıfırlanınca artar → eski istekler atlanır
+  let calanUrl = ""
+  let yavasSay = 0
+  // iPhone: "düğme dönüyor, sonra durdur geliyor ama ses yok" (16 Ekim 2026, kullanıcı).
+  // blob: adresli WAV bazı iOS sürümlerinde <audio>da hiç ilerlemiyor → ilk takılmada
+  // data: adresine geçilir (oturum boyunca), o da ilerlemezse ayrıntılı hata verilir.
+  let veriUrlKullan = false
+  const veriUrl = (blob) => new Promise((cz, red) => {
+    const o = new FileReader()
+    o.onload = () => cz(o.result); o.onerror = () => red(o.error || new Error("Ses verisi hazırlanamadı"))
+    o.readAsDataURL(blob)
+  })
+  const oynaticiDurumu = () => sesOgesi
+    ? `oynatıcı ilerlemedi — readyState ${sesOgesi.readyState}, networkState ${sesOgesi.networkState}${sesOgesi.error ? `, hata kodu ${sesOgesi.error.code}` : ""}${veriUrlKullan ? ", data adresi" : ""}`
+    : "oynatıcı yok"
+  const ONDEN = 3                                  // kaç cümle önden hazırlansın
+  let kerimAcik = false                            // kaynağı bilinmeyen Arapça Kerîm (Vukuf) sesiyle mi
+  // Bu birim Vukuf sesiyle mi okunur? Türkçe: motor "vukuf" · Arapça: Kerîm açıksa
+  const vukufBirimMi = (b) => !!vs && !!b && ((b.lang === "tr" && ayar.motor === "vukuf") || (b.lang === "ar" && kerimAcik))
+  const birimSesi = (b) => (b.lang === "ar" ? "kareem" : ayar.vukufSes)
+  const sentezleriSifirla = () => { sentezler = new Map(); sentezNesli++ }
+  const sentezAl = (i) => {
+    if (i >= birimler.length) { const s0 = sira; sira = i; doldur(); sira = s0 }
+    const b = birimler[i]
+    if (!vukufBirimMi(b)) return null
+    if (!sentezler.has(i)) {
+      const n = sentezNesli
+      // Sırası geldiğinde hâlâ gerekli mi? (okuyucu ileri atladıysa / ayar değiştiyse geç)
+      const soz = vs.sentezle(b.soyle, birimSesi(b), Number(ayar.hiz) || 1, () => n === sentezNesli && i >= sira)
+      soz.catch(() => {})
+      sentezler.set(i, soz)
+    }
+    return sentezler.get(i)
+  }
+  const ondenHazirla = (i) => { for (let k = 1; k <= ONDEN; k++) sentezAl(i + k) }
 
   const ekranAcik = async (acik) => {
     try {
@@ -384,8 +506,11 @@ function motorKur() {
   const sustur = () => {
     nesil++
     clearTimeout(bekci)
-    try { window.speechSynthesis.cancel() } catch { /* yoksay */ }
+    try { if (sesliDestekVar()) window.speechSynthesis.cancel() } catch { /* yoksay */ }
+    try { if (sesOgesi) { sesOgesi.onended = null; sesOgesi.onerror = null; sesOgesi.pause() } } catch { /* yoksay */ }
+    if (calanUrl) { try { URL.revokeObjectURL(calanUrl) } catch { /* yoksay */ } calanUrl = "" }
     konusma = null
+    if (durum.bekliyor) yay({ bekliyor: false })
   }
 
   const oku = async (i) => {
@@ -398,6 +523,100 @@ function motorKur() {
     yay({ durum: "okuyor", birim: b, sira })
     if (kitap) konumYaz(kitap, { sayfa: b.sayfa, satir: b.satir })
     if (b.isaret && ayar.isaret) { await isaretCal(); if (benim !== nesil) return }
+
+    // ── HAFIZ KAYDI: kaynağı bilinen âyetin tilâveti (everyayah; indirilmişse önbellekten)
+    if (b.tip === "kari") {
+      if (!sesOgesi) sesOgesi = new Audio()
+      let gecti = false
+      const ilerleK = () => {
+        if (gecti || benim !== nesil) return
+        gecti = true; clearTimeout(bekci)
+        setTimeout(() => { if (benim === nesil) oku(sira + 1) }, 250)
+      }
+      sesOgesi.onended = ilerleK
+      sesOgesi.onerror = ilerleK                         // internetsiz ve önbellekte yok → meale geç
+      try { sesOgesi.playbackRate = 1 } catch { /* yoksay */ }   // tilâvet hızlandırılmaz
+      sesOgesi.src = mp3Url(kariSec(ayar), b.sureNo, b.ayetNo)
+      // Hiç başlayamazsa takılı kalınmasın
+      bekci = setTimeout(() => { if (sesOgesi && sesOgesi.currentTime === 0) ilerleK() }, 12000)
+      try { await sesOgesi.play() }
+      catch (e) {
+        if (benim !== nesil) return
+        if (e?.name === "NotAllowedError") { clearTimeout(bekci); yay({ durum: "duraklatildi", hata: "vukufCal", hataAyrinti: "Tarayıcı sesi başlatmaya izin vermedi" }) }
+        else ilerleK()
+      }
+      return
+    }
+
+    // ── VUKUF SESİ: Türkçe (motor "vukuf") ve Kerîm açıksa Arapça birimler tarayıcı içi Piper ile
+    if (vukufBirimMi(b)) {
+      const ilerleV = () => {
+        if (benim !== nesil) return
+        // Cümle arası: Piper cümle sonuna zaten kısa bir sessizlik koyuyor → ek bekleme çok kısa
+        const bekle = b.tip === "baslik" || b.tip === "ayet" ? 300 : 20
+        setTimeout(() => { if (benim === nesil) oku(sira + 1) }, bekle)
+      }
+      let bekleZaman = 0
+      try {
+        // Kullanılmış sentezleri bırak (bellek); geri gidildiyse eskileri yeniden istenir
+        for (const k of [...sentezler.keys()]) if (k < sira) sentezler.delete(k)
+        // Cümle hazır değilse ve bekleme uzarsa kullanıcı görsün (düğmede dönen simge + "Ses hazırlanıyor…")
+        bekleZaman = setTimeout(() => { if (benim === nesil) yay({ bekliyor: true }) }, 1200)
+        let sonuc = await sentezAl(sira)
+        if (benim !== nesil) return
+        if (!sonuc) {                                      // atlanmış eski istek → yeniden
+          sentezler.delete(sira); sonuc = await sentezAl(sira)
+          if (benim !== nesil) return
+        }
+        clearTimeout(bekleZaman)
+        if (durum.bekliyor) yay({ bekliyor: false })
+        const { pcm, ornekleme, sure } = sonuc || { pcm: new Float32Array(0), ornekleme: 22050, sure: 0 }
+        ondenHazirla(sira)                                  // sonraki cümleler çalarken hazırlansın
+        // Bu cihaz sesi, okunduğundan YAVAŞ mı üretiyor? (3 cümle üst üste) → kullanıcıya bilgi
+        const sesSure = (pcm.length / ornekleme) * 1000
+        if (sesSure > 0) {
+          yavasSay = sure > sesSure * 0.9 ? yavasSay + 1 : 0
+          if (yavasSay >= 3 && !durum.yavas) yay({ yavas: true })
+        }
+        if (!pcm.length) { ilerleV(); return }
+        if (!sesOgesi) sesOgesi = new Audio()
+        if (calanUrl) { try { URL.revokeObjectURL(calanUrl) } catch { /* yoksay */ } calanUrl = "" }
+        const wav = vs.wavYap(pcm, ornekleme)
+        let adres
+        if (veriUrlKullan) adres = await veriUrl(wav)
+        else { calanUrl = URL.createObjectURL(wav); adres = calanUrl }
+        if (benim !== nesil) return
+        // Takılma: blob adresiyle çalmazsa data adresine geçilip AYNI cümle yeniden denenir
+        const takildi = () => {
+          if (benim !== nesil) return
+          clearTimeout(bekci)
+          if (!veriUrlKullan) { veriUrlKullan = true; oku(sira); return }
+          console.error("[Sesli okuma]", oynaticiDurumu())
+          sustur()
+          yay({ durum: "duraklatildi", hata: "vukufCal", hataAyrinti: oynaticiDurumu() })
+          ekranAcik(false)
+        }
+        sesOgesi.onended = () => { clearTimeout(bekci); ilerleV() }
+        sesOgesi.onerror = takildi
+        try { sesOgesi.playbackRate = 1 } catch { /* yoksay */ }
+        sesOgesi.src = adres
+        // Çalmaya başladı mı? (play() sözü iPhone'da çözülüp ses hiç ilerlemeyebiliyor)
+        clearTimeout(bekci)
+        bekci = setTimeout(() => {
+          if (benim !== nesil || !sesOgesi) return
+          if (sesOgesi.ended || sesOgesi.currentTime > 0.05 || sesOgesi.paused && durum.durum !== "okuyor") return
+          takildi()
+        }, 3000)
+        await sesOgesi.play()
+      } catch (e) {
+        clearTimeout(bekleZaman)
+        if (benim !== nesil) return
+        console.error("[Sesli okuma]", e)
+        if (e?.name !== "NotAllowedError" && !veriUrlKullan && vs && e?.name !== "Error") { veriUrlKullan = true; oku(sira); return }
+        yay({ durum: "duraklatildi", hata: "vukufCal", hataAyrinti: hataMetni(e), bekliyor: false })
+      }
+      return
+    }
     const u = new window.SpeechSynthesisUtterance(b.soyle)
     const ses = b.lang === "ar" ? sesAr : sesTr
     if (ses) u.voice = ses
@@ -431,30 +650,57 @@ function motorKur() {
     abone(f) { dinleyiciler.add(f); return () => dinleyiciler.delete(f) },
     durum: () => durum,
     async baslat({ kitapId, kitapMetni, baslangic, ayetMeal }) {
-      if (!sesliDestekVar()) { yay({ durum: "kapali", hata: "destek" }); return }
       sustur()
       ayar = ayarOku()
+      sentezleriSifirla(); yavasSay = 0; kerimAcik = false
+      yay({ yavas: false, hataAyrinti: "", asama: "", bekliyor: false })
+      const arapcaOku = ayar.arapca === "oku"
+      // VUKUF SESİ seçiliyse: indirilmiş mi, motor hazır mı?
+      if (ayar.motor === "vukuf") {
+        yay({ durum: "hazirlaniyor", hata: "", asama: "vukuf" })
+        try {
+          vs = vs || await import("./vukufSes")
+          if (!(await vs.indirilmisMi("tr"))) { yay({ durum: "kapali", hata: "vukufYok", birim: null }); return }
+          await vs.hazirla(ayar.vukufSes)
+        } catch (e) {
+          console.error("[Vukuf sesi]", e)
+          yay({ durum: "kapali", hata: "vukufHata", hataAyrinti: hataMetni(e), birim: null }); return
+        }
+      }
+      // Kerîm (Arapça Vukuf sesi) indirilmiş mi? Yalnız "Arapça sesle oku" açıkken bakılır
+      let kerimVar = false
+      if (arapcaOku && ayar.arSes !== "cihaz") {
+        try { vs = vs || await import("./vukufSes"); kerimVar = await vs.indirilmisMi("ar") } catch { kerimVar = false }
+      }
+      if (!sesliDestekVar() && ayar.motor !== "vukuf") { yay({ durum: "kapali", hata: "destek" }); return }
       // iPhone: konuşma ancak kullanıcı dokunuşuyla açılır → boş bir konuşmayla kilit açılır
       try { window.speechSynthesis.speak(new window.SpeechSynthesisUtterance("")) } catch { /* yoksay */ }
       yay({ durum: "hazirlaniyor", hata: "" })
       const sesler = await sesleriAl()
       const trler = turkceSesler(sesler), arlar = arapcaSesler(sesler)
-      // Ses listesi DOLU ama içinde Türkçe yoksa okunmaz — tarayıcı yabancı bir sesle
+      // Ses listesi DOLU ama içinde Türkçe yoksa okunmaz (Vukuf sesinde cihaz sesi gerekmez) — tarayıcı yabancı bir sesle
       // (ör. Almanca aksanla) okuyordu. Liste tamamen boşsa (bazı Android'ler listeyi geç
       // veriyor) yine de tr-TR diliyle denenir.
-      if (sesler.length && !trler.length) {
+      if (ayar.motor !== "vukuf" && sesler.length && !trler.length) {
         yay({ durum: "kapali", hata: "trSes", trSesYok: true, birim: null })
         return
       }
       sesTr = enIyiSes(trler, ayar.sesTr)
       sesAr = enIyiSes(arlar, ayar.sesAr)
+      if (kerimVar) {
+        try { yay({ durum: "hazirlaniyor" }); await vs.hazirla("kareem"); kerimAcik = true }
+        catch (e) { console.error("[Vukuf sesi] Kerîm", e); kerimAcik = false }
+      }
       kitap = kitapId
       sayfalar = kitapMetni || []
-      secenek = { arapca: ayar.arapca, arapcaSesVar: !!sesAr, ayetMeal }
+      secenek = { arapca: ayar.arapca, arapcaSesVar: !!sesAr || kerimAcik, ayetMeal, hafiz: ayar.ayetSes !== "meal" }
       const basIdx = Math.max(0, sayfalar.findIndex(s => s.sayfa === baslangic?.sayfa))
       sonSayfaIdx = basIdx
-      birimler = sayfaBirimleri(sayfalar[basIdx], secenek, baslangic?.satir || 0)
-      yay({ trSesYok: !trler.length, sesListesiBos: !sesler.length, arSesVar: !!sesAr })
+      // Kullanıcı bir kelimeye dokunarak başlattıysa: sayfanın tamamı kurulur, o kelimenin cümlesinden öncesi atılır
+      birimler = baslangic && baslangic.ofset != null
+        ? secimdenItibaren(sayfaBirimleri(sayfalar[basIdx], secenek, 0), baslangic)
+        : sayfaBirimleri(sayfalar[basIdx], secenek, baslangic?.satir || 0)
+      yay({ trSesYok: !trler.length, sesListesiBos: !sesler.length, arSesVar: !!sesAr || kerimAcik })
       ekranAcik(true)
       oku(0)
     },
@@ -469,20 +715,21 @@ function motorKur() {
     // Ayar değişti: hız/ses sıradaki cümleden; Arapça seçeneği kalan birimleri yeniden kurar
     ayarlariYenile(parca) {
       ayar = ayarYaz(parca)
+      // Hız ya da Vukuf sesi değişti → önden hazırlanmış sesler geçersiz
+      if ("hiz" in parca || "vukufSes" in parca || "motor" in parca) sentezleriSifirla()
       const calisiyor = durum.durum === "okuyor" || durum.durum === "duraklatildi"
       if (!calisiyor) return
+      if ("motor" in parca || "vukufSes" in parca || "arapca" in parca || "arSes" in parca || "ayetSes" in parca) {
+        // Motor / Arapça / âyet seçeneği değişince bulunulan satırdan yeniden kurulsun
+        // (indirme / hazırlık denetimi ve birimler baslat'ta)
+        const b = birimler[sira]
+        this.baslat({ kitapId: kitap, kitapMetni: sayfalar, baslangic: b ? { sayfa: b.sayfa, satir: b.satir } : null, ayetMeal: secenek?.ayetMeal })
+        return
+      }
+      if (!("hiz" in parca || "sesTr" in parca || "sesAr" in parca)) return   // ör. kâri: sıradaki âyette geçerli
       sesleriAl().then((sesler) => {
         sesTr = enIyiSes(turkceSesler(sesler), ayar.sesTr)
         sesAr = enIyiSes(arapcaSesler(sesler), ayar.sesAr)
-        if ("arapca" in parca) {
-          const b = birimler[sira]
-          if (!b) return
-          secenek = { ...secenek, arapca: ayar.arapca, arapcaSesVar: !!sesAr }
-          const idx = sayfalar.findIndex(s => s.sayfa === b.sayfa)
-          sonSayfaIdx = idx
-          birimler = sayfaBirimleri(sayfalar[idx], secenek, b.satir)
-          sira = 0
-        }
         if (durum.durum === "okuyor") oku(sira)
       })
     },

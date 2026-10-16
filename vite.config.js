@@ -16,7 +16,13 @@ import { join } from 'node:path'
    iniyordu) ama artık AYRIŞTIRILMIYOR — telefon yalnız açılan sayfanın kodunu
    işliyor.
    `writeBundle`: çıktı diske yazıldıktan sonra, CSS dahil her dosya kesinleşmiş
-   hâlde. Yalnız `vite build`de çalışır; geliştirme sunucusunu etkilemez. */
+   hâlde. Yalnız `vite build`de çalışır; geliştirme sunucusunu etkilemez.
+
+   .wasm HARİÇ (16 Ekim 2026): onnxruntime-web paketi kendi ~14 MB'lık wasm
+   dosyasını `new URL(..., import.meta.url)` ile andığı için Vite onu assets'e
+   koyuyor. Uygulama bu dosyayı HİÇ istemiyor (Vukuf sesi wasm'ı bir kez indirip
+   kendi önbelleğinden veriyor — data/vukufSes.js). Listeye girseydi servis
+   işçisi her kullanıcıya, Vukuf sesini hiç açmasa da, 14 MB indirtirdi. */
 function varlikListesi() {
   return {
     name: 'vukuf-varlik-listesi',
@@ -25,6 +31,7 @@ function varlikListesi() {
     writeBundle(secenek, paket) {
       const dosyalar = Object.keys(paket)
         .filter(ad => ad.startsWith('assets/'))
+        .filter(ad => !ad.endsWith('.wasm'))
         .map(ad => '/' + ad)
         .sort()
       writeFileSync(
@@ -43,4 +50,13 @@ export default defineConfig({
     port: 5173,
     strictPort: false,
   },
+  /* Ön-paketlemeye girmesinler (13 / 16 Ekim 2026):
+     • @ffmpeg/ffmpeg, @ffmpeg/util — kendi işçisini `new URL('./worker.js', import.meta.url)`
+       ile kuruyor; ön-paketlenince işçi dosyası bulunamıyor (video dönüştürme).
+     • onnxruntime-web — Vukuf sesi; aynı sebeple paketi olduğu gibi kullanılmalı. */
+  optimizeDeps: {
+    exclude: ['@ffmpeg/ffmpeg', '@ffmpeg/util', 'onnxruntime-web'],
+  },
+  // ffmpeg işçisi modül (ESM) olarak derlensin — içinde dinamik import var
+  worker: { format: 'es' },
 })

@@ -68,7 +68,7 @@ async function onbellekleriOlc(onIlerleme) {
     while (kuyruk.length) {
       const { k, ad, istek } = kuyruk.shift()
       const b = await yanitBoyutu(k, istek)
-      const tur = ad === "vukuf-veri" ? veriTuru(istek.url) : ad === "vukuf-ses" ? "ses" : "uygulama"
+      const tur = ad === "vukuf-veri" ? veriTuru(istek.url) : (ad === "vukuf-ses" || ad === "vukuf-ses-motoru") ? "ses" : "uygulama"
       sonuc[tur] += b
       sonuc.adet[tur]++
       biten++
@@ -150,7 +150,7 @@ async function tarayiciBildirimi() {
 /* Bölümler — SIRA ve RENK YUVASI SABİT (renk bölüme bağlı, büyüklüğe göre değişmez). */
 export const BOLUMLER = [
   { id: "metin",    ad: "Kitap ve Kur'ân metinleri", aciklama: "İndirilen eserler, mushaf, lügat" },
-  { id: "ses",      ad: "Kâri sesleri",              aciklama: "İnternetsiz dinlemek için indirilenler" },
+  { id: "ses",      ad: "Sesler",                    aciklama: "Kâri sesleri ve Vukuf okuma sesleri" },
   { id: "font",     ad: "Yazı tipleri",              aciklama: "Arapça ve metin yazı tipleri" },
   { id: "gorsel",   ad: "Görseller",                 aciklama: "Raf resimleri, kapaklar, simgeler" },
   { id: "galeri",   ad: "İzleme galerisi",           aciklama: "Arka plan için eklediğiniz resimler" },

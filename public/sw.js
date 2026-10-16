@@ -35,7 +35,7 @@
      de çalışır ama eski varlıklar önbellekte birikir.
    ═══════════════════════════════════════════════════════════════════════════ */
 
-const SURUM = "16-10-2026-1"
+const SURUM = "16-10-2026-2"
 
 const KABUK = `vukuf-kabuk-${SURUM}`
 const VARLIK = `vukuf-varlik-${SURUM}`
@@ -144,7 +144,7 @@ self.addEventListener("activate", (olay) => {
     const adlar = await caches.keys()
     await Promise.all(adlar.map(ad => {
       if (!ad.startsWith("vukuf-")) return null
-      if (ad === KABUK || ad === VARLIK || ad === VERI || ad === SES) return null
+      if (ad === KABUK || ad === VARLIK || ad === VERI || ad === SES || ad === "vukuf-ses-motoru") return null
       return caches.delete(ad)
     }))
     // Eski işçilerin veri önbelleğine koyduğu bayat manifest kaydını sil.

@@ -7,6 +7,7 @@ import { okumaKaydet, trFold } from "../data/okumaKayit"
 import { esnekBul, esnekHazirla } from "../data/esnekArama"
 import SiraSecici from "../components/SiraSecici"
 import SesliOkumaKontrol from "../components/SesliOkumaKontrol"
+import { sesKilidiAc } from "../data/sesliOkuma"
 import { ICINDEKILER_SIRALARI, ICINDEKILER_SIRA_ANAHTAR, agaciSirala, agaciDizinle, siraOku, siraYaz } from "../data/sureSirasi"
 import lugatVerisi from "../data/lugat.json"
 /* ── risale-lugat.json IMPORT'U KALDIRILDI (24 Eylül 2026) ──────────────────
@@ -3888,7 +3889,7 @@ const Bar = (
     )}
 
     {gorunurMu("sesli") && (
-      <button onClick={() => setSesliAcik(v => !v)} style={{ ...barButonStil(sesliAcik), ...barOge("sesli") }}
+      <button onClick={() => { if (!sesliAcik) sesKilidiAc(); setSesliAcik(v => !v) }} style={{ ...barButonStil(sesliAcik), ...barOge("sesli") }}
         title="Sesli okuma — metin cihazın sesiyle okunur">
         <Headphones size={bIkon(15)} />
       </button>

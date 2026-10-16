@@ -461,7 +461,8 @@ function motorKur() {
   const oynaticiDurumu = () => sesOgesi
     ? `oynatıcı ilerlemedi — readyState ${sesOgesi.readyState}, networkState ${sesOgesi.networkState}${sesOgesi.error ? `, hata kodu ${sesOgesi.error.code}` : ""}${veriUrlKullan ? ", data adresi" : ""}`
     : "oynatıcı yok"
-  const ONDEN = 3                                  // kaç cümle önden hazırlansın
+  const ONDEN = 4                                  // kaç cümle önden hazırlansın (iki işçi varken ikisi de dolu kalsın)
+  let arapcaKapaliKitap = false                    // Evrad ve Ezkâr: Arapça yapay sesle okunmaz (16 Ekim 2026, kullanıcı)
   let kerimAcik = false                            // kaynağı bilinmeyen Arapça Kerîm (Vukuf) sesiyle mi
   // Bu birim Vukuf sesiyle mi okunur? Türkçe: motor "vukuf" · Arapça: Kerîm açıksa
   const vukufBirimMi = (b) => !!vs && !!b && ((b.lang === "tr" && ayar.motor === "vukuf") || (b.lang === "ar" && kerimAcik))
@@ -572,11 +573,15 @@ function motorKur() {
         if (durum.bekliyor) yay({ bekliyor: false })
         const { pcm, ornekleme, sure } = sonuc || { pcm: new Float32Array(0), ornekleme: 22050, sure: 0 }
         ondenHazirla(sira)                                  // sonraki cümleler çalarken hazırlansın
-        // Bu cihaz sesi, okunduğundan YAVAŞ mı üretiyor? (3 cümle üst üste) → kullanıcıya bilgi
+        // Bu cihaz sesi, okunduğundan YAVAŞ mı üretiyor? → önce ikinci işçi (iki cümle aynı anda),
+        // o da yetmezse kullanıcıya bilgi (ölçülen oranla)
         const sesSure = (pcm.length / ornekleme) * 1000
-        if (sesSure > 0) {
-          yavasSay = sure > sesSure * 0.9 ? yavasSay + 1 : 0
-          if (yavasSay >= 3 && !durum.yavas) yay({ yavas: true })
+        if (sesSure > 400) {
+          // Etkin oran: iki işçi aynı anda iki cümle ürettiğinde süre ikiye bölünür
+          const oran = sure / sesSure / Math.max(1, vs.isciSayisi ? vs.isciSayisi() : 1)
+          yavasSay = oran > 0.8 ? yavasSay + 1 : 0
+          if (yavasSay >= 2 && vs.isciSayisi && vs.isciSayisi() < 2 && vs.isciEkle()) { yavasSay = -2 }   // kurulurken birkaç cümle beklenir
+          else if (yavasSay >= 3 && !durum.yavas) yay({ yavas: true, uretimOrani: Math.round(oran * 10) / 10 })
         }
         if (!pcm.length) { ilerleV(); return }
         if (!sesOgesi) sesOgesi = new Audio()
@@ -649,12 +654,15 @@ function motorKur() {
   return {
     abone(f) { dinleyiciler.add(f); return () => dinleyiciler.delete(f) },
     durum: () => durum,
-    async baslat({ kitapId, kitapMetni, baslangic, ayetMeal }) {
+    async baslat({ kitapId, kitapMetni, baslangic, ayetMeal, arapcaKapali }) {
       sustur()
       ayar = ayarOku()
+      if (arapcaKapali !== undefined) arapcaKapaliKitap = !!arapcaKapali
+      // Evrad ve Ezkâr'da "Arapça sesle oku" seçili olsa da Arapça atlanır (hatalı okuma ihtimali yüksek)
+      const arapcaAyari = arapcaKapaliKitap && ayar.arapca === "oku" ? "atla" : ayar.arapca
       sentezleriSifirla(); yavasSay = 0; kerimAcik = false
       yay({ yavas: false, hataAyrinti: "", asama: "", bekliyor: false })
-      const arapcaOku = ayar.arapca === "oku"
+      const arapcaOku = arapcaAyari === "oku"
       // VUKUF SESİ seçiliyse: indirilmiş mi, motor hazır mı?
       if (ayar.motor === "vukuf") {
         yay({ durum: "hazirlaniyor", hata: "", asama: "vukuf" })
@@ -693,7 +701,7 @@ function motorKur() {
       }
       kitap = kitapId
       sayfalar = kitapMetni || []
-      secenek = { arapca: ayar.arapca, arapcaSesVar: !!sesAr || kerimAcik, ayetMeal, hafiz: ayar.ayetSes !== "meal" }
+      secenek = { arapca: arapcaAyari, arapcaSesVar: arapcaAyari === "oku" && (!!sesAr || kerimAcik), ayetMeal, hafiz: ayar.ayetSes !== "meal" }
       const basIdx = Math.max(0, sayfalar.findIndex(s => s.sayfa === baslangic?.sayfa))
       sonSayfaIdx = basIdx
       // Kullanıcı bir kelimeye dokunarak başlattıysa: sayfanın tamamı kurulur, o kelimenin cümlesinden öncesi atılır

@@ -4047,6 +4047,7 @@ return (
       acik={sesliAcik} kapat={() => setSesliAcik(false)}
       theme={theme} isMobile={isMobile} olcek={barUiOlcegi}
       kitapId={id} kitapMetni={kitapMetni}
+      arapcaKapali={evradKitabiMi}
       baslangicAl={() => {
         const u = ustSatirYakala()
         if (!u || !u.satir) return { sayfa: mevcutSayfa, satir: 0 }

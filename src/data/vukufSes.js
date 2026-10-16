@@ -201,8 +201,8 @@ export async function indir(onIlerleme, sinyal, grup = "tr") {
 /** Vukuf sesi dosyalarını siler (yer açmak için). grup verilirse YALNIZ o grubun ses
     modelleri silinir (motor öbür grup için kalır); verilmezse hepsi. */
 export async function sil(grup) {
-  try { isci?.terminate() } catch { /* yoksay */ }
-  isci = null; isciSoz = null; hazirSozler.clear()
+  for (const is of [...isciler]) isciKaldir(is)
+  isKuyrugu.splice(0).forEach(j => j.cz(null))
   try {
     const d = await depo()
     if (!grup) { await d.sil(); return }
@@ -219,22 +219,33 @@ async function arabellek(url) {
   return b
 }
 
-/* ── İŞÇİ ─────────────────────────────────────────────────────────────────────
+/* ── İŞÇİLER ───────────────────────────────────────────────────────────────────
    Çıkarım işçide (data/vukufSesIsci.js) — ana iş parçacığı ve ses olayları beklemez.
-   İstekler SIRAYLA işlenir (tek oturum, tek iş parçacığı); sıradaki iş artık
-   istenmiyorsa (okuyucu atladı, hız değişti) çalıştırılmadan geçilir. */
+   Her işçi tek iş parçacığıyla çalışır (SharedArrayBuffer/COOP gerekmez).
+
+   16 Ekim 2026, kullanıcı (iPhone): "Çok uzun sürede ses hazırlanıyor diyor, sonra
+   1 cümle okuyor, tekrar hazırlanıyor." → Cihaz bir cümleyi okunduğundan YAVAŞ
+   üretiyor. Önden hazırlık bunu tek başına çözemez (üretim hızı çalma hızının
+   altında kaldıkça boşluk büyür). Çözüm: İKİNCİ BİR İŞÇİ — telefonlarda birden çok
+   çekirdek var; iki işçi iki cümleyi aynı anda üretir (üretim ~2 kat). İkinci işçi
+   yalnız gerektiğinde (sesliOkuma yavaşlık görünce `isciEkle`) kurulur — hızlı
+   cihaz boşuna bellek harcamaz. Kurulumu bitene kadar ona iş verilmez (sıra bozulmasın).
+   İş sırası: kuyruktaki ilk istenen iş ilk boş HAZIR işçiye; artık istenmeyen iş
+   (okuyucu atladı, hız değişti) çalıştırılmadan geçilir. */
 /* global Worker */
 export let isciOlustur = () => new Worker(new URL("./vukufSesIsci.js", import.meta.url), { type: "module" })
 export function isciOlusturucuAyarla(f) { isciOlustur = f }   // deneme ortamı için
-let isci = null, isciSoz = null, istekNo = 0
-const bekleyenler = new Map()
-const hazirSozler = new Map()                 // ses id → Promise (aynı ses iki kez kurulmasın)
+export const ISCI_SINIRI = 2
+let isciler = []                              // { w, kurSoz, sesSoz: Map, mesgul, hazir, olu }
+let istekNo = 0
+const bekleyenler = new Map()                 // no → { tip, is, cz, red }
 
 // Yanıt gelmezse (ör. iPhone işçiyi bellek yüzünden sessizce kapattıysa) sonsuza dek beklenmez
 const SURE_SINIRI = { kur: 90000, ses: 90000, sentez: 60000 }
 const ASAMA = { kur: "Ses motoru kurulumu", ses: "Ses modeli yüklemesi", sentez: "Ses üretimi" }
-function iste(tip, veri = {}, aktar = []) {
+function iste(is, tip, veri = {}, aktar = []) {
   return new Promise((cz, red) => {
+    if (is.olu) { red(new Error("Ses işçisi kapandı")); return }
     const no = ++istekNo
     const zaman = setTimeout(() => {
       if (!bekleyenler.has(no)) return
@@ -242,65 +253,159 @@ function iste(tip, veri = {}, aktar = []) {
       red(new Error(`${ASAMA[tip] || tip}: yanıt gelmedi (cihaz belleği yetmemiş olabilir)`))
     }, SURE_SINIRI[tip] || 60000)
     bekleyenler.set(no, {
-      tip,
+      tip, is,
       cz: (v) => { clearTimeout(zaman); cz(v) },
       red: (h) => { clearTimeout(zaman); red(h) },
     })
-    try { isci.postMessage({ no, tip, ...veri }, aktar) } catch (e) { clearTimeout(zaman); bekleyenler.delete(no); red(e) }
+    try { is.w.postMessage({ no, tip, ...veri }, aktar) } catch (e) { clearTimeout(zaman); bekleyenler.delete(no); red(e) }
   })
 }
 
-async function isciHazir() {
-  if (isci) return isciSoz
-  isci = isciOlustur()
-  isci.onmessage = (e) => {
+function isciKaldir(is, hata) {
+  if (is.olu) return
+  is.olu = true
+  try { is.w.terminate() } catch { /* yoksay */ }
+  isciler = isciler.filter(x => x !== is)
+  const h = hata || new Error("Ses işçisi kapandı")
+  for (const [no, b] of [...bekleyenler]) if (b.is === is) { bekleyenler.delete(no); b.red(h) }
+}
+
+function isciKur() {
+  const w = isciOlustur()
+  const is = { w, kurSoz: null, sesSoz: new Map(), mesgul: false, hazir: false, olu: false }
+  w.onmessage = (e) => {
     const b = bekleyenler.get(e.data?.no)
     if (!b) return
     bekleyenler.delete(e.data.no)
     if (e.data.hata) b.red(new Error(`${ASAMA[b.tip] || "Ses motoru"}: ${e.data.hata}`)); else b.cz(e.data)
   }
-  isci.onerror = (e) => {
+  w.onerror = (e) => {
     try { e?.preventDefault?.() } catch { /* yoksay */ }
-    const h = new Error(`Ses işçisi çalışmadı${e?.message ? ` (${e.message})` : ""}`)
-    bekleyenler.forEach(b => b.red(h)); bekleyenler.clear()
-    // Çökmüş işçi bir sonraki denemede yeniden kurulsun
-    try { isci?.terminate() } catch { /* yoksay */ }
-    isci = null; isciSoz = null; hazirSozler.clear()
+    // Çökmüş işçi atılır; gerekirse bir sonraki istekte yenisi kurulur
+    isciKaldir(is, new Error(`Ses işçisi çalışmadı${e?.message ? ` (${e.message})` : ""}`))
+    dagit()
   }
-  isci.onmessageerror = () => {
-    const h = new Error("Ses işçisi iletisi okunamadı")
-    bekleyenler.forEach(b => b.red(h)); bekleyenler.clear()
-  }
-  isciSoz = (async () => {
+  w.onmessageerror = () => isciKaldir(is, new Error("Ses işçisi iletisi okunamadı"))
+  is.kurSoz = (async () => {
     let ortWasm, fonemJsB, fonemWasm, fonemVeri
+    const t0 = performance.now()
     try {
       [ortWasm, fonemJsB, fonemWasm, fonemVeri] = await Promise.all([
         arabellek(KAYNAK.ortWasm), arabellek(KAYNAK.fonemJs), arabellek(KAYNAK.fonemWasm), arabellek(KAYNAK.fonemVeri),
       ])
     } catch (e) { throw new Error(`Kayıtlı dosyalar okunamadı (${e?.message || e})`) }
-    await iste("kur", { ortWasm, fonemJs: new TextDecoder().decode(fonemJsB), fonemWasm, fonemVeri }, [ortWasm, fonemWasm, fonemVeri])
-  })().catch((e) => { try { isci?.terminate() } catch { /* yoksay */ } isci = null; isciSoz = null; throw e })
-  return isciSoz
+    const t1 = performance.now()
+    const y = await iste(is, "kur", { ortWasm, fonemJs: new TextDecoder().decode(fonemJsB), fonemWasm, fonemVeri }, [ortWasm, fonemWasm, fonemVeri])
+    tani.kurulum = { dosyaMs: Math.round(t1 - t0), kurMs: Math.round(performance.now() - t1), ...(y.olcum || {}) }
+    tani.ortam = y.ortam || null
+  })()
+  is.kurSoz.catch((e) => isciKaldir(is, e))
+  isciler.push(is)
+  return is
+}
+
+/* Bir işçide bir sesi kur (her işçide ses başına bir kez) */
+function sesHazir(is, id) {
+  if (!is.sesSoz.has(id)) {
+    const soz = (async () => {
+      await is.kurSoz
+      let model, ayarB
+      const t0 = performance.now()
+      try { [model, ayarB] = await Promise.all([arabellek(KAYNAK.model(id)), arabellek(KAYNAK.model(id) + ".json")]) }
+      catch (e) { throw new Error(`${sesBul(id)?.ad || id} sesi okunamadı (${e?.message || e})`) }
+      const t1 = performance.now()
+      const y = await iste(is, "ses", { ses: id, model, ayar: JSON.parse(new TextDecoder().decode(ayarB)) }, [model])
+      tani.ses[id] = { dosyaMs: Math.round(t1 - t0), kurMs: Math.round(performance.now() - t1), ...(y.olcum || {}) }
+    })()
+    soz.catch(() => { if (is.sesSoz.get(id) === soz) is.sesSoz.delete(id) })
+    is.sesSoz.set(id, soz)
+  }
+  return is.sesSoz.get(id)
 }
 
 /** Ses önceden kurulur (ilk cümlede bekleme olmasın). Aynı anda iki kez çağrılırsa tek kurulum. */
-export function hazirla(id) {
-  if (!hazirSozler.has(id)) {
-    const soz = (async () => {
-      await isciHazir()
-      let model, ayarB
-      try { [model, ayarB] = await Promise.all([arabellek(KAYNAK.model(id)), arabellek(KAYNAK.model(id) + ".json")]) }
-      catch (e) { throw new Error(`${sesBul(id)?.ad || id} sesi okunamadı (${e?.message || e})`) }
-      await iste("ses", { ses: id, model, ayar: JSON.parse(new TextDecoder().decode(ayarB)) }, [model])
-    })()
-    soz.catch(() => { if (hazirSozler.get(id) === soz) hazirSozler.delete(id) })
-    hazirSozler.set(id, soz)
-  }
-  return hazirSozler.get(id)
+export async function hazirla(id) {
+  const is = isciler[0] || isciKur()
+  await sesHazir(is, id)
+  is.hazir = true
 }
 
-// Sıra: bir önceki bitmeden sonraki başlamaz
-let kuyruk = Promise.resolve()
+/** Kaç işçi çalışıyor */
+export const isciSayisi = () => isciler.length
+
+/** Yavaş cihaz: ikinci işçiyi kur (ilkinde kurulu sesleri de hazırlayarak). Kurulamazsa sessizce vazgeçilir. */
+export function isciEkle() {
+  if (isciler.length >= ISCI_SINIRI || !isciler.length) return false
+  const ilk = isciler[0]
+  const is = isciKur()
+  ;(async () => {
+    try {
+      await is.kurSoz
+      for (const id of [...ilk.sesSoz.keys()]) await sesHazir(is, id)
+      is.hazir = true
+      dagit()
+    } catch (e) {
+      console.warn("[Vukuf sesi] ikinci işçi kurulamadı:", e?.message || e)
+      isciKaldir(is)
+    }
+  })()
+  return true
+}
+
+/* ── TANILAMA ── "Hız testi" (ayarlar) bu ölçüleri gösterir; sorun bildirmek için */
+const tani = { kurulum: null, ortam: null, ses: {} }
+function jsOlcu() {
+  // Saf JS döngüsü: JIT kapalıysa (ör. Kilitlenme Modu) belirgin biçimde yavaşlar
+  const t = performance.now()
+  let x = 0
+  for (let i = 0; i < 5e6; i++) x = (x + i * 7) % 1000003
+  return { ms: Math.round(performance.now() - t), x }
+}
+/** Ölçümlü deneme: hazırlık + iki cümle. Okuma sürerken çağrılmamalı (kuyruğa girer). */
+export async function hizTesti(id = "fettah") {
+  const t0 = performance.now()
+  await hazirla(id)
+  const hazirlikMs = Math.round(performance.now() - t0)
+  const cumleler = []
+  for (const m of ["Bismillâhirrahmânirrahîm.", "Her hayrın başı besmeledir; biz dahi başta ona başlarız."]) {
+    const t = performance.now()
+    const y = await sentezle(m, id, 1)
+    cumleler.push({
+      metin: m, toplamMs: Math.round(performance.now() - t),
+      sesMs: Math.round((y.pcm.length / y.ornekleme) * 1000), ...(y.olcum || {}),
+    })
+  }
+  return {
+    hazirlikMs, kurulum: tani.kurulum, ortam: tani.ortam, ses: tani.ses[id] || null, cumleler,
+    js: jsOlcu().ms, isci: isciler.length,
+    tarayici: typeof navigator !== "undefined" ? navigator.userAgent : "",
+    guvenli: typeof window !== "undefined" ? window.isSecureContext : null,
+  }
+}
+
+const isKuyrugu = []                          // { metin, id, olcek, istenir, cz, red }
+function dagit() {
+  if (!isKuyrugu.length) return
+  if (!isciler.length) isciKur()
+  // İlk işçi hazır değilse de ona verilir (başka seçenek yok); sonradan gelen ancak hazır olunca iş alır
+  for (const is of isciler) {
+    if (is.mesgul || is.olu || !(is.hazir || is === isciler[0])) continue
+    let j
+    while ((j = isKuyrugu.shift())) { if (j.istenir()) break; j.cz(null) }
+    if (!j) return
+    is.mesgul = true
+    ;(async () => {
+      try {
+        await sesHazir(is, j.id)
+        is.hazir = true
+        const t0 = performance.now()
+        const y = await iste(is, "sentez", { ses: j.id, metin: j.metin, olcek: j.olcek })
+        j.cz({ pcm: y.pcm, ornekleme: y.ornekleme, sure: performance.now() - t0, olcum: y.olcum || null })
+      } catch (e) { j.red(e) }
+      finally { is.mesgul = false; dagit() }
+    })()
+  }
+}
 
 /**
  * Metni sese çevirir → { pcm: Float32Array, ornekleme, sure (ms) }.
@@ -310,15 +415,10 @@ export function sentezle(metin, id, hiz = 1, istenir = () => true) {
   const ses = sesBul(id) || VUKUF_SESLERI[0]
   // Seslerin doğal hızı farklı: Fahrettin hızlı konuşuyor → biraz yavaşlatılır (tempo)
   const olcek = (ses.tempo || 1) / Math.max(0.5, Math.min(2, Number(hiz) || 1))
-  const is = kuyruk.then(async () => {
-    if (!istenir()) return null
-    await hazirla(ses.id)
-    const t0 = performance.now()
-    const y = await iste("sentez", { ses: ses.id, metin, olcek })
-    return { pcm: y.pcm, ornekleme: y.ornekleme, sure: performance.now() - t0 }
+  return new Promise((cz, red) => {
+    isKuyrugu.push({ metin, id: ses.id, olcek, istenir, cz, red })
+    dagit()
   })
-  kuyruk = is.catch(() => {})
-  return is
 }
 
 /** Float32 PCM → WAV Blob (16 bit, tek kanal) */

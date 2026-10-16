@@ -116,6 +116,7 @@ function dokunulanYer(x, y, hedef) {
 export default function SesliOkumaKontrol({
   acik, kapat, theme, isMobile, olcek = 1, kitapId, kitapMetni,
   baslangicAl, scrollEl, onSayfayaGit, altPay = 16,
+  arapcaKapali = false,      // Evrad ve Ezkâr: Arapça yapay sesle okunmaz (16 Ekim 2026, kullanıcı)
 }) {
   const d = useSesliDurum()
   const [ayar, setAyar] = useState(() => ayarOku())
@@ -140,7 +141,7 @@ export default function SesliOkumaKontrol({
       const ekran = baslangicAl() || { sayfa: kitapMetni?.[0]?.sayfa, satir: 0 }
       const kayit = konumOku(kitapId)
       const bas = kayit && kayit.sayfa === ekran.sayfa && kayit.satir > ekran.satir ? kayit : ekran
-      sesliOkuyucu.baslat({ kitapId, kitapMetni, baslangic: bas, ayetMeal: meal })
+      sesliOkuyucu.baslat({ kitapId, kitapMetni, baslangic: bas, ayetMeal: meal, arapcaKapali })
     })()
     sesleriAl().then(v => { if (!iptal) setSesler({ tr: turkceSesler(v), ar: arapcaSesler(v) }) })
     return () => { iptal = true; sesliOkuyucu.durdur() }
@@ -173,7 +174,7 @@ export default function SesliOkumaKontrol({
       try { window.getSelection()?.removeAllRanges() } catch { /* yoksay */ }
       sesKilidiAc()
       elleRef.current = 0
-      import("../data/ayet-meal.json").then(m => sesliOkuyucu.baslat({ kitapId, kitapMetni, baslangic: yer, ayetMeal: m.default }))
+      import("../data/ayet-meal.json").then(m => sesliOkuyucu.baslat({ kitapId, kitapMetni, baslangic: yer, ayetMeal: m.default, arapcaKapali }))
     }
     const tus = (e) => { if (e.key === "Escape") setSecim(false) }
     window.addEventListener("click", tik, true)
@@ -277,8 +278,35 @@ export default function SesliOkumaKontrol({
     if (grup === "ar") { setVukufHazir(v => ({ ...v, ar: false })); if (d.durum !== "kapali") ayarDegis({ arSes: ayar.arSes }) }
     else { setVukufHazir({ tr: false, ar: false }); if (ayar.motor === "vukuf") ayarDegis({ motor: "cihaz" }) }
   }
+  /* HIZ TESTİ (16 Ekim 2026, iPhone'da cümle başına ~30 sn): nerede beklendiğini ölçer —
+     dosya okuma, motor, ses modeli, fonemleme, çıkarım — ve kopyalanabilir metin verir. */
+  const [hizTest, setHizTest] = useState(null)            // null | { calisiyor } | { metin } | { hata }
+  const sn = (ms) => (ms == null ? "?" : (ms / 1000).toFixed(1).replace(".", ","))
+  const hizTestiYap = async () => {
+    if (d.durum === "okuyor") sesliOkuyucu.duraklat()
+    setHizTest({ calisiyor: true })
+    try {
+      const m = await vukufSesYukle()
+      const t = await m.hizTesti(ayar.vukufSes)
+      const k = t.kurulum || {}, sk = t.ses || {}, o = t.ortam || {}
+      const satirlar = [
+        `Hazırlık: ${sn(t.hazirlikMs)} sn (dosyalar ${sn(k.dosyaMs)} · motor ${sn(k.motorMs)} · fonemleyici ${sn(k.fonemleyiciMs)} · ses dosyası ${sn(sk.dosyaMs)} · ses kurulumu ${sn(sk.oturumMs)})`,
+        ...t.cumleler.map((c, i) => `Cümle ${i + 1}: ${sn(c.sesMs)} sn ses → ${sn(c.toplamMs)} sn (fonem ${c.fonemMs ?? "?"} ms · çıkarım ${sn(c.cikarimMs)} sn · ${c.fonemSayisi ?? "?"} fonem) · oran ${c.sesMs ? (c.toplamMs / c.sesMs).toFixed(1).replace(".", ",") : "?"}`),
+        `JS ölçüsü: ${t.js} ms · SIMD: ${o.simd == null ? "?" : o.simd ? "var" : "yok"} · çekirdek: ${o.cekirdek || "?"} · işçi: ${t.isci} · izole: ${o.izole ? "evet" : "hayır"} · güvenli kök: ${t.guvenli ? "evet" : "hayır"}`,
+        t.tarayici,
+      ]
+      setHizTest({ metin: satirlar.join("\n") })
+    } catch (e) {
+      setHizTest({ hata: e?.message || String(e) })
+    }
+  }
+  const hizTestiKopyala = async (metin) => {
+    try { await navigator.clipboard.writeText(metin); setHizTest(h => ({ ...h, kopyalandi: true })) }
+    catch { setHizTest(h => ({ ...h, kopyalanamadi: true })) }
+  }
+
   const baslatYeniden = () => {
-    import("../data/ayet-meal.json").then(m => sesliOkuyucu.baslat({ kitapId, kitapMetni, baslangic: baslangicAl(), ayetMeal: m.default }))
+    import("../data/ayet-meal.json").then(m => sesliOkuyucu.baslat({ kitapId, kitapMetni, baslangic: baslangicAl(), ayetMeal: m.default, arapcaKapali }))
   }
 
   /* ── SÜRÜKLEME (16 Ekim 2026, kullanıcı: "bu menü sürüklenebilir olmalı") ──────
@@ -472,15 +500,17 @@ export default function SesliOkumaKontrol({
     : d.hata === "vukufYok" ? "Vukuf sesi henüz indirilmedi; ayarlardan bir kez indirilebilir."
     : d.hata === "vukufHata" ? "Vukuf sesi açılamadı; ayarlardan cihaz sesine geçilebilir."
     : d.hata === "vukufCal" ? "Ses çalınamadı; ▶ ile yeniden denenebilir."
-    : d.yavas && vukuf ? "Bu cihaz Vukuf sesini okunduğundan biraz yavaş hazırlıyor; cümle aralarında kısa beklemeler olabilir. Daha akıcı okuma için ayarlardan cihaz sesi seçilebilir."
+    : d.yavas && vukuf ? "Bu cihaz Vukuf sesini okunduğundan yavaş hazırlıyor; cümle aralarında beklemeler olabilir. Daha akıcı okuma için ayarlardan cihaz sesi seçilebilir."
     : d.sesListesiBos && !vukuf ? "Ses duyulmazsa ayarlardan Vukuf sesi seçilebilir."
     : d.durum === "hazirlaniyor" && d.asama === "vukuf" ? "Vukuf sesi hazırlanıyor… İlk açılışta birkaç saniye sürebilir."
     : d.bekliyor ? "Ses hazırlanıyor…"
     : null
   // Hata ayrıntısı (ör. iPhone'da hangi adımda kalındığı) — sorunu bildirmek için
-  const ayrinti = (d.hata === "vukufHata" || d.hata === "vukufCal") && d.hataAyrinti ? d.hataAyrinti : ""
+  const ayrinti = (d.hata === "vukufHata" || d.hata === "vukufCal") && d.hataAyrinti ? d.hataAyrinti
+    : bilgi && d.yavas && vukuf && !d.hata && d.uretimOrani ? `1 saniyelik ses yaklaşık ${String(d.uretimOrani).replace(".", ",")} saniyede hazırlanıyor.`
+    : ""
 
-  const arapcaOku = ayar.arapca === "oku"
+  const arapcaOku = ayar.arapca === "oku" && !arapcaKapali
   const kerimSecili = arapcaOku && (ayar.arSes !== "cihaz" || !sesler.ar.length)
 
   return (
@@ -528,7 +558,19 @@ export default function SesliOkumaKontrol({
                 {vukufHazir.tr && (
                   <div style={{ marginTop: "8px", fontSize: "11px", color: theme.textSecondary, display: "flex", gap: "8px", alignItems: "center" }}>
                     <span style={{ flex: 1 }}>Sesler cihazda; internetsiz çalışır.</span>
+                    {kucukDugme(hizTest?.calisiyor ? "Ölçülüyor…" : "Hız testi", () => { if (!hizTest?.calisiyor) hizTestiYap() })}
                     {kucukDugme("Sesleri sil", () => vukufSil())}
+                  </div>
+                )}
+                {hizTest && !hizTest.calisiyor && (
+                  <div style={{ marginTop: "8px", padding: "8px", borderRadius: "8px", background: theme.background, border: `1px solid ${theme.border}`, fontSize: "10.5px", lineHeight: 1.5 }}>
+                    {hizTest.hata
+                      ? <div style={{ color: "#c0392b", wordBreak: "break-word" }}>Ölçüm tamamlanamadı: {hizTest.hata}</div>
+                      : <pre style={{ margin: 0, whiteSpace: "pre-wrap", wordBreak: "break-word", fontFamily: "ui-monospace, Menlo, monospace", userSelect: "text", WebkitUserSelect: "text" }}>{hizTest.metin}</pre>}
+                    <div style={{ display: "flex", gap: "12px", marginTop: "6px" }}>
+                      {hizTest.metin && kucukDugme(hizTest.kopyalandi ? "Kopyalandı" : hizTest.kopyalanamadi ? "Kopyalanamadı; metin seçilebilir" : "Kopyala", () => hizTestiKopyala(hizTest.metin))}
+                      {kucukDugme("Kapat", () => setHizTest(null))}
+                    </div>
                   </div>
                 )}
               </>
@@ -559,9 +601,10 @@ export default function SesliOkumaKontrol({
             {baslik("Kaynağı belirtilmemiş Arapça ibareler")}
             <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
               {cip(ayar.arapca === "uyari", "Haber ver", () => ayarDegis({ arapca: "uyari" }))}
-              {cip(ayar.arapca === "atla", "Atla", () => ayarDegis({ arapca: "atla" }))}
-              {cip(arapcaOku, "Arapça sesle oku", () => ayarDegis({ arapca: "oku" }))}
+              {cip(ayar.arapca === "atla" || (arapcaKapali && ayar.arapca === "oku"), "Atla", () => ayarDegis({ arapca: "atla" }))}
+              {cip(arapcaOku, "Arapça sesle oku", () => ayarDegis({ arapca: "oku" }), arapcaKapali)}
             </div>
+            {arapcaKapali && not("Evrad ve Ezkâr'da Arapça kısımlar yapay sesle okunmaz.")}
             {arapcaOku && (
               <>
                 <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginTop: "8px" }}>

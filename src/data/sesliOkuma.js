@@ -41,7 +41,7 @@ import { mp3Url, KARILAR } from "./hooks/useAudioPlayer"
 
 export const SESLI_AYAR_ANAHTAR = "vukuf-sesli-okuma"
 export const SESLI_KONUM_ANAHTAR = "vukuf-sesli-konum"     // { kitap: { sayfa, satir } }
-// motor: "cihaz" (Web Speech) | "vukuf" (tarayıcı içi Piper — data/vukufSes.js); vukufSes: "antalia" (varsayılan) | "fettah" | "dfki" (Fahrettin 16 Ekim 2026'da çıkarıldı)
+// motor: "cihaz" (Web Speech) | "vukuf" (tarayıcı içi Piper — data/vukufSes.js); vukufSes: "antalia" (varsayılan) | "dfki" | "mms" (Fahrettin 16, Fettah 17 Ekim 2026'da çıkarıldı)
 export const SESLI_VARSAYILAN = {
   hiz: 1, sesTr: "", sesAr: "", arapca: "uyari", isaret: true, takip: true, motor: "cihaz", vukufSes: "antalia",
   ayetSes: "hafiz",      // kaynağı bilinen âyet: "hafiz" (kayıt + meal) | "meal"
@@ -97,7 +97,7 @@ export function sesliDestekVar() {
   return typeof window !== "undefined" && "speechSynthesis" in window && typeof window.SpeechSynthesisUtterance === "function"
 }
 
-const VUKUF_SES_IDLERI = ["antalia", "fettah", "dfki"]
+const VUKUF_SES_IDLERI = ["antalia", "dfki", "mms"]   // Fettah 17 Ekim 2026'da çıkarıldı
 export function ayarOku() {
   let a
   try { a = { ...SESLI_VARSAYILAN, ...(JSON.parse(localStorage.getItem(SESLI_AYAR_ANAHTAR)) || {}) } }

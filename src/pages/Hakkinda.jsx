@@ -287,8 +287,8 @@ export default function Hakkinda() {
         </div>
 
         {/* ── SESLİ OKUMA ATIFLARI (16 Ekim 2026) ─────────────────────────
-           Vukuf sesi (tarayıcı içi Piper) ve hafız kayıtları. DFKI sesinin veri seti
-           CC BY-NC-SA 4.0 — ticari olmayan kullanım + atıf şartı; bu bölüm o atıftır. */}
+           Vukuf sesi (Antalia, DFKI, MMS, Kerîm) ve hafız kayıtları. DFKI veri seti (CC BY-NC-SA 4.0)
+           ve MMS (CC BY-NC 4.0) — ticari olmayan kullanım + atıf şartı; bu bölüm o atıftır. */}
         <div style={{ marginTop: "22px" }}>
           <h2 style={{
             fontSize: "12px", letterSpacing: "1.5px", color: ac,
@@ -300,8 +300,11 @@ export default function Hakkinda() {
             {kaynak(Headphones, "Antalia-2 Mini",
               "Antalia sesi (Türkçe) ve Türkçe metin normalleştiricisi — PatientDesk AI, Apache-2.0 lisansı. Ses yapaydır; gerçek bir kişinin sesi değildir.",
               { href: "https://huggingface.co/cloud0day3/antalia-mini" })}
+            {kaynak(Headphones, "MMS-TTS (Meta)",
+              "MMS sesi (Türkçe) — Meta AI, Massively Multilingual Speech projesi (facebook/mms-tts-tur), CC BY-NC 4.0 lisansı. Tarayıcıda çalışması için ONNX biçimine çevrildi.",
+              { href: "https://huggingface.co/facebook/mms-tts-tur" })}
             {kaynak(Headphones, "Piper ses modelleri",
-              "Fettah ve DFKI (Türkçe), Kerîm (Arapça) sesleri — rhasspy/piper-voices. DFKI sesinin veri seti: DFKI GmbH, MaryTTS Turkish (CC BY-NC-SA 4.0).",
+              "DFKI (Türkçe) ve Kerîm (Arapça) sesleri — rhasspy/piper-voices. DFKI sesinin veri seti: DFKI GmbH, MaryTTS Turkish (CC BY-NC-SA 4.0).",
               { href: "https://huggingface.co/rhasspy/piper-voices" })}
             {kaynak(Headphones, "EveryAyah",
               "Sesli okumada âyetlerin hafız kayıtları",

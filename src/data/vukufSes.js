@@ -50,7 +50,25 @@
    sunucusundan (public/ses/antalia/ — sw.js bu yolu önbelleğe almıyor, depo burada), olmazsa
    Hugging Face'teki demodan iner. Varsayılan ses artık Antalia.
    GRUPLAR (her ses ayrı indirilir; motor hepsinde ortak):
-     "tr" = motor + Fettah · "dfki" = motor + DFKI · "ar" = motor + Kerîm.
+     "antalia" · "mms" · "ar" (Kerîm). ("tr" = Fettah, "dfki" = DFKI idi; 17 Ekim 2026'da çıkarıldı.)
+
+   DÜZELTME (17 Ekim 2026, kullanıcı): beğenilmeyen ses DFKI değil MMS'ti — "içinde birden fazla
+   ses var, bir cümleyi biri, diğerini başkası okuyor; ilk okuyan sürekli okusa güzel olur".
+   DFKI geri alındı (yedek). MMS kalıyor ama SES TUTARLILIĞI için gürültü düşük (MMS_AYAR):
+   VITS her cümlede ses rengini öncül dağılımdan RASTGELE örnekliyor (noise_scale); MMS'in
+   Türkçe verisinde birden çok okuyucu olduğundan bu, cümleden cümleye farklı kişi gibi
+   duyuluyor. noise_scale 0,667 → 0,2 ile örnek ortalamaya yaklaşır → tek ses.
+
+   FETTAH ÇIKARILDI (17 Ekim 2026, kullanıcı: "Fettah'ı kaldıralım"). İndirilmiş dosyaları
+   ESKI_PARCALAR ile depodan silinir.
+
+   MMS-TTS (Meta) TÜRKÇE (17 Ekim 2026, kullanıcı: "MMS'i kurup deneyelim, atıfla ekleriz").
+   facebook/mms-tts-tur — VITS, harf tabanlı, 16 kHz, CC BY-NC 4.0. Hugging Face'te ONNX'i
+   yok → mms_onnx_cevir.py ile Piper arayüzünde (input / input_lengths / scales → output)
+   ONNX'e çevrildi, ağırlıklar fp16 saklı (~55 MB), 20 MB'lık PARÇALAR hâlinde
+   public/ses/mms/ altında; indirirken birleştirilip TEK anahtarla saklanır. Metin
+   normalleştirme (sayı, tarih, kısaltma) Antalia'nınkiyle (frontend-data.json.gz ortak),
+   ardından MMS harf sözlüğü + aralara 0 (bosluk_ekle) — işçi "tokenizer: karakter"e bakar.
 
    ONNX RUNTIME 1.20.1 (16 Ekim 2026). iPhone "Hız testi": 1,6 sn ses → 10,2 sn çıkarım,
    ses kurulumu 20,7 sn (dizüstünde ~0,1 oran). Bilinen sorun: onnxruntime-web 1.21 ve
@@ -67,13 +85,13 @@ export const VUKUF_SESLERI = [
   // tempo: konuşma uzunluğu çarpanı (>1 yavaşlatır). 16 Ekim 2026, kullanıcı: "Fahrettin'in
   // sesi fazla hızlı geldi; Fettah güzel." → Fettah varsayılan, Fahrettin %18 yavaş.
   { id: "antalia",   ad: "Antalia",   grup: "antalia", motor: "antalia",                                        tempo: 1 },
-  { id: "fettah",    ad: "Fettah",    grup: "tr", yol: "tr/tr_TR/fettah/medium/tr_TR-fettah-medium",       tempo: 1 },
   { id: "dfki",      ad: "DFKI",      grup: "dfki", yol: "tr/tr_TR/dfki/medium/tr_TR-dfki-medium",          tempo: 1 },
+  { id: "mms",       ad: "MMS",       grup: "mms", motor: "mms",                                               tempo: 1 },
   { id: "kareem",    ad: "Kerîm",     grup: "ar", yol: "ar/ar_JO/kareem/medium/ar_JO-kareem-medium",       tempo: 1 },
 ]
 const sesBul = (id) => VUKUF_SESLERI.find(s => s.id === id)
-/** Bir sesin indirme grubu ("tr" | "dfki" | "ar") */
-export const sesGrubu = (id) => sesBul(id)?.grup || "tr"
+/** Bir sesin indirme grubu ("antalia" | "dfki" | "mms" | "ar") */
+export const sesGrubu = (id) => sesBul(id)?.grup || "antalia"
 // Dışarıdan değiştirilebilir (deneme ortamı yerel sunucuyu gösterir)
 export const KAYNAK = {
   ortJs:     "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/ort.wasm.min.mjs",
@@ -96,9 +114,11 @@ export const KAYNAK = {
 }
 // Önceki sürümlerden kalan, artık kullanılmayan parçalar (indirmeden sonra silinir)
 const ESKI_FAHRETTIN = "https://huggingface.co/rhasspy/piper-voices/resolve/6fb8245d6d27fef8988272e0c8e9f5018da1bbbf/tr/tr_TR/fahrettin/medium/tr_TR-fahrettin-medium.onnx"
+const ESKI_FETTAH = "https://huggingface.co/rhasspy/piper-voices/resolve/6fb8245d6d27fef8988272e0c8e9f5018da1bbbf/tr/tr_TR/fettah/medium/tr_TR-fettah-medium.onnx"
 const ESKI_PARCALAR = [
   "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.29.0/dist/ort-wasm-simd-threaded.wasm",
   ESKI_FAHRETTIN, ESKI_FAHRETTIN + ".json",
+  ESKI_FETTAH, ESKI_FETTAH + ".json",            // 17 Ekim 2026'da çıkarıldı
 ]
 let eskilerTemizlendi = false
 async function eskileriTemizle(dp) {
@@ -108,7 +128,7 @@ async function eskileriTemizle(dp) {
 }
 const TAHMINI_MB = { ortJs: 0.05, ortGlue: 0.03, ortWasm: 11, fonemJs: 0.12, fonemWasm: 0.6, fonemVeri: 18, model: 63, ayar: 0.01 }
 const MOTOR_MB = TAHMINI_MB.ortJs + TAHMINI_MB.ortGlue + TAHMINI_MB.ortWasm + TAHMINI_MB.fonemWasm + TAHMINI_MB.fonemVeri
-export const TOPLAM_MB = Math.round(MOTOR_MB + TAHMINI_MB.model * VUKUF_SESLERI.filter(s => s.grup === "tr").length)
+export const TOPLAM_MB = Math.round(MOTOR_MB + 24)   // varsayılan ses (Antalia) ile ilk indirme
 export const ARAPCA_MB = Math.round(TAHMINI_MB.model)
 
 // Antalia dosyaları (mixed duyarlık) — sıra: text, cond, flow, vocoder, manifest, normalleştirici verisi
@@ -116,7 +136,14 @@ const ANTALIA_DOSYALARI = [
   ["text.onnx", 4.05], ["cond.onnx", 0.62], ["flow.onnx", 10.3], ["vocoder.fp16.onnx", 7.9],
   ["manifest.json", 0.01], ["frontend-data.json.gz", 1],
 ]
-function dosyaListesi(grup = "tr") {
+// MMS: mms_onnx_cevir.py'nin verdiği parça sayısı (çıktısındaki "MMS_PARCA_SAYISI = N")
+export const MMS_PARCA_SAYISI = 3
+// Ses tutarlılığı: ses rengi gürültüsü düşük (0,667 → 0,2); ritim gürültüsü biraz düşük (0,8 → 0,6).
+// Ses hâlâ cümleden cümleye değişirse noise_scale daha da düşürülebilir (0 = tamamen sabit, biraz düz).
+export const MMS_AYAR = { noise_scale: 0.2, noise_w: 0.6 }
+const MMS_MODEL = "/ses/mms/mms-tur.onnx"
+const MMS_PARCALARI = Array.from({ length: MMS_PARCA_SAYISI }, (_, i) => `${MMS_MODEL}.${String(i).padStart(3, "0")}`)
+function dosyaListesi(grup = "antalia") {
   const l = [
     { url: KAYNAK.ortJs, ad: "Ses motoru", mb: TAHMINI_MB.ortJs },
     { url: KAYNAK.ortGlue, ad: "Ses motoru", mb: TAHMINI_MB.ortGlue },
@@ -128,6 +155,14 @@ function dosyaListesi(grup = "tr") {
   for (const s of VUKUF_SESLERI.filter(v => v.grup === grup)) {
     if (s.motor === "antalia") {
       for (const [ad, mb] of ANTALIA_DOSYALARI) l.push({ url: KAYNAK.antalia(ad), yedekler: [KAYNAK.antaliaYedek(ad)], ad: `${s.ad} sesi`, mb })
+      continue
+    }
+    if (s.motor === "mms") {
+      // Model parça parça iner, birleştirilip MMS_MODEL anahtarıyla saklanır
+      l.push({ url: MMS_MODEL, parcalar: MMS_PARCALARI, ad: `${s.ad} sesi`, mb: 55 })
+      l.push({ url: MMS_MODEL + ".json", ad: `${s.ad} ayarları`, mb: 0.01 })
+      // Metin normalleştirici verisi (Antalia ile ortak dosya, aynı anahtar)
+      l.push({ url: KAYNAK.antalia("frontend-data.json.gz"), yedekler: [KAYNAK.antaliaYedek("frontend-data.json.gz")], ad: "Metin normalleştirici", mb: 1 })
       continue
     }
     l.push({ url: KAYNAK.model(s.id), yedekler: [KAYNAK.modelYedek(s.id)], ad: `${s.ad} sesi`, mb: TAHMINI_MB.model })
@@ -191,7 +226,7 @@ async function depo() {
 }
 
 /** Gruptaki parçaların hepsi indirilmiş mi? ("tr" Türkçe sesler, "ar" Kerîm) */
-export async function indirilmisMi(grup = "tr") {
+export async function indirilmisMi(grup = "antalia") {
   try {
     const d = await depo()
     for (const f of dosyaListesi(grup)) if (!(await d.var(f.url))) return false
@@ -201,7 +236,7 @@ export async function indirilmisMi(grup = "tr") {
 }
 
 /** Gruptaki eksik parçaların yaklaşık boyutu (MB) — ör. yalnız motor güncellendiyse küçük */
-export async function eksikMb(grup = "tr") {
+export async function eksikMb(grup = "antalia") {
   try {
     const d = await depo()
     let t = 0
@@ -211,29 +246,23 @@ export async function eksikMb(grup = "tr") {
 }
 
 /** Eksik parçaları indirir. onIlerleme({ oran, ad, indirilenMb, toplamMb }). sinyal: AbortSignal */
-export async function indir(onIlerleme, sinyal, grup = "tr") {
+export async function indir(onIlerleme, sinyal, grup = "antalia") {
   const dp = await depo()
   const liste = dosyaListesi(grup)
   const eksik = []
   for (const d of liste) if (!(await dp.var(d.url))) eksik.push(d)
   const toplam = eksik.reduce((t, d) => t + d.mb, 0) || 1
   let biten = 0
-  for (const d of eksik) {
-    // Sırayla adresler denenir (asıl → yedek); depoda hep ASIL adresle saklanır.
-    // Hata AYRINTISIYLA bildirilir (hangi dosya, hangi adım).
-    let y = null, sonHata = null
-    for (const adres of [d.url, ...(d.yedekler || [])]) {
+  // Bir adres listesinden (asıl → yedek) ilk başarılı yanıt. Hata AYRINTISIYLA (hangi dosya, hangi adım).
+  const yanitAl = async (d, adresler) => {
+    let sonHata = null
+    for (const adres of adresler) {
       try {
         const yy = await fetch(adres, { mode: "cors", credentials: "omit", signal: sinyal })
         // Geliştirme sunucusu / SPA barındırıcısı olmayan dosyaya index.html döndürebiliyor → yok say
         const htmlMi = (yy.headers.get("content-type") || "").includes("text/html")
-        if (yy.ok && !htmlMi) { y = yy; break }
-        if (htmlMi) {
-          sonHata = new Error(`${d.ad}: sunucuda bulunamadı`)
-          sonHata.adim = "sunucu"; sonHata.url = adres
-          continue
-        }
-        sonHata = new Error(`${d.ad}: sunucu ${yy.status} döndürdü`)
+        if (yy.ok && !htmlMi) return yy
+        sonHata = new Error(htmlMi ? `${d.ad}: sunucuda bulunamadı` : `${d.ad}: sunucu ${yy.status} döndürdü`)
         sonHata.adim = "sunucu"; sonHata.url = adres
         console.error("[Vukuf sesi]", adres, yy.status)
       } catch (e) {
@@ -243,21 +272,38 @@ export async function indir(onIlerleme, sinyal, grup = "tr") {
         console.error("[Vukuf sesi]", adres, e)
       }
     }
-    if (!y) throw sonHata || new Error(`${d.ad} indirilemedi`)
-    const boy = Number(y.headers.get("content-length")) || d.mb * 1048576
-    const okuyucu = y.body?.getReader()
+    throw sonHata || new Error(`${d.ad} indirilemedi`)
+  }
+  for (const d of eksik) {
+    // Parçalı dosya (ör. MMS modeli): parçalar sırayla iner, tek dosya olarak saklanır
+    const kaynaklar = d.parcalar ? d.parcalar.map(u => [u]) : [[d.url, ...(d.yedekler || [])]]
     const parcalar = []
-    let gelen = 0
-    if (okuyucu) {
-      for (;;) {
-        const { done, value } = await okuyucu.read()
-        if (done) break
-        parcalar.push(value); gelen += value.length
-        const anlik = biten + d.mb * Math.min(1, gelen / boy)
+    let gelen = 0, tur = "application/octet-stream"
+    for (let pi = 0; pi < kaynaklar.length; pi++) {
+      const y = await yanitAl(d, kaynaklar[pi])
+      if (!d.parcalar) tur = y.headers.get("content-type") || tur
+      // İlerleme: parçalıda her parça eşit pay; değilse içerik boyuna göre
+      const boy = Number(y.headers.get("content-length")) || (d.mb * 1048576) / kaynaklar.length
+      const okuyucu = y.body?.getReader()
+      let buParca = 0
+      const bildir = () => {
+        const oranD = d.parcalar ? (pi + Math.min(1, buParca / boy)) / kaynaklar.length : Math.min(1, gelen / boy)
+        const anlik = biten + d.mb * oranD
         onIlerleme?.({ oran: Math.min(1, anlik / toplam), ad: d.ad, indirilenMb: anlik, toplamMb: toplam })
       }
-    } else parcalar.push(new Uint8Array(await y.arrayBuffer()))
-    const tur = y.headers.get("content-type") || "application/octet-stream"
+      if (okuyucu) {
+        for (;;) {
+          const { done, value } = await okuyucu.read()
+          if (done) break
+          parcalar.push(value); gelen += value.length; buParca += value.length
+          bildir()
+        }
+      } else {
+        const ab = new Uint8Array(await y.arrayBuffer())
+        parcalar.push(ab); gelen += ab.length; buParca += ab.length
+        bildir()
+      }
+    }
     try {
       await dp.koy(d.url, new Blob(parcalar, { type: tur }))
     } catch (e) {
@@ -286,6 +332,7 @@ export async function sil(grup) {
     if (!grup) { await d.sil(); return }
     for (const s of VUKUF_SESLERI.filter(v => v.grup === grup)) {
       if (s.motor === "antalia") { for (const [ad] of ANTALIA_DOSYALARI) await d.kaldir(KAYNAK.antalia(ad)); continue }
+      if (s.motor === "mms") { await d.kaldir(MMS_MODEL); await d.kaldir(MMS_MODEL + ".json"); continue }   // normalleştirici verisi Antalia ile ortak, kalır
       await d.kaldir(KAYNAK.model(s.id)); await d.kaldir(KAYNAK.model(s.id) + ".json")
     }
   } catch { /* yoksay */ }
@@ -393,6 +440,21 @@ function sesHazir(is, id) {
   if (!is.sesSoz.has(id)) {
     const soz = (async () => {
       await is.kurSoz
+      if (sesBul(id)?.motor === "mms") {
+        const t0 = performance.now()
+        let model, ayarB, veri
+        try {
+          [model, ayarB, veri] = await Promise.all([
+            arabellek(MMS_MODEL), arabellek(MMS_MODEL + ".json"), arabellek(KAYNAK.antalia("frontend-data.json.gz")),
+          ])
+        } catch (e) { throw new Error(`${sesBul(id).ad} sesi okunamadı (${e?.message || e})`) }
+        const t1 = performance.now()
+        const ayar = JSON.parse(new TextDecoder().decode(ayarB))
+        ayar.inference = { ...(ayar.inference || {}), ...MMS_AYAR }   // tek ses (bkz. başlık)
+        const y = await iste(is, "ses", { ses: id, model, ayar, veri }, [model, veri])
+        tani.ses[id] = { dosyaMs: Math.round(t1 - t0), kurMs: Math.round(performance.now() - t1), ...(y.olcum || {}) }
+        return
+      }
       if (sesBul(id)?.motor === "antalia") {
         const t0 = performance.now()
         let b
@@ -471,7 +533,7 @@ function jsOlcu() {
   return { ms: Math.round(performance.now() - t), x }
 }
 /** Ölçümlü deneme: hazırlık + iki cümle. Okuma sürerken çağrılmamalı (kuyruğa girer). */
-export async function hizTesti(id = "fettah") {
+export async function hizTesti(id = "antalia") {
   kuyruguBosalt()
   const t0 = performance.now()
   await hazirla(id)

@@ -16,6 +16,9 @@
             (16 Ekim 2026, kullanıcı: "Antalia2 güzel, hatta Piper'dan daha iyi"): espeak yok,
             harf tabanlı; Türkçe normalleştirici (sayı, tarih, kısaltma) ./antalia/frontend.js,
             dört ONNX grafiği + iSTFT ./antalia/tts.js — ikisi de Apache-2.0, değiştirilmeden.
+            { ses, model, ayar: { tokenizer: "karakter", sozluk, bosluk_ekle }, veri } → MMS-TTS
+            (17 Ekim 2026): harf tabanlı VITS; metin Antalia normalleştiricisinden geçer (veri),
+            sonra sözlükte olmayan harfler atılır (şapkalı ünlü → düz), aralara 0 eklenir.
      sentez { ses, metin, olcek }          → { pcm (aktarılır), ornekleme }
    TANILAMA (16 Ekim 2026, iPhone'da cümle başına ~30 sn): her yanıt `olcum` (ms) taşır;
    kur ayrıca `ortam` (SIMD, çekirdek, izolasyon) verir → ayarlardaki "Hız testi".
@@ -48,6 +51,26 @@ function fonemle(metin, dil) {
     fonem.callMain(["-l", dil, "--input", JSON.stringify([{ text: metin }]), "--espeak_data", "/espeak-ng-data"])
   } finally { fonemCikis = null }
   return ids
+}
+
+/* MMS: metin → harf kimlikleri (transformers VitsTokenizer ile aynı: küçük harf, sözlük
+   dışı karakter atılır, kırp, aralara 0). Sayı/tarih/kısaltma Antalia normalleştiricisiyle açılır. */
+function karakterKimlikleri(o, metin) {
+  let t = o.onYuz ? o.onYuz.modelText(metin) : String(metin).toLocaleLowerCase("tr")
+  let suz = ""
+  for (const c of t) {
+    if (o.sozluk.has(c)) { suz += c; continue }
+    const taban = c.normalize("NFD").replace(/[\u0300-\u036f]/g, "")   // â → a
+    if (taban && o.sozluk.has(taban)) suz += taban
+  }
+  suz = suz.trim()
+  if (!suz) return []
+  const ids = []
+  for (const c of suz) ids.push(Number(o.sozluk.get(c)))
+  if (o.ayar.bosluk_ekle === false) return ids
+  const ara = new Array(ids.length * 2 + 1).fill(0)
+  ids.forEach((v, i) => { ara[2 * i + 1] = v })
+  return ara
 }
 
 self.onmessage = async (e) => {
@@ -97,7 +120,13 @@ self.onmessage = async (e) => {
         oturumlar.set(e.data.ses, { antalia: { motor, onYuz } })
       } else if (!oturumlar.has(e.data.ses)) {
         const s = await ort.InferenceSession.create(e.data.model, { executionProviders: ["wasm"] })
-        oturumlar.set(e.data.ses, { s, ayar: e.data.ayar })
+        const o = { s, ayar: e.data.ayar }
+        if (e.data.ayar?.tokenizer === "karakter") {
+          o.onYuz = e.data.veri ? antaliaOnYuz(await antaliaVeriCoz(e.data.veri)) : null
+          o.onYuz?.warmup()
+          o.sozluk = new Map(Object.entries(e.data.ayar.sozluk || {}))
+        }
+        oturumlar.set(e.data.ses, o)
       }
       yanit({ ok: true, olcum: { oturumMs: Math.round(performance.now() - t0) } })
       return
@@ -131,8 +160,11 @@ self.onmessage = async (e) => {
       const dil = o.ayar.espeak?.voice || "tr"
       const t0 = performance.now()
       let ids
-      try { ids = fonemle(e.data.metin, dil) }
-      catch { fonem = await fonemleyiciKur(); ids = fonemle(e.data.metin, dil) }
+      if (o.sozluk) ids = karakterKimlikleri(o, e.data.metin)
+      else {
+        try { ids = fonemle(e.data.metin, dil) }
+        catch { fonem = await fonemleyiciKur(); ids = fonemle(e.data.metin, dil) }
+      }
       const ornekleme = o.ayar.audio?.sample_rate || 22050
       if (!ids.length) { yanit({ ok: true, pcm: new Float32Array(0), ornekleme }); return }
       const inf = o.ayar.inference || {}
@@ -151,7 +183,12 @@ self.onmessage = async (e) => {
       const sonuc = await o.s.run(feeds)
       const t2 = performance.now()
       const cikti = sonuc.output || sonuc[Object.keys(sonuc)[0]]
-      const pcm = cikti.data instanceof Float32Array ? new Float32Array(cikti.data) : Float32Array.from(cikti.data)
+      let pcm = cikti.data instanceof Float32Array ? new Float32Array(cikti.data) : Float32Array.from(cikti.data)
+      if (o.sozluk) {
+        // MMS cümle sonunda duraksamıyor (noktalama sözlükte yok) → kısa sessizlik
+        const ek = Math.floor((/[.?!…]["'”’)]*\s*$/.test(e.data.metin) ? 0.25 : 0.12) * ornekleme)
+        const p2 = new Float32Array(pcm.length + ek); p2.set(pcm); pcm = p2
+      }
       yanit({ ok: true, pcm, ornekleme, olcum: { fonemMs: Math.round(t1 - t0), cikarimMs: Math.round(t2 - t1), fonemSayisi: ids.length } }, [pcm.buffer])
       return
     }

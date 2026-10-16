@@ -29,14 +29,15 @@ import {
 
 // Vukuf sesi (Piper) yardımcıları yalnız ayarlar açılınca / indirirken yüklenir
 const vukufSesYukle = () => import("../data/vukufSes")
-// Fahrettin 16 Ekim 2026'da çıkarıldı; DFKI aynı gün eklendi (ayrı indirilir — grup)
+// Fahrettin 16, Fettah 17 Ekim 2026'da çıkarıldı. Her ses ayrı indirilir (grup).
+// 17 Ekim 2026: Antalia varsayılan; DFKI ve MMS yedek (MMS tek ses için düşük gürültüyle)
 // Antalia (Antalia-2 Mini) 16 Ekim 2026'da eklendi ve varsayılan oldu (kullanıcı: "Piper'dan daha iyi")
 const VUKUF_SES_LISTESI = [
   { id: "antalia", ad: "Antalia", grup: "antalia" },
-  { id: "fettah", ad: "Fettah", grup: "tr" },
   { id: "dfki", ad: "DFKI", grup: "dfki" },
+  { id: "mms", ad: "MMS", grup: "mms" },          // 17 Ekim 2026 (Fettah çıkarıldı)
 ]
-const VUKUF_GRUPLARI = ["antalia", "tr", "dfki", "ar"]
+const VUKUF_GRUPLARI = ["antalia", "dfki", "mms", "ar"]
 const VUKUF_TOPLAM_MB = 95
 const VUKUF_ARAPCA_MB = 63            // Kerîm modeli
 const VUKUF_MOTOR_MB = 30             // ses motoru + fonemleyici (Türkçe sesler inmişse zaten var)
@@ -245,8 +246,8 @@ export default function SesliOkumaKontrol({
   // Bitti → kısa süre sonra kendiliğinden kapanmaz; düğme "baştan değil, kaldığı yerden" yeniden başlatır
   const ayarDegis = (parca) => { setAyar(a => ({ ...a, ...parca })); sesliOkuyucu.ayarlariYenile(parca) }
 
-  // VUKUF SESİ: indirilmiş mi, indirme ilerlemesi — gruplar: "tr" (Fettah) · "dfki" (DFKI) · "ar" (Kerîm)
-  const [vukufHazir, setVukufHazir] = useState({ antalia: null, tr: null, dfki: null, ar: null })   // null: bilinmiyor
+  // VUKUF SESİ: indirilmiş mi, indirme ilerlemesi — gruplar: "antalia" · "dfki" · "mms" · "ar" (Kerîm)
+  const [vukufHazir, setVukufHazir] = useState({ antalia: null, dfki: null, mms: null, ar: null })   // null: bilinmiyor
   const [indirme, setIndirme] = useState(null)              // { grup, oran, ad } | { grup, hata, ayrinti }
   const [eksik, setEksik] = useState({})                    // grup → eksik MB (motor zaten inmişse yalnız ses modeli)
   const indirmeIptalRef = useRef(null)
@@ -264,12 +265,12 @@ export default function SesliOkumaKontrol({
         return v
       })
       .then(v => { if (!iptal) setVukufHazir(v) })
-      .catch(() => { if (!iptal) setVukufHazir({ antalia: false, tr: false, dfki: false, ar: false }) })
+      .catch(() => { if (!iptal) setVukufHazir({ antalia: false, dfki: false, mms: false, ar: false }) })
     return () => { iptal = true }
   }, [acik])
   // Vukuf sesi yokken açılırsa ayarlar kendiliğinden açılsın (indirme orada)
   useEffect(() => { if (d.hata === "vukufYok") setAyarAcik(true) }, [d.hata])
-  const vukufIndir = async (grup = "tr") => {
+  const vukufIndir = async (grup = "antalia") => {
     const k = new AbortController()
     indirmeIptalRef.current = k
     setIndirme({ grup, oran: 0, ad: "" })
@@ -302,7 +303,7 @@ export default function SesliOkumaKontrol({
       const kalan = VUKUF_SES_LISTESI.find(v => v.grup !== grup && vukufHazir[v.grup])
       if (VUKUF_SES_LISTESI.find(v => v.id === ayar.vukufSes)?.grup === grup) ayarDegis({ vukufSes: (kalan || VUKUF_SES_LISTESI[0]).id })
     }
-    else { setVukufHazir({ antalia: false, tr: false, dfki: false, ar: false }); if (ayar.motor === "vukuf") ayarDegis({ motor: "cihaz" }) }
+    else { setVukufHazir({ antalia: false, dfki: false, mms: false, ar: false }); if (ayar.motor === "vukuf") ayarDegis({ motor: "cihaz" }) }
     try { const e = {}; for (const g of VUKUF_GRUPLARI) e[g] = await m.eksikMb(g); setEksik(e) } catch { /* yoksay */ }
   }
   /* HIZ TESTİ (16 Ekim 2026, iPhone'da cümle başına ~30 sn): nerede beklendiğini ölçer —
@@ -643,7 +644,7 @@ export default function SesliOkumaKontrol({
                   {cip(kerimSecili, "Kerîm", () => ayarDegis({ arSes: "kerim" }))}
                   {cip(!kerimSecili, "Cihaz sesi", () => ayarDegis({ arSes: "cihaz" }), !sesler.ar.length)}
                 </div>
-                {kerimSecili && indirmeAlani("ar", `Kerîm sesi bir kez indirilir (yaklaşık ${eksik.ar || (vukufHazir.tr || vukufHazir.dfki || vukufHazir.antalia ? VUKUF_ARAPCA_MB : VUKUF_ARAPCA_MB + VUKUF_MOTOR_MB)} MB). Harekeli metinleri daha doğru okur.`)}
+                {kerimSecili && indirmeAlani("ar", `Kerîm sesi bir kez indirilir (yaklaşık ${eksik.ar || (vukufHazir.mms || vukufHazir.dfki || vukufHazir.antalia ? VUKUF_ARAPCA_MB : VUKUF_ARAPCA_MB + VUKUF_MOTOR_MB)} MB). Harekeli metinleri daha doğru okur.`)}
                 {kerimSecili && vukufHazir.ar && (
                   <div style={{ marginTop: "8px", fontSize: "11px", color: theme.textSecondary, display: "flex", gap: "8px", alignItems: "center" }}>
                     <span style={{ flex: 1 }}>Kerîm cihazda.</span>

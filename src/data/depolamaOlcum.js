@@ -11,7 +11,15 @@
          vukuf-veri         → kitap/Kur'ân metinleri (.json), yazı tipleri, görseller
          vukuf-ses          → kâri sesleri
          vukuf-kabuk-*, vukuf-varlik-* → uygulamanın kendi dosyaları
+         vukuf-ses-motoru   → Vukuf sesi (sesli okuma): okuyucular + ses motoru
      • IndexedDB "vukuf-izleme" → izleme modu galerisindeki resimler
+     • IndexedDB "vukuf-ses-motoru" → Vukuf sesi, önbellek kullanılamayan kökende
+       (http yerel ağ) aynı dosyalar burada (data/vukufSes.js depo())
+
+   SESLİ OKUMA (17 Ekim 2026, kullanıcı: "depolama bölümü burayı da kontrol edecek mi"):
+   ayrı bölüm, okuyucu okuyucu açılır alt satırlar (Antalia, Fettah, DFKI, Kerîm, ses
+   motoru). Eskiden "vukuf-ses-motoru" önbelleği "Uygulama dosyaları"na karışıyordu,
+   IndexedDB'deki kopyası hiç sayılmıyordu.
      • localStorage → ayarlar, işaretler, notlar, hıfz, Geçmiş… (vukufVeri envanteri)
      • `navigator.storage.estimate()` → tarayıcının bildirdiği toplam + ayrılan yer
 
@@ -28,6 +36,18 @@
 import { envanter } from "./vukufVeri"
 
 const GECMIS_ANAHTAR = "vukuf-gecmis"   // Geçmiş sayfası kayıtları (data/gecmis.js)
+const SES_MOTORU = "vukuf-ses-motoru"    // data/vukufSes.js ONBELLEK_ADI (önbellek ve IndexedDB adı)
+
+/* Vukuf sesi dosyası → alt satır (adresinden). Sıra = gösterim sırası. */
+const SES_PARCALARI = [
+  { id: "antalia", ad: "Antalia", aciklama: "Türkçe okuyucu", esle: /\/ses\/antalia\//i },
+  { id: "fettah", ad: "Fettah", aciklama: "Türkçe okuyucu", esle: /fettah/i },
+  { id: "dfki", ad: "DFKI", aciklama: "Türkçe okuyucu", esle: /dfki/i },
+  { id: "kareem", ad: "Kerîm", aciklama: "Arapça okuyucu", esle: /kareem/i },
+  { id: "fahrettin", ad: "Fahrettin", aciklama: "Artık kullanılmıyor; sesli okuma açılınca silinir", esle: /fahrettin/i },
+  { id: "motor", ad: "Ses motoru", aciklama: "Bütün okuyucuların ortak parçası", esle: /./ },
+]
+const sesParcasi = (adres) => SES_PARCALARI.find(p => p.esle.test(String(adres || ""))).id
 
 const UZANTI = (adres) => {
   try { return (new URL(adres).pathname.match(/\.([a-z0-9]+)$/i)?.[1] || "").toLowerCase() } catch { return "" }
@@ -68,7 +88,11 @@ async function onbellekleriOlc(onIlerleme) {
     while (kuyruk.length) {
       const { k, ad, istek } = kuyruk.shift()
       const b = await yanitBoyutu(k, istek)
-      const tur = ad === "vukuf-veri" ? veriTuru(istek.url) : (ad === "vukuf-ses" || ad === "vukuf-ses-motoru") ? "ses" : "uygulama"
+      if (ad === SES_MOTORU) {                   // Vukuf sesi ayrı bölümde (sesliOkumaOlc)
+        biten++
+        continue
+      }
+      const tur = ad === "vukuf-veri" ? veriTuru(istek.url) : ad === "vukuf-ses" ? "ses" : "uygulama"
       sonuc[tur] += b
       sonuc.adet[tur]++
       biten++
@@ -78,6 +102,58 @@ async function onbellekleriOlc(onIlerleme) {
   await Promise.all(Array.from({ length: 8 }, isci))
   onIlerleme?.(1)
   return sonuc
+}
+
+/* Vukuf sesi: önbellek + IndexedDB yedeği, parça parça. */
+async function sesliOkumaOlc() {
+  const parca = Object.fromEntries(SES_PARCALARI.map(p => [p.id, 0]))
+  let adet = 0
+  // 1) Önbellek
+  try {
+    if (typeof caches !== "undefined" && (await caches.keys()).includes(SES_MOTORU)) {
+      const k = await caches.open(SES_MOTORU)
+      for (const istek of await k.keys()) {
+        parca[sesParcasi(istek.url)] += await yanitBoyutu(k, istek)
+        adet++
+      }
+    }
+  } catch { /* ölçülemedi */ }
+  // 2) IndexedDB (yalnız varsa açılır)
+  try {
+    if (typeof indexedDB !== "undefined") {
+      let var_ = true
+      if (indexedDB.databases) var_ = (await indexedDB.databases()).some(d => d.name === SES_MOTORU)
+      if (var_) {
+        const db = await new Promise((cz, red) => {
+          const r = indexedDB.open(SES_MOTORU)
+          r.onsuccess = () => cz(r.result)
+          r.onerror = () => red(r.error)
+          r.onupgradeneeded = () => { /* yoksa boş oluşur */ }
+        })
+        if (db.objectStoreNames.contains("d")) {
+          await new Promise((cz) => {
+            const tx = db.transaction("d", "readonly")
+            const imlec = tx.objectStore("d").openCursor()
+            imlec.onsuccess = () => {
+              const c = imlec.result
+              if (!c) return
+              const v = c.value
+              parca[sesParcasi(c.key)] += v && typeof v.size === "number" ? v.size : (v?.byteLength || 0)
+              adet++
+              c.continue()
+            }
+            tx.oncomplete = () => cz()
+            tx.onerror = () => cz()
+            tx.onabort = () => cz()
+          })
+        }
+        db.close()
+      }
+    }
+  } catch { /* ölçülemedi */ }
+  const satirlar = SES_PARCALARI.filter(p => parca[p.id] > 0)
+    .map(p => ({ id: p.id, ad: p.ad, aciklama: p.aciklama, bayt: parca[p.id] }))
+  return { bayt: satirlar.reduce((t, s) => t + s.bayt, 0), adet, satirlar }
 }
 
 /* İzleme galerisi (IndexedDB). Veritabanı yoksa AÇILMIYOR (açmak boşunu oluştururdu). */
@@ -150,11 +226,12 @@ async function tarayiciBildirimi() {
 /* Bölümler — SIRA ve RENK YUVASI SABİT (renk bölüme bağlı, büyüklüğe göre değişmez). */
 export const BOLUMLER = [
   { id: "metin",    ad: "Kitap ve Kur'ân metinleri", aciklama: "İndirilen eserler, mushaf, lügat" },
-  { id: "ses",      ad: "Sesler",                    aciklama: "Kâri sesleri ve Vukuf okuma sesleri" },
+  { id: "ses",      ad: "Kâri sesleri",              aciklama: "İnternetsiz dinlemek için indirilenler" },
   { id: "font",     ad: "Yazı tipleri",              aciklama: "Arapça ve metin yazı tipleri" },
   { id: "gorsel",   ad: "Görseller",                 aciklama: "Raf resimleri, kapaklar, simgeler" },
   { id: "galeri",   ad: "İzleme galerisi",           aciklama: "Arka plan için eklediğiniz resimler" },
   { id: "kisisel",  ad: "Kişisel veriler ve ayarlar", aciklama: "İşaretler, notlar, hıfz, Geçmiş, ayarlar" },
+  { id: "sesli",    ad: "Sesli okuma sesleri",       aciklama: "Vukuf sesi okuyucuları ve ses motoru" },
   { id: "uygulama", ad: "Uygulama dosyaları",        aciklama: "İnternetsiz açılmak için saklanan sürüm", notr: true },
   { id: "diger",    ad: "Tarayıcı payı",             aciklama: "Tarayıcının kendi kayıt ve ek yükü", notr: true },
 ]
@@ -164,13 +241,13 @@ export const BOLUMLER = [
  *   { bolumler: [{ id, ad, aciklama, bayt, adet?, yaklasik, alt? }], toplam, kota, kullanilanTarayici, hata }
  */
 export async function depolamaOlc(onIlerleme) {
-  const [on, galeri, tarayici] = await Promise.all([onbellekleriOlc(onIlerleme), galeriOlc(), tarayiciBildirimi()])
+  const [on, galeri, tarayici, sesli] = await Promise.all([onbellekleriOlc(onIlerleme), galeriOlc(), tarayiciBildirimi(), sesliOkumaOlc()])
   const kisisel = kisiselOlc()
   const olcBayt = {
     metin: on.metin, ses: on.ses, font: on.font, gorsel: on.gorsel, uygulama: on.uygulama,
-    galeri: galeri.bayt, kisisel: kisisel.bayt,
+    galeri: galeri.bayt, kisisel: kisisel.bayt, sesli: sesli.bayt,
   }
-  const depolar = on.metin + on.ses + on.font + on.gorsel + on.uygulama + galeri.bayt
+  const depolar = on.metin + on.ses + on.font + on.gorsel + on.uygulama + galeri.bayt + sesli.bayt
   const kullanilanTarayici = tarayici.hata ? 0 : tarayici.kullanilan
   // Tarayıcının bildirdiğinden artan (Cache/IDB iç yükü, sıkıştırma farkı vb.)
   const diger = Math.max(0, kullanilanTarayici - depolar)
@@ -178,9 +255,9 @@ export async function depolamaOlc(onIlerleme) {
   const bolumler = BOLUMLER.map((b, i) => ({
     ...b, yuva: i,
     bayt: olcBayt[b.id] || 0,
-    adet: b.id === "galeri" ? galeri.adet : on.adet[b.id],
-    yaklasik: ["metin", "ses", "font", "gorsel", "uygulama"].includes(b.id),
-    alt: b.id === "kisisel" ? kisisel.satirlar : null,
+    adet: b.id === "galeri" ? galeri.adet : b.id === "sesli" ? sesli.adet : on.adet[b.id],
+    yaklasik: ["metin", "ses", "font", "gorsel", "uygulama", "sesli"].includes(b.id),
+    alt: b.id === "kisisel" ? kisisel.satirlar : b.id === "sesli" ? sesli.satirlar : null,
   }))
   const toplam = bolumler.reduce((t, b) => t + b.bayt, 0)
   return { bolumler, toplam, kota: tarayici.hata ? 0 : tarayici.kota, kullanilanTarayici, hata: tarayici.hata || null }

@@ -26,8 +26,9 @@ import { depolamaOlc, boyutYaz } from "../data/depolamaOlcum"
 import { temaTonu } from "../AppContext"
 
 const RENK = {
-  acik: ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4", "#008300"],
-  koyu: ["#3987e5", "#d95926", "#199e70", "#c98500", "#d55181", "#008300"],
+  // 7. renk (17 Ekim 2026): "Sesli okuma sesleri" — mor, öbür altısından ayırt edilir
+  acik: ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4", "#008300", "#8257d6"],
+  koyu: ["#3987e5", "#d95926", "#199e70", "#c98500", "#d55181", "#008300", "#9b78ea"],
 }
 const NOTR = { acik: ["#9a948a", "#c4beb3"], koyu: ["#7c766c", "#55504a"] }
 
@@ -44,7 +45,7 @@ export default function DepolamaGorunumu({ theme, tazele = 0, kalici, onKaliciYa
   const [ilerleme, setIlerleme] = useState(0)
   const [yeniden, setYeniden] = useState(0)
   const [secili, setSecili] = useState(null)
-  const [kisiselAcik, setKisiselAcik] = useState(false)
+  const [acikBolum, setAcikBolum] = useState(null)        // alt satırları açık bölüm (kişisel / sesli okuma)
 
   useEffect(() => {
     let iptal = false
@@ -148,7 +149,8 @@ export default function DepolamaGorunumu({ theme, tazele = 0, kalici, onKaliciYa
       {/* 3) BÖLÜM SATIRLARI */}
       <div style={{ display: "flex", flexDirection: "column", gap: "1px" }}>
         {dolu.map(b => {
-          const acilir = b.id === "kisisel" && b.alt && b.alt.length > 0
+          const acilir = !!(b.alt && b.alt.length > 0)
+          const kisiselAcik = acikBolum === b.id
           const satir = (
             <div style={satirStil(secili === b.id)}>
               <span aria-hidden="true" style={{ width: "10px", height: "10px", borderRadius: "3px", background: renkVer(b), flexShrink: 0 }} />
@@ -175,7 +177,7 @@ export default function DepolamaGorunumu({ theme, tazele = 0, kalici, onKaliciYa
             <div key={b.id}
               onMouseEnter={() => setSecili(b.id)} onMouseLeave={() => setSecili(null)}>
               {acilir ? (
-                <button onClick={() => setKisiselAcik(v => !v)} aria-expanded={kisiselAcik}
+                <button onClick={() => setAcikBolum(v => (v === b.id ? null : b.id))} aria-expanded={kisiselAcik}
                   style={{ display: "block", width: "100%", padding: 0, border: "none", background: "none", cursor: "pointer", fontFamily: "inherit", textAlign: "left" }}>
                   {satir}
                 </button>

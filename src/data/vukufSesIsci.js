@@ -8,12 +8,21 @@
    Artık fonemleme + ONNX çıkarımı bu işçide; ana iş parçacığı yalnız çalar.
 
    İLETİLER  (her biri { no, tip, ... } → yanıt { no, ok | hata, ... })
-     kur    { ortWasm, fonemJs (metin), fonemWasm, fonemVeri }
+     kur    { ortJs, ortGlue (metin), ortWasm, fonemJs (metin), fonemWasm, fonemVeri }
+            ONNX Runtime 1.20.1 npm'den değil, depodan gelen metinden (blob adresiyle) içe
+            aktarılır — 1.21+ Safari'de aşırı yavaş/bellek (bkz. vukufSes.js başlığı).
      ses    { ses, model, ayar }           → oturum kurulur (ses başına bir kez)
+            { ses, antalia: { text, cond, flow, vocoder, manifest, veri } } → Antalia-2 Mini
+            (16 Ekim 2026, kullanıcı: "Antalia2 güzel, hatta Piper'dan daha iyi"): espeak yok,
+            harf tabanlı; Türkçe normalleştirici (sayı, tarih, kısaltma) ./antalia/frontend.js,
+            dört ONNX grafiği + iSTFT ./antalia/tts.js — ikisi de Apache-2.0, değiştirilmeden.
      sentez { ses, metin, olcek }          → { pcm (aktarılır), ornekleme }
    TANILAMA (16 Ekim 2026, iPhone'da cümle başına ~30 sn): her yanıt `olcum` (ms) taşır;
    kur ayrıca `ortam` (SIMD, çekirdek, izolasyon) verir → ayarlardaki "Hız testi".
    ═══════════════════════════════════════════════════════════════════════════ */
+
+import { Engine as AntaliaMotoru, speak as antaliaSoyle, SAMPLE_RATE as ANTALIA_HZ } from "./antalia/tts.js"
+import { createFrontend as antaliaOnYuz, decodeAsset as antaliaVeriCoz } from "./antalia/frontend.js"
 
 let ort = null, fonem = null, fonemCikis = null
 const oturumlar = new Map()
@@ -49,10 +58,16 @@ self.onmessage = async (e) => {
       const t0 = performance.now()
       let t1 = t0
       if (!ort) {
-        const m = await import("onnxruntime-web/wasm")
-        ort = m.default || m
+        const blobUrl = (t) => URL.createObjectURL(new Blob([t], { type: "text/javascript" }))
+        const glueUrl = blobUrl(e.data.ortGlue)
+        const m = await import(/* @vite-ignore */ blobUrl(e.data.ortJs))
+        ort = m.InferenceSession ? m : m.default
         ort.env.wasm.numThreads = 1
-        ort.env.wasm.wasmBinary = e.data.ortWasm
+        ort.env.wasm.proxy = false
+        // wasm da blob adresiyle: yapıştırıcı `wasmBinary` verilse bile `new URL(…, import.meta.url)`
+        // hesaplıyor ve blob adresinde bu hata veriyor; locateFile ise yalnız wasmPaths ile kuruluyor
+        const wasmUrl = URL.createObjectURL(new Blob([e.data.ortWasm], { type: "application/wasm" }))
+        ort.env.wasm.wasmPaths = { mjs: glueUrl, wasm: wasmUrl }
       }
       t1 = performance.now()
       if (!fonem) {
@@ -66,13 +81,21 @@ self.onmessage = async (e) => {
       yanit({
         ok: true,
         olcum: { motorMs: Math.round(t1 - t0), fonemleyiciMs: Math.round(performance.now() - t1) },
-        ortam: { simd, izole: !!self.crossOriginIsolated, cekirdek: self.navigator?.hardwareConcurrency || 0 },
+        ortam: { simd, izole: !!self.crossOriginIsolated, cekirdek: self.navigator?.hardwareConcurrency || 0, ort: ort?.env?.versions?.web || "" },
       })
       return
     }
     if (tip === "ses") {
       const t0 = performance.now()
-      if (!oturumlar.has(e.data.ses)) {
+      if (!oturumlar.has(e.data.ses) && e.data.antalia) {
+        const a = e.data.antalia
+        const motor = await AntaliaMotoru.create(ort, { text: a.text, cond: a.cond, flow: a.flow, vocoder: a.vocoder }, a.manifest, ["wasm"])
+        const onYuz = antaliaOnYuz(await antaliaVeriCoz(a.veri))
+        onYuz.warmup()
+        // Isınma: her grafiğin ilk çalışması bellek ayırıyor; ilk gerçek cümle beklemesin
+        for await (const _ of antaliaSoyle(motor, onYuz.modelText("Merhaba."), { steps: 1 })) { /* boş */ }
+        oturumlar.set(e.data.ses, { antalia: { motor, onYuz } })
+      } else if (!oturumlar.has(e.data.ses)) {
         const s = await ort.InferenceSession.create(e.data.model, { executionProviders: ["wasm"] })
         oturumlar.set(e.data.ses, { s, ayar: e.data.ayar })
       }
@@ -82,6 +105,29 @@ self.onmessage = async (e) => {
     if (tip === "sentez") {
       const o = oturumlar.get(e.data.ses)
       if (!o) throw new Error("Ses hazır değil")
+      if (o.antalia) {
+        // Antalia: hız varsayılanına (0,95) oranla; cümle içi parçalar arası duraklamalar motorda.
+        // Cümle sonuna kısa sessizlik eklenir (Piper kendisi koyuyor; Antalia ön/son eki kesiyor).
+        const { motor, onYuz } = o.antalia
+        const t0 = performance.now()
+        const metin = onYuz.modelText(e.data.metin)
+        const t1 = performance.now()
+        const parcalar = []
+        let n = 0
+        const hiz = motor.defaults.speed / (e.data.olcek || 1)
+        const sure = { text: 0, cond: 0, flow: 0, vocoder: 0, istft: 0 }
+        for await (const { audio, timings } of antaliaSoyle(motor, metin, { seed: 0, speed: hiz, steps: e.data.adim || undefined })) {
+          parcalar.push(audio); n += audio.length
+          for (const k in sure) sure[k] += timings?.[k] || 0
+        }
+        const sessiz = Math.floor((/[.?!…]["'”’)]*\s*$/.test(e.data.metin) ? 0.22 : 0.12) * ANTALIA_HZ)
+        const pcm = new Float32Array(n + sessiz)
+        let k = 0
+        for (const p of parcalar) { pcm.set(p, k); k += p.length }
+        const ayrinti = Object.fromEntries(Object.entries(sure).map(([k, v]) => [k, Math.round(v)]))
+        yanit({ ok: true, pcm, ornekleme: ANTALIA_HZ, olcum: { fonemMs: Math.round(t1 - t0), cikarimMs: Math.round(performance.now() - t1), fonemSayisi: metin.length, ayrinti, metin } }, [pcm.buffer])
+        return
+      }
       const dil = o.ayar.espeak?.voice || "tr"
       const t0 = performance.now()
       let ids

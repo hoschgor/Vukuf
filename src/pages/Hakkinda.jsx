@@ -1,6 +1,6 @@
 import { useApp } from "../AppContext"
 import { useEffect, useId, useMemo, useState } from "react"
-import { Mail, BookOpen, Globe } from "lucide-react"
+import { Mail, BookOpen, Globe, Headphones } from "lucide-react"
 import MealPopup from "../components/MealPopup"
 import MushafKelime from "../components/MushafKelime"
 import { mushafYukle } from "../data/mushafVerisi"
@@ -286,6 +286,32 @@ export default function Hakkinda() {
           </div>
         </div>
 
+        {/* ── SESLİ OKUMA ATIFLARI (16 Ekim 2026) ─────────────────────────
+           Vukuf sesi (tarayıcı içi Piper) ve hafız kayıtları. DFKI sesinin veri seti
+           CC BY-NC-SA 4.0 — ticari olmayan kullanım + atıf şartı; bu bölüm o atıftır. */}
+        <div style={{ marginTop: "22px" }}>
+          <h2 style={{
+            fontSize: "12px", letterSpacing: "1.5px", color: ac,
+            margin: "0 0 12px", fontFamily: "PlayfairDisplay, serif", textAlign: "center",
+          }}>
+            {"Sesli Okuma".toLocaleUpperCase("tr-TR")}
+          </h2>
+          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "10px" }}>
+            {kaynak(Headphones, "Antalia-2 Mini",
+              "Antalia sesi (Türkçe) ve Türkçe metin normalleştiricisi — PatientDesk AI, Apache-2.0 lisansı. Ses yapaydır; gerçek bir kişinin sesi değildir.",
+              { href: "https://huggingface.co/cloud0day3/antalia-mini" })}
+            {kaynak(Headphones, "Piper ses modelleri",
+              "Fettah ve DFKI (Türkçe), Kerîm (Arapça) sesleri — rhasspy/piper-voices. DFKI sesinin veri seti: DFKI GmbH, MaryTTS Turkish (CC BY-NC-SA 4.0).",
+              { href: "https://huggingface.co/rhasspy/piper-voices" })}
+            {kaynak(Headphones, "EveryAyah",
+              "Sesli okumada âyetlerin hafız kayıtları",
+              { href: "https://everyayah.com/" })}
+            {kaynak(Globe, "ONNX Runtime Web · espeak-ng",
+              "Ses motoru (Microsoft, MIT lisansı) ve fonemleyici (espeak-ng, GPL-3.0; @diffusionstudio/piper-wasm)",
+              { href: "https://github.com/espeak-ng/espeak-ng" })}
+          </div>
+        </div>
+
         {/* ── KATKI ──────────────────────────────────────────────────── */}
         <div style={{
           marginTop: "24px", padding: "14px 16px", borderRadius: "12px",
@@ -328,6 +354,7 @@ export default function Hakkinda() {
 
       {/* Meal penceresi — Kur'ân ekranındakinin aynısı */}
       <MealPopup
+        sabit
         acik={!!veri}
         sure={veri?.sure}
         ayetNo={veri?.ayetNo}

@@ -41,9 +41,9 @@ import { mp3Url, KARILAR } from "./hooks/useAudioPlayer"
 
 export const SESLI_AYAR_ANAHTAR = "vukuf-sesli-okuma"
 export const SESLI_KONUM_ANAHTAR = "vukuf-sesli-konum"     // { kitap: { sayfa, satir } }
-// motor: "cihaz" (Web Speech) | "vukuf" (tarayıcı içi Piper — data/vukufSes.js); vukufSes: "fahrettin" | "fettah"
+// motor: "cihaz" (Web Speech) | "vukuf" (tarayıcı içi Piper — data/vukufSes.js); vukufSes: "antalia" (varsayılan) | "fettah" | "dfki" (Fahrettin 16 Ekim 2026'da çıkarıldı)
 export const SESLI_VARSAYILAN = {
-  hiz: 1, sesTr: "", sesAr: "", arapca: "uyari", isaret: true, takip: true, motor: "cihaz", vukufSes: "fettah",
+  hiz: 1, sesTr: "", sesAr: "", arapca: "uyari", isaret: true, takip: true, motor: "cihaz", vukufSes: "antalia",
   ayetSes: "hafiz",      // kaynağı bilinen âyet: "hafiz" (kayıt + meal) | "meal"
   kari: "",              // "" = Kur'ân bölümünde seçili kâri
   arSes: "kerim",        // kaynağı bilinmeyen Arapça: "kerim" (Vukuf) | "cihaz"
@@ -97,9 +97,14 @@ export function sesliDestekVar() {
   return typeof window !== "undefined" && "speechSynthesis" in window && typeof window.SpeechSynthesisUtterance === "function"
 }
 
+const VUKUF_SES_IDLERI = ["antalia", "fettah", "dfki"]
 export function ayarOku() {
-  try { return { ...SESLI_VARSAYILAN, ...(JSON.parse(localStorage.getItem(SESLI_AYAR_ANAHTAR)) || {}) } }
-  catch { return { ...SESLI_VARSAYILAN } }
+  let a
+  try { a = { ...SESLI_VARSAYILAN, ...(JSON.parse(localStorage.getItem(SESLI_AYAR_ANAHTAR)) || {}) } }
+  catch { a = { ...SESLI_VARSAYILAN } }
+  // Listeden çıkarılmış bir ses seçiliyse (ör. Fahrettin) varsayılana dön
+  if (!VUKUF_SES_IDLERI.includes(a.vukufSes)) a.vukufSes = SESLI_VARSAYILAN.vukufSes
+  return a
 }
 export function ayarYaz(parca) {
   const yeni = { ...ayarOku(), ...parca }
@@ -580,7 +585,9 @@ function motorKur() {
           // Etkin oran: iki işçi aynı anda iki cümle ürettiğinde süre ikiye bölünür
           const oran = sure / sesSure / Math.max(1, vs.isciSayisi ? vs.isciSayisi() : 1)
           yavasSay = oran > 0.8 ? yavasSay + 1 : 0
-          if (yavasSay >= 2 && vs.isciSayisi && vs.isciSayisi() < 2 && vs.isciEkle()) { yavasSay = -2 }   // kurulurken birkaç cümle beklenir
+          // Antalia'da önce hızlı kip (adım 8 → 4, bellek harcamaz), sonra ikinci işçi
+          if (yavasSay >= 2 && birimSesi(b) === "antalia" && vs.hizliKip && vs.hizliKip()) { yavasSay = 0 }
+          else if (yavasSay >= 2 && vs.isciSayisi && vs.isciSayisi() < 2 && vs.isciEkle()) { yavasSay = -2 }   // kurulurken birkaç cümle beklenir
           else if (yavasSay >= 3 && !durum.yavas) yay({ yavas: true, uretimOrani: Math.round(oran * 10) / 10 })
         }
         if (!pcm.length) { ilerleV(); return }
@@ -668,7 +675,7 @@ function motorKur() {
         yay({ durum: "hazirlaniyor", hata: "", asama: "vukuf" })
         try {
           vs = vs || await import("./vukufSes")
-          if (!(await vs.indirilmisMi("tr"))) { yay({ durum: "kapali", hata: "vukufYok", birim: null }); return }
+          if (!(await vs.indirilmisMi(vs.sesGrubu(ayar.vukufSes)))) { yay({ durum: "kapali", hata: "vukufYok", birim: null }); return }
           await vs.hazirla(ayar.vukufSes)
         } catch (e) {
           console.error("[Vukuf sesi]", e)

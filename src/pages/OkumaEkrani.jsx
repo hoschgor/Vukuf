@@ -220,6 +220,26 @@ function kelimeAra(kelime) {
    azaltmak için kök en az 4 harf ve (5+ harf ya da kelimenin en az yarısı) olmalı.
    Dönen { kok, anlam, kavram, son } — `son`: ORİJİNAL yazımda kökün bittiği konum (noktalama,
    kesme ve büyük harf korunarak); ekranda kelime bölünmeden yalnız o kısım lügat renginde. */
+/* KISA KÖK + BİLİNEN EK (17 Ekim 2026, kullanıcı: "nehyledilmiş kelimesinde lügat açmıyor fakat
+   nehy lügatte var"). 3-4 harflik kökler (nehy, ilm, akl, nur, hak…) yukarıdaki oran kuralına
+   takılıyordu. Artık kökten sonra kalan kısım tanınan bir ek dizisiyse de kabul ediliyor:
+   • Yardımcı fiil: [l/y] + ed/et/ol/eyle/kıl/buyur… → nehyedilmiş, nehyledilmiş, kalbolunur
+   • İsim ekleri (çokluk, iyelik, hâl, ek-fiil sırasıyla): nehyi, nehyini, ilmin, aklından, nurları
+   • Ünsüz ikizleşmesi: hak+kı, hak+kında (kökün son harfi ekin başında tekrar ediyor) */
+const KOK_EK_FIIL = /^[ly]?(?:ed|et|ol|eyl|kıl|kil|buyur)/
+const KOK_EK_ISIM = new RegExp(
+  "^(?:s[ıiuü]z|l[ıiuü]k?|c[ıiuü]|ç[ıiuü])?" +                                    // yapım: -siz, -li, -lik, -ci
+  "(?:l[ae]r)?" +                                                                   // çokluk
+  "(?:[ıiuü]?m(?:[ıiuü]z)?|[ıiuü]?n(?:[ıiuü]z)?|s?[ıiuü]|l[ae]r[ıi])?" +           // iyelik
+  "(?:y?[ıiuü]|y?[ae]|n?[ıiuü]n|n[ıiuü]|n[ae]|n?[dt][ae]n?|y?l[ae]|ki|[cç][ae])?" + // hâl
+  "(?:[dt][ıiuü]r)?$")                                                              // ek-fiil
+function kokEkiUygun(kok, ek) {
+  if (!ek) return false
+  if (KOK_EK_FIIL.test(ek)) return true
+  // ikizleşme: hak + kında → "ında"
+  const e = ek[0] === kok[kok.length - 1] && !/[aeıioöuüâîû]/.test(ek[0]) ? ek.slice(1) : ek
+  return e.length > 0 && e.length <= 8 && KOK_EK_ISIM.test(e)
+}
 const KOK_ONBELLEK = new Map()
 const KOK_ATILAN = /[.,!?;:'"()\[\]]/
 function kokBul(kelime) {
@@ -235,13 +255,15 @@ function kokBul(kelime) {
   }
   let sonuc = null
   const T = temiz.trim()
-  if (T.length >= 5 && !STOPKELIMELER.has(T)) {
-    for (let n = T.length - 1; n >= 4; n--) {
+  if (T.length >= 4 && !STOPKELIMELER.has(T)) {
+    for (let n = T.length - 1; n >= 3; n--) {
       const kok = T.slice(0, n)
       if (kok.endsWith("-") || kok.endsWith(" ")) continue
       const a = lugatVerisi[kok] || null, k = kavramlarVerisi[kok] || null
-      if (a || k) {
-        if (n >= 5 || n / T.length >= 0.5) sonuc = { kok, anlam: a, kavram: k, son: yer[n - 1] + 1 }
+      if (!a && !k) continue
+      // Uzun kök (eski kural) ya da kısa kök + tanınan ek
+      if ((n >= 4 && (n >= 5 || n / T.length >= 0.5)) || kokEkiUygun(kok, T.slice(n))) {
+        sonuc = { kok, anlam: a, kavram: k, son: yer[n - 1] + 1 }
         break
       }
     }

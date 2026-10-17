@@ -30,6 +30,7 @@ import { useApp } from "../AppContext"
 import { useOynatici } from "../data/oynatici"
 import { sureAdi } from "../data/sureAdlari"
 import { useHapKonumu } from "./DonusDugmesi"
+import SesliMiniHap from "./SesliMiniHap"
 import MushafPlayButton from "./MushafPlayButton"
 
 const KUCUK_ANAHTAR = "vukuf-mini-kucuk"
@@ -106,8 +107,14 @@ function SemseAmblem({ ac, zemin, calar, boy = 40 }) {
 export default function MiniOynatici() {
   const player = useOynatici()
   const location = useLocation()
-  if (!player || player.durum === "kapali" || location.pathname === "/kuran") return null
-  return <MiniHap player={player} kitapta={location.pathname.startsWith("/kitap/")} />
+  const kuranGoster = !!player && player.durum !== "kapali" && location.pathname !== "/kuran"
+  return (
+    <>
+      {kuranGoster && <MiniHap player={player} kitapta={location.pathname.startsWith("/kitap/")} />}
+      {/* Sesli okuma "Devamlı okuma" ile ekran dışında sürerken (17 Ekim 2026) */}
+      <SesliMiniHap />
+    </>
+  )
 }
 
 function MiniHap({ player, kitapta }) {

@@ -41,12 +41,16 @@ import { mp3Url, KARILAR } from "./hooks/useAudioPlayer"
 
 export const SESLI_AYAR_ANAHTAR = "vukuf-sesli-okuma"
 export const SESLI_KONUM_ANAHTAR = "vukuf-sesli-konum"     // { kitap: { sayfa, satir } }
-// motor: "cihaz" (Web Speech) | "vukuf" (tarayıcı içi Piper — data/vukufSes.js); vukufSes: "antalia" (varsayılan) | "dfki" | "mms" (Fahrettin 16, Fettah 17 Ekim 2026'da çıkarıldı)
+// motor: "cihaz" (Web Speech) | "vukuf" (tarayıcı içi Piper — data/vukufSes.js); vukufSes: "antalia" (varsayılan) | "mms" (Fahrettin 16, Fettah ve DFKI 17 Ekim 2026'da çıkarıldı)
 export const SESLI_VARSAYILAN = {
   hiz: 1, sesTr: "", sesAr: "", arapca: "uyari", isaret: true, takip: true, motor: "cihaz", vukufSes: "antalia",
   ayetSes: "hafiz",      // kaynağı bilinen âyet: "hafiz" (kayıt + meal) | "meal"
   kari: "",              // "" = Kur'ân bölümünde seçili kâri
   arSes: "kerim",        // kaynağı bilinmeyen Arapça: "kerim" (Vukuf) | "cihaz"
+  ses: 1,                // ses düzeyi 0–2 (17 Ekim 2026): Vukuf sesinde 1'in üstü örneklere kazanç
+                         // (yumuşak sınırlayıcıyla — iPhone'da <audio>.volume değiştirilemiyor);
+                         // hafız kaydı ve cihaz sesinde en çok 1
+  devamli: false,        // okuma ekranından çıkınca da okumaya devam (öbür ekranlarda küçük hap)
 }
 /* Hafız kaydı hangi kâriden: sesli okumada seçilen, yoksa Kur'ân bölümündeki seçim */
 export function kariSec(ayar) {
@@ -97,7 +101,7 @@ export function sesliDestekVar() {
   return typeof window !== "undefined" && "speechSynthesis" in window && typeof window.SpeechSynthesisUtterance === "function"
 }
 
-const VUKUF_SES_IDLERI = ["antalia", "dfki", "mms"]   // Fettah 17 Ekim 2026'da çıkarıldı
+const VUKUF_SES_IDLERI = ["antalia", "mms"]   // Fettah ve DFKI 17 Ekim 2026'da çıkarıldı
 export function ayarOku() {
   let a
   try { a = { ...SESLI_VARSAYILAN, ...(JSON.parse(localStorage.getItem(SESLI_AYAR_ANAHTAR)) || {}) } }
@@ -454,6 +458,10 @@ function motorKur() {
   let sentezNesli = 0                              // sentezler sıfırlanınca artar → eski istekler atlanır
   let calanUrl = ""
   let yavasSay = 0
+  let calanKazanc = 1                              // çalan Vukuf sesine işlenmiş kazanç (ses değişince anında ayar için)
+  // DEVAMLI OKUMA: hangi kitap okunuyor, denetim (SesliOkumaKontrol) açık mı
+  let bilgi = { kitapId: null, kitapAdi: "" }
+  let kontrolSayisi = 0
   // iPhone: "düğme dönüyor, sonra durdur geliyor ama ses yok" (16 Ekim 2026, kullanıcı).
   // blob: adresli WAV bazı iOS sürümlerinde <audio>da hiç ilerlemiyor → ilk takılmada
   // data: adresine geçilir (oturum boyunca), o da ilerlemezse ayrıntılı hata verilir.
@@ -542,6 +550,8 @@ function motorKur() {
       sesOgesi.onended = ilerleK
       sesOgesi.onerror = ilerleK                         // internetsiz ve önbellekte yok → meale geç
       try { sesOgesi.playbackRate = 1 } catch { /* yoksay */ }   // tilâvet hızlandırılmaz
+      try { sesOgesi.volume = Math.max(0, Math.min(1, Number(ayar.ses ?? 1))) } catch { /* yoksay */ }
+      calanKazanc = 1
       sesOgesi.src = mp3Url(kariSec(ayar), b.sureNo, b.ayetNo)
       // Hiç başlayamazsa takılı kalınmasın
       bekci = setTimeout(() => { if (sesOgesi && sesOgesi.currentTime === 0) ilerleK() }, 12000)
@@ -593,7 +603,18 @@ function motorKur() {
         if (!pcm.length) { ilerleV(); return }
         if (!sesOgesi) sesOgesi = new Audio()
         if (calanUrl) { try { URL.revokeObjectURL(calanUrl) } catch { /* yoksay */ } calanUrl = "" }
-        const wav = vs.wavYap(pcm, ornekleme)
+        // Ses düzeyi: örneklere kazanç (kopya — önden hazırlanmış sonuç yeniden çalınabilir)
+        const kazanc = Math.max(0, Math.min(2, Number(ayar.ses ?? 1)))
+        let cal = pcm
+        if (kazanc !== 1) {
+          cal = new Float32Array(pcm.length)
+          for (let i = 0; i < pcm.length; i++) {
+            const v = pcm[i] * kazanc
+            cal[i] = kazanc > 1 ? Math.tanh(v) : v                 // 1'in üstünde yumuşak sınır (patlamasın)
+          }
+        }
+        calanKazanc = kazanc || 1
+        const wav = vs.wavYap(cal, ornekleme)
         let adres
         if (veriUrlKullan) adres = await veriUrl(wav)
         else { calanUrl = URL.createObjectURL(wav); adres = calanUrl }
@@ -608,6 +629,7 @@ function motorKur() {
           yay({ durum: "duraklatildi", hata: "vukufCal", hataAyrinti: oynaticiDurumu() })
           ekranAcik(false)
         }
+        try { sesOgesi.volume = kazanc === 0 ? 0 : 1 } catch { /* yoksay */ }
         sesOgesi.onended = () => { clearTimeout(bekci); ilerleV() }
         sesOgesi.onerror = takildi
         try { sesOgesi.playbackRate = 1 } catch { /* yoksay */ }
@@ -634,6 +656,7 @@ function motorKur() {
     if (ses) u.voice = ses
     u.lang = ses?.lang || (b.lang === "ar" ? "ar-SA" : "tr-TR")
     u.rate = Math.max(0.5, Math.min(2, Number(ayar.hiz) || 1))
+    u.volume = Math.max(0, Math.min(1, Number(ayar.ses ?? 1)))
     const ilerle = () => {
       if (benim !== nesil) return
       clearTimeout(bekci)
@@ -661,6 +684,16 @@ function motorKur() {
   return {
     abone(f) { dinleyiciler.add(f); return () => dinleyiciler.delete(f) },
     durum: () => durum,
+    /** Okunan kitap (devamlı okumada okuma ekranına dönünce aynı okumaya bağlanmak için) */
+    kitap: () => kitap,
+    bilgi: () => bilgi,
+    bilgiYaz(b) { bilgi = { ...bilgi, ...b } },
+    /** Denetim açıldı → { kapat } ; açıkken öbür ekranlardaki küçük hap görünmez */
+    kontrolBagla() {
+      kontrolSayisi++
+      yay({ kontrolAcik: true })
+      return () => { kontrolSayisi = Math.max(0, kontrolSayisi - 1); yay({ kontrolAcik: kontrolSayisi > 0 }) }
+    },
     async baslat({ kitapId, kitapMetni, baslangic, ayetMeal, arapcaKapali }) {
       sustur()
       ayar = ayarOku()
@@ -730,6 +763,13 @@ function motorKur() {
     // Ayar değişti: hız/ses sıradaki cümleden; Arapça seçeneği kalan birimleri yeniden kurar
     ayarlariYenile(parca) {
       ayar = ayarYaz(parca)
+      // Ses düzeyi: çalan sese anında (1'e kadar), sonraki cümlelere örnek kazancıyla
+      if ("ses" in parca) {
+        const y = Math.max(0, Math.min(2, Number(ayar.ses ?? 1)))
+        try { if (sesOgesi) sesOgesi.volume = Math.max(0, Math.min(1, y / (calanKazanc || 1))) } catch { /* yoksay */ }
+        return
+      }
+      if ("devamli" in parca) return
       // Hız ya da Vukuf sesi değişti → önden hazırlanmış sesler geçersiz
       if ("hiz" in parca || "vukufSes" in parca || "motor" in parca) sentezleriSifirla()
       const calisiyor = durum.durum === "okuyor" || durum.durum === "duraklatildi"

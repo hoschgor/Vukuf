@@ -21,23 +21,22 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 import { useEffect, useRef, useState, useSyncExternalStore } from "react"
-import { SkipBack, SkipForward, Play, Pause, X, Settings2, Crosshair, Loader2, GripVertical } from "lucide-react"
+import { SkipBack, SkipForward, Play, Pause, X, Settings2, Crosshair, Loader2, GripVertical, Glasses, Gauge, RotateCcw, SlidersHorizontal, Volume1, Volume2, VolumeX, Headphones } from "lucide-react"
 import {
-  sesliOkuyucu, sesliDestekVar, ayarOku, HIZLAR, sesleriAl, turkceSesler, arapcaSesler, enIyiSes, konumOku,
+  sesliOkuyucu, sesliDestekVar, ayarOku, sesleriAl, turkceSesler, arapcaSesler, enIyiSes, konumOku,
   sesCinsiyeti, sesKilidiAc, kariSec, KARILAR,
 } from "../data/sesliOkuma"
 
 // Vukuf sesi (Piper) yardımcıları yalnız ayarlar açılınca / indirirken yüklenir
 const vukufSesYukle = () => import("../data/vukufSes")
-// Fahrettin 16, Fettah 17 Ekim 2026'da çıkarıldı. Her ses ayrı indirilir (grup).
-// 17 Ekim 2026: Antalia varsayılan; DFKI ve MMS yedek (MMS tek ses için düşük gürültüyle)
+// Fahrettin 16, Fettah ve DFKI 17 Ekim 2026'da çıkarıldı. Her ses ayrı indirilir (grup).
+// 17 Ekim 2026: Antalia varsayılan; MMS yedek (tek ses için düşük gürültüyle; geliştirilecek)
 // Antalia (Antalia-2 Mini) 16 Ekim 2026'da eklendi ve varsayılan oldu (kullanıcı: "Piper'dan daha iyi")
 const VUKUF_SES_LISTESI = [
   { id: "antalia", ad: "Antalia", grup: "antalia" },
-  { id: "dfki", ad: "DFKI", grup: "dfki" },
   { id: "mms", ad: "MMS", grup: "mms" },          // 17 Ekim 2026 (Fettah çıkarıldı)
 ]
-const VUKUF_GRUPLARI = ["antalia", "dfki", "mms", "ar"]
+const VUKUF_GRUPLARI = ["antalia", "mms", "ar"]
 const VUKUF_TOPLAM_MB = 95
 const VUKUF_ARAPCA_MB = 63            // Kerîm modeli
 const VUKUF_MOTOR_MB = 30             // ses motoru + fonemleyici (Türkçe sesler inmişse zaten var)
@@ -78,7 +77,7 @@ function cumleAraligi(kok, aranan, baslangic = 0) {
   try {
     const r = document.createRange()
     r.setStart(bn, bo); r.setEnd(sn, so + 1)
-    return { r, son: i + hedef.length }
+    return { r, son: i + hedef.length, bas: i }
   } catch { return null }
 }
 
@@ -123,25 +122,50 @@ function dokunulanYer(x, y, hedef) {
 
 export default function SesliOkumaKontrol({
   acik, kapat, theme, isMobile, olcek = 1, kitapId, kitapMetni,
-  baslangicAl, scrollEl, onSayfayaGit, altPay = 16,
+  baslangicAl, scrollEl, onSayfayaGit, altPay = 16, kitapAdi = "",
   arapcaKapali = false,      // Evrad ve Ezkâr: Arapça yapay sesle okunmaz (16 Ekim 2026, kullanıcı)
 }) {
   const d = useSesliDurum()
   const [ayar, setAyar] = useState(() => ayarOku())
   const [ayarAcik, setAyarAcik] = useState(false)
   const [sesler, setSesler] = useState({ tr: [], ar: [] })
-  const elleRef = useRef(0)
+  /* TAKİP (17 Ekim 2026, kullanıcı: "farklı bir sayfadayken yer seçme düğmesine basınca sayfa
+     okunan yere geçiyor, geçmemeli"; "takip sayfayı odaklamıyor, altına geçiyor"; "gözlük
+     düğmesiyle, farklı sayfadaysak okumayı hizalayabilmeliyiz").
+     Elle kaydırınca takip ASKIYA alınır (eskiden 5 sn sonra kendiliğinden geri dönüyordu).
+     Okunan yer yeniden görünür alana girerse ya da 👓 düğmesine basılırsa takip sürer.
+     Kaydırma hedefi artık okunan CÜMLE (uzun paragrafta paragrafın başı değil). */
+  const ayrildiRef = useRef(false)
+  const [ayrildi, setAyrildi] = useState(false)
+  const ayrilmaYaz = (v) => { ayrildiRef.current = v; setAyrildi(v) }
+  const secimRef = useRef(false)
+  const hedefRef = useRef(null)                            // () => okunan cümlenin/satırın dikdörtgeni
+  const sonBirimRef = useRef({ birim: null, bas: 0 })     // aynı birim yeniden çizilirse aynı yerden ara
+  const [tazele, setTazele] = useState(0)                  // 👓 sonrası vurguyu/takibi yeniden uygula
   const isaretliRef = useRef([])
   const cumleKonumRef = useRef({ satirAnahtar: "", son: 0 })
   const [secim, setSecim] = useState(false)                 // ⌖ açık: okunacak kelime bekleniyor
   const ac = theme.accent
   const px = (v) => `${Math.round(v * olcek)}px`
 
-  // Açılınca başla; kapanınca dur
+  /* Açılınca başla; kapanınca dur.
+     DEVAMLI OKUMA (17 Ekim 2026): ayar açıksa okuma ekranından ÇIKINCA okuma sürer (öbür
+     ekranlarda SesliMiniHap). ✕ ile kapatınca her hâlükârda durur. Aynı kitaba dönülüp denetim
+     açılınca baştan başlamaz, süren okumaya bağlanır. */
+  const kapatmaRef = useRef(false)
+  const kapatVeDurdur = () => { kapatmaRef.current = true; kapat() }
   useEffect(() => {
     if (!acik) return
-    if (!sesliDestekVar()) return
+    kapatmaRef.current = false
+    const coz = sesliOkuyucu.kontrolBagla()
+    sesliOkuyucu.bilgiYaz({ kitapId, kitapAdi })
+    const d0 = sesliOkuyucu.durum()
+    const sururken = ["okuyor", "duraklatildi", "hazirlaniyor"].includes(d0.durum) && sesliOkuyucu.kitap() === kitapId
     let iptal = false
+    if (!sesliDestekVar() || sururken) {
+      if (sururken) sesleriAl().then(v => { if (!iptal) setSesler({ tr: turkceSesler(v), ar: arapcaSesler(v) }) })
+      return () => { iptal = true; coz(); if (kapatmaRef.current || !ayarOku().devamli) sesliOkuyucu.durdur() }
+    }
     ;(async () => {
       const meal = (await import("../data/ayet-meal.json")).default
       if (iptal) return
@@ -152,15 +176,19 @@ export default function SesliOkumaKontrol({
       sesliOkuyucu.baslat({ kitapId, kitapMetni, baslangic: bas, ayetMeal: meal, arapcaKapali })
     })()
     sesleriAl().then(v => { if (!iptal) setSesler({ tr: turkceSesler(v), ar: arapcaSesler(v) }) })
-    return () => { iptal = true; sesliOkuyucu.durdur() }
+    return () => {
+      iptal = true; coz()
+      // ✕ ile kapatıldıysa ya da devamlı okuma kapalıysa dur; değilse (ekrandan çıkış) sürsün
+      if (kapatmaRef.current || !ayarOku().devamli) sesliOkuyucu.durdur()
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [acik, kitapId])
 
-  // Elle kaydırma: takip 5 sn araya girmesin
+  // Elle kaydırma: takip askıya (bkz. yukarı)
   useEffect(() => {
     const el = scrollEl?.()
     if (!acik || !el) return
-    const elle = () => { elleRef.current = Date.now() }
+    const elle = () => { if (!ayrildiRef.current) ayrilmaYaz(true) }
     el.addEventListener("wheel", elle, { passive: true })
     el.addEventListener("touchmove", elle, { passive: true })
     return () => { el.removeEventListener("wheel", elle); el.removeEventListener("touchmove", elle) }
@@ -181,7 +209,7 @@ export default function SesliOkumaKontrol({
       if (!yer) return
       try { window.getSelection()?.removeAllRanges() } catch { /* yoksay */ }
       sesKilidiAc()
-      elleRef.current = 0
+      ayrilmaYaz(false)                                      // seçilen yerden okunur → takip sürer
       import("../data/ayet-meal.json").then(m => sesliOkuyucu.baslat({ kitapId, kitapMetni, baslangic: yer, ayetMeal: m.default, arapcaKapali }))
     }
     const tus = (e) => { if (e.key === "Escape") setSecim(false) }
@@ -195,11 +223,15 @@ export default function SesliOkumaKontrol({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [acik, secim, kitapId, kitapMetni])
   useEffect(() => { if (!acik) setSecim(false) }, [acik])
+  useEffect(() => { secimRef.current = secim }, [secim])
 
   // Vurgu + takip
   useEffect(() => {
     const temizle = () => {
-      isaretliRef.current.forEach(el => el.classList.remove("sesli-satir"))
+      // "Okunup geçilen kısımlar kısmen işaretli kalabiliyor" (17 Ekim 2026): React bazen satır
+      // öğesini başka bir satır için yeniden kullanıyor → eski sınıf orada kalıyordu. Artık
+      // belgede bu sınıfı taşıyan HER öğe temizleniyor.
+      document.querySelectorAll(".sesli-satir").forEach(el => el.classList.remove("sesli-satir"))
       isaretliRef.current = []
       try { if (window.CSS && window.CSS.highlights) window.CSS.highlights.delete(HIGHLIGHT_AD) } catch { /* yoksay */ }
     }
@@ -211,8 +243,8 @@ export default function SesliOkumaKontrol({
       const nolar = b.satirlar && b.satirlar.length ? b.satirlar : [b.satir]
       const els = nolar.map(s => document.querySelector(`[data-satir="${b.sayfa}-${s}"]`)).filter(Boolean)
       if (!els.length) {
-        // Sayfa henüz çizilmedi → oraya git, sonra yeniden dene
-        if (deneme === 0 && ayar.takip) onSayfayaGit?.(b.sayfa, b.satir)
+        // Sayfa henüz çizilmedi → (takip sürüyorsa) oraya git, sonra yeniden dene
+        if (deneme === 0 && ayar.takip && !ayrildiRef.current && !secimRef.current) onSayfayaGit?.(b.sayfa, b.satir)
         if (deneme++ < 20) zaman = setTimeout(uygula, 150)
         return
       }
@@ -221,33 +253,101 @@ export default function SesliOkumaKontrol({
       // Cümle vurgusu (Custom Highlight API varsa)
       const anahtar = `${b.sayfa}-${b.satir}`
       if (cumleKonumRef.current.satirAnahtar !== anahtar) cumleKonumRef.current = { satirAnahtar: anahtar, son: 0 }
-      if (b.goster && window.CSS && window.CSS.highlights && typeof window.Highlight === "function") {
-        const bul = cumleAraligi(els[0], b.goster, cumleKonumRef.current.son)
+      let aralik = null
+      if (b.goster) {
+        const ayniBirim = sonBirimRef.current.birim === b
+        const bul = cumleAraligi(els[0], b.goster, ayniBirim ? sonBirimRef.current.bas : cumleKonumRef.current.son)
         if (bul) {
           cumleKonumRef.current.son = bul.son
-          try { window.CSS.highlights.set(HIGHLIGHT_AD, new window.Highlight(bul.r)) } catch { /* yoksay */ }
+          sonBirimRef.current = { birim: b, bas: bul.bas }
+          aralik = bul.r
+          if (window.CSS && window.CSS.highlights && typeof window.Highlight === "function") {
+            try { window.CSS.highlights.set(HIGHLIGHT_AD, new window.Highlight(bul.r)) } catch { /* yoksay */ }
+          }
         }
       }
-      // Takip: görünür alanın dışındaysa yumuşakça kaydır
+      // Hedef: okunan cümle (bulunduysa), değilse satır(lar)
+      hedefRef.current = () => {
+        try {
+          if (aralik) { const r = aralik.getBoundingClientRect(); if (r.height > 0) return r }
+        } catch { /* yoksay */ }
+        return els[0].isConnected ? els[0].getBoundingClientRect() : null
+      }
+      // Takip: askıda değilse ve cümle görünür bandın dışındaysa yumuşakça kaydır
       const kap = scrollEl?.()
-      if (ayar.takip && kap && Date.now() - elleRef.current > 5000) {
-        const kr = kap.getBoundingClientRect(), er = els[0].getBoundingClientRect()
-        const ust = kr.top + kr.height * 0.12, alt = kr.top + kr.height * 0.72
-        if (er.top < ust || er.top > alt) {
-          kap.scrollBy({ top: er.top - (kr.top + kr.height * 0.3), behavior: "smooth" })
+      if (ayar.takip && kap && !secimRef.current) {
+        const kr = kap.getBoundingClientRect(), er = hedefRef.current()
+        if (er) {
+          const gorunur = er.bottom > kr.top + 8 && er.top < kr.bottom - 8
+          if (ayrildiRef.current && gorunur) ayrilmaYaz(false)      // okuyucu okunan yere döndü
+          if (!ayrildiRef.current) {
+            const ust = kr.top + kr.height * 0.12, alt = kr.top + kr.height * 0.68
+            if (er.top < ust || er.bottom > alt) {
+              kap.scrollBy({ top: er.top - (kr.top + kr.height * 0.3), behavior: "smooth" })
+            }
+          }
         }
       }
     }
     uygula()
     return () => clearTimeout(zaman)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [acik, d.birim])
+  }, [acik, d.birim, tazele])
 
   // Bitti → kısa süre sonra kendiliğinden kapanmaz; düğme "baştan değil, kaldığı yerden" yeniden başlatır
   const ayarDegis = (parca) => { setAyar(a => ({ ...a, ...parca })); sesliOkuyucu.ayarlariYenile(parca) }
 
-  // VUKUF SESİ: indirilmiş mi, indirme ilerlemesi — gruplar: "antalia" · "dfki" · "mms" · "ar" (Kerîm)
-  const [vukufHazir, setVukufHazir] = useState({ antalia: null, dfki: null, mms: null, ar: null })   // null: bilinmiyor
+  // 👓 OKUNAN YERE HİZALA: takip yeniden başlar; sayfa çizili değilse önce oraya gidilir
+  const hizala = () => {
+    ayrilmaYaz(false)
+    const b = d.birim
+    const kap = scrollEl?.()
+    if (!b || !kap) return
+    const kaydir = () => {
+      const er = hedefRef.current?.()
+      if (!er) return false
+      const kr = kap.getBoundingClientRect()
+      kap.scrollBy({ top: er.top - (kr.top + kr.height * 0.3), behavior: "smooth" })
+      return true
+    }
+    const satirVar = document.querySelector(`[data-satir="${b.sayfa}-${b.satir}"]`)
+    if (satirVar && kaydir()) return
+    // Sayfa çizili değil: oraya git, sonra vurguyu yeniden uygula (takip açık → cümleye hizalanır)
+    onSayfayaGit?.(b.sayfa, b.satir)
+    setTimeout(() => setTazele(t => t + 1), 350)
+  }
+
+  /* HIZ (17 Ekim 2026, kullanıcı: "PlayerBar'daki hızlandırma düğmesi mantığında"): düğme küçük
+     bir kutu açar — kaydırıcı (0,5–2×), değer, 1×'e dönüş. Varsayılandan farklıysa düğmede
+     küçük rozet. Kaydırırken her adımda değil, bırakınca/kısa beklemeden sonra uygulanır
+     (her uygulama okunan cümleyi yeniden hazırlıyor). */
+  const [hizAcik, setHizAcik] = useState(false)
+  const [hizDeger, setHizDeger] = useState(() => Number(ayarOku().hiz) || 1)
+  const hizZamanRef = useRef(0)
+  useEffect(() => { setHizDeger(Number(ayar.hiz) || 1) }, [ayar.hiz])
+  const hizDegis = (v, hemen) => {
+    const y = Math.round(Math.max(0.5, Math.min(2, v)) * 20) / 20
+    setHizDeger(y)
+    clearTimeout(hizZamanRef.current)
+    hizZamanRef.current = setTimeout(() => { if (y !== Number(ayar.hiz)) ayarDegis({ hiz: y }) }, hemen ? 0 : 350)
+  }
+  const hizYaz = (v) => `${String(v).replace(".", ",")}×`
+  // SES DÜZEYİ (0–200 %): kaydırıcı yerel, uygulama kısa gecikmeyle; simgeye dokunmak sessize alır/geri açar
+  const [sesDeger, setSesDeger] = useState(() => Number(ayarOku().ses ?? 1))
+  const sesZamanRef = useRef(0)
+  const oncekiSesRef = useRef(1)
+  useEffect(() => { setSesDeger(Number(ayar.ses ?? 1)) }, [ayar.ses])
+  useEffect(() => { if (sesDeger > 0) oncekiSesRef.current = sesDeger }, [sesDeger])
+  const sesDegis = (v, hemen) => {
+    const y = Math.round(Math.max(0, Math.min(2, v)) * 20) / 20
+    setSesDeger(y)
+    clearTimeout(sesZamanRef.current)
+    sesZamanRef.current = setTimeout(() => { if (y !== Number(ayar.ses ?? 1)) ayarDegis({ ses: y }) }, hemen ? 0 : 150)
+  }
+  const SesIkon = sesDeger === 0 ? VolumeX : sesDeger < 0.5 ? Volume1 : Volume2
+
+  // VUKUF SESİ: indirilmiş mi, indirme ilerlemesi — gruplar: "antalia" · "mms" · "ar" (Kerîm)
+  const [vukufHazir, setVukufHazir] = useState({ antalia: null, mms: null, ar: null })   // null: bilinmiyor
   const [indirme, setIndirme] = useState(null)              // { grup, oran, ad } | { grup, hata, ayrinti }
   const [eksik, setEksik] = useState({})                    // grup → eksik MB (motor zaten inmişse yalnız ses modeli)
   const indirmeIptalRef = useRef(null)
@@ -265,7 +365,7 @@ export default function SesliOkumaKontrol({
         return v
       })
       .then(v => { if (!iptal) setVukufHazir(v) })
-      .catch(() => { if (!iptal) setVukufHazir({ antalia: false, dfki: false, mms: false, ar: false }) })
+      .catch(() => { if (!iptal) setVukufHazir({ antalia: false, mms: false, ar: false }) })
     return () => { iptal = true }
   }, [acik])
   // Vukuf sesi yokken açılırsa ayarlar kendiliğinden açılsın (indirme orada)
@@ -303,7 +403,7 @@ export default function SesliOkumaKontrol({
       const kalan = VUKUF_SES_LISTESI.find(v => v.grup !== grup && vukufHazir[v.grup])
       if (VUKUF_SES_LISTESI.find(v => v.id === ayar.vukufSes)?.grup === grup) ayarDegis({ vukufSes: (kalan || VUKUF_SES_LISTESI[0]).id })
     }
-    else { setVukufHazir({ antalia: false, dfki: false, mms: false, ar: false }); if (ayar.motor === "vukuf") ayarDegis({ motor: "cihaz" }) }
+    else { setVukufHazir({ antalia: false, mms: false, ar: false }); if (ayar.motor === "vukuf") ayarDegis({ motor: "cihaz" }) }
     try { const e = {}; for (const g of VUKUF_GRUPLARI) e[g] = await m.eksikMb(g); setEksik(e) } catch { /* yoksay */ }
   }
   /* HIZ TESTİ (16 Ekim 2026, iPhone'da cümle başına ~30 sn): nerede beklendiğini ölçer —
@@ -427,16 +527,16 @@ export default function SesliOkumaKontrol({
   /* ── DIŞARI DOKUNUNCA AYARLAR KAPANIR (16 Ekim 2026, kullanıcı) ─────────────
      O dokunuş başka bir işe (sözlük, bar) gitmez — yalnız menüyü kapatır. */
   useEffect(() => {
-    if (!acik || !ayarAcik) return
+    if (!acik || (!ayarAcik && !hizAcik)) return
     const bas = (e) => {
       if (bolgeRef.current && !bolgeRef.current.contains(e.target)) {
-        setAyarAcik(false)
+        setAyarAcik(false); setHizAcik(false)
         yutRef.current = Date.now() + 700
       }
     }
     document.addEventListener("pointerdown", bas, true)
     return () => document.removeEventListener("pointerdown", bas, true)
-  }, [acik, ayarAcik])
+  }, [acik, ayarAcik, hizAcik])
   useEffect(() => {
     if (!acik) return
     const tik = (e) => {
@@ -644,7 +744,7 @@ export default function SesliOkumaKontrol({
                   {cip(kerimSecili, "Kerîm", () => ayarDegis({ arSes: "kerim" }))}
                   {cip(!kerimSecili, "Cihaz sesi", () => ayarDegis({ arSes: "cihaz" }), !sesler.ar.length)}
                 </div>
-                {kerimSecili && indirmeAlani("ar", `Kerîm sesi bir kez indirilir (yaklaşık ${eksik.ar || (vukufHazir.mms || vukufHazir.dfki || vukufHazir.antalia ? VUKUF_ARAPCA_MB : VUKUF_ARAPCA_MB + VUKUF_MOTOR_MB)} MB). Harekeli metinleri daha doğru okur.`)}
+                {kerimSecili && indirmeAlani("ar", `Kerîm sesi bir kez indirilir (yaklaşık ${eksik.ar || (vukufHazir.mms || vukufHazir.antalia ? VUKUF_ARAPCA_MB : VUKUF_ARAPCA_MB + VUKUF_MOTOR_MB)} MB). Harekeli metinleri daha doğru okur.`)}
                 {kerimSecili && vukufHazir.ar && (
                   <div style={{ marginTop: "8px", fontSize: "11px", color: theme.textSecondary, display: "flex", gap: "8px", alignItems: "center" }}>
                     <span style={{ flex: 1 }}>Kerîm cihazda.</span>
@@ -657,6 +757,68 @@ export default function SesliOkumaKontrol({
             <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginTop: "12px" }}>
               {cip(ayar.isaret, ayar.isaret ? "İşaret sesi açık" : "İşaret sesi kapalı", () => ayarDegis({ isaret: !ayar.isaret }))}
               {cip(ayar.takip, ayar.takip ? "Okunan yeri takip et" : "Takip kapalı", () => ayarDegis({ takip: !ayar.takip }))}
+            </div>
+          </div>
+        )}
+
+        {hizAcik && destek && (
+          <div style={{
+            pointerEvents: "auto", width: "min(270px, calc(100vw - 20px))", background: theme.surface,
+            border: `1px solid ${ac}33`, borderRadius: "14px", padding: "6px 10px",
+            boxShadow: "0 6px 22px rgba(0,0,0,0.2)", display: "flex", flexDirection: "column", gap: "2px", color: theme.text,
+          }}>
+            {/* SES — simge sessize alır / eski düzeye döndürür; 100 %'ün üstü Vukuf sesini yükseltir */}
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", padding: "4px 0" }}>
+              <button onClick={() => sesDegis(sesDeger === 0 ? (oncekiSesRef.current || 1) : 0, true)}
+                title={sesDeger === 0 ? "Sesi aç" : "Sessize al"} aria-label={sesDeger === 0 ? "Sesi aç" : "Sessize al"}
+                style={{ border: "none", background: "none", padding: 0, cursor: "pointer", display: "flex", color: sesDeger === 0 ? "#c0392b" : ac, flexShrink: 0 }}>
+                <SesIkon size={16} />
+              </button>
+              <input type="range" min={0} max={2} step={0.05} value={sesDeger}
+                aria-label="Ses düzeyi"
+                onChange={e => sesDegis(parseFloat(e.target.value))}
+                onPointerUp={e => sesDegis(parseFloat(e.currentTarget.value), true)}
+                style={{ flex: 1, minWidth: 0, accentColor: ac, cursor: "pointer" }} />
+              <span style={{ minWidth: "40px", textAlign: "right", fontSize: "12px", fontWeight: 700, fontVariantNumeric: "tabular-nums", color: sesDeger > 1 ? ac : theme.text }}>%{Math.round(sesDeger * 100)}</span>
+              <button onClick={() => sesDegis(1, true)} title="%100'e getir" aria-label="%100'e getir"
+                style={{ border: "none", background: "none", padding: "4px", cursor: "pointer", color: theme.textSecondary, display: "flex" }}>
+                <RotateCcw size={13} />
+              </button>
+            </div>
+            <div style={{ height: "1px", background: theme.border, opacity: 0.6 }} />
+            {/* HIZ */}
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", padding: "4px 0" }}>
+              <Gauge size={16} color={ac} style={{ flexShrink: 0 }} />
+              <input type="range" min={0.5} max={2} step={0.05} value={hizDeger}
+                aria-label="Okuma hızı"
+                onChange={e => hizDegis(parseFloat(e.target.value))}
+                onPointerUp={e => hizDegis(parseFloat(e.currentTarget.value), true)}
+                style={{ flex: 1, minWidth: 0, accentColor: ac, cursor: "pointer" }} />
+              <span style={{ minWidth: "40px", textAlign: "right", fontSize: "12px", fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>{hizYaz(hizDeger)}</span>
+              <button onClick={() => hizDegis(1, true)} title="1×'e getir" aria-label="1×'e getir"
+                style={{ border: "none", background: "none", padding: "4px", cursor: "pointer", color: theme.textSecondary, display: "flex" }}>
+                <RotateCcw size={13} />
+              </button>
+            </div>
+            <div style={{ height: "1px", background: theme.border, opacity: 0.6 }} />
+            {/* DEVAMLI OKUMA — satırın tamamı dokunulabilir */}
+            <div role="switch" aria-checked={!!ayar.devamli} onClick={() => ayarDegis({ devamli: !ayar.devamli })}
+              title="Okuma ekranından çıkınca da okumaya devam etsin (öbür ekranlarda küçük denetim görünür)"
+              style={{ display: "flex", alignItems: "center", gap: "8px", padding: "5px 0", cursor: "pointer" }}>
+              <Headphones size={16} color={ayar.devamli ? ac : theme.textSecondary} style={{ flexShrink: 0 }} />
+              <span style={{ flex: 1, minWidth: 0, fontSize: "12px", lineHeight: 1.25 }}>
+                Devamlı okuma
+                <span style={{ display: "block", fontSize: "10px", color: theme.textSecondary }}>Ekrandan çıkınca da okusun</span>
+              </span>
+              <span aria-hidden="true" style={{
+                width: "30px", height: "18px", borderRadius: "999px", flexShrink: 0, position: "relative",
+                background: ayar.devamli ? ac : `${theme.textSecondary}44`, transition: "background .15s ease",
+              }}>
+                <span style={{
+                  position: "absolute", top: "2px", left: ayar.devamli ? "14px" : "2px", width: "14px", height: "14px",
+                  borderRadius: "50%", background: "#fff", transition: "left .15s ease", boxShadow: "0 1px 2px rgba(0,0,0,0.25)",
+                }} />
+              </span>
             </div>
           </div>
         )}
@@ -697,18 +859,31 @@ export default function SesliOkumaKontrol({
               okuyor ? "Duraklat" : "Oku", true)}
             {dugme(<SkipForward size={Math.round(17 * olcek)} />, () => sesliOkuyucu.ileri(), "Sonraki cümle")}
             <button
-              onClick={() => { const i = HIZLAR.indexOf(Number(ayar.hiz)); const y = HIZLAR[(i + 1) % HIZLAR.length]; ayarDegis({ hiz: y }) }}
-              title="Okuma hızı" aria-label="Okuma hızı"
+              onClick={() => { setAyarAcik(false); setSecim(false); setHizAcik(v => !v) }}
+              title={`Ses %${Math.round(Number(ayar.ses ?? 1) * 100)} · Hız ${hizYaz(Number(ayar.hiz) || 1)}${ayar.devamli ? " · Devamlı okuma" : ""}`}
+              aria-label="Ses, hız ve devamlı okuma" aria-expanded={hizAcik}
               style={{
-                minWidth: px(40), height: px(30), borderRadius: "999px", border: `1px solid ${theme.border}`, cursor: "pointer",
-                background: "transparent", color: theme.text, fontFamily: "inherit", fontSize: px(12), fontWeight: 700, margin: `0 ${px(2)}`,
-              }}>{String(ayar.hiz).replace(".", ",")}×</button>
+                width: px(36), height: px(36), borderRadius: "999px", border: "none", cursor: "pointer", flexShrink: 0, position: "relative",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                background: hizAcik ? `${ac}33` : (Number(ayar.hiz) !== 1 || Number(ayar.ses ?? 1) !== 1) ? `${ac}1f` : "transparent",
+                color: Number(ayar.ses ?? 1) === 0 ? "#c0392b" : (hizAcik || Number(ayar.hiz) !== 1 || Number(ayar.ses ?? 1) !== 1) ? ac : theme.text,
+              }}>
+              <SlidersHorizontal size={Math.round(16 * olcek)} />
+              {Number(ayar.hiz) !== 1 && (
+                <span style={{
+                  position: "absolute", top: "-2px", right: "-4px", fontSize: px(8.5), fontWeight: 700, lineHeight: 1,
+                  padding: "1px 3px", borderRadius: "6px", background: ac, color: "#fff",
+                }}>{hizYaz(Number(ayar.hiz))}</span>
+              )}
+            </button>
             {dugme(<Crosshair size={Math.round(16 * olcek)} />, () => {
-              sesKilidiAc(); setAyarAcik(false); setSecim(v => !v)
+              sesKilidiAc(); setAyarAcik(false); setHizAcik(false); setSecim(v => !v)
             }, secim ? "Cümle seçimini kapat" : "Okunacak cümleyi seç", secim)}
-            {dugme(<Settings2 size={Math.round(16 * olcek)} />, () => { setSecim(false); setAyarAcik(v => !v) }, "Sesli okuma ayarları", ayarAcik)}
+            {dugme(<Glasses size={Math.round(16 * olcek)} />, hizala,
+              ayrildi ? "Okunan yere dön (takip askıda)" : "Okunan yere hizala", ayrildi && (okuyor || hazirlaniyor))}
+            {dugme(<Settings2 size={Math.round(16 * olcek)} />, () => { setSecim(false); setHizAcik(false); setAyarAcik(v => !v) }, "Sesli okuma ayarları", ayarAcik)}
           </>}
-          {dugme(<X size={Math.round(17 * olcek)} />, kapat, "Sesli okumayı kapat")}
+          {dugme(<X size={Math.round(17 * olcek)} />, kapatVeDurdur, "Sesli okumayı kapat")}
         </div>
       </div>
     </>

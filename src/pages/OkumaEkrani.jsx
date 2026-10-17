@@ -8,7 +8,7 @@ import { esnekBul, esnekHazirla } from "../data/esnekArama"
 import SiraSecici from "../components/SiraSecici"
 import SesliOkumaKontrol from "../components/SesliOkumaKontrol"
 import LugatArama from "../components/LugatArama"
-import { sesKilidiAc } from "../data/sesliOkuma"
+import { sesKilidiAc, sesliOkuyucu } from "../data/sesliOkuma"
 import { ICINDEKILER_SIRALARI, ICINDEKILER_SIRA_ANAHTAR, agaciSirala, agaciDizinle, siraOku, siraYaz } from "../data/sureSirasi"
 import lugatVerisi from "../data/lugat.json"
 /* ── risale-lugat.json IMPORT'U KALDIRILDI (24 Eylül 2026) ──────────────────
@@ -208,12 +208,50 @@ const STOPKELIMELER = new Set([
   "ki,", "de,", "da,",
 ])
 function kelimeAra(kelime) {
-  const temiz = kelime.toLowerCase().replace(/[.,!?;:'"()\[\]]/g, "").trim()
+  // "İ" → "i" (toLowerCase "i̇" veriyordu; "İnsan" gibi büyük harfle başlayanlar eşleşmiyordu)
+  const temiz = kelime.replace(/İ/g, "i").toLowerCase().replace(/[.,!?;:'"()\[\]]/g, "").trim()
   if (!temiz || STOPKELIMELER.has(temiz)) return null
   return lugatVerisi[temiz] || null
 }
+/* EKLİ KELİME → KÖK (17 Ekim 2026, kullanıcı: "kelimelerin içinde lügat eşleşmesi olanların
+   tamamını yakalamıyor; kelime içinde işaretleyip kelimenin tamamını ayırmadan göstermeli").
+   Tam eşleşme yoksa kelimenin sonundan harf harf kırpılıp lügatta bulunan EN UZUN baş kısım
+   aranır ("hakikatlerin" → hakikat, "Mün'im-i" → mün'im, "Hakikîyi" → hakikî). Yanlış eşleşmeyi
+   azaltmak için kök en az 4 harf ve (5+ harf ya da kelimenin en az yarısı) olmalı.
+   Dönen { kok, anlam, kavram, son } — `son`: ORİJİNAL yazımda kökün bittiği konum (noktalama,
+   kesme ve büyük harf korunarak); ekranda kelime bölünmeden yalnız o kısım lügat renginde. */
+const KOK_ONBELLEK = new Map()
+const KOK_ATILAN = /[.,!?;:'"()\[\]]/
+function kokBul(kelime) {
+  if (!kelime) return null
+  if (KOK_ONBELLEK.has(kelime)) return KOK_ONBELLEK.get(kelime)
+  // kelimeAra ile AYNI temizlik, ama her temiz karakterin orijinaldeki yeri tutuluyor
+  let temiz = "", yer = []
+  for (let i = 0; i < kelime.length; i++) {
+    const c = kelime[i]
+    if (KOK_ATILAN.test(c)) continue
+    const k = c === "İ" ? "i" : c.toLowerCase()          // "İ".toLowerCase() = "i̇" (iki karakter) olmasın
+    for (let j = 0; j < k.length; j++) { temiz += k[j]; yer.push(i) }
+  }
+  let sonuc = null
+  const T = temiz.trim()
+  if (T.length >= 5 && !STOPKELIMELER.has(T)) {
+    for (let n = T.length - 1; n >= 4; n--) {
+      const kok = T.slice(0, n)
+      if (kok.endsWith("-") || kok.endsWith(" ")) continue
+      const a = lugatVerisi[kok] || null, k = kavramlarVerisi[kok] || null
+      if (a || k) {
+        if (n >= 5 || n / T.length >= 0.5) sonuc = { kok, anlam: a, kavram: k, son: yer[n - 1] + 1 }
+        break
+      }
+    }
+  }
+  if (KOK_ONBELLEK.size > 20000) KOK_ONBELLEK.clear()
+  KOK_ONBELLEK.set(kelime, sonuc)
+  return sonuc
+}
 function kavramAra(kelime) {
-  const temiz = kelime.toLowerCase().replace(/[.,!?;:'"()\[\]]/g, "").trim()
+  const temiz = kelime.replace(/İ/g, "i").toLowerCase().replace(/[.,!?;:'"()\[\]]/g, "").trim()
   if (!temiz || STOPKELIMELER.has(temiz)) return null
   return kavramlarVerisi[temiz] || null
 }
@@ -692,6 +730,9 @@ function MetinParcasi({
                 if (!anlam) anlam = secenekler[0].anlam
                 if (!kavram) kavram = secenekler[0].kavram
               }
+              // Tam eşleşme yoksa EKLİ kelimede kökü ara (kelime bölünmeden, yalnız kök renkli)
+              const kok = (!anlam && !kavram && !secenekler && lugatAktif && !arapKelime && !hasHasiye) ? kokBul(temiz) : null
+              if (kok) { anlam = kok.anlam; kavram = kok.kavram }
               const lugatliMi = (anlam || kavram || secenekler) && lugatAktif
               const vurgulu  = vurgulananMi(si, ki)
               const lgKey = (bil && bil.rol === "tam") ? `${sayfaNo}-${si}-c-${bil.grup}` : `${sayfaNo}-${si}-w-${ki}`
@@ -707,12 +748,13 @@ function MetinParcasi({
                     // Birleşikte pop-up başlığı = EŞLEŞEN kısım (secenekler[0].kelime), tüm kelime değil
                     if (secenekler && secenekler.length > 1) onKelimeTikla(secenekler[0].kelime, secenekler[0].anlam, secenekler[0].kavram, e, secenekler)
                     else if (secenekler) onKelimeTikla(secenekler[0].kelime, secenekler[0].anlam, secenekler[0].kavram, e)
+                    else if (kok) onKelimeTikla(temiz.slice(0, kok.son), anlam, kavram, e)
                     else onKelimeTikla(temiz, anlam, kavram, e)
                   } }}
                   style={{
                     ...(vurgulu ? { background: vurgulu.renk } : basiliZemin(lgKey)),
                     borderRadius: vurgulu ? "2px" : "0",
-                    color: arapKelime ? arapRenk : (lugatliMi ? lugatRenk : "inherit"),
+                    color: arapKelime ? arapRenk : (lugatliMi && !kok ? lugatRenk : "inherit"),
                     borderBottom: "none",
                     cursor: vurguModu ? "text" : (lugatliMi ? "pointer" : "default"),
                     padding: vurgulu ? "0 1px" : "0",
@@ -721,7 +763,9 @@ function MetinParcasi({
                   }}
                 >
                   {/* Boşluğu vurgulanan kelimenin içine al ki ardışık vurgular birleşsin */}
-                  {temiz}{hasHasiye ? "" : bosluk}
+                  {kok
+                    ? <><span style={{ color: lugatRenk }}>{temiz.slice(0, kok.son)}</span>{temiz.slice(kok.son)}</>
+                    : temiz}{hasHasiye ? "" : bosluk}
                 </span>
                 {hasiyeEk}{hasHasiye ? bosluk : ""}
               </span>
@@ -1151,7 +1195,16 @@ const maxSayfaGuncelle = (n) => { if (n > maxSayfaRef.current) { maxSayfaRef.cur
 const otomatikRef = useRef(null)
 const [otomatikKaydirma, setOtomatikKaydirma] = useState(false)
 // SESLİ OKUMA (15 Ekim 2026) — Web Speech API; denetim: components/SesliOkumaKontrol.jsx
-const [sesliAcik, setSesliAcik] = useState(false)
+// "Devamlı okuma" ile süren okuma bu kitabınsa denetim açık gelir ve okumaya bağlanır (17 Ekim 2026)
+const [sesliAcik, setSesliAcik] = useState(() => {
+  try { const d = sesliOkuyucu.durum(); return d.durum !== "kapali" && sesliOkuyucu.kitap() === id } catch { return false }
+})
+// Küçük haptaki "okumaya dön" aynı kitaptayken (yol değişmeden) denetimi yeniden açar
+useEffect(() => {
+  const ac = (e) => { if (!e.detail || e.detail.kitapId === id) setSesliAcik(true) }
+  window.addEventListener("vukuf-sesli-ac", ac)
+  return () => window.removeEventListener("vukuf-sesli-ac", ac)
+}, [id])
 // LÜGAT ARAMASI (17 Ekim 2026, kullanıcı: "bir buton ekleyip lügat araması yaptıralım; göz yormayan
 // şekilde sonuçları göstersin, kolayca çıkılabilsin") — components/LugatArama.jsx
 const [lugatAramaAcik, setLugatAramaAcik] = useState(false)
@@ -4065,7 +4118,7 @@ return (
     <SesliOkumaKontrol
       acik={sesliAcik} kapat={() => setSesliAcik(false)}
       theme={theme} isMobile={isMobile} olcek={barUiOlcegi}
-      kitapId={id} kitapMetni={kitapMetni}
+      kitapId={id} kitapMetni={kitapMetni} kitapAdi={(kitap && kitap.baslik) || ""}
       arapcaKapali={evradKitabiMi}
       baslangicAl={() => {
         const u = ustSatirYakala()

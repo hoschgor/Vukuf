@@ -54,7 +54,9 @@
 
    DÜZELTME (17 Ekim 2026, kullanıcı): beğenilmeyen ses DFKI değil MMS'ti — "içinde birden fazla
    ses var, bir cümleyi biri, diğerini başkası okuyor; ilk okuyan sürekli okusa güzel olur".
-   DFKI geri alındı (yedek). MMS kalıyor ama SES TUTARLILIĞI için gürültü düşük (MMS_AYAR):
+   (DFKI bir süre geri alındı; 17 Ekim 2026 akşamı kullanıcı: "DFKI'yi kaldıralım, daha sonra MMS
+   için geliştirme yapacağız" → DFKI KESİN çıkarıldı, dosyaları ESKI_PARCALAR ile silinir.)
+   MMS kalıyor ama SES TUTARLILIĞI için gürültü düşük (MMS_AYAR):
    VITS her cümlede ses rengini öncül dağılımdan RASTGELE örnekliyor (noise_scale); MMS'in
    Türkçe verisinde birden çok okuyucu olduğundan bu, cümleden cümleye farklı kişi gibi
    duyuluyor. noise_scale 0,667 → 0,2 ile örnek ortalamaya yaklaşır → tek ses.
@@ -85,12 +87,11 @@ export const VUKUF_SESLERI = [
   // tempo: konuşma uzunluğu çarpanı (>1 yavaşlatır). 16 Ekim 2026, kullanıcı: "Fahrettin'in
   // sesi fazla hızlı geldi; Fettah güzel." → Fettah varsayılan, Fahrettin %18 yavaş.
   { id: "antalia",   ad: "Antalia",   grup: "antalia", motor: "antalia",                                        tempo: 1 },
-  { id: "dfki",      ad: "DFKI",      grup: "dfki", yol: "tr/tr_TR/dfki/medium/tr_TR-dfki-medium",          tempo: 1 },
   { id: "mms",       ad: "MMS",       grup: "mms", motor: "mms",                                               tempo: 1 },
   { id: "kareem",    ad: "Kerîm",     grup: "ar", yol: "ar/ar_JO/kareem/medium/ar_JO-kareem-medium",       tempo: 1 },
 ]
 const sesBul = (id) => VUKUF_SESLERI.find(s => s.id === id)
-/** Bir sesin indirme grubu ("antalia" | "dfki" | "mms" | "ar") */
+/** Bir sesin indirme grubu ("antalia" | "mms" | "ar") */
 export const sesGrubu = (id) => sesBul(id)?.grup || "antalia"
 // Dışarıdan değiştirilebilir (deneme ortamı yerel sunucuyu gösterir)
 export const KAYNAK = {
@@ -115,10 +116,12 @@ export const KAYNAK = {
 // Önceki sürümlerden kalan, artık kullanılmayan parçalar (indirmeden sonra silinir)
 const ESKI_FAHRETTIN = "https://huggingface.co/rhasspy/piper-voices/resolve/6fb8245d6d27fef8988272e0c8e9f5018da1bbbf/tr/tr_TR/fahrettin/medium/tr_TR-fahrettin-medium.onnx"
 const ESKI_FETTAH = "https://huggingface.co/rhasspy/piper-voices/resolve/6fb8245d6d27fef8988272e0c8e9f5018da1bbbf/tr/tr_TR/fettah/medium/tr_TR-fettah-medium.onnx"
+const ESKI_DFKI = "https://huggingface.co/rhasspy/piper-voices/resolve/6fb8245d6d27fef8988272e0c8e9f5018da1bbbf/tr/tr_TR/dfki/medium/tr_TR-dfki-medium.onnx"
 const ESKI_PARCALAR = [
   "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.29.0/dist/ort-wasm-simd-threaded.wasm",
   ESKI_FAHRETTIN, ESKI_FAHRETTIN + ".json",
   ESKI_FETTAH, ESKI_FETTAH + ".json",            // 17 Ekim 2026'da çıkarıldı
+  ESKI_DFKI, ESKI_DFKI + ".json",                // 17 Ekim 2026'da çıkarıldı
 ]
 let eskilerTemizlendi = false
 async function eskileriTemizle(dp) {
@@ -140,7 +143,7 @@ const ANTALIA_DOSYALARI = [
 export const MMS_PARCA_SAYISI = 3
 // Ses tutarlılığı: ses rengi gürültüsü düşük (0,667 → 0,2); ritim gürültüsü biraz düşük (0,8 → 0,6).
 // Ses hâlâ cümleden cümleye değişirse noise_scale daha da düşürülebilir (0 = tamamen sabit, biraz düz).
-export const MMS_AYAR = { noise_scale: 0, noise_w: 0.6 }
+export const MMS_AYAR = { noise_scale: 0.2, noise_w: 0.6 }
 const MMS_MODEL = "/ses/mms/mms-tur.onnx"
 const MMS_PARCALARI = Array.from({ length: MMS_PARCA_SAYISI }, (_, i) => `${MMS_MODEL}.${String(i).padStart(3, "0")}`)
 function dosyaListesi(grup = "antalia") {

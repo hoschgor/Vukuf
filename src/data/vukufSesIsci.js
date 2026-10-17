@@ -27,6 +27,9 @@
 import { Engine as AntaliaMotoru, speak as antaliaSoyle, SAMPLE_RATE as ANTALIA_HZ } from "./antalia/tts.js"
 import { createFrontend as antaliaOnYuz, decodeAsset as antaliaVeriCoz } from "./antalia/frontend.js"
 
+// Şapkalı ünlü süresi çarpanı (Antalia). 1 = demonun kendi süresi. Az gelirse artırılabilir (ör. 1,6).
+const ANTALIA_SAPKA_UZATMA = 1.4
+
 let ort = null, fonem = null, fonemCikis = null
 const oturumlar = new Map()
 let fonemGirdileri = null
@@ -113,6 +116,9 @@ self.onmessage = async (e) => {
       if (!oturumlar.has(e.data.ses) && e.data.antalia) {
         const a = e.data.antalia
         const motor = await AntaliaMotoru.create(ort, { text: a.text, cond: a.cond, flow: a.flow, vocoder: a.vocoder }, a.manifest, ["wasm"])
+        // Şapkalı ünlüler (â, î, û) biraz daha uzun (17 Ekim 2026, kullanıcı: "biraz az uzatıyor")
+        const uzunIds = new Set(["â", "î", "û"].map(c => motor.symbolId.get(c)).filter(v => v !== undefined))
+        if (uzunIds.size) motor.options.uzun_unlu = { ids: uzunIds, oran: ANTALIA_SAPKA_UZATMA }
         const onYuz = antaliaOnYuz(await antaliaVeriCoz(a.veri))
         onYuz.warmup()
         // Isınma: her grafiğin ilk çalışması bellek ayırıyor; ilk gerçek cümle beklemesin

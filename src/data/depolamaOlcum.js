@@ -17,7 +17,7 @@
        (http yerel ağ) aynı dosyalar burada (data/vukufSes.js depo())
 
    SESLİ OKUMA (17 Ekim 2026, kullanıcı: "depolama bölümü burayı da kontrol edecek mi"):
-   ayrı bölüm, okuyucu okuyucu açılır alt satırlar (Antalia, DFKI, MMS, Kerîm, ses
+   ayrı bölüm, okuyucu okuyucu açılır alt satırlar (Antalia, MMS, Kerîm, ses
    motoru). Eskiden "vukuf-ses-motoru" önbelleği "Uygulama dosyaları"na karışıyordu,
    IndexedDB'deki kopyası hiç sayılmıyordu.
      • localStorage → ayarlar, işaretler, notlar, hıfz, Geçmiş… (vukufVeri envanteri)
@@ -41,10 +41,9 @@ const SES_MOTORU = "vukuf-ses-motoru"    // data/vukufSes.js ONBELLEK_ADI (önbe
 /* Vukuf sesi dosyası → alt satır (adresinden). Sıra = gösterim sırası. */
 const SES_PARCALARI = [
   { id: "antalia", ad: "Antalia", aciklama: "Türkçe okuyucu", esle: /\/ses\/antalia\//i },
-  { id: "dfki", ad: "DFKI", aciklama: "Türkçe okuyucu", esle: /dfki/i },
   { id: "mms", ad: "MMS", aciklama: "Türkçe okuyucu", esle: /\/ses\/mms\//i },
   { id: "kareem", ad: "Kerîm", aciklama: "Arapça okuyucu", esle: /kareem/i },
-  { id: "eski", ad: "Eski sesler (Fahrettin, Fettah)", aciklama: "Artık kullanılmıyor; sesli okuma açılınca silinir", esle: /fahrettin|fettah/i },
+  { id: "eski", ad: "Eski sesler (Fahrettin, Fettah, DFKI)", aciklama: "Artık kullanılmıyor; sesli okuma açılınca silinir", esle: /fahrettin|fettah|dfki/i },
   { id: "motor", ad: "Ses motoru", aciklama: "Bütün okuyucuların ortak parçası", esle: /./ },
 ]
 const sesParcasi = (adres) => SES_PARCALARI.find(p => p.esle.test(String(adres || ""))).id

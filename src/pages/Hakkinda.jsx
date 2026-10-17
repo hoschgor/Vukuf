@@ -287,8 +287,8 @@ export default function Hakkinda() {
         </div>
 
         {/* ── SESLİ OKUMA ATIFLARI (16 Ekim 2026) ─────────────────────────
-           Vukuf sesi (Antalia, DFKI, MMS, Kerîm) ve hafız kayıtları. DFKI veri seti (CC BY-NC-SA 4.0)
-           ve MMS (CC BY-NC 4.0) — ticari olmayan kullanım + atıf şartı; bu bölüm o atıftır. */}
+           Vukuf sesi (Antalia, MMS, Kerîm) ve hafız kayıtları. MMS'in lisansı
+           CC BY-NC 4.0 — ticari olmayan kullanım + atıf şartı; bu bölüm o atıftır. */}
         <div style={{ marginTop: "22px" }}>
           <h2 style={{
             fontSize: "12px", letterSpacing: "1.5px", color: ac,
@@ -304,7 +304,7 @@ export default function Hakkinda() {
               "MMS sesi (Türkçe) — Meta AI, Massively Multilingual Speech projesi (facebook/mms-tts-tur), CC BY-NC 4.0 lisansı. Tarayıcıda çalışması için ONNX biçimine çevrildi.",
               { href: "https://huggingface.co/facebook/mms-tts-tur" })}
             {kaynak(Headphones, "Piper ses modelleri",
-              "DFKI (Türkçe) ve Kerîm (Arapça) sesleri — rhasspy/piper-voices. DFKI sesinin veri seti: DFKI GmbH, MaryTTS Turkish (CC BY-NC-SA 4.0).",
+              "Kerîm (Arapça) sesi — rhasspy/piper-voices.",
               { href: "https://huggingface.co/rhasspy/piper-voices" })}
             {kaynak(Headphones, "EveryAyah",
               "Sesli okumada âyetlerin hafız kayıtları",

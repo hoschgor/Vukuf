@@ -1,5 +1,8 @@
 /* Antalia-2 Mini 1.0.0 — PatientDesk AI, Apache-2.0 (huggingface.co/spaces/cloud0day3/antalia-mini).
-   Vukuf: DEĞİŞTİRİLMEDEN alındı (16 Ekim 2026); src/data/vukufSesIsci.js kullanır. */
+   Vukuf: demodan alındı (16 Ekim 2026); src/data/vukufSesIsci.js kullanır.
+   TEK DEĞİŞİKLİK (17 Ekim 2026, kullanıcı: "şapkalı harfleri biraz az uzatıyor"): durations()
+   şapkalı ünlüleri (â, î, û) ayrıca uzatabiliyor — Engine.options.uzun_unlu = { ids, oran }.
+   Verilmezse davranış demoyla birebir aynı. */
 // Antalia-2 Mini inference in the browser: four ONNX graphs and the glue between them, reproducing
 // antalia_mini.api.Antalia.say of the release (same defaults, options and noise: the same text and seed give
 // the same audio). Every glue step mirrors web/tools/pipeline.py line for line (that file is what
@@ -87,7 +90,7 @@ const roundHalfEven = (x) => {
 };
 
 /** log durations (float32, per symbol) -> frames per symbol, as Antalia._acoustic computes them. */
-export function durations(logd, ids, speed, gemStretch = 1) {
+export function durations(logd, ids, speed, gemStretch = 1, uzunUnlu = null) {
   const L = ids.length, ld = Float32Array.from(logd);
   if (gemStretch !== 1) {
     // double sounds are long in Turkish: the second of a pair inside a word ("berraktı"), the gap between a
@@ -97,6 +100,11 @@ export function durations(logd, ids, speed, gemStretch = 1) {
       if (ids[j] === ids[j - 1] && ids[j] !== SPACE_ID) ld[j] = f32(ld[j] + g);
       else if (ids[j - 1] === SPACE_ID && ids[j] === ids[j - 2]) ld[j - 1] = f32(ld[j - 1] + g);
     }
+  }
+  if (uzunUnlu && uzunUnlu.oran && uzunUnlu.oran !== 1) {
+    // Vukuf: şapkalı ünlü (â, î, û) süresi × oran
+    const g = f32(Math.log(uzunUnlu.oran));
+    for (let j = 1; j < L - 1; j++) if (uzunUnlu.ids.has(ids[j])) ld[j] = f32(ld[j] + g);
   }
   const sp = f32(speed), dur = new Array(L);
   for (let j = 0; j < L; j++) dur[j] = Math.min(MAX_DUR, Math.max(1, roundHalfEven(f32(f32(Math.exp(ld[j])) / sp))));
@@ -243,7 +251,7 @@ export class Engine {
     const ids = this.encode(pre + text + suf);
     const L = ids.length;
     const r1 = await s.text.run({ ids: new ort.Tensor("int64", BigInt64Array.from(ids.map(BigInt)), [1, L]) });
-    const dur = durations(r1.logd.data, ids, speed, o.gem_stretch);
+    const dur = durations(r1.logd.data, ids, speed, o.gem_stretch, o.uzun_unlu);
     tm.text = now() - t0; t0 = now();
 
     const idx = frameIndex(dur);

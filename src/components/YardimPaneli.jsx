@@ -19,6 +19,9 @@
 
    DİL: Açıklamalar edilgen / "-ebilirsiniz" kalıbında; emir kipi yok.
    İÇERİK EKLEMEK: aşağıdaki KONULAR dizisine bir nesne eklemek yeterli.
+   ARA BAŞLIK (17 Ekim 2026): `metin` içinde { alt: "Kur'ân-ı Kerîm" } gibi bir öğe
+   küçük bir ara başlık olarak çizilir — bir kartta Kur'ân ve Türkçe eserler ayrı
+   anlatılabilsin diye (Oynatıcı, Ses ve hız, Devamlı okuma kartları).
    ═══════════════════════════════════════════════════════════════════════════ */
 
 import { useMemo, useState } from "react"
@@ -28,7 +31,7 @@ import {
   Gem, Feather, Play, Circle, Palette, Settings, Layers, Undo2, Headphones, Volume2,
   MessageSquareText, Brain, ImagePlay, MonitorPlay, List, Eye, Highlighter, Type, Shuffle,
   History, HardDrive, Smartphone, Hash, ChevronDown, X, MousePointerClick, Library, Star,
-  RotateCcw, Info, LayoutGrid,
+  RotateCcw, Info, LayoutGrid, BookA, SlidersHorizontal,
 } from "lucide-react"
 import AltSayfa from "./AltSayfa"
 import { Secim } from "./AyarOgeleri"
@@ -267,33 +270,58 @@ const KONULAR = [
   // ── DİNLEME ────────────────────────────────────────────────────────────
   {
     bolum: "dinleme", ikon: Headphones, baslik: "Oynatıcı",
-    ozet: "Okunan âyeti takip etmek, durdurmak, ilerlemek.",
+    ozet: "Kur'ân'da âyetleri, Türkçe eserlerde metni sesli dinlemek.",
+    nerede: "Kur'ân-ı Kerîm → âyet numarası ya da sûre başlığı · Kitap → bardaki kulaklık simgesi",
     metin: [
-      "Bir âyet dinlenmeye başlandığında alt kısımda oynatıcı açılır. Önceki ve sonraki âyet, duraklatma ve durdurma düğmeleri buradadır.",
-      "\"Okunan âyete odaklan\" düğmesi, sayfa başka bir yere kaydırılmış olsa bile ekranı çalan âyete getirir.",
+      { alt: "Kur'ân-ı Kerîm" },
+      "Bir âyet dinlenmeye başlandığında alt kısımda oynatıcı açılır. Önceki ve sonraki âyet, duraklatma ve durdurma düğmeleri buradadır; solda çalan sûre, âyet ve kârînin adı görünür. Sûre başlığındaki oynat düğmesiyle sûre baştan dinlenebilir.",
+      "Gözlük simgesi (Okunan âyete odaklan), sayfa başka bir yere kaydırılmış olsa bile ekranı çalan âyete getirir. Meal penceresi ve izleme modu düğmeleri de oynatıcıda yer alır.",
+      { alt: "Türkçe eserler (sesli okuma)" },
+      "Kitap okuma ekranında bardaki kulaklık simgesine dokunulduğunda eser, ekranda bulunulan yerden itibaren sesli okunmaya başlar ve küçük bir sesli okuma denetimi açılır. Okunan cümle metinde işaretlenir; sayfa da okumayı takip eder.",
+      "Denetimde önceki ve sonraki cümle, duraklatma ve kapatma düğmeleri bulunur. Denetim, solundaki tutamaktan sürüklenerek ekranda istenen yere taşınabilir.",
+      "Hedef simgesi (Okunacak cümleyi seç) seçildikten sonra metinde bir kelimeye dokunulduğunda okuma o kelimenin cümlesinden itibaren devam eder.",
+      "Sayfa elle kaydırıldığında takip bir süreliğine bırakılır. Gözlük simgesi (Okunan yere hizala) ekranı yeniden okunan cümleye getirir; başka bir sayfaya geçilmişse okunan sayfaya dönülür.",
     ],
-    anahtar: "ses dinle oynat durdur sonraki önceki",
+    anahtar: "ses dinle oynat durdur sonraki önceki sesli okuma kitap oku cümle seç hedef gözlük hizala takip kulaklık",
   },
   {
     bolum: "dinleme", ikon: Volume2, baslik: "Kârî, ses ve hız",
     ozet: "Okuyucuyu seçmek, sesi ve okuma hızını ayarlamak.",
-    nerede: "Kârî: Kur'ân-ı Kerîm → Ayarlar · Ses ve hız: oynatıcı",
+    nerede: "Oynatıcı ya da sesli okuma → ayar düğmesi",
     metin: [
+      { alt: "Kur'ân-ı Kerîm" },
       "Kârî (okuyucu) seçimi Kur'ân ekranının ayarlarında yer alır.",
-      "Ses seviyesi ve okuma hızı oynatıcının ayar kısmından değiştirilebilir; yanlarındaki küçük düğmeler değerleri tek dokunuşla varsayılana döndürür.",
+      "Ses seviyesi ve okuma hızı oynatıcının ayar düğmesinden değiştirilebilir; yanlarındaki küçük düğmeler değerleri tek dokunuşla varsayılana döndürür.",
+      { alt: "Türkçe eserler" },
+      "Sesli okuma denetimindeki ayar düğmesi (üzerinde okuma hızı yazar) ses, hız ve devamlı okuma kutusunu açar. Hız 0,5× ile 2× arasında ayarlanabilir; ses simgesine dokunulduğunda ses kısılır, yeniden dokunulduğunda eski seviyesine döner.",
+      "Ses %200'e kadar yükseltilebilir. %100'ün üstü Vukuf sesinde etkilidir; hafız kayıtları ve cihaz sesi en fazla %100 seviyesinde çalar.",
     ],
-    anahtar: "kari hafız okuyucu ses yüksek hız yavaş hızlı",
+    anahtar: "kari hafız okuyucu ses yüksek arttır kıs sessiz hız yavaş hızlı yüzde",
   },
   {
-    bolum: "dinleme", ikon: MonitorPlay, baslik: "Devamlı oynatma ve mini oynatıcı",
-    ozet: "Ekrandan çıkınca da dinlemeye devam etmek.",
-    nerede: "Oynatıcı → ayarlar → Devamlı oynatma",
+    bolum: "dinleme", ikon: SlidersHorizontal, baslik: "Sesli okuma ayarları",
+    ozet: "Ses kaynağı, âyetler ve Arapça ibareler.",
+    nerede: "Sesli okuma → dişli simgesi",
     metin: [
-      "Devamlı oynatma açıkken Kur'ân ekranından çıkılsa da okuma sürer ve diğer ekranlarda küçük bir oynatıcı görünür.",
-      "Mini oynatıcı sürüklenerek taşınabilir; bir süre dokunulmazsa tek yuvarlak düğmeye küçülür. Kitap simgesi, okunan âyete geri götürür.",
-      "Telefon kilitliyken ya da uygulama arka plandayken oynatma, kilit ekranındaki kontrollerle de yönetilebilir.",
+      "Ses kaynağı olarak Vukuf sesi ya da cihaz sesi seçilebilir. Vukuf sesi bir kez indirilir ve sonra internet olmadan da okur; cihaz sesi telefonun ya da tarayıcının kendi sesidir.",
+      "Âyetler bölümünde kaynağı belli âyetlerin nasıl okunacağı seçilebilir: hafız sesiyle seçildiğinde sûre adı ve âyet numarasından sonra hafız kaydı, ardından meal okunur; \"Yalnız meal\" seçildiğinde hafız kaydı atlanır.",
+      "Kaynağı belirtilmemiş Arapça ibarelerde haber verilmesi, atlanması ya da Arapça sesle okunması seçilebilir. Arapça ses olarak bir kez indirilen Kerîm sesi ya da cihaz sesi kullanılabilir. Evrad ve Ezkâr'da Arapça kısımlar yapay sesle okunmaz.",
+      "Âyetlerden ve Arapça ibarelerden önce kısa bir işaret sesi çalınır; bu ses ve okunan yerin takibi buradan açılıp kapatılabilir. İndirilen sesler yine buradan silinebilir; kapladıkları yer Ayarlar → Veriler → Depolama bölümünde görünür.",
     ],
-    anahtar: "arka plan kilit ekranı devam mini küçük oynatıcı",
+    anahtar: "vukuf sesi cihaz sesi indir kerîm arapça âyet hafız meal işaret sesi takip sil ses kaynağı",
+  },
+  {
+    bolum: "dinleme", ikon: MonitorPlay, baslik: "Devamlı okuma ve küçük oynatıcı",
+    ozet: "Ekrandan çıkınca da dinlemeye devam etmek.",
+    nerede: "Oynatıcı → ayar düğmesi → Devamlı oynatma · Sesli okuma → ayar düğmesi → Devamlı okuma",
+    metin: [
+      "Devamlı oynatma açıkken Kur'ân-ı Kerîm ya da bir Türkçe eser ekranından çıkılsa da okuma devam eder ve diğer ekranlarda küçük bir oynatıcı görünür. Kur'ân için oynatıcının ayarlarındaki \"Devamlı oynatma\", eserler için sesli okuma kutusundaki \"Devamlı okuma\" anahtarı kullanılır.",
+      "Küçük oynatıcıda duraklatma, okumaya dönme ve durdurma düğmeleri bulunur; Kur'ân'da sonraki âyete de geçilebilir. Kitap simgesi okunan yere geri götürür: Kur'ân çalan âyette, eser okunan sayfada açılır ve sesli okuma kaldığı yerden sürer.",
+      "Küçük oynatıcı sürüklenerek taşınabilir. Aşağı ok düğmesiyle ya da bir süre dokunulmadığında tek yuvarlak düğmeye küçülür: Kur'ân'da bir şemse, eserlerde rahle üstünde açık bir kitap görünür. Okuma sürerken amblem hareket eder, duraklatıldığında durur; dokunulduğunda oynatıcı yeniden açılır. Kur'ân ve eser oynatıcıları birlikte açıksa üst üste binmez.",
+      "Devamlı okuma kapalıyken ekrandan çıkıldığında okuma da durur. Kapatma ve durdurma düğmeleri okumayı her durumda bitirir.",
+      "Telefon kilitliyken ya da uygulama arka plandayken Kur'ân oynatıcısı kilit ekranındaki kontrollerle de yönetilebilir.",
+    ],
+    anahtar: "arka plan kilit ekranı devam devamlı oynatma okuma mini küçük oynatıcı küçült şemse rahle sürekli",
   },
   {
     bolum: "dinleme", ikon: MessageSquareText, baslik: "Meal penceresi",
@@ -366,8 +394,20 @@ const KONULAR = [
     nerede: "Kitap → bardaki göz simgesi",
     metin: [
       "Göz simgesi lügati açıp kapatır. Açıkken anlamı bilinen kelimeler renkli görünür; dokunulduğunda anlamı ve varsa kavram açıklaması açılır.",
+      "Ek almış kelimelerde anlamı bilinen kök kısmı renklendirilir; kelime bölünmeden bütün hâliyle okunur.",
     ],
     anahtar: "lügat sözlük anlam kelime kavram osmanlıca",
+  },
+  {
+    bolum: "kitap", ikon: BookA, baslik: "Lügat araması",
+    ozet: "Okuma ekranından ayrılmadan kelime anlamı aramak.",
+    nerede: "Kitap → bardaki lügat simgesi",
+    metin: [
+      "Lügat simgesi, okumayı bırakmadan kelime ya da anlam aramaya yarar; telefonda alttan açılan bir pencere, geniş ekranda ortada bir kutu olarak görünür.",
+      "Yazıldıkça sonuçlar listelenir; şapkalı harfler ve büyük-küçük harf fark etmez, birleşik kelimeler ayraçsız yazılsa da bulunur. Anlamlar içinde de arama yapılabilir. Son aramalar hatırlanır, bir dokunuşla yeniden açılabilir.",
+      "Pencere dışına dokunularak, aşağı doğru çekilerek ya da kapatma düğmesiyle kapatılabilir.",
+    ],
+    anahtar: "lügat sözlük ara anlam kelime kavram osmanlıca pencere",
   },
   {
     bolum: "kitap", ikon: Info, baslik: "Dipnotlar ve açıklamalar",
@@ -476,6 +516,16 @@ const KONULAR = [
     anahtar: "yedek yedekle indir geri yükle taşı sıfırla sil veri depolama",
   },
   {
+    bolum: "ayarlar", ikon: HardDrive, baslik: "Depolama",
+    ozet: "Cihazda ne kadar yer kullanıldığını görmek.",
+    nerede: "Ayarlar → Veriler → Depolama",
+    metin: [
+      "Depolama bölümü, uygulamanın cihazda kullandığı yeri bölüm bölüm gösterir: kitap ve Kur'ân metinleri, kâri sesleri, sesli okuma sesleri, izleme galerisi, kişisel veriler ve ayarlar gibi. Toplam kullanılan, ayrılan ve boş alan da burada görülebilir.",
+      "İndirilen sesli okuma sesleri sesli okumanın ayarlarından silinerek yer açılabilir.",
+    ],
+    anahtar: "depolama alan yer boyut mb gb indir sil önbellek ses",
+  },
+  {
     bolum: "ayarlar", ikon: Sparkles, baslik: "Giriş animasyonu",
     ozet: "Açılıştaki tezhipli giriş ekranı.",
     nerede: "Ayarlar → Görünüm → Giriş Animasyonu",
@@ -537,9 +587,18 @@ function KonuKarti({ konu, acik, onAc, theme, bolumAdi }) {
               <span style={{ opacity: 0.8 }}>Nerede:</span> {konu.nerede}
             </div>
           )}
-          {konu.metin.map((p, i) => (
+          {konu.metin.map((p, i) => (typeof p === "string" ? (
             <p key={i} style={{ margin: i ? "8px 0 0" : 0, fontSize: "14px", lineHeight: 1.6, color: theme.text }}>{p}</p>
-          ))}
+          ) : (
+            /* Ara başlık: Kur'ân-ı Kerîm / Türkçe eserler */
+            <div key={i} style={{
+              display: "flex", alignItems: "center", gap: "8px", margin: i ? "14px 0 0" : 0,
+              fontSize: "12.5px", fontWeight: 700, letterSpacing: "0.02em", color: theme.accent,
+            }}>
+              <span>{p.alt}</span>
+              <span aria-hidden="true" style={{ flex: 1, height: "1px", background: `${theme.accent}33` }} />
+            </div>
+          )))}
         </div>
       )}
     </div>
@@ -560,7 +619,7 @@ export default function YardimPaneli({ kapat, theme }) {
     if (q) {
       const kelimeler = q.split(/\s+/).filter(Boolean)
       return KONULAR.filter(k => {
-        const metin = normHarf([k.baslik, k.ozet, k.nerede || "", k.anahtar || "", ...k.metin].join(" "))
+        const metin = normHarf([k.baslik, k.ozet, k.nerede || "", k.anahtar || "", ...k.metin.map(p => (typeof p === "string" ? p : p.alt || ""))].join(" "))
         return kelimeler.every(w => metin.includes(w))
       })
     }

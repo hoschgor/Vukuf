@@ -18,7 +18,10 @@ export default function Lugat() {
   })
 
   return (
-    <div style={{ maxWidth: "800px", margin: "0 auto", padding: "40px 24px" }}>
+    /* TAŞMA (17 Ekim 2026, iPhone ekran görüntüsü): bir anlamdaki boşluksuz uzun ifade
+       kartı ekrandan taşırıyor, sayfa genişleyince Safari her şeyi ¼ boyuta küçültüyordu.
+       Artık uzun ifadeler satır içinde bölünüyor; hiçbir öğe ekran genişliğini aşamıyor. */
+    <div style={{ maxWidth: "800px", width: "100%", boxSizing: "border-box", margin: "0 auto", padding: "40px 24px", overflowWrap: "anywhere" }}>
       {/* Başlık */}
       <div style={{ marginBottom: "32px" }}>
         <h1
@@ -51,21 +54,27 @@ export default function Lugat() {
       >
         <Search size={18} color={theme.textSecondary} />
         <input
-          type="text"
+          type="search"
+          inputMode="search"
+          enterKeyHint="search"
           placeholder="Kelime veya anlam ara..."
           value={aramaMetni}
           onChange={(e) => setAramaMetni(e.target.value)}
           style={{
             flex: 1,
+            minWidth: 0,
             background: "transparent",
             border: "none",
             outline: "none",
-            fontSize: "15px",
+            // 16 px: iPhone'da 16 px'ten küçük kutuya dokunulunca Safari sayfayı
+            // yakınlaştırıyor ve kutudan çıkınca geri uzaklaştırmıyordu (17 Ekim 2026)
+            fontSize: "16px",
+            fontFamily: "inherit",
             color: theme.text,
           }}
         />
         {aramaMetni && (
-          <span style={{ fontSize: "13px", color: theme.textSecondary }}>
+          <span style={{ fontSize: "13px", color: theme.textSecondary, flexShrink: 0 }}>
             {filtrelenmis.length} sonuç
           </span>
         )}
@@ -84,6 +93,7 @@ export default function Lugat() {
               display: "flex",
               gap: "16px",
               alignItems: "baseline",
+              minWidth: 0,
             }}
           >
             <span
@@ -91,8 +101,10 @@ export default function Lugat() {
                 color: theme.accent,
                 fontWeight: "bold",
                 fontSize: "16px",
-                minWidth: "140px",
+                minWidth: "min(140px, 30vw)",
+                maxWidth: "45%",
                 flexShrink: 0,
+                overflowWrap: "anywhere",
               }}
             >
               {kelime}
@@ -102,6 +114,9 @@ export default function Lugat() {
                 color: theme.textSecondary,
                 fontSize: "14px",
                 lineHeight: "1.6",
+                flex: 1,
+                minWidth: 0,
+                overflowWrap: "anywhere",
               }}
             >
               {anlam}

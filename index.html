@@ -66,6 +66,43 @@
          verince tüm uygulamada kapanıyor. -->
     <style>html { -webkit-tap-highlight-color: transparent; }</style>
     <title>vukuf</title>
+    <!-- vukuf-ios-uzaklas (17 Ekim 2026): iPhone'da yazı kutusuna dokunulunca Safari
+         yakınlaştırıyor, klavye kapanınca geri uzaklaştırmıyordu. Kutudan çıkılınca
+         (başka kutuya geçilmediyse) viewport'a bir anlığına maximum-scale=1 eklenip
+         asıl hâline döndürülür; Safari yakınlığı 1'e indirir. Yalnız iOS. -->
+    <script>
+      (function () {
+        var ua = navigator.userAgent || ""
+        var ios = /iP(hone|ad|od)/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)
+        if (!ios) return
+        var ATLA = /^(range|checkbox|radio|button|submit|reset|color|file|image)$/i
+        function yaziAlani(el) {
+          if (!el || !el.tagName) return false
+          if (el.isContentEditable) return true
+          var t = el.tagName
+          if (t === "TEXTAREA" || t === "SELECT") return true
+          return t === "INPUT" && !ATLA.test(el.type || "")
+        }
+        var bekle = 0, geri = 0
+        function uzaklas() {
+          var vv = window.visualViewport
+          if (vv && vv.scale <= 1.01) return
+          var m = document.querySelector('meta[name="viewport"]')
+          if (!m) return
+          var asil = m.getAttribute("content") || ""
+          if (/maximum-scale/i.test(asil)) return
+          m.setAttribute("content", asil + ", maximum-scale=1")
+          clearTimeout(geri)
+          geri = setTimeout(function () { m.setAttribute("content", asil) }, 400)
+        }
+        document.addEventListener("focusout", function (e) {
+          if (!yaziAlani(e.target)) return
+          clearTimeout(bekle)
+          // Bir kutudan ötekine geçiliyorsa (klavye açık kalıyor) uzaklaşma
+          bekle = setTimeout(function () { if (!yaziAlani(document.activeElement)) uzaklas() }, 120)
+        }, true)
+      })()
+    </script>
   </head>
   <body>
     <div id="root"></div>

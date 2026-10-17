@@ -7,6 +7,7 @@ import { okumaKaydet, trFold } from "../data/okumaKayit"
 import { esnekBul, esnekHazirla } from "../data/esnekArama"
 import SiraSecici from "../components/SiraSecici"
 import SesliOkumaKontrol from "../components/SesliOkumaKontrol"
+import LugatArama from "../components/LugatArama"
 import { sesKilidiAc } from "../data/sesliOkuma"
 import { ICINDEKILER_SIRALARI, ICINDEKILER_SIRA_ANAHTAR, agaciSirala, agaciDizinle, siraOku, siraYaz } from "../data/sureSirasi"
 import lugatVerisi from "../data/lugat.json"
@@ -40,7 +41,7 @@ import {
   Search, Highlighter, ChevronDown, Clock, Settings,
   ChevronUp, ChevronRight, Edit2, Pencil, Circle, Feather, List, Check, Shuffle, Asterisk, ArrowRight,
   GripVertical, Eye as EyeIkon, UnfoldHorizontal, Camera, FoldHorizontal, ImagePlay, MoveVertical,
-  Headphones,
+  Headphones, BookA,
 } from "lucide-react"
 import { useMediaQuery } from '../data/hooks/useMediaQuery'
 import usePanelKilidi from "../data/hooks/usePanelKilidi"
@@ -120,6 +121,7 @@ const BAR_OGELERI = [
   { key: "menu",  label: "İçindekiler",       sadeVarsayilan: false },
   { key: "sayfa", label: "Sayfa Bilgisi",     sadeVarsayilan: false },
   { key: "lugat", label: "Lügat",             sadeVarsayilan: true },
+  { key: "lugatAra", label: "Lügat Araması",  sadeVarsayilan: true },   // 17 Ekim 2026
   { key: "yazi",  label: "Yazı Tipi (Aa)",    sadeVarsayilan: true },
   { key: "vurgu", label: "Vurgulama",         sadeVarsayilan: true },
   { key: "kayit", label: "Kayıtlar",          sadeVarsayilan: true },
@@ -140,6 +142,7 @@ const BAR_SIRA_OGELERI = [
   { key: "menu",    label: "İçindekiler",       Ikon: List,        taraf: "sol" },
   { key: "sayfa",   label: "Sayfa Bilgisi",     Ikon: BookOpen,    taraf: "sol" },
   { key: "lugat",   label: "Lügat",             Ikon: EyeIkon,     taraf: "sol" },
+  { key: "lugatAra", label: "Lügat Araması",    Ikon: BookA,       taraf: "sol" },
   { key: "yazi",    label: "Yazı Tipi (Aa)",    Ikon: Feather,     taraf: "sol" },
   { key: "vurgu",   label: "Vurgulama",         Ikon: Highlighter, taraf: "sol" },
   { key: "kayit",   label: "Kayıtlar",          Ikon: Bookmark,    taraf: "sol" },
@@ -1149,6 +1152,9 @@ const otomatikRef = useRef(null)
 const [otomatikKaydirma, setOtomatikKaydirma] = useState(false)
 // SESLİ OKUMA (15 Ekim 2026) — Web Speech API; denetim: components/SesliOkumaKontrol.jsx
 const [sesliAcik, setSesliAcik] = useState(false)
+// LÜGAT ARAMASI (17 Ekim 2026, kullanıcı: "bir buton ekleyip lügat araması yaptıralım; göz yormayan
+// şekilde sonuçları göstersin, kolayca çıkılabilsin") — components/LugatArama.jsx
+const [lugatAramaAcik, setLugatAramaAcik] = useState(false)
 const [kaydirmaHizi, setKaydirmaHizi]         = useState(1)
 const [duraklatildi, setDuraklatildi]         = useState(false)
 
@@ -2055,7 +2061,7 @@ function icerikTiklandi(e) {
 function tumPanelleriKapat() {
   setAyarlarAcik(false); setSayfaGitAcik(false); setAaAcik(false)
   setKayitAcik(false); setTemaAcik(false); setAramaAcik(false)
-  setMenuAcik(false)
+  setMenuAcik(false); setLugatAramaAcik(false)
 }
 
 function togglePanel(setter, deger) {
@@ -3836,6 +3842,14 @@ const Bar = (
       </button>
     )}
 
+    {gorunurMu("lugatAra") && (
+      <button onClick={() => { const y = !lugatAramaAcik; tumPanelleriKapat(); setLugatAramaAcik(y) }}
+        style={{ ...barButonStil(lugatAramaAcik), ...barOge("lugatAra") }}
+        title="Lügat araması — kelime ya da anlam ara">
+        <BookA size={bIkon(15)} />
+      </button>
+    )}
+
     {gorunurMu("yazi") && (
       <button onClick={() => togglePanel(setAaAcik, !aaAcik)} style={{ ...barButonStil(aaAcik), ...barOge("yazi") }} title="Yazı tipi / boyut">
         <Feather size={bIkon(15)} />
@@ -4043,6 +4057,11 @@ return (
     {GorselIpucu}
     {AramaPanel}
     {MenuPanel}
+    <LugatArama
+      acik={lugatAramaAcik} kapat={() => setLugatAramaAcik(false)}
+      theme={theme} isMobile={isMobile} olcek={bilgiOlcegi}
+      lugat={lugatVerisi} kavramlar={kavramlarVerisi}
+    />
     <SesliOkumaKontrol
       acik={sesliAcik} kapat={() => setSesliAcik(false)}
       theme={theme} isMobile={isMobile} olcek={barUiOlcegi}

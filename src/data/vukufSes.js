@@ -140,7 +140,7 @@ const ANTALIA_DOSYALARI = [
 export const MMS_PARCA_SAYISI = 3
 // Ses tutarlılığı: ses rengi gürültüsü düşük (0,667 → 0,2); ritim gürültüsü biraz düşük (0,8 → 0,6).
 // Ses hâlâ cümleden cümleye değişirse noise_scale daha da düşürülebilir (0 = tamamen sabit, biraz düz).
-export const MMS_AYAR = { noise_scale: 0.2, noise_w: 0.6 }
+export const MMS_AYAR = { noise_scale: 0, noise_w: 0.6 }
 const MMS_MODEL = "/ses/mms/mms-tur.onnx"
 const MMS_PARCALARI = Array.from({ length: MMS_PARCA_SAYISI }, (_, i) => `${MMS_MODEL}.${String(i).padStart(3, "0")}`)
 function dosyaListesi(grup = "antalia") {

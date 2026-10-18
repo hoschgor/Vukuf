@@ -1,6 +1,6 @@
 import { useEffect, useState, lazy, Suspense, Component } from "react"
 import IpucuKatmani from "./components/IpucuKatmani"
-import { Routes, Route, useLocation } from "react-router-dom"
+import { Routes, Route, useLocation, useNavigate } from "react-router-dom"
 import Navbar from "./components/Navbar"
 import MushafYukleniyorRozeti from "./components/MushafYukleniyorRozeti"
 import GirisCercevesi from "./components/GirisCercevesi"
@@ -10,6 +10,9 @@ import { swKaydet, swGuncelle } from "./data/cevrimdisi"
 // Uygulama geneli oynatıcı (6 Ekim 2026): ses Kur'ân ekranından çıkınca da sürebilsin
 import { OynaticiSaglayici } from "./data/oynatici"
 import MiniOynatici from "./components/MiniOynatici"
+// Paylaşılan bağlantı (18 Ekim 2026): önce ana sayfa, oradan paylaşılan yere köprü
+import { gelenPaylasim, paylasimiHazirla } from "./data/paylasim"
+import { Share2 } from "lucide-react"
 
 /* ═══════════════════════════════════════════════════════════════════════════
    SAYFALAR GEREKTİĞİNDE YÜKLENİYOR (29 Eylül 2026)
@@ -115,6 +118,27 @@ export default function App() {
   const { theme } = useApp()
   const location = useLocation()
   const okumadaMiyiz = location.pathname.startsWith("/kitap/") || location.pathname === "/kuran"
+  const navigate = useNavigate()
+
+  /* ── PAYLAŞILAN BAĞLANTI (18 Ekim 2026) ───────────────────────────────────
+     Kullanıcı: "Bağlantı önce ana sayfayı açacak, ana sayfadan kurulan bir köprüye
+     gider gibi seçilen bölüme gidilip açılacak." Adres ?k=… (eser) ya da ?a=… (âyet)
+     taşıyorsa: sorgu adres çubuğundan silinir (yenileyince tekrar gitmesin), ana
+     sayfada kısa bir "Paylaşılan bölüm açılıyor" kartı görünür, sonra o ekrana
+     geçilir — Arama sonucuna gider gibi (data/paylasim.js). Giriş animasyonu açıksa
+     kısaltılır ve bitince geçilir. */
+  const [paylasim] = useState(() => { try { return gelenPaylasim() } catch { return null } })
+  const [paylasimKarti, setPaylasimKarti] = useState(false)
+  useEffect(() => {
+    if (!paylasim) return
+    try { window.history.replaceState(window.history.state, "", window.location.pathname + window.location.hash) } catch { /* yoksay */ }
+    const giris = (() => { try { return localStorage.getItem("vukuf-giris-animasyonu") !== "0" } catch { return true } })()
+    const bas = giris ? 1500 : 250                // giriş (kısaltılmış) bitsin
+    const t1 = setTimeout(() => setPaylasimKarti(true), bas)
+    const t2 = setTimeout(() => { setPaylasimKarti(false); navigate(paylasimiHazirla(paylasim)) }, bas + 1300)
+    return () => { clearTimeout(t1); clearTimeout(t2) }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // ── GİRİŞ ANİMASYONU (splash) — açılışta rozet 2 sn görünür, sonra solarak kalkar.
   // "Giriş Animasyonu" ayarına bağlı (vukuf-giris-animasyonu; varsayılan açık). Alttaki
@@ -140,8 +164,10 @@ export default function App() {
     if (!girisVar) return
     // 10 Ekim 2026: 2 → 3,2 sn (çerçeve, köşebentler ve dallar sırayla belirebilsin;
     // kullanıcı: "süre kısa, dallar tam oturmuyor"). Dokununca hemen geçilebilir.
-    const t1 = setTimeout(() => setGirisSoluyor(true), 3200)   // 3,2 sn görün
-    const t2 = setTimeout(() => setGirisVar(false), 3820)      // 0.6 sn sol → DOM'dan kalk
+    // Paylaşılan bağlantıyla açılışta kısa (1 sn): kişi bir an önce paylaşılan yere geçsin
+    const gor = paylasim ? 1000 : 3200
+    const t1 = setTimeout(() => setGirisSoluyor(true), gor)    // 3,2 sn görün
+    const t2 = setTimeout(() => setGirisVar(false), gor + 620) // 0.6 sn sol → DOM'dan kalk
     return () => { clearTimeout(t1); clearTimeout(t2) }
     // eslint-disable-next-line
   }, [])
@@ -263,6 +289,25 @@ export default function App() {
       </Routes>
       </Suspense>
       </ParcaHatasi>
+      {/* Paylaşılan bölüm açılıyor (ana sayfada kısa kart) */}
+      {paylasimKarti && paylasim && (
+        <div role="status" style={{
+          position: "fixed", left: "50%", top: "50%", transform: "translate(-50%, -50%)", zIndex: 9500,
+          display: "flex", alignItems: "center", gap: "12px", padding: "14px 18px",
+          maxWidth: "min(380px, calc(100vw - 32px))",
+          background: theme.surface, border: `1px solid ${theme.accent}`, borderRadius: "16px",
+          boxShadow: "0 12px 36px rgba(0,0,0,0.24)", animation: "vukufPaylasimKart .3s ease-out",
+        }}>
+          <style>{`@keyframes vukufPaylasimKart { from { opacity: 0; transform: translate(-50%, -46%) } to { opacity: 1; transform: translate(-50%, -50%) } }`}</style>
+          <span style={{ width: "38px", height: "38px", borderRadius: "50%", background: `${theme.accent}1a`, color: theme.accent, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <Share2 size={18} />
+          </span>
+          <span style={{ display: "flex", flexDirection: "column", minWidth: 0, lineHeight: 1.3 }}>
+            <span style={{ fontSize: "14px", fontWeight: 700, color: theme.text }}>Paylaşılan bölüm açılıyor…</span>
+            <span style={{ fontSize: "12.5px", color: theme.textSecondary, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{paylasim.etiket}</span>
+          </span>
+        </div>
+      )}
       {/* Kur'ân ekranı dışında ses sürüyorsa minimal oynatıcı */}
       <MiniOynatici />
       </OynaticiSaglayici>

@@ -53,6 +53,8 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react"
 import { guvenliAlan } from "../data/hooks/useEkranIcinde"
 import { CornerUpLeft, ChevronUp, ChevronDown, X, Search, List, Bookmark, Hash, BookOpen } from "lucide-react"
 import { KAYNAK_ADI } from "../data/donusNoktalari"
+// donusNoktalari.js'e dokunmadan eklenen kaynak adları (18 Ekim 2026: paylaşılan bağlantı)
+const EK_KAYNAK_ADI = { paylasim: "Paylaşılan bağlantı" }
 
 const KAYNAK_SIMGE = { icindekiler: List, arama: Search, sayfa: Hash, isaret: Bookmark, ornek: BookOpen, geri: CornerUpLeft }
 
@@ -537,7 +539,7 @@ function DonusHapi({ theme, noktalar, onGit, onTemizle, altta, altPay, ustPay, l
                   <span style={{ flex: 1, minWidth: 0 }}>
                     <span style={{ display: "block", fontSize: "13px", fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{n.etiket}</span>
                     <span style={{ display: "block", fontSize: "10.5px", color: theme.textSecondary }}>
-                      {KAYNAK_ADI[n.kaynak] ? `${KAYNAK_ADI[n.kaynak]} ile ayrıldınız` : "Ayrıldığınız yer"} · {zamanYazi(n.z)}
+                      {(KAYNAK_ADI[n.kaynak] || EK_KAYNAK_ADI[n.kaynak]) ? `${KAYNAK_ADI[n.kaynak] || EK_KAYNAK_ADI[n.kaynak]} ile ayrıldınız` : "Ayrıldığınız yer"} · {zamanYazi(n.z)}
                     </span>
                   </span>
                 </button>

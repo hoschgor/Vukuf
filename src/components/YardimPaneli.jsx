@@ -31,7 +31,7 @@ import {
   Gem, Feather, Play, Circle, Palette, Settings, Layers, Undo2, Headphones, Volume2,
   MessageSquareText, Brain, ImagePlay, MonitorPlay, List, Eye, Highlighter, Type, Shuffle,
   History, HardDrive, Smartphone, Hash, ChevronDown, X, MousePointerClick, Library, Star,
-  RotateCcw, Info, LayoutGrid, BookA, SlidersHorizontal,
+  RotateCcw, Info, LayoutGrid, BookA, SlidersHorizontal, Share2,
 } from "lucide-react"
 import AltSayfa from "./AltSayfa"
 import { Secim } from "./AyarOgeleri"
@@ -229,6 +229,17 @@ const KONULAR = [
     anahtar: "sade odak gizle bar",
   },
   {
+    bolum: "kuran", ikon: Share2, baslik: "Âyet paylaşma",
+    ozet: "Bir âyetin bağlantısını göndermek.",
+    nerede: "Kur'ân-ı Kerîm → bardaki paylaş simgesi",
+    metin: [
+      "Paylaş simgesine dokunulduktan sonra âyetin numarasına dokunulduğunda paylaşma penceresi açılır. Mesajda sûre adı, âyet numarası ve bağlantı yer alır.",
+      "WhatsApp, Telegram, Facebook, X, e-posta ya da mesajla gönderilebilir; \"Diğer\" ile telefondaki başka uygulamalar da seçilebilir. Bağlantı ya da mesajın tamamı kopyalanabilir.",
+      "Bağlantıyı açan kişi önce ana sayfayı görür, ardından âyete götürülür; \"Size paylaşılan yer\" notu ve ana sayfaya dönüş düğmesi görünür.",
+    ],
+    anahtar: "paylaş paylaşım bağlantı link gönder whatsapp facebook telegram kopyala âyet",
+  },
+  {
     bolum: "kuran", ikon: Palette, baslik: "Tema değiştirme",
     ozet: "Yazı ve ekran öğelerinin renkleri.",
     nerede: "Kur'ân-ı Kerîm ve kitaplar → bardaki palet simgesi",
@@ -408,6 +419,17 @@ const KONULAR = [
       "Pencere dışına dokunularak, aşağı doğru çekilerek ya da kapatma düğmesiyle kapatılabilir.",
     ],
     anahtar: "lügat sözlük ara anlam kelime kavram osmanlıca pencere",
+  },
+  {
+    bolum: "kitap", ikon: Share2, baslik: "Cümle ya da kelime paylaşma",
+    ozet: "Okunan yerden bir cümleyi bağlantısıyla göndermek.",
+    nerede: "Kitap → bardaki paylaş simgesi",
+    metin: [
+      "Paylaş simgesine dokunulduktan sonra metinde bir kelimeye dokunulduğunda o kelimenin cümlesi seçilir ve paylaşma penceresi açılır. Pencerede \"Yalnız kelime\" seçilerek yalnızca kelime de paylaşılabilir.",
+      "Mesajda seçilen metin, eserin adı, sayfa numarası ve bağlantı yer alır. WhatsApp, Telegram, Facebook, X, e-posta ya da mesajla gönderilebilir; bağlantı ya da mesajın tamamı kopyalanabilir.",
+      "Bağlantıyı açan kişi önce ana sayfayı görür, ardından paylaşılan yere götürülür ve cümle vurgulanır; \"Size paylaşılan yer\" notu ve ana sayfaya dönüş düğmesi görünür.",
+    ],
+    anahtar: "paylaş paylaşım bağlantı link gönder whatsapp facebook telegram kopyala cümle kelime alıntı",
   },
   {
     bolum: "kitap", ikon: Info, baslik: "Dipnotlar ve açıklamalar",

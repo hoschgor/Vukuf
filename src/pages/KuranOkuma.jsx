@@ -105,8 +105,10 @@ import {
   Settings, Circle, Clock, ChevronsUp, ChevronsDown,
   ChevronLeft, Bookmark, BookOpen, Feather,
   Layers, Check, Shuffle, Mic, Repeat, Gem, UnfoldHorizontal, GripVertical, RotateCcw, Save, AlignLeft, AlignRight,
-  Camera, FoldHorizontal, ChevronUp, ImagePlay, Brain, History,
+  Camera, FoldHorizontal, ChevronUp, ImagePlay, Brain, History, Share2, Library,
 } from "lucide-react"
+// Paylaşma (18 Ekim 2026): âyet rozetine dokunarak paylaşma penceresi
+import PaylasimPenceresi, { PaylasimNotu } from "../components/PaylasimPenceresi"
 
 // ── Arapça font listesi
 const ARAPCA_FONTLAR = [
@@ -303,6 +305,7 @@ const SADE_OGELERI = [
   { key: "hizbBilgisi", label: "Hizb Bilgisi" },
   { key: "bilgi",       label: "Bilgi (İşaretler)" },
   { key: "gorsel",      label: "Görsel / Video" },
+  { key: "paylas",      label: "Paylaş" },
   { key: "hifz",        label: "Hıfz Modu" },
 ]
 
@@ -316,6 +319,7 @@ const SIRALANABILIR = [
   { key: "tekrar",      label: "Tekrar (Döngü)",     Ikon: Repeat,    taraf: "sol" },
   { key: "bilgi",       label: "Bilgi (İşaretler)",  Ikon: Gem,  taraf: "sol" },
   { key: "gorsel",      label: "Görsel / Video",     Ikon: ImagePlay, taraf: "sol" },
+  { key: "paylas",      label: "Paylaş",             Ikon: Share2,    taraf: "sol" },
   { key: "hifz",        label: "Hıfz Modu",          Ikon: Brain,     taraf: "sol" },
   { key: "yaziTipi",    label: "Yazı Tipi",          Ikon: Feather,   taraf: "sol" },
   { key: "otoOynat",    label: "Otomatik Kaydırma",  Ikon: Play,      taraf: "sol" },
@@ -1112,6 +1116,13 @@ export default function KuranOkuma({ kitap }) {
   // mod ve açıcı REF üzerinden okunur (kimlik değişip MushafSayfa'yı boşa render etmesin).
   const [gorselModu, setGorselModu] = useState(false)
   const gorselModuRef = useRef(false)
+  // PAYLAŞ (18 Ekim 2026, kullanıcı: "KuranOkuma için âyet rakam rozeti seçilecek, paylaşma ekranı
+  // açılacak"). Görsel kipindeki gibi: düğme → âyet numarasına dokunulur → PaylasimPenceresi.
+  const [paylasModu, setPaylasModu] = useState(false)
+  const paylasModuRef = useRef(false)
+  const [paylasAyet, setPaylasAyet] = useState(null)       // { tip:"ayet", sureNo, ayetNo, sureAdi }
+  const [paylasimNotu, setPaylasimNotu] = useState(null)   // bağlantıyla gelindiyse "Size paylaşılan yer"
+  useEffect(() => { paylasModuRef.current = paylasModu }, [paylasModu])
   const gorselAcRef = useRef(null)
   const [gorselVeri, setGorselVeri] = useState(null)
   useEffect(() => { gorselModuRef.current = gorselModu }, [gorselModu])
@@ -1313,6 +1324,7 @@ export default function KuranOkuma({ kitap }) {
   const [tekrarBtnGoster, setTekrarBtnGoster] = useState(() => localStorage.getItem("vukuf-btn-tekrar") !== "false")
   const [bilgiGoster, setBilgiGoster] = useState(() => localStorage.getItem("vukuf-btn-bilgi") !== "false")   // işaret/tecvid bilgi paneli butonu
   const [gorselGoster, setGorselGoster] = useState(() => localStorage.getItem("vukuf-btn-gorsel") !== "false") // âyet paylaşım görseli butonu
+  const [paylasGoster, setPaylasGoster] = useState(() => localStorage.getItem("vukuf-btn-paylas") !== "false") // âyet bağlantısı paylaşma (18 Ekim 2026)
   const [hifzGoster, setHifzGoster] = useState(() => localStorage.getItem("vukuf-btn-hifz") !== "false")
   const [bilgiAcik, setBilgiAcik] = useState(false)
   // Buton sıralaması: alt bar flex olduğundan sıra CSS `order` ile veriliyor (JSX yeri değişmez).
@@ -1505,8 +1517,9 @@ const maxWidth = useMemo(() =>
     localStorage.setItem("vukuf-btn-tekrar",   String(tekrarBtnGoster))
     localStorage.setItem("vukuf-btn-bilgi",    String(bilgiGoster))
     localStorage.setItem("vukuf-btn-gorsel",   String(gorselGoster))
+    localStorage.setItem("vukuf-btn-paylas",   String(paylasGoster))
     localStorage.setItem("vukuf-btn-hifz",     String(hifzGoster))
-  }, [sureGoster, sureBilgisiGoster, cuzBilgisiGoster, hizbBilgisiGoster, sureMenuGoster, kayitGoster, sayfaGitGoster, sadeModGoster, temaGoster, yaziTipiGoster, otoOynatGoster, tekrarBtnGoster, bilgiGoster, gorselGoster, hifzGoster])
+  }, [sureGoster, sureBilgisiGoster, cuzBilgisiGoster, hizbBilgisiGoster, sureMenuGoster, kayitGoster, sayfaGitGoster, sadeModGoster, temaGoster, yaziTipiGoster, otoOynatGoster, tekrarBtnGoster, bilgiGoster, gorselGoster, paylasGoster, hifzGoster])
   useEffect(() => { try { localStorage.setItem("vukuf-kuran-sade-gizli", JSON.stringify(sadeGizli)) } catch {} }, [sadeGizli])
 
 
@@ -1709,6 +1722,7 @@ const gorunurOgeSayisi = useMemo(() => {
   if (tekrarBtnGoster && sadeGorunur("tekrar")) n++
   if (bilgiGoster && sadeGorunur("bilgi")) n++
   if (gorselGoster && sadeGorunur("gorsel")) n++
+  if (paylasGoster && sadeGorunur("paylas")) n++
   if (hifzGoster && sadeGorunur("hifz")) n++
   if (yaziTipiGoster && sadeGorunur("yaziTipi")) n++
   if (otoOynatGoster && sadeGorunur("otoOynat")) n++
@@ -1718,7 +1732,7 @@ const gorunurOgeSayisi = useMemo(() => {
   if (sureBilgisiGoster && sadeGorunur("sureBilgisi")) n++
   if ((cuzBilgisiGoster && sadeGorunur("cuzBilgisi")) || (hizbBilgisiGoster && sadeGorunur("hizbBilgisi"))) n++
   return n
-}, [sureMenuGoster, kayitGoster, sayfaGitGoster, tekrarBtnGoster, bilgiGoster, gorselGoster, hifzGoster, yaziTipiGoster, otoOynatGoster,
+}, [sureMenuGoster, kayitGoster, sayfaGitGoster, tekrarBtnGoster, bilgiGoster, gorselGoster, paylasGoster, hifzGoster, yaziTipiGoster, otoOynatGoster,
     sadeModGoster, temaGoster, sureGoster, sureBilgisiGoster, cuzBilgisiGoster, hizbBilgisiGoster,
     sadeMode, sadeGizli])
 const wrapAktif = isMobile && barUiOlcegi > 0.9 && gorunurOgeSayisi >= 5
@@ -2348,6 +2362,8 @@ useEffect(() => {
   if (h && h.sureNo) {
     kuranHedefRef.current = true
     try { localStorage.removeItem("vukuf-kuran-hedef") } catch {}
+    // Paylaşılan bağlantıyla gelindiyse kısa "Size paylaşılan yer" notu (data/paylasim.js)
+    if (h.kaynak === "paylasim") setPaylasimNotu(h.not || "")
     // DÖNÜŞ NOKTASI: aramaya gitmeden önce okunan yer (açılışta geri yüklenmedi,
     // sonKonumRef hâlâ kayıtlı son konumu tutuyor). Mushafın başıysa bırakılmaz.
     {
@@ -2390,7 +2406,7 @@ useEffect(() => {
 useEffect(() => {
   try {
     const d = localStorage.getItem("vukuf-donus")
-    if (d === "arama" || d === "tefeul" || d === "gecmis") {
+    if (d === "arama" || d === "tefeul" || d === "gecmis" || d === "paylasim") {
       setDonusTip(d)
       localStorage.removeItem("vukuf-donus")
     } else if (d === "okuma") {
@@ -3364,6 +3380,11 @@ function donuseGit(i) {
 
   const ayetTikla = useCallback((sure, ayetNo, e) => {
     if (gorselModuRef.current) { gorselAcRef.current?.(sure, ayetNo); return }
+    if (paylasModuRef.current) {
+      setPaylasModu(false)
+      setPaylasAyet({ tip: "ayet", sureNo: sure.id, ayetNo, sureAdi: sure.isim })
+      return
+    }
     const meal = ayetMeal[sure.id]?.[ayetNo] || null
     setPopup({
       tip:    "ayet",
@@ -4096,6 +4117,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
             <AyarToggle etiket="Tekrar (Döngü)" aktif={tekrarBtnGoster} onToggle={() => setTekrarBtnGoster(v => !v)} {...{theme, isMobile, barUiOlcegi}} />
             <AyarToggle etiket="Bilgi (İşaretler)" aktif={bilgiGoster} onToggle={() => setBilgiGoster(v => !v)} {...{theme, isMobile, barUiOlcegi}} />
             <AyarToggle etiket="Görsel / Video" aktif={gorselGoster} onToggle={() => setGorselGoster(v => !v)} {...{theme, isMobile, barUiOlcegi}} />
+            <AyarToggle etiket="Paylaş" aktif={paylasGoster} onToggle={() => setPaylasGoster(v => !v)} {...{theme, isMobile, barUiOlcegi}} />
             <AyarToggle etiket="Hıfz Modu" aktif={hifzGoster} onToggle={() => setHifzGoster(v => !v)} {...{theme, isMobile, barUiOlcegi}} />
 
 
@@ -4198,6 +4220,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
       case "tekrar":      return tekrarBtnGoster && sadeGorunur("tekrar")
       case "bilgi":       return bilgiGoster && sadeGorunur("bilgi")
       case "gorsel":      return gorselGoster && sadeGorunur("gorsel")
+      case "paylas":      return paylasGoster && sadeGorunur("paylas")
       case "hifz":        return hifzGoster && sadeGorunur("hifz")
       case "yaziTipi":    return yaziTipiGoster && sadeGorunur("yaziTipi")
       case "otoOynat":    return otoOynatGoster && sadeGorunur("otoOynat")
@@ -4338,11 +4361,22 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
 
       {gorselGoster && sadeGorunur("gorsel") && (
         <button
-          onClick={() => { setPopup(null); setGorselModu(v => !v) }}
+          onClick={() => { setPopup(null); setPaylasModu(false); setGorselModu(v => !v) }}
           style={{ ...barButonStil(gorselModu), flexShrink: 0, ...barOge("gorsel") }}
           title="Âyetten görsel veya video oluştur"
         >
           <ImagePlay size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />
+        </button>
+      )}
+
+      {paylasGoster && sadeGorunur("paylas") && (
+        <button
+          onClick={() => { setPopup(null); setGorselModu(false); setPaylasModu(v => !v) }}
+          style={{ ...barButonStil(paylasModu), flexShrink: 0, ...barOge("paylas") }}
+          title="Âyeti paylaş — âyet numarasına dokunarak"
+          aria-pressed={paylasModu}
+        >
+          <Share2 size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />
         </button>
       )}
 
@@ -4859,6 +4893,37 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
             aria-label="Vazgeç"
           ><X size={14} /></button>
         </div>
+      )}
+      {paylasModu && (
+        <div style={{
+          position: "fixed",
+          top: barKonum === "ust" ? `${barYuksekligi + 12}px` : "auto",
+          bottom: barKonum === "ust" ? "auto" : `${barYuksekligi + 12}px`,
+          left: "50%", transform: "translateX(-50%)",
+          background: theme.surface,
+          border: `1px solid ${theme.accent}`,
+          borderRadius: "12px",
+          padding: "10px 16px",
+          fontSize: `${Math.round((isMobile ? 11 : 12) * barUiOlcegi)}px`,
+          color: theme.text,
+          zIndex: 499,
+          display: "flex", alignItems: "center", gap: "10px",
+          boxShadow: "0 4px 20px rgba(0,0,0,0.18)",
+          maxWidth: "92vw",
+        }}>
+          <Share2 size={14} color={theme.accent} />
+          <span>Paylaşmak istediğiniz âyetin numarasına dokunabilirsiniz.</span>
+          <button
+            onClick={() => setPaylasModu(false)}
+            style={{ background: "transparent", border: "none", color: theme.textSecondary, cursor: "pointer", padding: "2px", display: "flex" }}
+            aria-label="Vazgeç"
+          ><X size={14} /></button>
+        </div>
+      )}
+      <PaylasimPenceresi acik={!!paylasAyet} veri={paylasAyet} kapat={() => setPaylasAyet(null)} theme={theme} isMobile={isMobile} />
+      {paylasimNotu != null && (
+        <PaylasimNotu metin={paylasimNotu} theme={theme} kapat={() => setPaylasimNotu(null)}
+          ust={barKonum === "ust" ? barYuksekligi + 10 : 12} />
       )}
       {/* Sure menüsü */}
       {menuAcik && (
@@ -6065,10 +6130,11 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
             altPay={hapAltPay}
             ustPay={hapUstPay}
             ustuste={donusAcik && !hifzAcik && donusNoktalari.length > 0}
-            ikon={donusTip === "okuma" ? BookOpen : donusTip === "tefeul" ? Shuffle : donusTip === "gecmis" ? History : Search}
-            baslik={donusTip === "okuma" ? "Okumaya dön" : donusTip === "tefeul" ? "Tefeüle dön" : donusTip === "gecmis" ? "Geçmiş'e dön" : "Aramaya dön"}
-            alt={donusTip === "okuma" ? (donusAd || "Kitaptaki yerinize") : donusTip === "tefeul" ? "Tefeül ekranına" : donusTip === "gecmis" ? "Geçmiş listesine" : "Arama sonuçlarına"}
+            ikon={donusTip === "paylasim" ? Library : donusTip === "okuma" ? BookOpen : donusTip === "tefeul" ? Shuffle : donusTip === "gecmis" ? History : Search}
+            baslik={donusTip === "paylasim" ? "Ana sayfaya dön" : donusTip === "okuma" ? "Okumaya dön" : donusTip === "tefeul" ? "Tefeüle dön" : donusTip === "gecmis" ? "Geçmiş'e dön" : "Aramaya dön"}
+            alt={donusTip === "paylasim" ? "Kitaplığa" : donusTip === "okuma" ? (donusAd || "Kitaptaki yerinize") : donusTip === "tefeul" ? "Tefeül ekranına" : donusTip === "gecmis" ? "Geçmiş listesine" : "Arama sonuçlarına"}
             onGit={() => {
+              if (donusTip === "paylasim") { navigate("/"); return }
               if (donusTip === "okuma") { navigate(donusYol || "/"); return }
               if (donusTip === "gecmis") { navigate("/gecmis"); return }
               try { localStorage.setItem(`vukuf-${donusTip}-devam`, "1") } catch {}

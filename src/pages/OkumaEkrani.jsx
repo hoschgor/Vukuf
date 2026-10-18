@@ -8,6 +8,8 @@ import { esnekBul, esnekHazirla } from "../data/esnekArama"
 import SiraSecici from "../components/SiraSecici"
 import SesliOkumaKontrol from "../components/SesliOkumaKontrol"
 import LugatArama from "../components/LugatArama"
+import PaylasimPenceresi, { PaylasimNotu } from "../components/PaylasimPenceresi"
+import { dokunulanSecim, cumleyeGenislet } from "../data/paylasimSecim"
 import { sesKilidiAc, sesliOkuyucu } from "../data/sesliOkuma"
 import { ICINDEKILER_SIRALARI, ICINDEKILER_SIRA_ANAHTAR, agaciSirala, agaciDizinle, siraOku, siraYaz } from "../data/sureSirasi"
 import lugatVerisi from "../data/lugat.json"
@@ -41,7 +43,7 @@ import {
   Search, Highlighter, ChevronDown, Clock, Settings,
   ChevronUp, ChevronRight, Edit2, Pencil, Circle, Feather, List, Check, Shuffle, Asterisk, ArrowRight,
   GripVertical, Eye as EyeIkon, UnfoldHorizontal, Camera, FoldHorizontal, ImagePlay, MoveVertical,
-  Headphones, BookA,
+  Headphones, BookA, Share2, Library,
 } from "lucide-react"
 import { useMediaQuery } from '../data/hooks/useMediaQuery'
 import usePanelKilidi from "../data/hooks/usePanelKilidi"
@@ -129,6 +131,7 @@ const BAR_OGELERI = [
   { key: "oto",   label: "Otomatik Kaydırma", sadeVarsayilan: true },
   { key: "gorsel", label: "Görsel / Video",   sadeVarsayilan: true },
   { key: "sesli", label: "Sesli Okuma",       sadeVarsayilan: true },
+  { key: "paylas", label: "Paylaş",           sadeVarsayilan: true },   // 18 Ekim 2026
   { key: "sure",  label: "Okuma Süresi",      sadeVarsayilan: true },
   { key: "kisim", label: "Kısım Bilgisi",     sadeVarsayilan: true },
   { key: "sade",  label: "Sade Mod",          sadeVarsayilan: false },
@@ -150,6 +153,7 @@ const BAR_SIRA_OGELERI = [
   { key: "oto",     label: "Otomatik Kaydırma", Ikon: Play,        taraf: "sol" },
   { key: "gorsel",  label: "Görsel / Video",    Ikon: ImagePlay,   taraf: "sol" },
   { key: "sesli",   label: "Sesli Okuma",       Ikon: Headphones,  taraf: "sol" },
+  { key: "paylas",  label: "Paylaş",            Ikon: Share2,      taraf: "sol" },
   { key: "sade",    label: "Sade Mod",          Ikon: Circle,      taraf: "sag" },
   { key: "tema",    label: "Tema",              Ikon: Palette,     taraf: "sag" },
   { key: "ayarlar", label: "Ayarlar",           Ikon: Settings,    taraf: "sag" },
@@ -237,8 +241,11 @@ function kokEkiUygun(kok, ek) {
   if (!ek) return false
   if (KOK_EK_FIIL.test(ek)) return true
   // ikizleşme: hak + kında → "ında"
-  const e = ek[0] === kok[kok.length - 1] && !/[aeıioöuüâîû]/.test(ek[0]) ? ek.slice(1) : ek
-  return e.length > 0 && e.length <= 8 && KOK_EK_ISIM.test(e)
+  // (yalnız Arapça kökenli ikizleşen ünsüzlerde; "l" hariç — "belli" bel+li değil)
+  const e = ek[0] === kok[kok.length - 1] && /[kstdnrbzmfcç]/.test(ek[0]) ? ek.slice(1) : ek
+  if (!(e.length > 0 && e.length <= 8 && KOK_EK_ISIM.test(e))) return false
+  // 3 harflik kökte yapım eki kabul edilmez ("belli" → bel+li, "nurlu" gibi azınlığa değmez)
+  return kok.length >= 4 || !/^(?:s[ıiuü]z|l[ıiuü]|c[ıiuü]|ç[ıiuü])/.test(e)
 }
 const KOK_ONBELLEK = new Map()
 const KOK_ATILAN = /[.,!?;:'"()\[\]]/
@@ -1230,6 +1237,12 @@ useEffect(() => {
 // LÜGAT ARAMASI (17 Ekim 2026, kullanıcı: "bir buton ekleyip lügat araması yaptıralım; göz yormayan
 // şekilde sonuçları göstersin, kolayca çıkılabilsin") — components/LugatArama.jsx
 const [lugatAramaAcik, setLugatAramaAcik] = useState(false)
+// PAYLAŞ (18 Ekim 2026, kullanıcı: "Okuma Ekranında butona basınca kelime ya da cümle seçilecek,
+// paylaşma ekranı açılacak") — düğme seçim kipini açar; metne dokununca o kelimenin CÜMLESİ seçilir
+// (vurgulanır) ve components/PaylasimPenceresi açılır (orada "yalnız kelime"ye geçilebilir).
+const [paylasSecim, setPaylasSecim] = useState(false)
+const [paylasVeri, setPaylasVeri] = useState(null)
+const [paylasimNotu, setPaylasimNotu] = useState(null)   // bağlantıyla gelindiyse "Size paylaşılan yer"
 const [kaydirmaHizi, setKaydirmaHizi]         = useState(1)
 const [duraklatildi, setDuraklatildi]         = useState(false)
 
@@ -1758,12 +1771,36 @@ const konumKaydet = useCallback(() => {
 useEffect(() => {
   try {
     const d = localStorage.getItem("vukuf-donus")
-    if (d === "arama" || d === "tefeul" || d === "gecmis") {
+    if (d === "arama" || d === "tefeul" || d === "gecmis" || d === "paylasim") {
       setDonusTip(d)
       localStorage.removeItem("vukuf-donus")
     }
   } catch {}
 }, [])
+
+// PAYLAŞ seçim kipi: metne dokunuş YAKALANIR (lügat, dipnot vb. açılmaz) → cümle + kelime
+useEffect(() => {
+  if (!paylasSecim) return
+  const el = scrollRef.current
+  if (!el) return
+  const tik = (e) => {
+    e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation?.()
+    const s = dokunulanSecim(e.clientX, e.clientY, e.target)
+    if (!s || !(s.cumle || s.kelime)) return
+    try {
+      if (s.cumleAralik && window.CSS && window.CSS.highlights && typeof window.Highlight === "function")
+        window.CSS.highlights.set("vukuf-paylas", new window.Highlight(s.cumleAralik))
+    } catch { /* yoksay */ }
+    setPaylasSecim(false)
+    setPaylasVeri({
+      tip: "kitap", kitapId: id, kitapAdi: (kitap && kitap.baslik) || "",
+      sayfa: s.sayfa, satir: s.satir, cumle: s.cumle || s.kelime, kelime: s.kelime,
+    })
+  }
+  el.addEventListener("click", tik, true)
+  return () => el.removeEventListener("click", tik, true)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [paylasSecim, id])
 
 // Kaydetme: yalnız sekme gizlenince / sayfa kapanınca / bileşen sökülünce (scroll'da değil)
 useEffect(() => {
@@ -1792,13 +1829,18 @@ useEffect(() => {
     // DÖNÜŞ NOKTASI: bu kitapta daha önce kalınan yer (kitabın başıysa bırakılmaz)
     try {
       const onceki = JSON.parse(localStorage.getItem(`vukuf_son_konum_${id}`) || "null")
-      if (onceki && onceki.sayfa && (onceki.sayfa > 1 || (onceki.oran || 0) > 0.02)) donusBirak("arama", sn, onceki)
+      if (onceki && onceki.sayfa && (onceki.sayfa > 1 || (onceki.oran || 0) > 0.02)) donusBirak(aramaHedef.kaynak === "paylasim" ? "paylasim" : "arama", sn, onceki)
     } catch { /* yoksay */ }
+    // Paylaşılan bağlantıyla gelindiyse (data/paylasim.js) kısa not + daha uzun vurgu
+    const paylasimdan = aramaHedef.kaynak === "paylasim"
+    if (paylasimdan) setPaylasimNotu(aramaHedef.not || (kitap && kitap.baslik) || "")
     maxSayfaGuncelle(sn)
     setTimeout(() => {
       elemanaGit(sn,
         () => document.querySelector(`[data-satir="${sn}-${aramaHedef.satirIdx}"]`),
-        0, false, (el) => aramaVurgula(sn, el, aramaHedef.aranan))
+        0, false, (el) => aramaVurgula(sn, el,
+          aramaHedef.genislet ? cumleyeGenislet(el, aramaHedef.aranan) : aramaHedef.aranan,
+          true, false, null, paylasimdan ? 8000 : 3600))
       okumayiGoster()   // hizalama oturdu → açılış örtüsü solar
     }, 200)
     return
@@ -2136,7 +2178,7 @@ function icerikTiklandi(e) {
 function tumPanelleriKapat() {
   setAyarlarAcik(false); setSayfaGitAcik(false); setAaAcik(false)
   setKayitAcik(false); setTemaAcik(false); setAramaAcik(false)
-  setMenuAcik(false); setLugatAramaAcik(false)
+  setMenuAcik(false); setLugatAramaAcik(false); setPaylasSecim(false)
 }
 
 function togglePanel(setter, deger) {
@@ -2329,7 +2371,7 @@ function elemanaGit(sayfaNo, selectorFn, fallbackOran = 0, cizgi = true, onLand 
 
 // Bulunan öğede aranan metni seçili gibi vurgula (kutular sayfaya göre konumlanır) +
 // kelime görünür değilse ona kaydır. Kısa süre sonra söner.
-function aramaVurgula(sayfaNo, el, aranan, altCizgi = true, tumEleman = false, mutlakPay = null) {
+function aramaVurgula(sayfaNo, el, aranan, altCizgi = true, tumEleman = false, mutlakPay = null, sureMs = 3600) {
   const sc = scrollRef.current, pref = sayfaRefs.current[sayfaNo]
   if (!el || !sc || !pref) return
   // tumEleman: başlık gibi hedeflerde SATIRIN TAMAMINI işaretle → 2 satıra sarıyorsa
@@ -2370,7 +2412,7 @@ function aramaVurgula(sayfaNo, el, aranan, altCizgi = true, tumEleman = false, m
   }
   if (aramaZamanRef.current) clearTimeout(aramaZamanRef.current)
   setAramaVurgu({ sayfa: sayfaNo, kutular, altCizgi, nonce: Date.now() })
-  aramaZamanRef.current = setTimeout(() => setAramaVurgu(null), 3600)
+  aramaZamanRef.current = setTimeout(() => setAramaVurgu(null), sureMs)
 }
 
 // Odak işaretini (çizgi/ayraç) ayarla
@@ -3984,6 +4026,14 @@ const Bar = (
       </button>
     )}
 
+    {gorunurMu("paylas") && (
+      <button onClick={() => { const y = !paylasSecim; tumPanelleriKapat(); setVurguModu(false); setPaylasSecim(y) }}
+        style={{ ...barButonStil(paylasSecim), ...barOge("paylas") }}
+        title="Paylaş — bir kelimeye dokunarak cümlesini paylaşabilirsiniz" aria-pressed={paylasSecim}>
+        <Share2 size={bIkon(15)} />
+      </button>
+    )}
+
     {gorunurMu("oto") && (
       <button onClick={() => setOtomatikKaydirma(!otomatikKaydirma)} style={{ ...barButonStil(otomatikKaydirma), ...barOge("oto") }} title="Otomatik kaydırma">
         {otomatikKaydirma ? <Pause size={bIkon(15)} /> : <Play size={bIkon(15)} />}
@@ -4132,6 +4182,35 @@ return (
     {GorselIpucu}
     {AramaPanel}
     {MenuPanel}
+    {/* PAYLAŞ — seçim ipucu (18 Ekim 2026) */}
+    {paylasSecim && (
+      <div style={{
+        position: "fixed", left: "50%", transform: "translateX(-50%)", zIndex: 140,
+        top: barKonum === "ust" ? `${(barGorunur ? barYuk : 0) + 12}px` : "auto",
+        bottom: barKonum === "ust" ? "auto" : `${(barGorunur ? barYuk : 0) + 12}px`,
+        background: theme.surface, border: `1px solid ${theme.accent}`, borderRadius: "12px",
+        padding: "9px 10px 9px 14px", fontSize: "13px", color: theme.text,
+        display: "flex", alignItems: "center", gap: "10px", boxShadow: "0 4px 20px rgba(0,0,0,0.18)",
+        maxWidth: "min(440px, 92vw)",
+      }}>
+        <Share2 size={15} color={theme.accent} style={{ flexShrink: 0 }} />
+        <span style={{ lineHeight: 1.4 }}>Paylaşmak istediğiniz yerdeki bir kelimeye dokunabilirsiniz; o kelimenin cümlesi seçilir.</span>
+        <button onClick={() => setPaylasSecim(false)} aria-label="Vazgeç" title="Vazgeç"
+          style={{ background: "transparent", border: "none", color: theme.textSecondary, cursor: "pointer", padding: "4px", display: "flex", flexShrink: 0 }}>
+          <X size={15} />
+        </button>
+      </div>
+    )}
+    <style>{`::highlight(vukuf-paylas) { background-color: ${theme.accent}40; }`}</style>
+    <PaylasimPenceresi
+      acik={!!paylasVeri} veri={paylasVeri} theme={theme} isMobile={isMobile}
+      kapat={() => { setPaylasVeri(null); try { window.CSS?.highlights?.delete("vukuf-paylas") } catch { /* yoksay */ } }}
+    />
+    {paylasimNotu != null && (
+      <PaylasimNotu metin={paylasimNotu} theme={theme} kapat={() => setPaylasimNotu(null)}
+        ust={barKonum === "ust" && barGorunur ? barYuk + 10 : 12} />
+    )}
+
     <LugatArama
       acik={lugatAramaAcik} kapat={() => setLugatAramaAcik(false)}
       theme={theme} isMobile={isMobile} olcek={bilgiOlcegi}
@@ -4462,10 +4541,11 @@ return (
         altPay={barKonum === "alt" && barGorunur ? barYuk : 0}
         ustPay={barKonum === "ust" && barGorunur ? barYuk : 0}
         ustuste={donusAcik && donusNoktalari.length > 0}
-        ikon={donusTip === "tefeul" ? Shuffle : donusTip === "gecmis" ? GecmisIkon : Search}
-        baslik={donusTip === "tefeul" ? "Tefeüle dön" : donusTip === "gecmis" ? "Geçmiş'e dön" : "Aramaya dön"}
-        alt={donusTip === "tefeul" ? "Tefeül ekranına" : donusTip === "gecmis" ? "Geçmiş listesine" : "Arama sonuçlarına"}
+        ikon={donusTip === "paylasim" ? Library : donusTip === "tefeul" ? Shuffle : donusTip === "gecmis" ? GecmisIkon : Search}
+        baslik={donusTip === "paylasim" ? "Ana sayfaya dön" : donusTip === "tefeul" ? "Tefeüle dön" : donusTip === "gecmis" ? "Geçmiş'e dön" : "Aramaya dön"}
+        alt={donusTip === "paylasim" ? "Kitaplığa" : donusTip === "tefeul" ? "Tefeül ekranına" : donusTip === "gecmis" ? "Geçmiş listesine" : "Arama sonuçlarına"}
         onGit={() => {
+          if (donusTip === "paylasim") { navigate("/"); return }
           if (donusTip === "gecmis") { navigate("/gecmis"); return }
           try { localStorage.setItem(`vukuf-${donusTip}-devam`, "1") } catch {}
           navigate(donusTip === "tefeul" ? "/okuma-tefeul" : "/arama")

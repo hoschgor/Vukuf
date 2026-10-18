@@ -50,7 +50,12 @@
    sunucusundan (public/ses/antalia/ — sw.js bu yolu önbelleğe almıyor, depo burada), olmazsa
    Hugging Face'teki demodan iner. Varsayılan ses artık Antalia.
    GRUPLAR (her ses ayrı indirilir; motor hepsinde ortak):
-     "antalia" · "mms" · "ar" (Kerîm). ("tr" = Fettah, "dfki" = DFKI idi; 17 Ekim 2026'da çıkarıldı.)
+     "antalia" · "ar" (Kerîm). ("tr" = Fettah, "dfki" = DFKI, "mms" = MMS idi; çıkarıldılar.)
+
+   MMS ÇIKARILDI (18 Ekim 2026, kullanıcı: "MMS'yi de kaldıralım. Daha sonra farklı bir ses
+   bulursak ekleriz, Antalia şu an için gayet iyi"). İndirilmiş dosyası ESKI_PARCALAR ile
+   silinir. Parçalı indirme (`parcalar`) ve işçideki harf tabanlı belirteçleyici genel
+   olduğu için yerinde bırakıldı; ileride başka bir VITS sesi eklenirse kullanılabilir.
 
    DÜZELTME (17 Ekim 2026, kullanıcı): beğenilmeyen ses DFKI değil MMS'ti — "içinde birden fazla
    ses var, bir cümleyi biri, diğerini başkası okuyor; ilk okuyan sürekli okusa güzel olur".
@@ -87,11 +92,10 @@ export const VUKUF_SESLERI = [
   // tempo: konuşma uzunluğu çarpanı (>1 yavaşlatır). 16 Ekim 2026, kullanıcı: "Fahrettin'in
   // sesi fazla hızlı geldi; Fettah güzel." → Fettah varsayılan, Fahrettin %18 yavaş.
   { id: "antalia",   ad: "Antalia",   grup: "antalia", motor: "antalia",                                        tempo: 1 },
-  { id: "mms",       ad: "MMS",       grup: "mms", motor: "mms",                                               tempo: 1 },
   { id: "kareem",    ad: "Kerîm",     grup: "ar", yol: "ar/ar_JO/kareem/medium/ar_JO-kareem-medium",       tempo: 1 },
 ]
 const sesBul = (id) => VUKUF_SESLERI.find(s => s.id === id)
-/** Bir sesin indirme grubu ("antalia" | "mms" | "ar") */
+/** Bir sesin indirme grubu ("antalia" | "ar") */
 export const sesGrubu = (id) => sesBul(id)?.grup || "antalia"
 // Dışarıdan değiştirilebilir (deneme ortamı yerel sunucuyu gösterir)
 export const KAYNAK = {
@@ -122,6 +126,7 @@ const ESKI_PARCALAR = [
   ESKI_FAHRETTIN, ESKI_FAHRETTIN + ".json",
   ESKI_FETTAH, ESKI_FETTAH + ".json",            // 17 Ekim 2026'da çıkarıldı
   ESKI_DFKI, ESKI_DFKI + ".json",                // 17 Ekim 2026'da çıkarıldı
+  "/ses/mms/mms-tur.onnx", "/ses/mms/mms-tur.onnx.json",   // MMS — 18 Ekim 2026'da çıkarıldı
 ]
 let eskilerTemizlendi = false
 async function eskileriTemizle(dp) {
@@ -139,13 +144,6 @@ const ANTALIA_DOSYALARI = [
   ["text.onnx", 4.05], ["cond.onnx", 0.62], ["flow.onnx", 10.3], ["vocoder.fp16.onnx", 7.9],
   ["manifest.json", 0.01], ["frontend-data.json.gz", 1],
 ]
-// MMS: mms_onnx_cevir.py'nin verdiği parça sayısı (çıktısındaki "MMS_PARCA_SAYISI = N")
-export const MMS_PARCA_SAYISI = 3
-// Ses tutarlılığı: ses rengi gürültüsü düşük (0,667 → 0,2); ritim gürültüsü biraz düşük (0,8 → 0,6).
-// Ses hâlâ cümleden cümleye değişirse noise_scale daha da düşürülebilir (0 = tamamen sabit, biraz düz).
-export const MMS_AYAR = { noise_scale: 0.2, noise_w: 0.6 }
-const MMS_MODEL = "/ses/mms/mms-tur.onnx"
-const MMS_PARCALARI = Array.from({ length: MMS_PARCA_SAYISI }, (_, i) => `${MMS_MODEL}.${String(i).padStart(3, "0")}`)
 function dosyaListesi(grup = "antalia") {
   const l = [
     { url: KAYNAK.ortJs, ad: "Ses motoru", mb: TAHMINI_MB.ortJs },
@@ -158,14 +156,6 @@ function dosyaListesi(grup = "antalia") {
   for (const s of VUKUF_SESLERI.filter(v => v.grup === grup)) {
     if (s.motor === "antalia") {
       for (const [ad, mb] of ANTALIA_DOSYALARI) l.push({ url: KAYNAK.antalia(ad), yedekler: [KAYNAK.antaliaYedek(ad)], ad: `${s.ad} sesi`, mb })
-      continue
-    }
-    if (s.motor === "mms") {
-      // Model parça parça iner, birleştirilip MMS_MODEL anahtarıyla saklanır
-      l.push({ url: MMS_MODEL, parcalar: MMS_PARCALARI, ad: `${s.ad} sesi`, mb: 55 })
-      l.push({ url: MMS_MODEL + ".json", ad: `${s.ad} ayarları`, mb: 0.01 })
-      // Metin normalleştirici verisi (Antalia ile ortak dosya, aynı anahtar)
-      l.push({ url: KAYNAK.antalia("frontend-data.json.gz"), yedekler: [KAYNAK.antaliaYedek("frontend-data.json.gz")], ad: "Metin normalleştirici", mb: 1 })
       continue
     }
     l.push({ url: KAYNAK.model(s.id), yedekler: [KAYNAK.modelYedek(s.id)], ad: `${s.ad} sesi`, mb: TAHMINI_MB.model })
@@ -335,7 +325,6 @@ export async function sil(grup) {
     if (!grup) { await d.sil(); return }
     for (const s of VUKUF_SESLERI.filter(v => v.grup === grup)) {
       if (s.motor === "antalia") { for (const [ad] of ANTALIA_DOSYALARI) await d.kaldir(KAYNAK.antalia(ad)); continue }
-      if (s.motor === "mms") { await d.kaldir(MMS_MODEL); await d.kaldir(MMS_MODEL + ".json"); continue }   // normalleştirici verisi Antalia ile ortak, kalır
       await d.kaldir(KAYNAK.model(s.id)); await d.kaldir(KAYNAK.model(s.id) + ".json")
     }
   } catch { /* yoksay */ }
@@ -443,21 +432,6 @@ function sesHazir(is, id) {
   if (!is.sesSoz.has(id)) {
     const soz = (async () => {
       await is.kurSoz
-      if (sesBul(id)?.motor === "mms") {
-        const t0 = performance.now()
-        let model, ayarB, veri
-        try {
-          [model, ayarB, veri] = await Promise.all([
-            arabellek(MMS_MODEL), arabellek(MMS_MODEL + ".json"), arabellek(KAYNAK.antalia("frontend-data.json.gz")),
-          ])
-        } catch (e) { throw new Error(`${sesBul(id).ad} sesi okunamadı (${e?.message || e})`) }
-        const t1 = performance.now()
-        const ayar = JSON.parse(new TextDecoder().decode(ayarB))
-        ayar.inference = { ...(ayar.inference || {}), ...MMS_AYAR }   // tek ses (bkz. başlık)
-        const y = await iste(is, "ses", { ses: id, model, ayar, veri }, [model, veri])
-        tani.ses[id] = { dosyaMs: Math.round(t1 - t0), kurMs: Math.round(performance.now() - t1), ...(y.olcum || {}) }
-        return
-      }
       if (sesBul(id)?.motor === "antalia") {
         const t0 = performance.now()
         let b

@@ -41,7 +41,7 @@ import { mp3Url, KARILAR } from "./hooks/useAudioPlayer"
 
 export const SESLI_AYAR_ANAHTAR = "vukuf-sesli-okuma"
 export const SESLI_KONUM_ANAHTAR = "vukuf-sesli-konum"     // { kitap: { sayfa, satir } }
-// motor: "cihaz" (Web Speech) | "vukuf" (tarayıcı içi Piper — data/vukufSes.js); vukufSes: "antalia" (varsayılan) | "mms" (Fahrettin 16, Fettah ve DFKI 17 Ekim 2026'da çıkarıldı)
+// motor: "cihaz" (Web Speech) | "vukuf" (tarayıcı içi Piper — data/vukufSes.js); vukufSes: "antalia" (Fahrettin 16, Fettah ve DFKI 17 Ekim 2026'da çıkarıldı)
 export const SESLI_VARSAYILAN = {
   hiz: 1, sesTr: "", sesAr: "", arapca: "uyari", isaret: true, takip: true, motor: "cihaz", vukufSes: "antalia",
   ayetSes: "hafiz",      // kaynağı bilinen âyet: "hafiz" (kayıt + meal) | "meal"
@@ -101,7 +101,7 @@ export function sesliDestekVar() {
   return typeof window !== "undefined" && "speechSynthesis" in window && typeof window.SpeechSynthesisUtterance === "function"
 }
 
-const VUKUF_SES_IDLERI = ["antalia", "mms"]   // Fettah ve DFKI 17 Ekim 2026'da çıkarıldı
+const VUKUF_SES_IDLERI = ["antalia"]   // Fettah, DFKI (17 Ekim) ve MMS (18 Ekim 2026) çıkarıldı
 export function ayarOku() {
   let a
   try { a = { ...SESLI_VARSAYILAN, ...(JSON.parse(localStorage.getItem(SESLI_AYAR_ANAHTAR)) || {}) } }
@@ -214,7 +214,7 @@ const KISA = new Set(["hz", "bk", "bkz", "vb", "vs", "vd", "s", "sh", "c", "cilt
 const BUYUK_RE = /[A-ZÇĞİÖŞÜÂÎÛ"“'‘«(\[0-9]/
 // Cümlelere ayır: [.!?…] ardından boşluk ve BÜYÜK harf/rakam/tırnak gelirse sınır;
 // "Hz.", "bk. s. 45", "(a.s.m.) buyurmuş" gibi yerlerde bölmez.
-function cumleBol(metin) {
+export function cumleBol(metin) {   // paylaşmada da kullanılıyor (paylasimSecim.js)
   const parcalar = []
   let bas = 0
   for (let i = 0; i < metin.length; i++) {

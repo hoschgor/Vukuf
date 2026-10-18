@@ -287,7 +287,10 @@ export default function Hakkinda() {
         </div>
 
         {/* ── SESLİ OKUMA ATIFLARI (16 Ekim 2026) ─────────────────────────
-           Vukuf sesi (Antalia, Kerîm) ve hafız kayıtları. (MMS 18 Ekim 2026'da çıkarıldı.) */}
+           Vukuf sesi (Antalia, Kerîm) ve hafız kayıtları. 18 Ekim 2026: o günkü seslere göre
+           yenilendi — Türkçe yalnız Antalia (Fahrettin, Fettah, DFKI, MMS çıkarıldı), Arapça
+           Kerîm (Piper). Fonemleyici (espeak-ng) artık yalnız Kerîm için kullanılıyor;
+           Antalia kendi Türkçe metin normalleştiricisiyle çalışıyor. */}
         <div style={{ marginTop: "22px" }}>
           <h2 style={{
             fontSize: "12px", letterSpacing: "1.5px", color: ac,
@@ -297,17 +300,17 @@ export default function Hakkinda() {
           </h2>
           <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "10px" }}>
             {kaynak(Headphones, "Antalia-2 Mini",
-              "Antalia sesi (Türkçe) ve Türkçe metin normalleştiricisi — PatientDesk AI, Apache-2.0 lisansı. Ses yapaydır; gerçek bir kişinin sesi değildir.",
-              { href: "https://huggingface.co/cloud0day3/antalia-mini" })}
-            {kaynak(Headphones, "Piper ses modelleri",
-              "Kerîm (Arapça) sesi — rhasspy/piper-voices.",
+              "Türkçe eserlerin sesli okunmasındaki Vukuf sesi ve Türkçe metin normalleştiricisi (sayı, tarih, kısaltma) — PatientDesk AI, Apache-2.0 lisansı. Ses yapaydır; gerçek bir kişinin sesi değildir.",
+              { href: "https://huggingface.co/spaces/cloud0day3/antalia-mini" })}
+            {kaynak(Headphones, "Piper · Kerîm",
+              "Kaynağı belirtilmemiş Arapça ibareler için Kerîm sesi (ar_JO) — rhasspy/piper-voices, Piper projesi.",
               { href: "https://huggingface.co/rhasspy/piper-voices" })}
             {kaynak(Headphones, "EveryAyah",
-              "Sesli okumada âyetlerin hafız kayıtları",
+              "Sesli okumada ve Kur'ân oynatıcısında âyetlerin hafız kayıtları",
               { href: "https://everyayah.com/" })}
             {kaynak(Globe, "ONNX Runtime Web · espeak-ng",
-              "Ses motoru (Microsoft, MIT lisansı) ve fonemleyici (espeak-ng, GPL-3.0; @diffusionstudio/piper-wasm)",
-              { href: "https://github.com/espeak-ng/espeak-ng" })}
+              "Seslerin tarayıcıda çalıştığı motor (ONNX Runtime Web, Microsoft, MIT lisansı) ve Kerîm sesinin fonemleyicisi (espeak-ng, GPL-3.0; @diffusionstudio/piper-wasm)",
+              { href: "https://github.com/microsoft/onnxruntime" })}
           </div>
         </div>
 

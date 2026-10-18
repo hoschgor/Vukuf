@@ -51,6 +51,8 @@ export const SESLI_VARSAYILAN = {
                          // (yumuşak sınırlayıcıyla — iPhone'da <audio>.volume değiştirilemiyor);
                          // hafız kaydı ve cihaz sesinde en çok 1
   devamli: false,        // okuma ekranından çıkınca da okumaya devam (öbür ekranlarda küçük hap)
+  gizle: false,          // otomatik gizleme (18 Ekim 2026): dokunulmazsa denetim küçük yuvarlak düğmeye iner
+  gizleSn: 8,            // kaç saniye sonra (3–30)
 }
 /* Hafız kaydı hangi kâriden: sesli okumada seçilen, yoksa Kur'ân bölümündeki seçim */
 export function kariSec(ayar) {
@@ -769,7 +771,7 @@ function motorKur() {
         try { if (sesOgesi) sesOgesi.volume = Math.max(0, Math.min(1, y / (calanKazanc || 1))) } catch { /* yoksay */ }
         return
       }
-      if ("devamli" in parca) return
+      if ("devamli" in parca || "gizle" in parca || "gizleSn" in parca) return
       // Hız ya da Vukuf sesi değişti → önden hazırlanmış sesler geçersiz
       if ("hiz" in parca || "vukufSes" in parca || "motor" in parca) sentezleriSifirla()
       const calisiyor = durum.durum === "okuyor" || durum.durum === "duraklatildi"

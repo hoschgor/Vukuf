@@ -31,7 +31,7 @@ import {
   Gem, Feather, Play, Circle, Palette, Settings, Layers, Undo2, Headphones, Volume2,
   MessageSquareText, Brain, ImagePlay, MonitorPlay, List, Eye, Highlighter, Type, Shuffle,
   History, HardDrive, Smartphone, Hash, ChevronDown, X, MousePointerClick, Library, Star,
-  RotateCcw, Info, LayoutGrid, BookA, SlidersHorizontal, Share2,
+  RotateCcw, Info, LayoutGrid, BookA, SlidersHorizontal, Share2, Timer,
 } from "lucide-react"
 import AltSayfa from "./AltSayfa"
 import { Secim } from "./AyarOgeleri"
@@ -333,6 +333,16 @@ const KONULAR = [
       "Telefon kilitliyken ya da uygulama arka plandayken Kur'ân oynatıcısı kilit ekranındaki kontrollerle de yönetilebilir.",
     ],
     anahtar: "arka plan kilit ekranı devam devamlı oynatma okuma mini küçük oynatıcı küçült şemse rahle sürekli",
+  },
+  {
+    bolum: "dinleme", ikon: Timer, baslik: "Otomatik gizleme",
+    ozet: "Oynatıcının bir süre sonra küçük düğmeye inmesi.",
+    nerede: "Oynatıcı ya da sesli okuma → ayar düğmesi → Otomatik gizleme",
+    metin: [
+      "Otomatik gizleme açıkken oynatıcıya seçilen süre boyunca (3–30 saniye) dokunulmazsa oynatıcı tek yuvarlak düğmeye iner; okuma ya da dinleme sürer. Süre, ses ve hız gibi kaydırıcıyla seçilir.",
+      "Küçük düğme sürüklenerek istenen yere taşınabilir. Dokunulduğunda oynatıcı yeniden açılır: Kur'ân'da barın yanındaki yerinde (alt ya da üst), eserlerde sesli okuma denetiminin son bırakıldığı yerde.",
+    ],
+    anahtar: "otomatik gizle gizleme küçült küçük düğme saniye süre oynatıcı sürükle",
   },
   {
     bolum: "dinleme", ikon: MessageSquareText, baslik: "Meal penceresi",

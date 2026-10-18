@@ -21,7 +21,9 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 import { useEffect, useRef, useState, useSyncExternalStore } from "react"
-import { SkipBack, SkipForward, Play, Pause, X, Settings2, Crosshair, Loader2, GripVertical, Glasses, Gauge, RotateCcw, SlidersHorizontal, Volume1, Volume2, VolumeX, Headphones } from "lucide-react"
+import { KitapAmblem, KITAP_CSS } from "./SesliMiniHap"
+import { useHapKonumu } from "./DonusDugmesi"
+import { SkipBack, SkipForward, Play, Pause, X, Settings2, Crosshair, Loader2, GripVertical, Glasses, Gauge, RotateCcw, SlidersHorizontal, Volume1, Volume2, VolumeX, Headphones, Timer } from "lucide-react"
 import {
   sesliOkuyucu, sesliDestekVar, ayarOku, sesleriAl, turkceSesler, arapcaSesler, enIyiSes, konumOku,
   sesCinsiyeti, sesKilidiAc, kariSec, KARILAR,
@@ -358,6 +360,33 @@ export default function SesliOkumaKontrol({
   }
   const SesIkon = sesDeger === 0 ? VolumeX : sesDeger < 0.5 ? Volume1 : Volume2
 
+  /* OTOMATİK GİZLEME (18 Ekim 2026, kullanıcı: "oynatıcılara otomatik gizleme ayarı ekleyelim,
+     saniye seçilebilsin; açıkken mini moda geçsin ve sürüklenebilsin; OkumaEkranında açık
+     konumdayken son bırakıldığı yere dönsün"). Açıksa denetime gizleSn saniye dokunulmayınca
+     (ayar/hız kutusu açık değilken, cümle seçilmiyorken) tek yuvarlak düğmeye (KitapAmblem)
+     iner. Küçük düğme AYRI yerde durur ve sürüklenir ("vukuf-hap-konum-sesli-kucuk");
+     dokununca denetim, hapın son bırakıldığı yerde (HAP_KONUM_ANAHTAR) yeniden açılır.
+     Okuma, vurgu ve takip küçükken de sürer. */
+  const [gizleSnDeger, setGizleSnDeger] = useState(() => Number(ayarOku().gizleSn) || 8)
+  useEffect(() => { setGizleSnDeger(Number(ayar.gizleSn) || 8) }, [ayar.gizleSn])
+  const gizleZamanRef = useRef(0)
+  const gizleSnDegis = (v, hemen) => {
+    const y = Math.round(Math.max(3, Math.min(30, v)))
+    setGizleSnDeger(y)
+    clearTimeout(gizleZamanRef.current)
+    gizleZamanRef.current = setTimeout(() => { if (y !== Number(ayar.gizleSn)) ayarDegis({ gizleSn: y }) }, hemen ? 0 : 250)
+  }
+  const [kucuk, setKucuk] = useState(false)
+  const [dokunus, setDokunus] = useState(0)
+  useEffect(() => { if (!acik) setKucuk(false) }, [acik])
+  useEffect(() => { if (!ayar.gizle) setKucuk(false) }, [ayar.gizle])
+  useEffect(() => {
+    if (!acik || !ayar.gizle || kucuk || ayarAcik || hizAcik || secim) return
+    const t = setTimeout(() => { if (!surukleRef.current) setKucuk(true) }, (Number(ayar.gizleSn) || 8) * 1000)
+    return () => clearTimeout(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [acik, ayar.gizle, ayar.gizleSn, kucuk, ayarAcik, hizAcik, secim, dokunus])
+
   // VUKUF SESİ: indirilmiş mi, indirme ilerlemesi — gruplar: "antalia" · "ar" (Kerîm)
   const [vukufHazir, setVukufHazir] = useState({ antalia: null, ar: null })   // null: bilinmiyor
   const [indirme, setIndirme] = useState(null)              // { grup, oran, ad } | { grup, hata, ayrinti }
@@ -561,6 +590,11 @@ export default function SesliOkumaKontrol({
   }, [acik])
 
   if (!acik) return null
+  if (kucuk) {
+    const hal = (d.durum === "hazirlaniyor" || (d.durum === "okuyor" && d.bekliyor)) ? "hazirlaniyor"
+      : d.durum === "okuyor" ? "okuyor" : "duraklatildi"
+    return <SesliKucuk theme={theme} hal={hal} altPay={altPay} ac={() => { setKucuk(false); setDokunus(n => n + 1) }} />
+  }
   const destek = sesliDestekVar() || typeof Audio !== "undefined"
   const vukuf = ayar.motor === "vukuf"
   const okuyor = d.durum === "okuyor"
@@ -664,7 +698,9 @@ export default function SesliOkumaKontrol({
         .sesli-secim [data-satir]:hover { background: ${ac}0d; border-radius: 6px; }
         @keyframes sesliDon { to { transform: rotate(360deg) } }
       `}</style>
-      <div ref={bolgeRef} role="region" aria-label="Sesli okuma" style={{
+      <div ref={bolgeRef} role="region" aria-label="Sesli okuma"
+        onPointerDownCapture={() => setDokunus(n => n + 1)}
+        style={{
         position: "fixed", left: "50%", bottom: `calc(${altPay}px + env(safe-area-inset-bottom))`,
         transform: `translate(calc(-50% + ${konum.x}px), ${konum.y}px)`,
         zIndex: 140, maxWidth: "calc(100vw - 20px)",
@@ -836,6 +872,41 @@ export default function SesliOkumaKontrol({
                 }} />
               </span>
             </div>
+            <div style={{ height: "1px", background: theme.border, opacity: 0.6 }} />
+            {/* OTOMATİK GİZLEME — açıkken süre kaydırıcısı (3–30 sn) */}
+            <div role="switch" aria-checked={!!ayar.gizle} onClick={() => ayarDegis({ gizle: !ayar.gizle })}
+              title="Dokunulmayınca küçük yuvarlak düğmeye insin; dokununca yeniden açılır"
+              style={{ display: "flex", alignItems: "center", gap: "8px", padding: "5px 0", cursor: "pointer" }}>
+              <Timer size={16} color={ayar.gizle ? ac : theme.textSecondary} style={{ flexShrink: 0 }} />
+              <span style={{ flex: 1, minWidth: 0, fontSize: "12px", lineHeight: 1.25 }}>
+                Otomatik gizleme
+                <span style={{ display: "block", fontSize: "10px", color: theme.textSecondary }}>Küçük düğmeye insin, sürüklenebilsin</span>
+              </span>
+              <span aria-hidden="true" style={{
+                width: "30px", height: "18px", borderRadius: "999px", flexShrink: 0, position: "relative",
+                background: ayar.gizle ? ac : `${theme.textSecondary}44`, transition: "background .15s ease",
+              }}>
+                <span style={{
+                  position: "absolute", top: "2px", left: ayar.gizle ? "14px" : "2px", width: "14px", height: "14px",
+                  borderRadius: "50%", background: "#fff", transition: "left .15s ease", boxShadow: "0 1px 2px rgba(0,0,0,0.25)",
+                }} />
+              </span>
+            </div>
+            {ayar.gizle && (
+              <div style={{ display: "flex", alignItems: "center", gap: "8px", padding: "2px 0 4px" }}>
+                <span style={{ width: "16px", flexShrink: 0 }} />
+                <input type="range" min={3} max={30} step={1} value={gizleSnDeger}
+                  aria-label="Otomatik gizleme süresi (saniye)"
+                  onChange={e => gizleSnDegis(parseFloat(e.target.value))}
+                  onPointerUp={e => gizleSnDegis(parseFloat(e.currentTarget.value), true)}
+                  style={{ flex: 1, minWidth: 0, accentColor: ac, cursor: "pointer" }} />
+                <span style={{ minWidth: "40px", textAlign: "right", fontSize: "12px", fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>{gizleSnDeger} sn</span>
+                <button onClick={() => gizleSnDegis(8, true)} title="8 sn'ye getir" aria-label="8 saniyeye getir"
+                  style={{ border: "none", background: "none", padding: "4px", cursor: "pointer", color: theme.textSecondary, display: "flex" }}>
+                  <RotateCcw size={13} />
+                </button>
+              </div>
+            )}
           </div>
         )}
 
@@ -903,5 +974,28 @@ export default function SesliOkumaKontrol({
         </div>
       </div>
     </>
+  )
+}
+
+/* Otomatik gizlemede küçük hâl: KitapAmblem'li tek yuvarlak düğme (devamlı okumadaki
+   SesliMiniHap'in küçük hâliyle aynı çizim). Kendi yerinde durur, sürüklenir; dokununca açılır. */
+function SesliKucuk({ theme, hal, altPay, ac: acFn }) {
+  const ac = theme.accent
+  const k = useHapKonumu({ ad: "sesli-kucuk", yan: "sag", altta: true, altPay, kaydirGecir: true })
+  return (
+    <div ref={k.ref} className="vukuf-hap" {...k.olaylar}
+      style={{ ...k.stil, zIndex: k.surukleniyor ? 145 : 140, "--hap-kay": "8px", "--sk-ac": ac }}>
+      <style>{KITAP_CSS}</style>
+      <button onClick={acFn} aria-label="Sesli okuma denetimini aç" title="Sesli okuma · aç"
+        style={{
+          position: "relative", width: "46px", height: "46px", borderRadius: "50%", padding: 0, cursor: "pointer",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          background: theme.surface, border: `1px solid ${ac}`, color: ac,
+          boxShadow: k.surukleniyor ? "0 10px 28px rgba(0,0,0,0.32)" : "0 4px 16px rgba(0,0,0,0.22)",
+        }}>
+        {hal === "okuyor" && <span className="vukuf-sk-nabiz" aria-hidden="true" />}
+        <KitapAmblem ac={ac} zemin={theme.surface} hal={hal} />
+      </button>
+    </div>
   )
 }

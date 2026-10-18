@@ -80,7 +80,7 @@ function konumOku(ad) {
     return k && typeof k.fx === "number" && typeof k.fy === "number" ? k : null
   } catch { return null }
 }
-const HAP_ADLARI = ["geri", "kopru", "mini", "sesli-mini"]     // mini: uygulama geneli mini oynatıcı; sesli-mini: sesli okuma (devamlı okuma)
+const HAP_ADLARI = ["geri", "kopru", "mini", "sesli-mini", "kuran-kucuk", "sesli-kucuk"]     // mini: uygulama geneli mini oynatıcı; sesli-mini: sesli okuma (devamlı okuma); kuran-kucuk / sesli-kucuk: oynatıcıların otomatik gizlemedeki küçük hâli (18 Ekim 2026)
 export function hapKonumuVarMi() {
   return HAP_ADLARI.some(a => !!konumOku(a))
 }

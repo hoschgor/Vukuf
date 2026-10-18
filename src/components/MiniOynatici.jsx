@@ -38,7 +38,7 @@ const KUCUK_ANAHTAR = "vukuf-mini-kucuk"
 /* Nabız halkası: yalnız transform + opacity (bileşik katmanda çalışır). Eskiden
    box-shadow canlandırılıyordu; o her karede yeniden boyama ister, kitap
    kaydırılırken iPhone'da akıcılığı düşürebilirdi. */
-const NABIZ_CSS = `@keyframes vukuf-mini-nabiz{0%{transform:scale(1);opacity:.55}75%{transform:scale(1.42);opacity:0}100%{transform:scale(1.42);opacity:0}}
+export const NABIZ_CSS = `@keyframes vukuf-mini-nabiz{0%{transform:scale(1);opacity:.55}75%{transform:scale(1.42);opacity:0}100%{transform:scale(1.42);opacity:0}}
 .vukuf-mini-nabiz{position:absolute;inset:-1.5px;border-radius:50%;border:2px solid var(--mini-ac);pointer-events:none;animation:vukuf-mini-nabiz 1.8s ease-out infinite;will-change:transform,opacity}
 @media (prefers-reduced-motion: reduce){.vukuf-mini-nabiz{animation:none;opacity:0}}
 @keyframes vukuf-amb-don{to{transform:rotate(360deg)}}
@@ -63,7 +63,7 @@ const NABIZ_CSS = `@keyframes vukuf-mini-nabiz{0%{transform:scale(1);opacity:.55
        alır gibi uzayıp kısalır. Dışta nabız halkası (NABIZ_CSS).
      • Duraklatılmışken: hepsi durur, madalyonda oynat üçgeni.
    Yalnız transform/opacity canlandırılıyor (boyama yok) → kaydırmayı yormaz. */
-function SemseAmblem({ ac, zemin, calar, boy = 40 }) {
+export function SemseAmblem({ ac, zemin, calar, boy = 40 }) {   // PlayerBar küçük hâli de kullanıyor
   const uclar = Array.from({ length: 8 }, (_, i) => {
     const a = (Math.PI / 4) * i + Math.PI / 8
     return { x: Math.cos(a) * 45, y: Math.sin(a) * 45, gecik: (i * 0.275).toFixed(2) }

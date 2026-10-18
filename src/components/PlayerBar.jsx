@@ -1,8 +1,52 @@
 import { useRef, useEffect, useState } from "react"
 import {
   Square, SkipBack, SkipForward, Glasses, Gauge, RotateCcw,
-  Volume2, Volume1, VolumeX, SlidersHorizontal,
+  Volume2, Volume1, VolumeX, SlidersHorizontal, Timer,
 } from "lucide-react"
+import { SemseAmblem, NABIZ_CSS } from "./MiniOynatici"
+import { useHapKonumu } from "./DonusDugmesi"
+
+/* ── OTOMATİK GİZLEME (18 Ekim 2026) ──────────────────────────────────────────
+   Kullanıcı: "KuranOkuma ve OkumaEkranındaki oynatıcılara otomatik gizleme ayarı
+   ekleyelim, saniye seçilebilsin; açıkken playerbar mini moda geçsin ve sürüklenebilsin.
+   Mini moddan çıkarıldığında KuranOkuma'da eski yerine (barda seçili konuma göre alt ya
+   da üst) geri dönsün."
+   Açıksa oynatıcıya `sn` saniye dokunulmayınca (ses/hız kutusu kapalıyken) bar kalkar,
+   yerine şemse amblemli tek yuvarlak düğme (MiniOynatici'nin küçük hâliyle aynı) çıkar.
+   Düğme sürüklenir, yeri "vukuf-hap-konum-kuran-kucuk"te saklanır; dokununca oynatıcı
+   barın yanındaki ESKİ yerinde (alt/üst) açılır. Ses çalmayı sürdürür.
+   Ayar: localStorage "vukuf-oynatici-gizle" = { acik, sn } (sn 3–30, varsayılan 8). */
+const GIZLE_ANAHTAR = "vukuf-oynatici-gizle"
+function gizleOku() {
+  try {
+    const v = JSON.parse(localStorage.getItem(GIZLE_ANAHTAR) || "null")
+    if (v && typeof v === "object") return { acik: !!v.acik, sn: Math.max(3, Math.min(30, Number(v.sn) || 8)) }
+  } catch { /* yoksay */ }
+  return { acik: false, sn: 8 }
+}
+
+function KuranKucuk({ theme, calar, barKonum, altPay, ustPay, ac: acFn }) {
+  const ac = theme.accent
+  const k = useHapKonumu({ ad: "kuran-kucuk", yan: "sag", altta: barKonum !== "ust", altPay, ustPay, kaydirGecir: true })
+  return (
+    <>
+      <style>{NABIZ_CSS}</style>
+      <div ref={k.ref} className="vukuf-hap" {...k.olaylar}
+        style={{ ...k.stil, zIndex: k.surukleniyor ? 130 : 96, "--hap-kay": "8px", "--mini-ac": ac }}>
+        <button onClick={acFn} aria-label="Oynatıcıyı aç" title="Oynatıcıyı aç"
+          style={{
+            position: "relative", width: "46px", height: "46px", borderRadius: "50%", padding: 0, cursor: "pointer",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            background: theme.surface, border: `1px solid ${ac}`, color: ac,
+            boxShadow: k.surukleniyor ? "0 10px 28px rgba(0,0,0,0.32)" : "0 4px 16px rgba(0,0,0,0.22)",
+          }}>
+          {calar && <span className="vukuf-mini-nabiz" aria-hidden="true" />}
+          <SemseAmblem ac={ac} zemin={theme.surface} calar={calar} />
+        </button>
+      </div>
+    </>
+  )
+}
 import { KARILAR } from "../data/hooks/useAudioPlayer"
 import { useArkaCalma } from "../data/oynatici"
 import { Headphones } from "lucide-react"
@@ -77,6 +121,23 @@ export default function PlayerBar({
   useEffect(() => { if (ses > 0) oncekiSesRef.current = ses }, [ses])
   const SesIkon = ses === 0 ? VolumeX : ses < 0.5 ? Volume1 : Volume2
 
+  // OTOMATİK GİZLEME (bkz. dosya başı)
+  const [gizle, setGizleDurum] = useState(gizleOku)
+  const setGizle = (p) => setGizleDurum(g => {
+    const y = { ...g, ...p }
+    try { localStorage.setItem(GIZLE_ANAHTAR, JSON.stringify(y)) } catch { /* kota */ }
+    return y
+  })
+  const [kucuk, setKucuk] = useState(false)
+  const [dokunus, setDokunus] = useState(0)
+  useEffect(() => { if (!gizle.acik) setKucuk(false) }, [gizle.acik])
+  useEffect(() => { if (durum === "kapali") setKucuk(false) }, [durum])
+  useEffect(() => {
+    if (!gizle.acik || kucuk || ayarAcik || durum === "kapali") return
+    const t = setTimeout(() => setKucuk(true), gizle.sn * 1000)
+    return () => clearTimeout(t)
+  }, [gizle.acik, gizle.sn, kucuk, ayarAcik, durum, dokunus])
+
   // Baloncuk (ses/hız kutusu): dışarı dokununca ve Esc ile kapanır.
   const baloncukRef = useRef(null)
   const ayarDugmeRef = useRef(null)
@@ -102,6 +163,7 @@ export default function PlayerBar({
   // Gerçek yüksekliği ölç → ebeveyn (KuranOkuma) menü/içerik ofsetlerinde kullanır
   const rootRef = useRef(null)
   useEffect(() => {
+    if (kucuk && onOlcum) { onOlcum(0); return }          // küçükken bar yer kaplamıyor
     if (!rootRef.current || !onOlcum) return
     const ro = new ResizeObserver(() => {
       // offsetHeight = padding + border dahil (gerçek yükseklik)
@@ -109,7 +171,7 @@ export default function PlayerBar({
     })
     ro.observe(rootRef.current)
     return () => ro.disconnect()
-  }, [onOlcum, durum])
+  }, [onOlcum, durum, kucuk])
 
   if (durum === "kapali") return null
 
@@ -121,6 +183,15 @@ export default function PlayerBar({
 
   // Bar görünürken oynatıcı barın iç kenarına bitişik; bar gizlenince
   // oynatıcı barın yerine (kenara) geçsin
+  if (kucuk) {
+    return (
+      <KuranKucuk theme={theme} calar={durum === "caliyor"} barKonum={barKonum}
+        altPay={barKonum === "alt" && barGorunur ? mainBarHeight : 0}
+        ustPay={barKonum === "ust" && barGorunur ? mainBarHeight : 0}
+        ac={() => { setKucuk(false); setDokunus(n => n + 1) }} />
+    )
+  }
+
   const getBottomPosition = () => (barKonum === "alt" ? (barGorunur ? `${mainBarHeight}px` : "0px") : "auto")
   const getTopPosition = () => (barKonum === "ust" ? (barGorunur ? `${mainBarHeight}px` : "0px") : "auto")
 
@@ -171,7 +242,7 @@ export default function PlayerBar({
   }
 
   return (
-    <div ref={rootRef} style={{
+    <div ref={rootRef} onPointerDownCapture={() => setDokunus(n => n + 1)} style={{
       position: "fixed",
       left: 0,
       right: 0,
@@ -281,6 +352,40 @@ export default function PlayerBar({
               }} />
             </span>
           </div>
+          <div style={{ height: "1px", background: theme.border, opacity: 0.6, margin: "0 2px" }} />
+          {/* OTOMATİK GİZLEME — açıkken süre (3–30 sn) */}
+          <div role="switch" aria-checked={gizle.acik} onClick={() => setGizle({ acik: !gizle.acik })}
+            title="Dokunulmayınca oynatıcı küçük yuvarlak düğmeye insin; dokununca yerinde açılır"
+            style={{ ...satirStil, cursor: "pointer" }}>
+            <span style={{ ...ikonDugme, cursor: "pointer" }}><Timer size={16} color={gizle.acik ? theme.accent : theme.textSecondary} /></span>
+            <span style={{ flex: 1, minWidth: 0, fontSize: "12px", color: theme.text, lineHeight: 1.25 }}>
+              Otomatik gizleme
+              <span style={{ display: "block", fontSize: "10px", color: theme.textSecondary }}>Küçük düğmeye insin, sürüklenebilsin</span>
+            </span>
+            <span aria-hidden="true" style={{
+              width: "30px", height: "18px", borderRadius: "999px", flexShrink: 0, position: "relative",
+              background: gizle.acik ? theme.accent : `${theme.textSecondary}44`, transition: "background .15s ease",
+            }}>
+              <span style={{
+                position: "absolute", top: "2px", left: gizle.acik ? "14px" : "2px",
+                width: "14px", height: "14px", borderRadius: "50%", background: "#fff",
+                boxShadow: "0 1px 3px rgba(0,0,0,0.25)", transition: "left .15s ease",
+              }} />
+            </span>
+          </div>
+          {gizle.acik && (
+            <div style={satirStil}>
+              <span style={{ ...ikonDugme, cursor: "default" }} />
+              <input type="range" min={3} max={30} step={1} value={gizle.sn}
+                aria-label="Otomatik gizleme süresi (saniye)"
+                onChange={e => setGizle({ sn: parseInt(e.target.value, 10) || 8 })}
+                style={{ flex: 1, minWidth: 0, accentColor: theme.accent, cursor: "pointer" }} />
+              <span style={degerStil}>{gizle.sn} sn</span>
+              <button onClick={() => setGizle({ sn: 8 })} title="8 sn'ye getir" style={sifirStil}>
+                <RotateCcw size={12} />
+              </button>
+            </div>
+          )}
         </div>
       )}
 

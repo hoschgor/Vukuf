@@ -27,7 +27,7 @@ const KUCUK_ANAHTAR = "vukuf-sesli-mini-kucuk"
 
 /* Yalnız transform + opacity canlandırılıyor (boyama yok) → kitap kaydırılırken
    iPhone'u yormaz. Adlar Kur'ân mini oynatıcısınınkinden ayrı (ikisi birlikte açık olabilir). */
-const KITAP_CSS = `@keyframes vukuf-sk-nabiz{0%{transform:scale(1);opacity:.55}75%{transform:scale(1.42);opacity:0}100%{transform:scale(1.42);opacity:0}}
+export const KITAP_CSS = `@keyframes vukuf-sk-nabiz{0%{transform:scale(1);opacity:.55}75%{transform:scale(1.42);opacity:0}100%{transform:scale(1.42);opacity:0}}
 .vukuf-sk-nabiz{position:absolute;inset:-1.5px;border-radius:50%;border:2px solid var(--sk-ac);pointer-events:none;animation:vukuf-sk-nabiz 2.2s ease-out infinite;will-change:transform,opacity}
 @keyframes vukuf-sk-don{to{transform:rotate(360deg)}}
 @keyframes vukuf-sk-satir{0%{transform:scaleX(0);opacity:1}13%{transform:scaleX(1);opacity:1}24%{transform:scaleX(1);opacity:0}100%{transform:scaleX(1);opacity:0}}
@@ -49,7 +49,7 @@ const KITAP_CSS = `@keyframes vukuf-sk-nabiz{0%{transform:scale(1);opacity:.55}7
    • DURAKLATILMIŞKEN: hepsi durur; sağ sayfada satırlar yerine oynat üçgeni. */
 const SOL_SATIR = [-9, -3, 3].map(y => ({ x: -22, y }))
 const SAG_SATIR = [-9, -3, 3].map(y => ({ x: 5, y }))
-function KitapAmblem({ ac, zemin, hal, boy = 40 }) {
+export function KitapAmblem({ ac, zemin, hal, boy = 40 }) {   // SesliOkumaKontrol küçük hâli de kullanıyor
   const okur = hal === "okuyor", hazir = hal === "hazirlaniyor"
   const tesbih = Array.from({ length: 16 }, (_, i) => {
     const a = (Math.PI / 8) * i

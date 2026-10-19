@@ -532,6 +532,8 @@ function motorKur() {
   const sentezleriSifirla = () => { sentezler = new Map(); sentezNesli++ }
   const sentezAl = (i) => {
     if (i >= birimler.length) { const s0 = sira; sira = i; doldur(); sira = s0 }
+    // Sayfanın yarım kalan son cümlesi: önce sonraki sayfa eklensin (birleşsin), sonra hazırlansın
+    else if (i === birimler.length - 1 && i > sira && sonSayfaIdx < sayfalar.length - 1 && yarimMi(birimler[i])) sayfaEkle()
     const b = birimler[i]
     if (!vukufBirimMi(b)) return null
     if (!sentezler.has(i)) {
@@ -559,11 +561,34 @@ function motorKur() {
   }
 
   // Okunacak birim kalmadıysa sıradaki sayfanın birimleri eklenir
-  const doldur = () => {
-    while (sira >= birimler.length && sonSayfaIdx < sayfalar.length - 1) {
-      sonSayfaIdx++
-      birimler.push(...sayfaBirimleri(sayfalar[sonSayfaIdx], secenek))
+  /* SAYFA ARASINDA BÖLÜNEN CÜMLE (19 Ekim 2026, kullanıcı: "yeni sayfaya geçtiğinde cümle
+     bitmemişse fazla beklemeden geçmesi gerekiyor"). Sayfanın son cümlesi noktalamayla
+     bitmiyorsa ve sonraki sayfa küçük harfle (cümlenin devamıyla) başlıyorsa iki parça TEK
+     birim olarak seslendirilir: arada cümle sonu duraksaması, yeni ses hazırlığı ve sayfa
+     geçişi beklemesi olmaz. Birim ilk parçanın yerinde kalır; ikinci parça `ek` olarak
+     taşınır ve ekranda o da işaretlenir (SesliOkumaKontrol). Çok uzun cümlede (>420 harf)
+     birleştirilmez. Henüz çalınmamış ilk parçanın önden hazırlanmış sesi atılır. */
+  const BITIS_RE = /[.!?…:;]["'”’»)\]]*\s*$/
+  const yarimMi = (b) => !!b && b.tip === "metin" && b.lang === "tr" && !b.ek && !BITIS_RE.test(b.goster || "")
+  const devamMi = (b) => !!b && b.tip === "metin" && b.lang === "tr" && /^[\s"'“‘«(]*[\p{Ll}]/u.test(b.goster || "")
+  const sayfaEkle = (simdikiDahil = false) => {
+    sonSayfaIdx++
+    const yeni = sayfaBirimleri(sayfalar[sonSayfaIdx], secenek)
+    const sonIdx = birimler.length - 1, son = birimler[sonIdx]
+    if (yeni.length && (sonIdx > sira || (simdikiDahil && sonIdx === sira)) && yarimMi(son) && devamMi(yeni[0]) &&
+        (son.soyle.length + yeni[0].soyle.length) <= 420) {
+      const ilk = yeni.shift()
+      birimler[sonIdx] = {
+        ...son,
+        soyle: `${son.soyle.replace(/\s+$/, "")} ${ilk.soyle.replace(/^\s+/, "")}`,
+        ek: [{ sayfa: ilk.sayfa, satir: ilk.satir, goster: ilk.goster }],
+      }
+      if (sentezler.has(sonIdx)) sentezler.delete(sonIdx)
     }
+    birimler.push(...yeni)
+  }
+  const doldur = () => {
+    while (sira >= birimler.length && sonSayfaIdx < sayfalar.length - 1) sayfaEkle()
   }
 
   const sustur = () => {
@@ -581,6 +606,8 @@ function motorKur() {
     const benim = nesil
     sira = Math.max(0, i)
     doldur()
+    // Henüz başlamamış, sayfanın yarım kalan son cümlesi → sonraki sayfanın devamıyla birleşsin
+    if (sira === birimler.length - 1 && sonSayfaIdx < sayfalar.length - 1 && yarimMi(birimler[sira])) sayfaEkle(true)
     const b = birimler[sira]
     if (!b) { yay({ durum: "bitti", birim: null }); ekranAcik(false); return }
     // Yeni birim okunmaya başlıyor → önceki "ses çalınamadı" uyarısı kalksın (19 Ekim 2026,

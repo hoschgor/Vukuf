@@ -310,6 +310,14 @@ export default function SesliOkumaKontrol({
           try { ortuCiz(els[0], bul.r) } catch { /* yoksay */ }
         }
       }
+      // Sayfa arasında bölünen cümlenin ikinci parçası (sesliOkuma.js `ek`) — o da işaretlenir
+      for (const e of (b.ek || [])) {
+        const el2 = document.querySelector(`[data-satir="${e.sayfa}-${e.satir}"]`)
+        if (!el2) continue
+        el2.classList.add("sesli-satir")
+        const bul2 = e.goster ? cumleAraligi(el2, e.goster, 0) : null
+        if (bul2) { try { ortuCiz(el2, bul2.r) } catch { /* yoksay */ } }
+      }
       // Hedef: okunan cümle (bulunduysa), değilse satır(lar)
       hedefRef.current = () => {
         try {

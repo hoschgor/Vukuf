@@ -1,10 +1,7 @@
 import { useState } from "react"
-import { X, Bookmark, Trash2, ChevronRight, AlertTriangle, Pencil } from "lucide-react"
-
-function tarihFormatla(ts) {
-  const d = new Date(ts)
-  return d.toLocaleDateString("tr-TR", { day: "numeric", month: "short", year: "numeric" })
-}
+import { X, Bookmark, Trash2, AlertTriangle, Pencil } from "lucide-react"
+// 19 Ekim 2026: satırlar ve Düzenle düğmesi ortak bileşenden (OkumaEkrani İşaretler ile aynı)
+import { DuzenleDugmesi, KayitSatiri } from "./KayitOgeleri"
 
 export default function KayitPaneli({ 
   theme,
@@ -22,6 +19,8 @@ export default function KayitPaneli({
   const [duzenleId, setDuzenleId] = useState(null)
   const [baslik, setBaslik] = useState("")
   const [hepsiOnay, setHepsiOnay] = useState(0)
+  // DÜZENLE (19 Ekim 2026, kullanıcı): kalem ve sil düğmeleri yalnız düzenlemede görünür
+  const [duzenle, setDuzenle] = useState(false)
 
   const mevcutKayit = kayitlar?.find(k => k.sayfa === mevcutSayfa)
 
@@ -131,9 +130,12 @@ export default function KayitPaneli({
               </span>
             )}
           </div>
-          <button onClick={onKapat} style={{ background: "none", border: "none", cursor: "pointer", color: theme.textSecondary }}>
-            <X size={15} />
-          </button>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <DuzenleDugmesi duzenle={duzenle} setDuzenle={(v) => { setDuzenle(v); setHepsiOnay(0) }} theme={theme} gizli={!kayitlar?.length} />
+            <button onClick={onKapat} aria-label="Kapat" style={{ background: "none", border: "none", cursor: "pointer", color: theme.textSecondary, display: "flex" }}>
+              <X size={15} />
+            </button>
+          </div>
         </div>
 
         {/* İçerik */}
@@ -193,66 +195,18 @@ export default function KayitPaneli({
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
               {kayitlar.map(k => (
-                <div key={k.id} style={{
-                  display: "flex", alignItems: "center",
-                  background: k.sayfa === mevcutSayfa ? `${theme.accent}12` : theme.bg,
-                  border: `1px solid ${k.sayfa === mevcutSayfa ? theme.accent + "40" : theme.border}`,
-                  borderRadius: "10px", padding: "8px 10px",
-                  gap: "8px",
-                }}>
-                  <div style={{
-                    minWidth: "30px", height: "30px", borderRadius: "8px",
-                    background: `${theme.accent}20`,
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    fontSize: "11px", fontWeight: "700", color: theme.accent,
-                    flexShrink: 0,
-                  }}>
-                    {k.sayfa}
-                  </div>
-
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{
-                      fontSize: "13px", fontWeight: "500", color: theme.text,
-                      whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
-                    }}>
-                      {k.baslik}
-                    </div>
-                    <div style={{ fontSize: "10px", color: theme.textSecondary, marginTop: "1px" }}>
-                      {tarihFormatla(k.olusturma)}
-                    </div>
-                  </div>
-
-                  <div style={{ display: "flex", alignItems: "center", gap: "4px", flexShrink: 0 }}>
-                    <button
-                      onClick={() => degistirBaslat(k)}
-                      title="Düzenle"
-                      style={s.ikonButon(false)}
-                    >
-                      <Pencil size={11} />
-                    </button>
-                    <button
-                      onClick={() => kayitSil(k.id)}
-                      title="Sil"
-                      style={s.ikonButon(true)}
-                    >
-                      <Trash2 size={11} />
-                    </button>
-                    <button
-                      onClick={() => { onSayfaGit(k.sayfa, k.scrollY, k.id); onKapat() }}
-                      title="Sayfaya git"
-                      style={{ ...s.ikonButon(false), color: theme.accent, borderColor: `${theme.accent}40`, background: `${theme.accent}10` }}
-                    >
-                      <ChevronRight size={13} />
-                    </button>
-                  </div>
-                </div>
+                <KayitSatiri key={k.id} kayit={k} theme={theme} duzenle={duzenle}
+                  aktif={k.sayfa === mevcutSayfa}
+                  onGit={(kk) => { onSayfaGit(kk.sayfa, kk.scrollY, kk.id); onKapat() }}
+                  onAdDegistir={(id, ad) => onKayitGuncelle?.(id, ad)}
+                  onSil={(id) => kayitSil(id)} />
               ))}
             </div>
           )}
         </div>
 
         {/* Alt — tümünü sil */}
-        {kayitlar && kayitlar.length > 1 && (
+        {duzenle && kayitlar && kayitlar.length > 1 && (
           <div style={{ borderTop: `1px solid ${theme.border}`, padding: "10px 16px" }}>
             {hepsiOnay === 0 && (
               <button onClick={hepsiniSil} style={{ ...s.buton(false, true), width: "100%" }}>

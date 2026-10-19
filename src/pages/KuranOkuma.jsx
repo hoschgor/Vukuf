@@ -21,6 +21,7 @@ import { gorselIcinTemizle, tecvidAyikla, ozelOkuyusAyikla, VAKIF_HARF_KOD } fro
 import PlayerBar from "../components/PlayerBar"
 import KitapAyraci from "../components/KitapAyraci"
 import KayitPaneli from "../components/KayitPaneli"
+import { YerineKoySorusu } from "../components/KayitOgeleri"
 import KariSecici from "../components/KariSecici"
 import KelimePopup from "../components/KelimePopup"
 import YuklemeEkrani from "../components/YuklemeEkrani"
@@ -1111,6 +1112,8 @@ export default function KuranOkuma({ kitap }) {
   const [sayfaGirdi, setSayfaGirdi] = useState("")
   const [sayfaGirdiAcik, setSayfaGirdiAcik] = useState(false)
   const [kayitKonumModu, setKayitKonumModu] = useState(false)
+  // YENİ KAYIT → "yerine koy" sorusu (19 Ekim 2026): seçilen konum bekler; kayıt varsa sorulur
+  const [bekleyenKayit, setBekleyenKayit] = useState(null)   // { sayfa, scrollY }
   // GÖRSEL OLUŞTUR: fotoğraf makinesi butonu "âyet seçme modunu" açar; kullanıcı bir âyete
   // dokununca o âyetin verisiyle görsel paneli açılır. ayetTikla useCallback([]) olduğundan
   // mod ve açıcı REF üzerinden okunur (kimlik değişip MushafSayfa'yı boşa render etmesin).
@@ -4850,6 +4853,33 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
         />
       )}
 
+      <YerineKoySorusu
+        acik={!!bekleyenKayit}
+        yeniEtiket={bekleyenKayit ? `Sayfa ${bekleyenKayit.sayfa}` : ""}
+        kayitlar={kayitlar}
+        etiket={(k) => `s. ${k.sayfa}`}
+        theme={theme} isMobile={isMobile}
+        onVazgec={() => setBekleyenKayit(null)}
+        onYeni={() => {
+          const b = bekleyenKayit
+          setBekleyenKayit(null)
+          if (!b) return
+          const yeniKayit = { id: Date.now().toString(), sayfa: b.sayfa, scrollY: b.scrollY, baslik: `Sayfa ${b.sayfa}`, olusturma: Date.now() }
+          setKayitlar(prev => { const y = [...prev, yeniKayit]; localStorage.setItem("vukuf-kayitlar", JSON.stringify(y)); return y })
+        }}
+        onYerine={(id) => {
+          const b = bekleyenKayit
+          setBekleyenKayit(null)
+          if (!b) return
+          // Ad (ve oluşturma tarihi) korunur; yer yeni konum olur
+          setKayitlar(prev => {
+            const y = prev.map(k => (k.id === id ? { ...k, sayfa: b.sayfa, scrollY: b.scrollY, guncelleme: Date.now() } : k))
+            localStorage.setItem("vukuf-kayitlar", JSON.stringify(y))
+            return y
+          })
+        }}
+      />
+
       {kayitKonumModu && (
         <div style={{
           position: "fixed",
@@ -5598,9 +5628,11 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
               const oran = Math.max(0, Math.min(1, (e.clientY - nRect.top) / (node.offsetHeight || 1)))
               // kayitEkle mevcutSayfa'yı kullanır → önce onu ayarla, sonra ekle
               setMevcutSayfa(hedefNo)
+              setKayitKonumModu(false)
+              // Kayıt varsa "yeni mi, bir kaydın yerine mi?" sorulur (YerineKoySorusu)
+              if (kayitlar.length) { setBekleyenKayit({ sayfa: hedefNo, scrollY: oran }); return }
               const yeniKayit = { id: Date.now().toString(), sayfa: hedefNo, scrollY: oran, baslik: `Sayfa ${hedefNo}`, olusturma: Date.now() }
               setKayitlar(prev => { const y = [...prev, yeniKayit]; localStorage.setItem("vukuf-kayitlar", JSON.stringify(y)); return y })
-              setKayitKonumModu(false)
               return
             }
             if (window.innerWidth <= 768) return

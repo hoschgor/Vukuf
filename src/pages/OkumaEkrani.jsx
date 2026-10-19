@@ -25,6 +25,7 @@ import lugatVerisi from "../data/lugat.json"
    geri eklenir ve aşağıdaki satıra `|| risaleLugat[temiz]` yazılır. */
 import kavramlarVerisi from "../data/kavramlar.json"
 import KitapAyraci from "../components/KitapAyraci"
+import { DuzenleDugmesi, KayitSatiri, YerineKoySorusu } from "../components/KayitOgeleri"
 import YuklemeEkrani from "../components/YuklemeEkrani"
 import IosSwitch from "../components/IosSwitch"
 import DonusDugmesi, { KopruDugmesi, hapKonumlariniSifirla } from "../components/DonusDugmesi"
@@ -1418,6 +1419,9 @@ const [kayitlar, setKayitlar] = useState(() => {
   try { return JSON.parse(localStorage.getItem(`vukuf_kayitlar_${id}`)) || [] } catch { return [] }
 })
 const [kayitKonumModu, setKayitKonumModu] = useState(false)
+// İŞARETLER (19 Ekim 2026, kullanıcı): kalem/sil yalnız "Düzenle"de; yeni işarette "yerine koy" sorusu
+const [isaretDuzenle, setIsaretDuzenle] = useState(false)
+const [bekleyenKayit, setBekleyenKayit] = useState(null)   // { sayfa, oran }
 const [odakKonum, setOdakKonum] = useState(null)   // { sayfa, oran, nonce }
 const odakZamanRef = useRef(null)
 const [aramaVurgu, setAramaVurgu] = useState(null) // { sayfa, kutular:[{top,left,width,height}], nonce }
@@ -2520,6 +2524,16 @@ function kayitEkle(sayfaNo, oran, baslik) {
   }]
   setKayitlar(yeni); kayitlariKaydet(yeni)
 }
+function kayitAdDegistir(kayitId, baslik) {
+  const yeni = kayitlar.map(k => (k.id === kayitId ? { ...k, baslik } : k))
+  setKayitlar(yeni); kayitlariKaydet(yeni)
+}
+// Seçilen işaretin adı korunur, yeri yeni konuma taşınır (fazladan işaret birikmez)
+function kayitYerineKoy(kayitId, sayfaNo, oran) {
+  const yeni = kayitlar.map(k => (k.id === kayitId
+    ? { ...k, sayfa: sayfaNo, oran: Math.max(0, Math.min(1, oran)), guncelleme: Date.now() } : k))
+  setKayitlar(yeni); kayitlariKaydet(yeni)
+}
 function kayitSil(kayitId) {
   const yeni = kayitlar.filter(k => k.id !== kayitId)
   setKayitlar(yeni); kayitlariKaydet(yeni)
@@ -2653,8 +2667,10 @@ function kayitKonumSec(e) {
     }
   }
   if (secilenSayfa == null) secilenSayfa = mevcutSayfa
-  kayitEkle(secilenSayfa, oran, `Sayfa ${secilenSayfa}`)
   setKayitKonumModu(false)
+  // İşaret varsa "yeni mi, bir işaretin yerine mi?" sorulur (YerineKoySorusu)
+  if (kayitlar.length) { setBekleyenKayit({ sayfa: secilenSayfa, oran }); return }
+  kayitEkle(secilenSayfa, oran, `Sayfa ${secilenSayfa}`)
 }
 
 function fontSecimDegistir(grupId, fontId) {
@@ -3012,7 +3028,7 @@ const AaPanel = aaAcik && (
 
 const KayitPanel = kayitAcik && (
   <>
-    <div onClick={() => setKayitAcik(false)} style={{ position: "fixed", inset: 0, zIndex: 95 }} />
+    <div onClick={() => { setKayitAcik(false); setIsaretDuzenle(false) }} style={{ position: "fixed", inset: 0, zIndex: 95 }} />
     <div className="okuma-panel yp-panel yp-genis" style={{ ...panelStil("center", 520), width: "320px", maxHeight: "480px", display: "flex", flexDirection: "column" }}>
 
       {/* Sekmeler */}
@@ -3038,30 +3054,35 @@ const KayitPanel = kayitAcik && (
         {/* ── İşaretler ── */}
         {kayitSekme === "isaretler" && (
           <>
-            <button onClick={() => { setKayitKonumModu(true); setKayitAcik(false) }} style={{
-              width: "100%", marginBottom: "10px", padding: "9px", borderRadius: "8px",
-              background: theme.accent, color: "#fff", border: "none", cursor: "pointer",
-              fontSize: "13px", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px",
-            }}>
-              <Bookmark size={14} /> Yeni işaret ekle
-            </button>
-            {kayitlar.length > 0 && (
-              <OnayliSil label={`Tüm işaretleri sil (${kayitlar.length})`} onConfirm={kayitTumSil} theme={theme} />
-            )}
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "10px" }}>
+              <button onClick={() => { setIsaretDuzenle(false); setKayitKonumModu(true); setKayitAcik(false) }} style={{
+                flex: 1, padding: "9px", borderRadius: "10px",
+                background: theme.accent, color: "#fff", border: "none", cursor: "pointer",
+                fontSize: "13px", fontWeight: 600, fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px",
+              }}>
+                <Bookmark size={14} /> Yeni işaret ekle
+              </button>
+              <DuzenleDugmesi duzenle={isaretDuzenle} setDuzenle={setIsaretDuzenle} theme={theme} gizli={!kayitlar.length} />
+            </div>
             {kayitlar.length === 0
               ? <div style={{ color: theme.textSecondary, fontSize: "13px", textAlign: "center", padding: "16px 0", opacity: 0.6 }}>Henüz işaret eklenmedi</div>
-              : kayitlar.slice().sort((a, b) => a.sayfa - b.sayfa || a.oran - b.oran).map(k => (
-                <div key={k.id} style={{ display: "flex", alignItems: "center", gap: "8px", padding: "8px 10px", borderRadius: "8px", background: `${theme.accent}0A`, border: `1px solid ${theme.border}`, marginBottom: "6px" }}>
-                  <Bookmark size={13} fill={theme.accent} color={theme.accent} />
-                  <span style={{ flex: 1, fontSize: "13px", color: theme.text }}>{k.baslik}</span>
-                  {/* ESKİDEN: ekstra: barKonum === "ust" ? (isMobile ? 40 : -8) : 20 — elle
-                      tutturulmuş tek bir sayıydı, PWA'yı hiç ayırt etmiyordu. Artık pay
-                      ortam ortam ayrı (dosya başındaki KAYIT_PAYI tablosu). */}
-                  <button onClick={() => { donusBirak("isaret", k.sayfa); odakGit(k.sayfa, k.oran || 0, { cizgi: false, mutlakPay: gidisPayi(KAYIT_PAYI) }); setKayitAcik(false) }} title="İşarete git" style={{ fontSize: "11px", color: theme.accent, background: "none", border: "none", cursor: "pointer" }}><ChevronRight size={13} /></button>
-                  <button onClick={() => kayitSil(k.id)} style={{ color: theme.textSecondary, background: "none", border: "none", cursor: "pointer" }}><X size={12} /></button>
+              : <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                  {kayitlar.slice().sort((a, b) => a.sayfa - b.sayfa || a.oran - b.oran).map(k => (
+                    <KayitSatiri key={k.id} kayit={k} theme={theme} duzenle={isaretDuzenle}
+                      aktif={k.sayfa === mevcutSayfa}
+                      // ESKİDEN: ekstra: barKonum === "ust" ? (isMobile ? 40 : -8) : 20 — artık ortam
+                      // ortam ayrı pay (dosya başındaki KAYIT_PAYI tablosu)
+                      onGit={(kk) => { donusBirak("isaret", kk.sayfa); odakGit(kk.sayfa, kk.oran || 0, { cizgi: false, mutlakPay: gidisPayi(KAYIT_PAYI) }); setKayitAcik(false) }}
+                      onAdDegistir={kayitAdDegistir}
+                      onSil={kayitSil} />
+                  ))}
                 </div>
-              ))
             }
+            {isaretDuzenle && kayitlar.length > 1 && (
+              <div style={{ marginTop: "10px" }}>
+                <OnayliSil label={`Tüm işaretleri sil (${kayitlar.length})`} onConfirm={() => { kayitTumSil(); setIsaretDuzenle(false) }} theme={theme} />
+              </div>
+            )}
           </>
         )}
 
@@ -4173,6 +4194,16 @@ return (
     {SayfaGitPopup}
     {AaPanel}
     {KayitPanel}
+    <YerineKoySorusu
+      acik={!!bekleyenKayit}
+      yeniEtiket={bekleyenKayit ? `Sayfa ${bekleyenKayit.sayfa}` : ""}
+      kayitlar={kayitlar}
+      etiket={(k) => `s. ${k.sayfa}`}
+      theme={theme} isMobile={isMobile}
+      onVazgec={() => setBekleyenKayit(null)}
+      onYeni={() => { const b = bekleyenKayit; setBekleyenKayit(null); if (b) kayitEkle(b.sayfa, b.oran, `Sayfa ${b.sayfa}`) }}
+      onYerine={(kid) => { const b = bekleyenKayit; setBekleyenKayit(null); if (b) kayitYerineKoy(kid, b.sayfa, b.oran) }}
+    />
     {TemaPanel}
     {OzelTemaPanel}
     {AyarlarPanel}

@@ -208,10 +208,42 @@ function buyukHarfleriDuzelt(t) {
     return kucuk.charAt(0).toLocaleUpperCase("tr") + kucuk.slice(1)
   })
 }
+/* SIRA SAYILARI (19 Ekim 2026, kullanıcı: "Rum Suresi 50 âyet diyor, 50'inci âyet demesi
+   gerekiyor"). "50. âyet" gibi noktalı sayı ardından küçük harfli bir kelime gelince sıra sayısı
+   olarak yazıya çevrilir ("ellinci âyet"); ses motorları noktayı yok sayıp "elli" diyordu.
+   Cümle sonundaki sayı ("1950. Sonra…") büyük harfle sürdüğü için dokunulmaz. */
+const BIRLER = ["", "bir", "iki", "üç", "dört", "beş", "altı", "yedi", "sekiz", "dokuz"]
+const ONLAR = ["", "on", "yirmi", "otuz", "kırk", "elli", "altmış", "yetmiş", "seksen", "doksan"]
+const SIRA_EKI = {
+  bir: "birinci", iki: "ikinci", "üç": "üçüncü", "dört": "dördüncü", "beş": "beşinci", "altı": "altıncı",
+  yedi: "yedinci", sekiz: "sekizinci", dokuz: "dokuzuncu", on: "onuncu", yirmi: "yirminci", otuz: "otuzuncu",
+  "kırk": "kırkıncı", elli: "ellinci", "altmış": "altmışıncı", "yetmiş": "yetmişinci", seksen: "sekseninci",
+  doksan: "doksanıncı", "yüz": "yüzüncü", bin: "bininci",
+}
+function sayiYazi(n) {
+  if (n === 0) return "sıfır"
+  const p = []
+  const binler = Math.floor(n / 1000), kalan = n % 1000
+  if (binler) p.push(binler === 1 ? "bin" : `${sayiYazi(binler)} bin`)
+  const yuz = Math.floor(kalan / 100), on = Math.floor((kalan % 100) / 10), bir = kalan % 10
+  if (yuz) p.push(yuz === 1 ? "yüz" : `${BIRLER[yuz]} yüz`)
+  if (on) p.push(ONLAR[on])
+  if (bir) p.push(BIRLER[bir])
+  return p.join(" ")
+}
+export function siraSayisi(n) {
+  const k = sayiYazi(n).split(" ")
+  k[k.length - 1] = SIRA_EKI[k[k.length - 1]] || k[k.length - 1]
+  return k.join(" ")
+}
+function siraSayilariniYaz(t) {
+  return t.replace(/(?<![\d.,])(\d{1,6})\.(?=\s+\p{Ll})/gu, (m, s) => siraSayisi(parseInt(s, 10)))
+}
 function soylenis(s) {
   let t = s
   for (const [re, yeni] of KISALTMALAR) t = t.replace(re, yeni)
   t = buyukHarfleriDuzelt(t)
+  t = siraSayilariniYaz(t)
   return t.replace(/[_*•§⟦⟧]/g, " ").replace(/\s+/g, " ").trim()
 }
 // Ekranda aranacak biçim: işaretler ayıklanır, metin olduğu gibi kalır
@@ -345,7 +377,7 @@ export function sayfaBirimleri(sayfa, secenek, basSatir = 0) {
       if (atiflar.length) {
         atiflar.forEach((a, k) => {
           ekle({ satir: i, satirlar: blok, tip: "ayet", lang: "tr", isaret: k === 0, goster: "",
-            soyle: `${sureAdi(a.sureNo)} Sûresi, ${a.ayetNo}. âyet.` })
+            soyle: `${sureAdi(a.sureNo)} Sûresi, ${siraSayisi(Number(a.ayetNo))} âyet.` })
           // Hafız kaydı (yapay ses değil — gerçek tilâvet)
           if (secenek.hafiz) ekle({ satir: i, satirlar: blok, tip: "kari", lang: "kari", goster: "", soyle: "", sureNo: a.sureNo, ayetNo: a.ayetNo })
           const meal = secenek.ayetMeal?.[a.sureNo]?.[a.ayetNo]

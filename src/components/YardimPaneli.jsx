@@ -91,8 +91,9 @@ const KONULAR = [
     metin: [
       "Raf Ekle düğmesiyle önce rafa bir isim verilir, ardından listeden kitaplar seçilir.",
       "Özel rafa alt raflar eklenebilir; isimler kalem simgesiyle değiştirilebilir, kitaplar \"+ Kitap\" düğmesiyle eklenip kırmızı çarpıyla çıkarılabilir. Çöp kutusu simgesi, onay istendikten sonra rafı siler.",
+      "Düzenleme sırasında rafın adının yanındaki resim simgesiyle rafa resim eklenebilir: kısım raflarındaki hazır resimlerden biri seçilebilir ya da cihazdan bir resim yüklenebilir. Önizlemede resim sürüklenerek rafta görünecek kısım seçilir. Resim, Kitaplık'ın \"Resimli\" görünümünde gösterilir ve yedeğe de girer.",
     ],
-    anahtar: "favori kendi rafım yeni raf alt raf ekle sil",
+    anahtar: "favori kendi rafım yeni raf alt raf ekle sil resim fotoğraf görsel",
   },
   {
     bolum: "kitaplik", ikon: EyeOff, baslik: "Rafları gizleme",

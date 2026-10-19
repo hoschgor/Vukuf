@@ -29,8 +29,10 @@ import {
 import { CSS } from "@dnd-kit/utilities"
 import {
   Pencil, Check, GripVertical, GripHorizontal, Search, X, BookOpen, Sparkles,
-  ChevronLeft, ChevronRight, ChevronDown, Eye, EyeOff, Plus, Trash2, Clock, Star, FolderPlus, RotateCcw,
+  ChevronLeft, ChevronRight, ChevronDown, Eye, EyeOff, Plus, Trash2, Clock, Star, FolderPlus, RotateCcw, ImagePlus,
 } from "lucide-react"
+// Özel raf resmi (19 Ekim 2026): hazır raf resimleri + cihazdan yüklenen resim
+import RafResimSecici from "../components/RafResimSecici"
 
 // ════════════════════════════════════════════════════════════════
 // SÜRÜKLEME ERGONOMİSİ
@@ -622,6 +624,15 @@ const RAF_RESIMLERI = [
   { esle: /^son-okunanlar$/,   src: "/raflar/son-okunanlar.webp", konum: "50% 55%" },
   { esle: /^sik-okunanlar$/,   src: "/raflar/sik-okunanlar.webp", konum: "50% 55%" },
 ]
+// Özel raf resmi seçicisinde gösterilen hazır resimler (aynı dosya bir kez)
+const HAZIR_RAF_ADLARI = {
+  kuran: "Kur'ân", evrad: "Evrâd", risale: "Risale", tasavvuf: "Tasavvuf", diger: "Diğer", kelam: "Kelâm",
+  fikih: "Fıkıh", tefsir: "Tefsir", hadis: "Hadis", akaid: "Akâid", usul: "Usûl", alimler: "Âlimler",
+  "son-okunanlar": "Son Okunanlar", "sik-okunanlar": "Sık Okunanlar",
+}
+const HAZIR_RAF_RESIMLERI = RAF_RESIMLERI
+  .filter((r, i, l) => l.findIndex(x => x.src === r.src) === i)
+  .map(r => { const ad = (r.src.match(/\/raflar\/(.+)\.webp$/) || [])[1] || ""; return { src: r.src, konum: r.konum, ad: HAZIR_RAF_ADLARI[ad] || ad } })
 function rafResmiBul(id, baslik) {
   return RAF_RESIMLERI.find(r => r.esle.test(String(id || "")) || r.esle.test(String(baslik || ""))) || null
 }
@@ -2281,7 +2292,7 @@ function RafArama({ deger, setDeger, theme, acik, setAcik }) {
 // Açık/kapalı durumu üst bileşende (ozelAcik) — çekmecenin hangi satıra düşeceği orada hesaplanıyor.
 // Anahtar aynı: `vukuf-ozel-acik-<id>`, varsayılan açık.
 function OzelKategori({ raf, havuz, theme, dinamikMod, duzenlemeMode, gizlemeMod, gizli, onGizle,
-  onSil, onRename, onAltEkle, onAltSil, onAltRename, onKitapEkleAc, onKitapCikar, sensors, onAltSira,
+  onSil, onRename, onResim, onAltEkle, onAltSil, onAltRename, onKitapEkleAc, onKitapCikar, sensors, onAltSira,
   acik, onToggle, yer }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: raf.id })
   const sstyle = { transform: CSS.Transform.toString(transform), transition, zIndex: isDragging ? 5 : undefined }
@@ -2309,6 +2320,7 @@ function OzelKategori({ raf, havuz, theme, dinamikMod, duzenlemeMode, gizlemeMod
       <RafBolmesi
         p={yer.p} theme={theme} isMobile={isMobile} acik={acik} satirAcik={yer.satirAcik} gizli={gizli}
         sirtlar={sirtlar} kapak={{ tip: "semse", tohum: raf.id }} tohum={raf.id}
+        resim={raf.resim && raf.resim.src ? raf.resim : null}
         yataylar={(raf.altRaflar || []).length > 1 ? raf.altRaflar.map(a => ({ id: a.id, ad: a.baslik, n: (a.kitapIdler || []).length })) : []}
         onSirt={rafKitaplari.length && !duzenlemeMode ? (s) => s.veri && navigate(kitapYolu(s.veri)) : undefined}
         onToggle={isimDuzen != null ? undefined : toggle}
@@ -2343,6 +2355,14 @@ function OzelKategori({ raf, havuz, theme, dinamikMod, duzenlemeMode, gizlemeMod
           {duzenlemeMode && isimDuzen == null && (
             <span data-nodrag="1" onClick={e => { e.stopPropagation(); setIsimDuzen(raf.baslik) }} style={{ display: "flex", cursor: "pointer", color: theme.textSecondary, flexShrink: 0 }}>
               <Pencil size={14} />
+            </span>
+          )}
+          {/* RAF RESMİ (19 Ekim 2026) — hazır resim ya da cihazdan */}
+          {duzenlemeMode && isimDuzen == null && onResim && (
+            <span data-nodrag="1" role="button" title={raf.resim?.src ? "Raf resmini değiştir" : "Rafa resim ekle"}
+              onClick={e => { e.stopPropagation(); onResim(raf.id) }}
+              style={{ display: "flex", cursor: "pointer", color: raf.resim?.src ? theme.accent : theme.textSecondary, flexShrink: 0 }}>
+              <ImagePlus size={15} />
             </span>
           )}
         </div>
@@ -2666,6 +2686,7 @@ export default function Kutuphane() {
 
   const [gizliRaflar, setGizliRaflar] = useState(() => gizliRaflarOku())
   const [ozelRaflar, setOzelRaflar] = useState(() => ozelRaflarOku())
+  const [resimRafId, setResimRafId] = useState(null)       // resim seçicisi açık olan özel raf
   const [istatistik, setIstatistik] = useState(() => okumaKayitOku())
 
   const [yeniRafAcik, setYeniRafAcik] = useState(false)
@@ -2933,6 +2954,17 @@ export default function Kutuphane() {
     ustSiraKaydet(ustSira.filter(id => id !== rafId))
   }
   function rafRename(rafId, baslik) { ozelKaydet(ozelRaflar.map(r => r.id === rafId ? { ...r, baslik } : r)) }
+  // Raf resmi: yazılamazsa (kota) false → seçici uyarır, eski hâl korunur
+  function rafResimKaydet(rafId, resim) {
+    const liste = ozelRaflar.map(r => {
+      if (r.id !== rafId) return r
+      const { resim: _eski, ...kalan } = r
+      return resim ? { ...kalan, resim } : kalan
+    })
+    if (!ozelRaflarYaz(liste)) return false
+    setOzelRaflar(liste)
+    return true
+  }
   function altEkle(rafId) {
     ozelKaydet(ozelRaflar.map(r => r.id === rafId
       ? { ...r, altRaflar: [...(r.altRaflar || []), { id: yeniId("alt"), baslik: "Yeni Bölüm", kitapIdler: [] }] }
@@ -3322,6 +3354,7 @@ export default function Kutuphane() {
                   onGizle={gizleToggle}
                   onSil={rafSil}
                   onRename={rafRename}
+                  onResim={setResimRafId}
                   onAltEkle={altEkle}
                   onAltSil={altSil}
                   onAltRename={altRename}
@@ -3389,6 +3422,15 @@ export default function Kutuphane() {
           onEkle={seciciOnayla}
         />
       )}
+      <RafResimSecici
+        acik={!!resimRafId}
+        raf={ozelRaflar.find(r => r.id === resimRafId) || null}
+        hazirlar={HAZIR_RAF_RESIMLERI}
+        oran={RESIM_ORANI}
+        theme={theme} isMobile={isMobile}
+        kapat={() => setResimRafId(null)}
+        kaydet={(resim) => rafResimKaydet(resimRafId, resim)}
+      />
     </div>
   )
 }

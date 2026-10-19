@@ -61,15 +61,17 @@ export function okumaKayitOku() {
 }
 export function okumaKayitSil() { try { localStorage.removeItem(OKUMA_KEY) } catch {} }
 
-// ── Özel raflar: [ { id, baslik, altRaflar:[ { id, baslik, kitapIdler:[] } ] } ]
+// ── Özel raflar: [ { id, baslik, resim?:{ src, konum, ozel? }, altRaflar:[ { id, baslik, kitapIdler:[] } ] } ]
+//    resim (19 Ekim 2026): hazır raf resmi yolu ya da küçültülmüş data: adresi (components/RafResimSecici)
 export function ozelRaflarOku() {
   try {
     const l = JSON.parse(localStorage.getItem(OZEL_KEY) || "[]")
     return Array.isArray(l) ? l : []
   } catch { return [] }
 }
+// Yazılabildiyse true (resimli raf kotayı aşarsa false — seçici kullanıcıya bildiriyor)
 export function ozelRaflarYaz(liste) {
-  try { localStorage.setItem(OZEL_KEY, JSON.stringify(liste)) } catch {}
+  try { localStorage.setItem(OZEL_KEY, JSON.stringify(liste)); return true } catch { return false }
 }
 
 // ── Gizli raflar: [ rafId ]  (yalnızca büyük raflar: Kısım / özel / otomatik)

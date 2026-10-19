@@ -536,7 +536,9 @@ function motorKur() {
     doldur()
     const b = birimler[sira]
     if (!b) { yay({ durum: "bitti", birim: null }); ekranAcik(false); return }
-    yay({ durum: "okuyor", birim: b, sira })
+    // Yeni birim okunmaya başlıyor → önceki "ses çalınamadı" uyarısı kalksın (19 Ekim 2026,
+    // kullanıcı: uygulamadan çıkıp dönünce çıkan hata, okuma yeniden başlasa da ekrandan gitmiyordu)
+    yay({ durum: "okuyor", birim: b, sira, ...(durum.hata === "vukufCal" ? { hata: null, hataAyrinti: "" } : {}) })
     if (kitap) konumYaz(kitap, { sayfa: b.sayfa, satir: b.satir })
     if (b.isaret && ayar.isaret) { await isaretCal(); if (benim !== nesil) return }
 

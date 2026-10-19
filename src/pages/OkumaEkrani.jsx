@@ -9,7 +9,7 @@ import SiraSecici from "../components/SiraSecici"
 import SesliOkumaKontrol from "../components/SesliOkumaKontrol"
 import LugatArama from "../components/LugatArama"
 import PaylasimPenceresi, { PaylasimNotu } from "../components/PaylasimPenceresi"
-import { dokunulanSecim, cumleyeGenislet } from "../data/paylasimSecim"
+import { dokunulanSecim, cumleyeGenislet, araligiKutula } from "../data/paylasimSecim"
 import { sesKilidiAc, sesliOkuyucu } from "../data/sesliOkuma"
 import { ICINDEKILER_SIRALARI, ICINDEKILER_SIRA_ANAHTAR, agaciSirala, agaciDizinle, siraOku, siraYaz } from "../data/sureSirasi"
 import lugatVerisi from "../data/lugat.json"
@@ -1242,6 +1242,7 @@ const [lugatAramaAcik, setLugatAramaAcik] = useState(false)
 // (vurgulanır) ve components/PaylasimPenceresi açılır (orada "yalnız kelime"ye geçilebilir).
 const [paylasSecim, setPaylasSecim] = useState(false)
 const [paylasVeri, setPaylasVeri] = useState(null)
+const paylasKutuSilRef = useRef(null)      // seçilen cümlenin vurgu kutularını kaldırır
 const [paylasimNotu, setPaylasimNotu] = useState(null)   // bağlantıyla gelindiyse "Size paylaşılan yer"
 const [kaydirmaHizi, setKaydirmaHizi]         = useState(1)
 const [duraklatildi, setDuraklatildi]         = useState(false)
@@ -1787,10 +1788,8 @@ useEffect(() => {
     e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation?.()
     const s = dokunulanSecim(e.clientX, e.clientY, e.target)
     if (!s || !(s.cumle || s.kelime)) return
-    try {
-      if (s.cumleAralik && window.CSS && window.CSS.highlights && typeof window.Highlight === "function")
-        window.CSS.highlights.set("vukuf-paylas", new window.Highlight(s.cumleAralik))
-    } catch { /* yoksay */ }
+    // Seçilen cümle kutuyla işaretlenir (::highlight iPhone'da silinmeyebiliyor — paylasimSecim.js)
+    try { paylasKutuSilRef.current?.(); paylasKutuSilRef.current = araligiKutula(s.cumleAralik, `${theme.accent}40`) } catch { /* yoksay */ }
     setPaylasSecim(false)
     setPaylasVeri({
       tip: "kitap", kitapId: id, kitapAdi: (kitap && kitap.baslik) || "",
@@ -4201,10 +4200,9 @@ return (
         </button>
       </div>
     )}
-    <style>{`::highlight(vukuf-paylas) { background-color: ${theme.accent}40; }`}</style>
     <PaylasimPenceresi
       acik={!!paylasVeri} veri={paylasVeri} theme={theme} isMobile={isMobile}
-      kapat={() => { setPaylasVeri(null); try { window.CSS?.highlights?.delete("vukuf-paylas") } catch { /* yoksay */ } }}
+      kapat={() => { setPaylasVeri(null); try { paylasKutuSilRef.current?.(); paylasKutuSilRef.current = null } catch { /* yoksay */ } }}
     />
     {paylasimNotu != null && (
       <PaylasimNotu metin={paylasimNotu} theme={theme} kapat={() => setPaylasimNotu(null)}

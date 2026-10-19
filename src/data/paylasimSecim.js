@@ -122,3 +122,35 @@ export function cumleyeGenislet(el, parca) {
   }
   return parca
 }
+
+/* Bir aralığı satır öğesinin içinde, metnin ARKASINA kutularla vurgular (19 Ekim 2026).
+   CSS Custom Highlight (::highlight) iPhone WebKit'inde silinince bile boyası kalabildiği
+   için paylaşma seçimi de kutuyla gösteriliyor. Dönen işlev kutuları kaldırır. */
+export function araligiKutula(aralik, renk) {
+  if (!aralik) return () => {}
+  const el = (aralik.commonAncestorContainer.nodeType === 3 ? aralik.commonAncestorContainer.parentElement : aralik.commonAncestorContainer)?.closest?.("[data-satir]")
+  if (!el) return () => {}
+  const rects = Array.from(aralik.getClientRects()).filter(r => r.width > 0 && r.height > 0)
+  if (!rects.length) return () => {}
+  const satirlar = []
+  for (const rc of rects) {
+    const orta = rc.top + rc.height / 2
+    const g = satirlar.find(x => orta > x.top && orta < x.bottom)
+    if (!g) satirlar.push({ top: rc.top, bottom: rc.bottom, left: rc.left, right: rc.right })
+    else { g.top = Math.min(g.top, rc.top); g.bottom = Math.max(g.bottom, rc.bottom); g.left = Math.min(g.left, rc.left); g.right = Math.max(g.right, rc.right) }
+  }
+  const eski = { position: el.style.position, isolation: el.style.isolation }
+  if (getComputedStyle(el).position === "static") el.style.position = "relative"
+  el.style.isolation = "isolate"
+  const er = el.getBoundingClientRect()
+  const kat = document.createElement("span")
+  kat.setAttribute("aria-hidden", "true")
+  kat.style.cssText = "position:absolute;left:0;top:0;width:0;height:0;pointer-events:none;z-index:-1;user-select:none"
+  for (const g of satirlar) {
+    const k = document.createElement("span")
+    k.style.cssText = `position:absolute;left:${g.left - er.left - el.clientLeft - 2}px;top:${g.top - er.top - el.clientTop}px;width:${g.right - g.left + 4}px;height:${g.bottom - g.top}px;border-radius:4px;background:${renk}`
+    kat.appendChild(k)
+  }
+  el.appendChild(kat)
+  return () => { try { kat.remove(); el.style.position = eski.position; el.style.isolation = eski.isolation } catch { /* yoksay */ } }
+}

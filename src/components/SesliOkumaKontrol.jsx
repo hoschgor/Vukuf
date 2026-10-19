@@ -145,6 +145,7 @@ export default function SesliOkumaKontrol({
   const sonBirimRef = useRef({ birim: null, bas: 0 })     // aynı birim yeniden çizilirse aynı yerden ara
   const [tazele, setTazele] = useState(0)                  // 👓 sonrası vurguyu/takibi yeniden uygula
   const isaretliRef = useRef([])
+  const ortuluRef = useRef([])        // cümle kutusu için konumu değiştirilen satırlar: [el, eski stil]
   const cumleKonumRef = useRef({ satirAnahtar: "", son: 0 })
   const [secim, setSecim] = useState(false)                 // ⌖ açık: okunacak kelime bekleniyor
   const ac = theme.accent
@@ -236,22 +237,54 @@ export default function SesliOkumaKontrol({
       document.querySelectorAll(".sesli-satir").forEach(el => el.classList.remove("sesli-satir"))
       isaretliRef.current = []
       try { if (window.CSS && window.CSS.highlights) window.CSS.highlights.delete(HIGHLIGHT_AD) } catch { /* yoksay */ }
+      ortuleriSil()
     }
-    /* iOS/WebKit: Custom Highlight değişince eski cümlenin boyası her zaman silinmiyor; okunup
-       geçilen satırların altında soluk şeritler kalıyordu (18 Ekim 2026 ekran görüntüsü). Eski ve
-       yeni satırlar iki kare boyunca kendi katmanına alınıp bırakılıyor → tarayıcı onları
-       baştan boyuyor. Yalnız transform (yerleşim değişmez). */
-    const yenidenBoya = (els) => {
-      const l = els.filter(el => el && el.isConnected && !el.style.transform)
-      if (!l.length) return
-      l.forEach(el => { el.style.transform = "translateZ(0)" })
-      requestAnimationFrame(() => requestAnimationFrame(() => l.forEach(el => { if (el.style.transform === "translateZ(0)") el.style.transform = "" })))
+    /* CÜMLE VURGUSU ARTIK KUTULARLA (19 Ekim 2026). Custom Highlight API (::highlight) iPhone/iPad
+       WebKit'inde vurgu değişince eski cümlenin boyasını silmiyordu: okunup geçilen cümleler
+       gri kalıyordu (18–19 Ekim ekran görüntüleri; "yeniden boyama" denemesi de yetmedi).
+       Şimdi cümlenin satır kutuları ölçülüp satır öğesinin İÇİNE, metnin ARKASINA (isolation +
+       z-index -1) yarı saydam kutular olarak konuyor; kaldırılınca DOM'dan siliniyor → artık
+       kalamaz. Kutular satırla birlikte kayar; yazı boyu/ekran değişince yeniden çiziliyor. */
+    const ortuleriSil = () => {
+      document.querySelectorAll(".sesli-ortu-kat").forEach(k => k.remove())
+      for (const [el, eski] of ortuluRef.current) { try { el.style.position = eski.position; el.style.isolation = eski.isolation } catch { /* yoksay */ } }
+      ortuluRef.current = []
+    }
+    const ortuCiz = (el, aralik) => {
+      const rects = Array.from(aralik.getClientRects()).filter(r => r.width > 0 && r.height > 0)
+      if (!rects.length) return
+      // Aynı satırdaki parçaları tek kutuda birleştir (kelime araları boş kalmasın)
+      const satirlar = []
+      for (const rc of rects) {
+        const orta = rc.top + rc.height / 2
+        const g = satirlar.find(x => orta > x.top && orta < x.bottom)
+        if (!g) satirlar.push({ top: rc.top, bottom: rc.bottom, left: rc.left, right: rc.right })
+        else { g.top = Math.min(g.top, rc.top); g.bottom = Math.max(g.bottom, rc.bottom); g.left = Math.min(g.left, rc.left); g.right = Math.max(g.right, rc.right) }
+      }
+      if (getComputedStyle(el).position === "static") {
+        ortuluRef.current.push([el, { position: el.style.position, isolation: el.style.isolation }])
+        el.style.position = "relative"; el.style.isolation = "isolate"
+      } else if (getComputedStyle(el).isolation !== "isolate") {
+        ortuluRef.current.push([el, { position: el.style.position, isolation: el.style.isolation }])
+        el.style.isolation = "isolate"
+      }
+      const er = el.getBoundingClientRect()
+      const kat = document.createElement("span")
+      kat.className = "sesli-ortu-kat"
+      kat.setAttribute("aria-hidden", "true")
+      kat.style.cssText = "position:absolute;left:0;top:0;width:0;height:0;pointer-events:none;z-index:-1;user-select:none"
+      for (const g of satirlar) {
+        const k = document.createElement("span")
+        k.className = "sesli-ortu"
+        k.style.cssText = `position:absolute;left:${g.left - er.left - el.clientLeft - 2}px;top:${g.top - er.top - el.clientTop}px;width:${g.right - g.left + 4}px;height:${g.bottom - g.top}px`
+        kat.appendChild(k)
+      }
+      el.appendChild(kat)
     }
     const b = d.birim
     if (!acik || !b) { temizle(); return }
     let deneme = 0, zaman = 0
     const uygula = () => {
-      const oncekiler = isaretliRef.current.slice()
       temizle()
       const nolar = b.satirlar && b.satirlar.length ? b.satirlar : [b.satir]
       const els = nolar.map(s => document.querySelector(`[data-satir="${b.sayfa}-${s}"]`)).filter(Boolean)
@@ -263,8 +296,7 @@ export default function SesliOkumaKontrol({
       }
       els.forEach(el => el.classList.add("sesli-satir"))
       isaretliRef.current = els
-      yenidenBoya([...new Set([...oncekiler, ...els])])
-      // Cümle vurgusu (Custom Highlight API varsa)
+      // Cümle vurgusu (kutular — bkz. ortuCiz)
       const anahtar = `${b.sayfa}-${b.satir}`
       if (cumleKonumRef.current.satirAnahtar !== anahtar) cumleKonumRef.current = { satirAnahtar: anahtar, son: 0 }
       let aralik = null
@@ -275,9 +307,7 @@ export default function SesliOkumaKontrol({
           cumleKonumRef.current.son = bul.son
           sonBirimRef.current = { birim: b, bas: bul.bas }
           aralik = bul.r
-          if (window.CSS && window.CSS.highlights && typeof window.Highlight === "function") {
-            try { window.CSS.highlights.set(HIGHLIGHT_AD, new window.Highlight(bul.r)) } catch { /* yoksay */ }
-          }
+          try { ortuCiz(els[0], bul.r) } catch { /* yoksay */ }
         }
       }
       // Hedef: okunan cümle (bulunduysa), değilse satır(lar)
@@ -304,9 +334,19 @@ export default function SesliOkumaKontrol({
       }
     }
     uygula()
-    return () => clearTimeout(zaman)
+    // Ekran/yazı boyu değişince kutular yeniden ölçülsün
+    let rz = 0
+    const yeniden = () => { clearTimeout(rz); rz = setTimeout(() => setTazele(t => t + 1), 200) }
+    window.addEventListener("resize", yeniden)
+    return () => { clearTimeout(zaman); clearTimeout(rz); window.removeEventListener("resize", yeniden) }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [acik, d.birim, tazele])
+  // Bileşen kapanırken (okuma ekranından çıkış) kutular kalmasın
+  useEffect(() => () => {
+    document.querySelectorAll(".sesli-ortu-kat").forEach(k => k.remove())
+    for (const [el, eski] of ortuluRef.current) { try { el.style.position = eski.position; el.style.isolation = eski.isolation } catch { /* yoksay */ } }
+    ortuluRef.current = []
+  }, [])
 
   // Bitti → kısa süre sonra kendiliğinden kapanmaz; düğme "baştan değil, kaldığı yerden" yeniden başlatır
   const ayarDegis = (parca) => { setAyar(a => ({ ...a, ...parca })); sesliOkuyucu.ayarlariYenile(parca) }
@@ -590,10 +630,21 @@ export default function SesliOkumaKontrol({
   }, [acik])
 
   if (!acik) return null
+  // Vurgu stilleri HER hâlde çizilmeli: küçük hâle geçince <style> da kalkıyordu ve okunan
+  // satır/cümle işareti tamamen kayboluyordu (19 Ekim 2026, kullanıcı)
+  const vurguStili = (
+    <style>{`
+      .sesli-satir { background: ${theme.accent}14; border-radius: 6px; box-shadow: 0 0 0 4px ${theme.accent}14; transition: background .25s; }
+      .sesli-ortu { background: ${theme.accent}38; border-radius: 4px; }
+      .sesli-secim [data-satir] { cursor: pointer; user-select: text; -webkit-user-select: text; }
+      .sesli-secim [data-satir]:hover { background: ${theme.accent}0d; border-radius: 6px; }
+      @keyframes sesliDon { to { transform: rotate(360deg) } }
+    `}</style>
+  )
   if (kucuk) {
     const hal = (d.durum === "hazirlaniyor" || (d.durum === "okuyor" && d.bekliyor)) ? "hazirlaniyor"
       : d.durum === "okuyor" ? "okuyor" : "duraklatildi"
-    return <SesliKucuk theme={theme} hal={hal} altPay={altPay} ac={() => { setKucuk(false); setDokunus(n => n + 1) }} />
+    return <>{vurguStili}<SesliKucuk theme={theme} hal={hal} altPay={altPay} ac={() => { setKucuk(false); setDokunus(n => n + 1) }} /></>
   }
   const destek = sesliDestekVar() || typeof Audio !== "undefined"
   const vukuf = ayar.motor === "vukuf"
@@ -691,13 +742,7 @@ export default function SesliOkumaKontrol({
 
   return (
     <>
-      <style>{`
-        .sesli-satir { background: ${ac}14; border-radius: 6px; box-shadow: 0 0 0 4px ${ac}14; transition: background .25s; }
-        ::highlight(${HIGHLIGHT_AD}) { background-color: ${ac}38; }
-        .sesli-secim [data-satir] { cursor: pointer; user-select: text; -webkit-user-select: text; }
-        .sesli-secim [data-satir]:hover { background: ${ac}0d; border-radius: 6px; }
-        @keyframes sesliDon { to { transform: rotate(360deg) } }
-      `}</style>
+      {vurguStili}
       <div ref={bolgeRef} role="region" aria-label="Sesli okuma"
         onPointerDownCapture={() => setDokunus(n => n + 1)}
         style={{

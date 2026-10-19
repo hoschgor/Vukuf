@@ -194,9 +194,24 @@ const KISALTMALAR = [
   [/\bvs\.\s*/gi, "vesaire "],
   [/\bs\.\s*(?=\d)/g, "sayfa "],
 ]
+/* BÜYÜK HARFLİ KELİMELER (19 Ekim 2026, kullanıcı: "İKİNCİ LEM'A → ikinci lima, BİR ZAMAN →
+   bere zaman diyor"). Antalia'nın normalleştiricisi 5 harfe kadar BÜYÜK yazılmış kelimeyi
+   kısaltma sayıp harf harf okuyor (B-İ-R → "be i re"). Risale başlıkları büyük harfle yazıldığı
+   için bu kelimeler Türkçe kurallarıyla küçültülüp yalnız baş harfi büyük bırakılıyor
+   ("BİR" → "Bir", "LEM'A" → "Lem'a"). Roma rakamları (II, IV, XII…) olduğu gibi kalıyor. */
+const BUYUK_KELIME = /(?<!\p{L})\p{Lu}[\p{Lu}'’]*\p{Lu}(?!\p{L})/gu
+const ROMA = /^[IVXLCDM]+$/
+function buyukHarfleriDuzelt(t) {
+  return t.replace(BUYUK_KELIME, (k) => {
+    if (ROMA.test(k)) return k
+    const kucuk = k.toLocaleLowerCase("tr")
+    return kucuk.charAt(0).toLocaleUpperCase("tr") + kucuk.slice(1)
+  })
+}
 function soylenis(s) {
   let t = s
   for (const [re, yeni] of KISALTMALAR) t = t.replace(re, yeni)
+  t = buyukHarfleriDuzelt(t)
   return t.replace(/[_*•§⟦⟧]/g, " ").replace(/\s+/g, " ").trim()
 }
 // Ekranda aranacak biçim: işaretler ayıklanır, metin olduğu gibi kalır

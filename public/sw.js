@@ -35,7 +35,7 @@
      de çalışır ama eski varlıklar önbellekte birikir.
    ═══════════════════════════════════════════════════════════════════════════ */
 
-const SURUM = "20-10-2026-1"
+const SURUM = "21-10-2026-1"
 
 const KABUK = `vukuf-kabuk-${SURUM}`
 const VARLIK = `vukuf-varlik-${SURUM}`

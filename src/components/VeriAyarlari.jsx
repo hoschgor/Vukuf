@@ -110,7 +110,7 @@ const FONTLAR = [
   "Me_Quran.ttf", "PlayfairDisplay-Bold.ttf", "PlayfairDisplay-Regular.ttf",
   "ScheherazadeNew-Bold.ttf", "ScheherazadeNew-Regular.ttf",
   "souvenir-demi.ttf", "Souvenir.ttf", "surah-name-v1.ttf", "surah-name-v2.ttf",
-  "Symbols1_Ver02.woff2", "uc_ondokuz.ttf", "uthmanic-bazzi-v20.ttf",
+  "Symbols1_Ver02.woff2", "uc_ondokuz.ttf", "uthmanic-bazzi-v20.ttf", "Vukuf.ttf",
   "uthmanic-hafs-v22.ttf",
 ].map(a => encodeURI(`/fonts/${a}`))
 

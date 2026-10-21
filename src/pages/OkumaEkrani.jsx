@@ -60,13 +60,14 @@ const FONT_GRUPLARI = {
   turkce: {
     label: "Türkçe",
     fontlar: [
-      { id: "bookerly",     label: "Bookerly (Önerilen)",         style: "'Bookerly', 'Bookerly Display', serif" },
-      { id: "souvenir",     label: "Souvenir",         style: "'Souvenir', 'Souvenir Medium', serif" },
-      { id: "georgia",      label: "Georgia",          style: "Georgia, serif" },
-      { id: "lora",         label: "Lora",             style: "'Lora', serif",             google: "Lora:ital,wght@0,400;0,600;1,400" },
-      { id: "source-serif", label: "Source Serif 4",   style: "'Source Serif 4', serif",   google: "Source+Serif+4:ital,wght@0,400;0,600;1,400" },
-      { id: "playfair",     label: "Playfair Display", style: "'Playfair Display', serif",  google: "Playfair+Display:ital,wght@0,400;0,700;1,400" },
-      { id: "merriweather", label: "Merriweather",     style: "'Merriweather', serif",      google: "Merriweather:ital,wght@0,300;0,400;1,300" },
+      { id: "CooperLightBT",   label: "CooperLightBT (Önerilen)",         style: "'CooperLightBT', 'CooperLightBT', serif" },
+      { id: "souvenir",        label: "Souvenir",                         style: "'Souvenir', 'Souvenir Medium', serif" },
+      { id: "bookerly",        label: "Bookerly",                         style: "'Bookerly', 'Bookerly Display', serif" },
+      { id: "georgia",         label: "Georgia",                          style: "Georgia, serif" },
+      { id: "lora",            label: "Lora",                             style: "'Lora', serif",                  google: "Lora:ital,wght@0,400;0,600;1,400" },
+      { id: "source-serif",    label: "Source Serif 4",                   style: "'Source Serif 4', serif",        google: "Source+Serif+4:ital,wght@0,400;0,600;1,400" },
+      { id: "playfair",        label: "Playfair Display",                 style: "'Playfair Display', serif",      google: "Playfair+Display:ital,wght@0,400;0,700;1,400" },
+      { id: "merriweather",    label: "Merriweather",                     style: "'Merriweather', serif",          google: "Merriweather:ital,wght@0,300;0,400;1,300" },
     ],
   },
   osmanlica: {
@@ -81,13 +82,10 @@ const FONT_GRUPLARI = {
   arapca: {
     label: "Arapça",
     fontlar: [
-      // Yedek zincirine 'me_quran' eklendi: kfgqpc/Indopak'ta OLMAYAN işaretler (waqf/durak,
-      // küçük üst işaretler vb.) sistem serifine düşüp yanlış glyph + harf-bağ kopması yapıyordu.
-      // MeQuran bu işaretleri kapsadığından yedek olarak ondan alınır (gövde harfleri kfgqpc kalır).
-      { id: "kfgqpc",            label: "KFGQPC Uthmanic (Önerilen)", style: "'KFGQPC Uthmanic', 'me_quran', serif",      google: null },
+      { id: "Vukuf",             label: "Vukuf (Önerilen)",           style: "'Vukuf', serif",                            google: null },
+      { id: "kfgqpc",            label: "KFGQPC Uthmanic",            style: "'KFGQPC Uthmanic', 'me_quran', serif",      google: null },
       { id: "uc_ondokuz",        label: "Üç Ondokuz",                 style: "'uc_ondokuz', serif",                       google: null },
       { id: "me-quran",          label: "Me Quran",                   style: "'me_quran', serif",                         google: null },
-      { id: "Indopak",           label: "Indopak",                    style: "'Indopak', 'me_quran', serif",              google: null },
       { id: "IndopakNastaleeq",  label: "Indopak Nastaleeq",          style: "'IndopakNastaleeq', 'me_quran', serif",     google: null },
     ],
   },

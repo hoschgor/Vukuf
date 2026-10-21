@@ -36,14 +36,28 @@
   font-weight: normal;
   font-style: normal;
 }
+@font-face {
+  font-family: "CooperLightBT";
+  src: url("/fonts/CooperLightBT.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+}
 /* ============================================
    KUR'AN-ı KERİM ÖZEL FONTLARI
    ============================================ */
 
-/* KFGQPC Uthmanic - Resmi Medine Mushafı */
+/* KFGQPC Uthmanic - Yama yaptığımız Mushaf Fontu */
 @font-face {
   font-family: 'KFGQPC Uthmanic';
   src: url('/fonts/KFGQPC Uthmanic.ttf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+/* Kendi Ürettiğimiz Font */
+@font-face {
+  font-family: 'Vukuf';
+  src: url('/fonts/Vukuf.ttf') format('truetype');
   font-weight: normal;
   font-style: normal;
   font-display: swap;

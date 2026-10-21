@@ -1,6 +1,6 @@
 import { useApp } from "../AppContext"
 import { useEffect, useId, useMemo, useState } from "react"
-import { Mail, BookOpen, Globe, Headphones } from "lucide-react"
+import { Mail, BookOpen, Globe, Headphones, Type } from "lucide-react"
 import MealPopup from "../components/MealPopup"
 import MushafKelime from "../components/MushafKelime"
 import { mushafYukle } from "../data/mushafVerisi"
@@ -33,6 +33,7 @@ const KURAN_FONTLARI = {
   uc_ondokuz: "'uc_ondokuz', serif",
   "me-quran": "'me_quran', serif",
   IndopakNastaleeq: "'IndopakNastaleeq', serif",
+  Vukuf: "'Vukuf', serif",
 }
 function kuranFontu() {
   try { return KURAN_FONTLARI[localStorage.getItem("vukuf-kuran-arapca-font")] || KURAN_FONTLARI.kfgqpc }
@@ -40,9 +41,9 @@ function kuranFontu() {
 }
 // Harekesiz karşılaştırma: hareke, işaret, tatvîl atılır; elif/yâ biçimleri birleşir
 const sadeHarf = (s) => String(s || "")
-  .replace(/[\u0671\u0622\u0623\u0625]/g, "\u0627").replace(/\u0649/g, "\u064A")
-  .replace(/[\u0640\u064B-\u065F\u0670\u06D6-\u06ED]/g, "").trim()
-const lafzMi = (w) => { const t = sadeHarf(w); return t === "\u0627\u0644\u0644\u0647" || t.includes("\u0644\u0644\u0647") }
+  .replace(/[ٱآأإ]/g, "ا").replace(/ى/g, "ي")
+  .replace(/[ـً-ٰٟۖ-ۭ]/g, "").trim()
+const lafzMi = (w) => { const t = sadeHarf(w); return t === "الله" || t.includes("لله") }
 // Âyetin kelimeleri içinde aranan ifadenin ardışık kelimelerini bulur (yoksa null)
 function ifadeyiBul(mushaf, sureNo, ayetNo, ifade) {
   const ks = mushaf?.find(x => x.id === sureNo)?.ayetler?.find(a => a.no === ayetNo)?.kelimeler
@@ -283,6 +284,25 @@ export default function Hakkinda() {
             {kaynak(Globe, "Necati Aksu",
               "İmam Gazzâlî Eserleri, Abdülkâdir Geylânî Eserleri",
               { href: "https://necatiaksu.net/" })}
+          </div>
+        </div>
+
+        {/* ── YAZI TİPİ ATFI (21 Ekim 2026) ────────────────────────────────
+           Kullanıcı: "Vukuf Fontu ile ilişkilendirildiğini de yazarız."
+           Vukuf yazı tipi (public/fonts/Vukuf.ttf, sürüm 1.000) Scheherazade New üzerine kurulu.
+           OFL 1.1 gereği: kaynağın telif sahibi ve lisansı belirtilir; "Scheherazade" ve "SIL"
+           ayrılmış adlar olduğu için fontun kendi adı "Vukuf"tur, burada yalnız kaynak olarak anılır. */}
+        <div style={{ marginTop: "22px" }}>
+          <h2 style={{
+            fontSize: "12px", letterSpacing: "1.5px", color: ac,
+            margin: "0 0 12px", fontFamily: "PlayfairDisplay, serif", textAlign: "center",
+          }}>
+            {"Yazı Tipi".toLocaleUpperCase("tr-TR")}
+          </h2>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "10px" }}>
+            {kaynak(Type, "Vukuf yazı tipi",
+              "Vukuf yazı tipinin harf çizimleri ve birleşme kuralları, SIL Global'in Scheherazade New yazı tipinden alınmıştır (SIL Open Font License 1.1). Harekelerin Türk mushafı düzenine göre yerleşimi ile yeniden çizilen uzatma işaretleri (medde ve çekerler) Vukuf'a aittir. Vukuf yazı tipi de aynı lisansla, ücretsiz olarak kullanılabilir.",
+              { href: "https://software.sil.org/scheherazade/" })}
           </div>
         </div>
 

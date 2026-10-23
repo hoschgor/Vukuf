@@ -113,11 +113,12 @@ import PaylasimPenceresi, { PaylasimNotu } from "../components/PaylasimPenceresi
 
 // ── Arapça font listesi
 const ARAPCA_FONTLAR = [
-  { id: "Vukuf",             label: "Vukuf (Önerilen)",           style: "'Vukuf', serif",               google: null },
-  { id: "kfgqpc",            label: "KFGQPC Uthmanic",            style: "'KFGQPC Uthmanic', serif",     google: null },
-  { id: "uc_ondokuz",        label: "Üç Ondokuz",                 style: "'uc_ondokuz', serif",          google: null },
-  { id: "me-quran",          label: "Me Quran",                   style: "'me_quran', serif",            google: null },
-  { id: "IndopakNastaleeq",  label: "Indopak Nastaleeq",          style: "'IndopakNastaleeq', serif",    google: null },
+  { id: "Vukuf",             label: "Klasik",                     style: "'Vukuf', serif",                            google: null },
+  { id: "VukufInce",         label: "Klasik (İnce)",              style: "'Vukuf Ince', serif",                       google: null },
+  { id: "kfgqpc",            label: "KFGQPC Uthmanic",            style: "'KFGQPC Uthmanic', serif",                  google: null },
+  { id: "uc_ondokuz",        label: "Üç Ondokuz",                 style: "'uc_ondokuz', serif",                       google: null },
+  { id: "me-quran",          label: "Me Quran",                   style: "'me_quran', serif",                         google: null },
+  { id: "IndopakNastaleeq",  label: "Indopak Nastaleeq",          style: "'IndopakNastaleeq', serif",                 google: null },
 ]
 
 // Sûre adı araması için normalize: büyük/küçük + şapka/aksan duyarsız (â→a, İ/I, ş→s…)

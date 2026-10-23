@@ -45,19 +45,24 @@
 /* ============================================
    KUR'AN-ı KERİM ÖZEL FONTLARI
    ============================================ */
-
-/* KFGQPC Uthmanic - Yama yaptığımız Mushaf Fontu */
-@font-face {
-  font-family: 'KFGQPC Uthmanic';
-  src: url('/fonts/KFGQPC Uthmanic.ttf') format('opentype');
-  font-weight: normal;
-  font-style: normal;
-  font-display: swap;
-}
 /* Kendi Ürettiğimiz Font */
 @font-face {
   font-family: 'Vukuf';
   src: url('/fonts/Vukuf.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+/* Kendi Ürettiğimiz İnce Font */
+@font-face {
+  font-family: 'Vukuf Ince';
+  src: url('/fonts/VukufInce.ttf') format('truetype');
+  font-display: swap;
+}
+/* KFGQPC Uthmanic - Yama yaptığımız Mushaf Fontu */
+@font-face {
+  font-family: 'KFGQPC Uthmanic';
+  src: url('/fonts/KFGQPC Uthmanic.ttf') format('opentype');
   font-weight: normal;
   font-style: normal;
   font-display: swap;

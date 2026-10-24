@@ -35,7 +35,7 @@
      de çalışır ama eski varlıklar önbellekte birikir.
    ═══════════════════════════════════════════════════════════════════════════ */
 
-const SURUM = "24-10-2026-2"
+const SURUM = "24-10-2026-4"
 
 const KABUK = `vukuf-kabuk-${SURUM}`
 const VARLIK = `vukuf-varlik-${SURUM}`
@@ -48,7 +48,10 @@ const SES = "vukuf-ses"            // SÜRÜMSÜZ ve AYRI — aşağıdaki nota 
 // o an elindeki manifest'i kullandığı için `display: fullscreen` değişikliği
 // sürüm atlansa, uygulama silinip yüklense bile görülmüyordu (eski manifest).
 // Artık manifest işçiden hiç geçmiyor, doğrudan ağdan geliyor.
-const VERI_DESENI = /\.(json|ttf|otf|woff2?|png|jpe?g|svg|ico)$/i
+// `webp`, `avif`, `gif` EKLENDİ (24 Ekim 2026): raf resimleri public/raflar/*.webp;
+// desen yalnız png/jpg/svg tanıdığı için işçi bu istekleri hiç ele almıyordu →
+// önbelleğe girmiyor, internet yokken kitaplıktaki resimler gelmiyordu.
+const VERI_DESENI = /\.(json|ttf|otf|woff2?|png|jpe?g|webp|avif|gif|svg|ico)$/i
 
 /* ── YÖNLENDİRME TUZAĞI ───────────────────────────────────────────────────
    Sunucu `/` için yönlendirme yapıyorsa (nginx/Netlify/Vercel çok yapar) gelen

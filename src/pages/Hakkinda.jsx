@@ -34,6 +34,7 @@ const KURAN_FONTLARI = {
   "me-quran": "'me_quran', serif",
   IndopakNastaleeq: "'IndopakNastaleeq', serif",
   Vukuf: "'Vukuf', serif",
+  VukufInce: "'Vukuf Ince', serif",
 }
 function kuranFontu() {
   try { return KURAN_FONTLARI[localStorage.getItem("vukuf-kuran-arapca-font")] || KURAN_FONTLARI.kfgqpc }

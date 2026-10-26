@@ -106,6 +106,17 @@ const KONULAR = [
     anahtar: "sakla göster gizli raf",
   },
   {
+    bolum: "kitaplik", ikon: Library, baslik: "Kitaplık modu",
+    ozet: "Tüm eserler, seçilen eserler ya da Risale-i Nûr.",
+    nerede: "Ayarlar → Kitaplık modu",
+    metin: [
+      "Uygulama ilk açıldığında kitaplığın nasıl görüneceği sorulur; bu tercih daha sonra Ayarlar → Kitaplık modu bölümünden değiştirilebilir. Aynı bölümdeki \"Hızlı mod değiştirme\" açıldığında Kitaplık başlığının altında bir mod düğmesi görünür ve mod oradan da değiştirilebilir.",
+      "Tüm eserler modunda bütün raflar görünür. Risale-i Nûr modunda Kur'ân-ı Kerîm, Evrâd u Ezkâr ve Risale-i Nûr rafları görünür. Seçilen eserler modunda istenen raflar işaretlenebilir; bir rafın yalnız bazı âlimleri de seçilebilir.",
+      "Son ve Sık Okunanlar ile kendi oluşturduğunuz raflar her modda görünür. Mod yalnız görünen rafları değiştirir; sıralama, kayıtlar ve gizleme ayarları korunur.",
+    ],
+    anahtar: "mod kitaplık modu risale nur seçilen eserler tüm eserler raf seç âlim seç",
+  },
+  {
     bolum: "kitaplik", ikon: Star, baslik: "Son ve Sık Okunanlar",
     ozet: "Okudukça kendiliğinden oluşan iki raf.",
     metin: [

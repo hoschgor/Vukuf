@@ -33,6 +33,8 @@ import {
 } from "lucide-react"
 // Özel raf resmi (19 Ekim 2026): hazır raf resimleri + cihazdan yüklenen resim
 import RafResimSecici from "../components/RafResimSecici"
+// Kitaplık modu (26 Ekim 2026): tüm eserler · seçilen eserler · Risale-i Nûr — components/KitaplikModu.jsx
+import { useKitaplikModu, kategorileriSuz, modOzeti, ModPenceresi, MODLAR } from "../components/KitaplikModu"
 
 // ════════════════════════════════════════════════════════════════
 // SÜRÜKLEME ERGONOMİSİ
@@ -2670,6 +2672,12 @@ function YeniRafModal({ theme, isim, setIsim, onIptal, onDevam }) {
 
 export default function Kutuphane() {
   const { theme } = useApp()
+  /* KİTAPLIK MODU — yalnız kısım rafları ve Âlimler rafı süzülür; Son/Sık Okunanlar
+     ve özel raflar her modda aynen. Mod hiç seçilmemişse (ilk açılış) sorulur. */
+  const [kMod, kSecim, kHap] = useKitaplikModu()
+  const [modPenceresi, setModPenceresi] = useState(null)   // null | { ilk, adim }
+  useEffect(() => { if (!kMod) setModPenceresi({ ilk: true, adim: "mod" }) }, [kMod])
+  const gKategoriler = useMemo(() => kategorileriSuz(kategoriler, kMod || "tum", kSecim), [kMod, kSecim])
   const [acikKategori, setAcikKategori] = useState(() => {
     const kayitli = localStorage.getItem("vukuf-acik-kategori")
     return kayitli ? JSON.parse(kayitli) : null
@@ -2811,17 +2819,20 @@ export default function Kutuphane() {
   }, [isMobile])
 
   // ── Birleşik üst seviye raf listesi (Kısım + özel + Son/Sık)
-  const alimlerRafi = useMemo(() => alimlerRafiKur(kategoriler), [])
-  const kategoriMap = useMemo(() => new Map([...kategoriler, alimlerRafi].map(k => [k.id, k])), [alimlerRafi])
+  // Âlimler rafı: Risale-i Nûr modunda yok; seçilen eserlerde yalnız seçilenlerden kurulur
+  const tamAlimlerRafi = useMemo(() => alimlerRafiKur(kategoriler), [])
+  const alimlerRafi = useMemo(() => (kMod === "risale" ? { id: "alimler", baslik: "Âlimler", alimler: [] }
+    : kMod === "secili" ? alimlerRafiKur(gKategoriler) : tamAlimlerRafi), [kMod, gKategoriler, tamAlimlerRafi])
+  const kategoriMap = useMemo(() => new Map([...gKategoriler, alimlerRafi].map(k => [k.id, k])), [gKategoriler, alimlerRafi])
   const ozelMap = useMemo(() => new Map(ozelRaflar.map(r => [r.id, r])), [ozelRaflar])
 
   const varsayilanUst = [
-    ...kategoriler.map(k => k.id),
+    ...gKategoriler.map(k => k.id),
     ...ozelRaflar.map(r => r.id),
     "alimler", "son-okunanlar", "sik-okunanlar",
   ]
   const mevcutIdler = new Set([
-    ...kategoriler.map(k => k.id),
+    ...gKategoriler.map(k => k.id),
     ...ozelRaflar.map(r => r.id),
     ...(alimlerRafi.alimler.length ? ["alimler"] : []),
     ...(sonListe.length ? ["son-okunanlar"] : []),
@@ -2921,11 +2932,19 @@ export default function Kutuphane() {
     const { active, over } = event
     if (active.id !== over?.id) {
       setAlimSira(prev => {
-        // Kayıtta yoksa ya da eskiyse varsayılan/eksiksiz sıradan başlanır
-        const liste = alimIdSirasi(kategoriMap.get(kategoriId), prev[kategoriId])
-        const eskiIndex = liste.indexOf(active.id)
-        const yeniIndex = liste.indexOf(over.id)
-        const yeni = { ...prev, [kategoriId]: arrayMove(liste, eskiIndex, yeniIndex) }
+        // Kayıtta yoksa ya da eskiyse varsayılan/eksiksiz sıradan başlanır.
+        // Kitaplık modu âlimleri süzmüş olabilir: görünenler kendi yuvalarında yer
+        // değiştirir, gizli kalan âlimlerin yeri bozulmaz (Tüm eserler'e dönünce aynı).
+        const gorunen = alimIdSirasi(kategoriMap.get(kategoriId), prev[kategoriId])
+        const eskiIndex = gorunen.indexOf(active.id)
+        const yeniIndex = gorunen.indexOf(over.id)
+        if (eskiIndex < 0 || yeniIndex < 0) return prev
+        const yeniGorunen = arrayMove(gorunen, eskiIndex, yeniIndex)
+        const tamKat = kategoriId === "alimler" ? tamAlimlerRafi : kategoriler.find(k => k.id === kategoriId)
+        const tam = alimIdSirasi(tamKat || kategoriMap.get(kategoriId), prev[kategoriId])
+        let j = 0
+        const birlesik = tam.map(id => (gorunen.includes(id) ? yeniGorunen[j++] : id))
+        const yeni = { ...prev, [kategoriId]: birlesik }
         localStorage.setItem("vukuf-alim-sira", JSON.stringify(yeni))
         return yeni
       })
@@ -3228,7 +3247,7 @@ export default function Kutuphane() {
                 {(() => {
                   const aramaKucuk = trLower(genelArama)
                   const sonuclar = []
-                  kategoriler.forEach(kategori => {
+                  gKategoriler.forEach(kategori => {      // kitaplık modunda görünmeyen raflar aranmaz
                     const rafGizli = gizliRaflar.includes(kategori.id)
                     if (rafGizli && !gizliAramaDahil) return          // gizli bölüm aramada gösterilmez
                     kategori.alimler.forEach(alim => {
@@ -3293,6 +3312,35 @@ export default function Kutuphane() {
           </div>
         )}
       </div>
+
+      {/* HIZLI MOD DEĞİŞTİRME — Ayarlar → Kitaplık modu → "Hızlı mod değiştirme" açıksa
+          (VARSAYILAN KAPALI) başlığın altında küçük düğme; dokununca mod penceresi.
+          Seçilen eserler modunda seçim BOŞSA düğme ayar kapalı olsa da çıkar —
+          raflar boş kalınca kullanıcı ne yapacağını görsün. */}
+      {kMod && (() => {
+        const m = MODLAR.find(x => x.id === kMod)
+        const bos = kMod === "secili" && !gKategoriler.length
+        if (!bos && !kHap) return null
+        return (
+          <div style={{ marginTop: "-18px", marginBottom: "14px" }}>
+            <button onClick={() => setModPenceresi({ ilk: false, adim: bos ? "secim" : "mod" })} style={{
+              display: "inline-flex", alignItems: "center", gap: "7px", padding: "6px 12px", borderRadius: "999px",
+              border: `1px solid ${theme.accent}55`, background: `${theme.accent}10`, color: theme.accent,
+              fontSize: "12.5px", fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
+            }}>
+              {m && <m.Ikon size={14} />}
+              {m ? m.ad : ""}{kMod === "secili" ? ` · ${modOzeti(kMod, kSecim).replace("seçilen: ", "")}` : ""}
+              <span style={{ color: theme.textSecondary, fontWeight: 500 }}>· değiştir</span>
+            </button>
+            {bos && (
+              <div style={{ marginTop: "10px", fontSize: "13px", color: theme.textSecondary, lineHeight: 1.55 }}>
+                Seçilen eserler modunda henüz raf ya da âlim seçilmedi. Yukarıdaki düğmeyle seçim yapılabilir;
+                Son ve Sık Okunanlar ile kendi raflarınız aşağıda görünmeye devam eder.
+              </div>
+            )}
+          </div>
+        )
+      })()}
 
       {/* ═══ KİTAPLIK DOLABI: taç + bölmeler (direkleri paylaşır) + kaide ═══ */}
       <div style={{ boxShadow: "0 18px 30px -12px rgba(0,0,0,0.5)", borderRadius: "6px 6px 4px 4px" }}>
@@ -3404,6 +3452,10 @@ export default function Kutuphane() {
       </div>
 
       {/* Modallar */}
+      {modPenceresi && (
+        <ModPenceresi theme={theme} ilk={modPenceresi.ilk} baslangicAdim={modPenceresi.adim}
+          kapat={() => setModPenceresi(null)} />
+      )}
       {yeniRafAcik && (
         <YeniRafModal
           theme={theme}

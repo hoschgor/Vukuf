@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { Link, useLocation } from "react-router-dom"
-import { BookOpen, Search, Shuffle, Menu, X, Palette, Info, Type, Sparkles, Settings, HardDrive, Brain, History, HelpCircle } from "lucide-react"
+import { BookOpen, Search, Shuffle, Menu, X, Palette, Info, Type, Sparkles, Settings, HardDrive, Brain, History, HelpCircle, Library } from "lucide-react"
 import { useApp } from "../AppContext"
 import { useMediaQuery } from "../data/hooks/useMediaQuery"
 import IosSwitch from "./IosSwitch"
@@ -12,6 +12,7 @@ import { ypDegisken } from "./yatayDuzen"
 import { themes } from "../styles/themes"
 import { useGecmisAyari, gecmisOku, useGecmisBayragi, OKUNAN_SAYFA_AYAR, GECEN_SURE_AYAR } from "../data/gecmis"
 import YardimPaneli from "./YardimPaneli"
+import { useKitaplikModu, modYaz, secimYaz, hapYaz, modOzeti, ModKartlari, EserSecici } from "./KitaplikModu"
 
 /* ═══════════════════════════════════════════════════════════════════════════
    AYARLARIN TEK KAPIDA TOPLANMASI (24 Eylül 2026)
@@ -174,6 +175,10 @@ export default function Navbar() {
   const gecmisOzeti = gecmisAcik
     ? ["açık", okunanSayfaAyar && "sayfalar", gecenSureAyar && "süre"].filter(Boolean).join(" · ")
     : "kapalı"
+
+  /* KİTAPLIK MODU (26 Ekim 2026) — tüm eserler · seçilen eserler · Risale-i Nûr.
+     Seçim anında uygulanır (Kitaplık olayla güncellenir). Ayrıntı: KitaplikModu.jsx */
+  const [kitaplikModu, kitaplikSecimi, kitaplikHapi] = useKitaplikModu()
 
   const [ozelPanelAcik, setOzelPanelAcik] = useState(false)
   const [ozelRenkler, setOzelRenkler] = useState(customTheme)
@@ -413,6 +418,33 @@ export default function Navbar() {
             </div>
           </div>
 
+          </Katlanir>
+
+          {/* ── KİTAPLIK MODU ───────────────────────────────────────────── */}
+          <Katlanir
+            theme={theme} ikon={Library} baslik="Kitaplık modu"
+            ozet={modOzeti(kitaplikModu || "tum", kitaplikSecimi)}
+            {...kapak("kitaplik")}
+          >
+            <div style={{ fontSize: "12px", color: theme.textSecondary, lineHeight: 1.5, margin: "0 4px 10px" }}>
+              Kitaplıkta hangi rafların görüneceği seçilebilir. Son ve Sık Okunanlar ile kendi
+              raflarınız her modda görünür; sıralama ve kayıtlar değişmez.
+            </div>
+            <ModKartlari theme={theme} deger={kitaplikModu || "tum"} onSec={modYaz} />
+            {kitaplikModu === "secili" && (
+              <div style={{ marginTop: "12px" }}>
+                <EserSecici theme={theme} secim={kitaplikSecimi} onDegis={secimYaz} />
+              </div>
+            )}
+            <div style={{ height: "1px", background: theme.border, opacity: 0.6, margin: "12px 0 2px" }} />
+            {/* Varsayılan KAPALI: Kitaplık başlığının altında mod düğmesi */}
+            <AyarSatiri
+              baslik="Hızlı mod değiştirme"
+              aciklama="Kitaplık başlığının altında geçerli mod gösterilir; dokununca mod Ayarlar'a gitmeden değiştirilebilir."
+              acik={kitaplikHapi}
+              onToggle={() => hapYaz(!kitaplikHapi)}
+              theme={theme}
+            />
           </Katlanir>
 
           {/* ── GEÇMİŞ ────────────────────────────────────────────────── */}

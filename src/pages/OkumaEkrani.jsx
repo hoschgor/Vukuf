@@ -940,17 +940,38 @@ function SayfaBlok({ minHeight, margin = "2200px 0px", hafifGoster, render }) {
 // FONT SEÇİCİ
 // ════════════════════════════════════════════════════════════════
 
+/* YAZI TİPİ SEÇİCİ — LİSTE YERİNDE AÇILIR (26 Ekim 2026)
+   Kullanıcı: "Yatay düzende açılan kısım varsa tam kaydırılamıyor; yazı ayarları
+   içinde yazı tipi seçeceğimiz kısım tamamen kaydırılamıyor."
+   NEDEN: liste düğmenin ÜSTÜNE doğru (position: absolute; bottom: 100%) açılıyor,
+   arkasına da ekranı kaplayan görünmez bir kapatma katmanı konuyordu.
+     1) Kaydırılan panelin TEPESİNDEN taşan kısım kaydırma alanına girmez (tarayıcı
+        yukarı taşmayı kaydırmaz) → alçak yatay ekranda listenin başı kesik kalıyordu.
+     2) Kapatma katmanı panelin üstünde durduğu için liste açıkken parmak panele
+        değil katmana değiyordu → panel hiç kaydırılamıyordu.
+   ŞİMDİ: liste düğmenin ALTINDA, akışın içinde açılıyor (panelin kendi kaydırması
+   yetiyor), kapatma katmanı yok; açılınca görünür alana kaydırılıyor. Düğmeye
+   yeniden dokununca ya da bir yazı tipi seçilince kapanır. */
 function FontSecici({ grupId, grup, seciliFontId, onSecim, theme }) {
   const [acik, setAcik] = useState(false)
+  const listeRef = useRef(null)
   const secili = grup.fontlar.find(f => f.id === seciliFontId) || null
+  useEffect(() => {
+    if (!acik || !listeRef.current) return
+    const t = setTimeout(() => {
+      try { listeRef.current && listeRef.current.scrollIntoView({ block: "nearest", behavior: "smooth" }) } catch { /* yoksay */ }
+    }, 30)
+    return () => clearTimeout(t)
+  }, [acik])
 
   return (
-    <div style={{ position: "relative", marginBottom: "10px" }}>
+    <div style={{ marginBottom: "10px" }}>
       <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "4px", letterSpacing: "1px" }}>
         {grup.label.toUpperCase()}
       </div>
       <button
         onClick={() => setAcik(!acik)}
+        aria-expanded={acik}
         style={{
           width: "100%", display: "flex", alignItems: "center",
           justifyContent: "space-between", padding: "8px 12px", borderRadius: "8px",
@@ -960,50 +981,47 @@ function FontSecici({ grupId, grup, seciliFontId, onSecim, theme }) {
         }}
       >
         <span style={{ fontFamily: secili?.style }}>{secili ? secili.label : "—"}</span>
-        <ChevronDown size={13} color={theme.textSecondary} />
+        <ChevronDown size={13} color={theme.textSecondary} style={{ transition: "transform 0.2s", transform: acik ? "rotate(180deg)" : "none" }} />
       </button>
 
       {acik && (
-        <>
-          <div onClick={() => setAcik(false)} style={{ position: "fixed", inset: 0, zIndex: 195 }} />
-          <div style={{
-            position: "absolute", bottom: "100%", left: 0, right: 0, marginBottom: "4px",
-            background: theme.surface, border: `1px solid ${theme.border}`,
-            borderRadius: "10px", zIndex: 200, overflow: "hidden",
-            boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
-          }}>
-            {secili && (
-              <button
-                onClick={() => { onSecim(grupId, null); setAcik(false) }}
-                style={{
-                  width: "100%", padding: "8px 12px", textAlign: "left", fontSize: "12px",
-                  color: theme.textSecondary, background: "transparent", border: "none",
-                  cursor: "pointer", borderBottom: `1px solid ${theme.border}`,
-                }}
-              >
-                — Seçimi kaldır
-              </button>
-            )}
-            {grup.fontlar.map(font => (
-              <button
-                key={font.id}
-                onClick={() => { onSecim(grupId, font.id); setAcik(false) }}
-                style={{
-                  width: "100%", display: "flex", alignItems: "center",
-                  justifyContent: "space-between", padding: "10px 12px",
-                  background: seciliFontId === font.id ? `${theme.accent}15` : "transparent",
-                  border: "none", cursor: "pointer",
-                  borderBottom: `1px solid ${theme.border}`,
-                }}
-              >
-                <span style={{ fontSize: "13px", color: theme.text }}>{font.label}</span>
-                <span style={{ fontSize: "15px", fontFamily: font.style, color: theme.textSecondary, fontStyle: "italic" }}>
-                  Elif بسم
-                </span>
-              </button>
-            ))}
-          </div>
-        </>
+        <div ref={listeRef} style={{
+          marginTop: "4px",
+          background: theme.surface, border: `1px solid ${theme.border}`,
+          borderRadius: "10px", overflow: "hidden",
+          boxShadow: "0 2px 10px rgba(0,0,0,0.10)",
+        }}>
+          {secili && (
+            <button
+              onClick={() => { onSecim(grupId, null); setAcik(false) }}
+              style={{
+                width: "100%", padding: "8px 12px", textAlign: "left", fontSize: "12px",
+                color: theme.textSecondary, background: "transparent", border: "none",
+                cursor: "pointer", borderBottom: `1px solid ${theme.border}`,
+              }}
+            >
+              — Seçimi kaldır
+            </button>
+          )}
+          {grup.fontlar.map((font, i) => (
+            <button
+              key={font.id}
+              onClick={() => { onSecim(grupId, font.id); setAcik(false) }}
+              style={{
+                width: "100%", display: "flex", alignItems: "center",
+                justifyContent: "space-between", padding: "10px 12px",
+                background: seciliFontId === font.id ? `${theme.accent}15` : "transparent",
+                border: "none", cursor: "pointer",
+                borderBottom: i < grup.fontlar.length - 1 ? `1px solid ${theme.border}` : "none",
+              }}
+            >
+              <span style={{ fontSize: "13px", color: theme.text }}>{font.label}</span>
+              <span style={{ fontSize: "15px", fontFamily: font.style, color: theme.textSecondary, fontStyle: "italic" }}>
+                Elif بسم
+              </span>
+            </button>
+          ))}
+        </div>
       )}
     </div>
   )

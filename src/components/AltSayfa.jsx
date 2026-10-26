@@ -23,6 +23,16 @@
         gelince arka sayfaya taşmaz.
    Kapatmanın öbür yolları: perdeye dokunmak, Esc.
 
+   ── 26 EKİM 2026: KAPANMA KARARI (bilinen alt sayfa mantığı) ───────────────
+   Kullanıcı: "Biraz aşağı sürükleyip belirli bir noktayı geçip bırakırsam panel
+   kapanmalı, hemen yukarıdayken bıraktığımda kapanmamalı. Aşağı çekip vazgeçip
+   yukarı geri sürüklediğimde az sürüklesem de açık kalmalı."
+   ESKİ HATA: hız başlangıçtan bırakışa ORTALAMA idi; kısa ve çabuk bir dokunuş
+   "fiske" sayılıp kapatıyordu, geri çekilen hareketin yönü hesaba girmiyordu.
+   Karar artık BIRAKMA ANINDA ve ortak kancada: data/hooks/useCekKapat.js
+   (Lügat araması ve paylaşım penceresi de aynı kancayı kullanıyor).
+   Eşik geçilince tutamak çizgisi vurgu rengine döner: "bırakılırsa kapanır".
+
    Korunanlar: giriş/çıkış geçişi (keyframe değil, aynı transform), sürükledikçe
    solan perde, perdede parmak kaydırınca arka sayfanın kaymaması (iOS),
    yatay telefon düzeni için `yp-altsayfa` sınıfı (bkz. yatayDuzen.js).
@@ -30,12 +40,9 @@
    konumunu zıplatıyor.
    ═══════════════════════════════════════════════════════════════════════════ */
 
-import { useState, useRef, useEffect, useCallback } from "react"
+import { useState, useRef, useEffect } from "react"
 import "./yatayDuzen"
-
-const KAPANMA_SURESI = 220          // ms — çıkış geçişiyle aynı olmalı
-const ESIK_PX = 90                  // bu kadar aşağı inerse kapanır
-const HIZ_ESIGI = 0.5               // px/ms — fiske ile kapanma
+import { useCekKapat } from "../data/hooks/useCekKapat"
 
 export default function AltSayfa({
   kapat,
@@ -45,29 +52,17 @@ export default function AltSayfa({
   maxGenislik = "520px",
   maxYukseklik = "82vh",
 }) {
-  const [kayma, setKayma] = useState(0)
-  const [surukleniyor, setSurukleniyor] = useState(false)
-  const [kapaniyor, setKapaniyor] = useState(false)
   const [acildi, setAcildi] = useState(false)
-  const bilgi = useRef({ id: null, basY: 0, basT: 0 })
-  const suruklendi = useRef(false)
-  const zamanlayici = useRef(null)
   const perdeRef = useRef(null)
+  const panelRef = useRef(null)
+  const ck = useCekKapat({ kapat, kutuRef: panelRef })
+  const { kayma, surukleniyor, kapaniyor, kapanmayaBasla } = ck
 
   // Giriş: ilk karede kapalı, sonraki karede açık → geçiş devreye girer.
   useEffect(() => {
     const r = requestAnimationFrame(() => setAcildi(true))
-    return () => {
-      cancelAnimationFrame(r)
-      if (zamanlayici.current) clearTimeout(zamanlayici.current)
-    }
+    return () => cancelAnimationFrame(r)
   }, [])
-
-  const kapanmayaBasla = useCallback(() => {
-    setKapaniyor(true)
-    // Geçiş bitmeden unmount edilirse panel zıplayarak kaybolur; bekleniyor.
-    zamanlayici.current = setTimeout(() => kapat?.(), KAPANMA_SURESI)
-  }, [kapat])
 
   // Esc ile kapanma (masaüstü)
   useEffect(() => {
@@ -86,32 +81,9 @@ export default function AltSayfa({
     return () => el.removeEventListener("touchmove", engel)
   }, [])
 
-  // ── BAŞLIK ŞERİDİNDEN SÜRÜKLEME ────────────────────────────────────────
-  function basla(e) {
-    if (kapaniyor || bilgi.current.id != null) return
-    bilgi.current = { id: e.pointerId, basY: e.clientY, basT: performance.now() }
-    suruklendi.current = false
-    setSurukleniyor(true)
-    try { e.currentTarget.setPointerCapture(e.pointerId) } catch { /* eski tarayıcı */ }
-  }
-  function hareket(e) {
-    if (bilgi.current.id !== e.pointerId) return
-    const dy = e.clientY - bilgi.current.basY
-    if (Math.abs(dy) > 3) suruklendi.current = true
-    setKayma(dy > 0 ? dy : dy * 0.25)          // yukarı çekmede direnç
-  }
-  function bitir(e) {
-    if (bilgi.current.id !== e.pointerId) return
-    const dy = Math.max(0, e.clientY - bilgi.current.basY)
-    const sure = Math.max(1, performance.now() - bilgi.current.basT)
-    bilgi.current.id = null
-    setSurukleniyor(false)
-    if (dy > ESIK_PX || (suruklendi.current && dy / sure > HIZ_ESIGI)) kapanmayaBasla()
-    else setKayma(0)
-  }
-
   const yer = kapaniyor || !acildi ? "100%" : `${kayma}px`
   const perdeOran = kapaniyor ? 0 : Math.max(0, 1 - Math.max(0, kayma) / 320)
+  const esikGecildi = ck.esikGecildi
 
   return (
     <>
@@ -127,6 +99,7 @@ export default function AltSayfa({
       />
 
       <div
+        ref={panelRef}
         className="yp-altsayfa"
         role="dialog"
         aria-modal="true"
@@ -139,21 +112,13 @@ export default function AltSayfa({
           borderRadius: "20px 20px 0 0",
           boxShadow: "0 -8px 30px rgba(0,0,0,0.22)",
           transform: `translateY(${yer})`,
-          transition: surukleniyor ? "none" : `transform ${KAPANMA_SURESI}ms cubic-bezier(.22,.61,.36,1)`,
+          transition: ck.gecis,
         }}
       >
         {/* 1) BAŞLIK ŞERİDİ — tek sürükleme alanı. Dokunma hedefi çizgiden
             büyük tutuluyor; 4 px'lik çizgiyi yakalamak zor. */}
         <div
-          onPointerDown={basla}
-          onPointerMove={hareket}
-          onPointerUp={bitir}
-          onPointerCancel={bitir}
-          // Sürükledikten sonra başlıktaki bir öğe tıklanmış sayılmasın
-          onClickCapture={(e) => {
-            if (suruklendi.current) { e.stopPropagation(); e.preventDefault() }
-            suruklendi.current = false
-          }}
+          {...ck.tutamak}
           role="button"
           aria-label="Paneli kapatmak için aşağı sürükleyin"
           style={{
@@ -167,10 +132,10 @@ export default function AltSayfa({
           <div style={{ display: "flex", justifyContent: "center", padding: "12px 0 8px" }}>
             <div style={{
               width: "40px", height: "4px", borderRadius: "2px",
-              background: theme.border,
+              background: esikGecildi ? theme.accent : theme.border,
               opacity: surukleniyor ? 1 : 0.85,
               transform: surukleniyor ? "scaleX(1.25)" : "none",
-              transition: "transform 0.15s ease, opacity 0.15s ease",
+              transition: "transform 0.15s ease, opacity 0.15s ease, background 0.15s ease",
             }} />
           </div>
           {baslik && (

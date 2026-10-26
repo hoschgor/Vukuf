@@ -30,13 +30,14 @@
    1. sürüm sayfada ~10 sn durmayı sayıyordu; kullanıcı: "Sayfaları toplamıyor,
    bugün … toplam 2 sayfa okundu olarak kalıyor" — beklenen, KAYIT TAŞIMALARININ
    toplamı ("2 sayfa okundu" + "1 sayfa okundu" → bugün toplam 3).
-   • Kayıt "yerine koy" ile ileri taşınıp "N sayfa okundu" denince (eski, yeni]
-     aralığındaki sayfalar o günün o eser listesine eklenir ("ilerlendi" denen
-     hızlı atlamalar ve geri dönüşler eklenmez).
-   • Aynı gün aynı eserde aynı sayfa bir kez sayılır (ileri-geri gidip aynı
-     sayfaları yeniden geçmek toplamı şişirmez).
+   • Kayıt "yerine koy" ile ileri taşınınca fark o günün o eser toplamına eklenir.
+   • 3. düzeltme (kullanıcı: "eser içinde birden fazla kez kayıt değişimi olduğunda
+     üst üste toplayarak ilerlemesi lazım, 10 kez değişim yapılsa da toplam
+     değişen sayfa sayısını güncellemesi gerekiyor"): her ileri taşıma toplama
+     EKLENİR (tekrarsız sayfa kümesi değil). "İlerlendi" denen hızlı taşımalar da
+     eklenir; geri dönüşler eklenmez, düşülmez.
    • Ayrı anahtarda tutulur: localStorage "vukuf-okunan-sayfalar"
-       { "YYYY-AA-GG": { "<kaynak>|<kitapId>": { baslik, sayfalar: [..] } } }
+       { "YYYY-AA-GG": { "<kaynak>|<kitapId>": { baslik, toplam, araliklar: [[eski, yeni, z]] } } }
      Geçmiş kapalıyken yazılmaz; Geçmiş "Temizle" ve geçmişi kapatmak bunu da siler.
    ═══════════════════════════════════════════════════════════════════════════ */
 
@@ -76,6 +77,40 @@ export function useGecmisAyari() {
   }, [])
   return [acik, gecmisAyarla]
 }
+
+/* ── GEÇMİŞ ALT AYARLARI (26 Ekim 2026) ─────────────────────────────────────
+   Kullanıcı: "Geçmiş için ayarlar kısmında Okunan sayfalar ayarı açılıp
+   kapanabilsin, bir de sadece bu sayfada görüntülenecek geçen süre ayarı."
+   İkisi de VARSAYILAN AÇIK (anahtar yoksa açık; kapatılınca "0").
+   • Okunan sayfalar: kapalıyken sayfa toplamı TUTULMAZ, bildirimde günün
+     toplamı ve Geçmiş'teki sayfa bilgileri görünmez (eski toplamlar silinmez).
+   • Geçen süre: yalnız Geçmiş sayfasındaki süre gösterimleri (kayıt rozeti, gün
+     başlığı, okuma özeti). Süre ölçümü sürer; açılınca hepsi yine görünür. */
+export const OKUNAN_SAYFA_AYAR = "vukuf-gecmis-okunan-sayfalar"
+export const GECEN_SURE_AYAR = "vukuf-gecmis-gecen-sure"
+const bayrakAboneleri = new Map()          // anahtar → Set(setState)
+export function bayrakAcikMi(anahtar) {
+  try {
+    const v = localStorage.getItem(anahtar)
+    return v === null ? true : v === "1"
+  } catch { return true }
+}
+export function bayrakAyarla(anahtar, acik) {
+  try { localStorage.setItem(anahtar, acik ? "1" : "0") } catch { /* kota */ }
+  for (const f of bayrakAboneleri.get(anahtar) || []) f(!!acik)
+}
+export function useGecmisBayragi(anahtar) {
+  const [acik, setAcik] = useState(() => bayrakAcikMi(anahtar))
+  useEffect(() => {
+    if (!bayrakAboneleri.has(anahtar)) bayrakAboneleri.set(anahtar, new Set())
+    const k = bayrakAboneleri.get(anahtar)
+    k.add(setAcik)
+    setAcik(bayrakAcikMi(anahtar))
+    return () => { k.delete(setAcik) }
+  }, [anahtar])
+  return [acik, (v) => bayrakAyarla(anahtar, v)]
+}
+export const okunanSayfaAcikMi = () => gecmisAcikMi() && bayrakAcikMi(OKUNAN_SAYFA_AYAR)
 
 /* ── LİSTE ────────────────────────────────────────────────────────────────── */
 const listeAboneleri = new Set()
@@ -202,42 +237,80 @@ export function useOkunanSayfalar() {
   }, [])
   return o
 }
+/* Eser kaydı (2. biçim): { baslik, toplam, araliklar: [[eski, yeni, zaman], ...] }
+   toplam = bütün ileri taşımaların toplamı (aynı sayfalar yeniden geçilse de).
+   1. biçim { baslik, sayfalar: [..] } (26 Ekim'in ilk sürümü) okunurken çevrilir. */
+function eserKaydi(v) {
+  if (!v || typeof v !== "object") return null
+  if (Array.isArray(v.araliklar)) {
+    const toplam = Number.isFinite(v.toplam) ? v.toplam : v.araliklar.reduce((t, r) => t + Math.max(0, r[1] - r[0]), 0)
+    return { baslik: v.baslik, toplam, araliklar: v.araliklar }
+  }
+  if (Array.isArray(v.sayfalar)) {
+    const s = [...v.sayfalar].sort((x, y) => x - y)
+    const araliklar = []
+    for (let i = 0; i < s.length; i++) {
+      let j = i
+      while (j + 1 < s.length && s[j + 1] === s[j] + 1) j++
+      araliklar.push([s[i] - 1, s[j], 0])
+      i = j
+    }
+    return { baslik: v.baslik, toplam: s.length, araliklar }
+  }
+  return null
+}
 /* Bir günün (varsayılan bugün) o eserde okunan sayfa sayısı */
 export function gunlukOkunanSayfa(kaynak, kitapId = null, gun = gunKodu()) {
-  const v = (okunanOku()[gun] || {})[eserAnahtari(kaynak, kitapId)]
-  return v && Array.isArray(v.sayfalar) ? v.sayfalar.length : 0
+  const v = eserKaydi((okunanOku()[gun] || {})[eserAnahtari(kaynak, kitapId)])
+  return v ? v.toplam : 0
 }
-/* Kayıt eski → yeni taşındı ve "okundu" sayıldı: (eski, yeni] bugüne eklenir.
-   → { once, sonra }: eklemeden önceki ve sonraki gün toplamı (o eserde) */
+/* Kayıt eski → yeni İLERİ taşındı: (yeni − eski) günün o eser toplamına EKLENİR
+   (kullanıcı: "00:00–23:59 arasında 10 kez değişim yapılsa da toplam değişen sayfa
+   sayısını güncellemesi gerekiyor"). → { once, sonra }: eklemeden önceki/sonraki toplam */
 export function okunanSayfaEkle(kaynak, kitapId, baslik, eski, yeni) {
   const once = gunlukOkunanSayfa(kaynak, kitapId)
   const e = Math.floor(Number(eski)), y = Math.floor(Number(yeni))
-  if (!gecmisAcikMi() || !Number.isFinite(e) || !Number.isFinite(y) || y <= e || y - e > OKUNAN_TEK_SEFERDE) {
+  if (!okunanSayfaAcikMi() || !Number.isFinite(e) || !Number.isFinite(y) || y <= e || y - e > OKUNAN_TEK_SEFERDE) {
     return { once, sonra: once }
   }
   const o = okunanOku()
   const gun = gunKodu()
   const a = eserAnahtari(kaynak, kitapId)
   const g = o[gun] = { ...(o[gun] || {}) }
-  const v = g[a] && Array.isArray(g[a].sayfalar) ? g[a] : { baslik, sayfalar: [] }
-  const kume = new Set(v.sayfalar)
-  for (let n = e + 1; n <= y; n++) kume.add(n)
-  g[a] = { baslik: baslik || v.baslik, sayfalar: [...kume].sort((x, z) => x - z) }
+  const v = eserKaydi(g[a]) || { baslik, toplam: 0, araliklar: [] }
+  const sonra = v.toplam + (y - e)
+  g[a] = { baslik: baslik || v.baslik, toplam: sonra, araliklar: [...v.araliklar, [e, y, Date.now()]] }
   okunanYaz(o)
-  return { once, sonra: kume.size }
+  return { once, sonra }
 }
-/* Gün gün, eser eser: Map(gunKodu → Map(eserAnahtari → { kaynak, kitapId, baslik, sayfalar: number[] })) */
+/* Gün gün, eser eser: Map(gunKodu → Map(eserAnahtari → { kaynak, kitapId, baslik, toplam, araliklar })) */
 export function okunanSayfalar(o = okunanOku()) {
   const gunler = new Map()
   for (const [gun, eserler] of Object.entries(o || {})) {
     if (!eserler || typeof eserler !== "object") continue
     const m = new Map()
-    for (const [a, v] of Object.entries(eserler)) {
-      if (!v || !Array.isArray(v.sayfalar) || !v.sayfalar.length) continue
+    for (const [a, ham] of Object.entries(eserler)) {
+      const v = eserKaydi(ham)
+      if (!v || !(v.toplam > 0)) continue
       const [kaynak, kitapId] = a.split("|")
-      m.set(a, { kaynak, kitapId: kitapId || null, baslik: v.baslik, sayfalar: v.sayfalar })
+      m.set(a, { kaynak, kitapId: kitapId || null, baslik: v.baslik, toplam: v.toplam, araliklar: v.araliklar })
     }
     if (m.size) gunler.set(gun, m)
+  }
+  return gunler
+}
+/* Okuma süreleri gün gün, eser eser (oturumların ETKİN süresi; oturum son
+   güncellendiği güne yazılır) → Map(gunKodu → Map(eserAnahtari → { kaynak, kitapId, baslik, sure })) */
+export function okumaSureleri(liste = gecmisOku()) {
+  const gunler = new Map()
+  for (const e of liste) {
+    if (e.tur !== "okuma" || !(e.sure > 0)) continue
+    const gun = gunKodu(e.son || e.z)
+    const a = eserAnahtari(e.kaynak, e.kitapId)
+    if (!gunler.has(gun)) gunler.set(gun, new Map())
+    const g = gunler.get(gun)
+    if (!g.has(a)) g.set(a, { kaynak: e.kaynak, kitapId: e.kitapId || null, baslik: e.baslik, sure: 0 })
+    g.get(a).sure += e.sure
   }
   return gunler
 }
@@ -245,20 +318,19 @@ export function okunanSayfalar(o = okunanOku()) {
 export function gunToplami(gunler, gun) {
   const g = gunler.get(gun)
   let t = 0
-  if (g) for (const v of g.values()) t += v.sayfalar.length
+  if (g) for (const v of g.values()) t += v.toplam
   return t
 }
-/* [1,2,3,5,7,8] → "1–3, 5, 7–8" */
-export function sayfaAraliklari(sayfalar) {
-  const s = [...sayfalar].sort((a, b) => a - b)
-  const out = []
-  for (let i = 0; i < s.length; i++) {
-    let j = i
-    while (j + 1 < s.length && s[j + 1] === s[j] + 1) j++
-    out.push(i === j ? `${s[i]}` : `${s[i]}–${s[j]}`)
-    i = j
+/* Taşımalar → okunur metin; art arda gelenler birleşir:
+   [[40,42],[42,43],[50,52]] → "s. 40 → 43, s. 50 → 52" */
+export function aralikMetni(araliklar) {
+  const zincir = []
+  for (const [e, y] of araliklar || []) {
+    const son = zincir[zincir.length - 1]
+    if (son && son[1] === e) son[1] = y
+    else zincir.push([e, y])
   }
-  return out.join(", ")
+  return zincir.map(([e, y]) => `s. ${e} → ${y}`).join(", ")
 }
 
 /* ── ARAMA ────────────────────────────────────────────────────────────────── */

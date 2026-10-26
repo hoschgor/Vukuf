@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { okunanSayfaEkle, gunlukOkunanSayfa } from "../data/gecmis"
+import { okunanSayfaEkle, gunlukOkunanSayfa, okunanSayfaAcikMi } from "../data/gecmis"
 
 /* ═══════════════════════════════════════════════════════════════════════════
    SAYFA FARKI BİLDİRİMİ (26 Ekim 2026)
@@ -19,8 +19,8 @@ import { okunanSayfaEkle, gunlukOkunanSayfa } from "../data/gecmis"
      okunan sayfayı da kontrol etsin"; düzeltme: "1. bildirim: 2 sayfa okundu.
      2. bildirim: 1 sayfa okundu, altta 'xxx eserinde bugün toplam 3 sayfa okundu';
      ilk seferinde toplamı demesine gerek yok"):
-     sayfaFarkiOlustur() "okundu" sayılan taşımanın sayfalarını günün toplamına
-     ekler (data/gecmis.js → okunanSayfaEkle) ve bildirim.bugun = { sayi, once,
+     sayfaFarkiOlustur() ileri taşımanın farkını günün toplamına ekler
+     (3. düzeltme: her taşıma üst üste toplanır; "ilerlendi" de eklenir) (data/gecmis.js → okunanSayfaEkle) ve bildirim.bugun = { sayi, once,
      eser, kuran } verir. İkinci satır yalnız bugün bu eserde DAHA ÖNCE sayılmış
      sayfa varsa (once > 0) çıkar. Geçmiş kapalıysa toplam tutulmaz.
    • Dokunmayı engellemez (pointerEvents: none); 3 sn sonra yavaşça söner.
@@ -49,14 +49,14 @@ export function bugunMetni(bugun) {
 }
 
 /* Okuma ekranlarının "yerine koy" anında çağırdığı tek giriş: bildirimi kurar,
-   "okundu" sayılıyorsa sayfaları günün toplamına yazar.
+   ileri taşımada farkı günün o eser toplamına ekler.
    kaynak: "kitap" | "kuran"; eser: gösterilecek ad (Kur'ân'da gerekmez). */
 export function sayfaFarkiOlustur({ eski, yeni, gecenSn = null, kaynak, kitapId = null, eser = null, enAzSaniye = ENAZ_SANIYE_SAYFA }) {
-  const metin = sayfaFarkiMetni(eski, yeni, gecenSn, enAzSaniye) || ""
-  const okundu = metin.endsWith("sayfa okundu")
+  const ileri = Number(yeni) > Number(eski)
   let bugun = null
   try {
-    if (okundu) {
+    if (!okunanSayfaAcikMi()) bugun = null          // Ayarlar → Geçmiş → Okunan sayfalar kapalı
+    else if (ileri) {
       const { once, sonra } = okunanSayfaEkle(kaynak, kitapId, eser, eski, yeni)
       bugun = { sayi: sonra, once }
     } else {

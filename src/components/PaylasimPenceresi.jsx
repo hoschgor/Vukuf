@@ -18,6 +18,7 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 import { X, Link2, Copy, Check, Share2, MessageCircle, Send, ThumbsUp, AtSign, Mail, MessageSquare, BookOpen } from "lucide-react"
 import { paylasimMesaji, PAYLASIM_HEDEFLERI, panoyaKopyala } from "../data/paylasim"
+import { useCekKapat } from "../data/hooks/useCekKapat"
 
 // Önizlemede adres okunur biçimde (%C3%BC → ü); kopyalanan/gönderilen adres değişmez
 const okunurAdres = (u) => { try { return decodeURIComponent(String(u).replace(/\+/g, " ")) } catch { return u } }
@@ -27,13 +28,17 @@ export default function PaylasimPenceresi({ acik, veri, kapat, theme, isMobile }
   const ac = theme.accent
   const [secim, setSecim] = useState("cumle")
   const [bildirim, setBildirim] = useState("")
-  const [cekme, setCekme] = useState(0)
-  const cekmeRef = useRef(null)
+  /* AŞAĞI ÇEKİP KAPATMA (26 Ekim 2026) — ortak kanca data/hooks/useCekKapat.js:
+     karar bırakma anında (yukarı doğru bırakılırsa açık kalır, belirgin aşağı
+     fiske ya da eşiği geçmek kapatır). Eskiden yalnız "> 90 px" idi; geri çekip
+     vazgeçerken de kapanıyordu. */
+  const kutuRef = useRef(null)
+  const ck = useCekKapat({ kapat, kutuRef })
   const bildirimZaman = useRef(0)
 
   useEffect(() => {
     if (!acik) return
-    setSecim("cumle"); setBildirim(""); setCekme(0)
+    setSecim("cumle"); setBildirim(""); ck.sifirla()
     const tus = (e) => { if (e.key === "Escape") kapat() }
     window.addEventListener("keydown", tus)
     return () => { window.removeEventListener("keydown", tus); clearTimeout(bildirimZaman.current) }
@@ -75,10 +80,6 @@ export default function PaylasimPenceresi({ acik, veri, kapat, theme, isMobile }
     }
   }
 
-  const cekBas = (e) => { cekmeRef.current = { y: e.clientY, id: e.pointerId }; try { e.currentTarget.setPointerCapture(e.pointerId) } catch { /* yoksay */ } }
-  const cekKaydir = (e) => { const c = cekmeRef.current; if (c && c.id === e.pointerId) setCekme(Math.max(0, e.clientY - c.y)) }
-  const cekBirak = () => { const d = cekme; cekmeRef.current = null; if (d > 90) kapat(); else setCekme(0) }
-
   const baslik = veri.tip === "ayet" ? "Âyeti paylaş" : (secim === "kelime" && kelimeVar ? "Kelimeyi paylaş" : "Cümleyi paylaş")
 
   const hedefDugmesi = (key, ad, Ikon, renk, tikla) => (
@@ -112,7 +113,7 @@ export default function PaylasimPenceresi({ acik, veri, kapat, theme, isMobile }
         .vukuf-paylas-hedef:hover { background: ${ac}0d !important; }
         @media (prefers-reduced-motion: reduce) { .vukuf-paylas-kutu { animation: none !important } }
       `}</style>
-      <div className="vukuf-paylas-kutu" role="dialog" aria-modal="true" aria-label={baslik}
+      <div ref={kutuRef} className="vukuf-paylas-kutu" role="dialog" aria-modal="true" aria-label={baslik}
         onClick={(e) => e.stopPropagation()}
         style={{
           width: isMobile ? "100%" : "min(460px, 92vw)", maxHeight: isMobile ? "88dvh" : "84vh",
@@ -120,15 +121,15 @@ export default function PaylasimPenceresi({ acik, veri, kapat, theme, isMobile }
           borderRadius: isMobile ? "18px 18px 0 0" : "16px",
           boxShadow: "0 18px 50px rgba(0,0,0,0.25)",
           display: "flex", flexDirection: "column", overflow: "hidden",
-          transform: cekme ? `translateY(${cekme}px)` : undefined,
-          transition: cekme ? "none" : "transform .2s ease",
+          transform: ck.donusum,
+          transition: ck.gecis,
           animation: "vukufPaylasYukari .22s ease-out",
           paddingBottom: isMobile ? "max(10px, env(safe-area-inset-bottom))" : "6px",
         }}>
         {isMobile && (
-          <div onPointerDown={cekBas} onPointerMove={cekKaydir} onPointerUp={cekBirak} onPointerCancel={cekBirak}
+          <div {...ck.tutamak}
             style={{ padding: "8px 0 2px", display: "flex", justifyContent: "center", touchAction: "none", cursor: "grab" }}>
-            <span style={{ width: "38px", height: "4px", borderRadius: "2px", background: theme.border }} />
+            <span style={{ width: "38px", height: "4px", borderRadius: "2px", background: ck.esikGecildi ? theme.accent : theme.border, transition: "background .15s ease" }} />
           </div>
         )}
 

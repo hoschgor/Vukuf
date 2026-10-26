@@ -10,7 +10,7 @@ import Katlanir from "./Katlanir"
 import TemaSecici from "./TemaSecici"
 import { ypDegisken } from "./yatayDuzen"
 import { themes } from "../styles/themes"
-import { useGecmisAyari, gecmisOku } from "../data/gecmis"
+import { useGecmisAyari, gecmisOku, useGecmisBayragi, OKUNAN_SAYFA_AYAR, GECEN_SURE_AYAR } from "../data/gecmis"
 import YardimPaneli from "./YardimPaneli"
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -165,6 +165,15 @@ export default function Navbar() {
       setGecmisAcik(false)
     } else setGecmisAcik(true)
   }
+  /* GEÇMİŞ ALT AYARLARI (26 Ekim 2026) — kullanıcı: "Geçmiş için ayarlar kısmında
+     Okunan sayfalar ayarı açılıp kapanabilsin, bir de sadece bu sayfada
+     görüntülenecek geçen süre ayarı." Yalnız Geçmiş açıkken görünür; ikisi de
+     varsayılan açık. Ayrıntı: data/gecmis.js (OKUNAN_SAYFA_AYAR, GECEN_SURE_AYAR) */
+  const [okunanSayfaAyar, setOkunanSayfaAyar] = useGecmisBayragi(OKUNAN_SAYFA_AYAR)
+  const [gecenSureAyar, setGecenSureAyar] = useGecmisBayragi(GECEN_SURE_AYAR)
+  const gecmisOzeti = gecmisAcik
+    ? ["açık", okunanSayfaAyar && "sayfalar", gecenSureAyar && "süre"].filter(Boolean).join(" · ")
+    : "kapalı"
 
   const [ozelPanelAcik, setOzelPanelAcik] = useState(false)
   const [ozelRenkler, setOzelRenkler] = useState(customTheme)
@@ -409,7 +418,7 @@ export default function Navbar() {
           {/* ── GEÇMİŞ ────────────────────────────────────────────────── */}
           <Katlanir
             theme={theme} ikon={History} baslik="Geçmiş"
-            ozet={gecmisAcik ? "açık" : "kapalı"}
+            ozet={gecmisOzeti}
             {...kapak("gecmis")}
           >
           <AyarSatiri
@@ -419,6 +428,25 @@ export default function Navbar() {
             onToggle={toggleGecmis}
             theme={theme}
           />
+          {/* Alt ayarlar yalnız geçmiş açıkken (kapalıyken zaten kayıt tutulmuyor) */}
+          {gecmisAcik && (<>
+            <div style={{ height: "1px", background: theme.border, opacity: 0.6, margin: "2px 0" }} />
+            <AyarSatiri
+              baslik="Okunan sayfalar"
+              aciklama="Kayıt ileri taşındıkça günün okunan sayfaları toplanır; kayıt bildiriminde ve Geçmiş sayfasında gösterilir."
+              acik={okunanSayfaAyar}
+              onToggle={() => setOkunanSayfaAyar(!okunanSayfaAyar)}
+              theme={theme}
+            />
+            <div style={{ height: "1px", background: theme.border, opacity: 0.6, margin: "2px 0" }} />
+            <AyarSatiri
+              baslik="Geçen süre"
+              aciklama="Geçmiş sayfasında okuma süreleri gösterilir: kayıtlarda, günlerde ve okuma özetinde eser eser ve toplam olarak."
+              acik={gecenSureAyar}
+              onToggle={() => setGecenSureAyar(!gecenSureAyar)}
+              theme={theme}
+            />
+          </>)}
           </Katlanir>
 
           {/* ── VERİLER ───────────────────────────────────────────────────

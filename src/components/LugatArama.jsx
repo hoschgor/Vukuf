@@ -20,6 +20,7 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 import { Search, X, ChevronDown } from "lucide-react"
 import { trFold } from "../data/okumaKayit"
+import { useCekKapat } from "../data/hooks/useCekKapat"
 
 const SON_ANAHTAR = "vukuf-lugat-son-aramalar"
 const SAYFA = 40
@@ -61,10 +62,14 @@ export default function LugatArama({ acik, kapat, theme, isMobile, olcek = 1, lu
   const [goster, setGoster] = useState(SAYFA)
   const [acikKelime, setAcikKelime] = useState(null)
   const [sonlar, setSonlar] = useState(sonlariOku)
-  const [cekme, setCekme] = useState(0)                    // tutamaktan aşağı çekme (px)
+  /* AŞAĞI ÇEKİP KAPATMA (26 Ekim 2026) — ortak kanca data/hooks/useCekKapat.js:
+     karar bırakma anında (yukarı doğru bırakılırsa açık kalır, belirgin aşağı
+     fiske ya da eşiği geçmek kapatır). Eskiden yalnız "> 90 px" idi; geri çekip
+     vazgeçerken de kapanıyordu. */
+  const kutuRef = useRef(null)
+  const ck = useCekKapat({ kapat, kutuRef })
   const girisRef = useRef(null)
   const listeRef = useRef(null)
-  const cekmeRef = useRef(null)
   const ac = theme.accent
   const f = (v) => `${Math.round(v * olcek)}px`
 
@@ -81,7 +86,7 @@ export default function LugatArama({ acik, kapat, theme, isMobile, olcek = 1, lu
       if (temiz) { setSorgu(temiz); setGecikmeli(temiz) }
     }
     setSonlar(sonlariOku())
-    setCekme(0)
+    ck.sifirla()             // önceki aşağı çekip kapatmanın durumu kalmasın
     const t = setTimeout(() => girisRef.current?.focus({ preventScroll: true }), 60)
     const tus = (e) => { if (e.key === "Escape") kapat() }
     window.addEventListener("keydown", tus)
@@ -132,11 +137,6 @@ export default function LugatArama({ acik, kapat, theme, isMobile, olcek = 1, lu
     return <>{metin.slice(0, i)}<mark style={{ background: `${ac}26`, color: "inherit", borderRadius: "3px", padding: "0 1px" }}>{metin.slice(i, i + q.length)}</mark>{metin.slice(i + q.length)}</>
   }
 
-  // Tutamaktan aşağı çekince kapanır (telefon)
-  const cekBas = (e) => { cekmeRef.current = { y: e.clientY, id: e.pointerId }; try { e.currentTarget.setPointerCapture(e.pointerId) } catch { /* yoksay */ } }
-  const cekKaydir = (e) => { const c = cekmeRef.current; if (c && c.id === e.pointerId) setCekme(Math.max(0, e.clientY - c.y)) }
-  const cekBirak = () => { const d = cekme; cekmeRef.current = null; if (d > 90) kapat(); else setCekme(0) }
-
   if (!acik) return null
   const q = trFold(gecikmeli.trim())
   const gorunen = sonuclar.slice(0, goster)
@@ -157,7 +157,7 @@ export default function LugatArama({ acik, kapat, theme, isMobile, olcek = 1, lu
         @media (prefers-reduced-motion: reduce) { .lugat-arama-kutu { animation: none !important } }
       `}</style>
       <div
-        className="lugat-arama-kutu"
+        ref={kutuRef} className="lugat-arama-kutu"
         role="dialog" aria-label="Lügat araması" aria-modal="true"
         onClick={(e) => e.stopPropagation()}
         style={{
@@ -168,17 +168,17 @@ export default function LugatArama({ acik, kapat, theme, isMobile, olcek = 1, lu
           borderRadius: isMobile ? "18px 18px 0 0" : "16px",
           boxShadow: "0 18px 50px rgba(0,0,0,0.25)",
           display: "flex", flexDirection: "column", overflow: "hidden",
-          transform: cekme ? `translateY(${cekme}px)` : undefined,
-          transition: cekme ? "none" : "transform .2s ease",
+          transform: ck.donusum,
+          transition: ck.gecis,
           animation: "lugatAramaYukari .22s ease-out",
           paddingBottom: isMobile ? "env(safe-area-inset-bottom)" : 0,
         }}
       >
         {/* Tutamak (telefon) */}
         {isMobile && (
-          <div onPointerDown={cekBas} onPointerMove={cekKaydir} onPointerUp={cekBirak} onPointerCancel={cekBirak}
+          <div {...ck.tutamak}
             style={{ padding: "8px 0 2px", display: "flex", justifyContent: "center", touchAction: "none", cursor: "grab" }}>
-            <span style={{ width: "38px", height: "4px", borderRadius: "2px", background: theme.border }} />
+            <span style={{ width: "38px", height: "4px", borderRadius: "2px", background: ck.esikGecildi ? theme.accent : theme.border, transition: "background .15s ease" }} />
           </div>
         )}
 

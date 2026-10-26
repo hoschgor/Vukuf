@@ -19,8 +19,16 @@
      istenirse alta oradaki gibi açılır kısım ve sayfalar gösterilebilir"):
      filtrenin altında "Okunan sayfalar" şeridi (kapalıyken bugünün toplamı);
      dokununca açılır: Bugün / Son 7 gün / Son 30 gün + eser eser döküm; esere
-     dokununca o eserde okunan sayfalar gün gün ("s. 41–45, 50"). Açık/kapalı
-     hatırlanır. Gün başlıklarında da "· N sayfa". Sayım: data/gecmis.js. */
+     dokununca o eserde kayıt taşımaları gün gün ("s. 40 → 43, s. 50 → 52"). Açık/kapalı
+     hatırlanır. Gün başlıklarında da "· N sayfa". Sayım: data/gecmis.js.
+   • OKUMA ÖZETİ (26 Ekim 2026, kullanıcı: "Ayarlar'da Okunan sayfalar ve yalnız bu
+     sayfada görüntülenecek geçen süre açılıp kapanabilsin; eser bazında toplam
+     süre ve totalde toplam süre de bu kısma"): şerit artık sayfa + süre özeti.
+     Dönem kutularında toplam sayfa ve toplam süre, eser satırlarında eserin
+     sayfa ve süresi. Ayarlar → Geçmiş'teki iki anahtar neyin görüneceğini seçer
+     (sayfa kapalıysa yalnız süre, süre kapalıysa yalnız sayfa; ikisi kapalıysa
+     şerit hiç görünmez). Süre kapalıyken kayıt rozetleri ve gün başlıklarındaki
+     süre de gizlenir. */
 
 import { useEffect, useMemo, useRef, useState } from "react"
 import { useNavigate } from "react-router-dom"
@@ -31,7 +39,8 @@ import {
 import { useApp } from "../AppContext"
 import {
   useGecmis, useGecmisAyari, gecmisSil, gecmisTemizle, gecmisGeriKoy, gecmisKopruHazirla,
-  useOkunanSayfalar, okunanSayfalar, gunKodu, gunToplami, sayfaAraliklari,
+  useOkunanSayfalar, okunanSayfalar, gunKodu, gunToplami, aralikMetni,
+  okumaSureleri, useGecmisBayragi, OKUNAN_SAYFA_AYAR, GECEN_SURE_AYAR,
   // gecmisTeshisOku, depoBoyutu,   // ⏸ teşhis satırı (yorumda)
 } from "../data/gecmis"
 
@@ -48,6 +57,8 @@ const DONEMLER = [
   { id: "ay", ad: "Son 30 gün", gun: 30 },
 ]
 
+// Özet için: hiç süre yoksa "0 dk" (sureYazi "1 dk'dan az" der)
+const sureOzet = (sn) => (sn > 0 ? sureYazi(sn) : "0 dk")
 function sureYazi(sn) {
   const dk = Math.round((sn || 0) / 60)
   if (dk < 1) return "1 dk'dan az"
@@ -74,27 +85,38 @@ function gunAdi(z) {
     })
   } catch { return "" }
 }
-/* Bir dönemin toplamı ve eser eser dökümü (okunanSayfalar çıktısından).
-   Farklı günlerde aynı sayfa yeniden okunduysa her gün ayrıca sayılır.
-   eserler[i].gunler: [{ gun, ad, sayfalar }] (en yeni gün başta) */
-function donemToplami(gunler, gunSayisi) {
+/* Bir dönemin toplamı ve eser eser dökümü (sayfalar: okunanSayfalar, süreler:
+   okumaSureleri çıktısı). Farklı günlerde aynı sayfalar yeniden okunduysa her
+   gün ayrıca sayılır. eserler[i].gunler: [{ gun, ad, toplam, araliklar, sure }]
+   (en yeni gün başta) */
+function donemToplami(sayfaGunleri, sureGunleri, gunSayisi) {
   const eserler = new Map()
-  let toplam = 0
+  let toplam = 0, sure = 0
+  const eser = (a, v) => {
+    if (!eserler.has(a)) eserler.set(a, { anahtar: a, baslik: v.baslik, kaynak: v.kaynak, sayi: 0, sure: 0, gunler: new Map() })
+    return eserler.get(a)
+  }
+  const gunu = (e, kod, ad) => {
+    if (!e.gunler.has(kod)) e.gunler.set(kod, { gun: kod, ad, toplam: 0, araliklar: [], sure: 0 })
+    return e.gunler.get(kod)
+  }
   for (let i = 0; i < gunSayisi; i++) {
     const d = new Date(); d.setDate(d.getDate() - i)
-    const kod = gunKodu(d)
-    const g = gunler.get(kod)
-    if (!g) continue
-    for (const [a, v] of g) {
-      const n = v.sayfalar.length
-      toplam += n
-      if (!eserler.has(a)) eserler.set(a, { anahtar: a, baslik: v.baslik, kaynak: v.kaynak, sayi: 0, gunler: [] })
-      const e = eserler.get(a)
-      e.sayi += n
-      e.gunler.push({ gun: kod, ad: gunAdi(d), sayfalar: v.sayfalar })
+    const kod = gunKodu(d), ad = gunAdi(d)
+    for (const [a, v] of sayfaGunleri.get(kod) || []) {
+      toplam += v.toplam
+      const e = eser(a, v); e.sayi += v.toplam
+      const g = gunu(e, kod, ad); g.toplam += v.toplam; g.araliklar = v.araliklar
+    }
+    for (const [a, v] of sureGunleri.get(kod) || []) {
+      sure += v.sure
+      const e = eser(a, v); e.sure += v.sure
+      gunu(e, kod, ad).sure += v.sure
     }
   }
-  return { toplam, eserler: [...eserler.values()].sort((x, y) => y.sayi - x.sayi) }
+  const liste = [...eserler.values()].map(e => ({ ...e, gunler: [...e.gunler.values()] }))
+  liste.sort((x, y) => (y.sayi - x.sayi) || (y.sure - x.sure))
+  return { toplam, sure, eserler: liste }
 }
 const SAYFALAR_ACIK_ANAHTAR = "vukuf-gecmis-sayfalar-acik"
 
@@ -132,11 +154,17 @@ export default function Gecmis() {
   // Okunan sayfalar: gün → eser → sayfalar; dönem toplamları
   const okunanHam = useOkunanSayfalar()
   const okunan = useMemo(() => okunanSayfalar(okunanHam), [okunanHam])
+  const sureler = useMemo(() => okumaSureleri(liste), [liste])
   const donemSonuclari = useMemo(() => {
     const o = {}
-    for (const d of DONEMLER) o[d.id] = donemToplami(okunan, d.gun)
+    for (const d of DONEMLER) o[d.id] = donemToplami(okunan, sureler, d.gun)
     return o
-  }, [okunan])
+  }, [okunan, sureler])
+  // Ayarlar → Geçmiş: Okunan sayfalar · Geçen süre (ikisi de varsayılan açık)
+  const [sayfaAcik] = useGecmisBayragi(OKUNAN_SAYFA_AYAR)
+  const [sureAcik] = useGecmisBayragi(GECEN_SURE_AYAR)
+  // "12 sayfa · 40 dk" — kapalı olan kısım yazılmaz
+  const ozetMetni = (sayi, sn) => [sayfaAcik && `${sayi} sayfa`, sureAcik && sureOzet(sn)].filter(Boolean).join(" · ")
   const sayfaGoster = filtre !== "arama"
   // Gün gün gruplar (liste zaten en yeni başta)
   const gruplar = useMemo(() => {
@@ -325,11 +353,13 @@ export default function Gecmis() {
             </div>
           )}
 
-          {/* ── OKUNAN SAYFALAR ── Kapalıyken tek şerit (bugünün toplamı); açılınca
-              Bugün / Son 7 gün / Son 30 gün + eser eser; esere dokununca sayfalar.
-              Son 30 günde sayılmış sayfa yoksa görünmez. */}
-          {sayfaGoster && !secim && donemSonuclari.ay.toplam > 0 && (() => {
+          {/* ── OKUMA ÖZETİ (okunan sayfalar + süre) ── Kapalıyken tek şerit (bugünün
+              özeti); açılınca Bugün / Son 7 gün / Son 30 gün + eser eser; esere
+              dokununca gün gün sayfalar ve süre. Gösterilecek bir şey yoksa görünmez. */}
+          {sayfaGoster && !secim && ((sayfaAcik && donemSonuclari.ay.toplam > 0) || (sureAcik && donemSonuclari.ay.sure > 0)) && (() => {
             const sec = donemSonuclari[donem]
+            const eserler = sec.eserler.filter(v => (sayfaAcik && v.sayi > 0) || (sureAcik && v.sure > 0))
+            const baslik = sayfaAcik && sureAcik ? "Okuma özeti" : sayfaAcik ? "Okunan sayfalar" : "Okuma süresi"
             return (
               <div style={{ ...kart }}>
                 <button onClick={sayfalarDegis} aria-expanded={sayfalarAcik} style={{
@@ -338,9 +368,9 @@ export default function Gecmis() {
                   fontFamily: "inherit", color: theme.text, textAlign: "left",
                 }}>
                   <BookOpen size={16} color={ac} style={{ flexShrink: 0 }} />
-                  <span style={{ flex: 1, fontSize: "14px", fontWeight: 600 }}>Okunan sayfalar</span>
-                  <span style={{ fontSize: "12px", color: theme.textSecondary }}>
-                    Bugün <b style={{ color: ac, fontVariantNumeric: "tabular-nums" }}>{donemSonuclari.bugun.toplam}</b> sayfa
+                  <span style={{ flex: 1, minWidth: 0, fontSize: "14px", fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{baslik}</span>
+                  <span style={{ fontSize: "12px", color: theme.textSecondary, whiteSpace: "nowrap" }}>
+                    Bugün <b style={{ color: ac, fontVariantNumeric: "tabular-nums" }}>{ozetMetni(donemSonuclari.bugun.toplam, donemSonuclari.bugun.sure)}</b>
                   </span>
                   <ChevronDown size={16} color={theme.textSecondary} style={{
                     flexShrink: 0, transition: "transform 0.2s", transform: sayfalarAcik ? "rotate(180deg)" : "none",
@@ -351,23 +381,28 @@ export default function Gecmis() {
                     <div role="radiogroup" style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: "8px" }}>
                       {DONEMLER.map(d => {
                         const secili = donem === d.id
+                        const r = donemSonuclari[d.id]
                         return (
                           <button key={d.id} role="radio" aria-checked={secili} onClick={() => { setDonem(d.id); setAcikEser(null) }} style={{
                             display: "flex", flexDirection: "column", alignItems: "center", gap: "2px",
                             padding: "9px 4px", borderRadius: "11px", cursor: "pointer", fontFamily: "inherit",
                             border: `1px solid ${secili ? ac : theme.border}`, background: secili ? `${ac}14` : "transparent",
-                            color: theme.text,
+                            color: theme.text, minWidth: 0,
                           }}>
-                            <span style={{ fontSize: "20px", fontWeight: 700, lineHeight: 1.1, color: secili ? ac : theme.text, fontVariantNumeric: "tabular-nums" }}>
-                              {donemSonuclari[d.id].toplam}
+                            {/* Ana sayı: sayfa (kapalıysa süre); süre ikinci satırda */}
+                            <span style={{ fontSize: sayfaAcik ? "20px" : "15px", fontWeight: 700, lineHeight: 1.2, color: secili ? ac : theme.text, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>
+                              {sayfaAcik ? r.toplam : sureOzet(r.sure)}
                             </span>
-                            <span style={{ fontSize: "11px", color: theme.textSecondary }}>{d.ad}</span>
+                            {sayfaAcik && sureAcik && (
+                              <span style={{ fontSize: "11px", fontWeight: 600, color: secili ? ac : theme.textSecondary, whiteSpace: "nowrap" }}>{sureOzet(r.sure)}</span>
+                            )}
+                            <span style={{ fontSize: "11px", color: theme.textSecondary, whiteSpace: "nowrap" }}>{d.ad}</span>
                           </button>
                         )
                       })}
                     </div>
                     <div style={{ marginTop: "8px" }}>
-                      {sec.eserler.length ? sec.eserler.map((v, i) => {
+                      {eserler.length ? eserler.map((v, i) => {
                         const Ikon = v.kaynak === "kuran" ? BookMarked : BookOpen
                         const acikMi = acikEser === v.anahtar
                         return (
@@ -379,7 +414,7 @@ export default function Gecmis() {
                             }}>
                               <Ikon size={14} color={ac} style={{ flexShrink: 0 }} />
                               <span style={{ flex: 1, minWidth: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{v.baslik}</span>
-                              <span style={{ flexShrink: 0, fontWeight: 600, color: theme.textSecondary, fontVariantNumeric: "tabular-nums" }}>{v.sayi} sayfa</span>
+                              <span style={{ flexShrink: 0, fontWeight: 600, color: theme.textSecondary, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>{ozetMetni(v.sayi, v.sure)}</span>
                               <ChevronDown size={14} color={theme.textSecondary} style={{
                                 flexShrink: 0, transition: "transform 0.2s", transform: acikMi ? "rotate(180deg)" : "none",
                               }} />
@@ -390,24 +425,29 @@ export default function Gecmis() {
                                 background: `${ac}0d`, border: `1px solid ${ac}33`,
                                 fontSize: "12px", lineHeight: 1.55, color: theme.text,
                               }}>
-                                {v.gunler.map(gn => (
-                                  <div key={gn.gun} style={{ display: "flex", gap: "8px" }}>
-                                    {donem !== "bugun" && (
-                                      <span style={{ flexShrink: 0, minWidth: "4.5em", color: theme.textSecondary }}>{gn.ad}</span>
-                                    )}
-                                    <span style={{ flex: 1, minWidth: 0, wordBreak: "break-word" }}>
-                                      s. {sayfaAraliklari(gn.sayfalar)}
-                                      <span style={{ color: theme.textSecondary }}> · {gn.sayfalar.length} sayfa</span>
-                                    </span>
-                                  </div>
-                                ))}
+                                {v.gunler.map(gn => {
+                                  const sayfaVar = sayfaAcik && gn.toplam > 0
+                                  return (
+                                    <div key={gn.gun} style={{ display: "flex", gap: "8px" }}>
+                                      {donem !== "bugun" && (
+                                        <span style={{ flexShrink: 0, minWidth: "4.5em", color: theme.textSecondary }}>{gn.ad}</span>
+                                      )}
+                                      <span style={{ flex: 1, minWidth: 0, wordBreak: "break-word" }}>
+                                        {sayfaVar ? aralikMetni(gn.araliklar) : ""}
+                                        <span style={{ color: theme.textSecondary }}>
+                                          {sayfaVar ? " · " : ""}{ozetMetni(gn.toplam, gn.sure)}
+                                        </span>
+                                      </span>
+                                    </div>
+                                  )
+                                })}
                               </div>
                             )}
                           </div>
                         )
                       }) : (
                         <div style={{ padding: "6px 4px", fontSize: "12.5px", color: theme.textSecondary }}>
-                          {donem === "bugun" ? "Bugün henüz sayılan sayfa yok." : "Bu dönemde sayılan sayfa yok."}
+                          {donem === "bugun" ? "Bugün henüz okuma kaydı yok." : "Bu dönemde okuma kaydı yok."}
                         </div>
                       )}
                     </div>
@@ -465,7 +505,7 @@ export default function Gecmis() {
 
           {/* ── GÜNLER ── */}
           {gruplar.map(g => {
-            const gunSayfa = sayfaGoster ? gunToplami(okunan, g.kod) : 0
+            const gunSayfa = sayfaGoster && sayfaAcik ? gunToplami(okunan, g.kod) : 0
             return (
             <div key={g.anahtar} style={{ marginBottom: "6px" }}>
               <div style={{
@@ -473,7 +513,7 @@ export default function Gecmis() {
                 fontSize: "11.5px", color: theme.textSecondary,
               }}>
                 <span style={{ fontWeight: 700, letterSpacing: "0.05em" }}>{g.ad.toLocaleUpperCase("tr")}</span>
-                {g.okuma > 0 && <span>· {g.okuma} okuma · {sureYazi(g.sure)}{gunSayfa > 0 ? ` · ${gunSayfa} sayfa` : ""}</span>}
+                {g.okuma > 0 && <span>· {g.okuma} okuma{sureAcik ? ` · ${sureYazi(g.sure)}` : ""}{gunSayfa > 0 ? ` · ${gunSayfa} sayfa` : ""}</span>}
               </div>
               <div style={kart}>
                 {g.kayitlar.map((e, i) => {
@@ -518,7 +558,7 @@ export default function Gecmis() {
                         </span>
                         <span style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "3px", flexShrink: 0 }}>
                           <span style={{ fontSize: "11.5px", color: theme.textSecondary }}>{saatYazi(e.z)}</span>
-                          {okuma && (
+                          {okuma && sureAcik && (
                             <span style={{
                               fontSize: "10.5px", fontWeight: 700, color: ac,
                               background: `${ac}14`, borderRadius: "999px", padding: "1px 7px",

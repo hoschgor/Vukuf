@@ -523,8 +523,10 @@ const KONULAR = [
     metin: [
       "Geçmiş açıkken aramalarınız ve okuduğunuz yerler tarih ve süreleriyle kaydedilir; ana menüde Geçmiş sayfası görünür ve bir kayda dokunulduğunda oraya dönülür.",
       "Kayıtlar yalnız bu cihazda tutulur. Geçmiş kapatıldığında kayıtlar silinir; bundan önce onay istenir.",
+      "Bir kayıt ileri taşındığında kaç sayfa okunduğu kısa bir bildirimle gösterilir; aynı gün aynı eserde daha önce de okunduysa altında o günün toplamı yazar. Kısa sürede çok ileri taşınan kayıtlarda \"okundu\" yerine \"ilerlendi\" yazar.",
+      "Geçmiş sayfasındaki okuma özeti bugünün, son 7 ve son 30 günün okunan sayfalarını ve okuma sürelerini gösterir; bir esere dokunulduğunda gün gün ayrıntısı açılır. Okunan sayfalar ve geçen süre, Ayarlar → Geçmiş bölümünden ayrı ayrı açılıp kapatılabilir.",
     ],
-    anahtar: "geçmiş kayıt son arama okuma süre",
+    anahtar: "geçmiş kayıt son arama okuma süre sayfa okunan toplam özet bugün hafta ilerlendi bildirim",
   },
 
   // ── AYARLAR ────────────────────────────────────────────────────────────

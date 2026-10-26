@@ -26,6 +26,7 @@ import lugatVerisi from "../data/lugat.json"
 import kavramlarVerisi from "../data/kavramlar.json"
 import KitapAyraci from "../components/KitapAyraci"
 import { DuzenleDugmesi, KayitSatiri, YerineKoySorusu } from "../components/KayitOgeleri"
+import SayfaFarkiBildirimi from "../components/SayfaFarkiBildirimi"
 import YuklemeEkrani from "../components/YuklemeEkrani"
 import IosSwitch from "../components/IosSwitch"
 import DonusDugmesi, { KopruDugmesi, hapKonumlariniSifirla } from "../components/DonusDugmesi"
@@ -1418,6 +1419,8 @@ const [kayitKonumModu, setKayitKonumModu] = useState(false)
 // İŞARETLER (19 Ekim 2026, kullanıcı): kalem/sil yalnız "Düzenle"de; yeni işarette "yerine koy" sorusu
 const [isaretDuzenle, setIsaretDuzenle] = useState(false)
 const [bekleyenKayit, setBekleyenKayit] = useState(null)   // { sayfa, oran }
+// "Yerine koy" sonrası 3 sn: "N sayfa okundu" / "N sayfa geri gelindi" (26 Ekim 2026)
+const [sayfaFarki, setSayfaFarki] = useState(null)   // { nonce, eski, yeni }
 const [odakKonum, setOdakKonum] = useState(null)   // { sayfa, oran, nonce }
 const odakZamanRef = useRef(null)
 const [aramaVurgu, setAramaVurgu] = useState(null) // { sayfa, kutular:[{top,left,width,height}], nonce }
@@ -2526,6 +2529,8 @@ function kayitAdDegistir(kayitId, baslik) {
 }
 // Seçilen işaretin adı korunur, yeri yeni konuma taşınır (fazladan işaret birikmez)
 function kayitYerineKoy(kayitId, sayfaNo, oran) {
+  const eski = kayitlar.find(k => k.id === kayitId)
+  if (eski) setSayfaFarki({ nonce: Date.now(), eski: eski.sayfa, yeni: sayfaNo })
   const yeni = kayitlar.map(k => (k.id === kayitId
     ? { ...k, sayfa: sayfaNo, oran: Math.max(0, Math.min(1, oran)), guncelleme: Date.now() } : k))
   setKayitlar(yeni); kayitlariKaydet(yeni)
@@ -4199,6 +4204,12 @@ return (
       onVazgec={() => setBekleyenKayit(null)}
       onYeni={() => { const b = bekleyenKayit; setBekleyenKayit(null); if (b) kayitEkle(b.sayfa, b.oran, `Sayfa ${b.sayfa}`) }}
       onYerine={(kid) => { const b = bekleyenKayit; setBekleyenKayit(null); if (b) kayitYerineKoy(kid, b.sayfa, b.oran) }}
+    />
+    <SayfaFarkiBildirimi
+      bildirim={sayfaFarki}
+      theme={theme}
+      olcek={barUiOlcegi}
+      altBosluk={barKonum === "alt" && barGorunur ? barYuk : 0}
     />
     {TemaPanel}
     {OzelTemaPanel}

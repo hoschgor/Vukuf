@@ -22,6 +22,7 @@ import PlayerBar from "../components/PlayerBar"
 import KitapAyraci from "../components/KitapAyraci"
 import KayitPaneli from "../components/KayitPaneli"
 import { YerineKoySorusu } from "../components/KayitOgeleri"
+import SayfaFarkiBildirimi from "../components/SayfaFarkiBildirimi"
 import KariSecici from "../components/KariSecici"
 import KelimePopup from "../components/KelimePopup"
 import YuklemeEkrani from "../components/YuklemeEkrani"
@@ -1114,6 +1115,8 @@ export default function KuranOkuma({ kitap }) {
   const [kayitKonumModu, setKayitKonumModu] = useState(false)
   // YENİ KAYIT → "yerine koy" sorusu (19 Ekim 2026): seçilen konum bekler; kayıt varsa sorulur
   const [bekleyenKayit, setBekleyenKayit] = useState(null)   // { sayfa, scrollY }
+  // "Yerine koy" sonrası 3 sn: "N sayfa okundu" / "N sayfa geri gelindi" (26 Ekim 2026)
+  const [sayfaFarki, setSayfaFarki] = useState(null)   // { nonce, eski, yeni }
   // GÖRSEL OLUŞTUR: fotoğraf makinesi butonu "âyet seçme modunu" açar; kullanıcı bir âyete
   // dokununca o âyetin verisiyle görsel paneli açılır. ayetTikla useCallback([]) olduğundan
   // mod ve açıcı REF üzerinden okunur (kimlik değişip MushafSayfa'yı boşa render etmesin).
@@ -4871,6 +4874,8 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
           const b = bekleyenKayit
           setBekleyenKayit(null)
           if (!b) return
+          const eski = kayitlar.find(k => k.id === id)
+          if (eski) setSayfaFarki({ nonce: Date.now(), eski: eski.sayfa, yeni: b.sayfa })
           // Ad (ve oluşturma tarihi) korunur; yer yeni konum olur
           setKayitlar(prev => {
             const y = prev.map(k => (k.id === id ? { ...k, sayfa: b.sayfa, scrollY: b.scrollY, guncelleme: Date.now() } : k))
@@ -4878,6 +4883,15 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
             return y
           })
         }}
+      />
+
+      <SayfaFarkiBildirimi
+        bildirim={sayfaFarki}
+        theme={theme}
+        olcek={barUiOlcegi}
+        altBosluk={barKonum === "alt"
+          ? ((barGorunur ? barYuksekligi : 0) + (player.durum !== "kapali" ? playerBarYuksekligi : 0))
+          : 0}
       />
 
       {kayitKonumModu && (

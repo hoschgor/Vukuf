@@ -7,21 +7,33 @@ import { useEffect, useState } from "react"
    gelindi' gibi bir bilgi verebiliriz."
    • "Yerine koy" (YerineKoySorusu → onYerine) ile bir kaydın yeri değişince
      KuranOkuma ve OkumaEkrani bunu gösteriyor.
-   • bildirim = { nonce, eski, yeni }: eski/yeni sayfa numarası; nonce her yeni
-     bildirimde değişir (aynı fark arka arkaya gelse de yeniden görünsün diye).
+   • bildirim = { nonce, eski, yeni, gecenSn }: eski/yeni sayfa numarası; nonce her yeni
+     bildirimde değişir (aynı fark arka arkaya gelse de yeniden görünsün diye);
+     gecenSn = eski kaydın konduğu/taşındığı andan bu yana geçen saniye.
+   • OKUNDU mu İLERLENDİ mi (26 Ekim 2026, kullanıcı: "normal okuma zamanından kısa
+     bir sürede çok ileri sayfa ile değişim yapılırsa 'okudunuz' yerine başka bir şey
+     olsun, 'ilerlediniz' olabilir"): sayfa başına en az ENAZ_SANIYE_SAYFA saniye
+     geçmemişse "N sayfa ilerlendi" yazılır. Süre bilinmiyorsa (eski kayıtlar) "okundu".
    • Dokunmayı engellemez (pointerEvents: none); 3 sn sonra yavaşça söner.
    ═══════════════════════════════════════════════════════════════════════════ */
 
-export function sayfaFarkiMetni(eski, yeni) {
+// Bir sayfayı okumak için gereken en kısa süre (saniye). Daha hızlı geçilen sayfalar
+// "okundu" sayılmaz. Ekran başına prop ile değiştirilebilir (enAzSaniye).
+export const ENAZ_SANIYE_SAYFA = 30
+
+export function sayfaFarkiMetni(eski, yeni, gecenSn = null, enAzSaniye = ENAZ_SANIYE_SAYFA) {
   const e = Number(eski), y = Number(yeni)
   if (!Number.isFinite(e) || !Number.isFinite(y)) return null
   const fark = y - e
-  if (fark > 0) return `${fark} sayfa okundu`
+  if (fark > 0) {
+    const hizli = Number.isFinite(gecenSn) && gecenSn >= 0 && gecenSn < fark * enAzSaniye
+    return hizli ? `${fark} sayfa ilerlendi` : `${fark} sayfa okundu`
+  }
   if (fark < 0) return `${-fark} sayfa geri gelindi`
   return "Kayıt aynı sayfada güncellendi"
 }
 
-export default function SayfaFarkiBildirimi({ bildirim, theme, olcek = 1, altBosluk = 0, sure = 3000 }) {
+export default function SayfaFarkiBildirimi({ bildirim, theme, olcek = 1, altBosluk = 0, sure = 3000, enAzSaniye = ENAZ_SANIYE_SAYFA }) {
   const [gorunur, setGorunur] = useState(false)
   const nonce = bildirim ? bildirim.nonce : null
 
@@ -33,7 +45,7 @@ export default function SayfaFarkiBildirimi({ bildirim, theme, olcek = 1, altBos
   }, [nonce, sure])
 
   if (!bildirim) return null
-  const metin = sayfaFarkiMetni(bildirim.eski, bildirim.yeni)
+  const metin = sayfaFarkiMetni(bildirim.eski, bildirim.yeni, bildirim.gecenSn, enAzSaniye)
   if (!metin) return null
   const ayniSayfa = Number(bildirim.eski) === Number(bildirim.yeni)
 

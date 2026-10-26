@@ -4875,7 +4875,8 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
           setBekleyenKayit(null)
           if (!b) return
           const eski = kayitlar.find(k => k.id === id)
-          if (eski) setSayfaFarki({ nonce: Date.now(), eski: eski.sayfa, yeni: b.sayfa })
+          if (eski) setSayfaFarki({ nonce: Date.now(), eski: eski.sayfa, yeni: b.sayfa,
+            gecenSn: (eski.guncelleme || eski.olusturma) ? (Date.now() - (eski.guncelleme || eski.olusturma)) / 1000 : null })
           // Ad (ve oluşturma tarihi) korunur; yer yeni konum olur
           setKayitlar(prev => {
             const y = prev.map(k => (k.id === id ? { ...k, sayfa: b.sayfa, scrollY: b.scrollY, guncelleme: Date.now() } : k))

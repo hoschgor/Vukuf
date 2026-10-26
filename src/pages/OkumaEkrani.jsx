@@ -618,12 +618,13 @@ function MetinParcasi({
                 textAlign: "center", margin: (bh.seviye <= 1) ? "34px 0 18px" : "24px 0 12px",
                 fontFamily: baslikFont || "inherit",
                 fontWeight: 700, color: theme.accent, lineHeight: 1.35,
+                userSelect: "text",
               }}>
               {gosterilecek.replace(/⟦H\d+⟧/g, "")}
               {bh.aciklama && (
                 <sup onClick={!vurguModu ? (e) => { e.stopPropagation(); onDipnotTikla(bh.aciklama, e, "AÇIKLAMA") } : undefined}
                   title="Açıklama"
-                  style={{ fontSize: "0.32em", color: theme.textSecondary, cursor: !vurguModu ? "pointer" : "default", marginLeft: "0.15em", verticalAlign: "super", fontFamily: "inherit" }}>
+                  style={{ fontSize: "0.32em", color: theme.textSecondary, cursor: !vurguModu ? "pointer" : "default", marginLeft: "0.15em", verticalAlign: "super", fontFamily: "inherit", userSelect: "none" }}>
                   <Feather size={18} style={{ verticalAlign: "middle" }} />
                 </sup>
               )}
@@ -641,6 +642,7 @@ function MetinParcasi({
                 marginBottom: "12px", lineHeight: "2", direction: "rtl", textAlign: "center",
                 fontFamily: arapcaFont || undefined, fontSize: `${fontSize + arapBoyut}px`,
                 color: arapRenk, cursor: dpMetin && !vurguModu ? "pointer" : undefined,
+                userSelect: "text",   // seçim satırlar arasında kopmasın (kap "none")
               }}>
               {renderMarkerli(gosterilecek, dipnotMap, onDipnotTikla, theme, hasiyeMap)}
             </p>
@@ -654,6 +656,11 @@ function MetinParcasi({
           textAlign: (ortala || merkez) ? "center" : (hizalama || "left"),
           wordSpacing: `${kelimeAraligi}px`,
           cursor: vurguModu ? "text" : "default",
+          // SEÇİM BOŞLUKLARI (26 Ekim 2026): kaydırma kabı userSelect "none", yalnız kelime
+          // span'ları "text" idi. Aradaki sarmalayıcılar (izafet ekinin siyah kalanı, haşiyeli
+          // kelimenin boşluğu) "none" kaldığı için seçim boyanırken buralar boş görünüyordu
+          // (kopyalanan metin tamdı). Satırın tamamı seçilebilir; H/[n] işaretleri yine "none".
+          userSelect: "text",
         }
         // Hafif mod: aynı <p> stiliyle düz metin → tam moda geçişte YÜKSEKLİK DEĞİŞMEZ
         if (hafif) {
@@ -2530,7 +2537,8 @@ function kayitAdDegistir(kayitId, baslik) {
 // Seçilen işaretin adı korunur, yeri yeni konuma taşınır (fazladan işaret birikmez)
 function kayitYerineKoy(kayitId, sayfaNo, oran) {
   const eski = kayitlar.find(k => k.id === kayitId)
-  if (eski) setSayfaFarki({ nonce: Date.now(), eski: eski.sayfa, yeni: sayfaNo })
+  if (eski) setSayfaFarki({ nonce: Date.now(), eski: eski.sayfa, yeni: sayfaNo,
+    gecenSn: (eski.guncelleme || eski.olusturma) ? (Date.now() - (eski.guncelleme || eski.olusturma)) / 1000 : null })
   const yeni = kayitlar.map(k => (k.id === kayitId
     ? { ...k, sayfa: sayfaNo, oran: Math.max(0, Math.min(1, oran)), guncelleme: Date.now() } : k))
   setKayitlar(yeni); kayitlariKaydet(yeni)

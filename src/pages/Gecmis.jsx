@@ -13,7 +13,11 @@
    • Birden fazla silmek: üstteki "Seç" ya da bir kayda BASILI TUT → seçim
      kipi; kayıtların başında onay kutuları, üst şeritte "Tümünü seç · Sil".
    • "Temizle" bütün geçmişi siler (onay ister).
-   • Buradan bir yere gidilince oradaki sağdaki köprü düğmesi "Geçmiş'e dön". */
+   • Buradan bir yere gidilince oradaki sağdaki köprü düğmesi "Geçmiş'e dön".
+   • OKUNAN SAYFALAR (26 Ekim 2026, kullanıcı: "Geçmiş kısmında okunan sayfa
+     toplamları bölümü yapılabilir"): üstte Bugün / Son 7 gün / Son 30 gün
+     toplamları; birine dokununca o dönemin eser eser dökümü. Gün başlıklarında
+     ve açılan okuma kaydında da sayfa sayısı yazar. Sayım kuralı: data/gecmis.js. */
 
 import { useEffect, useMemo, useRef, useState } from "react"
 import { useNavigate } from "react-router-dom"
@@ -24,6 +28,7 @@ import {
 import { useApp } from "../AppContext"
 import {
   useGecmis, useGecmisAyari, gecmisSil, gecmisTemizle, gecmisGeriKoy, gecmisKopruHazirla,
+  okunanSayfalar, gunKodu, gunToplami, oturumSayfaSayisi,
   // gecmisTeshisOku, depoBoyutu,   // ⏸ teşhis satırı (yorumda)
 } from "../data/gecmis"
 
@@ -31,6 +36,13 @@ const FILTRELER = [
   { id: "hepsi", ad: "Tümü" },
   { id: "okuma", ad: "Okumalar" },
   { id: "arama", ad: "Aramalar" },
+]
+
+// Okunan sayfalar bölümünün dönemleri (bugünle birlikte geriye doğru gün sayısı)
+const DONEMLER = [
+  { id: "bugun", ad: "Bugün", gun: 1 },
+  { id: "hafta", ad: "Son 7 gün", gun: 7 },
+  { id: "ay", ad: "Son 30 gün", gun: 30 },
 ]
 
 function sureYazi(sn) {
@@ -59,6 +71,24 @@ function gunAdi(z) {
     })
   } catch { return "" }
 }
+/* Bir dönemin toplamı ve eser eser dökümü (okunanSayfalar çıktısından).
+   Farklı günlerde aynı sayfa yeniden okunduysa her gün ayrıca sayılır. */
+function donemToplami(gunler, gunSayisi) {
+  const eserler = new Map()
+  let toplam = 0
+  for (let i = 0; i < gunSayisi; i++) {
+    const d = new Date(); d.setDate(d.getDate() - i)
+    const g = gunler.get(gunKodu(d))
+    if (!g) continue
+    for (const [a, v] of g) {
+      const n = v.sayfalar.size
+      toplam += n
+      if (!eserler.has(a)) eserler.set(a, { anahtar: a, baslik: v.baslik, kaynak: v.kaynak, sayi: 0 })
+      eserler.get(a).sayi += n
+    }
+  }
+  return { toplam, eserler: [...eserler.values()].sort((x, y) => y.sayi - x.sayi) }
+}
 
 export default function Gecmis() {
   const { theme } = useApp()
@@ -66,6 +96,7 @@ export default function Gecmis() {
   const liste = useGecmis()
   const [acik, setAcik] = useGecmisAyari()
   const [filtre, setFiltre] = useState("hepsi")
+  const [donem, setDonem] = useState("bugun")        // okunan sayfalar: seçili dönem
   const [kapatSor, setKapatSor] = useState(false)    // boş sayfada "Geçmişi kapat" onayı
   const [acilan, setAcilan] = useState(null)         // açık (genişletilmiş) kaydın id'si
   const [secim, setSecim] = useState(null)           // null = seçim kipi kapalı; Set = seçilenler
@@ -82,13 +113,21 @@ export default function Gecmis() {
     okuma: liste.filter(e => e.tur === "okuma").length,
     arama: liste.filter(e => e.tur === "arama").length,
   }), [liste])
+  // Okunan sayfalar: gün → eser → sayfalar; dönem toplamları
+  const okunan = useMemo(() => okunanSayfalar(liste), [liste])
+  const donemSonuclari = useMemo(() => {
+    const o = {}
+    for (const d of DONEMLER) o[d.id] = donemToplami(okunan, d.gun)
+    return o
+  }, [okunan])
+  const sayfaGoster = filtre !== "arama"
   // Gün gün gruplar (liste zaten en yeni başta)
   const gruplar = useMemo(() => {
     const m = new Map()
     for (const e of gorunen) {
       const z = e.son || e.z
       const k = gunAnahtari(z)
-      if (!m.has(k)) m.set(k, { anahtar: k, ad: gunAdi(z), kayitlar: [], sure: 0, okuma: 0 })
+      if (!m.has(k)) m.set(k, { anahtar: k, kod: gunKodu(z), ad: gunAdi(z), kayitlar: [], sure: 0, okuma: 0 })
       const g = m.get(k)
       g.kayitlar.push(e)
       if (e.tur === "okuma") { g.okuma++; g.sure += e.sure || 0 }
@@ -269,6 +308,53 @@ export default function Gecmis() {
             </div>
           )}
 
+          {/* ── OKUNAN SAYFALAR ── Bugün / Son 7 gün / Son 30 gün; seçilen dönemin
+              eser eser dökümü. Son 30 günde sayılmış sayfa yoksa bölüm görünmez. */}
+          {sayfaGoster && !secim && donemSonuclari.ay.toplam > 0 && (() => {
+            const sec = donemSonuclari[donem]
+            return (
+              <div style={{ ...kart, padding: "12px 12px 10px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "7px", fontSize: "11.5px", fontWeight: 700, letterSpacing: "0.05em", color: theme.textSecondary, margin: "0 2px 9px" }}>
+                  <BookOpen size={14} color={ac} /> {"Okunan sayfalar".toLocaleUpperCase("tr")}
+                </div>
+                <div role="radiogroup" style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: "8px" }}>
+                  {DONEMLER.map(d => {
+                    const secili = donem === d.id
+                    return (
+                      <button key={d.id} role="radio" aria-checked={secili} onClick={() => setDonem(d.id)} style={{
+                        display: "flex", flexDirection: "column", alignItems: "center", gap: "2px",
+                        padding: "9px 4px", borderRadius: "11px", cursor: "pointer", fontFamily: "inherit",
+                        border: `1px solid ${secili ? ac : theme.border}`, background: secili ? `${ac}14` : "transparent",
+                        color: theme.text,
+                      }}>
+                        <span style={{ fontSize: "20px", fontWeight: 700, lineHeight: 1.1, color: secili ? ac : theme.text, fontVariantNumeric: "tabular-nums" }}>
+                          {donemSonuclari[d.id].toplam}
+                        </span>
+                        <span style={{ fontSize: "11px", color: theme.textSecondary }}>{d.ad}</span>
+                      </button>
+                    )
+                  })}
+                </div>
+                <div style={{ marginTop: "8px" }}>
+                  {sec.eserler.length ? sec.eserler.map(v => {
+                    const Ikon = v.kaynak === "kuran" ? BookMarked : BookOpen
+                    return (
+                      <div key={v.anahtar} style={{ display: "flex", alignItems: "center", gap: "9px", padding: "6px 4px", fontSize: "13px" }}>
+                        <Ikon size={14} color={ac} style={{ flexShrink: 0 }} />
+                        <span style={{ flex: 1, minWidth: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{v.baslik}</span>
+                        <span style={{ flexShrink: 0, fontWeight: 600, color: theme.textSecondary, fontVariantNumeric: "tabular-nums" }}>{v.sayi} sayfa</span>
+                      </div>
+                    )
+                  }) : (
+                    <div style={{ padding: "6px 4px", fontSize: "12.5px", color: theme.textSecondary }}>
+                      {donem === "bugun" ? "Bugün henüz sayılan sayfa yok." : "Bu dönemde sayılan sayfa yok."}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )
+          })()}
+
           {/* Liste BOŞKEN kısa bilgi (8 Ekim 2026, kullanıcı: "çok fazla bilgi var; başlık
               ve tek cümle yeter"). Kapatma yolu yalnız "Geçmişi kapat"a dokununca, onay
               kutusunun içinde gösteriliyor. */}
@@ -316,14 +402,16 @@ export default function Gecmis() {
           )}
 
           {/* ── GÜNLER ── */}
-          {gruplar.map(g => (
+          {gruplar.map(g => {
+            const gunSayfa = sayfaGoster ? gunToplami(okunan, g.kod) : 0
+            return (
             <div key={g.anahtar} style={{ marginBottom: "6px" }}>
               <div style={{
                 display: "flex", alignItems: "baseline", gap: "8px", padding: "0 4px 7px",
                 fontSize: "11.5px", color: theme.textSecondary,
               }}>
                 <span style={{ fontWeight: 700, letterSpacing: "0.05em" }}>{g.ad.toLocaleUpperCase("tr")}</span>
-                {g.okuma > 0 && <span>· {g.okuma} okuma · {sureYazi(g.sure)}</span>}
+                {g.okuma > 0 && <span>· {g.okuma} okuma · {sureYazi(g.sure)}{gunSayfa > 0 ? ` · ${gunSayfa} sayfa` : ""}</span>}
               </div>
               <div style={kart}>
                 {g.kayitlar.map((e, i) => {
@@ -332,6 +420,7 @@ export default function Gecmis() {
                   const okuma = e.tur === "okuma"
                   const Ikon = !okuma ? Search : e.kaynak === "kuran" ? BookMarked : BookOpen
                   const ayniYer = okuma && e.bas && e.bitis && e.bas.etiket === e.bitis.etiket
+                  const oturumSayfa = okuma ? oturumSayfaSayisi(e) : 0
                   return (
                     <div key={e.id} style={{ borderTop: i ? `1px solid ${theme.border}` : "none", background: secili ? `${ac}12` : "transparent" }}>
                       <div
@@ -394,7 +483,7 @@ export default function Gecmis() {
                           </div>
                           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "8px" }}>
                             <span style={{ fontSize: "11px", color: theme.textSecondary }}>
-                              {okuma ? `${saatYazi(e.z)} – ${saatYazi(e.son || e.z)}` : ""}
+                              {okuma ? `${saatYazi(e.z)} – ${saatYazi(e.son || e.z)}${oturumSayfa > 0 ? ` · ${oturumSayfa} sayfa okundu` : ""}` : ""}
                             </span>
                             <button onClick={() => sil([e.id], "Kayıt silindi")} style={{
                               display: "inline-flex", alignItems: "center", gap: "4px", padding: "4px 8px",
@@ -411,7 +500,8 @@ export default function Gecmis() {
                 })}
               </div>
             </div>
-          ))}
+            )
+          })}
 
           {liste.length > 0 && !secim && (
             <p style={{ fontSize: "11px", color: theme.textSecondary, textAlign: "center", margin: "6px 0 0" }}>

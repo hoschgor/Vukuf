@@ -31,7 +31,7 @@ import YuklemeEkrani from "../components/YuklemeEkrani"
 import IosSwitch from "../components/IosSwitch"
 import DonusDugmesi, { KopruDugmesi, hapKonumlariniSifirla } from "../components/DonusDugmesi"
 import { History as GecmisIkon } from "lucide-react"
-import { useOkumaGecmisi, OKUMA_HEDEF_ANAHTAR } from "../data/gecmis"
+import { useOkumaGecmisi, OKUMA_HEDEF_ANAHTAR, gunlukOkunanSayfa } from "../data/gecmis"
 import { useDonusAyari, donusAcikMi, noktalariOku, noktaEkle, noktayaDon, noktalariTemizle } from "../data/donusNoktalari"
 import PanelAyirac, { PanelAcilir, panelBolumeHizala } from "../components/PanelAyirac"
 import GeriIkonu from "../components/GeriIkonu"
@@ -2538,7 +2538,8 @@ function kayitAdDegistir(kayitId, baslik) {
 function kayitYerineKoy(kayitId, sayfaNo, oran) {
   const eski = kayitlar.find(k => k.id === kayitId)
   if (eski) setSayfaFarki({ nonce: Date.now(), eski: eski.sayfa, yeni: sayfaNo,
-    gecenSn: (eski.guncelleme || eski.olusturma) ? (Date.now() - (eski.guncelleme || eski.olusturma)) / 1000 : null })
+    gecenSn: (eski.guncelleme || eski.olusturma) ? (Date.now() - (eski.guncelleme || eski.olusturma)) / 1000 : null,
+    bugun: { sayi: gunlukOkunanSayfa("kitap", id), eser: (kitap && kitap.baslik) || null } })
   const yeni = kayitlar.map(k => (k.id === kayitId
     ? { ...k, sayfa: sayfaNo, oran: Math.max(0, Math.min(1, oran)), guncelleme: Date.now() } : k))
   setKayitlar(yeni); kayitlariKaydet(yeni)

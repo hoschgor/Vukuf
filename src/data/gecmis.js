@@ -12,7 +12,8 @@
      Arama : { id, tur: "arama", z, sorgu, ayrinti? }
      Okuma : { id, tur: "okuma", kaynak: "kuran"|"kitap", kitapId, baslik,
                z (başlangıç anı), son (son güncelleme), sure (sn),
-               bas: { sayfa, oran, etiket, merkez? }, bitis: { ... } }
+               bas: { sayfa, oran, etiket, merkez? }, bitis: { ... },
+               okunan?: { "YYYY-AA-GG": [sayfa, ...] } }
    Konumlar okuma ekranlarının DÖNÜŞ NOKTALARI ile aynı referansta ölçülüyor
    (bkz. donusNoktalari.js) → köprüyle gidince ekran aynı yerden açılır.
 
@@ -23,6 +24,16 @@
    Aynı esere 10 dk içinde dönülürse (arada başka esere bakılsa da) YENİ kayıt
    açılmaz, o eserin oturumu sürer ve listenin başına çıkar.
    2 sn'den kısa ve yerinden kıpırdamamış (yanlışlıkla açılmış) oturumlar atılır.
+
+   ── OKUNAN SAYFALAR (26 Ekim 2026) ─────────────────────────────────────────
+   Kullanıcı: "Eser içinde 00:00–23:59 arası toplam okunan sayfayı da kontrol
+   etsin … Geçmiş kısmında okunan sayfa toplamları bölümü yapılabilir."
+   • Bir sayfa, ETKİN iki ardışık ölçümde (≈10 sn arayla) hâlâ aynı sayfaysa
+     "okundu" sayılır; hızla geçilen sayfalar sayılmaz.
+   • Oturumun "okunan" alanına GÜN GÜN yazılır (gece yarısını aşan okuma iki
+     güne bölünür). Aynı gün aynı eserde aynı sayfa bir kez sayılır.
+   • Geçmiş kapalıyken kayıt tutulmadığı için sayı da tutulmaz; geçmişten
+     silinen oturumun sayfaları toplamdan da düşer.
    ═══════════════════════════════════════════════════════════════════════════ */
 
 import { useEffect, useRef, useState } from "react"
@@ -148,6 +159,54 @@ export function gecmisGeriKoy(kayitlar) {
   return yaz(birlesik)
 }
 
+/* ── OKUNAN SAYFALAR ──────────────────────────────────────────────────────── */
+/* Yerel takvim günü: "2026-10-26" (00:00–23:59, cihazın saatine göre) */
+export function gunKodu(z = Date.now()) {
+  const d = new Date(z)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
+}
+export const eserAnahtari = (kaynak, kitapId) => `${kaynak}|${kitapId || ""}`
+
+/* Bütün okuma kayıtlarından gün gün, eser eser okunan sayfalar.
+   → Map(gunKodu → Map(eserAnahtari → { kaynak, kitapId, baslik, sayfalar: Set }))
+   Liste en yeni başta olduğu için eser adı en son kayıttaki addır. */
+export function okunanSayfalar(liste = gecmisOku()) {
+  const gunler = new Map()
+  for (const e of liste) {
+    if (e.tur !== "okuma" || !e.okunan || typeof e.okunan !== "object") continue
+    const a = eserAnahtari(e.kaynak, e.kitapId)
+    for (const [gun, sayfalar] of Object.entries(e.okunan)) {
+      if (!Array.isArray(sayfalar) || !sayfalar.length) continue
+      if (!gunler.has(gun)) gunler.set(gun, new Map())
+      const g = gunler.get(gun)
+      if (!g.has(a)) g.set(a, { kaynak: e.kaynak, kitapId: e.kitapId || null, baslik: e.baslik, sayfalar: new Set() })
+      const s = g.get(a).sayfalar
+      for (const n of sayfalar) s.add(n)
+    }
+  }
+  return gunler
+}
+/* Bir günün (varsayılan bugün) o eserde okunan sayfa sayısı */
+export function gunlukOkunanSayfa(kaynak, kitapId = null, gun = gunKodu()) {
+  const g = okunanSayfalar().get(gun)
+  const v = g && g.get(eserAnahtari(kaynak, kitapId))
+  return v ? v.sayfalar.size : 0
+}
+/* Bir günün bütün eserlerdeki toplamı (okunanSayfalar çıktısından) */
+export function gunToplami(gunler, gun) {
+  const g = gunler.get(gun)
+  let t = 0
+  if (g) for (const v of g.values()) t += v.sayfalar.size
+  return t
+}
+/* Tek oturumun okuduğu sayfa sayısı (günler toplamı) */
+export function oturumSayfaSayisi(e) {
+  if (!e || !e.okunan) return 0
+  let t = 0
+  for (const s of Object.values(e.okunan)) if (Array.isArray(s)) t += s.length
+  return t
+}
+
 /* ── ARAMA ────────────────────────────────────────────────────────────────── */
 export function gecmisAramaEkle(sorgu, ayrinti = "") {
   if (!gecmisAcikMi()) return
@@ -189,13 +248,21 @@ function oturumAc(kaynak, kitapId, baslik, k) {
   return kayit.id
 }
 
-function oturumGuncelle(id, k, ekSure) {
+/* okunanSayfa: bu ölçümde "okundu" sayılan sayfa (yoksa null) → bugünün listesine */
+function oturumGuncelle(id, k, ekSure, okunanSayfa = null) {
   if (!id || !gecmisAcikMi()) return
   const liste = gecmisOku()
   const i = liste.findIndex(e => e.id === id)
   if (i < 0) return                       // kullanıcı bu arada sildi → yeniden açma
   const e = liste[i]
   const yeni = { ...e, son: Date.now(), sure: Math.round((e.sure || 0) + ekSure), bitis: k ? { ...k } : e.bitis }
+  if (okunanSayfa != null) {
+    const gun = gunKodu()
+    const okunan = { ...(e.okunan || {}) }
+    const bugun = Array.isArray(okunan[gun]) ? okunan[gun] : []
+    if (!bugun.includes(okunanSayfa)) okunan[gun] = [...bugun, okunanSayfa]
+    yeni.okunan = okunan
+  }
   // Güncellenen oturum en üste (en yeni) çıkar
   yaz([yeni, ...liste.slice(0, i), ...liste.slice(i + 1)])
 }
@@ -228,6 +295,7 @@ export function useOkumaGecmisi({ hazir, kaynak, kitapId = null, baslik, konumOk
     teshisYaz("başladı", ad)
     let id = null
     let sonK = null
+    let oncekiSayfa = null     // bir önceki ETKİN ölçümdeki sayfa (okundu sayımı için)
     let sonEtkinlik = Date.now()
     let sonTik = Date.now()
     const etkin = () => { sonEtkinlik = Date.now() }
@@ -248,8 +316,12 @@ export function useOkumaGecmisi({ hazir, kaynak, kitapId = null, baslik, konumOk
       try { k = r.current.konumOku ? r.current.konumOku() : null } catch (e) { k = null; konumHatasi = String((e && e.message) || e) }
       if (k && k.sayfa) sonK = k
       if (!sonK) { teshisYaz("konum okunamadı", `${ad}${konumHatasi ? ` · ${konumHatasi}` : ""}`, true); return }
+      // OKUNDU SAYIMI: etkin iki ardışık ölçümde aynı sayfa → o sayfa okundu
+      const buSayfa = aktif && k && k.sayfa ? k.sayfa : null
+      const okunanSayfa = buSayfa != null && buSayfa === oncekiSayfa ? buSayfa : null
+      oncekiSayfa = buSayfa
       if (!id) id = oturumAc(kaynak, kitapId, r.current.baslik, sonK)
-      oturumGuncelle(id, sonK, aktif ? ara : 0)
+      oturumGuncelle(id, sonK, aktif ? ara : 0, okunanSayfa)
       if (!sonYazmaHatasi) teshisYaz("kaydedildi", `${r.current.baslik} · ${sonK.etiket || `s. ${sonK.sayfa}`}`)
     }
     // İlk ölçüm açılıştaki hizalama oturduktan sonra (kayıt listede hemen görünsün)

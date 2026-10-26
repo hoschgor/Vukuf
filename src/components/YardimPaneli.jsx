@@ -523,10 +523,10 @@ const KONULAR = [
     metin: [
       "Geçmiş açıkken aramalarınız ve okuduğunuz yerler tarih ve süreleriyle kaydedilir; ana menüde Geçmiş sayfası görünür ve bir kayda dokunulduğunda oraya dönülür.",
       "Kayıtlar yalnız bu cihazda tutulur. Geçmiş kapatıldığında kayıtlar silinir; bundan önce onay istenir.",
-      "Bir kayıt ileri taşındığında kaç sayfa okunduğu kısa bir bildirimle gösterilir; aynı gün aynı eserde daha önce de okunduysa altında o günün toplamı yazar. Kısa sürede çok ileri taşınan kayıtlarda \"okundu\" yerine \"ilerlendi\" yazar.",
-      "Geçmiş sayfasındaki okuma özeti bugünün, son 7 ve son 30 günün okunan sayfalarını ve okuma sürelerini gösterir; bir esere dokunulduğunda gün gün ayrıntısı açılır. Okunan sayfalar ve geçen süre, Ayarlar → Geçmiş bölümünden ayrı ayrı açılıp kapatılabilir.",
+      "Bir kayıt ileri taşındığında kaç sayfa okunduğu kısa bir bildirimle gösterilir; aynı gün aynı eserde daha önce de okunduysa altında o günün toplamı yazar. Kısa sürede çok ileri taşınan kayıtlarda \"okundu\" yerine \"ilerlendi\" yazar. Kayıt yanlışlıkla taşındıysa bildirimdeki \"Geri al\" düğmesiyle yalnız bu taşıma geri alınabilir; kayıt eski yerine döner ve günün toplamı düzelir.",
+      "Geçmiş sayfasındaki okuma özeti bugünün, son 7 ve son 30 günün okunan sayfalarını ve okuma sürelerini gösterir; bir esere dokunulduğunda gün gün ayrıntısı açılır. \"Dönemlik özet\" ile bir gün, hafta, ay ya da yıl seçilebilir; oklarla önceki ve sonraki döneme geçilir, ortadaki tarihe dokunulduğunda takvimden istenen gün seçilebilir. Toplam süre ve okunan sayfa gün gün (yılda ay ay) ya da eser eser görüntülenebilir. Okunan sayfalar ve geçen süre, Ayarlar → Geçmiş bölümünden ayrı ayrı açılıp kapatılabilir.",
     ],
-    anahtar: "geçmiş kayıt son arama okuma süre sayfa okunan toplam özet bugün hafta ilerlendi bildirim",
+    anahtar: "geçmiş kayıt son arama okuma süre sayfa okunan toplam özet bugün hafta ay yıl dönem dönemlik takvim tarih ilerlendi bildirim geri al",
   },
 
   // ── AYARLAR ────────────────────────────────────────────────────────────

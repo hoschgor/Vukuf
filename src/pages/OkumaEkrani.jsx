@@ -2557,7 +2557,13 @@ function kayitYerineKoy(kayitId, sayfaNo, oran) {
   const eski = kayitlar.find(k => k.id === kayitId)
   if (eski) setSayfaFarki(sayfaFarkiOlustur({ eski: eski.sayfa, yeni: sayfaNo,
     gecenSn: (eski.guncelleme || eski.olusturma) ? (Date.now() - (eski.guncelleme || eski.olusturma)) / 1000 : null,
-    kaynak: "kitap", kitapId: id, eser: (kitap && kitap.baslik) || null }))
+    kaynak: "kitap", kitapId: id, eser: (kitap && kitap.baslik) || null,
+    // GERİ AL: yalnız bu kaydın yeri/tarihi eski hâline döner (başka hiçbir şey değişmez)
+    geriAl: () => setKayitlar(prev => {
+      const y = prev.map(k => (k.id === kayitId ? eski : k))
+      kayitlariKaydet(y)
+      return y
+    }) }))
   const yeni = kayitlar.map(k => (k.id === kayitId
     ? { ...k, sayfa: sayfaNo, oran: Math.max(0, Math.min(1, oran)), guncelleme: Date.now() } : k))
   setKayitlar(yeni); kayitlariKaydet(yeni)

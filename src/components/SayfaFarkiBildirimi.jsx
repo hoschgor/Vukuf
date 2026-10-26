@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react"
-import { okunanSayfaEkle, gunlukOkunanSayfa, okunanSayfaAcikMi } from "../data/gecmis"
+import { useEffect, useRef, useState } from "react"
+import { RotateCcw } from "lucide-react"
+import { okunanSayfaEkle, okunanSayfaGeriAl, gunlukOkunanSayfa, okunanSayfaAcikMi } from "../data/gecmis"
 
 /* ═══════════════════════════════════════════════════════════════════════════
    SAYFA FARKI BİLDİRİMİ (26 Ekim 2026)
@@ -23,7 +24,16 @@ import { okunanSayfaEkle, gunlukOkunanSayfa, okunanSayfaAcikMi } from "../data/g
      (3. düzeltme: her taşıma üst üste toplanır; "ilerlendi" de eklenir) (data/gecmis.js → okunanSayfaEkle) ve bildirim.bugun = { sayi, once,
      eser, kuran } verir. İkinci satır yalnız bugün bu eserde DAHA ÖNCE sayılmış
      sayfa varsa (once > 0) çıkar. Geçmiş kapalıysa toplam tutulmaz.
-   • Dokunmayı engellemez (pointerEvents: none); 3 sn sonra yavaşça söner.
+   • GERİ AL (26 Ekim 2026, kullanıcı: "sayfa değiştiğinde kısa süreliğine geri al
+     butonu görünsün; hatalı kayıt değiştirmeye karşın yalnızca alınan kayıt
+     işlemini geri alsın"): sayfaFarkiOlustur'a geriAl verilirse bildirimde
+     "Geri al" düğmesi çıkar (GERI_AL_SURESI boyunca). Dokununca YALNIZ o kayıt
+     taşıması geri alınır: kayıt eski yerine/tarihine döner (çağıranın geriAl'i) ve
+     günün toplamına eklenen sayfalar düşülür (okunanSayfaGeriAl). Sayfanın
+     kendisi, okuma yeri ve başka kayıtlar değişmez. Ardından kısa bir "Kayıt
+     eski yerine alındı (s. N)" görünür.
+   • Bildirimin kendisi dokunmayı engellemez (pointerEvents: none); yalnız düğme
+     dokunulabilir. Düğmesiz bildirim 3 sn, düğmeli 5 sn sonra yavaşça söner.
    ═══════════════════════════════════════════════════════════════════════════ */
 
 // Bir sayfayı okumak için gereken en kısa süre (saniye). Daha hızlı geçilen sayfalar
@@ -51,39 +61,64 @@ export function bugunMetni(bugun) {
 /* Okuma ekranlarının "yerine koy" anında çağırdığı tek giriş: bildirimi kurar,
    ileri taşımada farkı günün o eser toplamına ekler.
    kaynak: "kitap" | "kuran"; eser: gösterilecek ad (Kur'ân'da gerekmez). */
-export function sayfaFarkiOlustur({ eski, yeni, gecenSn = null, kaynak, kitapId = null, eser = null, enAzSaniye = ENAZ_SANIYE_SAYFA }) {
+export const GERI_AL_SURESI = 5000
+
+/* geriAl: () => void — kaydı ESKİ hâline döndüren işlev (çağıran ekran verir) */
+export function sayfaFarkiOlustur({ eski, yeni, gecenSn = null, kaynak, kitapId = null, eser = null, enAzSaniye = ENAZ_SANIYE_SAYFA, geriAl = null }) {
   const ileri = Number(yeni) > Number(eski)
-  let bugun = null
+  let bugun = null, z = null
   try {
     if (!okunanSayfaAcikMi()) bugun = null          // Ayarlar → Geçmiş → Okunan sayfalar kapalı
     else if (ileri) {
-      const { once, sonra } = okunanSayfaEkle(kaynak, kitapId, eser, eski, yeni)
-      bugun = { sayi: sonra, once }
+      const r = okunanSayfaEkle(kaynak, kitapId, eser, eski, yeni)
+      z = r.z || null
+      bugun = { sayi: r.sonra, once: r.once }
     } else {
       const t = gunlukOkunanSayfa(kaynak, kitapId)
       bugun = { sayi: t, once: t }
     }
   } catch { bugun = null }
   if (bugun) { bugun.eser = eser; bugun.kuran = kaynak === "kuran" }
-  return { nonce: Date.now(), eski, yeni, gecenSn, bugun }
+  const geriAlIslem = typeof geriAl === "function" ? () => {
+    try { if (z) okunanSayfaGeriAl(kaynak, kitapId, z) } catch { /* yoksay */ }
+    geriAl()
+  } : null
+  return { nonce: Date.now(), eski, yeni, gecenSn, bugun, geriAl: geriAlIslem }
 }
 
 export default function SayfaFarkiBildirimi({ bildirim, theme, olcek = 1, altBosluk = 0, sure = 3000, enAzSaniye = ENAZ_SANIYE_SAYFA }) {
   const [gorunur, setGorunur] = useState(false)
+  const [alindi, setAlindi] = useState(false)       // geri alındı → kısa onay metni
+  const zamanRef = useRef(null)
   const nonce = bildirim ? bildirim.nonce : null
+  const geriAlVar = !!(bildirim && bildirim.geriAl)
+  const kalma = geriAlVar ? Math.max(sure, GERI_AL_SURESI) : sure
 
   useEffect(() => {
     if (nonce == null) return
+    setAlindi(false)
     setGorunur(true)
-    const t = setTimeout(() => setGorunur(false), sure)
-    return () => clearTimeout(t)
-  }, [nonce, sure])
+    clearTimeout(zamanRef.current)
+    zamanRef.current = setTimeout(() => setGorunur(false), kalma)
+    return () => clearTimeout(zamanRef.current)
+  }, [nonce, kalma])
 
   if (!bildirim) return null
-  const metin = sayfaFarkiMetni(bildirim.eski, bildirim.yeni, bildirim.gecenSn, enAzSaniye)
+  const metin = alindi
+    ? `Kayıt eski yerine alındı (s. ${bildirim.eski})`
+    : sayfaFarkiMetni(bildirim.eski, bildirim.yeni, bildirim.gecenSn, enAzSaniye)
   if (!metin) return null
   const ayniSayfa = Number(bildirim.eski) === Number(bildirim.yeni)
-  const bugun = bugunMetni(bildirim.bugun)
+  const bugun = alindi ? null : bugunMetni(bildirim.bugun)
+  const dugme = geriAlVar && !alindi
+
+  const geriAl = () => {
+    if (!gorunur || alindi) return
+    try { bildirim.geriAl() } catch { /* yoksay */ }
+    setAlindi(true)
+    clearTimeout(zamanRef.current)
+    zamanRef.current = setTimeout(() => setGorunur(false), 1800)
+  }
 
   return (
     <div
@@ -101,29 +136,47 @@ export default function SayfaFarkiBildirimi({ bildirim, theme, olcek = 1, altBos
         background: theme.surface,
         color: theme.text,
         border: `1px solid ${theme.accent}55`,
-        borderRadius: bugun ? `${Math.round(16 * olcek)}px` : "999px",
-        padding: `${Math.round(8 * olcek)}px ${Math.round(18 * olcek)}px`,
+        borderRadius: bugun || dugme ? `${Math.round(16 * olcek)}px` : "999px",
+        padding: `${Math.round(8 * olcek)}px ${Math.round((dugme ? 8 : 18) * olcek)}px ${Math.round(8 * olcek)}px ${Math.round(18 * olcek)}px`,
         boxShadow: "0 4px 18px rgba(0,0,0,0.15)",
         fontSize: `${Math.round(13 * olcek)}px`,
         maxWidth: "calc(100vw - 32px)",
         boxSizing: "border-box",
         display: "flex",
-        flexDirection: "column",
         alignItems: "center",
-        gap: `${Math.round(3 * olcek)}px`,
-        textAlign: "center",
+        gap: `${Math.round(12 * olcek)}px`,
       }}
     >
-      <span style={{ display: "flex", alignItems: "baseline", gap: `${Math.round(8 * olcek)}px`, whiteSpace: "nowrap" }}>
-        <span style={{ color: theme.accent, fontWeight: 600 }}>{metin}</span>
-        {!ayniSayfa && (
-          <span style={{ color: theme.textSecondary, fontSize: "0.88em" }}>
-            s. {bildirim.eski} → s. {bildirim.yeni}
-          </span>
+      <span style={{ display: "flex", flexDirection: "column", alignItems: dugme ? "flex-start" : "center", gap: `${Math.round(3 * olcek)}px`, textAlign: dugme ? "left" : "center", minWidth: 0 }}>
+        <span style={{ display: "flex", alignItems: "baseline", gap: `${Math.round(8 * olcek)}px`, whiteSpace: "nowrap" }}>
+          <span style={{ color: theme.accent, fontWeight: 600 }}>{metin}</span>
+          {!ayniSayfa && !alindi && (
+            <span style={{ color: theme.textSecondary, fontSize: "0.88em" }}>
+              s. {bildirim.eski} → s. {bildirim.yeni}
+            </span>
+          )}
+        </span>
+        {bugun && (
+          <span style={{ color: theme.textSecondary, fontSize: "0.9em", lineHeight: 1.35 }}>{bugun}</span>
         )}
       </span>
-      {bugun && (
-        <span style={{ color: theme.textSecondary, fontSize: "0.9em", lineHeight: 1.35 }}>{bugun}</span>
+      {dugme && (
+        <button
+          onClick={geriAl}
+          aria-label="Kayıt taşımasını geri al"
+          style={{
+            pointerEvents: gorunur ? "auto" : "none",
+            flexShrink: 0,
+            display: "inline-flex", alignItems: "center", gap: `${Math.round(5 * olcek)}px`,
+            padding: `${Math.round(6 * olcek)}px ${Math.round(11 * olcek)}px`,
+            borderRadius: "999px", border: "none", cursor: "pointer", fontFamily: "inherit",
+            background: theme.accent, color: "#fff",
+            fontSize: `${Math.round(12 * olcek)}px`, fontWeight: 600, whiteSpace: "nowrap",
+            touchAction: "manipulation",
+          }}
+        >
+          <RotateCcw size={Math.round(13 * olcek)} /> Geri al
+        </button>
       )}
     </div>
   )

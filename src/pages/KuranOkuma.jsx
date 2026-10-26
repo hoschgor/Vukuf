@@ -4877,7 +4877,13 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
           const eski = kayitlar.find(k => k.id === id)
           if (eski) setSayfaFarki(sayfaFarkiOlustur({ eski: eski.sayfa, yeni: b.sayfa,
             gecenSn: (eski.guncelleme || eski.olusturma) ? (Date.now() - (eski.guncelleme || eski.olusturma)) / 1000 : null,
-            kaynak: "kuran", eser: "Kur'ân-ı Kerîm" }))
+            kaynak: "kuran", eser: "Kur'ân-ı Kerîm",
+            // GERİ AL: yalnız bu kaydın yeri/tarihi eski hâline döner
+            geriAl: () => setKayitlar(prev => {
+              const y = prev.map(k => (k.id === id ? eski : k))
+              localStorage.setItem("vukuf-kayitlar", JSON.stringify(y))
+              return y
+            }) }))
           // Ad (ve oluşturma tarihi) korunur; yer yeni konum olur
           setKayitlar(prev => {
             const y = prev.map(k => (k.id === id ? { ...k, sayfa: b.sayfa, scrollY: b.scrollY, guncelleme: Date.now() } : k))

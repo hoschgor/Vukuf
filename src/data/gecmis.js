@@ -64,10 +64,10 @@ export function gecmisAcikMi() {
 export function gecmisAyarla(acik) {
   try {
     localStorage.setItem(GECMIS_AYAR, acik ? "1" : "0")
-    if (!acik) { localStorage.removeItem(GECMIS_ANAHTAR); localStorage.removeItem(OKUNAN_ANAHTAR) }
+    if (!acik) { localStorage.removeItem(GECMIS_ANAHTAR); localStorage.removeItem(OKUNAN_ANAHTAR); localStorage.removeItem(SURE_ANAHTAR) }
   } catch { /* kota */ }
   for (const f of ayarAboneleri) f(!!acik)
-  if (!acik) { bildir([]); okunanBildir({}) }
+  if (!acik) { bildir([]); okunanBildir({}); sureBildir({}) }
 }
 export function useGecmisAyari() {
   const [acik, setAcik] = useState(gecmisAcikMi)
@@ -189,8 +189,8 @@ export function gecmisSil(idler) {
   return yaz(gecmisOku().filter(e => !kume.has(e.id)))
 }
 export function gecmisTemizle() {
-  try { localStorage.removeItem(OKUNAN_ANAHTAR) } catch { /* yoksay */ }
-  okunanBildir({})
+  try { localStorage.removeItem(OKUNAN_ANAHTAR); localStorage.removeItem(SURE_ANAHTAR) } catch { /* yoksay */ }
+  okunanBildir({}); sureBildir({})
   return yaz([])
 }
 /* Silineni geri koy ("Geri al") — kayıtlar zamanlarına göre yerine oturur */
@@ -204,7 +204,7 @@ export function gecmisGeriKoy(kayitlar) {
 
 /* ── OKUNAN SAYFALAR ──────────────────────────────────────────────────────── */
 export const OKUNAN_ANAHTAR = "vukuf-okunan-sayfalar"
-const OKUNAN_GUN_SINIRI = 400              // bundan eski günler düşer
+const OKUNAN_GUN_SINIRI = 800              // bundan eski günler düşer (~2 yıl; yıllık özet için)
 const OKUNAN_TEK_SEFERDE = 2000            // bozuk veriye karşı tek taşımada en fazla
 
 /* Yerel takvim günü: "2026-10-26" (00:00–23:59, cihazın saatine göre) */
@@ -279,9 +279,10 @@ export function okunanSayfaEkle(kaynak, kitapId, baslik, eski, yeni) {
   const g = o[gun] = { ...(o[gun] || {}) }
   const v = eserKaydi(g[a]) || { baslik, toplam: 0, araliklar: [] }
   const sonra = v.toplam + (y - e)
-  g[a] = { baslik: baslik || v.baslik, toplam: sonra, araliklar: [...v.araliklar, [e, y, Date.now()]] }
+  const z = Date.now()             // taşımanın kimliği (geri almak için)
+  g[a] = { baslik: baslik || v.baslik, toplam: sonra, araliklar: [...v.araliklar, [e, y, z]] }
   okunanYaz(o)
-  return { once, sonra }
+  return { once, sonra, z }
 }
 /* Gün gün, eser eser: Map(gunKodu → Map(eserAnahtari → { kaynak, kitapId, baslik, toplam, araliklar })) */
 export function okunanSayfalar(o = okunanOku()) {
@@ -301,16 +302,30 @@ export function okunanSayfalar(o = okunanOku()) {
 }
 /* Okuma süreleri gün gün, eser eser (oturumların ETKİN süresi; oturum son
    güncellendiği güne yazılır) → Map(gunKodu → Map(eserAnahtari → { kaynak, kitapId, baslik, sure })) */
-export function okumaSureleri(liste = gecmisOku()) {
+export function okumaSureleri(liste = gecmisOku(), kayit = sureOku()) {
   const gunler = new Map()
-  for (const e of liste) {
-    if (e.tur !== "okuma" || !(e.sure > 0)) continue
-    const gun = gunKodu(e.son || e.z)
-    const a = eserAnahtari(e.kaynak, e.kitapId)
+  const yer = (gun, a, v) => {
     if (!gunler.has(gun)) gunler.set(gun, new Map())
     const g = gunler.get(gun)
-    if (!g.has(a)) g.set(a, { kaynak: e.kaynak, kitapId: e.kitapId || null, baslik: e.baslik, sure: 0 })
-    g.get(a).sure += e.sure
+    if (!g.has(a)) {
+      const [kaynak, kitapId] = a.split("|")
+      g.set(a, { kaynak: v.kaynak || kaynak, kitapId: v.kitapId || kitapId || null, baslik: v.baslik, sure: 0 })
+    }
+    return g.get(a)
+  }
+  // 1) oturum listesinden
+  for (const e of liste) {
+    if (e.tur !== "okuma" || !(e.sure > 0)) continue
+    yer(gunKodu(e.son || e.z), eserAnahtari(e.kaynak, e.kitapId), e).sure += e.sure
+  }
+  // 2) gün gün süre kaydından — ikisinden büyüğü (kayıt başlamadan önceki günler listede)
+  for (const [gun, eserler] of Object.entries(kayit || {})) {
+    for (const [a, v] of Object.entries(eserler || {})) {
+      if (!v || !(v.sure > 0)) continue
+      const h = yer(gun, a, v)
+      if (v.sure > h.sure) h.sure = v.sure
+      if (!h.baslik) h.baslik = v.baslik
+    }
   }
   return gunler
 }
@@ -331,6 +346,86 @@ export function aralikMetni(araliklar) {
     else zincir.push([e, y])
   }
   return zincir.map(([e, y]) => `s. ${e} → ${y}`).join(", ")
+}
+
+/* GERİ AL (26 Ekim 2026, kullanıcı: "sayfa değiştiğinde kısa süreliğine geri al
+   butonu görünsün; hatalı kayıt değiştirmeye karşın yalnızca alınan kayıt
+   işlemini geri alsın"): okunanSayfaEkle'nin eklediği TEK taşıma (zamanıyla
+   bulunur) toplamdan çıkarılır. → silindiyse true */
+export function okunanSayfaGeriAl(kaynak, kitapId, z) {
+  if (!z) return false
+  const o = okunanOku()
+  const a = eserAnahtari(kaynak, kitapId)
+  for (const gun of Object.keys(o)) {
+    const v = eserKaydi((o[gun] || {})[a])
+    if (!v) continue
+    const i = v.araliklar.findIndex(r => r[2] === z)
+    if (i < 0) continue
+    const r = v.araliklar[i]
+    const araliklar = v.araliklar.filter((_, j) => j !== i)
+    o[gun] = { ...o[gun] }
+    if (araliklar.length) o[gun][a] = { baslik: v.baslik, toplam: Math.max(0, v.toplam - (r[1] - r[0])), araliklar }
+    else delete o[gun][a]
+    if (!Object.keys(o[gun]).length) delete o[gun]
+    okunanYaz(o)
+    return true
+  }
+  return false
+}
+
+/* Bir okuma oturumunda okunan sayfa: o eserde, oturumun başı ile sonu (+15 sn:
+   kayıt taşındıktan hemen sonra oturum henüz güncellenmemiş olabilir) arasında
+   yapılan kayıt taşımalarının toplamı. okunanHam: okunanOku() çıktısı */
+export function oturumSayfaSayisi(e, okunanHam = okunanOku()) {
+  if (!e || e.tur !== "okuma") return 0
+  const a = eserAnahtari(e.kaynak, e.kitapId)
+  const bas = e.z || 0, son = (e.son || e.z || 0) + 15000
+  let t = 0
+  for (const g of [gunKodu(bas), gunKodu(son)].filter((x, i, d) => d.indexOf(x) === i)) {
+    const v = eserKaydi((okunanHam[g] || {})[a])
+    if (!v) continue
+    for (const [x, y, z] of v.araliklar) if (z && z >= bas && z <= son) t += Math.max(0, y - x)
+  }
+  return t
+}
+
+/* ── GÜNLÜK OKUMA SÜRELERİ (26 Ekim 2026) ───────────────────────────────────
+   Dönemlik (haftalık, aylık, yıllık) özet için. Oturum listesi en çok 400 kayıt
+   tuttuğu için birkaç ay öncesinin süresi listeden düşüyordu; her ölçümde etkin
+   süre ayrıca gün gün, eser eser toplanır:
+     localStorage "vukuf-okuma-sureleri" { "YYYY-AA-GG": { "<kaynak>|<kitapId>": { baslik, sure } } }
+   Bu kayıt başlamadan önceki günler oturum listesinden hesaplanır; ikisinden
+   BÜYÜK olan alınır (okumaSureleri). Geçmiş kapalıyken tutulmaz; Temizle siler. */
+export const SURE_ANAHTAR = "vukuf-okuma-sureleri"
+const sureAboneleri = new Set()
+function sureBildir(o) { for (const f of sureAboneleri) f(o) }
+export function sureOku() {
+  try {
+    const o = JSON.parse(localStorage.getItem(SURE_ANAHTAR) || "{}")
+    return o && typeof o === "object" && !Array.isArray(o) ? o : {}
+  } catch { return {} }
+}
+function sureEkle(kaynak, kitapId, baslik, ekSn) {
+  if (!(ekSn > 0)) return
+  const o = sureOku()
+  const gun = gunKodu()
+  const a = eserAnahtari(kaynak, kitapId)
+  const g = o[gun] = { ...(o[gun] || {}) }
+  const v = g[a] || { baslik, sure: 0 }
+  g[a] = { baslik: baslik || v.baslik, sure: Math.round(((v.sure || 0) + ekSn) * 10) / 10 }
+  const gunler = Object.keys(o).sort()
+  for (const x of gunler.slice(0, Math.max(0, gunler.length - OKUNAN_GUN_SINIRI))) delete o[x]
+  try { localStorage.setItem(SURE_ANAHTAR, JSON.stringify(o)) } catch { /* kota */ }
+  sureBildir(o)
+}
+export function useOkumaSureKaydi() {
+  const [o, setO] = useState(sureOku)
+  useEffect(() => {
+    sureAboneleri.add(setO)
+    setO(sureOku())
+    return () => { sureAboneleri.delete(setO) }
+  }, [])
+  return o
 }
 
 /* ── ARAMA ────────────────────────────────────────────────────────────────── */
@@ -381,6 +476,7 @@ function oturumGuncelle(id, k, ekSure) {
   if (i < 0) return                       // kullanıcı bu arada sildi → yeniden açma
   const e = liste[i]
   const yeni = { ...e, son: Date.now(), sure: Math.round((e.sure || 0) + ekSure), bitis: k ? { ...k } : e.bitis }
+  if (ekSure > 0) sureEkle(e.kaynak, e.kitapId, e.baslik, ekSure)   // gün gün süre (dönemlik özet)
   // Güncellenen oturum en üste (en yeni) çıkar
   yaz([yeni, ...liste.slice(0, i), ...liste.slice(i + 1)])
 }

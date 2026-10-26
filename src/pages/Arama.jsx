@@ -229,7 +229,8 @@ export default function Arama() {
     const isimSikisik = esnekHazirla(vp[0].trim(), trLower).sikisik
     const ayetStr = (vp[1] || "").trim()
     const ayetNo = /^\d+$/.test(ayetStr) ? parseInt(ayetStr, 10) : null
-    setSureSonuc(filtreAktif ? [] : SURELER
+    // Kitaplık modunda Kur'ân rafı görünmüyorsa sûre adı sonuçları da çıkmaz
+    setSureSonuc(filtreAktif || scope.kuranGorunur === false ? [] : SURELER
       .filter(s => tamArama ? s.ad.includes(isimTerim) : (isimSikisik && esnekHazirla(s.ad, trLower).sikisik.includes(isimSikisik)))
       .slice(0, 15)
       .map(s => ({ ...s, ayetNo })))
@@ -280,7 +281,7 @@ export default function Arama() {
     }, 320)
 
     return () => clearTimeout(t)
-  }, [sorgu, kapsam, filtreAktif, tamArama])
+  }, [sorgu, kapsam, filtreAktif, tamArama, scope.kuranGorunur])
 
   // Sorgu/kapsam degisince acik kitaptan cik ve sayfalamayi bastan basla —
   // yoksa artik var olmayan bir kitabin icinde kalinabiliyor.

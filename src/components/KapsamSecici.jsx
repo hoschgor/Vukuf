@@ -2,6 +2,10 @@ import { useState, useMemo, useEffect, useRef } from "react"
 import { ChevronDown, Check } from "lucide-react"
 import { kategoriler, kitaplar } from "../data/kitaplar"
 import { ozelRaflarOku, ozelKategoriler, kitapHavuzu } from "../data/okumaKayit"
+// KİTAPLIK MODU (26 Ekim 2026, kullanıcı: "seçilen raf sistemine göre tefeül ve arama
+// bölümü de güncellenmeli; kapalı olan kısımlar görüntülenmemeli"). Kısımlar, "Tüm
+// kitaplar" kapsamı ve Kur'ân seçeneği moda göre süzülür (components/KitaplikModu.jsx).
+import { useKitaplikModu, kategorileriSuz, gorunenKitaplar, gorunenler } from "./KitaplikModu"
 
 // Bir alimin tüm kitapları (altKategoriler varsa düzleştir)
 export const alimKitaplari = (alim) =>
@@ -62,8 +66,13 @@ function Dropdown({ theme, label, value, options, onSelect, placeholder, disable
 }
 
 // Kısım → Alim → (Eserler) → Kitap seçici. Seçim değişince onChange(scope) verir.
-// scope = { kuran, kapsam:[kitap...], etiket, filtreAktif, secimler }
+// scope = { kuran, kapsam:[kitap...], etiket, filtreAktif, secimler, kuranGorunur }
+//   kuranGorunur: kitaplık modunda Kur'ân rafı görünüyor mu (Arama sûre sonuçları için)
 export default function KapsamSecici({ theme, kuranSecenek = false, baslangic, onChange }) {
+  const [kMod, kSecim] = useKitaplikModu()
+  const modAnahtari = `${kMod || "tum"}|${JSON.stringify(kSecim)}`
+  const kuranGorunur = useMemo(() => gorunenler(kMod || "tum", kSecim).kuran, [modAnahtari]) // eslint-disable-line
+  const kuranVar = kuranSecenek && kuranGorunur
   const [secKisim, setSecKisim] = useState(baslangic?.secKisim || "")
   const [secAlim, setSecAlim] = useState(baslangic?.secAlim || "")
   const [secEser, setSecEser] = useState(baslangic?.secEser || "")
@@ -71,16 +80,21 @@ export default function KapsamSecici({ theme, kuranSecenek = false, baslangic, o
 
   const kisimlar = useMemo(
     () => {
-      const yerlesik = kategoriler.filter(k => k.id !== "orijinal-eserler" && (k.alimler || []).some(a => alimKitaplari(a).length))
+      const yerlesik = kategorileriSuz(kategoriler, kMod || "tum", kSecim)
+        .filter(k => k.id !== "orijinal-eserler" && (k.alimler || []).some(a => alimKitaplari(a).length))
       // Özel raflar (Arama'da da isimleriyle görünür) — Kur'an hariç kitap havuzu
       const havuz = kitapHavuzu(kitaplar, null)
       const ozel = ozelKategoriler(ozelRaflarOku(), havuz)
         .filter(k => (k.alimler || []).some(a => alimKitaplari(a).length))
       return [...yerlesik, ...ozel]
     },
-    []
+    [modAnahtari] // eslint-disable-line
   )
-  const kuranMi = secKisim === "kuran"
+  // "Tüm kitaplar": görünen rafların kitapları (Tüm eserler modunda eskisi gibi hepsi)
+  const tumKapsam = useMemo(() => ((kMod || "tum") === "tum"
+    ? kitaplar.filter(k => k && k.dosya && k.id !== "kuran")
+    : gorunenKitaplar(kMod, kSecim)), [modAnahtari]) // eslint-disable-line
+  const kuranMi = secKisim === "kuran" && kuranVar
   const kisimObj = kisimlar.find(k => k.id === secKisim) || null
   const alimSecenek = useMemo(() => (kisimObj ? (kisimObj.alimler || []).filter(a => alimKitaplari(a).length) : []), [secKisim])
   const alimObj = alimSecenek.find(a => a.id === secAlim) || null
@@ -99,8 +113,15 @@ export default function KapsamSecici({ theme, kuranSecenek = false, baslangic, o
     if (eserKatmani && eserObj) return (eserObj.kitaplar || []).filter(b => b && b.dosya)
     if (alimObj) return alimKitaplari(alimObj)
     if (kisimObj) return (kisimObj.alimler || []).flatMap(alimKitaplari)
-    return kitaplar.filter(k => k && k.dosya && k.id !== "kuran")
-  }, [secKisim, secAlim, secEser, secKitap])
+    return tumKapsam
+  }, [secKisim, secAlim, secEser, secKitap, tumKapsam])
+
+  // Mod değişince (ya da kayıtlı seçim artık görünmeyen bir rafa aitse) seçim sıfırlanır
+  useEffect(() => {
+    if (!secKisim) return
+    const gecerli = secKisim === "kuran" ? kuranVar : kisimlar.some(k => k.id === secKisim)
+    if (!gecerli) { setSecKisim(""); setSecAlim(""); setSecEser(""); setSecKitap("") }
+  }, [modAnahtari]) // eslint-disable-line
 
   const etiket = kuranMi ? "Kur'ân-ı Kerîm"
     : [kisimObj?.baslik, alimObj?.isim, eserObj?.baslik, kitapSecenek.find(x => x.id === secKitap)?.baslik].filter(Boolean).join(" · ") || "Tüm kitaplar"
@@ -112,13 +133,14 @@ export default function KapsamSecici({ theme, kuranSecenek = false, baslangic, o
       kuran: kuranMi, kapsam, etiket,
       filtreAktif: !!(secKisim || secAlim || secEser || secKitap),
       secimler: { secKisim, secAlim, secEser, secKitap },
+      kuranGorunur,
     })
-  }, [secKisim, secAlim, secEser, secKitap]) // eslint-disable-line
+  }, [secKisim, secAlim, secEser, secKitap, tumKapsam, kuranGorunur]) // eslint-disable-line
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
       <Dropdown theme={theme} label="Kısım" value={secKisim} placeholder="Tüm kitaplar"
-        options={[...kisimlar.map(k => ({ id: k.id, ad: k.baslik })), ...(kuranSecenek ? [{ id: "kuran", ad: "Kur'ân-ı Kerîm" }] : [])]}
+        options={[...kisimlar.map(k => ({ id: k.id, ad: k.baslik })), ...(kuranVar ? [{ id: "kuran", ad: "Kur'ân-ı Kerîm" }] : [])]}
         onSelect={v => { setSecKisim(v); setSecAlim(""); setSecEser(""); setSecKitap("") }} />
 
       {!kuranMi && (

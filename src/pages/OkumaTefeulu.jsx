@@ -56,6 +56,7 @@ export default function OkumaTefeulu() {
     // Dönüş bilgisi: okuma ekranında "Tefeüle dön" göster + kapsamı hatırla
     try {
       localStorage.setItem("vukuf-donus", "tefeul")
+      localStorage.setItem("vukuf-tefeul-yol", "/okuma-tefeul")   // "Tefeüle dön" buraya
       localStorage.setItem("vukuf-tefeul-durum", JSON.stringify({ secimler: scope.secimler }))
     } catch {}
 

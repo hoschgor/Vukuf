@@ -24,7 +24,11 @@
    Değişince window olayı "vukuf-kitaplik-modu" yayınlanır (Navbar ↔ Kitaplık).
 
    ── NE ETKİLENİR ────────────────────────────────────────────────────────────
-   Yalnız Kitaplık'taki kısım rafları ve Âlimler rafı (Risale-i Nûr modunda
+   Kitaplık'taki kısım rafları ve Âlimler rafı; ayrıca (26 Ekim 2026, kullanıcı:
+   "seçilen raf sistemine göre tefeül ve arama bölümü de güncellenmeli, kapalı
+   kısımlar görüntülenmemeli") Arama ve Okuma Tefeülü'nün kapsam seçicisi
+   (KapsamSecici), Arama'nın sûre adı sonuçları ve Söz Tefeülü (gorunenler,
+   gorunenKitaplar). Kitaplık'ta (Risale-i Nûr modunda
    Âlimler rafı gösterilmez; seçilen eserlerde yalnız seçilenlerden kurulur).
    Son Okunanlar, Sık Okunanlar ve kullanıcının kendi (özel) rafları her modda
    aynen görünür. Hiçbir kayıt, sıra ya da gizleme ayarı silinmez; mod yalnız
@@ -105,6 +109,28 @@ export function kategorileriSuz(kategoriler, mod, secim) {
   return kategoriler
     .map(k => (raflar.has(k.id) ? k : { ...k, alimler: (k.alimler || []).filter(a => alimler.has(a.id)) }))
     .filter(k => raflar.has(k.id) || k.alimler.length)
+}
+
+/* Moda göre görünenler (tefeül, arama gibi kitaplık dışı ekranlar için):
+   { raflar: Set(kategoriId), alimler: Set(alimId), kuran: bool } */
+export function gorunenler(mod, secim, kategoriler = TUM_KATEGORILER) {
+  const gk = kategorileriSuz(kategoriler, mod || "tum", secim)
+  return {
+    raflar: new Set(gk.map(k => k.id)),
+    alimler: new Set(gk.flatMap(k => (k.alimler || []).map(a => a.id))),
+    kuran: gk.some(k => k.id === "orijinal-eserler"),
+  }
+}
+/* Görünen raflardaki okunabilir kitaplar (tekrarsız) */
+export function gorunenKitaplar(mod, secim, kategoriler = TUM_KATEGORILER) {
+  const gor = new Set(), liste = []
+  for (const k of kategorileriSuz(kategoriler, mod || "tum", secim)) {
+    for (const a of k.alimler || []) {
+      const ks = a.altKategoriler ? a.altKategoriler.flatMap(x => x.kitaplar || []) : (a.kitaplar || [])
+      for (const b of ks) if (b && b.dosya && b.id !== "kuran" && !gor.has(b.id)) { gor.add(b.id); liste.push(b) }
+    }
+  }
+  return liste
 }
 
 export function secimSayilari(secim, kategoriler = TUM_KATEGORILER) {

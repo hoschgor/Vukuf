@@ -113,6 +113,7 @@ const KONULAR = [
       "Uygulama ilk açıldığında kitaplığın nasıl görüneceği sorulur; bu tercih daha sonra Ayarlar → Kitaplık modu bölümünden değiştirilebilir. Aynı bölümdeki \"Hızlı mod değiştirme\" açıldığında Kitaplık başlığının altında bir mod düğmesi görünür ve mod oradan da değiştirilebilir.",
       "Tüm eserler modunda bütün raflar görünür. Risale-i Nûr modunda Kur'ân-ı Kerîm, Evrâd u Ezkâr ve Risale-i Nûr rafları görünür. Seçilen eserler modunda istenen raflar işaretlenebilir; bir rafın yalnız bazı âlimleri de seçilebilir.",
       "Son ve Sık Okunanlar ile kendi oluşturduğunuz raflar her modda görünür. Mod yalnız görünen rafları değiştirir; sıralama, kayıtlar ve gizleme ayarları korunur.",
+      "Arama ve tefeül bölümleri de moda uyar: kapsam seçicide yalnız görünen raflar listelenir, \"Tüm kitaplar\" görünen raflardaki eserleri kapsar; Kur'ân-ı Kerîm rafı görünmüyorsa sûre sonuçları ve Kur'ân seçeneği çıkmaz.",
     ],
     anahtar: "mod kitaplık modu risale nur seçilen eserler tüm eserler raf seç âlim seç",
   },
@@ -524,8 +525,9 @@ const KONULAR = [
     nerede: "Ana menü → Söz Tefeülü / Okuma Tefeülü",
     metin: [
       "Söz Tefeülü rastgele bir söz, Okuma Tefeülü ise rastgele bir okuma bölümü sunar; oradan esere geçildiğinde \"Tefeüle dön\" düğmesiyle geri gelinebilir.",
+      "Söz Tefeülü'nde sözlerin arasında Kur'ân-ı Kerîm'den rastgele bir âyetin meali ya da bir sûre de çıkar; filtreden yalnız Kur'ân-ı Kerîm de seçilebilir. \"Âyete git\" ya da \"Sûreyi aç\" Kur'ân'ı o yerde açar, \"Tefeüle dön\" aynı karta geri getirir.",
     ],
-    anahtar: "tefeül rastgele fal söz okuma",
+    anahtar: "tefeül rastgele fal söz okuma kuran âyet sûre meal",
   },
   {
     bolum: "arama", ikon: History, baslik: "Geçmiş",

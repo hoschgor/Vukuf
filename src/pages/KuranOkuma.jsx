@@ -6192,7 +6192,10 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
               if (donusTip === "okuma") { navigate(donusYol || "/"); return }
               if (donusTip === "gecmis") { navigate("/gecmis"); return }
               try { localStorage.setItem(`vukuf-${donusTip}-devam`, "1") } catch {}
-              navigate(donusTip === "tefeul" ? "/okuma-tefeul" : "/arama")
+              // Tefeül: hangi tefeülden gelindiyse oraya (Söz Tefeülü'ndeki Kur'ân kartı → /tefeul)
+              let tefeulYolu = "/okuma-tefeul"
+              try { tefeulYolu = localStorage.getItem("vukuf-tefeul-yol") || tefeulYolu } catch { /* yoksay */ }
+              navigate(donusTip === "tefeul" ? tefeulYolu : "/arama")
             }}
             onKapat={() => setDonusTip("")}
           />

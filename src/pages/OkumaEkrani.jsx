@@ -4617,7 +4617,9 @@ return (
           if (donusTip === "paylasim") { navigate("/"); return }
           if (donusTip === "gecmis") { navigate("/gecmis"); return }
           try { localStorage.setItem(`vukuf-${donusTip}-devam`, "1") } catch {}
-          navigate(donusTip === "tefeul" ? "/okuma-tefeul" : "/arama")
+          let tefeulYolu = "/okuma-tefeul"
+          try { tefeulYolu = localStorage.getItem("vukuf-tefeul-yol") || tefeulYolu } catch { /* yoksay */ }
+          navigate(donusTip === "tefeul" ? tefeulYolu : "/arama")
         }}
         onKapat={() => setDonusTip("")}
       />

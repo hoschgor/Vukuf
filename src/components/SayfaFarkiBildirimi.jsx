@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { okunanSayfaEkle, gunlukOkunanSayfa } from "../data/gecmis"
 
 /* ═══════════════════════════════════════════════════════════════════════════
    SAYFA FARKI BİLDİRİMİ (26 Ekim 2026)
@@ -15,10 +16,13 @@ import { useEffect, useState } from "react"
      olsun, 'ilerlediniz' olabilir"): sayfa başına en az ENAZ_SANIYE_SAYFA saniye
      geçmemişse "N sayfa ilerlendi" yazılır. Süre bilinmiyorsa (eski kayıtlar) "okundu".
    • BUGÜN TOPLAMI (26 Ekim 2026, kullanıcı: "eser içinde 00:00–23:59 arası toplam
-     okunan sayfayı da kontrol etsin"): bildirim.bugun = { sayi, eser, kuran } →
-     ikinci satır "Bugün Sözler eserinde toplam 5 sayfa okundu". Sayı geçmişteki
-     okuma oturumlarından (data/gecmis.js → gunlukOkunanSayfa); geçmiş kapalıysa
-     ya da sayı 0 ise satır çıkmaz.
+     okunan sayfayı da kontrol etsin"; düzeltme: "1. bildirim: 2 sayfa okundu.
+     2. bildirim: 1 sayfa okundu, altta 'xxx eserinde bugün toplam 3 sayfa okundu';
+     ilk seferinde toplamı demesine gerek yok"):
+     sayfaFarkiOlustur() "okundu" sayılan taşımanın sayfalarını günün toplamına
+     ekler (data/gecmis.js → okunanSayfaEkle) ve bildirim.bugun = { sayi, once,
+     eser, kuran } verir. İkinci satır yalnız bugün bu eserde DAHA ÖNCE sayılmış
+     sayfa varsa (once > 0) çıkar. Geçmiş kapalıysa toplam tutulmaz.
    • Dokunmayı engellemez (pointerEvents: none); 3 sn sonra yavaşça söner.
    ═══════════════════════════════════════════════════════════════════════════ */
 
@@ -39,9 +43,29 @@ export function sayfaFarkiMetni(eski, yeni, gecenSn = null, enAzSaniye = ENAZ_SA
 }
 
 export function bugunMetni(bugun) {
-  if (!bugun || !(Number(bugun.sayi) > 0)) return null
-  const yer = bugun.kuran ? "Kur'ân-ı Kerîm'de" : bugun.eser ? `${bugun.eser} eserinde` : "bu eserde"
-  return `Bugün ${yer} toplam ${bugun.sayi} sayfa okundu`
+  if (!bugun || !(Number(bugun.sayi) > 0) || !(Number(bugun.once) > 0)) return null
+  const yer = bugun.kuran ? "Kur'ân-ı Kerîm'de" : bugun.eser ? `${bugun.eser} eserinde` : "Bu eserde"
+  return `${yer} bugün toplam ${bugun.sayi} sayfa okundu`
+}
+
+/* Okuma ekranlarının "yerine koy" anında çağırdığı tek giriş: bildirimi kurar,
+   "okundu" sayılıyorsa sayfaları günün toplamına yazar.
+   kaynak: "kitap" | "kuran"; eser: gösterilecek ad (Kur'ân'da gerekmez). */
+export function sayfaFarkiOlustur({ eski, yeni, gecenSn = null, kaynak, kitapId = null, eser = null, enAzSaniye = ENAZ_SANIYE_SAYFA }) {
+  const metin = sayfaFarkiMetni(eski, yeni, gecenSn, enAzSaniye) || ""
+  const okundu = metin.endsWith("sayfa okundu")
+  let bugun = null
+  try {
+    if (okundu) {
+      const { once, sonra } = okunanSayfaEkle(kaynak, kitapId, eser, eski, yeni)
+      bugun = { sayi: sonra, once }
+    } else {
+      const t = gunlukOkunanSayfa(kaynak, kitapId)
+      bugun = { sayi: t, once: t }
+    }
+  } catch { bugun = null }
+  if (bugun) { bugun.eser = eser; bugun.kuran = kaynak === "kuran" }
+  return { nonce: Date.now(), eski, yeni, gecenSn, bugun }
 }
 
 export default function SayfaFarkiBildirimi({ bildirim, theme, olcek = 1, altBosluk = 0, sure = 3000, enAzSaniye = ENAZ_SANIYE_SAYFA }) {

@@ -26,12 +26,12 @@ import lugatVerisi from "../data/lugat.json"
 import kavramlarVerisi from "../data/kavramlar.json"
 import KitapAyraci from "../components/KitapAyraci"
 import { DuzenleDugmesi, KayitSatiri, YerineKoySorusu } from "../components/KayitOgeleri"
-import SayfaFarkiBildirimi from "../components/SayfaFarkiBildirimi"
+import SayfaFarkiBildirimi, { sayfaFarkiOlustur } from "../components/SayfaFarkiBildirimi"
 import YuklemeEkrani from "../components/YuklemeEkrani"
 import IosSwitch from "../components/IosSwitch"
 import DonusDugmesi, { KopruDugmesi, hapKonumlariniSifirla } from "../components/DonusDugmesi"
 import { History as GecmisIkon } from "lucide-react"
-import { useOkumaGecmisi, OKUMA_HEDEF_ANAHTAR, gunlukOkunanSayfa } from "../data/gecmis"
+import { useOkumaGecmisi, OKUMA_HEDEF_ANAHTAR } from "../data/gecmis"
 import { useDonusAyari, donusAcikMi, noktalariOku, noktaEkle, noktayaDon, noktalariTemizle } from "../data/donusNoktalari"
 import PanelAyirac, { PanelAcilir, panelBolumeHizala } from "../components/PanelAyirac"
 import GeriIkonu from "../components/GeriIkonu"
@@ -2537,9 +2537,9 @@ function kayitAdDegistir(kayitId, baslik) {
 // Seçilen işaretin adı korunur, yeri yeni konuma taşınır (fazladan işaret birikmez)
 function kayitYerineKoy(kayitId, sayfaNo, oran) {
   const eski = kayitlar.find(k => k.id === kayitId)
-  if (eski) setSayfaFarki({ nonce: Date.now(), eski: eski.sayfa, yeni: sayfaNo,
+  if (eski) setSayfaFarki(sayfaFarkiOlustur({ eski: eski.sayfa, yeni: sayfaNo,
     gecenSn: (eski.guncelleme || eski.olusturma) ? (Date.now() - (eski.guncelleme || eski.olusturma)) / 1000 : null,
-    bugun: { sayi: gunlukOkunanSayfa("kitap", id), eser: (kitap && kitap.baslik) || null } })
+    kaynak: "kitap", kitapId: id, eser: (kitap && kitap.baslik) || null }))
   const yeni = kayitlar.map(k => (k.id === kayitId
     ? { ...k, sayfa: sayfaNo, oran: Math.max(0, Math.min(1, oran)), guncelleme: Date.now() } : k))
   setKayitlar(yeni); kayitlariKaydet(yeni)

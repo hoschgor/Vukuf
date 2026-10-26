@@ -14,21 +14,24 @@
      kipi; kayıtların başında onay kutuları, üst şeritte "Tümünü seç · Sil".
    • "Temizle" bütün geçmişi siler (onay ister).
    • Buradan bir yere gidilince oradaki sağdaki köprü düğmesi "Geçmiş'e dön".
-   • OKUNAN SAYFALAR (26 Ekim 2026, kullanıcı: "Geçmiş kısmında okunan sayfa
-     toplamları bölümü yapılabilir"): üstte Bugün / Son 7 gün / Son 30 gün
-     toplamları; birine dokununca o dönemin eser eser dökümü. Gün başlıklarında
-     ve açılan okuma kaydında da sayfa sayısı yazar. Sayım kuralı: data/gecmis.js. */
+   • OKUNAN SAYFALAR (26 Ekim 2026, kullanıcı: "Geçmiş sayfasında bir buton ile
+     açılıp kapanabilir, toplam okunan sayfa miktarları gösterilebilir, detay
+     istenirse alta oradaki gibi açılır kısım ve sayfalar gösterilebilir"):
+     filtrenin altında "Okunan sayfalar" şeridi (kapalıyken bugünün toplamı);
+     dokununca açılır: Bugün / Son 7 gün / Son 30 gün + eser eser döküm; esere
+     dokununca o eserde okunan sayfalar gün gün ("s. 41–45, 50"). Açık/kapalı
+     hatırlanır. Gün başlıklarında da "· N sayfa". Sayım: data/gecmis.js. */
 
 import { useEffect, useMemo, useRef, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import {
   History, BookOpen, BookMarked, Search, Trash2, CheckSquare, Square, CheckCircle2,
-  CircleDot, Bookmark, ChevronRight, X, RotateCcw, Info, Settings,
+  CircleDot, Bookmark, ChevronRight, ChevronDown, X, RotateCcw, Info, Settings,
 } from "lucide-react"
 import { useApp } from "../AppContext"
 import {
   useGecmis, useGecmisAyari, gecmisSil, gecmisTemizle, gecmisGeriKoy, gecmisKopruHazirla,
-  okunanSayfalar, gunKodu, gunToplami, oturumSayfaSayisi,
+  useOkunanSayfalar, okunanSayfalar, gunKodu, gunToplami, sayfaAraliklari,
   // gecmisTeshisOku, depoBoyutu,   // ⏸ teşhis satırı (yorumda)
 } from "../data/gecmis"
 
@@ -72,23 +75,28 @@ function gunAdi(z) {
   } catch { return "" }
 }
 /* Bir dönemin toplamı ve eser eser dökümü (okunanSayfalar çıktısından).
-   Farklı günlerde aynı sayfa yeniden okunduysa her gün ayrıca sayılır. */
+   Farklı günlerde aynı sayfa yeniden okunduysa her gün ayrıca sayılır.
+   eserler[i].gunler: [{ gun, ad, sayfalar }] (en yeni gün başta) */
 function donemToplami(gunler, gunSayisi) {
   const eserler = new Map()
   let toplam = 0
   for (let i = 0; i < gunSayisi; i++) {
     const d = new Date(); d.setDate(d.getDate() - i)
-    const g = gunler.get(gunKodu(d))
+    const kod = gunKodu(d)
+    const g = gunler.get(kod)
     if (!g) continue
     for (const [a, v] of g) {
-      const n = v.sayfalar.size
+      const n = v.sayfalar.length
       toplam += n
-      if (!eserler.has(a)) eserler.set(a, { anahtar: a, baslik: v.baslik, kaynak: v.kaynak, sayi: 0 })
-      eserler.get(a).sayi += n
+      if (!eserler.has(a)) eserler.set(a, { anahtar: a, baslik: v.baslik, kaynak: v.kaynak, sayi: 0, gunler: [] })
+      const e = eserler.get(a)
+      e.sayi += n
+      e.gunler.push({ gun: kod, ad: gunAdi(d), sayfalar: v.sayfalar })
     }
   }
   return { toplam, eserler: [...eserler.values()].sort((x, y) => y.sayi - x.sayi) }
 }
+const SAYFALAR_ACIK_ANAHTAR = "vukuf-gecmis-sayfalar-acik"
 
 export default function Gecmis() {
   const { theme } = useApp()
@@ -97,6 +105,14 @@ export default function Gecmis() {
   const [acik, setAcik] = useGecmisAyari()
   const [filtre, setFiltre] = useState("hepsi")
   const [donem, setDonem] = useState("bugun")        // okunan sayfalar: seçili dönem
+  const [sayfalarAcik, setSayfalarAcik] = useState(() => {
+    try { return localStorage.getItem(SAYFALAR_ACIK_ANAHTAR) === "1" } catch { return false }
+  })
+  const [acikEser, setAcikEser] = useState(null)     // okunan sayfalar: dökümü açık eser
+  const sayfalarDegis = () => setSayfalarAcik(a => {
+    try { localStorage.setItem(SAYFALAR_ACIK_ANAHTAR, a ? "0" : "1") } catch { /* yoksay */ }
+    return !a
+  })
   const [kapatSor, setKapatSor] = useState(false)    // boş sayfada "Geçmişi kapat" onayı
   const [acilan, setAcilan] = useState(null)         // açık (genişletilmiş) kaydın id'si
   const [secim, setSecim] = useState(null)           // null = seçim kipi kapalı; Set = seçilenler
@@ -114,7 +130,8 @@ export default function Gecmis() {
     arama: liste.filter(e => e.tur === "arama").length,
   }), [liste])
   // Okunan sayfalar: gün → eser → sayfalar; dönem toplamları
-  const okunan = useMemo(() => okunanSayfalar(liste), [liste])
+  const okunanHam = useOkunanSayfalar()
+  const okunan = useMemo(() => okunanSayfalar(okunanHam), [okunanHam])
   const donemSonuclari = useMemo(() => {
     const o = {}
     for (const d of DONEMLER) o[d.id] = donemToplami(okunan, d.gun)
@@ -308,49 +325,94 @@ export default function Gecmis() {
             </div>
           )}
 
-          {/* ── OKUNAN SAYFALAR ── Bugün / Son 7 gün / Son 30 gün; seçilen dönemin
-              eser eser dökümü. Son 30 günde sayılmış sayfa yoksa bölüm görünmez. */}
+          {/* ── OKUNAN SAYFALAR ── Kapalıyken tek şerit (bugünün toplamı); açılınca
+              Bugün / Son 7 gün / Son 30 gün + eser eser; esere dokununca sayfalar.
+              Son 30 günde sayılmış sayfa yoksa görünmez. */}
           {sayfaGoster && !secim && donemSonuclari.ay.toplam > 0 && (() => {
             const sec = donemSonuclari[donem]
             return (
-              <div style={{ ...kart, padding: "12px 12px 10px" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "7px", fontSize: "11.5px", fontWeight: 700, letterSpacing: "0.05em", color: theme.textSecondary, margin: "0 2px 9px" }}>
-                  <BookOpen size={14} color={ac} /> {"Okunan sayfalar".toLocaleUpperCase("tr")}
-                </div>
-                <div role="radiogroup" style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: "8px" }}>
-                  {DONEMLER.map(d => {
-                    const secili = donem === d.id
-                    return (
-                      <button key={d.id} role="radio" aria-checked={secili} onClick={() => setDonem(d.id)} style={{
-                        display: "flex", flexDirection: "column", alignItems: "center", gap: "2px",
-                        padding: "9px 4px", borderRadius: "11px", cursor: "pointer", fontFamily: "inherit",
-                        border: `1px solid ${secili ? ac : theme.border}`, background: secili ? `${ac}14` : "transparent",
-                        color: theme.text,
-                      }}>
-                        <span style={{ fontSize: "20px", fontWeight: 700, lineHeight: 1.1, color: secili ? ac : theme.text, fontVariantNumeric: "tabular-nums" }}>
-                          {donemSonuclari[d.id].toplam}
-                        </span>
-                        <span style={{ fontSize: "11px", color: theme.textSecondary }}>{d.ad}</span>
-                      </button>
-                    )
-                  })}
-                </div>
-                <div style={{ marginTop: "8px" }}>
-                  {sec.eserler.length ? sec.eserler.map(v => {
-                    const Ikon = v.kaynak === "kuran" ? BookMarked : BookOpen
-                    return (
-                      <div key={v.anahtar} style={{ display: "flex", alignItems: "center", gap: "9px", padding: "6px 4px", fontSize: "13px" }}>
-                        <Ikon size={14} color={ac} style={{ flexShrink: 0 }} />
-                        <span style={{ flex: 1, minWidth: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{v.baslik}</span>
-                        <span style={{ flexShrink: 0, fontWeight: 600, color: theme.textSecondary, fontVariantNumeric: "tabular-nums" }}>{v.sayi} sayfa</span>
-                      </div>
-                    )
-                  }) : (
-                    <div style={{ padding: "6px 4px", fontSize: "12.5px", color: theme.textSecondary }}>
-                      {donem === "bugun" ? "Bugün henüz sayılan sayfa yok." : "Bu dönemde sayılan sayfa yok."}
+              <div style={{ ...kart }}>
+                <button onClick={sayfalarDegis} aria-expanded={sayfalarAcik} style={{
+                  width: "100%", display: "flex", alignItems: "center", gap: "9px",
+                  padding: "11px 14px", border: "none", background: "transparent", cursor: "pointer",
+                  fontFamily: "inherit", color: theme.text, textAlign: "left",
+                }}>
+                  <BookOpen size={16} color={ac} style={{ flexShrink: 0 }} />
+                  <span style={{ flex: 1, fontSize: "14px", fontWeight: 600 }}>Okunan sayfalar</span>
+                  <span style={{ fontSize: "12px", color: theme.textSecondary }}>
+                    Bugün <b style={{ color: ac, fontVariantNumeric: "tabular-nums" }}>{donemSonuclari.bugun.toplam}</b> sayfa
+                  </span>
+                  <ChevronDown size={16} color={theme.textSecondary} style={{
+                    flexShrink: 0, transition: "transform 0.2s", transform: sayfalarAcik ? "rotate(180deg)" : "none",
+                  }} />
+                </button>
+                {sayfalarAcik && (
+                  <div style={{ padding: "0 12px 10px" }}>
+                    <div role="radiogroup" style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: "8px" }}>
+                      {DONEMLER.map(d => {
+                        const secili = donem === d.id
+                        return (
+                          <button key={d.id} role="radio" aria-checked={secili} onClick={() => { setDonem(d.id); setAcikEser(null) }} style={{
+                            display: "flex", flexDirection: "column", alignItems: "center", gap: "2px",
+                            padding: "9px 4px", borderRadius: "11px", cursor: "pointer", fontFamily: "inherit",
+                            border: `1px solid ${secili ? ac : theme.border}`, background: secili ? `${ac}14` : "transparent",
+                            color: theme.text,
+                          }}>
+                            <span style={{ fontSize: "20px", fontWeight: 700, lineHeight: 1.1, color: secili ? ac : theme.text, fontVariantNumeric: "tabular-nums" }}>
+                              {donemSonuclari[d.id].toplam}
+                            </span>
+                            <span style={{ fontSize: "11px", color: theme.textSecondary }}>{d.ad}</span>
+                          </button>
+                        )
+                      })}
                     </div>
-                  )}
-                </div>
+                    <div style={{ marginTop: "8px" }}>
+                      {sec.eserler.length ? sec.eserler.map((v, i) => {
+                        const Ikon = v.kaynak === "kuran" ? BookMarked : BookOpen
+                        const acikMi = acikEser === v.anahtar
+                        return (
+                          <div key={v.anahtar} style={{ borderTop: i ? `1px solid ${theme.border}` : "none" }}>
+                            <button onClick={() => setAcikEser(a => (a === v.anahtar ? null : v.anahtar))} aria-expanded={acikMi} style={{
+                              width: "100%", display: "flex", alignItems: "center", gap: "9px", padding: "8px 4px",
+                              border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit",
+                              fontSize: "13px", color: theme.text, textAlign: "left",
+                            }}>
+                              <Ikon size={14} color={ac} style={{ flexShrink: 0 }} />
+                              <span style={{ flex: 1, minWidth: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{v.baslik}</span>
+                              <span style={{ flexShrink: 0, fontWeight: 600, color: theme.textSecondary, fontVariantNumeric: "tabular-nums" }}>{v.sayi} sayfa</span>
+                              <ChevronDown size={14} color={theme.textSecondary} style={{
+                                flexShrink: 0, transition: "transform 0.2s", transform: acikMi ? "rotate(180deg)" : "none",
+                              }} />
+                            </button>
+                            {acikMi && (
+                              <div style={{
+                                margin: "0 4px 8px 27px", padding: "8px 10px", borderRadius: "10px",
+                                background: `${ac}0d`, border: `1px solid ${ac}33`,
+                                fontSize: "12px", lineHeight: 1.55, color: theme.text,
+                              }}>
+                                {v.gunler.map(gn => (
+                                  <div key={gn.gun} style={{ display: "flex", gap: "8px" }}>
+                                    {donem !== "bugun" && (
+                                      <span style={{ flexShrink: 0, minWidth: "4.5em", color: theme.textSecondary }}>{gn.ad}</span>
+                                    )}
+                                    <span style={{ flex: 1, minWidth: 0, wordBreak: "break-word" }}>
+                                      s. {sayfaAraliklari(gn.sayfalar)}
+                                      <span style={{ color: theme.textSecondary }}> · {gn.sayfalar.length} sayfa</span>
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )
+                      }) : (
+                        <div style={{ padding: "6px 4px", fontSize: "12.5px", color: theme.textSecondary }}>
+                          {donem === "bugun" ? "Bugün henüz sayılan sayfa yok." : "Bu dönemde sayılan sayfa yok."}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             )
           })()}
@@ -420,7 +482,6 @@ export default function Gecmis() {
                   const okuma = e.tur === "okuma"
                   const Ikon = !okuma ? Search : e.kaynak === "kuran" ? BookMarked : BookOpen
                   const ayniYer = okuma && e.bas && e.bitis && e.bas.etiket === e.bitis.etiket
-                  const oturumSayfa = okuma ? oturumSayfaSayisi(e) : 0
                   return (
                     <div key={e.id} style={{ borderTop: i ? `1px solid ${theme.border}` : "none", background: secili ? `${ac}12` : "transparent" }}>
                       <div
@@ -483,7 +544,7 @@ export default function Gecmis() {
                           </div>
                           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "8px" }}>
                             <span style={{ fontSize: "11px", color: theme.textSecondary }}>
-                              {okuma ? `${saatYazi(e.z)} – ${saatYazi(e.son || e.z)}${oturumSayfa > 0 ? ` · ${oturumSayfa} sayfa okundu` : ""}` : ""}
+                              {okuma ? `${saatYazi(e.z)} – ${saatYazi(e.son || e.z)}` : ""}
                             </span>
                             <button onClick={() => sil([e.id], "Kayıt silindi")} style={{
                               display: "inline-flex", alignItems: "center", gap: "4px", padding: "4px 8px",

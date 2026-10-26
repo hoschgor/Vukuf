@@ -22,7 +22,7 @@ import PlayerBar from "../components/PlayerBar"
 import KitapAyraci from "../components/KitapAyraci"
 import KayitPaneli from "../components/KayitPaneli"
 import { YerineKoySorusu } from "../components/KayitOgeleri"
-import SayfaFarkiBildirimi from "../components/SayfaFarkiBildirimi"
+import SayfaFarkiBildirimi, { sayfaFarkiOlustur } from "../components/SayfaFarkiBildirimi"
 import KariSecici from "../components/KariSecici"
 import KelimePopup from "../components/KelimePopup"
 import YuklemeEkrani from "../components/YuklemeEkrani"
@@ -78,7 +78,7 @@ import MealPopup from "../components/MealPopup"
 import IzlemeModu from "../components/IzlemeModu"
 import HifzPaneli from "../components/HifzPaneli"
 import DonusDugmesi, { KopruDugmesi, hapKonumlariniSifirla } from "../components/DonusDugmesi"
-import { useOkumaGecmisi, gunlukOkunanSayfa } from "../data/gecmis"
+import { useOkumaGecmisi } from "../data/gecmis"
 import { useDonusAyari, donusAcikMi, noktalariOku, noktaEkle, noktayaDon, noktalariTemizle } from "../data/donusNoktalari"
 import {
   hifzOku, ayarGuncelle as hifzAyarGuncelle, gizlemeHaritasi, perdeCss,
@@ -4875,9 +4875,9 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
           setBekleyenKayit(null)
           if (!b) return
           const eski = kayitlar.find(k => k.id === id)
-          if (eski) setSayfaFarki({ nonce: Date.now(), eski: eski.sayfa, yeni: b.sayfa,
+          if (eski) setSayfaFarki(sayfaFarkiOlustur({ eski: eski.sayfa, yeni: b.sayfa,
             gecenSn: (eski.guncelleme || eski.olusturma) ? (Date.now() - (eski.guncelleme || eski.olusturma)) / 1000 : null,
-            bugun: { sayi: gunlukOkunanSayfa("kuran"), kuran: true } })
+            kaynak: "kuran", eser: "Kur'ân-ı Kerîm" }))
           // Ad (ve oluşturma tarihi) korunur; yer yeni konum olur
           setKayitlar(prev => {
             const y = prev.map(k => (k.id === id ? { ...k, sayfa: b.sayfa, scrollY: b.scrollY, guncelleme: Date.now() } : k))

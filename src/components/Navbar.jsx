@@ -430,7 +430,7 @@ export default function Navbar() {
               Kitaplıkta hangi rafların görüneceği seçilebilir. Son ve Sık Okunanlar ile kendi
               raflarınız her modda görünür; sıralama ve kayıtlar değişmez.
             </div>
-            <ModKartlari theme={theme} deger={kitaplikModu || "tum"} onSec={modYaz} secim={kitaplikSecimi} />
+            <ModKartlari theme={theme} deger={kitaplikModu || "tum"} onSec={modYaz} />
             {kitaplikModu === "secili" && (
               <div style={{ marginTop: "12px" }}>
                 <EserSecici theme={theme} secim={kitaplikSecimi} onDegis={secimYaz} />

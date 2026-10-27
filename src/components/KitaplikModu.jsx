@@ -35,10 +35,11 @@
    GÖRÜNENİ süzer, "Tüm eserler"e dönünce her şey eskisi gibidir.
    ═══════════════════════════════════════════════════════════════════════════ */
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { Library, BookOpen, ListChecks, ChevronDown, ChevronLeft, X } from "lucide-react"
 import { kategoriler as TUM_KATEGORILER } from "../data/kitaplar"
 import { rafPaleti, rafResmiBul } from "./rafGorselleri"
+import DalSusu from "./DalSusu"
 
 export const MOD_ANAHTAR = "vukuf-kitaplik-modu"
 export const SECIM_ANAHTAR = "vukuf-kitaplik-secim"
@@ -198,10 +199,8 @@ const birimAdi = (k) => (/ris[aâ]le|evr[aâ]d/i.test(`${k.id} ${k.baslik}`) ? "
    kitaplığın kendi dili:
    • PENCERE: kitap sayfası gibi — "cetvel" (altın çift çizgi) çerçeve, köşelerde
      tezhip köşebentleri, başlık ahşap bir "unvan" levhasında.
-   • MOD KARTLARI: her mod küçük bir dolap — Kitaplık'taki raf resimleri ahşap
-     çerçeve içinde (Tüm eserler: altı raf; Risale-i Nûr: Kur'ân, Evrâd, Risale;
-     Seçilen eserler: seçtiğiniz raflar + boş bölme). Seçilende resimler aydınlanır,
-     kandil ışığı düşer, üstten bir AYRAÇ (kitap şeridi) sarkar.
+   • MOD KARTLARI: (2. tasarım, aşağıda MOD KARTLARI notu) sade kart + tezhip
+     madalyonu; seçilende kenara dal sarılır, gonca güle açar.
    • SEÇİM İŞARETİ: onay kutusu yerine sekiz köşeli MÜHÜR — boş, yarım (bazı
      âlimler), tam (bütün raf).
    • RAF SATIRLARI: raf resmi + raf levhası (Kitaplık'taki aralıklı büyük harf).
@@ -234,17 +233,6 @@ function Muhur({ theme, durum, boy = 26 }) {
   )
 }
 
-/* Kitap şeridi (ayraç) — seçili kartın üst kenarından sarkar */
-function Ayrac({ theme, sag = 18, boy = 30 }) {
-  return (
-    <svg width="14" height={boy} viewBox={`0 0 14 ${boy}`} aria-hidden="true"
-      style={{ position: "absolute", top: -2, right: sag, filter: "drop-shadow(0 2px 2px rgba(0,0,0,0.25))", pointerEvents: "none" }}>
-      <path d={`M0 0 H14 V${boy} L7 ${boy - 6} L0 ${boy} Z`} fill={theme.accent} />
-      <path d={`M3 0 V${boy - 4}`} stroke="rgba(255,255,255,0.35)" strokeWidth="1" />
-    </svg>
-  )
-}
-
 /* Raf resmi (yoksa ahşap zemin) */
 function RafResmi({ theme, id, baslik, soluk, style }) {
   const p = rafPaleti(theme)
@@ -257,36 +245,6 @@ function RafResmi({ theme, id, baslik, soluk, style }) {
           filter: soluk ? "saturate(0.45) brightness(0.78)" : "none", transition: "filter .3s ease",
         }} />
       )}
-    </div>
-  )
-}
-
-/* Küçük dolap: ahşap çerçeve + raf resimleri. duzen: [[id,…], …] satırlar; null = boş bölme */
-function MiniDolap({ theme, duzen, secili, en = 120, yuk = 74 }) {
-  const p = rafPaleti(theme)
-  return (
-    <div aria-hidden="true" style={{
-      position: "relative", width: `${en}px`, height: `${yuk}px`, flexShrink: 0, boxSizing: "border-box",
-      padding: "5px 4px 4px", borderRadius: "5px 5px 3px 3px",
-      background: p.yatay, boxShadow: `inset 0 0 0 1px ${p.oyma}, 0 2px 5px rgba(0,0,0,0.3)`,
-      display: "flex", flexDirection: "column", gap: "3px",
-    }}>
-      {duzen.map((satir, i) => (
-        <div key={i} style={{ flex: 1, minHeight: 0, display: "flex", gap: "3px" }}>
-          {satir.map((id, j) => id ? (
-            <RafResmi key={j} theme={theme} id={id} baslik={TUM_KATEGORILER.find(k => k.id === id)?.baslik}
-              soluk={!secili} style={{ flex: 1, borderRadius: "1px", boxShadow: "inset 0 -2px 0 rgba(0,0,0,0.35)" }} />
-          ) : (
-            <div key={j} style={{
-              flex: 1, borderRadius: "1px", background: p.ic, display: "flex", alignItems: "center", justifyContent: "center",
-              color: p.oyma, fontSize: "14px", fontWeight: 700, outline: `1px dashed ${p.oyma}`, outlineOffset: "-4px",
-            }}>+</div>
-          ))}
-        </div>
-      ))}
-      {/* kandil ışığı — seçilende */}
-      <div style={{ position: "absolute", left: "50%", top: "-14px", width: "110px", height: "70px", transform: "translateX(-50%)",
-        background: p.isik, opacity: secili ? 1 : 0, transition: "opacity .3s ease", pointerEvents: "none" }} />
     </div>
   )
 }
@@ -402,46 +360,191 @@ export function EserSecici({ theme, secim, onDegis, kategoriler = TUM_KATEGORILE
   )
 }
 
-/* ── MOD KARTLARI (ilk açılış ve Ayarlar ortak) ───────────────────────────── */
-const MOD_DOLABI = {
-  tum: [["orijinal-eserler", "risale", "tasavvuf"], ["hadis", "kelam", "tefsir"]],
-  risale: [["orijinal-eserler", "evrad-ezkar", "risale"]],
-}
-export function ModKartlari({ theme, deger, onSec, secim = null }) {
+/* ── MOD KARTLARI (ilk açılış ve Ayarlar ortak) ───────────────────────────────
+   27 Ekim 2026 (2. tasarım) — kullanıcı: "Kitapların çizimi burada çok fazla;
+   dümdüz bir kart da olmasın, belki dallar olabilir. Seçili olan tercih (üstten
+   inen ip, öncesinde yuvarlak) çok sade olmasın. Özel seçim kısmını beğendim;
+   görsellerimiz var ama genel kısımda böyle olmasına gerek yok."
+   • Kart sade ve açık: ince kenar, solda (3. adım) dal çelengi içinde yuvarlak
+     raf resmi (Celenk); kitap çizimi yok.
+   • SEÇİLEN KART: meal penceresindeki DAL SÜSÜ (DalSusu.jsx) kartın kenarına
+     sarılır; kenar altın çift çizgiye (cetvel) döner, madalyon dolar.
+   • SEÇİM İŞARETİ: sağda bir GONCA — seçilmemişte kapalı gonca, seçilende
+     açmış gül (sekiz yapraklı hatâyî çiçeği, altın göbekli).               */
+
+/* ── RESİMLİ ÇELENK (27 Ekim 2026, 3. adım) ───────────────────────────────────
+   Kullanıcı: "Menü içinde simgelerin olduğu yerde eklediğimiz görseller olabilir,
+   yine etrafı dallar ile süslensin. Seçim kısmını beğendim, bu tarzda biraz daha
+   geliştirebiliriz."
+   Simge madalyonunun yerine YUVARLAK RAF RESMİ (Kitaplık'taki raf görselleri),
+   etrafında İNCE BİR DAL ÇELENGİ: alttan iki yana açılan iki sap, üstte açık
+   kalır (defne çelengi gibi); sap boyunca sırayla içe/dışa yapraklar ve goncalar.
+   SEÇİLENDE çelenk de "açar": yapraklar renklenir, goncalar beş yapraklı küçük
+   çiçeklere döner (sağdaki gonca → gül ile aynı dil), resim tam renge gelir.
+   Mod → resim: Tüm eserler: Âlimler rafı · Risale-i Nûr: Risale rafı ·
+   Seçilen eserler: seçilen ilk raf (seçim yoksa Tasavvuf). */
+const MOD_RESMI = { tum: "alimler", risale: "risale", secili: null }
+
+function Celenk({ theme, modId, acik, boy = 76 }) {
   const p = rafPaleti(theme)
   const ac = theme.accent
-  // Seçilen eserler kartı: seçilen ilk iki raf + boş bölme
-  const seciliDolap = useMemo(() => {
-    const s = secim || secimOku()
-    const ids = TUM_KATEGORILER.filter(k => s.raflar.includes(k.id) || (k.alimler || []).some(a => s.alimler.includes(a.id))).map(k => k.id)
-    const ilk2 = ids.length ? ids.slice(0, 2) : ["tasavvuf", "hadis"]
-    return [[...ilk2, null]]
-  }, [secim])
+  const [, secim] = useKitaplikModu()
+  const rafId = MOD_RESMI[modId] || (() => {
+    const k = TUM_KATEGORILER.find(x => secim.raflar.includes(x.id) || (x.alimler || []).some(a => secim.alimler.includes(a.id)))
+    return k ? k.id : "tasavvuf"
+  })()
+  const baslik = TUM_KATEGORILER.find(k => k.id === rafId)?.baslik
+  const resim = rafResmiBul(rafId, baslik)
+  // Çelenk geometrisi (76×76 görünüm; merkez 38,40). Sap: alttan (−100°) iki yana
+  // tepeye doğru (−300° / +120°'ye kadar), üstte ~70°'lik açıklık.
+  const cizim = useMemo(() => {
+    const cx = 38, cy = 40, R = 34.5
+    const nokta = (der, r = R) => { const a = (der - 90) * Math.PI / 180; return [cx + r * Math.cos(a), cy + r * Math.sin(a)] }
+    const f = (x) => x.toFixed(2)
+    const sap = (bas, son) => {
+      const [x1, y1] = nokta(bas), [x2, y2] = nokta(son)
+      const buyuk = Math.abs(son - bas) > 180 ? 1 : 0, yon = son > bas ? 1 : 0
+      return `M${f(x1)} ${f(y1)} A${R} ${R} 0 ${buyuk} ${yon} ${f(x2)} ${f(y2)}`
+    }
+    const yapraklar = [], goncalar = []
+    // sağ sap: 180° (alt) → 35° ; sol sap: 180° → 325°
+    const kol = (isaret) => {
+      for (let i = 0; i < 7; i++) {
+        const der = 180 + isaret * (16 + i * 19.5)
+        const [x, y] = nokta(der)
+        const teget = der + isaret * 90 + (i % 2 ? 22 : -22) * isaret   // sap boyunca, uca doğru
+        const disa = i % 2 === 0
+        yapraklar.push({ x, y, aci: teget + (disa ? -isaret * 35 : isaret * 35), L: 10.5 - i * 0.45 })
+        if (i === 2 || i === 5) goncalar.push({ x: nokta(der + isaret * 6, R + (disa ? -6 : 6))[0], y: nokta(der + isaret * 6, R + (disa ? -6 : 6))[1] })
+      }
+      goncalar.push({ x: nokta(180 + isaret * 148)[0], y: nokta(180 + isaret * 148)[1], uc: true })
+    }
+    kol(1); kol(-1)
+    return { sagSap: sap(180, 328), solSap: sap(180, 32), yapraklar, goncalar }
+  }, [])
+  const yaprakYolu = (L) => `M0 0 C${L * 0.35} ${-L * 0.32} ${L * 0.75} ${-L * 0.28} ${L} 0 C${L * 0.75} ${L * 0.28} ${L * 0.35} ${L * 0.32} 0 0 Z`
+  const dalRengi = acik ? ac : `${ac}99`
+  const resimBoy = 50
   return (
-    <div role="radiogroup" style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-      {MODLAR.map(m => {
-        const sec = deger === m.id
-        return (
-          <button key={m.id} role="radio" aria-checked={sec} onClick={() => onSec(m.id)} style={{
-            position: "relative", display: "flex", alignItems: "center", gap: "12px", padding: "10px 12px 10px 10px",
-            borderRadius: "8px", cursor: "pointer", fontFamily: "inherit", textAlign: "left", color: theme.text,
-            background: sec ? theme.surface : "transparent",
-            border: `1px solid ${sec ? p.gold : theme.border}`,
-            // seçilende cetvel: altın çift çizgi
-            boxShadow: sec ? `inset 0 0 0 3px ${theme.surface}, inset 0 0 0 4px ${p.gold}88, 0 3px 10px rgba(0,0,0,0.12)` : "none",
-            transition: "border-color .2s ease, box-shadow .2s ease",
-          }}>
-            <MiniDolap theme={theme} secili={sec} duzen={m.id === "secili" ? seciliDolap : MOD_DOLABI[m.id]} />
-            <span style={{ flex: 1, minWidth: 0, paddingRight: "16px" }}>
-              <span style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", fontWeight: 700, letterSpacing: "0.1em", color: sec ? ac : theme.text, whiteSpace: "nowrap" }}>
-                <m.Ikon size={14} style={{ flexShrink: 0, opacity: 0.85 }} /> {aralikli(m.ad)}
-              </span>
-              <span style={{ display: "block", fontSize: "12px", color: theme.textSecondary, lineHeight: 1.45, marginTop: "4px" }}>{m.aciklama}</span>
-            </span>
-            {sec && <Ayrac theme={theme} />}
-          </button>
-        )
-      })}
+    <span style={{ position: "relative", width: `${boy}px`, height: `${boy}px`, flexShrink: 0, display: "inline-block" }}>
+      {/* yuvarlak raf resmi + altın halka */}
+      <span style={{
+        position: "absolute", left: `${(boy - resimBoy) / 2}px`, top: `${(boy - resimBoy) / 2 + 2}px`,
+        width: `${resimBoy}px`, height: `${resimBoy}px`, borderRadius: "50%", overflow: "hidden",
+        background: p.ic, boxShadow: `0 0 0 1.5px ${acik ? p.gold : `${ac}66`}, 0 0 0 3.5px ${theme.surface}, 0 0 0 4.5px ${acik ? `${p.gold}88` : `${ac}22`}`,
+        transition: "box-shadow .3s ease",
+      }}>
+        {resim && (
+          <img src={resim.src} alt="" draggable={false} loading="lazy" style={{
+            width: "100%", height: "100%", objectFit: "cover", objectPosition: resim.konum,
+            filter: acik ? "none" : "saturate(0.55) brightness(0.92)", transform: acik ? "scale(1.08)" : "scale(1)",
+            transition: "filter .35s ease, transform .5s ease",
+          }} />
+        )}
+      </span>
+      {/* dal çelengi */}
+      <svg width={boy} height={boy} viewBox="0 0 76 76" aria-hidden="true" style={{ position: "absolute", inset: 0, overflow: "visible", pointerEvents: "none" }}>
+        <path d={cizim.sagSap} fill="none" stroke={dalRengi} strokeWidth="1.1" strokeLinecap="round" style={{ transition: "stroke .3s" }} />
+        <path d={cizim.solSap} fill="none" stroke={dalRengi} strokeWidth="1.1" strokeLinecap="round" style={{ transition: "stroke .3s" }} />
+        {cizim.yapraklar.map((y, i) => (
+          <path key={i} d={yaprakYolu(y.L)} transform={`translate(${y.x.toFixed(2)} ${y.y.toFixed(2)}) rotate(${y.aci.toFixed(1)})`}
+            fill={acik ? ac : theme.surface} fillOpacity={acik ? 0.55 : 1} stroke={dalRengi} strokeWidth="0.7"
+            style={{ transition: "fill .35s ease, fill-opacity .35s ease" }} />
+        ))}
+        {cizim.goncalar.map((g, i) => (
+          <g key={`g${i}`} transform={`translate(${g.x.toFixed(2)} ${g.y.toFixed(2)})`}>
+            <g style={{ transform: acik ? "scale(1)" : "scale(0)", transition: `transform .45s cubic-bezier(.3,1.6,.5,1) ${0.05 * i}s` }}>
+              {[0, 72, 144, 216, 288].map(d => (
+                <ellipse key={d} cx="0" cy={g.uc ? -2.6 : -2.1} rx={g.uc ? 1.6 : 1.3} ry={g.uc ? 2.6 : 2.1} transform={`rotate(${d})`}
+                  fill={ac} fillOpacity="0.8" stroke={p.gold} strokeWidth="0.35" />
+              ))}
+              <circle r={g.uc ? 1.1 : 0.9} fill={p.gold} />
+            </g>
+            <circle r={g.uc ? 1.7 : 1.3} fill={dalRengi} style={{ opacity: acik ? 0 : 1, transition: "opacity .25s" }} />
+          </g>
+        ))}
+      </svg>
+    </span>
+  )
+}
+
+/* Gonca → gül: seçilmemişte kapalı gonca, seçilende açmış sekiz yapraklı çiçek */
+function Gonca({ theme, acik, boy = 30 }) {
+  const p = rafPaleti(theme)
+  const ac = theme.accent
+  return (
+    <svg width={boy} height={boy} viewBox="0 0 30 30" aria-hidden="true" style={{ flexShrink: 0, overflow: "visible" }}>
+      {/* sap ve yaprak */}
+      <path d="M15 29 C15 25 14.6 22 15 19" fill="none" stroke={acik ? ac : theme.border} strokeWidth="1.1" strokeLinecap="round" />
+      <path d="M15 25 C11.5 25.2 9.6 23.6 9 21.4 C11.6 21.2 13.8 22.6 15 25 Z" fill={acik ? `${ac}55` : "transparent"} stroke={acik ? ac : theme.border} strokeWidth="0.8" />
+      {/* kapalı gonca */}
+      <g style={{ transformOrigin: "15px 13px", transform: acik ? "scale(0.3)" : "scale(1)", opacity: acik ? 0 : 1, transition: "transform .3s ease, opacity .25s ease" }}>
+        <path d="M15 19 C11 17.5 10.5 12.5 12.6 8.8 C13.4 10.6 14.2 11.6 15 12 C15.8 11.6 16.6 10.6 17.4 8.8 C19.5 12.5 19 17.5 15 19 Z"
+          fill="transparent" stroke={theme.border} strokeWidth="1" strokeLinejoin="round" />
+        <path d="M15 12 L15 17.5" stroke={theme.border} strokeWidth="0.7" />
+      </g>
+      {/* açmış gül */}
+      <g style={{ transformOrigin: "15px 12px", transform: acik ? "scale(1) rotate(0deg)" : "scale(0.2) rotate(-60deg)", opacity: acik ? 1 : 0, transition: "transform .4s cubic-bezier(.3,1.5,.5,1), opacity .25s ease" }}>
+        {[0, 45, 90, 135, 180, 225, 270, 315].map(a => (
+          <ellipse key={a} cx="15" cy="6.6" rx="2.9" ry="5" fill={ac} fillOpacity={a % 90 ? 0.55 : 0.9}
+            stroke={p.gold} strokeWidth="0.5" transform={`rotate(${a} 15 12)`} />
+        ))}
+        <circle cx="15" cy="12" r="3.2" fill={p.gold} stroke="#fff" strokeOpacity="0.6" strokeWidth="0.6" />
+        <circle cx="15" cy="12" r="1.2" fill="#fff" fillOpacity="0.75" />
+      </g>
+    </svg>
+  )
+}
+
+function ModKarti({ theme, m, sec, onSec }) {
+  const p = rafPaleti(theme)
+  const ac = theme.accent
+  const ref = useRef(null)
+  const [olcu, setOlcu] = useState(null)
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const olc = () => setOlcu(o => (o && o.en === el.offsetWidth && o.boy === el.offsetHeight ? o : { en: el.offsetWidth, boy: el.offsetHeight }))
+    olc()
+    if (typeof ResizeObserver === "undefined") return
+    const ro = new ResizeObserver(olc)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+  return (
+    <button ref={ref} role="radio" aria-checked={sec} onClick={() => onSec(m.id)} style={{
+      position: "relative", isolation: "isolate", display: "flex", alignItems: "center", gap: "12px",
+      padding: "12px", borderRadius: "14px", cursor: "pointer", fontFamily: "inherit",
+      textAlign: "left", color: theme.text, background: theme.surface,
+      border: `1px solid ${sec ? p.gold : `${ac}33`}`,
+      boxShadow: sec ? `inset 0 0 0 3px ${theme.surface}, inset 0 0 0 4px ${p.gold}99, 0 4px 14px rgba(0,0,0,0.10)` : "none",
+      transition: "border-color .25s ease, box-shadow .25s ease",
+    }}>
+      {/* Seçilende kartın kenarına dal sarılır (DalSusu kendi konumunu kartın sol üstünden alır) */}
+      {sec && olcu && (
+        <span className="vk-dal-gir" aria-hidden="true" style={{ position: "absolute", left: 0, top: 0, width: 0, height: 0, pointerEvents: "none", zIndex: -1 }}>
+          <DalSusu en={olcu.en} boy={olcu.boy} renk={ac} zemin={theme.surface} sayfa={theme.surface} yaricap={14} yogunluk={0.75} />
+        </span>
+      )}
+      <Celenk theme={theme} modId={m.id} acik={sec} />
+      <span style={{ flex: 1, minWidth: 0 }}>
+        <span style={{ display: "flex", alignItems: "center", gap: "6px", fontFamily: "PlayfairDisplay, serif", fontSize: "16px", fontWeight: 700, color: sec ? ac : theme.text }}>
+          {m.ad}
+        </span>
+        <span style={{ display: "block", fontSize: "12px", color: theme.textSecondary, lineHeight: 1.45, marginTop: "2px" }}>{m.aciklama}</span>
+      </span>
+      <Gonca theme={theme} acik={sec} />
+    </button>
+  )
+}
+
+export function ModKartlari({ theme, deger, onSec }) {
+  return (
+    <div role="radiogroup" style={{ display: "flex", flexDirection: "column", gap: "18px", padding: "10px 8px" }}>
+      <style>{`@keyframes vk-dal-gir { from { opacity: 0 } to { opacity: 1 } }
+        .vk-dal-gir { animation: vk-dal-gir .5s ease both }
+        @media (prefers-reduced-motion: reduce) { .vk-dal-gir { animation: none } }`}</style>
+      {MODLAR.map(m => <ModKarti key={m.id} theme={theme} m={m} sec={deger === m.id} onSec={onSec} />)}
     </div>
   )
 }
@@ -546,7 +649,7 @@ export function ModPenceresi({ theme, ilk = false, baslangicAdim = "mod", kapat 
 
         <div style={{ flex: "1 1 auto", minHeight: 0, overflowY: "auto", overscrollBehavior: "contain", padding: "6px 10px 10px" }}>
           {adim === "mod"
-            ? <ModKartlari theme={theme} deger={mod} onSec={setMod} secim={secim} />
+            ? <ModKartlari theme={theme} deger={mod} onSec={setMod} />
             : <EserSecici theme={theme} secim={secim} onDegis={setSecim} />}
         </div>
 

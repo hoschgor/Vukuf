@@ -136,6 +136,43 @@ const SAYFALAR_ACIK_ANAHTAR = "vukuf-gecmis-sayfalar-acik"
    okunan / sureler: Map(gunKodu → Map(eser → {…})) — sayfalar ve süreler. */
 const AYLAR_KISA = ["Oca", "Şub", "Mar", "Nis", "May", "Haz", "Tem", "Ağu", "Eyl", "Eki", "Kas", "Ara"]
 const gunBasi = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate())
+/* GÖRELİ TARİH (28 Ekim 2026, kullanıcı: "tarih yazanlarda dün harici ise parantez
+   içinde x gün önce diyebiliriz; ayı da geçerse 1 ay 5 gün önce gibi"). Takvim farkı:
+   2–30 gün → "5 gün önce"; ay geçince "1 ay 5 gün önce"; yıl geçince "1 yıl 2 ay önce".
+   Bugün ve Dün için boş (başlık zaten öyle yazıyor). */
+function goreliGun(kod) {
+  const [y, m, g] = String(kod).split("-").map(Number)
+  if (!y || !m || !g) return ""
+  const d = new Date(y, m - 1, g), bugun = gunBasi(new Date())
+  const gun = Math.round((bugun - d) / 86400000)
+  if (gun < 2) return ""
+  let ay = (bugun.getFullYear() - d.getFullYear()) * 12 + (bugun.getMonth() - d.getMonth())
+  const ayEkle = (n) => { const x = new Date(d); x.setMonth(x.getMonth() + n); return x }
+  if (ay > 0 && ayEkle(ay) > bugun) ay--
+  if (ay <= 0) return `${gun} gün önce`
+  const kalan = Math.round((bugun - ayEkle(ay)) / 86400000)
+  const yil = Math.floor(ay / 12), ayK = ay % 12
+  if (yil) return `${[`${yil} yıl`, ayK && `${ayK} ay`].filter(Boolean).join(" ")} önce`
+  return `${[`${ay} ay`, kalan && `${kalan} gün`].filter(Boolean).join(" ")} önce`
+}
+/* Takvim yaprağı: üstte ay (kısaltma), altta gün numarası */
+function TakvimYapragi({ theme, kod, acik }) {
+  const [y, m, g] = String(kod).split("-").map(Number)
+  let ay = ""
+  try { ay = new Date(y, m - 1, g).toLocaleDateString("tr-TR", { month: "short" }).replace(".", "").toLocaleUpperCase("tr-TR") } catch { /* yoksay */ }
+  const ac = theme.accent
+  return (
+    <span aria-hidden="true" style={{
+      width: "38px", flexShrink: 0, borderRadius: "8px", overflow: "hidden", textAlign: "center",
+      border: `1px solid ${acik ? ac : `${ac}55`}`, background: theme.surface,
+      boxShadow: acik ? `0 2px 6px ${ac}33` : "none", transition: "box-shadow .2s, border-color .2s",
+    }}>
+      <span style={{ display: "block", fontSize: "8.5px", fontWeight: 700, letterSpacing: "0.08em", padding: "2px 0 1px",
+        background: acik ? ac : `${ac}22`, color: acik ? "#fff" : ac, transition: "background .2s, color .2s" }}>{ay}</span>
+      <span style={{ display: "block", fontSize: "16px", fontWeight: 700, lineHeight: 1.25, padding: "1px 0 2px", color: theme.text, fontVariantNumeric: "tabular-nums" }}>{g}</span>
+    </span>
+  )
+}
 const isoGun = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
 function donemAraligi(tur, tarih) {
   const d = gunBasi(tarih)
@@ -785,16 +822,21 @@ export default function Gecmis() {
             return (
             <div key={g.anahtar} style={{ ...kart, marginBottom: "10px", borderColor: gunAcikDurum ? `${ac}55` : theme.border }}>
               {/* Çekmece başlığı — satırın tamamı dokunulabilir */}
+              {/* BAŞLIK: takvim yaprağı + gün adı (göreli tarih) + özet; içerikten
+                  ayrı dursun diye vurgu tonunda zemin, içerik ise sayfa tonunda */}
               <button onClick={() => gunDegis(g.anahtar, gi)} aria-expanded={gunAcikDurum} style={{
-                width: "100%", display: "flex", alignItems: "center", gap: "10px", padding: "12px 14px",
-                border: "none", background: gunAcikDurum ? `${ac}0a` : "transparent", cursor: "pointer",
+                width: "100%", display: "flex", alignItems: "center", gap: "11px", padding: "10px 12px",
+                border: "none", background: gunAcikDurum ? `${ac}12` : `${ac}06`, cursor: "pointer",
                 fontFamily: "inherit", textAlign: "left", color: theme.text,
-                borderBottom: gunAcikDurum ? `1px solid ${theme.border}` : "none",
+                borderBottom: gunAcikDurum ? `1px solid ${ac}33` : "none", transition: "background .2s",
               }}>
-                <ChevronRight size={16} color={ac} style={{ flexShrink: 0, transition: "transform .2s ease", transform: gunAcikDurum ? "rotate(90deg)" : "none" }} />
+                <TakvimYapragi theme={theme} kod={g.kod} acik={gunAcikDurum} />
                 <span style={{ flex: 1, minWidth: 0 }}>
-                  <span style={{ display: "block", fontSize: "12.5px", fontWeight: 700, letterSpacing: "0.05em", color: gunAcikDurum ? ac : theme.text }}>
+                  <span style={{ display: "flex", alignItems: "baseline", gap: "6px", flexWrap: "wrap", fontSize: "12.5px", fontWeight: 700, letterSpacing: "0.05em", color: gunAcikDurum ? ac : theme.text }}>
                     {g.ad.toLocaleUpperCase("tr")}
+                    {goreliGun(g.kod) && (
+                      <span style={{ fontSize: "11px", fontWeight: 500, letterSpacing: 0, color: theme.textSecondary }}>({goreliGun(g.kod)})</span>
+                    )}
                   </span>
                   <span style={{ display: "block", fontSize: "11.5px", color: theme.textSecondary, marginTop: "2px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                     {[
@@ -809,9 +851,12 @@ export default function Gecmis() {
                   <span style={{ flexShrink: 0, fontSize: "10.5px", fontWeight: 700, color: "#fff", background: ac, borderRadius: "999px", padding: "1px 7px" }}>{seciliSay}</span>
                 )}
                 <span style={{ flexShrink: 0, fontSize: "11px", color: theme.textSecondary, fontVariantNumeric: "tabular-nums" }}>{g.kayitlar.length}</span>
+                <ChevronDown size={16} color={ac} style={{ flexShrink: 0, transition: "transform .2s ease", transform: gunAcikDurum ? "rotate(180deg)" : "none" }} />
               </button>
               {gunAcikDurum && (
-              <div style={{ animation: "vk-gun-ac .2s ease" }}>
+              /* İÇERİK: sayfa tonunda panel; kayıtlar ayrı küçük kartlar, solda zaman çizgisi */
+              <div style={{ animation: "vk-gun-ac .2s ease", position: "relative", background: theme.background, padding: "10px 10px 4px 26px" }}>
+                <span aria-hidden="true" style={{ position: "absolute", left: "13px", top: "14px", bottom: "14px", width: "2px", borderRadius: "1px", background: `${ac}33` }} />
                 {g.kayitlar.map((e, i) => {
                   const secili = !!secim && secim.has(e.id)
                   const acikMi = acilan === e.id && !secim
@@ -819,7 +864,17 @@ export default function Gecmis() {
                   const Ikon = !okuma ? Search : e.kaynak === "kuran" ? BookMarked : BookOpen
                   const ayniYer = okuma && e.bas && e.bitis && e.bas.etiket === e.bitis.etiket
                   return (
-                    <div key={e.id} style={{ borderTop: i ? `1px solid ${theme.border}` : "none", background: secili ? `${ac}12` : "transparent" }}>
+                    <div key={e.id} style={{
+                      position: "relative", marginBottom: "6px", borderRadius: "11px",
+                      border: `1px solid ${acikMi || secili ? `${ac}66` : theme.border}`,
+                      background: secili ? `${ac}12` : theme.surface,
+                      boxShadow: acikMi ? `0 3px 10px ${ac}22` : "0 1px 2px rgba(0,0,0,0.04)",
+                    }}>
+                      {/* zaman çizgisindeki nokta */}
+                      <span aria-hidden="true" style={{
+                        position: "absolute", left: "-17px", top: "22px", width: "8px", height: "8px", borderRadius: "50%",
+                        background: acikMi ? ac : theme.surface, border: `2px solid ${ac}`, boxSizing: "border-box",
+                      }} />
                       <div
                         role="button" tabIndex={0}
                         onClick={() => satirTikla(e)}

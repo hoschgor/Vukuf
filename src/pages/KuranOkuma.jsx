@@ -27,6 +27,7 @@ import KariSecici from "../components/KariSecici"
 import KelimePopup from "../components/KelimePopup"
 import YuklemeEkrani from "../components/YuklemeEkrani"
 import IosSwitch from "../components/IosSwitch"
+import { useOrtaMenu, useOrtaBilgi, OrtaMenuCercevesi, OrtaIpucu, BilgiSeridi, BarKonumSecici, barKonumOku, barKonumYaz, ORTA_OLCEK } from "../components/OrtaMenu"
 import PanelAyirac, { PanelAcilir, panelBolumeHizala } from "../components/PanelAyirac"
 import GeriIkonu from "../components/GeriIkonu"
 import TemaSecici from "../components/TemaSecici"
@@ -1294,7 +1295,15 @@ export default function KuranOkuma({ kitap }) {
 
   // ── Bar
   const [barGorunur, setBarGorunur]       = useState(true)
-  const [barKonum, setBarKonum]           = useState(() => localStorage.getItem("vukuf-bar-konum") || "alt")
+  const [barKonum, setBarKonum]           = useState(barKonumOku)   // "ust" | "alt" | "orta" (components/OrtaMenu.jsx)
+  // MENÜ GİBİ BAR (28 Ekim 2026) — okuma ekranıyla ORTAK davranış (components/OrtaMenu.jsx).
+  const ortaBar = barKonum === "orta"
+  const ortaBarRef = useRef(ortaBar)
+  ortaBarRef.current = ortaBar
+  const [ortaBilgi, setOrtaBilgi] = useOrtaBilgi()
+  const ortaSerit = ortaBar && ortaBilgi
+  const [seritYuk, setSeritYuk] = useState(0)
+  const seritPay = ortaSerit ? seritYuk : 0
 
   /* ÜST SOLMA PERDESİ — ölçüleri tek yerde. (Hizalama payı `ustPay` bunu okuduğu
      için tanım ondan ÖNCE duruyor; çizim çok aşağıda.)
@@ -1307,7 +1316,7 @@ export default function KuranOkuma({ kitap }) {
   const perdeBandi = PERDE_YUKSEKLIK > 0
     ? Math.min(60, Math.round(yaziBoyutu * satirAraligi * PERDE_YUKSEKLIK))
     : 0
-  const perdeVar = barKonum === "alt" && PERDE_KOYULUK > 0 && perdeBandi > 0
+  const perdeVar = barKonum !== "ust" && PERDE_KOYULUK > 0 && perdeBandi > 0
   const [sadeMode, setSadeMode]           = useState(() => localStorage.getItem("vukuf-sade-mod") === "true")
   const [otomatikGizleme, setOtomatikGizleme] = useState(() => localStorage.getItem("vukuf-otomatik-gizleme") === "true")   // varsayılan KAPALI (yeni kullanıcı bar gizlemeden başlar)
   const [gizlemeSuresi, setGizlemeSuresi] = useState(() => parseInt(localStorage.getItem("vukuf-gizleme-suresi") || "5"))
@@ -1500,7 +1509,9 @@ const maxWidth = useMemo(() =>
   // ════════════════════════════════════════════════════════════════
 
   useEffect(() => { localStorage.setItem("vukuf-kuran-yazi-boyutu", String(yaziBoyutu))     }, [yaziBoyutu])
-  useEffect(() => { localStorage.setItem("vukuf-bar-konum",         barKonum)               }, [barKonum])
+  useEffect(() => { barKonumYaz(barKonum) }, [barKonum])
+  // Menü modunda bar yerinde durmaz; menüden çıkınca bar görünür
+  useEffect(() => { setBarGorunur(!ortaBar) }, [ortaBar])
   useEffect(() => { localStorage.setItem("vukuf-sade-mod",          String(sadeMode))       }, [sadeMode])
   useEffect(() => { localStorage.setItem("vukuf-otomatik-gizleme",  String(otomatikGizleme))}, [otomatikGizleme])
   useEffect(() => { localStorage.setItem("vukuf-gizleme-suresi",    String(gizlemeSuresi))  }, [gizlemeSuresi])
@@ -1686,7 +1697,7 @@ useLayoutEffect(() => {
   }
   const observer = new ResizeObserver(() => {
     // offsetHeight = padding + border dahil (contentRect padding'i atlıyordu → player bara biniyordu)
-    setBarYuksekligi(Math.ceil(barDugumu.offsetHeight))
+    if (!ortaBarRef.current) setBarYuksekligi(Math.ceil(barDugumu.offsetHeight))
     olcSatir()
   })
   observer.observe(barDugumu)
@@ -1750,7 +1761,7 @@ const cokSatir = wrapAktif && barYuksekligi > tekSatirYuksekligi * 1.0
   // ════════════════════════════════════════════════════════════════
 
   const barGoster = useCallback(() => {
-    if (sadeMode || !otomatikGizleme) return
+    if (sadeMode || !otomatikGizleme || ortaBarRef.current) return
     setBarGorunur(true)
     if (barZamanRef.current) {
       clearTimeout(barZamanRef.current)
@@ -1777,6 +1788,7 @@ const cokSatir = wrapAktif && barYuksekligi > tekSatirYuksekligi * 1.0
     return
   }
   if (herhangiPanelAcik) return
+  if (ortaBarRef.current) return            // menü modunda tek dokunuş barı açıp kapamaz
   if (barZamanRef.current) {
     clearTimeout(barZamanRef.current)
     barZamanRef.current = null
@@ -1792,6 +1804,27 @@ const cokSatir = wrapAktif && barYuksekligi > tekSatirYuksekligi * 1.0
     return yeni
   })
 }, [herhangiPanelAcik, otomatikGizleme, gizlemeSuresi, sadeMode])
+
+  // ── MENÜ GİBİ BAR ("orta") ─────────────────────────────────────────────────
+  const ortaMenu = useOrtaMenu({
+    aktif: ortaBar,
+    // Bir panel açıkken çift dokunma menüyü açmaz
+    engelli: () => ayarlarAcik || aaAcik || temaAcik || ozelTemaPanelAcik || sayfaGitAcik || menuAcik
+      || kayitPaneliAcik || donguAyarAcik || bilgiAcik || !!gorselVeri || kayitKonumModu || izlemeModu || kariSecAcik,
+    // Kelime/âyet penceresinin İÇİ sayılmaz (saydam perdesi sayılır): pencere z-index 300
+    haric: (el) => {
+      for (let n = el; n && n !== document.body; n = n.parentElement) {
+        const cs = window.getComputedStyle(n)
+        if (cs.position === "fixed" && cs.zIndex === "300") return true
+      }
+      return false
+    },
+    secimKapsami: "[data-kelime], [data-ayet], [data-sure]",
+    acilinca: () => setPopup(null),
+    // Tema / özel tema paneli BİLEREK yok: menü açık kalsın, yeni tema menüde de görülsün
+    kapatanlar: [ayarlarAcik, aaAcik, sayfaGitAcik, menuAcik, kayitPaneliAcik,
+      donguAyarAcik, bilgiAcik, !!gorselVeri, kayitKonumModu, izlemeModu, gorselModu, paylasModu, hifzAcik],
+  })
 
   // ════════════════════════════════════════════════════════════════
   // SCROLLBAR FONKSİYONLARI
@@ -2516,7 +2549,10 @@ const hizbSayfalari = (cuzNo) => {
      2026: "geri dön düğmesi playerbar'ın üzerine çıkabiliyor"). Bar ve oynatıcı
      aynı kenarda duruyor; bar gizlenince oynatıcı kenara iner, hap da onu izler. */
   const hapDolu = (barGorunur ? barYuksekligi : 0) + (player.durum !== "kapali" ? playerBarYuksekligi : 0)
-  const hapAltPay = barKonum === "alt" ? hapDolu : 0
+  const hapAltPay = barKonum !== "ust" ? hapDolu + seritPay : 0
+  // Altta dolu alan (bar + oynatıcı + menü modunda bilgi şeridi) — alttan yerleşen pencereler için
+  const altBarDolu = barKonum === "ust" ? 0
+    : (barGorunur ? barYuksekligi : 0) + (player.durum !== "kapali" ? playerBarYuksekligi : 0) + seritPay
   const hapUstPay = barKonum === "ust" ? hapDolu : 0
 
   // ════════════════════════════════════════════════════
@@ -3488,8 +3524,11 @@ function donuseGit(i) {
   const panelPayi = barYuksekligi + (player.durum !== "kapali" ? playerBarYuksekligi : 4)
   const panelStil = (konum, en = 620) => ({
     position: "fixed",
-    [barKonum === "alt" ? "bottom" : "top"]: `${panelPayi}px`,
-    ...ypDegisken({ pay: panelPayi + 12, en, cizgi: theme.border }),
+    // MENÜ MODUNDA bar yok: panel üstten küçük bir payla başlar (oynatıcı altta)
+    ...(ortaBar
+      ? { top: "max(12px, env(safe-area-inset-top))" }
+      : { [barKonum === "alt" ? "bottom" : "top"]: `${panelPayi}px` }),
+    ...ypDegisken({ pay: ortaBar ? 24 + (player.durum !== "kapali" ? playerBarYuksekligi : 0) : panelPayi + 12, en, cizgi: theme.border }),
     ...(konum === "right"
       ? { right: "12px" }
       : konum === "left"
@@ -3505,20 +3544,22 @@ function donuseGit(i) {
     overscrollBehavior: "contain",
   })
 
+  // Menü modunda bar öğeleri büyür
+  const barOlcegi = ortaBar ? barUiOlcegi * ORTA_OLCEK : barUiOlcegi
   const barButonStil = (aktif = false) => ({
   display: "flex", alignItems: "center", gap: "4px",
   padding: isMobile 
-    ? `${Math.round(3 * barUiOlcegi)}px ${Math.round(5 * barUiOlcegi)}px`
-    : `${Math.round(6 * barUiOlcegi)}px ${Math.round(8 * barUiOlcegi)}px`,
+    ? `${Math.round(3 * barOlcegi)}px ${Math.round(5 * barOlcegi)}px`
+    : `${Math.round(6 * barOlcegi)}px ${Math.round(8 * barOlcegi)}px`,
   // EŞİT KUTU: bardaki simgelerin çoğu 18px, dördü 16px çiziliyor; bu da o dört
   // düğmeyi 2px dar bırakıp aralar düzensiz görünüyordu. Kutu en büyük simgeye
   // (18 + 2×5 dolgu) göre sabitlendi, içerik ortalandı. Yazılı düğmeler (sayfa
   // no, süre) doğal genişliğinde kalır — bu bir TABAN değer.
-  minWidth: `${Math.round((isMobile ? 28 : 37) * barUiOlcegi)}px`,
+  minWidth: `${Math.round((isMobile ? 28 : 37) * barOlcegi)}px`,
   justifyContent: "center",
   boxSizing: "border-box",
   borderRadius: "8px",
-  fontSize: `${Math.round(12 * barUiOlcegi)}px`,
+  fontSize: `${Math.round(12 * barOlcegi)}px`,
   background: aktif ? `${theme.accent}20` : "transparent",
   color: theme.accent,
   border: "none", cursor: "pointer", transition: "all 0.15s",
@@ -3546,8 +3587,8 @@ const menuStil = {
   top: barKonum === "ust"
     ? `${(barGorunur ? barYuksekligi : 0) + (player.durum !== "kapali" ? playerBarYuksekligi : 0)}px`
     : "env(safe-area-inset-top)",
-  bottom: barKonum === "alt"
-    ? `${(barGorunur ? barYuksekligi : 0) + (player.durum !== "kapali" ? playerBarYuksekligi : 0)}px`
+  bottom: (barKonum === "alt" || ortaBar)
+    ? `${(barKonum === "alt" && barGorunur ? barYuksekligi : 0) + (player.durum !== "kapali" ? playerBarYuksekligi : 0)}px`
     : "env(safe-area-inset-bottom)",
   transition: "top 0.3s ease, bottom 0.3s ease",
   ...(isMobile ? { left: 0 } : {}),
@@ -4013,20 +4054,11 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
             Etiketler de OkumaEkrani gibi büyük harf, değer sağda yüzde. */}
         <div>
           <div style={ayarEtiket}>BAR KONUMU</div>
-          <div style={{ display: "flex", gap: "6px" }}>
-            {["ust", "alt"].map(k => (
-              <button key={k} onClick={() => setBarKonum(k)} style={{
-                flex: 1, padding: "8px", borderRadius: "8px", fontSize: `${Math.round((isMobile ? 11 : 12) * barUiOlcegi)}px`, fontFamily: "inherit",
-                background: barKonum === k ? theme.accent : `${theme.accent}15`,
-                color: barKonum === k ? "#fff" : theme.text,
-                display: "flex", alignItems: "center", justifyContent: "center", gap: "4px",
-                border: "none", cursor: "pointer",
-              }}>
-                {k === "ust" ? <ChevronsUp size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} /> : <ChevronsDown size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />}
-                {k === "ust" ? "Üst" : "Alt"}
-              </button>
-            ))}
-          </div>
+          <BarKonumSecici theme={theme} deger={barKonum} onSec={setBarKonum}
+            UstIkon={ChevronsUp} AltIkon={ChevronsDown}
+            ikonBoy={Math.round((isMobile ? 18 : 21) * barUiOlcegi)}
+            yaziBoy={Math.round((isMobile ? 11 : 12) * barUiOlcegi)}
+            bilgiAcik={ortaBilgi} onBilgi={setOrtaBilgi} />
         </div>
 
         <div>
@@ -4245,14 +4277,21 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
   // order 10'un katları: satır kırma ayraçları aradaki tek sayıya (ör. 35) yerleşebilsin.
   const barOge = (k) => ({
     order: ((butonTaraf[k] === "sag" ? 50 : 0) + sira(k)) * 10,
-    ...(!barCokSatir && k === ilkSagKey ? { marginLeft: "auto" } : {}),
+    ...(!barCokSatir && !ortaBar && k === ilkSagKey ? { marginLeft: "auto" } : {}),
   })
 
   const Bar = (
   <div
     ref={barOlcRef}
     className="mushaf-bar"
-    style={{
+    style={ortaBar ? {
+      // MENÜ MODU: bar çerçevenin (OrtaMenuCercevesi) içinde; öğeler ortalı ve ferah
+      position: "relative", width: "100%", boxSizing: "border-box",
+      display: "flex", alignItems: "center", justifyContent: "center", flexWrap: "wrap",
+      gap: `${Math.round(8 * barOlcegi)}px`,
+      rowGap: barSatirKes.length ? "0px" : "10px",
+      padding: "2px",
+    } : {
       position: "fixed", left: 0, right: 0,
       [barKonum === "alt" ? "bottom" : "top"]: 0,
       background: theme.surface,
@@ -4280,7 +4319,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
     // "Geri" yazısının kalkması bundan fazlasını geri kazandırıyor.
     paddingLeft:   `max(${isMobile ? 26 : 20}px, env(safe-area-inset-left))`,
       paddingRight:  `max(${isMobile ? 26 : 20}px, env(safe-area-inset-right))`,
-      display: "flex", alignItems: "center", gap: `${Math.round(4 * barUiOlcegi)}px`,
+      display: "flex", alignItems: "center", gap: `${Math.round(4 * barOlcegi)}px`,
       justifyContent: "center",
       zIndex: 90, flexWrap: "wrap",
     // Ayraç varken satır arası ayracın kendi yüksekliğinden gelir; rowGap iki kez uygulanıp
@@ -4297,12 +4336,12 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
           ve simge yalan söylemiş oluyordu. */}
       <button onClick={() => navigate("/")} title="Kitaplığa dön" aria-label="Kitaplığa dön"
         style={{ ...barButonStil(), flexShrink: 0, ...barOge("geri") }}>
-        <GeriIkonu boyut={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />
+        <GeriIkonu boyut={Math.round((isMobile ? 18 : 21) * barOlcegi)} />
       </button>
       
             {sureMenuGoster && sadeGorunur("sureMenu") && (
         <button onClick={() => setMenuAcik(!menuAcik)} style={{ ...barButonStil(menuAcik), flexShrink: 0, ...barOge("sureMenu") }}title="Sûre menüsü">
-          <Menu size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />
+          <Menu size={Math.round((isMobile ? 18 : 21) * barOlcegi)} />
         </button>
       )}
 
@@ -4319,7 +4358,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
           style={{ ...barOge("kayit") }}title="Kayıt menüsü"
         >
           <Bookmark color={theme.accent}
-            size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)}
+            size={Math.round((isMobile ? 18 : 21) * barOlcegi)}
             fill={kayitlar.some(k => k.sayfa === mevcutSayfa) ? "currentColor" : "none"}
           />
         </button>
@@ -4331,14 +4370,14 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
           style={{
             ...barButonStil(),
             ...barOge("sayfaGit"),
-            fontSize: `${Math.round((isMobile ? 11 : 14) * barUiOlcegi)}px`,
+            fontSize: `${Math.round((isMobile ? 11 : 14) * barOlcegi)}px`,
             minWidth: isMobile ? "40px" : "48px",
             justifyContent: "center",
             fontWeight: "500",
             color: theme.accent,
           }}title="Sayfa bilgisi ve sayfaya gitme"
         >
-          <BookOpen size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />
+          <BookOpen size={Math.round((isMobile ? 18 : 21) * barOlcegi)} />
           {sayfaGosterim === "ikon" ? null : (sayfaGosterim === "sayfa" ? mevcutSayfa : `${mevcutSayfa} / ${toplamSayfa}`)}
         </button>
       )}
@@ -4351,7 +4390,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
           style={{ ...barButonStil(donguAyarAcik), flexShrink: 0, ...barOge("tekrar") }}
           title="Tekrar (döngü) ayarları"
         >
-          <Repeat size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />
+          <Repeat size={Math.round((isMobile ? 18 : 21) * barOlcegi)} />
         </button>
       )}
 
@@ -4361,7 +4400,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
           style={{ ...barButonStil(bilgiAcik), flexShrink: 0, ...barOge("bilgi") }}
           title="İşaretler ve tecvid bilgisi"
         >
-          <Gem size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />
+          <Gem size={Math.round((isMobile ? 18 : 21) * barOlcegi)} />
         </button>
       )}
 
@@ -4371,7 +4410,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
           style={{ ...barButonStil(gorselModu), flexShrink: 0, ...barOge("gorsel") }}
           title="Âyetten görsel veya video oluştur"
         >
-          <ImagePlay size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />
+          <ImagePlay size={Math.round((isMobile ? 18 : 21) * barOlcegi)} />
         </button>
       )}
 
@@ -4382,7 +4421,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
           title="Âyeti paylaş — âyet numarasına dokunarak"
           aria-pressed={paylasModu}
         >
-          <Share2 size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />
+          <Share2 size={Math.round((isMobile ? 18 : 21) * barOlcegi)} />
         </button>
       )}
 
@@ -4392,14 +4431,14 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
           style={{ ...barButonStil(hifzAcik), flexShrink: 0, ...barOge("hifz") }}
           title="Hıfz modu — seçtiğiniz kısım perdelenerek ezberlenebilir"
         >
-          <Brain size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />
+          <Brain size={Math.round((isMobile ? 18 : 21) * barOlcegi)} />
         </button>
       )}
 
     {yaziTipiGoster && sadeGorunur("yaziTipi") && (
       <button onClick={() => togglePanel(setAaAcik, !aaAcik)} style={{ ...barButonStil(aaAcik), ...barOge("yaziTipi") }}
           title="Yazı Tercihleri">
-        <Feather size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />
+        <Feather size={Math.round((isMobile ? 18 : 21) * barOlcegi)} />
       </button>
     )}
 
@@ -4411,8 +4450,8 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
           title="Otomatik kaydırma"
         >
           {otomatikKaydirma
-            ? <Pause size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)}  />
-            : <Play size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)}  />}
+            ? <Pause size={Math.round((isMobile ? 18 : 21) * barOlcegi)}  />
+            : <Play size={Math.round((isMobile ? 18 : 21) * barOlcegi)}  />}
         </button>
 
         {otomatikKaydirma && (
@@ -4429,10 +4468,10 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
               onClick={() => setKaydirmaHizi(Math.max(1, kaydirmaHizi - 1))}
               style={{ ...barButonStil(), padding: "2px" }}
             >
-              <Minus size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />
+              <Minus size={Math.round((isMobile ? 18 : 21) * barOlcegi)} />
             </button>
             <span style={{
-              fontSize: `${Math.round((isMobile ? 18 : 21) * barUiOlcegi)}px`,
+              fontSize: `${Math.round((isMobile ? 18 : 21) * barOlcegi)}px`,
               color: theme.textSecondary,
               minWidth: "16px",
               textAlign: "center",
@@ -4443,7 +4482,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
               onClick={() => setKaydirmaHizi(Math.min(20, kaydirmaHizi + 1))}
               style={{ ...barButonStil(), padding: "2px" }}
             >
-              <Plus size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />
+              <Plus size={Math.round((isMobile ? 18 : 21) * barOlcegi)} />
             </button>
           </div>
         )}
@@ -4453,46 +4492,46 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
       {sadeModGoster && (
         <button onClick={() => setSadeMode(!sadeMode)} style={{ ...barButonStil(sadeMode), padding: isMobile ? "3px" : "4px", ...barOge("sadeMod") }}
             title="Sade mod">
-          <Circle size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />
+          <Circle size={Math.round((isMobile ? 18 : 21) * barOlcegi)} />
         </button>
       )}
 
       {temaGoster && sadeGorunur("tema") && (
         <button onClick={() => togglePanel(setTemaAcik, !temaAcik)} style={{ ...barButonStil(temaAcik), padding: isMobile ? "3px" : "4px", ...barOge("tema") }}
             title="Tema paneli">
-          <Palette size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />
+          <Palette size={Math.round((isMobile ? 18 : 21) * barOlcegi)} />
         </button>
       )}
 
       <button onClick={() => togglePanel(setAyarlarAcik, !ayarlarAcik)} style={{ ...barButonStil(ayarlarAcik), padding: isMobile ? "3px" : "4px", ...barOge("ayarlar") }}title="Ayarlar">
-        <Settings size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />
+        <Settings size={Math.round((isMobile ? 18 : 21) * barOlcegi)} />
       </button>
 
-      {sureGoster && sadeGorunur("okumaZamani") && (
+      {!ortaSerit && sureGoster && sadeGorunur("okumaZamani") && (
         <span style={{
           ...barOge("okumaZamani"),
-          fontSize: `${Math.round((isMobile ? 9 : 12) * barUiOlcegi)}px`,
+          fontSize: `${Math.round((isMobile ? 9 : 12) * barOlcegi)}px`,
           color: theme.accent,
           padding: "5px 4px",
           display: "flex",
           alignItems: "center",
           gap: "2px",
         }}>
-          <Clock size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />
+          <Clock size={Math.round((isMobile ? 18 : 21) * barOlcegi)} />
           {isMobile ? dakikaFormatla(bugunSure) : `Bugün ${dakikaFormatla(bugunSure)}`}
         </span>
       )}
-      {mevcutSureBilgisi && sureBilgisiGoster && sadeGorunur("sureBilgisi") && (
+      {!ortaSerit && mevcutSureBilgisi && sureBilgisiGoster && sadeGorunur("sureBilgisi") && (
         <span style={{
           ...barOge("sureBilgisi"),
-          fontSize: `${Math.round((isMobile ? 9 : 12) * barUiOlcegi)}px`,
+          fontSize: `${Math.round((isMobile ? 9 : 12) * barOlcegi)}px`,
           color: theme.accent,
           padding: "5px 4px",
           display: "flex",
           alignItems: "center",
           gap: "2px",
         }}>
-          <Layers size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />
+          <Layers size={Math.round((isMobile ? 18 : 21) * barOlcegi)} />
           {mevcutSureBilgisi.isim}
         </span>
       )}
@@ -4501,7 +4540,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
         // yazılır ("1. Cüz" / "Hizb 1"); İKİSİ birden açıksa sığması için kısaltılır ("9C·3H").
         const cuzAcik  = cuzBilgisiGoster  && sadeGorunur("cuzBilgisi")
         const hizbAcik = hizbBilgisiGoster && sadeGorunur("hizbBilgisi")
-        if (!mevcutCuzHizb || (!cuzAcik && !hizbAcik)) return null
+        if (ortaSerit || !mevcutCuzHizb || (!cuzAcik && !hizbAcik)) return null
         const metin = isMobile
           ? (cuzAcik && hizbAcik
               ? `${mevcutCuzHizb.cuz}C·${mevcutCuzHizb.hizb}H`
@@ -4512,7 +4551,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
         return (
           <span style={{
             ...barOge("cuzHizb"),
-            fontSize: `${Math.round((isMobile ? 9 : 12) * barUiOlcegi)}px`,
+            fontSize: `${Math.round((isMobile ? 9 : 12) * barOlcegi)}px`,
             color: theme.accent,
             padding: "5px 4px",
             display: "flex",
@@ -4520,7 +4559,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
             gap: "2px",
             whiteSpace: "nowrap",
           }}>
-            <BookOpen size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />
+            <BookOpen size={Math.round((isMobile ? 18 : 21) * barOlcegi)} />
             {metin}
           </span>
         )
@@ -4533,7 +4572,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
           key={`bar-kes-${i}`}
           data-bar-kes="1"
           aria-hidden="true"
-          style={{ flexBasis: "100%", width: "100%", height: "4px", order: o, pointerEvents: "none" }}
+          style={{ flexBasis: "100%", width: "100%", height: ortaBar ? "10px" : "4px", order: o, pointerEvents: "none" }}
         />
       ))}
   </div>
@@ -4544,6 +4583,31 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
 
   // GEÇİCİ — dönme teşhisi: commit anı (çizim süresi) + durum izlemeyi bitir
   // useLayoutEffect(() => { donmeCizimBitti() }); izIndeks = -1   // ⏸ dönme teşhisi (yorumda)
+
+
+  // MENÜ GİBİ BAR — perde + tezhipli, dallı çerçeve; içinde Bar (components/OrtaMenu.jsx)
+  const OrtaMenu = ortaBar && (
+    <OrtaMenuCercevesi menu={ortaMenu} theme={theme} olcek={barUiOlcegi} etiket="Mushaf menüsü">
+      {Bar}
+    </OrtaMenuCercevesi>
+  )
+  // Alt bilgi şeridi — içerik bar öğelerinin açık/kapalı ayarından; oynatıcı açıksa onun üstünde
+  const seritCuz = cuzBilgisiGoster && sadeGorunur("cuzBilgisi")
+  const seritHizb = hizbBilgisiGoster && sadeGorunur("hizbBilgisi")
+  const BilgiSeridiOgesi = ortaSerit && (
+    <BilgiSeridi theme={theme} olcek={barUiOlcegi} onYukseklik={setSeritYuk}
+      altPay={player.durum !== "kapali" ? playerBarYuksekligi : 0}
+      ogeler={[
+        mevcutSureBilgisi && sureBilgisiGoster && sadeGorunur("sureBilgisi")
+          ? <><Layers size={Math.round(11 * barUiOlcegi)} />{mevcutSureBilgisi.isim}</> : null,
+        sayfaGitGoster && sadeGorunur("sayfaGit") && sayfaGosterim !== "ikon"
+          ? <><BookOpen size={Math.round(11 * barUiOlcegi)} />{sayfaGosterim === "sayfa" ? mevcutSayfa : `${mevcutSayfa} / ${toplamSayfa}`}</> : null,
+        mevcutCuzHizb && (seritCuz || seritHizb)
+          ? (seritCuz && seritHizb ? `${mevcutCuzHizb.cuz}. Cüz · ${mevcutCuzHizb.hizb}. Hizb` : seritCuz ? `${mevcutCuzHizb.cuz}. Cüz` : `${mevcutCuzHizb.hizb}. Hizb`) : null,
+        sureGoster && sadeGorunur("okumaZamani")
+          ? <><Clock size={Math.round(11 * barUiOlcegi)} />{dakikaFormatla(bugunSure)}</> : null,
+      ]} />
+  )
 
   if (yukleniyor) return <YuklemeEkrani theme={theme} yukseklik="100vh" />
 
@@ -4897,9 +4961,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
         bildirim={sayfaFarki}
         theme={theme}
         olcek={barUiOlcegi}
-        altBosluk={barKonum === "alt"
-          ? ((barGorunur ? barYuksekligi : 0) + (player.durum !== "kapali" ? playerBarYuksekligi : 0))
-          : 0}
+        altBosluk={altBarDolu}
       />
 
       {kayitKonumModu && (
@@ -4923,8 +4985,8 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
       {gorselModu && (
         <div style={{
           position: "fixed",
-          top: barKonum === "ust" ? `${barYuksekligi + 12}px` : "auto",
-          bottom: barKonum === "ust" ? "auto" : `${barYuksekligi + 12}px`,
+          top: barKonum === "ust" ? `${(barGorunur ? barYuksekligi : 0) + 12}px` : "auto",
+          bottom: barKonum === "ust" ? "auto" : `${altBarDolu + 12}px`,
           left: "50%", transform: "translateX(-50%)",
           background: theme.surface,
           border: `1px solid ${theme.accent}`,
@@ -4949,8 +5011,8 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
       {paylasModu && (
         <div style={{
           position: "fixed",
-          top: barKonum === "ust" ? `${barYuksekligi + 12}px` : "auto",
-          bottom: barKonum === "ust" ? "auto" : `${barYuksekligi + 12}px`,
+          top: barKonum === "ust" ? `${(barGorunur ? barYuksekligi : 0) + 12}px` : "auto",
+          bottom: barKonum === "ust" ? "auto" : `${altBarDolu + 12}px`,
           left: "50%", transform: "translateX(-50%)",
           background: theme.surface,
           border: `1px solid ${theme.accent}`,
@@ -4975,7 +5037,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
       <PaylasimPenceresi acik={!!paylasAyet} veri={paylasAyet} kapat={() => setPaylasAyet(null)} theme={theme} isMobile={isMobile} />
       {paylasimNotu != null && (
         <PaylasimNotu metin={paylasimNotu} theme={theme} kapat={() => setPaylasimNotu(null)}
-          ust={barKonum === "ust" ? barYuksekligi + 10 : 12} />
+          ust={barKonum === "ust" && barGorunur ? barYuksekligi + 10 : 12} />
       )}
       {/* Sure menüsü */}
       {menuAcik && (
@@ -5394,7 +5456,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
           player={player}
           sureler={sureler}
           theme={theme}
-          barKonum={barKonum}
+          barKonum={ortaBar ? "alt" : barKonum}
           barGorunur={barGorunur}
           barYuksekligi={barYuksekligi}
           playerBarYuksekligi={playerBarYuksekligi}
@@ -5438,9 +5500,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
           besmeleMi={mealPencere?.besmeleMi}
           theme={theme}
           isMobile={isMobile}
-          altBosluk={barKonum === "alt"
-            ? (barGorunur ? barYuksekligi : 0) + (player.durum !== "kapali" ? playerBarYuksekligi : 0)
-            : 0}
+          altBosluk={altBarDolu}
           ustBosluk={barKonum === "ust"
             ? (barGorunur ? barYuksekligi : 0) + (player.durum !== "kapali" ? playerBarYuksekligi : 0)
             : 0}
@@ -5456,9 +5516,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
           kapat={hifzAcKapa}
           theme={theme}
           isMobile={isMobile}
-          altBosluk={barKonum === "alt"
-            ? (barGorunur ? barYuksekligi : 0) + (player.durum !== "kapali" ? playerBarYuksekligi : 0)
-            : 0}
+          altBosluk={altBarDolu}
           etiket={hifzEtiket}
           kademe={hifzKademe}
           onKademe={(d) => setHifzKademe(k => (
@@ -5622,7 +5680,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
             paddingTop: barKonum === "ust"
               ? `${barYuksekligi + (player.durum !== "kapali" ? playerBarYuksekligi : 0) + 8}px`
               : "16px",
-            paddingBottom: barKonum === "alt" 
+            paddingBottom: ortaBar ? `${Math.max(16, altBarDolu + 8)}px` : barKonum === "alt" 
               ? `${barYuksekligi + (player.durum !== "kapali" ? playerBarYuksekligi : 0) + 8}px` 
               : "16px",
             // Scrollbar YERİ HER ZAMAN AYRILIR. Daha önce genişlik 0px↔6px arası
@@ -6158,6 +6216,9 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
         )}
 
         {barKonum === "alt" && Bar}
+        {OrtaMenu}
+        {BilgiSeridiOgesi}
+        {ortaBar && <OrtaIpucu menu={ortaMenu} theme={theme} />}
 
         {/* GERİ DÖN — dönüş noktaları (solda; sağdaki "Aramaya dön" ile çakışmaz).
             Hıfz şeridi alttayken onun üstüne binmesin diye hıfzda gizli (liste durur). */}
@@ -6165,7 +6226,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
           <DonusDugmesi
             theme={theme}
             noktalar={donusNoktalari}
-            altta={barKonum === "alt"}
+            altta={barKonum !== "ust"}
             // Dolu alanlar: bar + oynatıcı (hap onların üstünde/altında kalır, onları örtmez)
             altPay={hapAltPay}
             ustPay={hapUstPay}
@@ -6179,7 +6240,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
         {donusTip && (
           <KopruDugmesi
             theme={theme}
-            altta={barKonum === "alt"}
+            altta={barKonum !== "ust"}
             // "Geri dön" hapı da görünüyorsa bir sıra yukarıda (dar ekranda yan yana sığmıyorlar)
             altPay={hapAltPay}
             ustPay={hapUstPay}

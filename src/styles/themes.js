@@ -162,7 +162,7 @@ export const themes = {
     surface: "#152331",
     text: "#d0dbe6",
     textSecondary: "#98adc2",
-    accent: "#5fa8d3",
+    accent: "#A98546",
     lugatHighlight: "#e8c880",
     arabicHighlight: "#7fd6e6",
     ayetNoRengi: "#8cc4ea",

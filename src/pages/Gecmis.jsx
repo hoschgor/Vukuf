@@ -365,6 +365,21 @@ export default function Gecmis() {
   })
   const [kapatSor, setKapatSor] = useState(false)    // boş sayfada "Geçmişi kapat" onayı
   const [acilan, setAcilan] = useState(null)         // açık (genişletilmiş) kaydın id'si
+  /* GÜN ÇEKMECELERİ (28 Ekim 2026, kullanıcı: "Geçmiş bölümünde görüntülenen günlerin
+     hepsi aşağı doğru açık görünüyor; çekmece gibi açılır kapanabilir olmalı ve kolay
+     kullanılabilmeli"). Her gün tek kart: başlık satırı (gün adı + özet + ok) her
+     zaman görünür, kayıtlar dokununca açılır. Varsayılan: en yeni gün açık,
+     öbürleri kapalı. Elle açılan/kapatılanlar oturum boyunca hatırlanır (bir
+     kayda gidip "Geçmiş'e dön" ile gelince aynı günler açık). */
+  const [gunAcik, setGunAcik] = useState(() => {
+    try { return JSON.parse(sessionStorage.getItem("vukuf-gecmis-gun-acik") || "{}") || {} } catch { return {} }
+  })
+  const gunAcikMi = (anahtar, sira) => (anahtar in gunAcik ? gunAcik[anahtar] : sira === 0)
+  const gunAcikYaz = (yeni) => {
+    setGunAcik(yeni)
+    try { sessionStorage.setItem("vukuf-gecmis-gun-acik", JSON.stringify(yeni)) } catch { /* yoksay */ }
+  }
+  const gunDegis = (anahtar, sira) => gunAcikYaz({ ...gunAcik, [anahtar]: !gunAcikMi(anahtar, sira) })
   const [secim, setSecim] = useState(null)           // null = seçim kipi kapalı; Set = seçilenler
   const [geriAl, setGeriAl] = useState(null)         // { kayitlar, metin }
   const geriAlZaman = useRef(null)
@@ -742,23 +757,61 @@ export default function Gecmis() {
             </div>
           )}
 
-          {/* ── GÜNLER ── */}
-          {gruplar.map(g => {
+          {/* ── GÜNLER (çekmece) ── üstte "Tümünü aç / kapat" */}
+          {gruplar.length > 1 && (() => {
+            const hepsiAcik = gruplar.every((g, i) => gunAcikMi(g.anahtar, i))
+            return (
+              <div style={{ display: "flex", justifyContent: "flex-end", margin: "-4px 2px 6px" }}>
+                <button onClick={() => gunAcikYaz(Object.fromEntries(gruplar.map(g => [g.anahtar, !hepsiAcik])))} style={{
+                  display: "inline-flex", alignItems: "center", gap: "4px", padding: "4px 8px", borderRadius: "999px",
+                  border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit",
+                  fontSize: "11.5px", fontWeight: 600, color: ac,
+                }}>
+                  <ChevronDown size={13} style={{ transform: hepsiAcik ? "rotate(180deg)" : "none", transition: "transform .2s" }} />
+                  {hepsiAcik ? "Tümünü kapat" : "Tümünü aç"}
+                </button>
+              </div>
+            )
+          })()}
+          {gruplar.map((g, gi) => {
+            const gunAcikDurum = gunAcikMi(g.anahtar, gi)
+            const seciliSay = secim ? g.kayitlar.filter(e => secim.has(e.id)).length : 0
+            const aramaSay = g.kayitlar.length - g.okuma
             const gunSayfa = sayfaGoster && sayfaAcik ? gunToplami(okunan, g.kod) : 0
             // Günün süresi: oturumlar ile gün gün süre kaydının büyüğü (özetle aynı sayı)
             let gunSure = 0
             for (const v of (sureler.get(g.kod) || new Map()).values()) gunSure += v.sure
             gunSure = Math.max(gunSure, g.sure)
             return (
-            <div key={g.anahtar} style={{ marginBottom: "6px" }}>
-              <div style={{
-                display: "flex", alignItems: "baseline", gap: "8px", padding: "0 4px 7px",
-                fontSize: "11.5px", color: theme.textSecondary,
+            <div key={g.anahtar} style={{ ...kart, marginBottom: "10px", borderColor: gunAcikDurum ? `${ac}55` : theme.border }}>
+              {/* Çekmece başlığı — satırın tamamı dokunulabilir */}
+              <button onClick={() => gunDegis(g.anahtar, gi)} aria-expanded={gunAcikDurum} style={{
+                width: "100%", display: "flex", alignItems: "center", gap: "10px", padding: "12px 14px",
+                border: "none", background: gunAcikDurum ? `${ac}0a` : "transparent", cursor: "pointer",
+                fontFamily: "inherit", textAlign: "left", color: theme.text,
+                borderBottom: gunAcikDurum ? `1px solid ${theme.border}` : "none",
               }}>
-                <span style={{ fontWeight: 700, letterSpacing: "0.05em" }}>{g.ad.toLocaleUpperCase("tr")}</span>
-                {g.okuma > 0 && <span>· {g.okuma} okuma{sureAcik ? ` · ${sureYazi(gunSure)}` : ""}{gunSayfa > 0 ? ` · ${gunSayfa} sayfa` : ""}</span>}
-              </div>
-              <div style={kart}>
+                <ChevronRight size={16} color={ac} style={{ flexShrink: 0, transition: "transform .2s ease", transform: gunAcikDurum ? "rotate(90deg)" : "none" }} />
+                <span style={{ flex: 1, minWidth: 0 }}>
+                  <span style={{ display: "block", fontSize: "12.5px", fontWeight: 700, letterSpacing: "0.05em", color: gunAcikDurum ? ac : theme.text }}>
+                    {g.ad.toLocaleUpperCase("tr")}
+                  </span>
+                  <span style={{ display: "block", fontSize: "11.5px", color: theme.textSecondary, marginTop: "2px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                    {[
+                      g.okuma > 0 && `${g.okuma} okuma`,
+                      g.okuma > 0 && sureAcik && sureYazi(gunSure),
+                      gunSayfa > 0 && `${gunSayfa} sayfa`,
+                      aramaSay > 0 && `${aramaSay} arama`,
+                    ].filter(Boolean).join(" · ")}
+                  </span>
+                </span>
+                {seciliSay > 0 && (
+                  <span style={{ flexShrink: 0, fontSize: "10.5px", fontWeight: 700, color: "#fff", background: ac, borderRadius: "999px", padding: "1px 7px" }}>{seciliSay}</span>
+                )}
+                <span style={{ flexShrink: 0, fontSize: "11px", color: theme.textSecondary, fontVariantNumeric: "tabular-nums" }}>{g.kayitlar.length}</span>
+              </button>
+              {gunAcikDurum && (
+              <div style={{ animation: "vk-gun-ac .2s ease" }}>
                 {g.kayitlar.map((e, i) => {
                   const secili = !!secim && secim.has(e.id)
                   const acikMi = acilan === e.id && !secim
@@ -848,9 +901,12 @@ export default function Gecmis() {
                   )
                 })}
               </div>
+              )}
             </div>
             )
           })}
+          <style>{`@keyframes vk-gun-ac { from { opacity: 0; transform: translateY(-4px) } to { opacity: 1; transform: none } }
+            @media (prefers-reduced-motion: reduce) { [style*="vk-gun-ac"] { animation: none !important } }`}</style>
 
           {liste.length > 0 && !secim && (
             <p style={{ fontSize: "11px", color: theme.textSecondary, textAlign: "center", margin: "6px 0 0" }}>

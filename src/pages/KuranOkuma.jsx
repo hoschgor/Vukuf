@@ -1316,7 +1316,10 @@ export default function KuranOkuma({ kitap }) {
   const perdeBandi = PERDE_YUKSEKLIK > 0
     ? Math.min(60, Math.round(yaziBoyutu * satirAraligi * PERDE_YUKSEKLIK))
     : 0
-  const perdeVar = barKonum !== "ust" && PERDE_KOYULUK > 0 && perdeBandi > 0
+  // MENÜ MODUNDA PERDE YOK (29 Ekim 2026) — kullanıcı: "menü bir kez açılıp kapandıktan sonra
+  // üstteki solma gidiyor, opaklık geliyor; o kısmı boş yapabilsek, perdesiz tam ekran olsa".
+  // Bar ekranda durmadığı için metin ekranın en üstüne kadar akar.
+  const perdeVar = barKonum === "alt" && PERDE_KOYULUK > 0 && perdeBandi > 0
   const [sadeMode, setSadeMode]           = useState(() => localStorage.getItem("vukuf-sade-mod") === "true")
   const [otomatikGizleme, setOtomatikGizleme] = useState(() => localStorage.getItem("vukuf-otomatik-gizleme") === "true")   // varsayılan KAPALI (yeni kullanıcı bar gizlemeden başlar)
   const [gizlemeSuresi, setGizlemeSuresi] = useState(() => parseInt(localStorage.getItem("vukuf-gizleme-suresi") || "5"))

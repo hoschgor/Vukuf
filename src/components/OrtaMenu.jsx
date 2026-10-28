@@ -54,11 +54,14 @@ const PERDE = 0.34
 const DISARI = "button, a, input, textarea, select, label, [role=dialog], [role=button], .okuma-panel, .vukuf-panel, .okuma-bar, .mushaf-bar"
 
 // ── KONUM ────────────────────────────────────────────────────────────────────
+// VARSAYILAN "orta" (29 Ekim 2026 — kullanıcı: "Varsayılanı orta menü seçeneği yapalım").
+// Bayrak hiç yazılmamışsa (yeni kullanıcı) Menü; daha önce Üst/Alt seçilmişse o korunur.
 export function barKonumOku() {
   try {
-    if (localStorage.getItem(ORTA_ANAHTAR) === "1") return "orta"
+    const orta = localStorage.getItem(ORTA_ANAHTAR)
+    if (orta === "1" || orta === null) return "orta"
     return localStorage.getItem(KONUM_ANAHTAR) || "alt"
-  } catch { return "alt" }
+  } catch { return "orta" }
 }
 export function barKonumYaz(k) {
   try {

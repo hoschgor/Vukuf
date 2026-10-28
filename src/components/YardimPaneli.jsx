@@ -262,11 +262,24 @@ const KONULAR = [
     anahtar: "tema renk gece gündüz karanlık",
   },
   {
+    bolum: "kuran", ikon: LayoutGrid, baslik: "Bar konumu ve menü",
+    ozet: "Bar üstte, altta ya da ortada açılan bir menü olarak.",
+    nerede: "Kur'ân-ı Kerîm ve kitaplar → Ayarlar (dişli) → Bar konumu",
+    metin: [
+      "Bar üç biçimde kullanılabilir: Üst, Alt ve Menü. Başlangıçta Menü seçilidir.",
+      "Menü seçiliyken bar ekranda durmaz; metne iki kez dokunulunca (bilgisayarda çift tıklanınca) ekranın ortasında tezhipli bir çerçeve içinde açılır. Başka bir yere dokunulunca ya da bir panel açılınca kendiliğinden kapanır. Tema paneli açıldığında menü açık kalır, böylece yeni tema menüde de görülebilir.",
+      "Bazı telefonlarda metin seçilince altta tarayıcının arama çubuğu çıkıp alttaki barı örtebiliyor; Menü bu durumda da rahat kullanılabilsin diye ortada açılır.",
+      "Bir bölüm seçiliyken iki kez dokunulursa seçim korunur: menünün başında \"Seçili\" olarak görünür ve görsel oluşturma gibi işlerde kullanılır. Yanındaki × ile bırakılabilir.",
+      "Menü seçiliyken \"Altta bilgi şeridi\" anahtarıyla sayfa, kısım, okuma süresi gibi bilgiler ekranın altında yarı saydam bir şeritte gösterilebilir. Şeritte hangi bilgilerin yer alacağı, bar öğelerinin açık/kapalı ayarına göre belirlenir.",
+    ],
+    anahtar: "bar konum üst alt orta menü çift dokun iki kez tezhip bilgi şeridi google arama çubuğu seçim",
+  },
+  {
     bolum: "kuran", ikon: Settings, baslik: "Barın ayarları",
     ozet: "Konum, gizlenme, boyut ve hangi öğelerin görüneceği.",
     nerede: "Kur'ân-ı Kerîm → bardaki dişli simgesi",
     metin: [
-      "Barın üstte mi altta mı duracağı, kaydırırken kendiliğinden gizlenip gizlenmeyeceği ve arayüz boyutu buradan seçilebilir.",
+      "Barın üstte mi, altta mı yoksa ortada açılan bir menü olarak mı duracağı (bkz. \"Bar konumu ve menü\"), kaydırırken kendiliğinden gizlenip gizlenmeyeceği ve arayüz boyutu buradan seçilebilir.",
       "Görüntüleme bölümünde bardaki öğeler tek tek açılıp kapatılabilir. \"Bardaki görünüm tipi\" ile öğelerin sırası ve sağa ya da sola yaslanması da düzenlenebilir.",
     ],
     anahtar: "bar üst alt gizle boyut sırala görünüm ayar",
@@ -494,7 +507,7 @@ const KONULAR = [
     ozet: "Yazı tipi, boyut ve aralıklar.",
     nerede: "Kitap → Ayarlar (dişli)",
     metin: [
-      "Yazı tipi, boyutu, satır, harf ve kelime aralıkları ile bar konumu, arayüz ve bilgi penceresi boyutu ayarlardan değiştirilebilir. Görüntüle bölümünden bardaki öğeler gizlenebilir; sade modda gizlenecekler de ayrıca seçilebilir.",
+      "Yazı tipi, boyutu, satır, harf ve kelime aralıkları ile bar konumu (Üst, Alt ya da Menü), arayüz ve bilgi penceresi boyutu ayarlardan değiştirilebilir. Görüntüle bölümünden bardaki öğeler gizlenebilir; sade modda gizlenecekler de ayrıca seçilebilir.",
     ],
     anahtar: "font yazı boyut aralık satır harf kelime bar",
   },

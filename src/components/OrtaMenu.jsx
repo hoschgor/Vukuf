@@ -35,6 +35,38 @@ import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from
 import { hexHsl, hsl } from "./rafGorselleri"
 import IosSwitch from "./IosSwitch"
 
+// ── iOS ÜST ŞERİDİ KORUMASI (29 Ekim 2026) ─────────────────────────────────
+// Kullanıcı (iPhone): "Perde renge göre olmuş ama tema değişince çok kötü görünüyor;
+// eskiden perdesiz gibi kullanabiliyordum." SEBEP (araştırma): iOS 26 Safari ve ana
+// ekran uygulaması saat şeridinin rengini SAYFADAN ÖRNEKLİYOR: üst kenarın 4 px
+// içinde, yatay ortadaki noktada duran, genişliği ekranın %90'ından fazla olan
+// position: fixed / sticky bir öğe varsa onun arka planını alıp şeridi OPAK boyuyor
+// (saydam ya da yarı saydamsa sayfa rengiyle karıştırıp yine opak). Hiç böyle öğe
+// yoksa sistemin yumuşak cam bulanıklığı kalıyor — kullanıcının "perdesiz" dediği hâl.
+// Örnekleme de her değişimde tazelenmiyor: tema değişince şerit ESKİ renkte kalıyor.
+// Bizde bu öğeler, panellerin/pencerelerin ekranı kaplayan SAYDAM "dışarı dokununca
+// kapat" katmanları ve karartma perdeleri (position: fixed; inset: 0). Panel/menü bir
+// kez açılınca şerit onların rengine kilitleniyordu.
+// ÇÖZÜM: yalnız iOS'ta, ekranı kaplayan sabit katmanlardan SAYDAM olanlar ve SİYAH
+// karartmalar üst kenardan 6 px aşağıdan başlatılır → örnekleme noktasına hiç
+// değmezler, şerit cam bulanıklığında kalır. Dolu zeminli tam ekran paneller
+// (izleme modu vb.) etkilenmez. Satır içi stile CSS'teki !important üstün gelir;
+// React'in yazdığı stil özniteliği seçiciyle yakalanır (inset kısaltması bazı
+// tarayıcılarda dört kenar olarak yazıldığı için iki biçim de aranır).
+const IOS_SERIT_CSS = `@supports (-webkit-touch-callout: none) {
+  [style*="position: fixed"]:is([style*="inset: 0px"], [style*="top: 0px"][style*="bottom: 0px"][style*="left: 0px"]):is(:not([style*="background"]), [style*="background: rgba(0, 0, 0"], [style*="background-color: rgba(0, 0, 0"]) {
+    top: 6px !important;
+  }
+}`
+export function iosUstSeritKorumasiKur() {
+  if (typeof document === "undefined" || document.getElementById("vukuf-ios-serit")) return
+  const st = document.createElement("style")
+  st.id = "vukuf-ios-serit"
+  st.textContent = IOS_SERIT_CSS
+  document.head.appendChild(st)
+}
+iosUstSeritKorumasiKur()
+
 export const ORTA_ANAHTAR = "vukuf-bar-orta"
 export const ORTA_BILGI_ANAHTAR = "vukuf-orta-bilgi"
 const KONUM_ANAHTAR = "vukuf-bar-konum"

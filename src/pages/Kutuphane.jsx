@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from "react"
+import { useState, useEffect, useLayoutEffect, useRef, useMemo } from "react"
 import { useMediaQuery } from "../data/hooks/useMediaQuery"
 import { useApp } from "../AppContext"
 import { Link, useNavigate } from "react-router-dom"
@@ -1457,6 +1457,56 @@ function DinamikRaf({ kitaplar: liste, rafId, theme, alimId, kitapSiralama }) {
   )
 }
 
+// ── YATAY KİTAP IZGARASI (30 Ekim 2026) ─────────────────────────────────────
+// Kullanıcı: "Kitaplıkta dinamik mod olmadan kitaplar çok fazla ise aşağı doğru uzuyor;
+// yana doğru uzamalı, 2 ya da 3'er satır olarak ilerlemeli:  1 3 5 7 9 / 2 4 6 8 10."
+// Kitaplar 2 satıra sığıyorsa düzen ESKİSİ GİBİ (sarmalı). Sığmıyorsa sütun sütun
+// dizilir (1-2 üst üste, 3-4 yanında…) ve raf YANA kaydırılır; çok kalabalık rafta
+// (3 satırı da aşıyorsa) 3 satır kullanılır. Satır başına kaç kitap sığdığı ilk
+// kartın genişliğinden ölçülür, ekran dönünce yeniden hesaplanır.
+// Düzenleme modunda kullanılmaz (sürükle-bırak sarmalı düzende çalışıyor).
+function KitapIzgarasi({ sayi, padding, children }) {
+  const ref = useRef(null)
+  const [satir, setSatir] = useState(0)          // 0 = sarmalı (eski düzen), 2 | 3 = yatay
+  const BOSLUK = 12
+  useLayoutEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const olc = () => {
+      const ilk = el.firstElementChild
+      if (!ilk) return
+      const cs = getComputedStyle(el)
+      const ic = el.clientWidth - parseFloat(cs.paddingLeft || 0) - parseFloat(cs.paddingRight || 0)
+      const kart = ilk.offsetWidth || 80
+      const sigan = Math.max(1, Math.floor((ic + BOSLUK) / (kart + BOSLUK)))
+      const yeni = sayi <= sigan * 2 ? 0 : (sayi > sigan * 3 ? 3 : 2)
+      setSatir(o => (o === yeni ? o : yeni))
+    }
+    olc()
+    let ro
+    try { ro = new ResizeObserver(olc); ro.observe(el) } catch { ro = null }
+    return () => { try { ro && ro.disconnect() } catch { /* yoksay */ } }
+  }, [sayi])
+  return (
+    <div ref={ref} style={satir ? {
+      display: "grid", gridAutoFlow: "column",
+      gridTemplateRows: `repeat(${satir}, auto)`, gridAutoColumns: "max-content",
+      columnGap: `${BOSLUK}px`, rowGap: `${BOSLUK}px`, alignItems: "start",
+      overflowX: "auto", overflowY: "hidden", overscrollBehaviorX: "contain",
+      WebkitOverflowScrolling: "touch", scrollSnapType: "x proximity", scrollPaddingLeft: "16px",
+      scrollbarWidth: "thin", padding: `${padding} 16px 10px`,
+    } : {
+      display: "flex", gap: `${BOSLUK}px`, flexWrap: "wrap", padding: `${padding} 16px 4px`,
+    }}>
+      {satir
+        ? Array.isArray(children)
+          ? children.map((c, i) => <div key={c?.key ?? i} style={{ scrollSnapAlign: "start" }}>{c}</div>)
+          : children
+        : children}
+    </div>
+  )
+}
+
 // Özel/otomatik raflarda kitap satırı (DnD yok; dinamikse coverflow, değilse grid)
 function RafSatiri({ kitaplar: liste, rafId, theme, dinamikMod, alimId, duzenlemeMode, onKitapSil }) {
   if (!liste || !liste.length) {
@@ -1465,17 +1515,19 @@ function RafSatiri({ kitaplar: liste, rafId, theme, dinamikMod, alimId, duzenlem
   if (dinamikMod && !duzenlemeMode) {
     return <DinamikRaf kitaplar={liste} rafId={rafId} theme={theme} alimId={alimId} kitapSiralama={null} />
   }
+  const kartlar = liste.map(k => (
+    <KitapKart
+      key={k.id}
+      kitap={k}
+      theme={theme}
+      alimId={alimId}
+      onSil={duzenlemeMode && onKitapSil ? () => onKitapSil(k.id) : undefined}
+    />
+  ))
+  if (!duzenlemeMode) return <KitapIzgarasi sayi={liste.length} padding="16px">{kartlar}</KitapIzgarasi>
   return (
     <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", padding: "16px 16px 4px" }}>
-      {liste.map(k => (
-        <KitapKart
-          key={k.id}
-          kitap={k}
-          theme={theme}
-          alimId={alimId}
-          onSil={duzenlemeMode && onKitapSil ? () => onKitapSil(k.id) : undefined}
-        />
-      ))}
+      {kartlar}
     </div>
   )
 }
@@ -1511,6 +1563,21 @@ function KitapRafi({ kitaplar: liste, rafId, duzenlemeMode, theme, sensors, kita
         return yeni
       })
     }
+  }
+
+  // Düzenleme kapalıyken sürükle-bırak yok: kalabalık rafta yatay ızgara
+  if (!duzenlemeMode) {
+    return (
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <SortableContext items={sirali.map(k => k.id)} strategy={horizontalListSortingStrategy}>
+          <KitapIzgarasi sayi={sirali.length} padding="20px">
+            {sirali.map(kitap => (
+              <SortableKitap key={kitap.id} kitap={kitap} duzenlemeMode={false} theme={theme} alimId={alimId} />
+            ))}
+          </KitapIzgarasi>
+        </SortableContext>
+      </DndContext>
+    )
   }
 
   return (

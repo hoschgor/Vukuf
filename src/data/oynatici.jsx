@@ -22,7 +22,51 @@ const OynaticiBaglami = createContext(null)
 
 export function OynaticiSaglayici({ children }) {
   const player = useAudioPlayer()
-  return <OynaticiBaglami.Provider value={player}>{children}</OynaticiBaglami.Provider>
+  const uyku = useUykuDurumu(player)
+  return (
+    <OynaticiBaglami.Provider value={player}>
+      <UykuBaglami.Provider value={uyku}>{children}</UykuBaglami.Provider>
+    </OynaticiBaglami.Provider>
+  )
+}
+
+/* ── OTOMATİK DURDURMA (uyku zamanlayıcısı) — 3 Kasım 2026 ─────────────────
+   Kullanıcı: "Otomatik durdurma: kullanıcı belli bir süre seçip o süre sonunda
+   oynatıcı sonlansın." Zamanlayıcı UYGULAMA KÖKÜNDE (oynatıcının yanında) tutulur:
+   Kur'ân ekranından çıkılıp devamlı oynatmayla dinlenirken de çalışır.
+   Telefonda sayfa arka plandayken JS sayaçları gecikebildiği için süre ayrıca her
+   âyet değişiminde ve uygulamaya dönüldüğünde de denetlenir. Oynatıcı kapanınca
+   (elle ya da kendiliğinden) zamanlayıcı da iptal edilir. */
+export const UYKU_SURELERI = [0, 5, 10, 15, 30, 45, 60, 90]   // dk; 0 = kapalı
+const UykuBaglami = createContext({ dk: 0, bitis: null, kur: () => {} })
+export function useOtomatikDurdurma() { return useContext(UykuBaglami) }
+
+function useUykuDurumu(player) {
+  const [uyku, setUyku] = useState(null)          // { dk, bitis } | null
+  const [, setTik] = useState(0)
+  const durdur = player?.durdur
+  const doldu = () => uyku && Date.now() >= uyku.bitis
+  // Süre dolunca durdur; kalan süre gösterimi için 20 sn'de bir tazele
+  useEffect(() => {
+    if (!uyku) return
+    const t = setTimeout(() => { try { durdur && durdur() } catch { /* yoksay */ } setUyku(null) }, Math.max(0, uyku.bitis - Date.now()))
+    const iv = setInterval(() => setTik(n => n + 1), 20000)
+    const gorunur = () => { if (document.visibilityState === "visible" && Date.now() >= uyku.bitis) { try { durdur && durdur() } catch { /* yoksay */ } setUyku(null) } }
+    document.addEventListener("visibilitychange", gorunur)
+    return () => { clearTimeout(t); clearInterval(iv); document.removeEventListener("visibilitychange", gorunur) }
+  }, [uyku, durdur])
+  // Âyet değişiminde de denetle (arka planda sayaç gecikirse)
+  useEffect(() => {
+    if (doldu()) { try { durdur && durdur() } catch { /* yoksay */ } setUyku(null) }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [player?.aktifAyet])
+  // Oynatıcı kapanınca zamanlayıcı da biter
+  useEffect(() => { if (player?.durum === "kapali" && uyku) setUyku(null) }, [player?.durum, uyku])
+  return {
+    dk: uyku ? uyku.dk : 0,
+    bitis: uyku ? uyku.bitis : null,
+    kur: (dk) => setUyku(dk ? { dk, bitis: Date.now() + dk * 60000 } : null),
+  }
 }
 
 export function useOynatici() {

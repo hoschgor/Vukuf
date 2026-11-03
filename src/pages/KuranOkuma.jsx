@@ -27,7 +27,7 @@ import KariSecici from "../components/KariSecici"
 import KelimePopup from "../components/KelimePopup"
 import YuklemeEkrani from "../components/YuklemeEkrani"
 import IosSwitch from "../components/IosSwitch"
-import { useOrtaMenu, useOrtaBilgi, OrtaMenuCercevesi, OrtaIpucu, BilgiSeridi, BarKonumSecici, barKonumOku, barKonumYaz, ORTA_OLCEK } from "../components/OrtaMenu"
+import { useOrtaMenu, useOrtaBilgi, OrtaMenuCercevesi, OrtaIpucu, BilgiSeridi, BarKonumSecici, barKonumOku, barKonumYaz, ORTA_OLCEK, barEtiketle } from "../components/OrtaMenu"
 import PanelAyirac, { PanelAcilir, panelBolumeHizala } from "../components/PanelAyirac"
 import GeriIkonu from "../components/GeriIkonu"
 import TemaSecici from "../components/TemaSecici"
@@ -310,6 +310,7 @@ const SADE_OGELERI = [
   { key: "gorsel",      label: "Görsel / Video" },
   { key: "paylas",      label: "Paylaş" },
   { key: "hifz",        label: "Hıfz Modu" },
+  { key: "sadeMod",     label: "Sade Mod Düğmesi" },   // 3 Kasım 2026
 ]
 
 // Alt bardaki SIRALANABİLİR butonlar (varsayılan sıra). Geri tuşu ve sağdaki
@@ -1383,10 +1384,16 @@ export default function KuranOkuma({ kitap }) {
     localStorage.setItem("vukuf-buton-taraf", JSON.stringify(tarafTaslak))
     setSiraAcik(false)
   }   // döngü/tekrar barda görünsün mü (sade modda da geçerli)
-  // Sade modda GİZLENECEK öğeler (true = gizli). Varsayılan: yazı tipi + oto. oynatma + okuma zamanı.
+  // Sade modda GİZLENECEK öğeler (true = gizli). 3 Kasım 2026 (kullanıcı): sade modda
+  // başlangıçta düğmelerden yalnız Geri, Sûre menüsü, Yazı tipi, Otomatik kaydırma ve Ayarlar;
+  // bilgilerden yalnız OKUMA ZAMANI ve HİZB gizli (sayfa, sûre, cüz görünür). Gerisi Ayarlar →
+  // Sade mod içeriklerinden açılabilir. Kayıtlı tercihi olanlarda değişmez; Ayarlar → Okuma
+  // ekranı'ndan mod yeniden seçilince bu varsayılanlara dönülür.
   const [sadeGizli, setSadeGizli] = useState(() => {
     try { const v = JSON.parse(localStorage.getItem("vukuf-kuran-sade-gizli") || "null"); if (v && typeof v === "object") return v } catch {}
-    return { yaziTipi: true, otoOynat: true, okumaZamani: true }
+    const d = {}
+    SADE_OGELERI.forEach(o => { if (!["sureMenu", "yaziTipi", "otoOynat", "sayfaGit", "sureBilgisi", "cuzBilgisi"].includes(o.key)) d[o.key] = true })
+    return d
   })
   const [sadeIcerikAcik, setSadeIcerikAcik] = useState(false)   // "Sade Mod İçerikleri" bölümü açık mı
   const [gorunumAcik, setGorunumAcik] = useState(false)
@@ -1811,11 +1818,14 @@ const cokSatir = wrapAktif && barYuksekligi > tekSatirYuksekligi * 1.0
   // ── MENÜ GİBİ BAR ("orta") ─────────────────────────────────────────────────
   const ortaMenu = useOrtaMenu({
     aktif: ortaBar,
-    // Bir panel açıkken çift dokunma menüyü açmaz
+    // Bir panel açıkken dokunma menüyü açmaz
     engelli: () => ayarlarAcik || aaAcik || temaAcik || ozelTemaPanelAcik || sayfaGitAcik || menuAcik
-      || kayitPaneliAcik || donguAyarAcik || bilgiAcik || !!gorselVeri || kayitKonumModu || izlemeModu || kariSecAcik,
+      || kayitPaneliAcik || donguAyarAcik || bilgiAcik || !!gorselVeri || kayitKonumModu || izlemeModu || kariSecAcik
+      // tek dokunma: açık kelime/âyet penceresi varken dokunuş onu kapatır, menüyü açmaz
+      || popup !== null,
     // Kelime/âyet penceresinin İÇİ sayılmaz (saydam perdesi sayılır): pencere z-index 300
     haric: (el) => {
+      if (el?.closest?.(".meal-pencere")) return true          // meal penceresinin içi
       for (let n = el; n && n !== document.body; n = n.parentElement) {
         const cs = window.getComputedStyle(n)
         if (cs.position === "fixed" && cs.zIndex === "300") return true
@@ -4187,6 +4197,8 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
               ? <ChevronDown size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />
               : <ChevronRight size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />}
           </button>
+          {/* Sade modun kendisi — bar düğmesi sade modda gizli olabileceği için burada da */}
+          <AyarToggle etiket="Sade mod" aktif={sadeMode} onToggle={() => setSadeMode(!sadeMode)} {...{theme, isMobile, barUiOlcegi}} />
           {sadeIcerikAcik && (
             <div style={{ marginTop: "10px" }}>
               <div style={{ fontSize: `${Math.round((isMobile ? 9 : 10) * barUiOlcegi)}px`, color: theme.textSecondary, opacity: .7, marginBottom: "6px", paddingLeft: "2px" }}>Sade modda görünecek öğeler</div>
@@ -4235,7 +4247,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
         <div className="yp-tam" style={{ position: "relative", zIndex: 300 }}>
           <KariSecici
             kariId={player.kariId}
-            setKariId={player.setKariId}
+            setKariId={player.kariDegistir || player.setKariId}
             theme={theme}
             barKonum={barKonum}
             barUiOlcegi={barUiOlcegi}
@@ -4492,7 +4504,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
       </>
     )}
 
-      {sadeModGoster && (
+      {sadeModGoster && sadeGorunur("sadeMod") && (
         <button onClick={() => setSadeMode(!sadeMode)} style={{ ...barButonStil(sadeMode), padding: isMobile ? "3px" : "4px", ...barOge("sadeMod") }}
             title="Sade mod">
           <Circle size={Math.round((isMobile ? 18 : 21) * barOlcegi)} />
@@ -4591,12 +4603,17 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
   // MENÜ GİBİ BAR — perde + tezhipli, dallı çerçeve; içinde Bar (components/OrtaMenu.jsx)
   const OrtaMenu = ortaBar && (
     <OrtaMenuCercevesi menu={ortaMenu} theme={theme} olcek={barUiOlcegi} etiket="Mushaf menüsü">
-      {Bar}
+      {barEtiketle(Bar, new Map(Object.entries({
+        geri: "Geri", sureMenu: "Menü", kayit: "Kayıt", sayfaGit: "Sayfa", tekrar: "Tekrar", bilgi: "İşaretler",
+        gorsel: "Görsel", paylas: "Paylaş", hifz: "Hıfz", yaziTipi: "Yazı", otoOynat: "Kaydır",
+        sadeMod: "Sade", tema: "Tema", ayarlar: "Ayarlar",
+      }).map(([k, ad]) => [barOge(k).order, ad])), { theme, olcek: barOlcegi })}
     </OrtaMenuCercevesi>
   )
   // Alt bilgi şeridi — içerik bar öğelerinin açık/kapalı ayarından; oynatıcı açıksa onun üstünde
   const seritCuz = cuzBilgisiGoster && sadeGorunur("cuzBilgisi")
   const seritHizb = hizbBilgisiGoster && sadeGorunur("hizbBilgisi")
+  // Oynatıcı açıkken şerit gizlenmez; oynatıcının üst kenarına yapışık sekme olur (BilgiSeridi)
   const BilgiSeridiOgesi = ortaSerit && (
     <BilgiSeridi theme={theme} olcek={barUiOlcegi} onYukseklik={setSeritYuk}
       altPay={player.durum !== "kapali" ? playerBarYuksekligi : 0}

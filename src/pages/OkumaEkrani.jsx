@@ -29,7 +29,7 @@ import { DuzenleDugmesi, KayitSatiri, YerineKoySorusu } from "../components/Kayi
 import SayfaFarkiBildirimi, { sayfaFarkiOlustur } from "../components/SayfaFarkiBildirimi"
 import YuklemeEkrani from "../components/YuklemeEkrani"
 import IosSwitch from "../components/IosSwitch"
-import { useOrtaMenu, useOrtaBilgi, OrtaMenuCercevesi, OrtaIpucu, BilgiSeridi, BarKonumSecici, barKonumOku, barKonumYaz, ORTA_OLCEK } from "../components/OrtaMenu"
+import { useOrtaMenu, useOrtaBilgi, OrtaMenuCercevesi, OrtaIpucu, BilgiSeridi, BarKonumSecici, barKonumOku, barKonumYaz, ORTA_OLCEK, barEtiketle } from "../components/OrtaMenu"
 import DonusDugmesi, { KopruDugmesi, hapKonumlariniSifirla } from "../components/DonusDugmesi"
 import { History as GecmisIkon } from "lucide-react"
 import { useOkumaGecmisi, OKUMA_HEDEF_ANAHTAR } from "../data/gecmis"
@@ -118,23 +118,28 @@ const VURGU_RENKLERI = [
 ]
 
 // Bar'da gösterilip gizlenebilen öğeler (Geri ve Ayarlar hariç)
+// sadeVarsayilan: true = sade modda GİZLİ. 3 Kasım 2026 (kullanıcı): sade modda başlangıçta
+// düğmelerden yalnız Geri, İçerik menüsü, Yazı tipi, Otomatik kaydırma ve Ayarlar görünsün;
+// bilgilerden yalnız OKUMA SÜRESİ gizlensin (sayfa ve kısım bilgisi görünür). Gerisi
+// Ayarlar → Sade mod içeriklerinden açılabilir. (Kayıtlı tercihi olanlarda değişmez;
+// Ayarlar → Okuma ekranı'ndan mod yeniden seçilince bu varsayılanlara dönülür.)
 const BAR_OGELERI = [
   { key: "menu",  label: "İçindekiler",       sadeVarsayilan: false },
   { key: "sayfa", label: "Sayfa Bilgisi",     sadeVarsayilan: false },
   { key: "lugat", label: "Lügat",             sadeVarsayilan: true },
   { key: "lugatAra", label: "Lügat Araması",  sadeVarsayilan: true },   // 17 Ekim 2026
-  { key: "yazi",  label: "Yazı Tipi (Aa)",    sadeVarsayilan: true },
+  { key: "yazi",  label: "Yazı Tipi (Aa)",    sadeVarsayilan: false },
   { key: "vurgu", label: "Vurgulama",         sadeVarsayilan: true },
   { key: "kayit", label: "Kayıtlar",          sadeVarsayilan: true },
   { key: "arama", label: "Arama",             sadeVarsayilan: true },
-  { key: "oto",   label: "Otomatik Kaydırma", sadeVarsayilan: true },
+  { key: "oto",   label: "Otomatik Kaydırma", sadeVarsayilan: false },
   { key: "gorsel", label: "Görsel / Video",   sadeVarsayilan: true },
   { key: "sesli", label: "Sesli Okuma",       sadeVarsayilan: true },
   { key: "paylas", label: "Paylaş",           sadeVarsayilan: true },   // 18 Ekim 2026
   { key: "sure",  label: "Okuma Süresi",      sadeVarsayilan: true },
-  { key: "kisim", label: "Kısım Bilgisi",     sadeVarsayilan: true },
-  { key: "sade",  label: "Sade Mod",          sadeVarsayilan: false },
-  { key: "tema",  label: "Tema",              sadeVarsayilan: false },
+  { key: "kisim", label: "Kısım Bilgisi",     sadeVarsayilan: false },
+  { key: "sade",  label: "Sade Mod",          sadeVarsayilan: true },
+  { key: "tema",  label: "Tema",              sadeVarsayilan: true },
 ]
 
 // Alt bardaki SIRALANABİLİR öğeler: sıra + sol/sağ yaslama (BarSiraPaneli ile düzenlenir).
@@ -1622,8 +1627,9 @@ useEffect(() => { barGoster() }, [])
 const ortaMenu = useOrtaMenu({
   aktif: ortaBar,
   // Bir panel / pencere açıkken çift dokunma menüyü açmaz
-  engelli: () => herhangiPanelAcik || lugatAramaAcik || !!gorselVeri || !!paylasVeri || paylasSecim || kayitKonumModu,
-  // Lügat penceresinin İÇİNE dokunmak sayılmaz (perdesine dokunmak sayılır)
+  // Bir pencere (lügat, dipnot) açıkken dokunuş onu kapatır, menüyü açmaz (tek dokunma)
+  engelli: () => herhangiPanelAcik || lugatAramaAcik || !!gorselVeri || !!paylasVeri || paylasSecim || kayitKonumModu
+    || !!popup || !!dipnotPopup || vurguModu,
   haric: (el) => !!(popupRef.current && popupRef.current.contains(el)),
   secimKapsami: "[data-satir]",
   metinAl: secimMetni,
@@ -3496,6 +3502,8 @@ const AyarlarPanel = ayarlarAcik && (
           <span>SADE MOD İÇERİKLERİ</span>
           {sadeIcerikAcik ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
         </button>
+        {/* Sade modun kendisi — bar düğmesi sade modda gizli olabileceği için burada da */}
+        <AyarToggle etiket="Sade mod" theme={theme} aktif={sadeMode} onToggle={() => setSadeMode(!sadeMode)} />
         {sadeIcerikAcik && (
           <div style={{ marginTop: "8px" }}>
             {/* Düz mantık: anahtar AÇIK = öğe sade modda GÖSTERİLİR. ogeSade[key]=true "gizli"
@@ -4233,16 +4241,26 @@ const Bar = (
 // ════════════════════════════════════════════════════════════════
 
 // MENÜ GİBİ BAR — perde + tezhipli, dallı çerçeve (components/OrtaMenu.jsx). Bar içinde.
+// Menüde düğmelerin altında kısa adlar
+const BAR_KISA_ADLAR = {
+  geri: "Geri", menu: "Menü", sayfa: "Sayfa", lugat: "Lügat", lugatAra: "Sözlük", yazi: "Yazı",
+  vurgu: "Vurgu", kayit: "Kayıtlar", arama: "Ara", gorsel: "Görsel", sesli: "Dinle", paylas: "Paylaş",
+  oto: "Kaydır", sade: "Sade", tema: "Tema", ayarlar: "Ayarlar",
+}
 const OrtaMenu = ortaBar && (
   <OrtaMenuCercevesi menu={ortaMenu} theme={theme} olcek={barUiOlcegi}>
-    {Bar}
+    {barEtiketle(Bar, new Map(Object.entries(BAR_KISA_ADLAR).map(([k, ad]) => [barOge(k).order, ad])), { theme, olcek: barOlcegi })}
   </OrtaMenuCercevesi>
 )
 // Alt bilgi şeridi — içerik bar öğelerinin açık/kapalı ayarından
+// Sesli okuma açıkken de şerit durur; sesli okuma denetimi şeridin üstüne yerleşir (altPay)
 const BilgiSeridiOgesi = ortaSerit && (
   <BilgiSeridi theme={theme} olcek={barUiOlcegi} onYukseklik={setSeritYuk} ogeler={[
     gorunurMu("kisim") && mevcutKisim ? (
-      <span style={{ overflow: "hidden", textOverflow: "ellipsis", maxWidth: isMobile ? "46vw" : "360px" }}>
+      // Dokununca kısmın açıklaması açılır (bardaki kısım bilgisiyle aynı)
+      <span role="button" title="Kısım bilgisi"
+        onClick={(e) => { e.stopPropagation(); const yol = mevcutKisimYolu.map(b => b.baslik).join(" / "); dipnotTikla(mevcutKisim.aciklama || yol, e, yol) }}
+        style={{ overflow: "hidden", textOverflow: "ellipsis", maxWidth: isMobile ? "46vw" : "360px", pointerEvents: "auto", cursor: "pointer", textDecoration: "underline dotted", textUnderlineOffset: "3px" }}>
         {mevcutKisimYolu.map(b => b.baslik).join(" / ")}
       </span>
     ) : null,

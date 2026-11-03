@@ -40,6 +40,7 @@ import { Library, BookOpen, ListChecks, ChevronDown, ChevronLeft, X } from "luci
 import { kategoriler as TUM_KATEGORILER } from "../data/kitaplar"
 import { rafPaleti, rafResmiBul } from "./rafGorselleri"
 import DalSusu from "./DalSusu"
+import TemaSecici from "./TemaSecici"
 
 export const MOD_ANAHTAR = "vukuf-kitaplik-modu"
 export const SECIM_ANAHTAR = "vukuf-kitaplik-secim"
@@ -568,24 +569,88 @@ const KOSELER = [
 /* ── MOD PENCERESİ ─────────────────────────────────────────────────────────────
    ilk: true → ilk açılış karşılaması (kapatma düğmesi yok; seçim yapılınca kapanır).
    adim: "mod" | "secim" — "Seçilen eserler"de ikinci adım raf/âlim seçimi. */
+/* ── İLK AÇILIŞ: OKUMA MODU + TEMA (3 Kasım 2026) ──────────────────────────────
+   Kullanıcı: "İlk açılışta raf seçimi altında mod seçimi de olsun; sade mod bardaki
+   öğeleri başlangıçta gizlesin, kullanıcı isterse tabii ki tekrar açabilsin.
+   Sonrasında tema seçimi yaptırsın ve temanın daha sonra Ayarlar bölümünden
+   değiştirilebileceği bilgisini iletsin." Sade modda başlangıçta görünenler: Geri,
+   İçerik menüsü (sûre menüsü / içindekiler), Yazı tipi, Otomatik kaydırma, Ayarlar
+   (varsayılanlar OkumaEkrani BAR_OGELERI ve KuranOkuma sadeGizli'de).
+   Okuma ekranı "vukuf-sade-mode", mushaf "vukuf-sade-mod" anahtarını okuyor; ikisi
+   de yazılır. */
+const OKUMA_MODLARI = [
+  { id: "sade", ad: "Sade", aciklama: "Barda temel öğeler: içerik menüsü, yazı tipi, otomatik kaydırma, ayarlar ve sayfa bilgisi. Diğerleri Ayarlar'dan açılabilir." },
+  { id: "tam",  ad: "Tam",  aciklama: "Bütün öğeler barda görünür (lügat, arama, kayıtlar, görsel, paylaş…)." },
+]
+/* Seçilen mod "sıfırdan" uygulanır (3 Kasım 2026 — kullanıcı: "Başlangıçtaki mod da
+   ayarlar kısmından değiştirilebilsin, değiştirildiğinde sıfırdan (seçtiğimiz şekilde)
+   başlasın"): sade mod bayrağı iki ekrana yazılır, sade modda gizlenecekler listesi de
+   silinir → ekranlar açılınca varsayılan sade düzenine döner. */
+export function okumaModuOku() {
+  try { return localStorage.getItem("vukuf-sade-mode") === "true" ? "sade" : "tam" } catch { return "tam" }
+}
+export function okumaModuYaz(okuma) {
+  const v = okuma === "sade" ? "true" : "false"
+  try {
+    localStorage.setItem("vukuf-sade-mode", v); localStorage.setItem("vukuf-sade-mod", v)
+    localStorage.removeItem("vukuf-bar-sade"); localStorage.removeItem("vukuf-kuran-sade-gizli")
+  } catch { /* yoksay */ }
+}
+export function OkumaModuSecici({ theme, deger, onSec }) {
+  const p = rafPaleti(theme)
+  const ac = theme.accent
+  return (
+    <div style={{ padding: "4px 8px 6px" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "8px", margin: "6px 2px 10px" }}>
+        <span style={{ flex: 1, height: "1px", background: `${p.gold}66` }} />
+        <span style={{ fontSize: "11px", letterSpacing: "0.14em", color: theme.textSecondary, fontWeight: 600 }}>OKUMA EKRANI</span>
+        <span style={{ flex: 1, height: "1px", background: `${p.gold}66` }} />
+      </div>
+      <div role="radiogroup" style={{ display: "flex", gap: "8px" }}>
+        {OKUMA_MODLARI.map(m => {
+          const sec = deger === m.id
+          return (
+            <button key={m.id} role="radio" aria-checked={sec} onClick={() => onSec(m.id)} style={{
+              flex: 1, textAlign: "left", padding: "10px 11px", borderRadius: "12px", cursor: "pointer", fontFamily: "inherit",
+              background: sec ? `${ac}14` : theme.surface, color: theme.text,
+              border: `1px solid ${sec ? p.gold : `${ac}33`}`,
+              boxShadow: sec ? `inset 0 0 0 2px ${theme.surface}, inset 0 0 0 3px ${p.gold}99` : "none",
+            }}>
+              <span style={{ display: "flex", alignItems: "center", gap: "6px", fontFamily: "PlayfairDisplay, serif", fontSize: "15px", fontWeight: 700, color: sec ? ac : theme.text }}>
+                <span aria-hidden="true" style={{ width: "12px", height: "12px", borderRadius: "50%", border: `1.5px solid ${sec ? ac : theme.border}`, background: sec ? ac : "transparent", boxShadow: sec ? `inset 0 0 0 2px ${theme.surface}` : "none", flexShrink: 0 }} />
+                {m.ad}{m.id === "sade" && <span style={{ fontFamily: "inherit", fontSize: "10.5px", fontWeight: 600, color: theme.textSecondary }}>· önerilen</span>}
+              </span>
+              <span style={{ display: "block", fontSize: "11.5px", color: theme.textSecondary, lineHeight: 1.45, marginTop: "4px" }}>{m.aciklama}</span>
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 export function ModPenceresi({ theme, ilk = false, baslangicAdim = "mod", kapat }) {
   const p = rafPaleti(theme)
   const ac = theme.accent
   const [mod, setMod] = useState(() => modOku() || "tum")
   const [secim, setSecim] = useState(secimOku)
   const [adim, setAdim] = useState(baslangicAdim)
+  const [okuma, setOkuma] = useState("sade")
   const { raf, alim } = useMemo(() => secimSayilari(secim), [secim])
   const bosSecim = raf === 0 && alim === 0
 
   const bitir = () => {
     if (mod === "secili") secimYaz(secim)
     modYaz(mod)
+    if (ilk) okumaModuYaz(okuma)
     kapat?.()
   }
   const devam = () => {
     if (adim === "mod" && mod === "secili") { setAdim("secim"); return }
+    if (ilk && adim !== "tema") { setAdim("tema"); return }
     bitir()
   }
+  const geri = () => setAdim(adim === "tema" && mod === "secili" ? "secim" : "mod")
   const dugme = (birincil, pasif) => ({
     flex: birincil ? 2 : 1, padding: "11px", borderRadius: "6px", fontFamily: "inherit",
     fontSize: "13px", fontWeight: 700, letterSpacing: "0.1em", cursor: pasif ? "default" : "pointer",
@@ -598,7 +663,7 @@ export function ModPenceresi({ theme, ilk = false, baslangicAdim = "mod", kapat 
     width: "30px", height: "30px", borderRadius: "50%", border: "none", background: "transparent",
     color: "#f3e6c8", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
   }
-  const baslik = adim === "secim" ? "Raf ve Âlim Seçimi" : ilk ? "Vukuf'a Hoş Geldiniz" : "Kitaplık Modu"
+  const baslik = adim === "tema" ? "Tema Seçimi" : adim === "secim" ? "Raf ve Âlim Seçimi" : ilk ? "Vukuf'a Hoş Geldiniz" : "Kitaplık Modu"
 
   return (
     <>
@@ -627,8 +692,8 @@ export function ModPenceresi({ theme, ilk = false, baslangicAdim = "mod", kapat 
             <path d="M12 26 L30 7 H370 L388 26 L370 45 H30 Z" fill="none" stroke={p.gold} strokeOpacity="0.55" strokeWidth="0.8" vectorEffect="non-scaling-stroke" />
           </svg>
           <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", padding: "0 34px" }}>
-            {adim === "secim" && (
-              <button onClick={() => setAdim("mod")} aria-label="Geri" style={{ ...yuvarlak, position: "absolute", left: "26px" }}><ChevronLeft size={18} /></button>
+            {adim !== "mod" && (
+              <button onClick={geri} aria-label="Geri" style={{ ...yuvarlak, position: "absolute", left: "26px" }}><ChevronLeft size={18} /></button>
             )}
             <span style={{ fontFamily: "PlayfairDisplay, serif", fontSize: "17px", fontWeight: 700, color: "#f1d991", letterSpacing: "0.04em", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", textShadow: "0 1px 2px rgba(0,0,0,0.5)" }}>
               {baslik}
@@ -640,25 +705,32 @@ export function ModPenceresi({ theme, ilk = false, baslangicAdim = "mod", kapat 
         </div>
 
         <div style={{ fontSize: "12.5px", color: theme.textSecondary, lineHeight: 1.55, textAlign: "center", padding: "10px 18px 6px", fontStyle: "italic" }}>
-          {adim === "secim"
+          {adim === "tema"
+            ? "Göze en rahat gelen tema seçilebilir. Tema daha sonra Ayarlar → Tema bölümünden her zaman değiştirilebilir."
+            : adim === "secim"
             ? "Kitaplıkta görmek istediğiniz raflar mühürlenebilir. Bir rafın yalnız bazı âlimlerini ya da bölümlerini seçmek için sağdaki oka dokunabilirsiniz."
             : ilk
-              ? "Kitaplığın nasıl görüneceğini seçebilirsiniz. Bu tercih daha sonra Ayarlar → Kitaplık modu bölümünden değiştirilebilir."
+              ? "Kitaplığın ve okuma ekranının nasıl görüneceğini seçebilirsiniz. Bu tercihler daha sonra Ayarlar'dan değiştirilebilir."
               : "Kitaplıkta hangi rafların görüneceğini seçebilirsiniz. Son ve Sık Okunanlar ile kendi raflarınız her modda görünür."}
         </div>
 
         <div style={{ flex: "1 1 auto", minHeight: 0, overflowY: "auto", overscrollBehavior: "contain", padding: "6px 10px 10px" }}>
           {adim === "mod"
-            ? <ModKartlari theme={theme} deger={mod} onSec={setMod} />
-            : <EserSecici theme={theme} secim={secim} onDegis={setSecim} />}
+            ? <>
+                <ModKartlari theme={theme} deger={mod} onSec={setMod} />
+                {ilk && <OkumaModuSecici theme={theme} deger={okuma} onSec={setOkuma} />}
+              </>
+            : adim === "tema"
+              ? <div style={{ padding: "2px 2px 4px" }}><TemaSecici theme={theme} duzen="kart" /></div>
+              : <EserSecici theme={theme} secim={secim} onDegis={setSecim} />}
         </div>
 
         <div style={{ display: "flex", gap: "8px", padding: "10px 10px calc(8px + env(safe-area-inset-bottom))", borderTop: `1px solid ${p.gold}55`, flexShrink: 0 }}>
           {!ilk && adim === "mod" && <button onClick={kapat} style={dugme(false)}>VAZGEÇ</button>}
-          {adim === "secim" && <button onClick={() => setAdim("mod")} style={dugme(false)}>GERİ</button>}
+          {adim !== "mod" && <button onClick={geri} style={dugme(false)}>GERİ</button>}
           <button onClick={() => { if (!(adim === "secim" && bosSecim)) devam() }} disabled={adim === "secim" && bosSecim}
             style={dugme(true, adim === "secim" && bosSecim)}>
-            {adim === "mod" && mod === "secili" ? "RAF VE ÂLİM SEÇ →" : ilk ? "BAŞLA" : "KAYDET"}
+            {adim === "mod" && mod === "secili" ? "RAF VE ÂLİM SEÇ →" : ilk && adim !== "tema" ? "DEVAM →" : ilk ? "BAŞLA" : "KAYDET"}
           </button>
         </div>
       </div>

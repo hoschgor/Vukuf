@@ -31,7 +31,7 @@ import {
   Gem, Feather, Play, Circle, Palette, Settings, Layers, Undo2, Headphones, Volume2,
   MessageSquareText, Brain, ImagePlay, MonitorPlay, List, Eye, Highlighter, Type, Shuffle,
   History, HardDrive, Smartphone, Hash, ChevronDown, X, MousePointerClick, Library, Star,
-  RotateCcw, Info, LayoutGrid, BookA, SlidersHorizontal, Share2, Timer,
+  RotateCcw, Info, LayoutGrid, BookA, SlidersHorizontal, Share2, Timer, Compass,
 } from "lucide-react"
 import AltSayfa from "./AltSayfa"
 import { Secim } from "./AyarOgeleri"
@@ -237,7 +237,9 @@ const KONULAR = [
     ozet: "Barı sadeleştirip yalnız metne odaklanmak.",
     nerede: "Kur'ân-ı Kerîm → bardaki daire simgesi",
     metin: [
-      "Daire simgesi barı sadeleştirir. Sade modda hangi öğelerin gizleneceği Ayarlar → Sade Mod İçerikleri bölümünden seçilebilir.",
+      "Daire simgesi barı sadeleştirir. Sade modda hangi öğelerin gizleneceği Ayarlar → Sade Mod İçerikleri bölümünden seçilebilir; sade mod da aynı bölümdeki anahtarla açılıp kapatılabilir.",
+      "Uygulamanın ilk açılışında Sade ya da Tam okuma ekranı seçilebilir; bu seçim sonradan ana menüdeki Ayarlar → Okuma ekranı bölümünden değiştirilebilir. Değiştirildiğinde iki okuma ekranı da seçilen modun başlangıç düzenine döner.",
+      "Sade modda başlangıçta düğmelerden Geri, içerik menüsü (sûre menüsü ya da içindekiler), Yazı tipi, Otomatik kaydırma ve Ayarlar görünür. Bilgilerden yalnız okuma süresi ve hizb bilgisi gizlenir; sayfa, sûre, cüz ve kısım bilgisi görünür. Diğer öğeler istenince açılabilir.",
     ],
     anahtar: "sade odak gizle bar",
   },
@@ -267,12 +269,14 @@ const KONULAR = [
     nerede: "Kur'ân-ı Kerîm ve kitaplar → Ayarlar (dişli) → Bar konumu",
     metin: [
       "Bar üç biçimde kullanılabilir: Üst, Alt ve Menü. Başlangıçta Menü seçilidir.",
-      "Menü seçiliyken bar ekranda durmaz; metne iki kez dokunulunca (bilgisayarda çift tıklanınca) ekranın ortasında tezhipli bir çerçeve içinde açılır. Başka bir yere dokunulunca ya da bir panel açılınca kendiliğinden kapanır. Tema paneli açıldığında menü açık kalır, böylece yeni tema menüde de görülebilir.",
+      "Menü seçiliyken bar ekranda durmaz; metne dokunulunca (bilgisayarda tıklanınca) ekranın ortasında tezhipli bir çerçeve içinde açılır. Düğmelerin altında kısa adları yazar. Başka bir yere dokunulunca ya da bir panel açılınca kendiliğinden kapanır. Tema paneli açıldığında menü açık kalır, böylece yeni tema menüde de görülebilir.",
+      "Lügat kelimeleri, mushaftaki kelimeler ve âyet numaraları dokununca kendi pencerelerini açar; menü bunların dışındaki boş yere dokunularak açılır. Sayfa kayarken dokunmak yalnız kaydırmayı durdurur.",
       "Bazı telefonlarda metin seçilince altta tarayıcının arama çubuğu çıkıp alttaki barı örtebiliyor; Menü bu durumda da rahat kullanılabilsin diye ortada açılır.",
-      "Bir bölüm seçiliyken iki kez dokunulursa seçim korunur: menünün başında \"Seçili\" olarak görünür ve görsel oluşturma gibi işlerde kullanılır. Yanındaki × ile bırakılabilir.",
+      "Bir bölüm seçiliyken metne dokunulursa seçim korunur: menünün başında \"Seçili\" olarak görünür ve görsel oluşturma gibi işlerde kullanılır. Yanındaki × ile bırakılabilir.",
+      "Bilgi şeridindeki kısım adına dokunulunca o kısmın açıklaması açılır. Mushafta oynatıcı açıkken şerit oynatıcının üst kenarına yapışık bir sekme olarak durur; kitaplarda sesli okuma denetimi şeridin üstüne yerleşir.",
       "Menü seçiliyken \"Altta bilgi şeridi\" anahtarıyla sayfa, kısım, okuma süresi gibi bilgiler ekranın altında yarı saydam bir şeritte gösterilebilir. Şeritte hangi bilgilerin yer alacağı, bar öğelerinin açık/kapalı ayarına göre belirlenir.",
     ],
-    anahtar: "bar konum üst alt orta menü çift dokun iki kez tezhip bilgi şeridi google arama çubuğu seçim",
+    anahtar: "bar konum üst alt orta menü dokun tek dokunuş tezhip bilgi şeridi kısım google arama çubuğu seçim düğme adı",
   },
   {
     bolum: "kuran", ikon: Settings, baslik: "Barın ayarları",
@@ -327,13 +331,14 @@ const KONULAR = [
     nerede: "Oynatıcı ya da sesli okuma → ayar düğmesi",
     metin: [
       { alt: "Kur'ân-ı Kerîm" },
-      "Kârî (okuyucu) seçimi Kur'ân ekranının ayarlarında yer alır.",
+      "Kârî (okuyucu) Kur'ân ekranının ayarlarından ya da oynatıcının ayar düğmesinden seçilebilir. Oynatıcıdan değiştirildiğinde okuma kesilmez, aynı âyetten yeni kârînin sesiyle sürer.",
       "Ses seviyesi ve okuma hızı oynatıcının ayar düğmesinden değiştirilebilir; yanlarındaki küçük düğmeler değerleri tek dokunuşla varsayılana döndürür.",
+      "Otomatik durdurma: aynı kutudan bir süre (5–90 dk) seçilirse oynatıcı o sürenin sonunda kendiliğinden kapanır; kalan süre kutuda görünür. Kur'ân ekranından çıkılıp dinlemeye devam edilirken de çalışır.",
       { alt: "Türkçe eserler" },
       "Sesli okuma denetimindeki ayar düğmesi (üzerinde okuma hızı yazar) ses, hız ve devamlı okuma kutusunu açar. Hız 0,5× ile 2× arasında ayarlanabilir; ses simgesine dokunulduğunda ses kısılır, yeniden dokunulduğunda eski seviyesine döner.",
       "Ses %200'e kadar yükseltilebilir. %100'ün üstü Vukuf sesinde etkilidir; hafız kayıtları ve cihaz sesi en fazla %100 seviyesinde çalar.",
     ],
-    anahtar: "kari hafız okuyucu ses yüksek arttır kıs sessiz hız yavaş hızlı yüzde",
+    anahtar: "kari hafız okuyucu ses yüksek arttır kıs sessiz hız yavaş hızlı yüzde otomatik durdurma uyku zamanlayıcı süre",
   },
   {
     bolum: "dinleme", ikon: SlidersHorizontal, baslik: "Sesli okuma ayarları",
@@ -555,7 +560,37 @@ const KONULAR = [
     anahtar: "geçmiş kayıt son arama okuma süre sayfa okunan toplam özet bugün hafta ay yıl dönem dönemlik takvim tarih ilerlendi bildirim geri al",
   },
 
+  {
+    bolum: "arama", ikon: Compass, baslik: "Ekstralar",
+    ozet: "Namaz vakitleri, mübarek günler, Diyanet radyoları, kıble, camiler, zikirmatik.",
+    nerede: "Ana menü → Ekstralar",
+    metin: [
+      { alt: "Namaz vakitleri" },
+      "Konumdan bulunabilir ya da il ve ilçe seçilebilir. Sıradaki vakte kalan süre, günün vakitleri, miladî ve hicrî tarih görünür. Vakitler Diyanet'in aylık vakitlerinden alınır ve cihazda saklanır; internetsiz de görünür.",
+      "\"Takvime ekle\" elde olan yaklaşık 30 günün vakitlerini telefonun takvimine aktarır; ay dolunca yeniden eklenebilir.",
+      { alt: "Kandiller ve mübarek günler" },
+      "Diyanet'in dinî günler takviminden yaklaşan kandiller, Ramazan, bayramlar ve diğer mübarek günler kalan gün sayısıyla listelenir. Kandiller o günün akşamı idrak edilir.",
+      { alt: "Diyanet radyoları" },
+      "Diyanet Radyo, Diyanet Kur'an Radyo ve Diyanet Risalet Radyo canlı dinlenebilir. Radyo sayfadan çıkınca da çalmaya devam eder; diğer ekranlarda \"Ekstralar · Canlı\" yazılı küçük radyo hapı görünür. Hap sürüklenebilir, küçültülebilir; pusula düğmesi Ekstralar'a döner, çarpı radyoyu kapatır.",
+      "Radyo başlarken Kur'ân oynatıcısı çalıyorsa duraklatılır; Kur'ân dinlenmeye başlanınca da radyo duraklar. Yayını doğrudan çalamayan tarayıcılarda resmî siteye bağlantı vardır.",
+      { alt: "Kıble, camiler, zikirmatik" },
+      "Kıble pusulası konuma göre Kâbe yönünü ve uzaklığını gösterir. Telefonun pusulası varsa kadran telefonla birlikte döner; Kâbe işareti üstteki oka gelince kıbleye dönülmüş olur. iPhone'da hareket ve yön izni istenir.",
+      "Yakındaki camiler harita uygulamasında açılır. Zikirmatik dokundukça sayar ve seçilen hedefe (33, 99, 100) gelince titreşir.",
+    ],
+    anahtar: "ekstra namaz vakit ezan imsak öğle ikindi akşam yatsı kalan süre takvim ics kandil mübarek gün bayram ramazan radyo diyanet canlı kıble pusula yön kabe cami harita zikir tesbih zikirmatik hicri",
+  },
+
   // ── AYARLAR ────────────────────────────────────────────────────────────
+  {
+    bolum: "ayarlar", ikon: Circle, baslik: "Okuma ekranı (Sade / Tam)",
+    ozet: "Okuma ekranlarındaki barın başlangıç düzeni.",
+    nerede: "Ana menü → Ayarlar → Okuma ekranı",
+    metin: [
+      "İlk açılışta seçilen okuma ekranı modu buradan değiştirilebilir. Seçim yapıldığında kitap ve Kur'ân-ı Kerîm ekranları seçilen modun başlangıç düzenine döner.",
+      "Sade modda barda temel öğeler kalır; Tam modda bütün öğeler görünür. Öğeler daha sonra okuma ekranlarının kendi ayarlarından tek tek açılıp kapatılabilir.",
+    ],
+    anahtar: "okuma ekranı sade tam mod başlangıç sıfırla bar öğe",
+  },
   {
     bolum: "ayarlar", ikon: Palette, baslik: "Tema",
     ozet: "Açık, koyu ve özel temalar.",

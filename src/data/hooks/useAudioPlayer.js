@@ -980,19 +980,41 @@ export default function useAudioPlayer() {
     }
   }, [aktifEl, bostaEl, sesCtxUyandir])
 
-  // Kâri değişince: çalıyorsa durdur, tamponları temizle
+  // Kâri değişince: çalıyorsa durdur, tamponları temizle.
+  // 3 Kasım 2026: kâri OYNATICININ İÇİNDEN değiştirilince (kariDegistir) oynatma
+  // DURMAZ — aynı kuyruk, aynı âyetten yeni kârinin sesiyle sürer.
+  const devamKariRef = useRef(null)
   useEffect(() => {
     kariIdRef.current = kariId
     localStorage.setItem("vukuf-kari", kariId)
     // Önden inen baytlar ESKİ kârinin sesi — hepsi bırakılıyor.
     bellekTemizle()
+    const devam = devamKariRef.current
+    devamKariRef.current = null
     if (elsRef.current.length && durum !== "kapali") {
       for (const a of elsRef.current) { try { a.__erkenCikis = 0; a.pause(); a.src = ""; a.dataset.url = ""; a.dataset.kaynak = "" } catch {} }
+      const it = devam && devam.kuyruk[devam.indis]
+      if (it) {
+        kuyrukRef.current = devam.kuyruk
+        kuyrukIndisRef.current = devam.indis
+        tekAyetRef.current = devam.tek
+        donguRef.current = devam.dongu
+        _ayetOynat(it.sureNo, it.ayetNo, it.besmeleIcin, false)
+        return
+      }
       setDurum("kapali")
       setAktifAyet(null)
     }
     // eslint-disable-next-line
   }, [kariId])
+  const kariDegistir = useCallback((id) => {
+    if (!id || id === kariIdRef.current) return
+    const kuyruk = kuyrukRef.current
+    devamKariRef.current = (durumRef.current !== "kapali" && kuyruk && kuyruk.length)
+      ? { kuyruk, indis: kuyrukIndisRef.current, tek: tekAyetRef.current, dongu: donguRef.current }
+      : null
+    setKariId(id)
+  }, [])
 
   /* "Âyeti dinle". `ayetSayisi` verilirse kuyruğa sûrenin TAMAMI konur ve o âyetten
      başlanır: böylece ileri/geri düğmeleri çalışır (eskiden kuyrukta tek öğe vardı,
@@ -1117,6 +1139,6 @@ export default function useAudioPlayer() {
     oncekiAyet, sonrakiAyet,
     hiz, hizAyarla,
     ses, sesAyarla,
-    setKariId, mp3Url, besmeleUrl, KARILAR,
+    setKariId, kariDegistir, mp3Url, besmeleUrl, KARILAR,
   }
 }

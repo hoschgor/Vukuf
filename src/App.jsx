@@ -10,6 +10,8 @@ import { swKaydet, swGuncelle } from "./data/cevrimdisi"
 // Uygulama geneli oynatıcı (6 Ekim 2026): ses Kur'ân ekranından çıkınca da sürebilsin
 import { OynaticiSaglayici } from "./data/oynatici"
 import MiniOynatici from "./components/MiniOynatici"
+import { RadyoSaglayici } from "./data/radyo"
+import MiniRadyo from "./components/MiniRadyo"
 // Paylaşılan bağlantı (18 Ekim 2026): önce ana sayfa, oradan paylaşılan yere köprü
 import { gelenPaylasim, paylasimiHazirla } from "./data/paylasim"
 import { Share2 } from "lucide-react"
@@ -61,6 +63,7 @@ const Arama        = tembel(() => import("./pages/Arama"))
 const Hakkinda     = tembel(() => import("./pages/Hakkinda"))
 const KuranOkuma   = tembel(() => import("./pages/KuranOkuma"))
 const Gecmis       = tembel(() => import("./pages/Gecmis"))
+const Ekstralar    = tembel(() => import("./pages/Ekstralar"))
 
 /* Parça HİÇ yüklenemezse (çevrimdışı ve önbellekte yok, ya da yenileme de
    yetmedi) beyaz ekran yerine açıklama + iki çıkış. Sayfa değişince sıfırlanır. */
@@ -273,6 +276,7 @@ export default function App() {
       {/* OYNATICI KÖKTE — KuranOkuma ve mini oynatıcı aynı oynatıcıyı paylaşır;
           sayfa değişince ses kesilmez ("devamlı oynatma" açıksa). */}
       <OynaticiSaglayici>
+      <RadyoSaglayici>
       <ParcaHatasi theme={theme} yol={location.pathname}>
       <Suspense fallback={<SayfaYukleniyor theme={theme} />}>
       <Routes>
@@ -285,6 +289,7 @@ export default function App() {
         <Route path="/okuma-tefeul" element={<OkumaTefeulu />} />
         <Route path="/gecmis" element={<Gecmis />} />
         <Route path="/kitap/:id" element={<OkumaEkrani />} />
+        <Route path="/ekstralar" element={<Ekstralar />} />
         <Route path="/hakkinda" element={<Hakkinda />} />
       </Routes>
       </Suspense>
@@ -310,6 +315,9 @@ export default function App() {
       )}
       {/* Kur'ân ekranı dışında ses sürüyorsa minimal oynatıcı */}
       <MiniOynatici />
+      {/* Ekstralar'dan açılan radyo, öbür ekranlarda (3 Kasım 2026) */}
+      <MiniRadyo />
+      </RadyoSaglayici>
       </OynaticiSaglayici>
     </div>
   )

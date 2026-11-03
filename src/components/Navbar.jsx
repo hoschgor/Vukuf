@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { Link, useLocation } from "react-router-dom"
-import { BookOpen, Search, Shuffle, Menu, X, Palette, Info, Type, Sparkles, Settings, HardDrive, Brain, History, HelpCircle, Library } from "lucide-react"
+import { BookOpen, Search, Shuffle, Menu, X, Palette, Info, Type, Sparkles, Settings, HardDrive, Brain, History, HelpCircle, Library, Compass } from "lucide-react"
 import { useApp } from "../AppContext"
 import { useMediaQuery } from "../data/hooks/useMediaQuery"
 import IosSwitch from "./IosSwitch"
@@ -12,7 +12,7 @@ import { ypDegisken } from "./yatayDuzen"
 import { themes } from "../styles/themes"
 import { useGecmisAyari, gecmisOku, useGecmisBayragi, OKUNAN_SAYFA_AYAR, GECEN_SURE_AYAR } from "../data/gecmis"
 import YardimPaneli from "./YardimPaneli"
-import { useKitaplikModu, modYaz, secimYaz, hapYaz, modOzeti, ModKartlari, EserSecici } from "./KitaplikModu"
+import { useKitaplikModu, modYaz, secimYaz, hapYaz, modOzeti, ModKartlari, EserSecici, OkumaModuSecici, okumaModuOku, okumaModuYaz } from "./KitaplikModu"
 
 /* ═══════════════════════════════════════════════════════════════════════════
    AYARLARIN TEK KAPIDA TOPLANMASI (24 Eylül 2026)
@@ -182,6 +182,7 @@ export default function Navbar() {
 
   const [ozelPanelAcik, setOzelPanelAcik] = useState(false)
   const [ozelRenkler, setOzelRenkler] = useState(customTheme)
+  const [okumaModu, setOkumaModu] = useState(okumaModuOku)   // Sade / Tam (Ayarlar → Okuma ekranı)
   const [aktifRenk, setAktifRenk] = useState(null)
 
   // Ana menü öğeleri (Hakkında hariç)
@@ -194,6 +195,8 @@ export default function Navbar() {
     { path: "/okuma-tefeul", label: "Okuma Tefeülü", icon: Shuffle },
     // Geçmiş yalnız ayarı açıkken (Ayarlar → Geçmiş)
     ...(gecmisAcik ? [{ path: "/gecmis", label: "Geçmiş", icon: History }] : []),
+    // Ekstralar (3 Kasım 2026): Diyanet radyoları, kıble pusulası, yakındaki camiler, zikirmatik
+    { path: "/ekstralar", label: "Ekstralar", icon: Compass },
   ]
 
   // Alt menü öğesi (Hakkında)
@@ -445,6 +448,20 @@ export default function Navbar() {
               onToggle={() => hapYaz(!kitaplikHapi)}
               theme={theme}
             />
+          </Katlanir>
+
+          {/* ── OKUMA EKRANI (Sade / Tam) — 3 Kasım 2026 ──────────────── */}
+          <Katlanir
+            theme={theme} ikon={BookOpen} baslik="Okuma ekranı"
+            ozet={okumaModu === "sade" ? "Sade" : "Tam"}
+            {...kapak("okumaModu")}
+          >
+            <div style={{ fontSize: "12px", color: theme.textSecondary, lineHeight: 1.5, margin: "0 4px 4px" }}>
+              Kitap ve Kur'ân-ı Kerîm ekranlarındaki barın düzeni. Seçim yapıldığında iki ekran da
+              bu modun başlangıç düzenine döner; öğeler daha sonra ekranların kendi ayarlarından
+              tek tek açılıp kapatılabilir.
+            </div>
+            <OkumaModuSecici theme={theme} deger={okumaModu} onSec={(m) => { okumaModuYaz(m); setOkumaModu(m) }} />
           </Katlanir>
 
           {/* ── GEÇMİŞ ────────────────────────────────────────────────── */}

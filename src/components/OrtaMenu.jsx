@@ -3,7 +3,7 @@
 
    28 Ekim 2026 — kullanıcı: "Android'de alttan Google araması çıkıyor, bar kapanıyor;
    bardaki hiçbir öğe kullanılamıyor bazen. Bar açıkken öğeler ortalansın, arka hafif
-   kararsın, öğeler güzel bir çerçeve içinde görünsün; çift dokunmayla açılsın, başka
+   kararsın, öğeler güzel bir çerçeve içinde görünsün; (3 Kasım 2026: TEK dokunuşla) açılsın, başka
    yere dokununca kapansın." Ardından: "Kur'an-ı Kerîm ekranında da yapalım; menüyü
    tezhip çizgileri, dallarla süsleyelim, öğeler biraz büyüsün, arka biraz daha kapansın.
    Menü modundaysak altta bilgi şeridi olsun/olmasın ayarı; içerikleri bar öğelerinin
@@ -15,11 +15,11 @@
        anahtarda ("vukuf-bar-konum"); "orta" ayrı bayrakta ("vukuf-bar-orta") → orta'dan
        çıkınca önceki Üst/Alt tercihi geri gelir.
      • useOrtaBilgi        — alt bilgi şeridi açık mı (ortak, varsayılan açık)
-     • useOrtaMenu         — açık/kapalı, çift dokunma/tıklama, Esc, ilk açılış notu,
+     • useOrtaMenu         — açık/kapalı, tek dokunma/tıklama, Esc, ilk açılış notu,
                              panel açılınca kapanma, SEÇİMİ KORUMA
      • OrtaMenuCercevesi   — perde + tezhipli, dallı çerçeve (içine ekranın Bar'ı konur)
      • BilgiSeridi         — altta yarı saydam bilgi şeridi
-     • OrtaIpucu           — "iki kez dokunabilirsiniz" notu
+     • OrtaIpucu           — "metne dokunabilirsiniz" notu
      • BarKonumSecici      — Ayarlar'daki Üst · Alt · Menü + bilgi şeridi anahtarı
 
    ── SEÇİMİ KORUMA ─────────────────────────────────────────────────────────────
@@ -31,7 +31,7 @@
    çubuğu ve alttaki Google araması menünün önünü kapatmasın. Menü, seçili yerin
    üstüne değil öbür yarıya açılır. */
 
-import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react"
+import { Children, Fragment, cloneElement, isValidElement, useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react"
 import { hexHsl, hsl } from "./rafGorselleri"
 import IosSwitch from "./IosSwitch"
 
@@ -72,8 +72,6 @@ export const ORTA_BILGI_ANAHTAR = "vukuf-orta-bilgi"
 const KONUM_ANAHTAR = "vukuf-bar-konum"
 const IPUCU_ANAHTAR = "vukuf-orta-ipucu"
 const IPUCU_SAYISI = 3
-const CIFT_ARALIK_MS = 400      // iki dokunuş arası en çok (olay zamanıyla)
-const CIFT_MESAFE = 40          // iki dokunuş arası en çok (px)
 const SECIM_TAZE_MS = 1500      // seçim kalktıktan sonra bu süre içinde açılırsa korunur
 const VURGU_ADI = "vukuf-korunan-secim"
 
@@ -84,6 +82,8 @@ const PERDE = 0.34
 
 /* Çift dokunmanın SAYILMADIĞI yerler (düğmeler, alanlar, paneller, menünün kendisi) */
 const DISARI = "button, a, input, textarea, select, label, [role=dialog], [role=button], .okuma-panel, .vukuf-panel, .okuma-bar, .mushaf-bar"
+  // tek dokunmada: kendi penceresini açan kelimeler ve işaretler de sayılmaz
+  + ", .lugat-kelime, [data-kelime], [data-ayet], [data-sure], [data-sure-baslik], sup"
 
 // ── KONUM ────────────────────────────────────────────────────────────────────
 // VARSAYILAN "orta" (29 Ekim 2026 — kullanıcı: "Varsayılanı orta menü seçeneği yapalım").
@@ -127,7 +127,7 @@ function vurguyuKaldir() {
 /**
  * useOrtaMenu — menü gibi barın bütün davranışı.
  * @param aktif        bar konumu "orta" mı
- * @param engelli      () => bool — true iken çift dokunma menüyü AÇMAZ (panel açık vb.)
+ * @param engelli      () => bool — true iken dokunma menüyü AÇMAZ (panel/pencere açık vb.)
  * @param haric        (el) => bool — bu öğeye dokunuş sayılmaz (ör. lügat penceresinin içi)
  * @param secimKapsami seçim bu seçiciye uyan bir öğenin içindeyse korunur (ör. "[data-satir]")
  * @param metinAl      (selection) => string — seçilen metni ayıklar (yoksa toString)
@@ -243,61 +243,63 @@ export function useOrtaMenu({ aktif, engelli, haric, secimKapsami = null, metinA
     return () => clearTimeout(t)
   }, [aktif])
 
-  // ÇİFT DOKUNMA / ÇİFT TIKLAMA — PENCERE düzeyinde, yakalama evresinde. Kaydırma kabında
-  // dinlenince, ilk dokunuşun açtığı bir pencerenin (lügat, kelime/âyet) saydam perdesine
-  // düşen ikinci dokunuş sayılmıyordu (tarayıcıda doğrulandı).
+  // TEK DOKUNMA / TIKLAMA (3 Kasım 2026 — kullanıcı: "Menüyü çift tık ile değil, tek
+  // tıklama ile verelim"). PENCERE düzeyinde, yakalama evresinde dinlenir.
+  // Sayılmayanlar: düğmeler/paneller (DISARI), etkileşimli kelimeler (lügat kelimesi,
+  // mushaf kelimesi/âyet numarası, dipnot işareti — onların kendi penceresi açılır),
+  // bir pencere/panel açıkken yapılan dokunuş (o dokunuş pencereyi kapatır), kaydırma
+  // sırasında ya da hemen sonrasında gelen dokunuş (akan sayfayı durdurmak için
+  // dokunulduğunda menü açılmasın) ve sürükleyerek metin seçerken bırakılan tıklama.
   useEffect(() => {
     if (!aktif) return
-    let bas = null, son = null, sonDokunma = -1e9
+    let bas = null, sonDokunma = -1e9, sonKaydirma = -1e9
     const sayilmaz = (el) => {
       if (acikRef.current) return true
       try { if (cb.current.engelli?.()) return true } catch { /* yoksay */ }
       try { if (el && cb.current.haric?.(el)) return true } catch { /* yoksay */ }
       return !!el?.closest?.(DISARI)
     }
-    // ZAMAN: olayın OLUŞTUĞU an (e.timeStamp), işlendiği an değil. Mushafta ilk dokunuş
-    // (kelime) ağır bir çizim başlatıyor; ikinci dokunuş ancak o bitince işleniyor ve
-    // Date.now() ile aralık 350 ms'yi aşıp çift dokunma kaçıyordu (tarayıcıda doğrulandı).
-    const dene = (x, y, el, simdi) => {
-      if (sayilmaz(el)) { son = null; return false }
-      if (son && simdi - son.t < CIFT_ARALIK_MS && Math.abs(x - son.x) < CIFT_MESAFE && Math.abs(y - son.y) < CIFT_MESAFE) {
-        son = null
-        ac()
-        return true
-      }
-      son = { x, y, t: simdi }
-      return false
-    }
+    const kaydir = (e) => { sonKaydirma = e.timeStamp || performance.now() }
     const basla = (e) => {
       const t = e.touches[0]
-      bas = (t && e.touches.length === 1) ? { x: t.clientX, y: t.clientY, t: e.timeStamp } : null
+      // Noktadaki öğe AYRICA saklanır: tarayıcının dokunma düzeltmesi (touch adjustment)
+      // e.target'ı yakındaki başka bir kelimeye kaydırabiliyor; lügat kelimesine dokunulup
+      // komşu kelime hedef sayılınca menü açılıyordu (tarayıcıda doğrulandı).
+      let nokta = null
+      try { nokta = t ? document.elementFromPoint(t.clientX, t.clientY) : null } catch { nokta = null }
+      bas = (t && e.touches.length === 1)
+        ? { x: t.clientX, y: t.clientY, t: e.timeStamp, akiyordu: e.timeStamp - sonKaydirma < 140, nokta }
+        : null
     }
     const bitir = (e) => {
       sonDokunma = e.timeStamp
       const t = e.changedTouches[0], b = bas
       bas = null
-      if (!b || !t) return
-      if (Math.abs(t.clientX - b.x) > 10 || Math.abs(t.clientY - b.y) > 10 || e.timeStamp - b.t > 300) { son = null; return }
-      // İkinci dokunuşun tıklaması iptal: açılan perdeye ya da bir kelimeye düşmesin
-      if (dene(t.clientX, t.clientY, e.target, e.timeStamp) && e.cancelable) e.preventDefault()
+      if (!b || !t || b.akiyordu) return
+      if (Math.abs(t.clientX - b.x) > 10 || Math.abs(t.clientY - b.y) > 10 || e.timeStamp - b.t > 350) return
+      if (sayilmaz(e.target) || (b.nokta && sayilmaz(b.nokta))) return
+      ac()
+      // Dokunuşun tıklaması iptal: açılan perdeye düşüp menüyü hemen kapatmasın
+      if (e.cancelable) e.preventDefault()
     }
     const tikla = (e) => {
       if (e.timeStamp - sonDokunma < 800) return   // dokunmanın ürettiği tıklama zaten sayıldı
-      dene(e.clientX, e.clientY, e.target, e.timeStamp)
+      if (e.button !== 0) return
+      try { const sel = window.getSelection(); if (sel && !sel.isCollapsed) return } catch { /* yoksay */ }
+      let nokta = null
+      try { nokta = document.elementFromPoint(e.clientX, e.clientY) } catch { nokta = null }
+      if (sayilmaz(e.target) || (nokta && sayilmaz(nokta))) return
+      ac()
     }
-    // Masaüstü: çift tıklama kelime SEÇMESİN (önceki seçim korunabilsin)
-    const fareBas = (e) => {
-      if (e.detail >= 2 && !sayilmaz(e.target)) e.preventDefault()
-    }
+    document.addEventListener("scroll", kaydir, { capture: true, passive: true })
     window.addEventListener("touchstart", basla, { capture: true, passive: true })
     window.addEventListener("touchend", bitir, { capture: true, passive: false })
     window.addEventListener("click", tikla, true)
-    window.addEventListener("mousedown", fareBas, true)
     return () => {
+      document.removeEventListener("scroll", kaydir, { capture: true })
       window.removeEventListener("touchstart", basla, { capture: true })
       window.removeEventListener("touchend", bitir, { capture: true })
       window.removeEventListener("click", tikla, true)
-      window.removeEventListener("mousedown", fareBas, true)
     }
   }, [aktif, ac])
 
@@ -602,8 +604,42 @@ export function OrtaMenuCercevesi({ menu, theme, olcek = 1, etiket = "Okuma men�
   )
 }
 
+// ── DÜĞME ADLARI (3 Kasım 2026) ─────────────────────────────────────────────
+// Kullanıcı: "Menülü modda butonların kısaca isimleri yazsın: Kaydır, Menü, Tema gibi."
+// Ekranın Bar'ı olduğu gibi kullanılır; menüde gösterilirken her ÜST DÜZEY düğmenin
+// altına kısa adı eklenir. Hangi düğmenin hangi öğe olduğu, barOge()'nin verdiği
+// `order` değerinden bulunur (etiketler: order → ad). Düğme olmayanlar (süre, kısım
+// bilgisi, hız kutusu) ve iç düğmeler olduğu gibi kalır.
+export function barEtiketle(bar, etiketler, { theme, olcek = 1 } = {}) {
+  if (!isValidElement(bar)) return bar
+  const etiketStil = {
+    fontSize: `${Math.max(9, Math.round(9.5 * olcek))}px`, lineHeight: 1.1, fontWeight: 500,
+    color: theme?.textSecondary, whiteSpace: "nowrap", letterSpacing: "0.01em",
+  }
+  const isle = (c) => {
+    if (!isValidElement(c)) return c
+    if (c.type === Fragment) return cloneElement(c, {}, Children.map(c.props.children, isle))
+    if (c.type !== "button") return c
+    const ad = etiketler.get(c.props.style?.order)
+    if (!ad) return c
+    return cloneElement(c, {
+      style: {
+        background: "transparent", border: "none",     // düz <button> görünümü kalmasın
+        ...c.props.style,
+        flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "3px",
+        minWidth: `${Math.round(46 * olcek)}px`,
+        padding: `${Math.round(5 * olcek)}px ${Math.round(3 * olcek)}px`,
+      },
+      "aria-label": c.props["aria-label"] || ad,
+    },
+    <span style={{ display: "flex", alignItems: "center", gap: "3px" }}>{c.props.children}</span>,
+    <span style={etiketStil}>{ad}</span>)
+  }
+  return cloneElement(bar, {}, Children.map(bar.props.children, isle))
+}
+
 // ── İLK AÇILIŞ NOTU ─────────────────────────────────────────────────────────
-export function OrtaIpucu({ menu, theme, metin = "Menüyü açmak için metne iki kez dokunabilirsiniz." }) {
+export function OrtaIpucu({ menu, theme, metin = "Menüyü açmak için metne dokunabilirsiniz." }) {
   if (!menu.ipucu || menu.acik) return null
   return (
     <div role="status" style={{
@@ -620,7 +656,8 @@ export function OrtaIpucu({ menu, theme, metin = "Menüyü açmak için metne ik
 // ── ALT BİLGİ ŞERİDİ ────────────────────────────────────────────────────────
 /**
  * BilgiSeridi — menü modunda altta yarı saydam bilgi şeridi. Dokunuşları YUTMAZ
- * (pointerEvents none): altındaki metne dokunulabilir, çift dokunma da çalışır.
+ * (pointerEvents none): altındaki metne dokunulabilir. Tek tek öğeler kendi stiline
+ * pointerEvents: "auto" + role="button" vererek dokunulabilir yapılabilir (ör. kısım bilgisi).
  * @param ogeler  React düğümleri (null olanlar atlanır); aralarına ince nokta konur
  * @param onYukseklik (px) — sayfanın alt payı / hap konumları için
  */
@@ -651,13 +688,26 @@ export function BilgiSeridi({ theme, ogeler, olcek = 1, altPay = 0, onYukseklik 
       position: "fixed", left: "50%", transform: "translateX(-50%)",
       // altPay: altta başka bir çubuk varsa (mushafta oynatıcı) onun üstünde durur
       // zIndex 70: sûre menüsü / içindekiler (80+) ve paneller şeridin ÜSTÜNDE kalır
-      bottom: `calc(max(6px, env(safe-area-inset-bottom)) + ${altPay}px)`, zIndex: 70,
+      // 3 Kasım 2026: "alt menü daha aşağıda olabilir" — ev çubuğu payının bir kısmına iner.
+      // ALTTA BİR ÇUBUK VARSA (mushafta oynatıcı): şerit gizlenmez, oynatıcının ÜST
+      // KENARINA YAPIŞIK bir sekme olur — opak, oynatıcıyla aynı zemin, alt köşeleri düz
+      // (kullanıcı: "oynatıcılar açıkken bilgi kısmı gizlenmesin, sadece konumu kullanışlı olsun").
+      ...(altPay > 0 ? {
+        bottom: `${altPay - 1}px`, zIndex: 92,
+        borderRadius: "12px 12px 0 0", borderBottom: "none",
+        background: theme.surface, border: `1px solid ${theme.accent}25`,
+        padding: `${Math.round(3 * olcek)}px ${Math.round(14 * olcek)}px ${Math.round(2 * olcek)}px`,
+        opacity: 1, boxShadow: `0 -3px 10px ${theme.accent}10`,
+      } : {
+        bottom: "calc(max(2px, env(safe-area-inset-bottom) - 14px))", zIndex: 70,
+        padding: `${Math.round(4 * olcek)}px ${Math.round(12 * olcek)}px`, borderRadius: "999px",
+        background: `${theme.surface}c4`, border: `1px solid ${theme.accent}30`,
+        backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)",
+        opacity: 0.92,
+      }),
       display: "flex", alignItems: "center", gap: "8px", maxWidth: "calc(100vw - 24px)", boxSizing: "border-box",
-      padding: `${Math.round(4 * olcek)}px ${Math.round(12 * olcek)}px`, borderRadius: "999px",
-      background: `${theme.surface}c4`, border: `1px solid ${theme.accent}30`,
-      backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)",
       color: theme.accent, fontSize: `${Math.round(11 * olcek)}px`, whiteSpace: "nowrap",
-      pointerEvents: "none", opacity: 0.92,
+      pointerEvents: "none",
     }}>
       {dolu.map((o, i) => (
         <span key={i} style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0 }}>
@@ -708,7 +758,7 @@ export function BarKonumSecici({ theme, deger, onSec, UstIkon, AltIkon, ikonBoy 
       {deger === "orta" && (
         <>
           <div style={{ fontSize: `${Math.max(11, yaziBoy - 1.5)}px`, color: theme.textSecondary, lineHeight: 1.45, marginTop: "7px" }}>
-            Bar ekranda durmaz; metne iki kez dokununca ortada menü olarak açılır, başka bir yere dokununca kapanır.
+            Bar ekranda durmaz; metne dokununca ortada menü olarak açılır, başka bir yere dokununca kapanır.
           </div>
           <div onClick={() => onBilgi(!bilgiAcik)} role="button" aria-pressed={bilgiAcik} style={{
             width: "100%", padding: "7px 10px", marginTop: "6px", borderRadius: "8px", fontSize: `${yaziBoy}px`,

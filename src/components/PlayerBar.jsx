@@ -48,8 +48,8 @@ function KuranKucuk({ theme, calar, barKonum, altPay, ustPay, ac: acFn }) {
   )
 }
 import { KARILAR } from "../data/hooks/useAudioPlayer"
-import { useArkaCalma } from "../data/oynatici"
-import { Headphones } from "lucide-react"
+import { useArkaCalma, useOtomatikDurdurma, UYKU_SURELERI } from "../data/oynatici"
+import { Headphones, Music2, Moon } from "lucide-react"
 import { useMediaQuery } from "../data/hooks/useMediaQuery"
 import MushafPlayButton from "./MushafPlayButton"
 
@@ -107,6 +107,11 @@ export default function PlayerBar({
     durum, aktifAyet, kariId, duraklat, devamEt, durdur, oncekiAyet, sonrakiAyet,
     hiz = 1, hizAyarla, ses = 1, sesAyarla,
   } = player
+  // Oynatıcıdan kâri değişince çalma kesilmesin (aynı âyetten yeni sesle sürer)
+  const setKariId = player.kariDegistir || player.setKariId
+  // OTOMATİK DURDURMA (uyku zamanlayıcısı) — data/oynatici.jsx
+  const uyku = useOtomatikDurdurma()
+  const uykuKalan = uyku.bitis ? Math.max(1, Math.ceil((uyku.bitis - Date.now()) / 60000)) : 0
   const isMobile = useMediaQuery("(max-width: 768px)")
   // SES + HIZ TEK MENÜDE (28 Eylül 2026). Kullanıcı: bar fazla doluydu, kâri adı
   // görünmüyordu; ayrı ses ve hız düğmeleri yerine "sonraki âyet" düğmesinin
@@ -297,6 +302,8 @@ export default function PlayerBar({
               : "0 6px 22px rgba(0,0,0,0.22)",
             padding: "6px 8px",
             display: "flex", flexDirection: "column", gap: "2px",
+            // kâri ve otomatik durdurma eklenince uzadı: kısa ekranda kaydırılabilsin
+            maxHeight: "min(70vh, 520px)", overflowY: "auto", overscrollBehavior: "contain",
             zIndex: 3,
           }}
         >
@@ -330,6 +337,50 @@ export default function PlayerBar({
             <button onClick={() => hizAyarla && hizAyarla(1)} title="1×'e getir" style={sifirStil}>
               <RotateCcw size={12} />
             </button>
+          </div>
+          <div style={{ height: "1px", background: theme.border, opacity: 0.6, margin: "0 2px" }} />
+          {/* KÂRÎ — 3 Kasım 2026 (kullanıcı: "Playerbar içine karileri alalım, hız ayarı altına") */}
+          {setKariId && (
+            <div style={satirStil}>
+              <span style={{ ...ikonDugme, cursor: "default" }}><Music2 size={16} color={theme.accent} /></span>
+              <select value={kariId || ""} aria-label="Kârî (okuyucu)"
+                onChange={e => setKariId(e.target.value)}
+                style={{
+                  flex: 1, minWidth: 0, padding: "5px 8px", borderRadius: "8px", fontFamily: "inherit",
+                  fontSize: "12px", color: theme.text, background: theme.background,
+                  border: `1px solid ${theme.border}`, cursor: "pointer",
+                }}>
+                {(player.KARILAR || KARILAR).map(k => <option key={k.id} value={k.id}>{k.label || k.isim || k.id}</option>)}
+              </select>
+            </div>
+          )}
+          <div style={{ height: "1px", background: theme.border, opacity: 0.6, margin: "0 2px" }} />
+          {/* OTOMATİK DURDURMA — seçilen süre sonunda oynatıcı kapanır */}
+          <div style={{ ...satirStil, flexDirection: "column", alignItems: "stretch", gap: "5px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "7px" }}>
+              <span style={{ ...ikonDugme, cursor: "default" }}><Moon size={16} color={uyku.bitis ? theme.accent : theme.textSecondary} /></span>
+              <span style={{ flex: 1, minWidth: 0, fontSize: "12px", color: theme.text, lineHeight: 1.25 }}>
+                Otomatik durdurma
+                <span style={{ display: "block", fontSize: "10px", color: uyku.bitis ? theme.accent : theme.textSecondary }}>
+                  {uyku.bitis ? `${uykuKalan} dk sonra duracak` : "Seçilen süre sonunda oynatıcı kapanır"}
+                </span>
+              </span>
+            </div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "4px", paddingLeft: "33px" }}>
+              {UYKU_SURELERI.map(dk => {
+                const sec = (uyku.dk || 0) === dk
+                return (
+                  <button key={dk} onClick={() => uyku.kur(dk)} aria-pressed={sec}
+                    style={{
+                      padding: "3px 7px", borderRadius: "999px", fontSize: "11px", fontFamily: "inherit",
+                      cursor: "pointer", border: `1px solid ${sec ? theme.accent : theme.border}`,
+                      background: sec ? theme.accent : "transparent", color: sec ? "#fff" : theme.textSecondary,
+                    }}>
+                    {dk ? `${dk} dk` : "Kapalı"}
+                  </button>
+                )
+              })}
+            </div>
           </div>
           <div style={{ height: "1px", background: theme.border, opacity: 0.6, margin: "0 2px" }} />
           {/* DEVAMLI OYNATMA — satırın tamamı dokunulabilir; sağda küçük anahtar */}

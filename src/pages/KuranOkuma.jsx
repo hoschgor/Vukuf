@@ -3287,6 +3287,30 @@ function donuseGit(i) {
     setGorselModu(false)
   }, [ayetArapcasi])
 
+  /* TEFEÜLDEN GÖRSEL (4 Kasım 2026) — Söz Tefeülü'ndeki âyet/sûre kartının "Görsel"
+     düğmesi: { sureNo, ayetNo, donus } bırakır. Mushaf yüklenince görsel penceresi
+     doğrudan açılır; sayfa kaydırılmaz (okuma konumu değişmez). Pencere kapatılınca
+     (vazgeçilince de) `donus` yoluna, aynı tefeül kartına dönülür. */
+  const gorselDonusRef = useRef(null)
+  useEffect(() => {
+    if (!mushafData.length || !sayfaMap?.size) return
+    let h = null
+    try { h = JSON.parse(localStorage.getItem("vukuf-kuran-gorsel") || "null"); localStorage.removeItem("vukuf-kuran-gorsel") } catch { /* yoksay */ }
+    if (!h || !h.sureNo) return
+    const sure = mushafData.find(x => x.id === h.sureNo)
+    if (!sure) return
+    gorselDonusRef.current = h.donus || null
+    gorselAc(sure, h.ayetNo || 1)
+  }, [mushafData, sayfaMap, gorselAc])
+  const gorselKapat = useCallback(() => {
+    setGorselVeri(null)
+    const yol = gorselDonusRef.current
+    if (!yol) return
+    gorselDonusRef.current = null
+    try { localStorage.setItem("vukuf-tefeul-devam", "1") } catch { /* yoksay */ }
+    navigate(yol)
+  }, [navigate])
+
   // ── VİDEO SESİ ──────────────────────────────────────────────────────────────
   // useAudioPlayer `mp3Url(kariId, sureNo, ayetNo)` fonksiyonunu dışa veriyor
   // (everyayah.com/data/<kari>/SSSAAA.mp3) → tahmine/öğrenmeye gerek yok.
@@ -4691,7 +4715,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
       {/* GÖRSEL OLUŞTUR */}
       <GorselOlustur
         acik={!!gorselVeri}
-        kapat={() => setGorselVeri(null)}
+        kapat={gorselKapat}
         arapca={gorselVeri?.arapca || null}
         meal={gorselVeri?.meal || null}
         kaynak={gorselVeri?.kaynak || null}

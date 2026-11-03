@@ -544,6 +544,8 @@ const KONULAR = [
     metin: [
       "Söz Tefeülü rastgele bir söz, Okuma Tefeülü ise rastgele bir okuma bölümü sunar; oradan esere geçildiğinde \"Tefeüle dön\" düğmesiyle geri gelinebilir.",
       "Söz Tefeülü'nde sözlerin arasında Kur'ân-ı Kerîm'den rastgele bir âyetin meali ya da bir sûre de çıkar; filtreden yalnız Kur'ân-ı Kerîm de seçilebilir. \"Âyete git\" ya da \"Sûreyi aç\" Kur'ân'ı o yerde açar, \"Tefeüle dön\" aynı karta geri getirir.",
+      "Söz Tefeülü'ndeki \"Görsel\" düğmesi ekrandaki karttan paylaşılabilir bir görsel hazırlar. Sözde okuma ekranlarındaki görsel penceresi söz, söyleyeni ve kaynağıyla açılır. Âyet ya da sûre kartında Kur'ân ekranının görsel penceresi açılır (sûrede ilk âyet); pencere kapatılınca aynı tefeül kartına dönülür.",
+      "Söz Tefeülü'ndeki \"Paylaş\" düğmesi ekrandaki kartı okuma ekranlarındaki paylaşma penceresiyle paylaşır: sözde söz, söyleyeni ve kaynağı; âyette Kur'ân ekranındaki gibi âyetin yeri ve bağlantısı; sûrede sûrenin bağlantısı gider. Pencere kapatılınca aynı kart yerinde kalır. Söz bağlantısını açan kişi Söz Tefeülü'nde o sözü görür.",
     ],
     anahtar: "tefeül rastgele fal söz okuma kuran âyet sûre meal",
   },

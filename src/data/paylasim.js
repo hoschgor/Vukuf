@@ -19,6 +19,8 @@
               tamamı değil BAŞI taşınıyor; varınca satırda o baş bulunup cümle tamamlanarak
               vurgulanıyor (paylasimSecim.js cumleyeGenislet).
      Âyet   : https://<site>/?a=<sûre>:<âyet>
+     Söz    : https://<site>/?t=<sıra>&m=<sözün ilk 6 kelimesi>   (Kısa Tefeül, 4 Kasım 2026)
+              Sıra data/tefeul.json'daki yeri; liste değişirse varınca m ile yeniden bulunur.
    Kök adres seçildi çünkü: (1) sunucu her durumda index.html'i verir (derin yol 404
    olmaz), (2) kullanıcı isteği — önce ana sayfa açılır, oradan geçilir.
 
@@ -35,6 +37,7 @@ import { kitaplar } from "./kitaplar"
 import { sureAdi } from "./sureAdlari"
 
 export const PAYLASIM_DONUS = "paylasim"
+export const SOZ_PAYLASIM_ANAHTAR = "vukuf-soz-tefeul-paylasim"
 const METIN_AZAMI = 300
 const BAS_KELIME = 6
 const ilkKelimeler = (t, n = BAS_KELIME) => String(t || "").replace(/\s+/g, " ").trim().split(" ").slice(0, n).join(" ")
@@ -71,6 +74,13 @@ export function kitapBaglantisi({ kitapId, sayfa, satir, metin, kelimeMi = false
 export function ayetBaglantisi({ sureNo, ayetNo }) {
   return `${kok()}?a=${sureNo}${ayetNo ? `:${ayetNo}` : ""}`
 }
+export function sozBaglantisi({ index, metin }) {
+  const p = new window.URLSearchParams()
+  p.set("t", String(index))
+  const m = ilkKelimeler(metin)
+  if (m) p.set("m", m)
+  return `${kok()}?${p.toString()}`
+}
 
 /* ── MESAJ ────────────────────────────────────────────────────────────────────
    { metin, baglanti, govde } — govde: bağlantısız kısım (Telegram/X bağlantıyı ayrı alır) */
@@ -80,6 +90,12 @@ export function paylasimMesaji(v) {
     const baglanti = ayetBaglantisi(v)
     const govde = `${ayetEtiketi(v.sureNo, v.ayetNo, v.sureAdi)} · Kur'ân-ı Kerîm`
     return { baglanti, govde, metin: `${govde}\n${baglanti}`, konu: govde }
+  }
+  if (v.tip === "soz") {
+    const baglanti = sozBaglantisi(v)
+    const kaynak = [v.yazar, v.kaynak].filter(Boolean).join(", ")
+    const govde = `“${String(v.metin || "").trim()}”${kaynak ? `\n— ${kaynak}` : ""}`
+    return { baglanti, govde, metin: `${govde}\n\n${baglanti}`, konu: v.yazar || "Vukuf" }
   }
   const kelimeMi = v.secim === "kelime" && !!v.kelime
   const secili = (kelimeMi ? v.kelime : v.cumle) || v.cumle || v.kelime || ""
@@ -130,6 +146,12 @@ export function gelenPaylasim(arama = typeof window !== "undefined" ? window.loc
     const ayetNo = a >= 1 ? a : null
     return { tip: "ayet", sureNo: s, ayetNo, etiket: ayetEtiketi(s, ayetNo) }
   }
+  if (p.has("t")) {
+    const index = parseInt(p.get("t"), 10)
+    const metin = kisalt(p.get("m") || "", 120)
+    if (!(index >= 0) && !metin) return null
+    return { tip: "soz", index: index >= 0 ? index : -1, metin, etiket: "Kısa Tefeül · paylaşılan söz" }
+  }
   if (p.has("k")) {
     const kitapId = String(p.get("k") || "").trim()
     if (!kitapId || !kitaplar.some(x => String(x.id) === kitapId)) return null
@@ -145,6 +167,11 @@ export function gelenPaylasim(arama = typeof window !== "undefined" ? window.loc
 
 /* Hedefi okuma ekranlarının açılışta okuduğu anahtarlara yaz → gidilecek yol */
 export function paylasimiHazirla(h) {
+  if (h.tip === "soz") {
+    // Söz Tefeülü açılışta okur, bulur ve o kartı gösterir (pages/SozTefeul.jsx)
+    try { localStorage.setItem(SOZ_PAYLASIM_ANAHTAR, JSON.stringify({ index: h.index, metin: h.metin })) } catch { /* yoksay */ }
+    return "/tefeul"
+  }
   try {
     if (h.tip === "ayet") {
       localStorage.setItem("vukuf-kuran-hedef", JSON.stringify(h.ayetNo

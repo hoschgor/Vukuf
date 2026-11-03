@@ -1,10 +1,14 @@
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { useApp } from "../AppContext"
-import { Shuffle, RefreshCw, SlidersHorizontal, X, BookOpen, ArrowRight } from "lucide-react"
+import { Shuffle, RefreshCw, SlidersHorizontal, X, BookOpen, ArrowRight, Share2, Image as ImageIcon } from "lucide-react"
 import tefeulMetinleri from "../data/tefeul.json"
 import { SURE_ADLARI } from "../data/sureAdlari"
 import { useKitaplikModu, gorunenler } from "../components/KitaplikModu"
+import PaylasimPenceresi, { PaylasimNotu } from "../components/PaylasimPenceresi"
+import GorselOlustur from "../components/GorselOlustur"
+import { SOZ_PAYLASIM_ANAHTAR } from "../data/paylasim"
+import { useMediaQuery } from "../data/hooks/useMediaQuery"
 
 /* ═══════════════════════════════════════════════════════════════════════════
    26 Ekim 2026 — kullanıcı: "Seçilen raf sistemine göre tefeül bölümü de
@@ -19,7 +23,36 @@ import { useKitaplikModu, gorunenler } from "../components/KitaplikModu"
    • KİTAPLIK MODU: sözün söyleyeni, kitaplıkta görünen bir rafa/âlime bağlıysa
      görünür (YAZAR_KIMLIKLERI). Risale-i Nûr modunda Bediüzzaman'ın sözleri ve
      Kur'ân; seçilen eserlerde yalnız seçilen raf ve âlimlerinkiler.
+   • PAYLAŞ (4 Kasım 2026) — kullanıcı: "Kısa tefeül moduna paylaşma seçeneği de
+     ekleyelim, paylaşma aynı bizdeki gibi çalışsın ve oradaki kısmı baz alsın.
+     Kur'ân-ı Kerîm'den seçilmiş ise bizdeki Kur'ân-ı Kerîm içindeki paylaşma ekranını
+     açsın, paylaşma iptal edilirse tefeül kısmına geri gelsin."
+     Aynı PaylasimPenceresi bu sayfanın üstünde açılır: söz → { tip:"soz" } (söz +
+     söyleyen + kaynak + ?t= bağlantısı); âyet → Kur'ân ekranındaki âyet paylaşımının
+     aynısı (?a=sûre:âyet); sûre kartı → sûrenin bağlantısı (?a=sûre). Kapatınca
+     kart yerinde durur. Söz bağlantısıyla gelen kişi bu sayfada o sözü görür
+     (kitaplık modunda o rafı kapalı olsa bile, ilk kart olarak).
+   • GÖRSEL (4 Kasım 2026) — kullanıcı: "görsel oluşturup paylaşmayı kastetmiştim."
+     Söz → okuma ekranlarındaki görsel oluşturma penceresi bu sayfada açılır (metin =
+     söz, kaynak = söyleyen · kaynak). Âyet/sûre → Arapça metin mushaf verisinden
+     geldiği için Kur'ân ekranına geçilir ve oradaki görsel penceresi doğrudan açılır
+     ("vukuf-kuran-gorsel"); pencere kapatılınca (vazgeçilince de) aynı karta dönülür.
+     Sûre kartında sûrenin ilk âyeti kullanılır.
    ═══════════════════════════════════════════════════════════════════════════ */
+
+// Paylaşılan sözü bul: sıra tutuyorsa o, tutmuyorsa (liste değişmiş) metnin başından
+const bosluksuz = (t) => String(t || "").toLocaleLowerCase("tr-TR").replace(/[^\p{L}\p{N}]+/gu, "")
+function paylasilanSozBul() {
+  let h = null
+  try { h = JSON.parse(localStorage.getItem(SOZ_PAYLASIM_ANAHTAR) || "null"); localStorage.removeItem(SOZ_PAYLASIM_ANAHTAR) } catch { /* yoksay */ }
+  if (!h) return null
+  const bas = bosluksuz(h.metin)
+  const uyar = (i) => !!tefeulMetinleri[i] && (!bas || bosluksuz(tefeulMetinleri[i].metin).startsWith(bas))
+  if (h.index >= 0 && uyar(h.index)) return h.index
+  if (!bas) return null
+  const i = tefeulMetinleri.findIndex(m => bosluksuz(m.metin).startsWith(bas))
+  return i >= 0 ? i : null
+}
 
 // Sûre başına âyet sayıları (Hafs), 1..114 — OkumaTefeulu.jsx ile aynı
 const AYET_SAYILARI = [
@@ -125,8 +158,12 @@ export default function Tefeul() {
   const kuranAcik = gor.kuran
   const sozGorunur = (m) => tumMod || yazarGorunur(m.yazar, gor)
 
+  const isMobile = useMediaQuery("(max-width: 768px)")
+  // Söz bağlantısıyla gelindiyse o söz (filtre "Tümü")
+  const paylasilan = useMemo(() => paylasilanSozBul(), [])
   // "Tefeüle dön" ile Kur'ân'dan gelindiyse aynı kart ve filtre geri gelir
   const ilk = useMemo(() => {
+    if (paylasilan != null) return { kart: { tip: "soz", index: paylasilan }, seciliKategori: "Tümü", seciliYazar: null, paylasim: true }
     try {
       if (localStorage.getItem("vukuf-tefeul-devam") === "1" && localStorage.getItem("vukuf-tefeul-yol") === "/tefeul") {
         return JSON.parse(localStorage.getItem(DURUM_ANAHTAR) || "null")
@@ -177,8 +214,13 @@ export default function Tefeul() {
     return { tip: "soz", index: i }
   }
   const [kart, setKart] = useState(() => ilk?.kart || null)
+  const [paylasVeri, setPaylasVeri] = useState(null)
+  const [gorselVeri, setGorselVeri] = useState(null)
+  const [paylasimNotu, setPaylasimNotu] = useState(() => (ilk?.paylasim ? yazarAdi(tefeulMetinleri[paylasilan]?.yazar) : null))
+  // Paylaşılan söz, kitaplık modunda rafı kapalı olsa da ilk kart olarak kalır
+  const paylasilanKartRef = useRef(ilk?.paylasim ? ilk.kart : null)
   // İlk kart ve mod/filtre değişince geçersiz kalan kart yenilenir
-  const kartGecerli = (k) => !!k && (k.tip === "soz"
+  const kartGecerli = (k) => !!k && (k === paylasilanKartRef.current || k.tip === "soz"
     ? havuz.includes(k.index)
     : kuranAcik && (seciliKategori === KURAN || (seciliKategori === "Tümü" && !seciliYazar)))
   useEffect(() => {
@@ -215,6 +257,37 @@ export default function Tefeul() {
       localStorage.setItem("vukuf-tefeul-yol", "/tefeul")
       localStorage.setItem("vukuf-kuran-hedef", JSON.stringify(kart.tip === "ayet"
         ? { sureNo: kart.sureNo, ayetNo: kart.ayetNo } : { sureNo: kart.sureNo }))
+    } catch { /* yoksay */ }
+    navigate("/kuran")
+  }
+
+  // Ekrandaki kartı paylaş — söz kendi biçimiyle, âyet/sûre Kur'ân ekranındaki gibi
+  function paylas() {
+    if (!kart) return
+    if (kart.tip === "soz") {
+      const m = tefeulMetinleri[kart.index]
+      if (!m) return
+      setPaylasVeri({ tip: "soz", index: kart.index, metin: m.metin, yazar: yazarAdi(m.yazar), kaynak: m.kaynak || "" })
+    } else {
+      setPaylasVeri({ tip: "ayet", sureNo: kart.sureNo, ayetNo: kart.tip === "ayet" ? kart.ayetNo : null, sureAdi: SURE_ADLARI[kart.sureNo - 1] })
+    }
+  }
+
+  // Ekrandaki karttan görsel — söz burada, âyet/sûre Kur'ân ekranının görsel penceresinde
+  function gorselYap() {
+    if (!kart) return
+    if (kart.tip === "soz") {
+      const m = tefeulMetinleri[kart.index]
+      if (!m) return
+      setGorselVeri({ metin: m.metin, kaynak: [yazarAdi(m.yazar), m.kaynak].filter(Boolean).join(" · ") })
+      return
+    }
+    try {
+      localStorage.setItem(DURUM_ANAHTAR, JSON.stringify({ kart, seciliKategori, seciliYazar }))
+      localStorage.setItem("vukuf-tefeul-yol", "/tefeul")
+      localStorage.setItem("vukuf-kuran-gorsel", JSON.stringify({
+        sureNo: kart.sureNo, ayetNo: kart.tip === "ayet" ? kart.ayetNo : 1, donus: "/tefeul",
+      }))
     } catch { /* yoksay */ }
     navigate("/kuran")
   }
@@ -382,8 +455,8 @@ export default function Tefeul() {
         </div>
       )}
 
-      {/* Yeni tefeül butonu */}
-      <div style={{ display: "flex", justifyContent: "center", marginTop: "32px" }}>
+      {/* Yeni tefeül + Paylaş */}
+      <div style={{ display: "flex", justifyContent: "center", flexWrap: "wrap", gap: "10px", marginTop: "32px" }}>
         <button
           onClick={yeniMetin}
           style={{
@@ -397,7 +470,46 @@ export default function Tefeul() {
           <RefreshCw size={16} />
           Yeni Tefeül
         </button>
+        {kart && (mevcutMetin || kart.tip !== "soz") && (
+          <button
+            onClick={gorselYap}
+            aria-label="Görsel oluştur"
+            style={{
+              display: "flex", alignItems: "center", gap: "8px", padding: "12px 22px", borderRadius: "10px",
+              background: `${theme.accent}12`, border: `1px solid ${theme.accent}55`, color: theme.accent,
+              fontSize: "14px", fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
+            }}
+          >
+            <ImageIcon size={16} />
+            Görsel
+          </button>
+        )}
+        {kart && (mevcutMetin || kart.tip !== "soz") && (
+          <button
+            onClick={paylas}
+            aria-label={kart.tip === "soz" ? "Sözü paylaş" : kart.tip === "ayet" ? "Âyeti paylaş" : "Sûreyi paylaş"}
+            style={{
+              display: "flex", alignItems: "center", gap: "8px", padding: "12px 22px", borderRadius: "10px",
+              background: `${theme.accent}12`, border: `1px solid ${theme.accent}55`, color: theme.accent,
+              fontSize: "14px", fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
+            }}
+          >
+            <Share2 size={16} />
+            Paylaş
+          </button>
+        )}
       </div>
+
+      {/* Paylaşma penceresi — okuma ekranlarındakinin aynısı; kapanınca kart yerinde kalır */}
+      <PaylasimPenceresi acik={!!paylasVeri} veri={paylasVeri} theme={theme} isMobile={isMobile}
+        kapat={() => setPaylasVeri(null)} />
+      {/* Görsel oluşturma — okuma ekranındakinin aynısı (söz kartı için) */}
+      <GorselOlustur acik={!!gorselVeri} kapat={() => setGorselVeri(null)}
+        arapca={null} meal={gorselVeri?.metin || null} kaynak={gorselVeri?.kaynak || null}
+        arapcaFont={null} theme={theme} isMobile={isMobile} />
+      {paylasimNotu != null && (
+        <PaylasimNotu metin={paylasimNotu} theme={theme} ust={64} kapat={() => setPaylasimNotu(null)} />
+      )}
     </div>
   )
 }

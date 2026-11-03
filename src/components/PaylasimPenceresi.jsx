@@ -9,7 +9,8 @@
 
    veri:
      { tip: "kitap", kitapId, kitapAdi, sayfa, satir, cumle, kelime }
-     { tip: "ayet",  sureNo, ayetNo, sureAdi }
+     { tip: "ayet",  sureNo, ayetNo, sureAdi }          (ayetNo yoksa sûrenin tamamı)
+     { tip: "soz",   index, metin, yazar, kaynak }      (Kısa Tefeül'deki söz)
    Mesaj ve bağlantı data/paylasim.js'te kuruluyor (biçim orada anlatıldı).
 
    Marka logoları çizilmedi: düğmeler genel simge + uygulamanın adı + tanıdık rengiyle.
@@ -80,7 +81,8 @@ export default function PaylasimPenceresi({ acik, veri, kapat, theme, isMobile }
     }
   }
 
-  const baslik = veri.tip === "ayet" ? "Âyeti paylaş" : (secim === "kelime" && kelimeVar ? "Kelimeyi paylaş" : "Cümleyi paylaş")
+  const baslik = veri.tip === "ayet" ? (veri.ayetNo ? "Âyeti paylaş" : "Sûreyi paylaş")
+    : veri.tip === "soz" ? "Sözü paylaş" : (secim === "kelime" && kelimeVar ? "Kelimeyi paylaş" : "Cümleyi paylaş")
 
   const hedefDugmesi = (key, ad, Ikon, renk, tikla) => (
     <button key={key} onClick={tikla} className="vukuf-paylas-hedef"
@@ -160,10 +162,10 @@ export default function PaylasimPenceresi({ acik, veri, kapat, theme, isMobile }
                   fontSize: "15px", lineHeight: 1.6, maxHeight: "9.6em", overflowY: "auto",
                   fontFamily: "inherit", overflowWrap: "anywhere",
                 }}>
-                  “{secim === "kelime" && kelimeVar ? veri.kelime : veri.cumle}”
+                  “{veri.tip === "soz" ? veri.metin : secim === "kelime" && kelimeVar ? veri.kelime : veri.cumle}”
                 </div>
                 <div style={{ fontSize: "12.5px", color: theme.textSecondary, marginTop: "6px" }}>
-                  — {[veri.kitapAdi, veri.sayfa ? `s. ${veri.sayfa}` : ""].filter(Boolean).join(", ")}
+                  — {(veri.tip === "soz" ? [veri.yazar, veri.kaynak] : [veri.kitapAdi, veri.sayfa ? `s. ${veri.sayfa}` : ""]).filter(Boolean).join(", ")}
                 </div>
               </>
             )}

@@ -1266,11 +1266,25 @@ export default function KuranOkuma({ kitap }) {
     document.body.appendChild(kutu)
     const oku = () => setUstCentik(Math.round(kutu.getBoundingClientRect().height) || 0)
     oku()
+    /* 5 Kasım 2026 — kullanıcı: "perde bazen geliyor, bazen gidiyor. Bu sebeple odaklama
+       da karışabiliyor." iOS çentik payını açılıştan SONRA değiştirebiliyor (ana ekran
+       uygulamasında açılışta 0 gelip sonra dolabiliyor) ve bu bir `resize` doğurmuyor.
+       Ölçü kutusunun boyu doğrudan izleniyor; uygulamaya geri dönülünce de yeniden ölçülüyor. */
+    let ro = null
+    try { ro = new ResizeObserver(oku); ro.observe(kutu) } catch { /* eski tarayıcı */ }
+    const gorunur = () => { if (document.visibilityState === "visible") oku() }
+    const t1 = setTimeout(oku, 400), t2 = setTimeout(oku, 1500)
     window.addEventListener("resize", oku)
     window.addEventListener("orientationchange", oku)
+    window.addEventListener("pageshow", oku)
+    document.addEventListener("visibilitychange", gorunur)
     return () => {
+      clearTimeout(t1); clearTimeout(t2)
+      try { ro && ro.disconnect() } catch { /* yoksay */ }
       window.removeEventListener("resize", oku)
       window.removeEventListener("orientationchange", oku)
+      window.removeEventListener("pageshow", oku)
+      document.removeEventListener("visibilitychange", gorunur)
       kutu.remove()
     }
   }, [])

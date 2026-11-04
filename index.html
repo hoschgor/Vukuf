@@ -61,6 +61,27 @@
          ikisi birlikte çalışır. -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <!-- SAAT ŞERİDİ AYARI (5 Kasım 2026) — Ayarlar → Görünüm → Saat Şeridi.
+         iOS 26.1'den beri `black-translucent` kipinde sistem saat şeridinin üstüne
+         kendi gölgesini (perde) çiziyor; sayfadan kapatılamıyor. "Tema renginde"
+         seçiliyse yukarıdaki etiket `default` yapılıp tema rengi theme-color olarak
+         yazılıyor: şerit opak ve tema renginde, perde yok. iOS bunu ana ekrana
+         EKLENİRKEN sakladığı için seçim yeniden eklemeyle geçerli olur.
+         Ayrıntı: src/data/saatSeridi.js -->
+    <script>
+      try {
+        if (localStorage.getItem("vukuf-saat-seridi") === "tema") {
+          document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]').setAttribute("content", "default")
+          var serRenk = localStorage.getItem("vukuf-saat-seridi-renk")
+          if (serRenk) {
+            var serMeta = document.createElement("meta")
+            serMeta.setAttribute("name", "theme-color")
+            serMeta.setAttribute("content", serRenk)
+            document.head.appendChild(serMeta)
+          }
+        }
+      } catch (e) { /* depolama kapalı — saydam şerit kalır */ }
+    </script>
     <!-- DOKUNMA VURGUSU — Android Chrome dokunulan öğenin üstüne yarı saydam bir
          kutu çiziyor (-webkit-tap-highlight-color). Kalıtılan bir özellik; köke
          verince tüm uygulamada kapanıyor. -->

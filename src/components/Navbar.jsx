@@ -7,6 +7,7 @@ import IosSwitch from "./IosSwitch"
 import AltSayfa from "./AltSayfa"
 import VeriAyarlari from "./VeriAyarlari"
 import Katlanir from "./Katlanir"
+import { saatSeridiOku, saatSeridiYaz } from "../data/saatSeridi"
 import TemaSecici from "./TemaSecici"
 import { ypDegisken } from "./yatayDuzen"
 import { themes } from "../styles/themes"
@@ -146,6 +147,18 @@ export default function Navbar() {
       const m = document.querySelector('link[rel="manifest"]'); if (m && s) m.href = s.manifest
       const a = document.querySelector('link[rel="apple-touch-icon"]'); if (a && s) a.href = s.apple
     } catch {}
+  }
+
+  /* SAAT ŞERİDİ (5 Kasım 2026) — iPhone ana ekran uygulamasında saydam ya da tema
+     renginde (iOS 26 perdesi). Ayrıntı: data/saatSeridi.js */
+  const SERITLER = [
+    { id: "saydam", ad: "Saydam" },
+    { id: "tema", ad: "Tema renginde" },
+  ]
+  const [saatSeridi, setSaatSeridi] = useState(saatSeridiOku)
+  function saatSeridiSec(id) {
+    setSaatSeridi(id)
+    saatSeridiYaz(id, theme.background)
   }
 
   function toggleGirisAnim() {
@@ -342,7 +355,7 @@ export default function Navbar() {
           {/* ── GÖRÜNÜM ───────────────────────────────────────────────── */}
           <Katlanir
             theme={theme} ikon={Sparkles} baslik="Görünüm"
-            ozet={[girisAnim && "giriş", dinamik && "dinamik", RAF_GORUNUMLERI.find(r => r.id === rafGorunum)?.ad.toLocaleLowerCase("tr-TR"), `${uygSimge === "acik" ? "açık" : "koyu"} simge`].filter(Boolean).join(" · ")}
+            ozet={[girisAnim && "giriş", dinamik && "dinamik", RAF_GORUNUMLERI.find(r => r.id === rafGorunum)?.ad.toLocaleLowerCase("tr-TR"), `${uygSimge === "acik" ? "açık" : "koyu"} simge`, saatSeridi === "tema" && "renkli şerit"].filter(Boolean).join(" · ")}
             {...kapak("gorunum")}
           >
           <AyarSatiri
@@ -415,6 +428,50 @@ export default function Navbar() {
                       boxShadow: "0 1px 4px rgba(0,0,0,0.25)",
                     }} />
                     <span style={{ fontSize: "13px", fontWeight: 600, color: secili ? theme.accent : theme.text }}>{s.ad}</span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+          <div style={{ height: "1px", background: theme.border, opacity: 0.6, margin: "2px 0" }} />
+          {/* Saat şeridi (iPhone ana ekran uygulaması) — data/saatSeridi.js */}
+          <div style={{ padding: "12px 4px" }}>
+            <div style={{ fontSize: "15px", color: theme.text, fontWeight: 500 }}>Saat Şeridi</div>
+            <div style={{ fontSize: "12px", color: theme.textSecondary, marginTop: "2px", lineHeight: 1.45 }}>
+              iPhone'da ana ekrana eklenen uygulamanın en üstündeki saat ve pil şeridi.
+              "Saydam"da sayfa saatin altına kadar uzanır; iOS bu şeridin üstüne kendi
+              gölgesini (perde) çizebilir. "Tema renginde"de perde olmaz, şerit temanın
+              rengini alır ve sayfa saatin altından başlar. Seçim, uygulama ana ekrandan
+              kaldırılıp yeniden eklendiğinde geçerli olur.
+            </div>
+            <div role="radiogroup" aria-label="Saat şeridi" style={{
+              display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "8px", marginTop: "10px",
+            }}>
+              {SERITLER.map(s => {
+                const secili = saatSeridi === s.id
+                return (
+                  <button key={s.id} role="radio" aria-checked={secili} onClick={() => saatSeridiSec(s.id)}
+                    style={{
+                      display: "flex", alignItems: "center", gap: "10px", padding: "8px 10px",
+                      borderRadius: "12px", cursor: "pointer", fontFamily: "inherit", textAlign: "left",
+                      border: `1.5px solid ${secili ? theme.accent : theme.border}`,
+                      background: secili ? `${theme.accent}12` : "transparent",
+                    }}>
+                    {/* küçük telefon üstü önizlemesi */}
+                    <span aria-hidden="true" style={{
+                      width: "30px", height: "40px", borderRadius: "7px", flexShrink: 0, overflow: "hidden", position: "relative",
+                      border: `1.5px solid ${theme.text}40`, background: theme.background,
+                    }}>
+                      <span style={{
+                        position: "absolute", left: 0, right: 0, top: 0, height: "9px",
+                        background: s.id === "tema" ? theme.surface : `linear-gradient(${theme.text}55, ${theme.text}00)`,
+                        borderBottom: s.id === "tema" ? `1px solid ${theme.border}` : "none",
+                      }} />
+                      {[0, 1, 2, 3].map(i => (
+                        <span key={i} style={{ position: "absolute", left: "4px", right: i === 3 ? "10px" : "4px", top: `${(s.id === "tema" ? 14 : 6) + i * 6}px`, height: "2px", borderRadius: "1px", background: theme.textSecondary, opacity: 0.45 }} />
+                      ))}
+                    </span>
+                    <span style={{ fontSize: "13px", fontWeight: 600, color: secili ? theme.accent : theme.text, lineHeight: 1.25 }}>{s.ad}</span>
                   </button>
                 )
               })}

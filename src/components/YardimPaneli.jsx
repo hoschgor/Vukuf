@@ -662,6 +662,16 @@ const KONULAR = [
     anahtar: "açılış giriş animasyon splash",
   },
   {
+    bolum: "ayarlar", ikon: Smartphone, baslik: "Saat şeridi (iPhone)",
+    ozet: "Ana ekran uygulamasında en üstteki şeridin görünümü.",
+    nerede: "Ayarlar → Görünüm → Saat Şeridi",
+    metin: [
+      "iPhone'da ana ekrana eklenen uygulamanın en üstündeki saat ve pil şeridi iki biçimde kullanılabilir. \"Saydam\"da sayfa saatin altına kadar uzanır; iOS bu şeridin üstüne kendi gölgesini (perde) çizebilir ve bu perde zaman zaman gelip gidebilir. \"Tema renginde\"de perde olmaz; şerit seçili temanın rengini alır ve sayfa saatin altından başlar.",
+      "iOS bu ayarı uygulama ana ekrana eklenirken sakladığı için seçim, uygulama ana ekrandan kaldırılıp Safari'den yeniden eklendiğinde geçerli olur.",
+    ],
+    anahtar: "durum çubuğu status bar perde gölge saat pil çentik iphone ana ekran",
+  },
+  {
     bolum: "ayarlar", ikon: Smartphone, baslik: "Uygulama olarak kurma ve çevrimdışı kullanım",
     ozet: "Ana ekrana eklemek, internetsiz okumak.",
     metin: [

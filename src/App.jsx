@@ -16,6 +16,7 @@ import OdakPenceresi from "./components/OdakPenceresi"
 // Paylaşılan bağlantı (18 Ekim 2026): önce ana sayfa, oradan paylaşılan yere köprü
 import { gelenPaylasim, paylasimiHazirla } from "./data/paylasim"
 import { Share2 } from "lucide-react"
+import { saatSeridiUygula } from "./data/saatSeridi"
 
 /* ═══════════════════════════════════════════════════════════════════════════
    SAYFALAR GEREKTİĞİNDE YÜKLENİYOR (29 Eylül 2026)
@@ -193,7 +194,10 @@ export default function App() {
     // Aynı renk manifest'te de `theme_color` olarak duruyordu, o da kaldırıldı.
     // Varsa ESKİDEN kalan etiket de siliniyor: kurulu uygulamada head'de kalmış
     // olabilir ve tek başına bandı diri tutar.
-    document.querySelectorAll('meta[name="theme-color"]').forEach(m => m.remove())
+    // SAAT ŞERİDİ AYARI (5 Kasım 2026): "Tema renginde" seçiliyse (data/saatSeridi.js)
+    // theme-color BİLEREK yazılıyor — şerit opak ve tema renginde olsun, iOS 26'nın
+    // perdesi çizilmesin. Saydam kipte (varsayılan) eskisi gibi siliniyor.
+    saatSeridiUygula(bg)
     // Letterbox/çentik alanının beyaz kalmaması zaten yukarıdaki html+body
     // arka planıyla sağlanıyor; theme-color buna gerekli değil.
     // ══════════════════════════════════════════════════════════════════════

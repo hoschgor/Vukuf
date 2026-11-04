@@ -10,10 +10,11 @@
    değişince geçişle döner). Mihrap nişinin içinde sıradaki vakit ve kalan süre
    yazar (HTML katmanı; yazı boyu çizimle birlikte ölçeklenir). Çizim önizlemeden
    daha alçak: kart içinde yer kaplamasın diye cephe kısaltıldı.
-   SOL KANAT (4 Kasım 2026): `solKanat` verilirse ({ baslik, satirlar, ipucu }) sol
-   kanattaki çiçek ve pencere yerine renkli bir levha çizilir, içine kısa bilgi yazılır
-   (kerahat vakti — kullanıcı: "kerahat vakti içerisindeysek cami üzerinde sağ ya da
-   sol bölümde bilgi verebiliriz").
+   YAN KÖŞELER (4 Kasım 2026): kullanıcı: "caminin dışında sol tarafa günün kerahat
+   vakitleri aralıklarını liste olarak tutalım, kerahat vakti içindeysek sağ tarafta da
+   bununla ilgili bildirim verebilir." Minare ile kubbeler arasındaki boş gökyüzü
+   köşeleri kullanılıyor: `sol` (liste) ve `sag` (bildirim) — HTML katmanı, yazı boyu
+   çizimle ölçeklenir. (İlk denemedeki sol kanat levhası beğenilmedi, kaldırıldı.)
    ═══════════════════════════════════════════════════════════════════════════ */
 
 import { useEffect, useRef, useState } from "react"
@@ -24,7 +25,11 @@ const GECIS = "fill .35s ease, stroke .35s ease"
 // Niş içi yazı alanı (viewBox birimiyle)
 const NIS = { x: 86, y: 134, g: 128, h: 66 }
 
-export default function CamiVakit({ theme, ust, buyuk, alt, solKanat = null }) {
+// Gökyüzü köşeleri (viewBox birimi): minarenin şerefesi ile yan kubbe/ana kubbe arası
+const SOL_KOSE = { x: 31, y: 0, g: 60, h: 80 }
+const SAG_KOSE = { x: 209, y: 0, g: 60, h: 80 }
+
+export default function CamiVakit({ theme, ust, buyuk, alt, sol = null, sag = null }) {
   const t = { ...theme, ayetNoRengi: theme.ayetNoRengi || theme.accent }
   const f = (fill, stroke, sw, ek) => ({ fill, stroke, strokeWidth: sw, transition: GECIS, ...ek })
   const yuzey = f(t.surface, t.border, 1.2)
@@ -80,15 +85,8 @@ export default function CamiVakit({ theme, ust, buyuk, alt, solKanat = null }) {
         {/* cephe */}
         <rect x="32" y="100" width="236" height={ZEMIN - 100} style={yuzey} />
         {/* yan kanatlar: çiçek rozeti + kemerli pencere */}
-        {solKanat ? (
-          <rect x="34.5" y="104" width="32" height="98" rx="3"
-            style={f(t.accent, t.accent, 1, { fillOpacity: 0.14 })} />
-        ) : (
-          <>
-            <RozetSekli cx={50} cy={128} r={11} t={t} />
-            {pencere(43, 158, 14, 30)}
-          </>
-        )}
+        <RozetSekli cx={50} cy={128} r={11} t={t} />
+        {pencere(43, 158, 14, 30)}
         <RozetSekli cx={250} cy={128} r={11} t={t} />
         {pencere(243, 158, 14, 30)}
         {/* MİHRAP: pîştak + sivri kemerli niş */}
@@ -100,21 +98,16 @@ export default function CamiVakit({ theme, ust, buyuk, alt, solKanat = null }) {
         <line x1="2" y1={ZEMIN + 0.5} x2="298" y2={ZEMIN + 0.5} style={f("none", t.border, 1.4)} />
       </svg>
 
-      {/* SOL KANAT LEVHASI */}
-      {solKanat && (
-        <div role="status" title={solKanat.ipucu || undefined} style={{
-          position: "absolute", boxSizing: "border-box", ...yuzde(34.5, 106),
-          width: `${(32 / VB_G) * 100}%`, height: `${(94 / yH) * 100}%`,
-          display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: `${2 * k}px`,
-          textAlign: "center", lineHeight: 1.15, color: t.accent, overflow: "hidden",
-          fontSize: `${Math.max(7.5, 7.8 * k)}px`,
-        }}>
-          <span style={{ fontWeight: 700 }}>{solKanat.baslik}</span>
-          {(solKanat.satirlar || []).map((x, i) => (
-            <span key={i} style={{ color: i === 0 ? t.text : t.textSecondary, fontVariantNumeric: "tabular-nums" }}>{x}</span>
-          ))}
-        </div>
-      )}
+      {/* GÖKYÜZÜ KÖŞELERİ: solda liste, sağda bildirim */}
+      {[[sol, SOL_KOSE, "flex-start"], [sag, SAG_KOSE, "flex-end"]].map(([icerik, kose, hiza], i) => icerik && (
+        <div key={i} style={{
+          position: "absolute", boxSizing: "border-box", ...yuzde(kose.x, kose.y),
+          width: `${(kose.g / VB_G) * 100}%`, height: `${(kose.h / yH) * 100}%`,
+          display: "flex", flexDirection: "column", justifyContent: "flex-start", alignItems: hiza,
+          textAlign: i ? "right" : "left", overflow: "hidden",
+          fontSize: `${Math.max(8.5, 8.2 * k)}px`, lineHeight: 1.12, color: t.textSecondary,
+        }}>{icerik}</div>
+      ))}
 
       {/* NİŞ İÇİ YAZI */}
       <div style={{

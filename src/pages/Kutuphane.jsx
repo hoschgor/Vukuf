@@ -2120,7 +2120,7 @@ function SortableKategori({ kategori,
 
 // Özel rafın alt rafı — tıklayınca açılır (dinamikte varsayılan kapalı)
 function OzelAltRaf({ raf, alt, liste, theme, dinamikMod, duzenlemeMode, aramaAktif,
-  altDuzen, setAltDuzen, onAltRename, onAltSil, onKitapEkleAc, onKitapCikar, silinebilir }) {
+  altDuzen, setAltDuzen, onAltRename, onAltSil, onKitapEkleAc, onKitapCikar, silinebilir, bolumsuz = false }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: alt.id })
   const sstyle = { transform: CSS.Transform.toString(transform), transition }
   const [acik, setAcik] = useState(() => {
@@ -2162,6 +2162,7 @@ function OzelAltRaf({ raf, alt, liste, theme, dinamikMod, duzenlemeMode, aramaAk
           ) : (
             <span style={{ fontSize: "12px", color: theme.accent, fontWeight: "bold", letterSpacing: "1px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
               {alt.baslik.toLocaleUpperCase('tr-TR')}
+              {bolumsuz && <span style={{ fontWeight: 400, letterSpacing: 0, color: theme.textSecondary }}> · bölümsüz, doğrudan rafta görünür</span>}
             </span>
           )}
         </div>
@@ -2247,6 +2248,15 @@ function RafArama({ deger, setDeger, theme, acik, setAcik }) {
 // ─────────────────────────────────────────────────────────────
 // Açık/kapalı durumu üst bileşende (ozelAcik) — çekmecenin hangi satıra düşeceği orada hesaplanıyor.
 // Anahtar aynı: `vukuf-ozel-acik-<id>`, varsayılan açık.
+/* BÖLÜMSÜZ KİTAPLAR (4 Kasım 2026) — kullanıcı: "Kitaplıkta tek raf oluşturulursa
+   'Kitap' ismi gibi bir bölüme gerek yok, direkt kitaplar görünse daha iyi olacak.
+   Özel olarak istenirse raf içine konabilir fakat raf oluşturulmayanlar direkt
+   gösterilsin." Raf oluşturulurken kendiliğinden açılan ilk alt raf ("Kitaplar")
+   başlıksız gösterilir: kitaplar doğrudan rafın içinde. Kullanıcının eklediği ya da
+   adını değiştirdiği alt raflar her zamanki gibi başlıklı bölüm olarak görünür.
+   Düzenleme modunda bölümsüz kısım da başlığıyla görünür (kitap eklemek için). */
+const bolumsuzMu = (alt, i) => i === 0 && (alt.baslik || "").trim() === "Kitaplar"
+
 function OzelKategori({ raf, havuz, theme, dinamikMod, duzenlemeMode, gizlemeMod, gizli, onGizle,
   onSil, onRename, onResim, onAltEkle, onAltSil, onAltRename, onKitapEkleAc, onKitapCikar, sensors, onAltSira,
   acik, onToggle, yer }) {
@@ -2277,7 +2287,7 @@ function OzelKategori({ raf, havuz, theme, dinamikMod, duzenlemeMode, gizlemeMod
         p={yer.p} theme={theme} isMobile={isMobile} acik={acik} satirAcik={yer.satirAcik} gizli={gizli}
         sirtlar={sirtlar} kapak={{ tip: "semse", tohum: raf.id }} tohum={raf.id}
         resim={raf.resim && raf.resim.src ? raf.resim : null}
-        yataylar={(raf.altRaflar || []).length > 1 ? raf.altRaflar.map(a => ({ id: a.id, ad: a.baslik, n: (a.kitapIdler || []).length })) : []}
+        yataylar={(raf.altRaflar || []).length > 1 ? raf.altRaflar.filter((a, i) => !bolumsuzMu(a, i)).map(a => ({ id: a.id, ad: a.baslik, n: (a.kitapIdler || []).length })) : []}
         onSirt={rafKitaplari.length && !duzenlemeMode ? (s) => s.veri && navigate(kitapYolu(s.veri)) : undefined}
         onToggle={isimDuzen != null ? undefined : toggle}
         setNodeRef={setNodeRef} sortStil={sstyle}
@@ -2368,10 +2378,22 @@ function OzelKategori({ raf, havuz, theme, dinamikMod, duzenlemeMode, gizlemeMod
             onDragEnd={(e) => { const { active, over } = e; if (over && active.id !== over.id) onAltSira(raf.id, active.id, over.id) }}
           >
             <SortableContext items={(raf.altRaflar || []).map(a => a.id)} strategy={verticalListSortingStrategy}>
-              {(raf.altRaflar || []).map(alt => {
+              {(raf.altRaflar || []).map((alt, i) => {
                 let liste = (alt.kitapIdler || []).map(id => havuz.get(id)).filter(Boolean)
                 if (q) liste = liste.filter(k => normHarf(k.baslik).includes(q))
                 if (aramaAktif && liste.length === 0) return null
+                // Bölümsüz kitaplar: başlıksız, doğrudan rafın içinde (düzenlemede başlıklı)
+                if (!duzenlemeMode && bolumsuzMu(alt, i)) {
+                  if (!liste.length && raf.altRaflar.length > 1) return null
+                  return (
+                    <div key={alt.id}>
+                      <RafSatiri kitaplar={liste} rafId={`ozel-${alt.id}`} theme={theme} dinamikMod={dinamikMod} duzenlemeMode={false} />
+                      {raf.altRaflar.length > 1 && (
+                        <div style={{ height: "8px", background: `linear-gradient(to bottom, ${theme.accent}40, ${theme.accent}20)`, borderTop: `2px solid ${theme.accent}60`, margin: "0 0 4px" }} />
+                      )}
+                    </div>
+                  )
+                }
                 return (
                   <OzelAltRaf
                     key={alt.id}
@@ -2389,6 +2411,7 @@ function OzelKategori({ raf, havuz, theme, dinamikMod, duzenlemeMode, gizlemeMod
                     onKitapEkleAc={onKitapEkleAc}
                     onKitapCikar={onKitapCikar}
                     silinebilir={raf.altRaflar.length > 1}
+                    bolumsuz={bolumsuzMu(alt, i)}
                   />
                 )
               })}

@@ -71,7 +71,7 @@ import NamazHatimTakibi from "../components/NamazHatimTakibi"
 import {
   VAKITLER, vakitAni, sehirleriGetir, ilceleriGetir, vakitleriGetir, secimOku, secimYaz, durumHesapla, kalanMetni,
   konumdanBul, icsIndir, yaklasanGunler, konumBilgisiniSil, KONUM_SILINDI,
-  ramazanHedefi, ramazanMi, kerahatDurumu, HATIRLATMA_SECENEKLERI, hatirlatmaOku, hatirlatmaYaz,
+  ramazanHedefi, ramazanMi, kerahatDurumu, kerahatAraliklari, HATIRLATMA_SECENEKLERI, hatirlatmaOku, hatirlatmaYaz,
 } from "../data/namazVakitleri"
 
 // ── KIBLE ────────────────────────────────────────────────────────────────────
@@ -233,15 +233,43 @@ function NamazVakitleri({ theme }) {
           {/* Cami: mihrabında yaklaşan (ya da dokunulan) vakit ve kalan / geçen süre */}
           {(() => {
             const sec = seciliVakit && VAKITLER.find(v => v.k === seciliVakit)
-            // Kerahat vaktindeysek sol kanatta levha
-            const solKanat = kerahat ? {
-              baslik: "Kerahat", satirlar: ["vakti", "bitiş", kerahat.bitSaat],
-              ipucu: `${kerahat.ad} · kerahat vakti ${kerahat.basSaat}–${kerahat.bitSaat}`,
-            } : null
+            // Caminin solundaki gökyüzünde günün kerahat aralıkları; içindeysek sağda bildirim.
+            // Ramazan'da (kerahat yokken) sağda sahur ve iftar saatleri.
+            const araliklar = kerahatAraliklari(d.bugun)
+            const sol = (
+              <>
+                <span style={{ fontSize: "0.85em", fontWeight: 700, letterSpacing: "0.08em", color: theme.textSecondary, marginBottom: "0.25em" }}>KERAHAT</span>
+                {araliklar.map(a => (
+                  <span key={a.k} title={`${a.ad} · ${a.basSaat}–${a.bitSaat}`}
+                    style={{ display: "block", marginBottom: "0.12em", opacity: a.gecti && !a.aktif ? 0.55 : 1, color: a.aktif ? theme.accent : theme.textSecondary }}>
+                    <span style={{ display: "block", fontSize: "0.88em" }}>{a.kisa}</span>
+                    <span style={{ display: "block", fontWeight: a.aktif ? 700 : 600, color: a.aktif ? theme.accent : theme.text, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>{a.basSaat}–{a.bitSaat}</span>
+                  </span>
+                ))}
+              </>
+            )
+            const ramGun = d.bugun && Date.now() >= vakitAni(d.bugun, d.bugun.Aksam) && d.yarin ? d.yarin : d.bugun
+            const sag = kerahat ? (
+              <span role="status" style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", padding: "0.35em 0.5em", borderRadius: "0.6em", border: `1px solid ${theme.accent}`, background: `${theme.accent}14` }}>
+                <span style={{ display: "flex", alignItems: "center", gap: "0.3em", fontWeight: 700, color: theme.accent }}>
+                  <span className="vk-kerahat-nokta" style={{ width: "0.55em", height: "0.55em", borderRadius: "50%", background: theme.accent }} />Kerahat vakti
+                </span>
+                <span style={{ fontSize: "0.9em" }}>{kerahat.kisa}</span>
+                <span style={{ color: theme.text, fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>bitiş {kerahat.bitSaat}</span>
+                <span style={{ fontSize: "0.9em" }}>{kalanMetni(kerahat.bit - Date.now())} kaldı</span>
+              </span>
+            ) : ramGun && ramazanMi(ramGun) ? (
+              <>
+                <span style={{ display: "block", fontSize: "0.88em" }}>Sahur</span>
+                <span style={{ display: "block", fontWeight: 600, color: theme.text, fontVariantNumeric: "tabular-nums", marginBottom: "0.25em" }}>{ramGun.Imsak}</span>
+                <span style={{ display: "block", fontSize: "0.88em" }}>İftar</span>
+                <span style={{ display: "block", fontWeight: 600, color: theme.text, fontVariantNumeric: "tabular-nums" }}>{ramGun.Aksam}</span>
+              </>
+            ) : null
             if (sec) {
               const fark = vakitAni(d.bugun, d.bugun[sec.k]) - Date.now()
               return (
-                <CamiVakit theme={theme} solKanat={solKanat}
+                <CamiVakit theme={theme} sol={sol} sag={sag}
                   ust={<><strong style={{ color: theme.text }}>{sec.ad}</strong> · {d.bugun[sec.k]}</>}
                   buyuk={<SureYazisi ms={fark} />}
                   alt={fark > 0 ? "kaldı" : "geçti"} />
@@ -250,14 +278,14 @@ function NamazVakitleri({ theme }) {
             // Ramazan: iftara / sahura kalan (kendiliğinden)
             if (ramazan) {
               return (
-                <CamiVakit theme={theme} solKanat={solKanat}
+                <CamiVakit theme={theme} sol={sol} sag={sag}
                   ust={<>{ramazan.tur === "iftar" ? "İftara kalan" : "Sahura kalan"}: <span style={{ whiteSpace: "nowrap" }}><strong style={{ color: theme.text }}>{ramazan.ad}</strong> · {ramazan.saat}</span></>}
                   buyuk={<SureYazisi ms={ramazan.an - Date.now()} />}
-                  alt={d.sonraki && d.sonraki.k !== (ramazan.tur === "iftar" ? "Aksam" : "Imsak") ? `Yaklaşan vakit: ${d.sonraki.ad} ${d.sonraki.saat}` : "kaldı"} />
+                  alt="kaldı" />
               )
             }
             return (
-              <CamiVakit theme={theme} solKanat={solKanat}
+              <CamiVakit theme={theme} sol={sol} sag={sag}
                 ust={d.sonraki ? <>{d.sonraki.yarin ? "Yarın" : "Yaklaşan vakit"}: <span style={{ whiteSpace: "nowrap" }}><strong style={{ color: theme.text }}>{d.sonraki.ad}</strong> · {d.sonraki.saat}</span></> : "Günün vakitleri"}
                 buyuk={d.sonraki ? <SureYazisi ms={sonrakiKalan} /> : null}
                 alt={d.sonraki ? "kaldı" : null} />
@@ -866,7 +894,9 @@ export default function Ekstralar() {
       padding: "18px 14px calc(70px + env(safe-area-inset-bottom))",
       width: "100%", maxWidth: "760px", margin: "0 auto", boxSizing: "border-box",
     }}>
-      <style>{`@keyframes vk-don { to { transform: rotate(360deg) } } .vk-don { animation: vk-don 1s linear infinite }`}</style>
+      <style>{`@keyframes vk-don { to { transform: rotate(360deg) } } .vk-don { animation: vk-don 1s linear infinite }
+        @keyframes vk-kerahat { 0%,100% { opacity: 1 } 50% { opacity: .3 } } .vk-kerahat-nokta { animation: vk-kerahat 1.6s ease-in-out infinite }
+        @media (prefers-reduced-motion: reduce) { .vk-kerahat-nokta { animation: none } }`}</style>
       <div style={{ display: "flex", alignItems: "baseline", gap: "9px", marginBottom: "14px", flexWrap: "wrap" }}>
         <h1 style={{ margin: 0, fontSize: "19px", fontWeight: 600 }}>Ekstralar</h1>
 

@@ -166,13 +166,23 @@ export function ramazanHedefi(d, simdi = Date.now()) {
                                               → Akşam − 50 dk … Akşam
    Değiştirmek gerekirse yalnız bu tablo. */
 export const KERAHAT = [
-  { k: "sabah", ad: "Güneşin doğuşu", vakit: "Gunes", once: 0, sonra: 50 },
-  { k: "istiva", ad: "İstivâ (zevâl)", vakit: "Ogle", once: 10, sonra: 0 },
-  { k: "gurub", ad: "Güneşin batışı", vakit: "Aksam", once: 50, sonra: 0 },
+  { k: "sabah", ad: "Güneşin doğuşu", kisa: "Şurûk", vakit: "Gunes", once: 0, sonra: 50 },
+  { k: "istiva", ad: "İstivâ (zevâl)", kisa: "İstivâ", vakit: "Ogle", once: 10, sonra: 0 },
+  { k: "gurub", ad: "Güneşin batışı", kisa: "Gurûb", vakit: "Aksam", once: 50, sonra: 0 },
 ]
 const saatYaz = (ms, gmt = 3) => {
   const t = new Date(ms + gmt * 3600000)
   return `${String(t.getUTCHours()).padStart(2, "0")}:${String(t.getUTCMinutes()).padStart(2, "0")}`
+}
+/* Günün üç kerahat aralığı (caminin solundaki liste için); `aktif` = şu an içinde */
+export function kerahatAraliklari(gun, simdi = Date.now()) {
+  if (!gun) return []
+  const gmt = typeof gun.GreenwichOrtalamaZamani === "number" ? gun.GreenwichOrtalamaZamani : 3
+  return KERAHAT.map(k => {
+    const an = vakitAni(gun, gun[k.vakit])
+    const bas = an - k.once * 60000, bit = an + k.sonra * 60000
+    return { ...k, bas, bit, basSaat: saatYaz(bas, gmt), bitSaat: saatYaz(bit, gmt), aktif: simdi >= bas && simdi < bit, gecti: simdi >= bit }
+  })
 }
 export function kerahatDurumu(gun, simdi = Date.now()) {
   if (!gun) return null

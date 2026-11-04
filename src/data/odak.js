@@ -26,7 +26,30 @@ export const BOYUT_ANAHTAR = "vukuf-odak-boyut"
 export const GORUNUM_ANAHTAR = "vukuf-odak-gorunum"     // { arapca, meal }
 
 const okuSurekli = () => { try { return localStorage.getItem(SUREKLI_ANAHTAR) === "1" } catch { return false } }
-let durum = { acik: false, kaynak: null, surekli: okuSurekli() }
+
+/* KARŞILAMA KONUMU (4 Kasım 2026) — kullanıcı: "Odaklanma tek seferde kullanıldığında
+   perdenin altında karşılayabiliyor; perdeye dokunmadan karşıladığı konumu varsayılan
+   olarak biraz daha aşağı alalım ve bunu ayetin karşılanacağı konum ayarı olarak
+   kullanıcıya bırakabilelim." Ekran yüksekliğine oran (0 üst … 1 alt); okunan öğenin
+   ORTASI bu çizgiye gelir. Varsayılan 0,45 (eskiden 0,38). Ayar: PlayerBar → Görünüm
+   ve konum → sürüklemeli önizleme (components/OdakKonumAyari.jsx). */
+const KONUM_ANAHTAR = "vukuf-odak-konum"
+export const KONUM_VARSAYILAN = 0.45
+export const KONUM_SINIR = [0.25, 0.7]
+const okuKonum = () => {
+  try { const v = parseFloat(localStorage.getItem(KONUM_ANAHTAR)); return v >= KONUM_SINIR[0] && v <= KONUM_SINIR[1] ? v : KONUM_VARSAYILAN } catch { return KONUM_VARSAYILAN }
+}
+export function konumAyarla(v) {
+  const y = Math.max(KONUM_SINIR[0], Math.min(KONUM_SINIR[1], Number(v) || KONUM_VARSAYILAN))
+  try { localStorage.setItem(KONUM_ANAHTAR, String(y)) } catch { /* yoksay */ }
+  yay({ konum: y })
+}
+/* Karşılama çizgisi → hizalama oranı ve "rahat bant" (bant içindeyken kımıldamaz) */
+export function odakBandi(konum = KONUM_VARSAYILAN) {
+  return { oran: konum, bolge: [Math.max(0.1, konum - 0.26), Math.min(0.9, konum + 0.2)] }
+}
+
+let durum = { acik: false, kaynak: null, surekli: okuSurekli(), konum: okuKonum() }
 const dinleyiciler = new Set()
 const yay = (p) => { durum = { ...durum, ...p }; dinleyiciler.forEach(f => f()) }
 const abone = (f) => { dinleyiciler.add(f); return () => dinleyiciler.delete(f) }
@@ -78,7 +101,7 @@ export function yumusakKaydir(kap, hedef, { sure = null, bitti } = {}) {
 
 /* Öğeyi kabın "göz hizasına" getir — ama zaten rahat bölgedeyse kımıldama (denge):
    oran: hedef çizgi (0 üst … 1 alt), bolge: [üst, alt] rahat bant */
-export function hizayaGetir(kap, el, { oran = 0.36, bolge = [0.16, 0.62], zorla = false, ...ops } = {}) {
+export function hizayaGetir(kap, el, { oran = KONUM_VARSAYILAN, bolge = [0.19, 0.65], zorla = false, ...ops } = {}) {
   if (!kap || !el) return () => {}
   const kr = kap.getBoundingClientRect()
   const er = el.getBoundingClientRect()
@@ -89,7 +112,8 @@ export function hizayaGetir(kap, el, { oran = 0.36, bolge = [0.16, 0.62], zorla 
   const bantta = uzun ? ust >= bolge[0] - 0.02 && ust <= bolge[0] + 0.1 : ust >= bolge[0] && alt <= bolge[1]
   if (!zorla && bantta) return () => {}
   // Uzun öğe (ekrandan büyük) başından hizalanır
-  const pay = er.height > kr.height * 0.6 ? kr.height * 0.12 : kr.height * oran - Math.min(er.height, kr.height * 0.4) / 2
+  // Öğenin ortası karşılama çizgisine; çok uzun öğede başı çizginin biraz üstüne
+  const pay = er.height > kr.height * 0.6 ? kr.height * Math.max(0.12, oran - 0.25) : kr.height * oran - Math.min(er.height, kr.height * 0.4) / 2
   return yumusakKaydir(kap, kap.scrollTop + (er.top - kr.top) - pay, ops)
 }
 

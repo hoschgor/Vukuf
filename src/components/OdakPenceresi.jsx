@@ -29,7 +29,7 @@ import { sesliOkuyucu, sesKilidiAc } from "../data/sesliOkuma"
 import { sureAdi } from "../data/sureAdlari"
 import MushafAyetRozeti from "./MushafAyetRozeti"
 import {
-  useOdak, odakAc, odakKapat, surekliAyarla, hizayaGetir, mushafYukle, mealYukle, ayetMetni,
+  useOdak, odakAc, odakKapat, surekliAyarla, hizayaGetir, odakBandi, mushafYukle, mealYukle, ayetMetni,
   BOYUT_ANAHTAR, GORUNUM_ANAHTAR,
 } from "../data/odak"
 
@@ -79,6 +79,7 @@ export default function OdakPenceresi() {
 
 // ── TAKİP ────────────────────────────────────────────────────────────────────
 function useTakip(kapRef, aktifAnahtar, hazir) {
+  const { konum } = useOdak()                      // kullanıcının seçtiği karşılama çizgisi
   const [askida, setAskida] = useState(false)
   const durdurRef = useRef(() => {})
   const ilkRef = useRef(true)
@@ -88,8 +89,8 @@ function useTakip(kapRef, aktifAnahtar, hazir) {
     const el = kap.querySelector(`[data-odak="${aktifAnahtar}"]`)
     if (!el) return
     durdurRef.current()
-    durdurRef.current = hizayaGetir(kap, el, { zorla, ...(anlik ? { sure: 1 } : null) })
-  }, [kapRef, aktifAnahtar])
+    durdurRef.current = hizayaGetir(kap, el, { zorla, ...odakBandi(konum), ...(anlik ? { sure: 1 } : null) })
+  }, [kapRef, aktifAnahtar, konum])
   // İlk açılış: anında; sonraki geçişler: yumuşak ve yalnız gerekirse
   useLayoutEffect(() => {
     if (!hazir || askida) return

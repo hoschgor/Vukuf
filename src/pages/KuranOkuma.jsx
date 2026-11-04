@@ -23,7 +23,6 @@ import KitapAyraci from "../components/KitapAyraci"
 import KayitPaneli from "../components/KayitPaneli"
 import { YerineKoySorusu } from "../components/KayitOgeleri"
 import SayfaFarkiBildirimi, { sayfaFarkiOlustur } from "../components/SayfaFarkiBildirimi"
-import KariSecici from "../components/KariSecici"
 import KelimePopup from "../components/KelimePopup"
 import YuklemeEkrani from "../components/YuklemeEkrani"
 import IosSwitch from "../components/IosSwitch"
@@ -112,7 +111,7 @@ import {
 } from "lucide-react"
 // Paylaşma (18 Ekim 2026): âyet rozetine dokunarak paylaşma penceresi
 import PaylasimPenceresi, { PaylasimNotu } from "../components/PaylasimPenceresi"
-import { useOdak, hizayaGetir } from "../data/odak"
+import { useOdak, hizayaGetir, odakBandi } from "../data/odak"
 
 // ── Arapça font listesi
 const ARAPCA_FONTLAR = [
@@ -3467,10 +3466,23 @@ function donuseGit(i) {
     const sec = a.besmeleIcin ? `[data-sure-baslik="${a.besmeleIcin}"]` : `[data-sure="${a.sureNo}"][data-ayet="${a.ayetNo}"]`
     const el = kap.querySelector(sec)
     odakDurdurRef.current()
-    if (!el) { if (a.besmeleIcin) sureGit(a.besmeleIcin); else sureGit(a.sureNo, a.ayetNo); return }
-    odakDurdurRef.current = hizayaGetir(kap, el, { zorla, oran: 0.38, bolge: [0.14, 0.6] })
+    const { oran, bolge } = odakBandi(odakDurumu.konum)
+    if (!el) {
+      // Uzak sayfa: sureGit ile git, oturunca kullanıcının seçtiği hizaya (perdenin altına
+      // düşmesin) yumuşakça getir — sureGit'e dokunulmadı, ardından ince ayar yapılıyor.
+      if (a.besmeleIcin) sureGit(a.besmeleIcin); else sureGit(a.sureNo, a.ayetNo)
+      let iptal = false
+      const t = setTimeout(() => {
+        if (iptal) return
+        const el2 = scrollRef.current?.querySelector(sec)
+        if (el2) odakDurdurRef.current = hizayaGetir(scrollRef.current, el2, { zorla: true, oran, bolge })
+      }, 950)
+      odakDurdurRef.current = () => { iptal = true; clearTimeout(t) }
+      return
+    }
+    odakDurdurRef.current = hizayaGetir(kap, el, { zorla, oran, bolge })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [player.aktifAyet])
+  }, [player.aktifAyet, odakDurumu.konum])
   // Gözlükle açılınca / askıdan dönülünce ilk hizalama zorunlu (bantta olsa da göz hizasına)
   const odakZorlaRef = useRef(false)
   useEffect(() => {
@@ -4149,7 +4161,6 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
               ARAYÜZ BOYUTU     | MEAL PENCERESİ BOYUTU
               GÖRÜNTÜLEME       | SADE MOD İÇERİKLERİ
               GEZİNME (tam genişlik; içi: anahtar | açıklama)
-              KÂRÎ (tam genişlik)
             Dikeyde aynı sırayla alt alta; yatay telefonda iki sütun (yp-iki).
             Etiketler de OkumaEkrani gibi büyük harf, değer sağda yüzde. */}
         <div>
@@ -4330,16 +4341,8 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
           </div>
         </div>
 
-        {/* Kârî — Görüntüleme ve Sade Mod'un altında, yatayda iki sütunu birden kaplar */}
-        <div className="yp-tam" style={{ position: "relative", zIndex: 300 }}>
-          <KariSecici
-            kariId={player.kariId}
-            setKariId={player.kariDegistir || player.setKariId}
-            theme={theme}
-            barKonum={barKonum}
-            barUiOlcegi={barUiOlcegi}
-          />
-        </div>
+        {/* Kârî seçimi 4 Kasım 2026'da buradan kaldırıldı (kullanıcı: "diğer tarafta zaten var")
+            — oynatıcının ayar düğmesinde (PlayerBar) duruyor. */}
       </div>
     </>
   )

@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState } from "react"
 import {
-  Square, SkipBack, SkipForward, Glasses, Gauge, RotateCcw,
+  Square, SkipBack, SkipForward, Glasses, Gauge, RotateCcw, ChevronRight, ChevronLeft, Crosshair,
   Volume2, Volume1, VolumeX, SlidersHorizontal, Timer,
 } from "lucide-react"
 import { SemseAmblem, NABIZ_CSS } from "./MiniOynatici"
@@ -50,6 +50,22 @@ function KuranKucuk({ theme, calar, barKonum, altPay, ustPay, ac: acFn }) {
 import { KARILAR } from "../data/hooks/useAudioPlayer"
 import { useArkaCalma, useOtomatikDurdurma, UYKU_SURELERI } from "../data/oynatici"
 import { useOdak, surekliAyarla } from "../data/odak"
+import OtomatikDurdurmaSecici from "./OtomatikDurdurmaSecici"
+import OdakKonumAyari from "./OdakKonumAyari"
+
+/* GÖRÜNÜM VE KONUM (4 Kasım 2026) — kullanıcı: "Playerbar altayken çok içte kalıyor,
+   padding gibi bir şey ile biraz daha üste alalım fakat çok abartmayalım. Belki opaklık ve
+   konum değeri kullanıp bunu da playerbar ayarları içine koyabiliriz … bu karışık ayarları
+   bu bölümde ayrı bir yere alıp sadeliği bozmayalım."
+   • Bar ekranın alt kenarındayken (ana bar gizli / menülü düzen) içerik telefonun alt
+     çizgisinden biraz yukarı alınır: alt iç boşluk = max(0, güvenli alan − 12 px) + seçilen
+     ek boşluk (0–24 px, varsayılan 4). Zemin kenara kadar uzanır, yalnız içerik yükselir.
+   • Opaklık %60–100 (100'ün altında arkası hafifçe bulanıklaşır).
+   • Âyetin karşılanacağı yer → OdakKonumAyari (sürüklemeli önizleme).
+   Hepsi ayar kutusunun en altındaki "Görünüm ve konum" sayfasında. */
+const GORUNUM_ANAHTAR = "vukuf-oynatici-gorunum"
+const GORUNUM_VARSAYILAN = { bosluk: 4, opak: 1 }
+const gorunumOku = () => { try { return { ...GORUNUM_VARSAYILAN, ...(JSON.parse(localStorage.getItem(GORUNUM_ANAHTAR) || "null") || {}) } } catch { return { ...GORUNUM_VARSAYILAN } } }
 import { Headphones, Music2, Moon } from "lucide-react"
 import { useMediaQuery } from "../data/hooks/useMediaQuery"
 import MushafPlayButton from "./MushafPlayButton"
@@ -120,6 +136,11 @@ export default function PlayerBar({
   // sağında tek düğme, yukarı doğru açılan ince menü. Döngü düğmesi de bardan
   // kalktı (aşağıdaki ana barda zaten var).
   const [ayarAcik, setAyarAcik] = useState(false)
+  const [altPanel, setAltPanel] = useState(null)          // null | "gorunum"
+  useEffect(() => { if (!ayarAcik) setAltPanel(null) }, [ayarAcik])
+  const [gorunum, setGorunumDurum] = useState(gorunumOku)
+  const setGorunum = (p) => setGorunumDurum(o => { const y = { ...o, ...p }; try { localStorage.setItem(GORUNUM_ANAHTAR, JSON.stringify(y)) } catch { /* yoksay */ } return y })
+  const [konumAyarAcik, setKonumAyarAcik] = useState(false)
   // DEVAMLI OYNATMA (6 Ekim 2026): açıksa Kur'ân ekranından çıkınca ses sürer,
   // öbür ekranlarda mini oynatıcı görünür (components/MiniOynatici.jsx)
   const [arkaCalma, setArkaCalma] = useArkaCalma()
@@ -259,10 +280,15 @@ export default function PlayerBar({
       top: getTopPosition(),
       minHeight: `${playerBarHeight}px`,
       height: "auto",
-      background: theme.surface,
+      background: gorunum.opak < 1 ? `color-mix(in srgb, ${theme.surface} ${Math.round(gorunum.opak * 100)}%, transparent)` : theme.surface,
+      ...(gorunum.opak < 1 ? { backdropFilter: "blur(10px) saturate(1.15)", WebkitBackdropFilter: "blur(10px) saturate(1.15)" } : null),
       borderTop: barKonum === "alt" ? `1px solid ${theme.accent}25` : "none",
       borderBottom: barKonum === "ust" ? `1px solid ${theme.accent}25` : "none",
       padding: isMobile ? "4px 16px" : "4px 24px",
+      // Ekranın alt kenarındayken içerik telefonun alt çizgisinden biraz yukarıda dursun
+      ...(barKonum === "alt" && !barGorunur
+        ? { paddingBottom: `calc(4px + max(0px, env(safe-area-inset-bottom) - 12px) + ${gorunum.bosluk}px)` }
+        : null),
       display: "flex", 
       alignItems: "center", 
       justifyContent: "space-between",
@@ -311,6 +337,12 @@ export default function PlayerBar({
             zIndex: 3,
           }}
         >
+          {altPanel === "gorunum" ? (
+            <GorunumPaneli theme={theme} gorunum={gorunum} setGorunum={setGorunum} geri={() => setAltPanel(null)}
+              konumAc={() => { setAyarAcik(false); setKonumAyarAcik(true) }}
+              satirStil={satirStil} ikonDugme={ikonDugme} degerStil={degerStil} sifirStil={sifirStil}
+              kenarda={barKonum === "alt" && !barGorunur} />
+          ) : (<>
           {/* SES — simgeye dokunmak sessize alır / eski seviyeye döndürür */}
           <div style={satirStil}>
             <button
@@ -359,33 +391,9 @@ export default function PlayerBar({
             </div>
           )}
           <div style={{ height: "1px", background: theme.border, opacity: 0.6, margin: "0 2px" }} />
-          {/* OTOMATİK DURDURMA — seçilen süre sonunda oynatıcı kapanır */}
-          <div style={{ ...satirStil, flexDirection: "column", alignItems: "stretch", gap: "5px" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "7px" }}>
-              <span style={{ ...ikonDugme, cursor: "default" }}><Moon size={16} color={uyku.bitis ? theme.accent : theme.textSecondary} /></span>
-              <span style={{ flex: 1, minWidth: 0, fontSize: "12px", color: theme.text, lineHeight: 1.25 }}>
-                Otomatik durdurma
-                <span style={{ display: "block", fontSize: "10px", color: uyku.bitis ? theme.accent : theme.textSecondary }}>
-                  {uyku.bitis ? `${uykuKalan} dk sonra duracak` : "Seçilen süre sonunda oynatıcı kapanır"}
-                </span>
-              </span>
-            </div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "4px", paddingLeft: "33px" }}>
-              {UYKU_SURELERI.map(dk => {
-                const sec = (uyku.dk || 0) === dk
-                return (
-                  <button key={dk} onClick={() => uyku.kur(dk)} aria-pressed={sec}
-                    style={{
-                      padding: "3px 7px", borderRadius: "999px", fontSize: "11px", fontFamily: "inherit",
-                      cursor: "pointer", border: `1px solid ${sec ? theme.accent : theme.border}`,
-                      background: sec ? theme.accent : "transparent", color: sec ? "#fff" : theme.textSecondary,
-                    }}>
-                    {dk ? `${dk} dk` : "Kapalı"}
-                  </button>
-                )
-              })}
-            </div>
-          </div>
+          {/* OTOMATİK DURDURMA — seçilen (ya da özel) süre sonunda oynatıcı kapanır; ortak seçici */}
+          <OtomatikDurdurmaSecici theme={theme} uyku={uyku} girinti={24}
+            aciklama="Seçilen süre sonunda oynatıcı kapanır" />
           <div style={{ height: "1px", background: theme.border, opacity: 0.6, margin: "0 2px" }} />
           {/* DEVAMLI OYNATMA — satırın tamamı dokunulabilir; sağda küçük anahtar */}
           <div role="switch" aria-checked={arkaCalma} onClick={() => setArkaCalma(!arkaCalma)}
@@ -462,8 +470,20 @@ export default function PlayerBar({
               </button>
             </div>
           )}
+          <div style={{ height: "1px", background: theme.border, opacity: 0.6, margin: "0 2px" }} />
+          {/* GÖRÜNÜM VE KONUM — gelişmiş ayarlar ayrı sayfada, ana liste sade kalsın */}
+          <button onClick={() => setAltPanel("gorunum")} style={{ ...satirStil, width: "100%", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", textAlign: "left", padding: "6px 0" }}>
+            <span style={{ ...ikonDugme, cursor: "pointer" }}><SlidersHorizontal size={15} color={theme.textSecondary} /></span>
+            <span style={{ flex: 1, minWidth: 0, fontSize: "12px", color: theme.text, lineHeight: 1.25 }}>
+              Görünüm ve konum
+              <span style={{ display: "block", fontSize: "10px", color: theme.textSecondary }}>Kenar boşluğu, opaklık, âyetin karşılanacağı yer</span>
+            </span>
+            <ChevronRight size={15} color={theme.textSecondary} />
+          </button>
+          </>)}
         </div>
       )}
+      <OdakKonumAyari acik={konumAyarAcik} kapat={() => setKonumAyarAcik(false)} theme={theme} />
 
       {/* SOL grup: (sure·ayet + kâri adı) → Gözlük → Meal → İzleme */}
       <div style={{
@@ -655,5 +675,48 @@ export default function PlayerBar({
         </button>
       </div>
     </div>
+  )
+}
+/* ── GÖRÜNÜM VE KONUM SAYFASI (ayar kutusunun içinde) ───────────────────────── */
+function GorunumPaneli({ theme, gorunum, setGorunum, geri, konumAc, satirStil, ikonDugme, degerStil, sifirStil, kenarda }) {
+  const { konum } = useOdak()
+  return (
+    <>
+      <button onClick={geri} style={{ ...satirStil, border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", padding: "4px 0", color: theme.accent, fontSize: "12px", fontWeight: 700 }}>
+        <ChevronLeft size={15} /> Görünüm ve konum
+      </button>
+      <div style={{ height: "1px", background: theme.border, opacity: 0.6, margin: "0 2px" }} />
+      <div style={{ fontSize: "11px", color: theme.text, padding: "6px 0 0" }}>
+        Kenar boşluğu
+        <span style={{ display: "block", fontSize: "10px", color: theme.textSecondary }}>
+          {kenarda ? "Alttayken oynatıcının ekran kenarından yüksekliği" : "Oynatıcı ekranın alt kenarındayken uygulanır"}
+        </span>
+      </div>
+      <div style={satirStil}>
+        <input type="range" min={0} max={24} step={1} value={gorunum.bosluk} aria-label="Kenar boşluğu"
+          onChange={e => setGorunum({ bosluk: parseInt(e.target.value, 10) || 0 })}
+          style={{ flex: 1, minWidth: 0, accentColor: theme.accent, cursor: "pointer" }} />
+        <span style={degerStil}>{gorunum.bosluk} px</span>
+        <button onClick={() => setGorunum({ bosluk: GORUNUM_VARSAYILAN.bosluk })} title="Varsayılana döndür" style={sifirStil}><RotateCcw size={12} /></button>
+      </div>
+      <div style={{ fontSize: "11px", color: theme.text, padding: "4px 0 0" }}>Opaklık</div>
+      <div style={satirStil}>
+        <input type="range" min={0.6} max={1} step={0.05} value={gorunum.opak} aria-label="Opaklık"
+          onChange={e => setGorunum({ opak: parseFloat(e.target.value) || 1 })}
+          style={{ flex: 1, minWidth: 0, accentColor: theme.accent, cursor: "pointer" }} />
+        <span style={degerStil}>%{Math.round(gorunum.opak * 100)}</span>
+        <button onClick={() => setGorunum({ opak: 1 })} title="Tam opak" style={sifirStil}><RotateCcw size={12} /></button>
+      </div>
+      <div style={{ height: "1px", background: theme.border, opacity: 0.6, margin: "4px 2px" }} />
+      <button onClick={konumAc} style={{ ...satirStil, width: "100%", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", textAlign: "left", padding: "6px 0" }}>
+        <span style={{ ...ikonDugme, cursor: "pointer" }}><Crosshair size={15} color={theme.accent} /></span>
+        <span style={{ flex: 1, minWidth: 0, fontSize: "12px", color: theme.text, lineHeight: 1.25 }}>
+          Âyetin karşılanacağı yer
+          <span style={{ display: "block", fontSize: "10px", color: theme.textSecondary }}>Gözlükle takipte okunan âyetin geleceği yükseklik</span>
+        </span>
+        <span style={degerStil}>%{Math.round(konum * 100)}</span>
+        <ChevronRight size={15} color={theme.textSecondary} />
+      </button>
+    </>
   )
 }

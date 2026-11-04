@@ -174,6 +174,29 @@ const saatYaz = (ms, gmt = 3) => {
   const t = new Date(ms + gmt * 3600000)
   return `${String(t.getUTCHours()).padStart(2, "0")}:${String(t.getUTCMinutes()).padStart(2, "0")}`
 }
+/* ── GÖK: GÜNEŞ / AY (4 Kasım 2026) ─────────────────────────────────────────
+   Kullanıcı: "üst kısma güneşin doğuş batışına göre ay ve güneş resmi çizebilir miyiz".
+   Güneş doğuşu (Gunes) ile Akşam arasında güneş, gökte soldan (doğu) sağa (batı)
+   bir yay boyunca ilerler; gece (Akşam → ertesi Güneş) aynı yayda ay ilerler.
+   `oran` 0..1 yaydaki yer. Ayın evresi astronomik ortalamadan: bilinen bir yeni ay
+   (6 Ocak 2000 18:14 UT) + sinodik ay 29,530588853 gün → 0 yeni ay, 0,5 dolunay.
+   Yalnız çizim içindir (hilal gözlemi / takvim hesabı değildir). */
+const SINODIK = 29.530588853 * 86400000
+const YENI_AY = Date.UTC(2000, 0, 6, 18, 14)
+export const ayEvresi = (simdi = Date.now()) => (((simdi - YENI_AY) % SINODIK) + SINODIK) % SINODIK / SINODIK
+export function gokDurumu(d, simdi = Date.now()) {
+  if (!d || !d.bugun) return null
+  const b = d.bugun
+  const dogus = vakitAni(b, b.Gunes), aksam = vakitAni(b, b.Aksam)
+  const sinir = (x) => Math.min(1, Math.max(0, x))
+  if (simdi >= dogus && simdi < aksam) return { tur: "gunes", oran: sinir((simdi - dogus) / (aksam - dogus)) }
+  // Gece: akşamdan ertesi güneş doğuşuna (sabah ise dünkü akşamdan bugünkü doğuşa)
+  let bas, bit
+  if (simdi >= aksam) { bas = aksam; bit = d.yarin ? vakitAni(d.yarin, d.yarin.Gunes) : dogus + 86400000 }
+  else { bas = aksam - 86400000; bit = dogus }
+  return { tur: "ay", oran: sinir((simdi - bas) / (bit - bas)), evre: ayEvresi(simdi) }
+}
+
 /* Günün üç kerahat aralığı (caminin solundaki liste için); `aktif` = şu an içinde */
 export function kerahatAraliklari(gun, simdi = Date.now()) {
   if (!gun) return []

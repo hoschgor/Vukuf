@@ -71,7 +71,7 @@ import NamazHatimTakibi from "../components/NamazHatimTakibi"
 import {
   VAKITLER, vakitAni, sehirleriGetir, ilceleriGetir, vakitleriGetir, secimOku, secimYaz, durumHesapla, kalanMetni,
   konumdanBul, icsIndir, yaklasanGunler, konumBilgisiniSil, KONUM_SILINDI,
-  ramazanHedefi, ramazanMi, kerahatDurumu, kerahatAraliklari, HATIRLATMA_SECENEKLERI, hatirlatmaOku, hatirlatmaYaz,
+  ramazanHedefi, ramazanMi, kerahatDurumu, kerahatAraliklari, gokDurumu, HATIRLATMA_SECENEKLERI, hatirlatmaOku, hatirlatmaYaz,
 } from "../data/namazVakitleri"
 
 // ── KIBLE ────────────────────────────────────────────────────────────────────
@@ -236,9 +236,10 @@ function NamazVakitleri({ theme }) {
             // Caminin solundaki gökyüzünde günün kerahat aralıkları; içindeysek sağda bildirim.
             // Ramazan'da (kerahat yokken) sağda sahur ve iftar saatleri.
             const araliklar = kerahatAraliklari(d.bugun)
+            const gok = gokDurumu(d)
             const sol = (
               <>
-                <span style={{ fontSize: "0.85em", fontWeight: 700, letterSpacing: "0.08em", color: theme.textSecondary, marginBottom: "0.25em" }}>KERAHAT</span>
+                <span style={{ fontSize: "0.88em", fontWeight: 700, color: theme.textSecondary, marginBottom: "0.2em", lineHeight: 1.05 }}>Kerahat Vakitleri</span>
                 {araliklar.map(a => (
                   <span key={a.k} title={`${a.ad} · ${a.basSaat}–${a.bitSaat}`}
                     style={{ display: "block", marginBottom: "0.12em", opacity: a.gecti && !a.aktif ? 0.55 : 1, color: a.aktif ? theme.accent : theme.textSecondary }}>
@@ -269,7 +270,7 @@ function NamazVakitleri({ theme }) {
             if (sec) {
               const fark = vakitAni(d.bugun, d.bugun[sec.k]) - Date.now()
               return (
-                <CamiVakit theme={theme} sol={sol} sag={sag}
+                <CamiVakit theme={theme} sol={sol} sag={sag} gok={gok}
                   ust={<><strong style={{ color: theme.text }}>{sec.ad}</strong> · {d.bugun[sec.k]}</>}
                   buyuk={<SureYazisi ms={fark} />}
                   alt={fark > 0 ? "kaldı" : "geçti"} />
@@ -278,14 +279,14 @@ function NamazVakitleri({ theme }) {
             // Ramazan: iftara / sahura kalan (kendiliğinden)
             if (ramazan) {
               return (
-                <CamiVakit theme={theme} sol={sol} sag={sag}
+                <CamiVakit theme={theme} sol={sol} sag={sag} gok={gok}
                   ust={<>{ramazan.tur === "iftar" ? "İftara kalan" : "Sahura kalan"}: <span style={{ whiteSpace: "nowrap" }}><strong style={{ color: theme.text }}>{ramazan.ad}</strong> · {ramazan.saat}</span></>}
                   buyuk={<SureYazisi ms={ramazan.an - Date.now()} />}
                   alt="kaldı" />
               )
             }
             return (
-              <CamiVakit theme={theme} sol={sol} sag={sag}
+              <CamiVakit theme={theme} sol={sol} sag={sag} gok={gok}
                 ust={d.sonraki ? <>{d.sonraki.yarin ? "Yarın" : "Yaklaşan vakit"}: <span style={{ whiteSpace: "nowrap" }}><strong style={{ color: theme.text }}>{d.sonraki.ad}</strong> · {d.sonraki.saat}</span></> : "Günün vakitleri"}
                 buyuk={d.sonraki ? <SureYazisi ms={sonrakiKalan} /> : null}
                 alt={d.sonraki ? "kaldı" : null} />

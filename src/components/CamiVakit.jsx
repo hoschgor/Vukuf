@@ -20,7 +20,8 @@
 import { useEffect, useRef, useState } from "react"
 import { hilalYolu, RozetSekli } from "./TemaSecici"
 
-const VB_G = 300, VB_Y = -2, VB_Y2 = 212, ZEMIN = 206
+// VB_Y −42: caminin üstünde güneşin / ayın dolaştığı gök şeridi (4 Kasım 2026)
+const VB_G = 300, VB_Y = -42, VB_Y2 = 212, ZEMIN = 206
 const GECIS = "fill .35s ease, stroke .35s ease"
 // Niş içi yazı alanı (viewBox birimiyle)
 const NIS = { x: 86, y: 134, g: 128, h: 66 }
@@ -29,7 +30,39 @@ const NIS = { x: 86, y: 134, g: 128, h: 66 }
 const SOL_KOSE = { x: 31, y: 0, g: 60, h: 80 }
 const SAG_KOSE = { x: 209, y: 0, g: 60, h: 80 }
 
-export default function CamiVakit({ theme, ust, buyuk, alt, sol = null, sag = null }) {
+/* GÖK — güneş ya da ay, doğudan (sol) batıya (sağ) yay üzerinde. `gok`: { tur: "gunes"|"ay", oran 0..1, evre 0..1 } */
+const yayNoktasi = (oran) => ({ x: 34 + oran * 232, y: -10 - 24 * Math.sin(Math.PI * oran) })
+function Gunes({ x, y }) {
+  const isinlar = Array.from({ length: 12 }, (_, i) => i * 30)
+  return (
+    <g transform={`translate(${x.toFixed(2)} ${y.toFixed(2)})`} aria-hidden="true">
+      <circle r="15" fill="#f2b544" opacity="0.16" />
+      <circle r="11" fill="#f2b544" opacity="0.18" />
+      {isinlar.map(a => (
+        <line key={a} x1="0" y1="-9.5" x2="0" y2={a % 60 ? "-12" : "-13.5"} stroke="#e39b2d" strokeWidth="1.1" strokeLinecap="round" transform={`rotate(${a})`} />
+      ))}
+      <circle r="7" fill="#f6c453" stroke="#e39b2d" strokeWidth="1" />
+    </g>
+  )
+}
+function Ay({ x, y, evre, t }) {
+  const r = 7
+  const buyuyen = evre < 0.5
+  const q = buyuyen ? evre : 1 - evre               // 0 yeni ay … 0,5 dolunay
+  const rx = r * Math.abs(Math.cos(2 * Math.PI * q))
+  const sisk = q > 0.25                               // şişkin (yarımdan büyük) ay
+  const aydin = `M0 ${-r} A${r} ${r} 0 0 1 0 ${r} A${rx.toFixed(2)} ${r} 0 0 ${sisk ? 1 : 0} 0 ${-r} Z`
+  return (
+    <g transform={`translate(${x.toFixed(2)} ${y.toFixed(2)})`} aria-hidden="true">
+      <circle r="13" fill="#f3ead0" opacity="0.14" />
+      <circle r={r} fill={t.textSecondary} opacity="0.18" stroke={t.border} strokeWidth="0.6" />
+      {q > 0.01 && <path d={aydin} fill="#f3ead0" stroke="#cdbb86" strokeWidth="0.6" transform={buyuyen ? undefined : "scale(-1 1)"} />}
+    </g>
+  )
+}
+const YILDIZLAR = [[58, -30], [92, -18], [126, -36], [178, -32], [214, -20], [246, -34], [270, -14], [40, -16]]
+
+export default function CamiVakit({ theme, ust, buyuk, alt, sol = null, sag = null, gok = null }) {
   const t = { ...theme, ayetNoRengi: theme.ayetNoRengi || theme.accent }
   const f = (fill, stroke, sw, ek) => ({ fill, stroke, strokeWidth: sw, transition: GECIS, ...ek })
   const yuzey = f(t.surface, t.border, 1.2)
@@ -70,6 +103,14 @@ export default function CamiVakit({ theme, ust, buyuk, alt, sol = null, sag = nu
     <div ref={kutuRef} style={{ position: "relative", width: "100%", maxWidth: "380px", margin: "0 auto" }}>
       <svg viewBox={`0 ${VB_Y} ${VB_G} ${yH}`} width="100%" role="img" aria-label="Cami"
         style={{ display: "block", overflow: "visible", filter: "drop-shadow(0 4px 10px rgba(0,0,0,.12))" }}>
+        {/* GÖK: gece yıldızlar + ay, gündüz güneş */}
+        {gok && gok.tur === "ay" && YILDIZLAR.map(([x, y], i) => (
+          <circle key={i} cx={x} cy={y} r={i % 3 ? 0.8 : 1.1} fill={t.accent} opacity={0.35 + (i % 3) * 0.15} />
+        ))}
+        {gok && (() => {
+          const n = yayNoktasi(gok.oran)
+          return gok.tur === "gunes" ? <Gunes x={n.x} y={n.y} /> : <Ay x={n.x} y={n.y} evre={gok.evre ?? 0.5} t={t} />
+        })()}
         {minare(20)}
         {minare(280)}
         {/* yan kubbeler, kasnak + pencereler, ana kubbe, alem */}

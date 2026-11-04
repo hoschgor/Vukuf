@@ -133,6 +133,58 @@ export function durumHesapla(liste, simdi = Date.now()) {
   return { bugun, sonraki, simdiki, yarin: liste[i + 1] || null }
 }
 
+/* ── RAMAZAN (4 Kasım 2026) ─────────────────────────────────────────────────
+   Kullanıcı: "Ramazan modunu ekleyelim ama kullanıcıya belirtmeye gerek yok, Ramazan
+   ayı girdiğinde otomatik çalışsın." Ölçüt Diyanet'in kendi hicrî tarihi
+   (HicriTarihUzun içinde "Ramazan"): bugün Ramazan'sa gündüz iftara (Akşam),
+   iftardan sonra ve imsaktan önce sahura (İmsak) kalan süre. Ramazan'ın son
+   iftarından sonra (ertesi gün Ramazan değilse) sahur gösterilmez. */
+export const ramazanMi = (gun) => !!gun && /ramazan/i.test(String(gun.HicriTarihUzun || ""))
+export function ramazanHedefi(d, simdi = Date.now()) {
+  if (!d || !d.bugun) return null
+  const b = d.bugun
+  const imsak = vakitAni(b, b.Imsak), aksam = vakitAni(b, b.Aksam)
+  if (ramazanMi(b)) {
+    if (simdi < imsak) return { tur: "sahur", an: imsak, saat: b.Imsak, ad: "İmsak" }
+    if (simdi < aksam) return { tur: "iftar", an: aksam, saat: b.Aksam, ad: "Akşam" }
+  }
+  // İftardan sonra: yarın da Ramazan'sa sahura (yarının imsakı)
+  if (simdi >= aksam && d.yarin && ramazanMi(d.yarin)) {
+    return { tur: "sahur", an: vakitAni(d.yarin, d.yarin.Imsak), saat: d.yarin.Imsak, ad: "İmsak" }
+  }
+  return null
+}
+
+/* ── KERAHAT VAKİTLERİ (4 Kasım 2026) ───────────────────────────────────────
+   Kullanıcı: "Kerahat vakti içerisindeysek cami üzerinde sağ ya da sol bölümde bilgi
+   verebiliriz." Süreler, Diyanet'in fetva/ilmihal metinlerinde Merğînânî'ye (el-Hidâye,
+   I, 265-271) dayanarak verilen aralıklardan; ihtiyatlı uçları alındı:
+     • Güneşin doğmasından itibaren 40-50 dk  → Güneş … Güneş + 50 dk
+     • İstivâ: öğle vaktinin girmesine yaklaşık 10 dk kalmasından öğle vaktine kadar
+                                              → Öğle − 10 dk … Öğle
+     • Güneşin batmasına 40-50 dk kalmasından akşam vakti girinceye kadar
+                                              → Akşam − 50 dk … Akşam
+   Değiştirmek gerekirse yalnız bu tablo. */
+export const KERAHAT = [
+  { k: "sabah", ad: "Güneşin doğuşu", vakit: "Gunes", once: 0, sonra: 50 },
+  { k: "istiva", ad: "İstivâ (zevâl)", vakit: "Ogle", once: 10, sonra: 0 },
+  { k: "gurub", ad: "Güneşin batışı", vakit: "Aksam", once: 50, sonra: 0 },
+]
+const saatYaz = (ms, gmt = 3) => {
+  const t = new Date(ms + gmt * 3600000)
+  return `${String(t.getUTCHours()).padStart(2, "0")}:${String(t.getUTCMinutes()).padStart(2, "0")}`
+}
+export function kerahatDurumu(gun, simdi = Date.now()) {
+  if (!gun) return null
+  const gmt = typeof gun.GreenwichOrtalamaZamani === "number" ? gun.GreenwichOrtalamaZamani : 3
+  for (const k of KERAHAT) {
+    const an = vakitAni(gun, gun[k.vakit])
+    const bas = an - k.once * 60000, bit = an + k.sonra * 60000
+    if (simdi >= bas && simdi < bit) return { ...k, bas, bit, basSaat: saatYaz(bas, gmt), bitSaat: saatYaz(bit, gmt) }
+  }
+  return null
+}
+
 export function kalanMetni(ms) {
   if (ms <= 0) return "şimdi"
   const dk = Math.ceil(ms / 60000)
@@ -177,7 +229,16 @@ function icsZaman(ms) {
   return `${t.getUTCFullYear()}${p(t.getUTCMonth() + 1)}${p(t.getUTCDate())}T${p(t.getUTCHours())}${p(t.getUTCMinutes())}00Z`
 }
 /** Elde olan günler (≈30) için her vakte bir etkinlik */
-export function icsOlustur(liste, secim) {
+/* HATIRLATMA (4 Kasım 2026): `hatirlatma` dk verilirse her vakte VALARM eklenir —
+   uyarıyı telefonun takvimi verir (uygulama kapalıyken de). 0 = vaktinde, null = yok. */
+export const HATIRLATMA_SECENEKLERI = [null, 0, 5, 10, 15, 30]
+export const HATIRLATMA_ANAHTAR = "vukuf-namaz-hatirlatma"
+export function hatirlatmaOku() {
+  try { const v = localStorage.getItem(HATIRLATMA_ANAHTAR); return v == null || v === "" || v === "yok" ? null : Number(v) } catch { return null }
+}
+export function hatirlatmaYaz(dk) { try { localStorage.setItem(HATIRLATMA_ANAHTAR, dk == null ? "yok" : String(dk)) } catch { /* yoksay */ } }
+
+export function icsOlustur(liste, secim, hatirlatma = null) {
   const yer = secim ? `${secim.ilceAdi}${secim.sehirAdi && secim.sehirAdi !== secim.ilceAdi ? ` / ${secim.sehirAdi}` : ""}` : ""
   const s = [
     "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Vukuf//Namaz Vakitleri//TR", "CALSCALE:GREGORIAN", "METHOD:PUBLISH",
@@ -195,14 +256,20 @@ export function icsOlustur(liste, secim) {
         `DTSTAMP:${damga}`, `DTSTART:${icsZaman(an)}`, `DTEND:${icsZaman(an + 10 * 60000)}`,
         `SUMMARY:${v.ad} (${g[v.k]})`,
         `DESCRIPTION:${v.ad} vakti${yer ? ` - ${yer}` : ""}. Kaynak: Diyanet aylık vakitleri.`,
-        "TRANSP:TRANSPARENT", "END:VEVENT")
+        "TRANSP:TRANSPARENT")
+      if (hatirlatma != null && hatirlatma >= 0) {
+        s.push("BEGIN:VALARM", "ACTION:DISPLAY",
+          `DESCRIPTION:${hatirlatma ? `${v.ad} vaktine ${hatirlatma} dk` : `${v.ad} vakti girdi`}`,
+          `TRIGGER:${hatirlatma ? `-PT${hatirlatma}M` : "PT0M"}`, "END:VALARM")
+      }
+      s.push("END:VEVENT")
     }
   }
   s.push("END:VCALENDAR")
   return s.join("\r\n")
 }
-export function icsIndir(liste, secim) {
-  const metin = icsOlustur(liste, secim)
+export function icsIndir(liste, secim, hatirlatma = null) {
+  const metin = icsOlustur(liste, secim, hatirlatma)
   const blob = new Blob([metin], { type: "text/calendar;charset=utf-8" })
   const url = URL.createObjectURL(blob)
   const a = document.createElement("a")

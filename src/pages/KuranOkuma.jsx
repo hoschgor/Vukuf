@@ -108,7 +108,7 @@ import {
   Settings, Circle, Clock, ChevronsUp, ChevronsDown,
   ChevronLeft, Bookmark, BookOpen, Feather,
   Layers, Check, Shuffle, Mic, Repeat, Gem, UnfoldHorizontal, GripVertical, RotateCcw, Save, AlignLeft, AlignRight,
-  Camera, FoldHorizontal, ChevronUp, ImagePlay, Brain, History, Share2, Library,
+  Camera, FoldHorizontal, ChevronUp, ImagePlay, Brain, History, Share2, Library, ListChecks,
 } from "lucide-react"
 // Paylaşma (18 Ekim 2026): âyet rozetine dokunarak paylaşma penceresi
 import PaylasimPenceresi, { PaylasimNotu } from "../components/PaylasimPenceresi"
@@ -2411,6 +2411,14 @@ useEffect(() => {
   if (kuranHedefRef.current || !sayfaListesi.length) return
   let h = null
   try { h = JSON.parse(localStorage.getItem("vukuf-kuran-hedef") || "null") } catch {}
+  // CÜZ HEDEFİ (4 Kasım 2026 — Namaz & Hatim takibi): { cuz } → cüzün ilk âyeti
+  if (h && h.cuz && !h.sureNo) {
+    bul: for (const sure of mushafData) {
+      for (const ayet of sure.ayetler) {
+        if (Number(ayet.cuz) === Number(h.cuz)) { h = { ...h, sureNo: sure.id, ayetNo: ayet.no }; break bul }
+      }
+    }
+  }
   if (h && h.sureNo) {
     kuranHedefRef.current = true
     try { localStorage.removeItem("vukuf-kuran-hedef") } catch {}
@@ -2458,7 +2466,7 @@ useEffect(() => {
 useEffect(() => {
   try {
     const d = localStorage.getItem("vukuf-donus")
-    if (d === "arama" || d === "tefeul" || d === "gecmis" || d === "paylasim") {
+    if (d === "arama" || d === "tefeul" || d === "gecmis" || d === "paylasim" || d === "takip") {
       setDonusTip(d)
       localStorage.removeItem("vukuf-donus")
     } else if (d === "okuma") {
@@ -6289,11 +6297,12 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
             altPay={hapAltPay}
             ustPay={hapUstPay}
             ustuste={donusAcik && !hifzAcik && donusNoktalari.length > 0}
-            ikon={donusTip === "paylasim" ? Library : donusTip === "okuma" ? BookOpen : donusTip === "tefeul" ? Shuffle : donusTip === "gecmis" ? History : Search}
-            baslik={donusTip === "paylasim" ? "Ana sayfaya dön" : donusTip === "okuma" ? "Okumaya dön" : donusTip === "tefeul" ? "Tefeüle dön" : donusTip === "gecmis" ? "Geçmiş'e dön" : "Aramaya dön"}
-            alt={donusTip === "paylasim" ? "Kitaplığa" : donusTip === "okuma" ? (donusAd || "Kitaptaki yerinize") : donusTip === "tefeul" ? "Tefeül ekranına" : donusTip === "gecmis" ? "Geçmiş listesine" : "Arama sonuçlarına"}
+            ikon={donusTip === "paylasim" ? Library : donusTip === "okuma" ? BookOpen : donusTip === "tefeul" ? Shuffle : donusTip === "gecmis" ? History : donusTip === "takip" ? ListChecks : Search}
+            baslik={donusTip === "paylasim" ? "Ana sayfaya dön" : donusTip === "okuma" ? "Okumaya dön" : donusTip === "tefeul" ? "Tefeüle dön" : donusTip === "gecmis" ? "Geçmiş'e dön" : donusTip === "takip" ? "Hatim takibine dön" : "Aramaya dön"}
+            alt={donusTip === "paylasim" ? "Kitaplığa" : donusTip === "okuma" ? (donusAd || "Kitaptaki yerinize") : donusTip === "tefeul" ? "Tefeül ekranına" : donusTip === "gecmis" ? "Geçmiş listesine" : donusTip === "takip" ? "Ekstralar" : "Arama sonuçlarına"}
             onGit={() => {
               if (donusTip === "paylasim") { navigate("/"); return }
+              if (donusTip === "takip") { navigate("/ekstralar"); return }
               if (donusTip === "okuma") { navigate(donusYol || "/"); return }
               if (donusTip === "gecmis") { navigate("/gecmis"); return }
               try { localStorage.setItem(`vukuf-${donusTip}-devam`, "1") } catch {}

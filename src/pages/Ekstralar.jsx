@@ -44,20 +44,34 @@
      Vakit kutucuğuna dokunulunca mihrapta o vakte kalan ya da üzerinden geçen süre
      yazar; aynı kutucuğa ya da yaklaşan vakte dokunulunca yaklaşan vakte dönülür.
      Süre saniyeyle (küçük "sn") ve saniyede bir tazelenir — yalnız kart açıkken.
+   • TAKVİM HATIRLATMASI, AYLIK VAKİTLER, RAMAZAN, KERAHAT (4 Kasım 2026):
+     "Takvime ekle" küçük bir kutu açar: hatırlatma (yok / vaktinde / 5–30 dk önce) seçilir,
+     .ics her vakte VALARM ile iner. "Aylık vakitler" elde olan ≈30 günü tablo olarak
+     gösterir (Ramazan'da adı "İmsakiye", İmsak ve Akşam sütunları vurgulu). Ramazan
+     girince (Diyanet hicrî tarihi) mihrapta kendiliğinden iftara / sahura kalan süre
+     yazar — ayrıca bir ayar ya da duyuru yok. Kerahat vaktindeysek caminin sol
+     kanadında levha (data/namazVakitleri.js → KERAHAT).
+   • CUMA HUTBESİ (4 Kasım 2026) — kullanıcı: "izin veriyorlarsa o haftanın hutbesini
+     PDF'ten otomatik indirip dönüştürebiliriz." Diyanet Din Hizmetleri'nin hutbe
+     listesi robots.txt ile otomatik okumaya kapalı ve sitede yeniden yayım izni
+     bulunamadı → metin uygulamaya alınmıyor; kart resmî sayfalara götürüyor.
    • Hicrî tarih Namaz Vakitleri kartında, Diyanet'in takviminden gelir (3 Kasım 2026'da
      başlıktaki Ümmü'l-Kurâ hesabı kaldırıldı: Diyanet takviminden bir gün sapabiliyordu).
    ═══════════════════════════════════════════════════════════════════════════ */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { ChevronDown, Radio, Compass, MapPin, Sparkles, Play, Pause, ExternalLink, RotateCcw, Navigation, Loader2, X, Clock, CalendarPlus, Moon, LocateFixed, ShieldCheck, Trash2, PowerOff } from "lucide-react"
+import { ScrollText, BellRing, Table2, Radio, Compass, MapPin, Sparkles, Play, Pause, ExternalLink, RotateCcw, Navigation, Loader2, X, Clock, CalendarPlus, Moon, LocateFixed, ShieldCheck, Trash2, PowerOff } from "lucide-react"
 import { useApp } from "../AppContext"
 import { useRadyo, YAYINLAR, radyoZamanlayici } from "../data/radyo"
 import { useZamanlayici } from "../data/otomatikDurdurma"
 import OtomatikDurdurmaSecici from "../components/OtomatikDurdurmaSecici"
 import CamiVakit from "../components/CamiVakit"
+import { Kart, useBolum, dugmeStil } from "../components/EkstraKart"
+import NamazHatimTakibi from "../components/NamazHatimTakibi"
 import {
   VAKITLER, vakitAni, sehirleriGetir, ilceleriGetir, vakitleriGetir, secimOku, secimYaz, durumHesapla, kalanMetni,
   konumdanBul, icsIndir, yaklasanGunler, konumBilgisiniSil, KONUM_SILINDI,
+  ramazanHedefi, ramazanMi, kerahatDurumu, HATIRLATMA_SECENEKLERI, hatirlatmaOku, hatirlatmaYaz,
 } from "../data/namazVakitleri"
 
 // ── KIBLE ────────────────────────────────────────────────────────────────────
@@ -105,82 +119,6 @@ function SureYazisi({ ms }) {
   )
 }
 
-// ── AÇILIR BÖLÜMLER ──────────────────────────────────────────────────────────
-// Hangi kartın açık olduğu cihazda saklanır; başlangıçta yalnız Namaz Vakitleri açık.
-const BOLUM_ANAHTAR = "vukuf-ekstralar-bolumler"
-const VARSAYILAN_ACIK = { namaz: true }
-const bolumleriOku = () => { try { return JSON.parse(localStorage.getItem(BOLUM_ANAHTAR) || "{}") || {} } catch { return {} } }
-function useBolum(id) {
-  const [acik, setAcik] = useState(() => { const m = bolumleriOku(); return id in m ? !!m[id] : !!VARSAYILAN_ACIK[id] })
-  const degis = useCallback(() => {
-    setAcik(a => {
-      const y = !a
-      try { const m = bolumleriOku(); m[id] = y; localStorage.setItem(BOLUM_ANAHTAR, JSON.stringify(m)) } catch { /* yoksay */ }
-      return y
-    })
-  }, [id])
-  return [acik, degis]
-}
-
-// ── ORTAK KART ───────────────────────────────────────────────────────────────
-// `bolum` = [acik, degis] verilirse başlık dokunulabilir olur, içerik yalnız açıkken çizilir.
-// `ozet`: kapalıyken başlığın altında görünen kısa bilgi (verilmezse `alt`).
-function Kart({ theme, Ikon, baslik, alt, ozet, bolum, children }) {
-  const acilir = !!bolum
-  const acik = acilir ? bolum[0] : true
-  const altMetin = acik ? alt : (ozet ?? alt)
-  const baslikIci = (
-    <>
-      <span style={{ width: "34px", height: "34px", borderRadius: "10px", background: `${theme.accent}18`, color: theme.accent, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-        <Ikon size={18} />
-      </span>
-      <span style={{ minWidth: 0, flex: 1, display: "block" }}>
-        <span style={{ display: "block", fontSize: "15.5px", fontWeight: 600, color: theme.text }}>{baslik}</span>
-        {altMetin && (
-          <span style={{
-            display: "block", fontSize: "12px", marginTop: "1px",
-            color: !acik && ozet ? theme.accent : theme.textSecondary,
-            whiteSpace: acik ? "normal" : "nowrap", overflow: "hidden", textOverflow: "ellipsis",
-          }}>{altMetin}</span>
-        )}
-      </span>
-      {acilir && (
-        <ChevronDown size={18} color={theme.textSecondary} aria-hidden="true"
-          style={{ flexShrink: 0, transition: "transform .2s ease", transform: acik ? "rotate(180deg)" : "none" }} />
-      )}
-    </>
-  )
-  return (
-    <section style={{
-      background: theme.surface, border: `1px solid ${theme.border}`, borderRadius: "14px",
-      padding: acik ? "14px" : "12px 14px", marginBottom: acik ? "14px" : "10px", boxShadow: "0 2px 10px rgba(0,0,0,0.05)",
-    }}>
-      {acilir ? (
-        <h2 style={{ margin: 0, fontSize: "inherit", fontWeight: "inherit" }}>
-          <button onClick={bolum[1]} aria-expanded={acik}
-            style={{
-              width: "100%", display: "flex", alignItems: "center", gap: "10px", padding: 0, margin: 0,
-              marginBottom: acik ? "10px" : 0, background: "none", border: "none", cursor: "pointer",
-              textAlign: "left", fontFamily: "inherit", color: "inherit",
-            }}>
-            {baslikIci}
-          </button>
-        </h2>
-      ) : (
-        <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "10px" }}>{baslikIci}</div>
-      )}
-      {acik && children}
-    </section>
-  )
-}
-const dugmeStil = (theme, birincil) => ({
-  display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "6px",
-  padding: "9px 14px", borderRadius: "10px", fontFamily: "inherit", fontSize: "13px", fontWeight: 600,
-  cursor: "pointer", textDecoration: "none",
-  border: `1px solid ${birincil ? theme.accent : theme.border}`,
-  background: birincil ? theme.accent : "transparent", color: birincil ? "#fff" : theme.text,
-})
-
 // ── NAMAZ VAKİTLERİ ──────────────────────────────────────────────────────────
 function NamazVakitleri({ theme }) {
   const [secim, setSecim] = useState(secimOku)
@@ -194,6 +132,9 @@ function NamazVakitleri({ theme }) {
   const [konumAraniyor, setKonumAraniyor] = useState(false)
   const [, setTik] = useState(0)
   const [seciliVakit, setSeciliVakit] = useState(null)   // dokunulan vakit (null = yaklaşan vakit)
+  const [takvimAcik, setTakvimAcik] = useState(false)      // "Takvime ekle" kutusu
+  const [hatirlatma, setHatirlatma] = useState(hatirlatmaOku)
+  const [tabloAcik, setTabloAcik] = useState(false)        // aylık vakitler / imsakiye
 
   // Vakitleri getir
   useEffect(() => {
@@ -239,7 +180,12 @@ function NamazVakitleri({ theme }) {
   }, [bolum[0]]) // eslint-disable-line
   const d = liste ? durumHesapla(liste) : null
   const sonrakiKalan = d?.sonraki ? d.sonraki.an - Date.now() : null
-  const ozet = d?.sonraki ? `${d.sonraki.ad} ${d.sonraki.saat} · ${kalanMetni(sonrakiKalan)} kaldı` : undefined
+  const ramazan = d ? ramazanHedefi(d) : null
+  const kerahat = d?.bugun ? kerahatDurumu(d.bugun) : null
+  const ozet = ramazan
+    ? `${ramazan.tur === "iftar" ? "İftara" : "Sahura"} ${kalanMetni(ramazan.an - Date.now())} · ${ramazan.ad} ${ramazan.saat}`
+    : d?.sonraki ? `${d.sonraki.ad} ${d.sonraki.saat} · ${kalanMetni(sonrakiKalan)} kaldı` : undefined
+  const ramazanAyi = !!(d?.bugun && (ramazanMi(d.bugun) || ramazanMi(d.yarin)))
   const secStil = {
     width: "100%", padding: "9px 10px", borderRadius: "10px", fontFamily: "inherit", fontSize: "13.5px",
     color: theme.text, background: theme.background, border: `1px solid ${theme.border}`,
@@ -287,17 +233,31 @@ function NamazVakitleri({ theme }) {
           {/* Cami: mihrabında yaklaşan (ya da dokunulan) vakit ve kalan / geçen süre */}
           {(() => {
             const sec = seciliVakit && VAKITLER.find(v => v.k === seciliVakit)
+            // Kerahat vaktindeysek sol kanatta levha
+            const solKanat = kerahat ? {
+              baslik: "Kerahat", satirlar: ["vakti", "bitiş", kerahat.bitSaat],
+              ipucu: `${kerahat.ad} · kerahat vakti ${kerahat.basSaat}–${kerahat.bitSaat}`,
+            } : null
             if (sec) {
               const fark = vakitAni(d.bugun, d.bugun[sec.k]) - Date.now()
               return (
-                <CamiVakit theme={theme}
+                <CamiVakit theme={theme} solKanat={solKanat}
                   ust={<><strong style={{ color: theme.text }}>{sec.ad}</strong> · {d.bugun[sec.k]}</>}
                   buyuk={<SureYazisi ms={fark} />}
                   alt={fark > 0 ? "kaldı" : "geçti"} />
               )
             }
+            // Ramazan: iftara / sahura kalan (kendiliğinden)
+            if (ramazan) {
+              return (
+                <CamiVakit theme={theme} solKanat={solKanat}
+                  ust={<>{ramazan.tur === "iftar" ? "İftara kalan" : "Sahura kalan"}: <span style={{ whiteSpace: "nowrap" }}><strong style={{ color: theme.text }}>{ramazan.ad}</strong> · {ramazan.saat}</span></>}
+                  buyuk={<SureYazisi ms={ramazan.an - Date.now()} />}
+                  alt={d.sonraki && d.sonraki.k !== (ramazan.tur === "iftar" ? "Aksam" : "Imsak") ? `Yaklaşan vakit: ${d.sonraki.ad} ${d.sonraki.saat}` : "kaldı"} />
+              )
+            }
             return (
-              <CamiVakit theme={theme}
+              <CamiVakit theme={theme} solKanat={solKanat}
                 ust={d.sonraki ? <>{d.sonraki.yarin ? "Yarın" : "Yaklaşan vakit"}: <span style={{ whiteSpace: "nowrap" }}><strong style={{ color: theme.text }}>{d.sonraki.ad}</strong> · {d.sonraki.saat}</span></> : "Günün vakitleri"}
                 buyuk={d.sonraki ? <SureYazisi ms={sonrakiKalan} /> : null}
                 alt={d.sonraki ? "kaldı" : null} />
@@ -335,14 +295,119 @@ function NamazVakitleri({ theme }) {
             </div>
           )}
           <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", justifyContent: "center" }}>
-            <button onClick={() => icsIndir(liste, secim)} style={dugmeStil(theme, true)}><CalendarPlus size={15} /> Takvime ekle</button>
+            <button onClick={() => setTakvimAcik(v => !v)} aria-expanded={takvimAcik} style={dugmeStil(theme, true)}><CalendarPlus size={15} /> Takvime ekle</button>
+            <button onClick={() => setTabloAcik(v => !v)} aria-expanded={tabloAcik} style={dugmeStil(theme, false)}><Table2 size={15} /> {ramazanAyi ? "İmsakiye" : "Aylık vakitler"}</button>
             <button onClick={() => setSeciyor(true)} style={dugmeStil(theme, false)}><MapPin size={15} /> Konumu değiştir</button>
           </div>
+          {takvimAcik && (
+            <div style={{ padding: "10px 12px", borderRadius: "12px", border: `1px solid ${theme.border}`, background: theme.background }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "7px", fontSize: "12.5px", fontWeight: 600, color: theme.text, marginBottom: "6px" }}>
+                <BellRing size={15} color={theme.accent} /> Hatırlatma
+              </div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "5px", marginBottom: "10px" }}>
+                {HATIRLATMA_SECENEKLERI.map(dk => {
+                  const sec = hatirlatma === dk
+                  return (
+                    <button key={String(dk)} aria-pressed={sec} onClick={() => { setHatirlatma(dk); hatirlatmaYaz(dk) }}
+                      style={{
+                        padding: "4px 9px", borderRadius: "999px", fontSize: "11.5px", fontFamily: "inherit", cursor: "pointer",
+                        border: `1px solid ${sec ? theme.accent : theme.border}`, background: sec ? theme.accent : "transparent",
+                        color: sec ? "#fff" : theme.textSecondary,
+                      }}>
+                      {dk == null ? "Yok" : dk === 0 ? "Vaktinde" : `${dk} dk önce`}
+                    </button>
+                  )
+                })}
+              </div>
+              <button onClick={() => icsIndir(liste, secim, hatirlatma)} style={{ ...dugmeStil(theme, true), width: "100%" }}>
+                <CalendarPlus size={15} /> Takvim dosyasını indir
+              </button>
+              <div style={{ fontSize: "11px", color: theme.textSecondary, lineHeight: 1.5, marginTop: "8px" }}>
+                Elde olan yaklaşık 30 günün vakitleri telefonun takvimine aktarılır; hatırlatmayı uygulama kapalıyken de takvim verir. Ay dolunca yeniden eklenebilir. Bazı takvim uygulamaları dosyadaki hatırlatmayı almayabilir; o durumda takvimden ayarlanabilir.
+              </div>
+            </div>
+          )}
+          {tabloAcik && <AylikVakitler theme={theme} liste={liste} bugun={d.bugun} ramazanAyi={ramazanAyi} />}
           <div style={{ fontSize: "11px", color: theme.textSecondary, lineHeight: 1.5, textAlign: "center" }}>
-            "Takvime ekle", elde olan yaklaşık 30 günün vakitlerini telefonun takvimine aktarır; ay dolunca yeniden eklenebilir. Vakitler cihazda saklanır, internetsiz de görünür.
+            Vakitler cihazda saklanır, internetsiz de görünür.
           </div>
         </div>
       )}
+    </Kart>
+  )
+}
+
+// ── AYLIK VAKİTLER / İMSAKİYE ───────────────────────────────────────────────
+// Elde olan günler (≈30). Bugünün satırı vurgulu; Ramazan'da İmsak ve Akşam sütunları
+// öne çıkar, Ramazan günleri satır başında küçük hilalle.
+function AylikVakitler({ theme, liste, bugun, ramazanAyi }) {
+  const satirlar = useMemo(() => {
+    const i = liste.findIndex(g => g === bugun)
+    return i >= 0 ? liste.slice(i) : liste
+  }, [liste, bugun])
+  const vurgulu = (k) => ramazanAyi && (k === "Imsak" || k === "Aksam")
+  const hucre = { padding: "6px 4px", textAlign: "center", fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }
+  return (
+    <div style={{ border: `1px solid ${theme.border}`, borderRadius: "12px", overflow: "hidden" }}>
+      <div style={{ maxHeight: "360px", overflow: "auto" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12px", color: theme.text }}>
+          <thead>
+            <tr style={{ position: "sticky", top: 0, background: theme.surface, boxShadow: `0 1px 0 ${theme.border}` }}>
+              <th style={{ ...hucre, textAlign: "left", paddingLeft: "8px", color: theme.textSecondary, fontWeight: 600 }}>Gün</th>
+              {VAKITLER.map(v => (
+                <th key={v.k} style={{ ...hucre, color: vurgulu(v.k) ? theme.accent : theme.textSecondary, fontWeight: vurgulu(v.k) ? 700 : 600 }}>{v.ad}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {satirlar.map(g => {
+              const bu = g === bugun
+              const [gg, aa] = String(g.MiladiTarihKisa || "").split(".")
+              return (
+                <tr key={g.MiladiTarihKisa} style={{ background: bu ? `${theme.accent}18` : "transparent", borderTop: `1px solid ${theme.border}55` }}>
+                  <td style={{ ...hucre, textAlign: "left", paddingLeft: "8px", fontWeight: bu ? 700 : 500 }}>
+                    {gg}.{aa}{ramazanMi(g) && <Moon size={10} color={theme.accent} style={{ marginLeft: "3px", verticalAlign: "-1px" }} aria-label="Ramazan" />}
+                  </td>
+                  {VAKITLER.map(v => (
+                    <td key={v.k} style={{ ...hucre, color: vurgulu(v.k) ? theme.accent : theme.text, fontWeight: vurgulu(v.k) || bu ? 700 : 400 }}>{g[v.k]}</td>
+                  ))}
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  )
+}
+
+// ── CUMA HUTBESİ ─────────────────────────────────────────────────────────────
+const HUTBE_ADRESI = "https://dinhizmetleri.diyanet.gov.tr/kategoriler/yayinlarimiz/hutbeler/t%C3%BCrk%C3%A7e"
+const HUTBE_EDEVLET = "https://www.turkiye.gov.tr/diyanet-isleri-cuma-ve-bayram-hutbeleri"
+function CumaHutbesi({ theme }) {
+  const bolum = useBolum("hutbe")
+  const bugun = new Date()
+  const kalan = (5 - bugun.getDay() + 7) % 7          // 0 = bugün Cuma
+  const cuma = new Date(bugun.getFullYear(), bugun.getMonth(), bugun.getDate() + kalan)
+  const tarih = `${cuma.getDate()} ${AY_ADLARI[cuma.getMonth()]}`
+  const ozet = kalan === 0 ? "Bugün Cuma" : kalan === 1 ? `Yarın Cuma · ${tarih}` : `Cuma'ya ${kalan} gün · ${tarih}`
+  return (
+    <Kart theme={theme} Ikon={ScrollText} baslik="Cuma Hutbesi" alt="Diyanet'in haftalık hutbesi" bolum={bolum} ozet={ozet}>
+      <div style={{ fontSize: "12.5px", color: theme.text, lineHeight: 1.55 }}>
+        {kalan === 0 ? <strong style={{ color: theme.accent }}>Bugün Cuma. </strong> : <>Bu haftanın Cuma'sı: <strong>{tarih}</strong>. </>}
+        Diyanet her hafta Cuma hutbesini metni ve sesli hâliyle yayımlar; hutbeler resmî sayfada okunabilir ve dinlenebilir.
+      </div>
+      <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginTop: "10px" }}>
+        <a href={HUTBE_ADRESI} target="_blank" rel="noopener noreferrer" style={dugmeStil(theme, true)}>
+          <ScrollText size={15} /> Hutbeler · Diyanet
+        </a>
+        <a href={HUTBE_EDEVLET} target="_blank" rel="noopener noreferrer" style={dugmeStil(theme, false)}>
+          <ExternalLink size={14} /> e-Devlet
+        </a>
+      </div>
+      <div style={{ fontSize: "11px", color: theme.textSecondary, lineHeight: 1.5, marginTop: "8px" }}>
+        Hutbe metni Diyanet'in sayfasında açılır; uygulamaya kopyalanmaz.
+      </div>
     </Kart>
   )
 }
@@ -808,11 +873,14 @@ export default function Ekstralar() {
       </div>
       <NamazVakitleri theme={theme} />
       <DiniGunler theme={theme} />
+      <CumaHutbesi theme={theme} />
       <Radyolar theme={theme} />
       <KiblePusulasi theme={theme} />
       <YakinCamiler theme={theme} />
       <Zikirmatik theme={theme} />
       <KonumIzni theme={theme} />
+      {/* En altta: Namaz & Hatim takibi (4 Kasım 2026) */}
+      <NamazHatimTakibi theme={theme} />
     </div>
   )
 }

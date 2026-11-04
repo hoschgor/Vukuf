@@ -52,6 +52,8 @@ const GECICI_ANAHTAR = new Set([
   "vukuf-hifz-yedek",
   // Son yedeğin alındığı an — hatırlatma için; yedeğin içine girmesi anlamsız
   "vukuf-son-yedek",
+  // Grup hatmi bağlantısıyla gelen, henüz işlenmemiş davet/bildirim (4 Kasım 2026)
+  "vukuf-hatim-gelen",
 ])
 
 /* SON YEDEK ZAMANI (3 Ekim 2026) — genel yedek ya da hıfz yedeği alınınca
@@ -77,6 +79,15 @@ export const KATEGORILER = [
     korumali: true,          // "her şeyi sıfırla" dışında ekstra uyarı gösterilir
     anahtarlar: ["vukuf-kayitlar", "vukuf-isaretler"],
     onekler: ["vukuf_kayitlar_"],
+  },
+  {
+    // 4 Kasım 2026 — Ekstralar → Namaz & Hatim takibi (data/takip.js)
+    id: "takip",
+    ad: "Namaz ve hatim takibi",
+    aciklama: "Günlük namaz işaretleri, kaza sayıları, hatim planı ve grup hatimleri",
+    korumali: true,
+    anahtarlar: ["vukuf-namaz-gunluk", "vukuf-kaza", "vukuf-hatim", "vukuf-hatim-gruplar", "vukuf-hatim-davetler", "vukuf-takip-sekme"],
+    onekler: [],
   },
   {
     id: "hifz",

@@ -20,6 +20,8 @@
               vurgulanıyor (paylasimSecim.js cumleyeGenislet).
      Âyet   : https://<site>/?a=<sûre>:<âyet>
      Söz    : https://<site>/?t=<sıra>&m=<sözün ilk 6 kelimesi>   (Kısa Tefeül, 4 Kasım 2026)
+     Hatim  : https://<site>/?hg=<davet>  ·  ?hd=<okudum bildirimi>   (grup hatmi, data/takip.js)
+              Varınca Ekstralar → Namaz & Hatim takibi → Hatim açılır, kayıt orada işlenir.
               Sıra data/tefeul.json'daki yeri; liste değişirse varınca m ile yeniden bulunur.
    Kök adres seçildi çünkü: (1) sunucu her durumda index.html'i verir (derin yol 404
    olmaz), (2) kullanıcı isteği — önce ana sayfa açılır, oradan geçilir.
@@ -35,6 +37,7 @@
 
 import { kitaplar } from "./kitaplar"
 import { sureAdi } from "./sureAdlari"
+import { veriCoz, GELEN_ANAHTAR, SEKME_ANAHTAR } from "./takip"
 
 export const PAYLASIM_DONUS = "paylasim"
 export const SOZ_PAYLASIM_ANAHTAR = "vukuf-soz-tefeul-paylasim"
@@ -146,6 +149,14 @@ export function gelenPaylasim(arama = typeof window !== "undefined" ? window.loc
     const ayetNo = a >= 1 ? a : null
     return { tip: "ayet", sureNo: s, ayetNo, etiket: ayetEtiketi(s, ayetNo) }
   }
+  if (p.has("hg") || p.has("hd")) {
+    const davet = p.has("hg")
+    const veri = veriCoz(p.get(davet ? "hg" : "hd"))
+    if (!veri || !veri.i || !Array.isArray(veri.c)) return null
+    return davet
+      ? { tip: "hatim-davet", veri, etiket: `Grup hatmi daveti${veri.g ? ` · ${veri.g}` : ""}` }
+      : { tip: "hatim-bildirim", veri, etiket: `Hatim bildirimi${veri.k ? ` · ${veri.k}` : ""}` }
+  }
   if (p.has("t")) {
     const index = parseInt(p.get("t"), 10)
     const metin = kisalt(p.get("m") || "", 120)
@@ -167,6 +178,19 @@ export function gelenPaylasim(arama = typeof window !== "undefined" ? window.loc
 
 /* Hedefi okuma ekranlarının açılışta okuduğu anahtarlara yaz → gidilecek yol */
 export function paylasimiHazirla(h) {
+  if (h.tip === "hatim-davet" || h.tip === "hatim-bildirim") {
+    try {
+      const l = JSON.parse(localStorage.getItem(GELEN_ANAHTAR) || "[]")
+      l.push({ tip: h.tip, veri: h.veri })
+      localStorage.setItem(GELEN_ANAHTAR, JSON.stringify(l))
+      // Ekstralar'da takip bölümü ve Hatim sekmesi açık gelsin
+      const b = JSON.parse(localStorage.getItem("vukuf-ekstralar-bolumler") || "{}") || {}
+      b.takip = true
+      localStorage.setItem("vukuf-ekstralar-bolumler", JSON.stringify(b))
+      localStorage.setItem(SEKME_ANAHTAR, JSON.stringify("hatim"))
+    } catch { /* yoksay */ }
+    return "/ekstralar"
+  }
   if (h.tip === "soz") {
     // Söz Tefeülü açılışta okur, bulur ve o kartı gösterir (pages/SozTefeul.jsx)
     try { localStorage.setItem(SOZ_PAYLASIM_ANAHTAR, JSON.stringify({ index: h.index, metin: h.metin })) } catch { /* yoksay */ }

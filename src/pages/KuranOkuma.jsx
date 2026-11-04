@@ -3464,18 +3464,31 @@ function donuseGit(i) {
     const kap = scrollRef.current
     if (!a || !kap) return
     const sec = a.besmeleIcin ? `[data-sure-baslik="${a.besmeleIcin}"]` : `[data-sure="${a.sureNo}"][data-ayet="${a.ayetNo}"]`
-    const el = kap.querySelector(sec)
+    /* Âyetin KAPLADIĞI ALAN: mushafta data-ayet yalnız âyet SONU rozetinde var (kelimelerde
+       yok). Âyetin başı = bir önceki âyetin sonu rozetinin satırı (1. âyette sûre başlığı);
+       sonu = kendi rozeti. İkisi birlikte ölçülünce uzun âyet de kısa âyet de BAŞINDAN
+       hizalanır (eskiden yalnız sondaki rozete bakılıyordu → uzun âyetin başı çok yukarıda
+       kalıyordu). Önceki rozet çizili değilse (sayfa dışı) yalnız son rozet kullanılır. */
+    const bas = a.besmeleIcin ? null
+      : a.ayetNo > 1 ? kap.querySelector(`[data-sure="${a.sureNo}"][data-ayet="${a.ayetNo - 1}"]`)
+      : kap.querySelector(`[data-sure-baslik="${a.sureNo}"]`)
+    const son = [...kap.querySelectorAll(sec)]
+    const el = son.length ? [...(bas ? [bas] : []), ...son] : []
     odakDurdurRef.current()
     const { oran, bolge } = odakBandi(odakDurumu.konum)
-    if (!el) {
+    if (!el.length) {
       // Uzak sayfa: sureGit ile git, oturunca kullanıcının seçtiği hizaya (perdenin altına
       // düşmesin) yumuşakça getir — sureGit'e dokunulmadı, ardından ince ayar yapılıyor.
       if (a.besmeleIcin) sureGit(a.besmeleIcin); else sureGit(a.sureNo, a.ayetNo)
       let iptal = false
       const t = setTimeout(() => {
         if (iptal) return
-        const el2 = scrollRef.current?.querySelector(sec)
-        if (el2) odakDurdurRef.current = hizayaGetir(scrollRef.current, el2, { zorla: true, oran, bolge })
+        const k2 = scrollRef.current
+        const bas2 = !k2 || a.besmeleIcin ? null
+          : a.ayetNo > 1 ? k2.querySelector(`[data-sure="${a.sureNo}"][data-ayet="${a.ayetNo - 1}"]`)
+          : k2.querySelector(`[data-sure-baslik="${a.sureNo}"]`)
+        const el2 = [...(bas2 ? [bas2] : []), ...(k2?.querySelectorAll(sec) || [])]
+        if (el2.length) odakDurdurRef.current = hizayaGetir(scrollRef.current, el2, { zorla: true, oran, bolge })
       }, 950)
       odakDurdurRef.current = () => { iptal = true; clearTimeout(t) }
       return

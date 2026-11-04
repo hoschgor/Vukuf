@@ -8,7 +8,7 @@
    Küçük bir telefon önizlemesi: üstte perde (durum çubuğu bölgesi), altta oynatıcı,
    arada satırlar. Vurgulu "âyet" şeridi parmakla yukarı/aşağı çekilir (ya da alttaki
    kaydırıcıyla); bırakılan yer gözlük takibinin ve odak penceresinin okunan âyeti
-   getireceği çizgidir (data/odak.js → konumAyarla). Perdeye girmesin diye üst sınır %25.
+   getireceği çizgidir (data/odak.js → konumAyarla). Perdeye girmesin diye üst sınır %12; çizgi âyetin BAŞIDIR (uzun âyet sığmazsa yukarı alınır).
    createPortal ile body'ye çizilir (oynatıcının saydamlık bulanıklığı fixed konumu
    bozmasın).
    ═══════════════════════════════════════════════════════════════════════════ */
@@ -49,7 +49,7 @@ export default function OdakKonumAyari({ acik, kapat, theme }) {
           <button onClick={kapat} aria-label="Kapat" style={{ width: "32px", height: "32px", borderRadius: "50%", border: "none", background: "transparent", color: theme.textSecondary, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><X size={18} /></button>
         </div>
         <div style={{ fontSize: "12px", color: theme.textSecondary, lineHeight: 1.5, marginBottom: "12px" }}>
-          Vurgulu şerit yukarı ya da aşağı çekilerek gözlükle takipte okunan âyetin getirileceği yükseklik seçilebilir.
+          Okunan âyetin <strong>başı</strong> bu çizgiye gelir; şerit yukarı ya da aşağı çekilerek seçilebilir. Ekrana sığmayan uzun âyet, tamamı görünecek kadar yukarı alınır.
         </div>
         <div style={{ display: "flex", gap: "16px", alignItems: "center", justifyContent: "center" }}>
           {/* Telefon önizlemesi */}
@@ -75,16 +75,16 @@ export default function OdakKonumAyari({ acik, kapat, theme }) {
             <div style={{ position: "absolute", left: 0, right: 0, top: `${deger * 100}%`, height: 0, borderTop: `1px dashed ${ac}` }} />
             {/* şerit */}
             <div style={{
-              position: "absolute", left: "6px", right: "6px", top: `calc(${deger * 100}% - 18px)`, height: "36px",
+              position: "absolute", left: "6px", right: "6px", top: `${deger * 100}%`, height: "44px",
               borderRadius: "8px", background: `linear-gradient(${ac}24, ${ac}24), ${theme.background}`, boxShadow: `inset 3px 0 0 ${ac}`, border: `1px solid ${ac}88`,
               display: "flex", alignItems: "center", justifyContent: "center", transition: surukRef.current ? "none" : "top .2s ease",
             }}>
-              <span style={{ fontSize: "10px", fontWeight: 700, color: ac }}>okunan âyet</span>
+              <span style={{ fontSize: "10px", fontWeight: 700, color: ac, textAlign: "center", lineHeight: 1.25 }}>okunan âyet<br /><span style={{ fontWeight: 500 }}>başı çizgide</span></span>
             </div>
           </div>
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "6px" }}>
             <span style={{ fontSize: "26px", fontWeight: 700, color: ac, fontVariantNumeric: "tabular-nums" }}>%{Math.round(deger * 100)}</span>
-            <span style={{ fontSize: "11px", color: theme.textSecondary, textAlign: "center", lineHeight: 1.35 }}>ekranın<br />üstünden</span>
+            <span style={{ fontSize: "11px", color: theme.textSecondary, textAlign: "center", lineHeight: 1.35 }}>âyetin başı<br />ekranın<br />üstünden</span>
           </div>
         </div>
         <input type="range" min={KONUM_SINIR[0]} max={KONUM_SINIR[1]} step={0.01} value={deger} aria-label="Karşılama yüksekliği"

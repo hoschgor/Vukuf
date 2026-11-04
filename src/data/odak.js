@@ -30,12 +30,20 @@ const okuSurekli = () => { try { return localStorage.getItem(SUREKLI_ANAHTAR) ==
 /* KARŞILAMA KONUMU (4 Kasım 2026) — kullanıcı: "Odaklanma tek seferde kullanıldığında
    perdenin altında karşılayabiliyor; perdeye dokunmadan karşıladığı konumu varsayılan
    olarak biraz daha aşağı alalım ve bunu ayetin karşılanacağı konum ayarı olarak
-   kullanıcıya bırakabilelim." Ekran yüksekliğine oran (0 üst … 1 alt); okunan öğenin
-   ORTASI bu çizgiye gelir. Varsayılan 0,45 (eskiden 0,38). Ayar: PlayerBar → Görünüm
-   ve konum → sürüklemeli önizleme (components/OdakKonumAyari.jsx). */
-const KONUM_ANAHTAR = "vukuf-odak-konum"
-export const KONUM_VARSAYILAN = 0.45
-export const KONUM_SINIR = [0.25, 0.7]
+   kullanıcıya bırakabilelim." Ekran yüksekliğine oran (0 üst … 1 alt).
+   DÜZELTME (4 Kasım 2026, kullanıcı: "Uzun ayetlerde çok daha yukarıda, kısa ayetlerde
+   çok daha aşağıda karşılıyor … uzun ayeti baz alıp karşılamayı ona göre ayarlamalıyız"):
+   Eskiden öğenin ORTASI çizgiye geliyordu → uzun âyetin başı yukarıda, kısanınki aşağıda
+   kalıyordu. Artık âyetin BAŞI her zaman bu çizgiye gelir; âyet ekrana (oynatıcıya
+   kadar) sığmıyorsa sığacak kadar — en fazla perde sınırına dek — yukarı alınır.
+   Mushafta âyetin bütün kelimeleri birlikte ölçülür (yalnız ilk kelime değil).
+   Anlam değiştiği için yeni anahtar; varsayılan 0,30. Ayar: PlayerBar → Görünüm ve konum
+   → sürüklemeli önizleme (components/OdakKonumAyari.jsx). */
+const KONUM_ANAHTAR = "vukuf-odak-baslangic"
+export const KONUM_VARSAYILAN = 0.3
+export const KONUM_SINIR = [0.12, 0.55]
+export const UST_SINIR = 0.1          // perde: âyetin başı bunun üstüne çıkmaz
+export const ALT_SINIR = 0.86         // oynatıcı / bilgi şeridi payı: âyetin sonu bunun altına inmesin
 const okuKonum = () => {
   try { const v = parseFloat(localStorage.getItem(KONUM_ANAHTAR)); return v >= KONUM_SINIR[0] && v <= KONUM_SINIR[1] ? v : KONUM_VARSAYILAN } catch { return KONUM_VARSAYILAN }
 }
@@ -46,7 +54,7 @@ export function konumAyarla(v) {
 }
 /* Karşılama çizgisi → hizalama oranı ve "rahat bant" (bant içindeyken kımıldamaz) */
 export function odakBandi(konum = KONUM_VARSAYILAN) {
-  return { oran: konum, bolge: [Math.max(0.1, konum - 0.26), Math.min(0.9, konum + 0.2)] }
+  return { oran: konum, bolge: [Math.max(UST_SINIR, konum - 0.14), Math.min(0.8, konum + 0.24)] }
 }
 
 let durum = { acik: false, kaynak: null, surekli: okuSurekli(), konum: okuKonum() }
@@ -101,20 +109,27 @@ export function yumusakKaydir(kap, hedef, { sure = null, bitti } = {}) {
 
 /* Öğeyi kabın "göz hizasına" getir — ama zaten rahat bölgedeyse kımıldama (denge):
    oran: hedef çizgi (0 üst … 1 alt), bolge: [üst, alt] rahat bant */
-export function hizayaGetir(kap, el, { oran = KONUM_VARSAYILAN, bolge = [0.19, 0.65], zorla = false, ...ops } = {}) {
-  if (!kap || !el) return () => {}
+export function hizayaGetir(kap, el, { oran = KONUM_VARSAYILAN, bolge = null, zorla = false, ustSinir = UST_SINIR, altSinir = ALT_SINIR, ...ops } = {}) {
+  const liste = (Array.isArray(el) ? el : [el]).filter(Boolean)
+  if (!kap || !liste.length) return () => {}
   const kr = kap.getBoundingClientRect()
-  const er = el.getBoundingClientRect()
-  const ust = (er.top - kr.top) / kr.height
-  const alt = (er.bottom - kr.top) / kr.height
-  // Rahat bantta mı? Banttan uzun öğe, başı bandın başına yakınsa bantta sayılır
-  const uzun = (alt - ust) > (bolge[1] - bolge[0])
-  const bantta = uzun ? ust >= bolge[0] - 0.02 && ust <= bolge[0] + 0.1 : ust >= bolge[0] && alt <= bolge[1]
-  if (!zorla && bantta) return () => {}
-  // Uzun öğe (ekrandan büyük) başından hizalanır
-  // Öğenin ortası karşılama çizgisine; çok uzun öğede başı çizginin biraz üstüne
-  const pay = er.height > kr.height * 0.6 ? kr.height * Math.max(0.12, oran - 0.25) : kr.height * oran - Math.min(er.height, kr.height * 0.4) / 2
-  return yumusakKaydir(kap, kap.scrollTop + (er.top - kr.top) - pay, ops)
+  // Âyet birden çok parçadan (kelime) oluşabilir: hepsinin kapladığı alan
+  let ustPx = Infinity, altPx = -Infinity
+  for (const e of liste) { const r = e.getBoundingClientRect(); if (r.height || r.width) { ustPx = Math.min(ustPx, r.top); altPx = Math.max(altPx, r.bottom) } }
+  if (!isFinite(ustPx)) return () => {}
+  const H = kr.height
+  const ust = (ustPx - kr.top) / H, alt = (altPx - kr.top) / H, boy = alt - ust
+  // Hedef: başı çizgiye; sığmıyorsa sığacak kadar yukarı (perde sınırına kadar)
+  let hedef = oran
+  if (hedef + boy > altSinir) hedef = Math.max(ustSinir, altSinir - boy)
+  if (!zorla) {
+    const b = bolge || odakBandi(oran).bolge
+    const sigiyor = alt <= altSinir
+    // Denge: başı rahat bantta ve tamamı görünüyorsa kımıldama; sığmayan uzun âyet
+    // zaten olabileceği en iyi yerdeyse de kımıldama
+    if ((sigiyor && ust >= b[0] && ust <= b[1]) || (!sigiyor && Math.abs(ust - hedef) < 0.03)) return () => {}
+  }
+  return yumusakKaydir(kap, kap.scrollTop + (ustPx - kr.top) - hedef * H, ops)
 }
 
 // ── VERİ (odak penceresi Kur'ân ekranı dışında da çalışır) ─────────────────────

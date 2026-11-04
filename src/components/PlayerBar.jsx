@@ -748,7 +748,7 @@ function GorunumPaneli({ theme, gorunum, setGorunum, geri, konumAc, satirStil, i
         <span style={{ ...ikonDugme, cursor: "pointer" }}><Crosshair size={15} color={theme.accent} /></span>
         <span style={{ flex: 1, minWidth: 0, fontSize: "12px", color: theme.text, lineHeight: 1.25 }}>
           Âyetin karşılanacağı yer
-          <span style={{ display: "block", fontSize: "10px", color: theme.textSecondary }}>Gözlükle takipte okunan âyetin geleceği yükseklik</span>
+          <span style={{ display: "block", fontSize: "10px", color: theme.textSecondary }}>Gözlükle takipte okunan âyetin başının geleceği yükseklik</span>
         </span>
         <span style={degerStil}>%{Math.round(konum * 100)}</span>
         <ChevronRight size={15} color={theme.textSecondary} />

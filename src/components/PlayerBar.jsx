@@ -49,6 +49,7 @@ function KuranKucuk({ theme, calar, barKonum, altPay, ustPay, ac: acFn }) {
 }
 import { KARILAR } from "../data/hooks/useAudioPlayer"
 import { useArkaCalma, useOtomatikDurdurma, UYKU_SURELERI } from "../data/oynatici"
+import { useOdak, surekliAyarla } from "../data/odak"
 import { Headphones, Music2, Moon } from "lucide-react"
 import { useMediaQuery } from "../data/hooks/useMediaQuery"
 import MushafPlayButton from "./MushafPlayButton"
@@ -95,6 +96,7 @@ export default function PlayerBar({
   barYuksekligi = 0,
   playerBarYuksekligi,
   onOdaklan,
+  odakDurum = "kapali",   // gözlük: "kapali" | "acik" (okunan âyeti takip) | "askida" (elle kaydırıldı)
   onOlcum,
   onDonguAyar,          // döngü/tekrar ayar arayüzünü aç (KuranOkuma yönetir)
   tekrarAktif = false,  // bir tekrar modu seçili mi (buton vurgusu)
@@ -121,6 +123,8 @@ export default function PlayerBar({
   // DEVAMLI OYNATMA (6 Ekim 2026): açıksa Kur'ân ekranından çıkınca ses sürer,
   // öbür ekranlarda mini oynatıcı görünür (components/MiniOynatici.jsx)
   const [arkaCalma, setArkaCalma] = useArkaCalma()
+  // SÜREKLİ ODAK (4 Kasım 2026) — data/odak.js
+  const odakDurumu = useOdak()
   // Sessize alınca eski seviyeyi hatırla → tekrar dokununca aynı seviyeye dön
   const oncekiSesRef = useRef(ses > 0 ? ses : 1)
   useEffect(() => { if (ses > 0) oncekiSesRef.current = ses }, [ses])
@@ -404,6 +408,27 @@ export default function PlayerBar({
             </span>
           </div>
           <div style={{ height: "1px", background: theme.border, opacity: 0.6, margin: "0 2px" }} />
+          {/* SÜREKLİ ODAK — mushaf okunan âyeti takip eder; öbür ekranlarda odak penceresi açık kalır */}
+          <div role="switch" aria-checked={odakDurumu.surekli} onClick={() => surekliAyarla(!odakDurumu.surekli)}
+            title="Kur'ân ekranında okunan âyet hep takip edilsin; ekrandan çıkınca okunan âyetler odak penceresinde görünsün"
+            style={{ ...satirStil, cursor: "pointer" }}>
+            <span style={{ ...ikonDugme, cursor: "pointer" }}><Glasses size={16} color={odakDurumu.surekli ? theme.accent : theme.textSecondary} /></span>
+            <span style={{ flex: 1, minWidth: 0, fontSize: "12px", color: theme.text, lineHeight: 1.25 }}>
+              Sürekli odak
+              <span style={{ display: "block", fontSize: "10px", color: theme.textSecondary }}>Okunan âyet hep takip edilsin</span>
+            </span>
+            <span aria-hidden="true" style={{
+              width: "30px", height: "18px", borderRadius: "999px", flexShrink: 0, position: "relative",
+              background: odakDurumu.surekli ? theme.accent : `${theme.textSecondary}44`, transition: "background .15s ease",
+            }}>
+              <span style={{
+                position: "absolute", top: "2px", left: odakDurumu.surekli ? "14px" : "2px",
+                width: "14px", height: "14px", borderRadius: "50%", background: "#fff",
+                boxShadow: "0 1px 3px rgba(0,0,0,0.25)", transition: "left .15s ease",
+              }} />
+            </span>
+          </div>
+          <div style={{ height: "1px", background: theme.border, opacity: 0.6, margin: "0 2px" }} />
           {/* OTOMATİK GİZLEME — açıkken süre (3–30 sn) */}
           <div role="switch" aria-checked={gizle.acik} onClick={() => setGizle({ acik: !gizle.acik })}
             title="Dokunulmayınca oynatıcı küçük yuvarlak düğmeye insin; dokununca yerinde açılır"
@@ -478,17 +503,25 @@ export default function PlayerBar({
           </div>
         </div>
 
-        {/* GÖZLÜK */}
+        {/* GÖZLÜK — okunan âyeti yumuşakça takip et (4 Kasım 2026; KuranOkuma → gozlukTikla) */}
         <button
           onClick={onOdaklan}
+          aria-pressed={odakDurum !== "kapali"}
           style={{
-            display: "flex", alignItems: "center", justifyContent: "center",
+            position: "relative", display: "flex", alignItems: "center", justifyContent: "center",
             width: isMobile ? "28px" : "30px", height: isMobile ? "28px" : "30px", borderRadius: "50%",
-            border: "none", cursor: "pointer", background: "transparent", color: theme.textSecondary,
+            border: "none", cursor: "pointer",
+            background: odakDurum === "acik" ? `${theme.accent}22` : "transparent",
+            color: odakDurum === "kapali" ? theme.textSecondary : theme.accent,
             transition: "all 0.15s", flexShrink: 0, touchAction: "manipulation", padding: 0,
           }}
-          title="Okunan ayete odaklan"
+          title={odakDurum === "kapali" ? "Okunan âyete odaklan ve takip et"
+            : odakDurum === "askida" ? "Takip askıda — okunan âyete dön"
+            : "Takip açık — kapatmak için dokunun"}
         >
+          {odakDurum === "askida" && (
+            <span aria-hidden="true" style={{ position: "absolute", top: "2px", right: "2px", width: "6px", height: "6px", borderRadius: "50%", background: theme.accent }} />
+          )}
           <Glasses size={isMobile ? 17 : 19} />
         </button>
 

@@ -112,6 +112,7 @@ import {
 } from "lucide-react"
 // Paylaşma (18 Ekim 2026): âyet rozetine dokunarak paylaşma penceresi
 import PaylasimPenceresi, { PaylasimNotu } from "../components/PaylasimPenceresi"
+import { useOdak, hizayaGetir } from "../data/odak"
 
 // ── Arapça font listesi
 const ARAPCA_FONTLAR = [
@@ -3444,6 +3445,60 @@ function donuseGit(i) {
     })
   }, [player, mevcutSureBilgisi])
 
+  /* ── ODAK TAKİBİ — PlayerBar'daki gözlük (4 Kasım 2026) ─────────────────────
+     Kullanıcı: "istersek sürekli odak açık kalabilmeli … sonraki ayete geçtiğinde keskin,
+     göz yoran bir şekilde kaymak yerine yavaşça ama güzel bir denge ile takip edecek."
+     Gözlük: kapalı → AÇ (okunan âyete yavaşça gel, sonra takip et) · açık → KAPAT ·
+     askıda (elle kaydırıldı) → okunan yere dön ve takibe devam. Takip, âyet ekranın
+     rahat bandından (≈%14–%60) çıkınca onu göz hizasına (≈%38) 0,8–1,8 sn'de yumuşakça
+     getirir (data/odak.js → hizayaGetir); bant içindeyken mushaf kımıldamaz. Âyet
+     sayfası henüz çizilmemişse (uzak) sureGit ile gidilir. "Sürekli odak" açıksa
+     (odak penceresi / oynatıcı ayarları) Kur'ân ekranı takip açık başlar.
+     sureGit / ayetGit / ustPay'e dokunulmadı; yalnız çağrılıyor. */
+  const odakDurumu = useOdak()
+  const [odakTakip, setOdakTakip] = useState(() => odakDurumu.surekli)
+  const [odakAskida, setOdakAskida] = useState(false)
+  const odakDurdurRef = useRef(() => {})
+  useEffect(() => { if (odakDurumu.surekli) { setOdakTakip(true); setOdakAskida(false) } }, [odakDurumu.surekli])
+  const odakHizala = useCallback((zorla) => {
+    const a = player.aktifAyet
+    const kap = scrollRef.current
+    if (!a || !kap) return
+    const sec = a.besmeleIcin ? `[data-sure-baslik="${a.besmeleIcin}"]` : `[data-sure="${a.sureNo}"][data-ayet="${a.ayetNo}"]`
+    const el = kap.querySelector(sec)
+    odakDurdurRef.current()
+    if (!el) { if (a.besmeleIcin) sureGit(a.besmeleIcin); else sureGit(a.sureNo, a.ayetNo); return }
+    odakDurdurRef.current = hizayaGetir(kap, el, { zorla, oran: 0.38, bolge: [0.14, 0.6] })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [player.aktifAyet])
+  // Gözlükle açılınca / askıdan dönülünce ilk hizalama zorunlu (bantta olsa da göz hizasına)
+  const odakZorlaRef = useRef(false)
+  useEffect(() => {
+    if (odakTakip && !odakAskida && player.durum !== "kapali") { odakHizala(odakZorlaRef.current); odakZorlaRef.current = false }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [player.aktifAyet, odakTakip, odakAskida])
+  // Elle kaydırma → takip askıya (çalarken); yeni çalma başlayınca askı kalkar
+  useEffect(() => {
+    if (!odakTakip) return
+    const kap = scrollRef.current
+    if (!kap) return
+    const elle = () => { if (player.durum !== "kapali") { odakDurdurRef.current(); setOdakAskida(true) } }
+    kap.addEventListener("wheel", elle, { passive: true })
+    kap.addEventListener("touchmove", elle, { passive: true })
+    return () => { kap.removeEventListener("wheel", elle); kap.removeEventListener("touchmove", elle) }
+  }, [odakTakip, player.durum])
+  useEffect(() => { if (player.durum === "kapali") setOdakAskida(false) }, [player.durum])
+  useEffect(() => () => odakDurdurRef.current(), [])
+  const gozlukTikla = () => {
+    if (!odakTakip || odakAskida) {
+      odakZorlaRef.current = true
+      if (!odakTakip) setOdakTakip(true)
+      if (odakAskida) setOdakAskida(false)
+      return
+    }
+    odakDurdurRef.current(); setOdakTakip(false)
+  }
+
   // Meal penceresinin içeriği: çalan âyet. `besmeleIcin` doluysa henüz sûrenin
   // besmelesi okunuyor demektir — âyet numarası verilmez.
   const mealPencere = useMemo(() => {
@@ -5514,15 +5569,8 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
           playerBarYuksekligi={playerBarYuksekligi}
           barUiOlcegi={barUiOlcegi}
           onOlcum={setPlayerYuk}
-          onOdaklan={() => {
-            if (!player.aktifAyet) return
-            const { sureNo, ayetNo, besmeleIcin } = player.aktifAyet
-            // Besmele çalıyorsa (besmeleIcin=hedef sûre) → Fatiha 1'e değil, o sûrenin başına
-            // (başlık + besmele componenti orada) git.
-            if (besmeleIcin) { sureGit(besmeleIcin); return }
-            // Akış modeli: sayfaya git + âyete hizala + odak (sureGit bunu yapıyor)
-            sureGit(sureNo, ayetNo)
-          }}
+          onOdaklan={gozlukTikla}
+          odakDurum={!odakTakip ? "kapali" : odakAskida ? "askida" : "acik"}
           onDonguAyar={acDonguAyar}
           tekrarAktif={!!tekrarModu}
           onCeviri={() => setMealModu(v => !v)}

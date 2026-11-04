@@ -27,7 +27,7 @@
 import { useMemo, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import {
-  BookOpen, Search, Pencil, FolderPlus, EyeOff, Sparkles, Menu, Bookmark, Repeat,
+  Glasses, BookOpen, Search, Pencil, FolderPlus, EyeOff, Sparkles, Menu, Bookmark, Repeat,
   Gem, Feather, Play, Circle, Palette, Settings, Layers, Undo2, Headphones, Volume2,
   MessageSquareText, Brain, ImagePlay, MonitorPlay, List, Eye, Highlighter, Type, Shuffle,
   History, HardDrive, Smartphone, Hash, ChevronDown, X, MousePointerClick, Library, Star,
@@ -365,6 +365,18 @@ const KONULAR = [
       "Telefon kilitliyken ya da uygulama arka plandayken Kur'ân oynatıcısı kilit ekranındaki kontrollerle de yönetilebilir.",
     ],
     anahtar: "arka plan kilit ekranı devam devamlı oynatma okuma mini küçük oynatıcı küçült şemse rahle sürekli",
+  },
+  {
+    bolum: "dinleme", ikon: Glasses, baslik: "Odak (gözlük)",
+    ozet: "Okunan âyeti ya da cümleyi sakin bir takiple göstermek.",
+    nerede: "Oynatıcıdaki gözlük · küçük oynatıcıdaki gözlük",
+    metin: [
+      "Kur'ân ekranında oynatıcıdaki gözlüğe dokunulunca mushaf okunan âyete yavaşça gelir ve ardından okumayı takip eder. Âyet ekranın rahat bölgesinde durdukça mushaf kımıldamaz; oradan çıkınca göz hizasına yumuşak bir geçişle kayar. Gözlüğe yeniden dokunulunca takip kapanır.",
+      "Takip açıkken mushaf elle kaydırılırsa takip askıya alınır; gözlüğün üstünde küçük bir nokta görünür ve gözlüğe dokunulunca okunan yere dönülür.",
+      "Başka bir ekrandayken küçük oynatıcıdaki gözlük odak penceresini açar: Kur'ân'da çalan sûrenin âyetleri (Arapça ve meal ayrı ayrı açılıp kapatılabilir), kitaplarda sesli okunan cümleler görünür. Okunan öğe vurgulanır, okunanlar soluklaşır; yazı boyutu T düğmesiyle büyütülebilir. Pencere elle kaydırılırsa \"Okunan yere dön\" düğmesi çıkar.",
+      "Sürekli odak (odak penceresindeki raptiye ya da oynatıcı ayarlarındaki anahtar) açıksa Kur'ân ekranı takip açık başlar; okuma başka bir ekranda sürerken odak penceresi kendiliğinden açılır. Kapatılırsa o okuma boyunca yeniden açılmaz.",
+    ],
+    anahtar: "odak gözlük takip okunan âyet cümle yumuşak kaydırma sürekli odak pencere vurgula",
   },
   {
     bolum: "dinleme", ikon: Timer, baslik: "Otomatik gizleme",

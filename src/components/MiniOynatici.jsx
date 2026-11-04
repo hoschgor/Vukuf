@@ -25,7 +25,8 @@
 
 import { useState, useEffect } from "react"
 import { useLocation, useNavigate } from "react-router-dom"
-import { SkipForward, BookOpen, ChevronDown, Square } from "lucide-react"
+import { SkipForward, BookOpen, ChevronDown, Square, Glasses } from "lucide-react"
+import { odakAc } from "../data/odak"
 import { useApp } from "../AppContext"
 import { useOynatici } from "../data/oynatici"
 import { sureAdi } from "../data/sureAdlari"
@@ -216,6 +217,10 @@ function MiniHap({ player, kitapta }) {
             </span>
             <button onClick={() => player.sonrakiAyet()} aria-label="Sonraki âyet" title="Sonraki âyet" style={yuvarlak(false)}>
               <SkipForward size={15} />
+            </button>
+            {/* GÖZLÜK (4 Kasım 2026) — bu ekrandan ayrılmadan okunan âyetlere odaklan */}
+            <button onClick={() => odakAc("kuran")} aria-label="Odak — okunan âyetler" title="Odak — okunan âyetleri göster" style={yuvarlak(false)}>
+              <Glasses size={16} />
             </button>
             <button onClick={okumayaDon} aria-label="Okumaya dön" title="Okumaya dön — çalınan âyete"
               style={{ ...yuvarlak(false), color: ac, background: `${ac}14` }}>

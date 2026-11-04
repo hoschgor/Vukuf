@@ -18,7 +18,8 @@
 
 import { useState, useEffect, useSyncExternalStore } from "react"
 import { useLocation, useNavigate } from "react-router-dom"
-import { Play, Pause, BookOpen, Square, Loader2, ChevronDown } from "lucide-react"
+import { Play, Pause, BookOpen, Square, Loader2, ChevronDown, Glasses } from "lucide-react"
+import { odakAc } from "../data/odak"
 import { useApp } from "../AppContext"
 import { sesliOkuyucu, sesKilidiAc } from "../data/sesliOkuma"
 import { useHapKonumu } from "./DonusDugmesi"
@@ -206,6 +207,9 @@ function Hap({ d, kitapta }) {
             {uyku.bitis && <> · <UykuRozeti theme={theme} bitis={uyku.bitis} /></>}
           </span>
         </span>
+        <button onClick={() => odakAc("sesli")} aria-label="Odak — okunan cümleler" title="Odak — okunan cümleleri göster" style={yuvarlak(false)}>
+          <Glasses size={16} />
+        </button>
         <button onClick={okumayaDon} aria-label="Okumaya dön" title="Okumaya dön — okunan yere"
           style={{ ...yuvarlak(false), color: ac, background: `${ac}14` }}>
           <BookOpen size={15} />

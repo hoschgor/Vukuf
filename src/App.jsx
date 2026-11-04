@@ -12,6 +12,7 @@ import { OynaticiSaglayici } from "./data/oynatici"
 import MiniOynatici from "./components/MiniOynatici"
 import { RadyoSaglayici } from "./data/radyo"
 import MiniRadyo from "./components/MiniRadyo"
+import OdakPenceresi from "./components/OdakPenceresi"
 // Paylaşılan bağlantı (18 Ekim 2026): önce ana sayfa, oradan paylaşılan yere köprü
 import { gelenPaylasim, paylasimiHazirla } from "./data/paylasim"
 import { Share2 } from "lucide-react"
@@ -317,6 +318,8 @@ export default function App() {
       <MiniOynatici />
       {/* Ekstralar'dan açılan radyo, öbür ekranlarda (3 Kasım 2026) */}
       <MiniRadyo />
+      {/* Gözlük: okuma ekran dışında sürerken odak penceresi (4 Kasım 2026) */}
+      <OdakPenceresi />
       </RadyoSaglayici>
       </OynaticiSaglayici>
     </div>

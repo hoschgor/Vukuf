@@ -766,6 +766,9 @@ function motorKur() {
     kitap: () => kitap,
     bilgi: () => bilgi,
     bilgiYaz(b) { bilgi = { ...bilgi, ...b } },
+    /** Kurulmuş okuma birimleri (salt okunur) — odak penceresi okunan cümleyi ve
+        çevresini göstermek için kullanıyor (4 Kasım 2026, data/odak.js) */
+    liste: () => birimler,
     /** Denetim açıldı → { kapat } ; açıkken öbür ekranlardaki küçük hap görünmez */
     kontrolBagla() {
       kontrolSayisi++

@@ -8,7 +8,7 @@
    Küçük bir telefon önizlemesi: üstte perde (durum çubuğu bölgesi), altta oynatıcı,
    arada satırlar. Vurgulu "âyet" şeridi parmakla yukarı/aşağı çekilir (ya da alttaki
    kaydırıcıyla); bırakılan yer gözlük takibinin ve odak penceresinin okunan âyeti
-   getireceği çizgidir (data/odak.js → konumAyarla). Perdeye girmesin diye üst sınır %12; çizgi âyetin BAŞIDIR (uzun âyet sığmazsa yukarı alınır).
+   getireceği çizgidir (data/odak.js → konumAyarla). Çizgi âyetin BAŞIDIR (uzun âyet sığmazsa yukarı alınır); eksi değerde (en çok −%20) âyetin başı ekranın üst kenarının da üstünde kalır.
    createPortal ile body'ye çizilir (oynatıcının saydamlık bulanıklığı fixed konumu
    bozmasın).
    ═══════════════════════════════════════════════════════════════════════════ */
@@ -35,10 +35,11 @@ export default function OdakKonumAyari({ acik, kapat, theme }) {
   const sinirla = (v) => Math.max(KONUM_SINIR[0], Math.min(KONUM_SINIR[1], v))
   const noktadan = (e) => {
     const r = kutuRef.current.getBoundingClientRect()
-    setDeger(sinirla(Math.round(((e.clientY - r.top) / r.height) * 100) / 100))
+    setDeger(sinirla(Math.round(((e.clientY - r.top - EK) / Y) * 100) / 100))
   }
   const kaydet = () => { konumAyarla(deger); kapat() }
   const G = 150, Y = 300                       // önizleme boyu (px)
+  const EK = Math.round(-KONUM_SINIR[0] * Y) + 6   // telefonun üstünde eksi değerler için pay
   const satirlar = Array.from({ length: 16 }, (_, i) => i)
   return createPortal(
     <div onClick={kapat} style={{ position: "fixed", inset: 0, zIndex: 400, background: "rgba(0,0,0,0.32)", display: "flex", alignItems: "center", justifyContent: "center", padding: "16px" }}>
@@ -52,30 +53,33 @@ export default function OdakKonumAyari({ acik, kapat, theme }) {
           Okunan âyetin <strong>başı</strong> bu çizgiye gelir; şerit yukarı ya da aşağı çekilerek seçilebilir. Ekrana sığmayan uzun âyet, tamamı görünecek kadar yukarı alınır.
         </div>
         <div style={{ display: "flex", gap: "16px", alignItems: "center", justifyContent: "center" }}>
-          {/* Telefon önizlemesi */}
+          {/* Telefon önizlemesi — üstünde ekran DIŞI bir pay var (eksi değerler görünsün) */}
           <div ref={kutuRef}
             onPointerDown={e => { surukRef.current = true; e.currentTarget.setPointerCapture?.(e.pointerId); noktadan(e) }}
             onPointerMove={e => { if (surukRef.current) noktadan(e) }}
             onPointerUp={() => { surukRef.current = false }}
             onPointerCancel={() => { surukRef.current = false }}
-            style={{
-              position: "relative", width: `${G}px`, height: `${Y}px`, borderRadius: "22px", overflow: "hidden", flexShrink: 0,
-              border: `3px solid ${theme.text}33`, background: theme.background, touchAction: "none", cursor: "ns-resize", userSelect: "none",
-            }}>
-            {/* satırlar */}
-            {satirlar.map(i => (
-              <div key={i} style={{ position: "absolute", left: "14px", right: i % 4 === 3 ? "44px" : "14px", top: `${8 + i * 5.6}%`, height: "5px", borderRadius: "3px", background: theme.textSecondary, opacity: 0.22 }} />
-            ))}
-            {/* perde */}
-            <div style={{ position: "absolute", left: 0, right: 0, top: 0, height: "11%", background: `linear-gradient(${theme.text}38, ${theme.text}00)` }} />
-            <div style={{ position: "absolute", left: "50%", top: "4px", transform: "translateX(-50%)", fontSize: "8px", color: theme.textSecondary, letterSpacing: "0.06em" }}>PERDE</div>
-            {/* oynatıcı */}
-            <div style={{ position: "absolute", left: "8px", right: "8px", bottom: "8px", height: "9%", borderRadius: "8px", background: `${ac}2a`, border: `1px solid ${ac}55` }} />
-            {/* karşılama çizgisi (şeridin arkasında) + şerit */}
-            <div style={{ position: "absolute", left: 0, right: 0, top: `${deger * 100}%`, height: 0, borderTop: `1px dashed ${ac}` }} />
-            {/* şerit */}
+            style={{ position: "relative", width: `${G}px`, height: `${Y + EK}px`, flexShrink: 0, touchAction: "none", cursor: "ns-resize", userSelect: "none" }}>
+            {/* ekranın üstü (eksi bölge) */}
+            <div style={{ position: "absolute", left: "10px", right: "10px", top: 0, height: `${EK - 6}px`, borderRadius: "10px 10px 0 0", border: `1px dashed ${theme.textSecondary}55`, borderBottom: "none", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "8.5px", color: theme.textSecondary, letterSpacing: "0.04em" }}>ekranın üstü</div>
             <div style={{
-              position: "absolute", left: "6px", right: "6px", top: `${deger * 100}%`, height: "44px",
+              position: "absolute", left: 0, top: `${EK}px`, width: `${G}px`, height: `${Y}px`, borderRadius: "22px", overflow: "hidden", boxSizing: "border-box",
+              border: `3px solid ${theme.text}33`, background: theme.background,
+            }}>
+              {/* satırlar */}
+              {satirlar.map(i => (
+                <div key={i} style={{ position: "absolute", left: "14px", right: i % 4 === 3 ? "44px" : "14px", top: `${8 + i * 5.6}%`, height: "5px", borderRadius: "3px", background: theme.textSecondary, opacity: 0.22 }} />
+              ))}
+              {/* perde */}
+              <div style={{ position: "absolute", left: 0, right: 0, top: 0, height: "11%", background: `linear-gradient(${theme.text}38, ${theme.text}00)` }} />
+              <div style={{ position: "absolute", left: "50%", top: "4px", transform: "translateX(-50%)", fontSize: "8px", color: theme.textSecondary, letterSpacing: "0.06em" }}>PERDE</div>
+              {/* oynatıcı */}
+              <div style={{ position: "absolute", left: "8px", right: "8px", bottom: "8px", height: "9%", borderRadius: "8px", background: `${ac}2a`, border: `1px solid ${ac}55` }} />
+            </div>
+            {/* karşılama çizgisi (şeridin arkasında) + şerit — telefonun dışına taşabilir */}
+            <div style={{ position: "absolute", left: "-4px", right: "-4px", top: `${EK + deger * Y}px`, height: 0, borderTop: `1px dashed ${ac}` }} />
+            <div style={{
+              position: "absolute", left: "6px", right: "6px", top: `${EK + deger * Y}px`, height: "44px",
               borderRadius: "8px", background: `linear-gradient(${ac}24, ${ac}24), ${theme.background}`, boxShadow: `inset 3px 0 0 ${ac}`, border: `1px solid ${ac}88`,
               display: "flex", alignItems: "center", justifyContent: "center", transition: surukRef.current ? "none" : "top .2s ease",
             }}>
@@ -83,7 +87,7 @@ export default function OdakKonumAyari({ acik, kapat, theme }) {
             </div>
           </div>
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "6px" }}>
-            <span style={{ fontSize: "26px", fontWeight: 700, color: ac, fontVariantNumeric: "tabular-nums" }}>%{Math.round(deger * 100)}</span>
+            <span style={{ fontSize: "26px", fontWeight: 700, color: ac, fontVariantNumeric: "tabular-nums" }}>{deger < 0 ? "−" : ""}%{Math.abs(Math.round(deger * 100))}</span>
             <span style={{ fontSize: "11px", color: theme.textSecondary, textAlign: "center", lineHeight: 1.35 }}>âyetin başı<br />ekranın<br />üstünden</span>
           </div>
         </div>

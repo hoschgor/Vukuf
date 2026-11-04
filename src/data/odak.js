@@ -37,11 +37,16 @@ const okuSurekli = () => { try { return localStorage.getItem(SUREKLI_ANAHTAR) ==
    kalıyordu. Artık âyetin BAŞI her zaman bu çizgiye gelir; âyet ekrana (oynatıcıya
    kadar) sığmıyorsa sığacak kadar — en fazla perde sınırına dek — yukarı alınır.
    Mushafta âyetin bütün kelimeleri birlikte ölçülür (yalnız ilk kelime değil).
-   Anlam değiştiği için yeni anahtar; varsayılan 0,30. Ayar: PlayerBar → Görünüm ve konum
-   → sürüklemeli önizleme (components/OdakKonumAyari.jsx). */
-const KONUM_ANAHTAR = "vukuf-odak-baslangic"
-export const KONUM_VARSAYILAN = 0.3
-export const KONUM_SINIR = [0.12, 0.55]
+   Anlam değiştiği için yeni anahtar. Ayar: PlayerBar → Görünüm ve konum → sürüklemeli
+   önizleme (components/OdakKonumAyari.jsx).
+   İKİNCİ AYAR (4 Kasım 2026, kullanıcı: "Bu şekilde de çok aşağıda karşılıyor, değeri
+   biraz düşük varsayılandan başlatmamız gerekebilir ya da − değere inebilecek şekilde
+   ayarlamak gerekebilir."): varsayılan 0,30 → 0,15; alt sınır −0,20 (âyetin başı
+   ekranın üst kenarının biraz üstünde, perdenin/barın altında kalabilir). Varsayılan
+   değişince eski kayıt karışmasın diye anahtar yine yenilendi. */
+const KONUM_ANAHTAR = "vukuf-odak-hiza"
+export const KONUM_VARSAYILAN = 0.15
+export const KONUM_SINIR = [-0.2, 0.55]
 export const UST_SINIR = 0.1          // perde: âyetin başı bunun üstüne çıkmaz
 export const ALT_SINIR = 0.86         // oynatıcı / bilgi şeridi payı: âyetin sonu bunun altına inmesin
 const okuKonum = () => {
@@ -54,7 +59,7 @@ export function konumAyarla(v) {
 }
 /* Karşılama çizgisi → hizalama oranı ve "rahat bant" (bant içindeyken kımıldamaz) */
 export function odakBandi(konum = KONUM_VARSAYILAN) {
-  return { oran: konum, bolge: [Math.max(UST_SINIR, konum - 0.14), Math.min(0.8, konum + 0.24)] }
+  return { oran: konum, bolge: [konum - 0.14, Math.min(0.8, konum + 0.24)] }
 }
 
 let durum = { acik: false, kaynak: null, surekli: okuSurekli(), konum: okuKonum() }
@@ -121,7 +126,8 @@ export function hizayaGetir(kap, el, { oran = KONUM_VARSAYILAN, bolge = null, zo
   const ust = (ustPx - kr.top) / H, alt = (altPx - kr.top) / H, boy = alt - ust
   // Hedef: başı çizgiye; sığmıyorsa sığacak kadar yukarı (perde sınırına kadar)
   let hedef = oran
-  if (hedef + boy > altSinir) hedef = Math.max(ustSinir, altSinir - boy)
+  // (çizgi perde sınırından da yukarıdaysa — eksi değer — sınır olarak çizgi alınır)
+  if (hedef + boy > altSinir) hedef = Math.max(Math.min(ustSinir, oran), altSinir - boy)
   if (!zorla) {
     const b = bolge || odakBandi(oran).bolge
     const sigiyor = alt <= altSinir

@@ -29,7 +29,7 @@ import { DuzenleDugmesi, KayitSatiri, YerineKoySorusu } from "../components/Kayi
 import SayfaFarkiBildirimi, { sayfaFarkiOlustur } from "../components/SayfaFarkiBildirimi"
 import YuklemeEkrani from "../components/YuklemeEkrani"
 import IosSwitch from "../components/IosSwitch"
-import { useOrtaMenu, useOrtaBilgi, OrtaMenuCercevesi, OrtaIpucu, BilgiSeridi, BarKonumSecici, barKonumOku, barKonumYaz, ORTA_OLCEK, barEtiketle } from "../components/OrtaMenu"
+import { useOrtaMenu, useOrtaBilgi, OrtaMenuCercevesi, OrtaIpucu, BilgiSeridi, BarKonumSecici, barKonumOku, barKonumYaz, ORTA_OLCEK, barEtiketle, OpaklikCekmecesi, useOrtaOpaklik, yariSaydam } from "../components/OrtaMenu"
 import DonusDugmesi, { KopruDugmesi, hapKonumlariniSifirla } from "../components/DonusDugmesi"
 import { History as GecmisIkon } from "lucide-react"
 import { useOkumaGecmisi, OKUMA_HEDEF_ANAHTAR } from "../data/gecmis"
@@ -1364,6 +1364,8 @@ const pwaAltBosluk = 8
 const [barKonum, setBarKonum] = useState(barKonumOku)
 const ortaBar = barKonum === "orta"
 const [ortaBilgi, setOrtaBilgi] = useOrtaBilgi()      // menü modunda altta bilgi şeridi
+// Bar (üst/alt) ya da menü zemini opaklığı — Ayarlar → Opaklık (4 Kasım 2026)
+const { menu: barOpak } = useOrtaOpaklik()
 const ortaSerit = ortaBar && ortaBilgi
 const [seritYuk, setSeritYuk] = useState(0)           // şeridin ekran altından kapladığı yer
 const seritPay = ortaSerit ? seritYuk : 0
@@ -3396,6 +3398,10 @@ const AyarlarPanel = ayarlarAcik && (
           bilgiAcik={ortaBilgi} onBilgi={setOrtaBilgi} />
       </div>
 
+      {/* OPAKLIK — ayrı çekmece; bar konumu ne olursa olsun bar ya da menü zeminine uygulanır */}
+      <OpaklikCekmecesi theme={theme} yaziBoy={13}
+        etiketStil={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px" }} />
+
       {/* Otomatik gizleme */}
       <div>
         <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px" }}>OTOMATİK GİZLEME</div>
@@ -4040,7 +4046,8 @@ const Bar = (
   } : {
     position: "fixed", left: 0, right: 0,
     [barKonum === "alt" ? "bottom" : "top"]: 0,
-    background: theme.surface,
+    background: yariSaydam(theme.surface, barOpak),
+    ...(barOpak < 1 ? { backdropFilter: "blur(10px) saturate(1.15)", WebkitBackdropFilter: "blur(10px) saturate(1.15)" } : null),
     borderTop:    barKonum === "alt" ? `1px solid ${theme.border}` : "none",
     borderBottom: barKonum === "ust" ? `1px solid ${theme.border}` : "none",
     // Dikey padding + safe-area: max() → çift boşluk YOK (baz+inset yerine büyüğü kadar)

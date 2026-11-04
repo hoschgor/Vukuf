@@ -26,7 +26,7 @@ import SayfaFarkiBildirimi, { sayfaFarkiOlustur } from "../components/SayfaFarki
 import KelimePopup from "../components/KelimePopup"
 import YuklemeEkrani from "../components/YuklemeEkrani"
 import IosSwitch from "../components/IosSwitch"
-import { useOrtaMenu, useOrtaBilgi, OrtaMenuCercevesi, OrtaIpucu, BilgiSeridi, BarKonumSecici, barKonumOku, barKonumYaz, ORTA_OLCEK, barEtiketle } from "../components/OrtaMenu"
+import { useOrtaMenu, useOrtaBilgi, OrtaMenuCercevesi, OrtaIpucu, BilgiSeridi, BarKonumSecici, barKonumOku, barKonumYaz, ORTA_OLCEK, barEtiketle, OpaklikCekmecesi, useOrtaOpaklik, yariSaydam } from "../components/OrtaMenu"
 import PanelAyirac, { PanelAcilir, panelBolumeHizala } from "../components/PanelAyirac"
 import GeriIkonu from "../components/GeriIkonu"
 import TemaSecici from "../components/TemaSecici"
@@ -1302,6 +1302,8 @@ export default function KuranOkuma({ kitap }) {
   const ortaBarRef = useRef(ortaBar)
   ortaBarRef.current = ortaBar
   const [ortaBilgi, setOrtaBilgi] = useOrtaBilgi()
+  // Bar (üst/alt) ya da menü zemini opaklığı — Ayarlar → Opaklık (4 Kasım 2026)
+  const { menu: barOpak } = useOrtaOpaklik()
   const ortaSerit = ortaBar && ortaBilgi
   const [seritYuk, setSeritYuk] = useState(0)
   const seritPay = ortaSerit ? seritYuk : 0
@@ -4185,6 +4187,9 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
             bilgiAcik={ortaBilgi} onBilgi={setOrtaBilgi} />
         </div>
 
+        {/* OPAKLIK — ayrı çekmece; bar konumu ne olursa olsun bar ya da menü zeminine uygulanır */}
+        <OpaklikCekmecesi theme={theme} etiketStil={ayarEtiket} yaziBoy={Math.round((isMobile ? 11 : 12) * barUiOlcegi)} />
+
         <div>
           <div style={ayarEtiket}>OTOMATİK GİZLEME</div>
           <div onClick={() => setOtomatikGizleme(!otomatikGizleme)} role="button" aria-pressed={otomatikGizleme} style={{
@@ -4412,7 +4417,8 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
     } : {
       position: "fixed", left: 0, right: 0,
       [barKonum === "alt" ? "bottom" : "top"]: 0,
-      background: theme.surface,
+      background: yariSaydam(theme.surface, barOpak),
+      ...(barOpak < 1 ? { backdropFilter: "blur(10px) saturate(1.15)", WebkitBackdropFilter: "blur(10px) saturate(1.15)" } : null),
       borderTop:    barKonum === "alt" ? `1px solid ${theme.border}` : "none",
       borderBottom: barKonum === "ust" ? `1px solid ${theme.border}` : "none",
       // Dikey padding + safe-area: max() → çift boşluk yok. Baz padding azaltıldı: bar uzamasın.

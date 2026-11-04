@@ -750,7 +750,7 @@ function GorunumPaneli({ theme, gorunum, setGorunum, geri, konumAc, satirStil, i
           Âyetin karşılanacağı yer
           <span style={{ display: "block", fontSize: "10px", color: theme.textSecondary }}>Gözlükle takipte okunan âyetin başının geleceği yükseklik</span>
         </span>
-        <span style={degerStil}>%{Math.round(konum * 100)}</span>
+        <span style={degerStil}>{konum < 0 ? "−" : ""}%{Math.abs(Math.round(konum * 100))}</span>
         <ChevronRight size={15} color={theme.textSecondary} />
       </button>
     </>

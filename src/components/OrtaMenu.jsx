@@ -37,8 +37,10 @@ import IosSwitch from "./IosSwitch"
 
 /* ── OPAKLIK (4 Kasım 2026) ──────────────────────────────────────────────────
    Kullanıcı: "bilgi kısmına ya da menü arka planına da opaklık verebilelim."
-   Menü kartuşunun zemini ve alttaki bilgi şeridi için ayrı değerler; iki okuma ekranı
-   ortak (Ayarlar → Bar konumu → Menü seçiliyken). Değişince açık ekran anında güncellenir. */
+   İki değer: `menu` = BAR YA DA MENÜ zemini (bar üstte/alttaysa barın zemini, Menü
+   seçiliyse ortadaki kartuşun zemini — kullanıcı: "bar konumu fark etmeksizin bar ya da
+   menüyü etkilesin"), `bilgi` = alttaki bilgi şeridi. İki okuma ekranı ortak; ayar
+   Ayarlar'daki ayrı "Opaklık" çekmecesinde (OpaklikCekmecesi). Anında güncellenir. */
 const OPAKLIK_ANAHTAR = "vukuf-orta-opaklik"
 const OPAKLIK_VARSAYILAN = { menu: 1, bilgi: 0.85 }
 const opakOku = () => { try { return { ...OPAKLIK_VARSAYILAN, ...(JSON.parse(localStorage.getItem(OPAKLIK_ANAHTAR) || "null") || {}) } } catch { return { ...OPAKLIK_VARSAYILAN } } }
@@ -52,7 +54,7 @@ export function ortaOpaklikYaz(p) {
 export function useOrtaOpaklik() {
   return useSyncExternalStore((f) => { opakDinleyiciler.add(f); return () => opakDinleyiciler.delete(f) }, () => opaklik, () => opaklik)
 }
-const yariSaydam = (renk, o) => (o >= 1 ? renk : `color-mix(in srgb, ${renk} ${Math.round(o * 100)}%, transparent)`)
+export const yariSaydam = (renk, o) => (o >= 1 ? renk : `color-mix(in srgb, ${renk} ${Math.round(o * 100)}%, transparent)`)
 
 // ── iOS ÜST ŞERİDİ KORUMASI (29 Ekim 2026) ─────────────────────────────────
 // Kullanıcı (iPhone): "Perde renge göre olmuş ama tema değişince çok kötü görünüyor;
@@ -526,7 +528,7 @@ function TezhipCerceve({ en, boy, theme, g }) {
       ))}
 
       {/* zemin + çifte altın cetvel */}
-      <path d={kartusYolu(W, H)} fill={`url(#${g}-z)`} fillOpacity={zeminOpak} stroke={`url(#${g}-c)`} strokeWidth="2.2" />
+      <path d={kartusYolu(W, H)} fill={`url(#${g}-z)`} fillOpacity={Math.max(0.45, zeminOpak)} stroke={`url(#${g}-c)`} strokeWidth="2.2" />
       <path d={kartusYolu(W, H, 5)} fill="none" stroke={a.cizgi} strokeWidth="0.8" strokeOpacity="0.9" />
       <path d={kartusYolu(W, H, 7.5)} fill="none" stroke={a.altinSoluk} strokeWidth="0.5" />
 
@@ -794,18 +796,21 @@ export function BarKonumSecici({ theme, deger, onSec, UstIkon, AltIkon, ikonBoy 
             </span>
             <IosSwitch acik={bilgiAcik} theme={theme} boyut={0.82} />
           </div>
-          <OpaklikAyari theme={theme} yaziBoy={yaziBoy} bilgiAcik={bilgiAcik} />
         </>
       )}
     </>
   )
 }
 
-/* Menü zemini / bilgi şeridi opaklığı — Bar konumu "Menü" seçiliyken */
-function OpaklikAyari({ theme, yaziBoy, bilgiAcik }) {
+/* OPAKLIK ÇEKMECESİ — okuma ekranlarının Ayarlar panelinde ayrı, açılıp kapanan bölüm.
+   etiketStil: ekranın kendi bölüm başlığı stili (BAR KONUMU vb. ile aynı görünsün) */
+const CEKMECE_ANAHTAR = "vukuf-opaklik-cekmece"
+export function OpaklikCekmecesi({ theme, yaziBoy = 13, etiketStil }) {
   const o = useOrtaOpaklik()
+  const [acik, setAcik] = useState(() => { try { return localStorage.getItem(CEKMECE_ANAHTAR) === "1" } catch { return false } })
+  const degis = () => setAcik(v => { const y = !v; try { localStorage.setItem(CEKMECE_ANAHTAR, y ? "1" : "0") } catch { /* yoksay */ } return y })
   const satir = (anahtar, ad, alt, min, deger, vars) => (
-    <div style={{ padding: "4px 10px 2px" }}>
+    <div style={{ padding: "4px 2px 2px" }}>
       <div style={{ display: "flex", alignItems: "baseline", gap: "8px", fontSize: `${yaziBoy}px`, color: theme.text }}>
         <span style={{ flex: 1 }}>{ad}
           <span style={{ display: "block", fontSize: `${Math.max(10.5, yaziBoy - 2)}px`, color: theme.textSecondary, marginTop: "2px" }}>{alt}</span>
@@ -822,9 +827,18 @@ function OpaklikAyari({ theme, yaziBoy, bilgiAcik }) {
     </div>
   )
   return (
-    <>
-      {satir("menu", "Menü zemini", "Ortada açılan menünün arka planı", 0.5, o.menu, OPAKLIK_VARSAYILAN.menu)}
-      {bilgiAcik && satir("bilgi", "Bilgi şeridi", "Alttaki sayfa, süre bilgisi şeridi", 0.3, o.bilgi, OPAKLIK_VARSAYILAN.bilgi)}
-    </>
+    <div>
+      <div onClick={degis} role="button" aria-expanded={acik}
+        style={{ ...(etiketStil || { fontSize: "11px", color: theme.textSecondary, letterSpacing: "1px", marginBottom: "8px" }), display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer", userSelect: "none" }}>
+        <span>OPAKLIK</span>
+        <span style={{ display: "inline-block", transition: "transform .2s ease", transform: acik ? "rotate(90deg)" : "none", fontSize: "1.1em", lineHeight: 1 }}>›</span>
+      </div>
+      {acik && (
+        <>
+          {satir("menu", "Bar ya da menü zemini", "Bar üstte/alttaysa barın, Menü seçiliyse ortadaki menünün arka planı", 0.3, o.menu, OPAKLIK_VARSAYILAN.menu)}
+          {satir("bilgi", "Bilgi şeridi", "Menü düzeninde alttaki sayfa, süre bilgisi şeridi", 0.3, o.bilgi, OPAKLIK_VARSAYILAN.bilgi)}
+        </>
+      )}
+    </div>
   )
 }

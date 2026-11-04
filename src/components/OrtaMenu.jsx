@@ -31,9 +31,28 @@
    çubuğu ve alttaki Google araması menünün önünü kapatmasın. Menü, seçili yerin
    üstüne değil öbür yarıya açılır. */
 
-import { Children, Fragment, cloneElement, isValidElement, useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react"
+import { Children, Fragment, cloneElement, isValidElement, useCallback, useEffect, useId, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react"
 import { hexHsl, hsl } from "./rafGorselleri"
 import IosSwitch from "./IosSwitch"
+
+/* ── OPAKLIK (4 Kasım 2026) ──────────────────────────────────────────────────
+   Kullanıcı: "bilgi kısmına ya da menü arka planına da opaklık verebilelim."
+   Menü kartuşunun zemini ve alttaki bilgi şeridi için ayrı değerler; iki okuma ekranı
+   ortak (Ayarlar → Bar konumu → Menü seçiliyken). Değişince açık ekran anında güncellenir. */
+const OPAKLIK_ANAHTAR = "vukuf-orta-opaklik"
+const OPAKLIK_VARSAYILAN = { menu: 1, bilgi: 0.85 }
+const opakOku = () => { try { return { ...OPAKLIK_VARSAYILAN, ...(JSON.parse(localStorage.getItem(OPAKLIK_ANAHTAR) || "null") || {}) } } catch { return { ...OPAKLIK_VARSAYILAN } } }
+let opaklik = opakOku()
+const opakDinleyiciler = new Set()
+export function ortaOpaklikYaz(p) {
+  opaklik = { ...opaklik, ...p }
+  try { localStorage.setItem(OPAKLIK_ANAHTAR, JSON.stringify(opaklik)) } catch { /* yoksay */ }
+  opakDinleyiciler.forEach(f => f())
+}
+export function useOrtaOpaklik() {
+  return useSyncExternalStore((f) => { opakDinleyiciler.add(f); return () => opakDinleyiciler.delete(f) }, () => opaklik, () => opaklik)
+}
+const yariSaydam = (renk, o) => (o >= 1 ? renk : `color-mix(in srgb, ${renk} ${Math.round(o * 100)}%, transparent)`)
 
 // ── iOS ÜST ŞERİDİ KORUMASI (29 Ekim 2026) ─────────────────────────────────
 // Kullanıcı (iPhone): "Perde renge göre olmuş ama tema değişince çok kötü görünüyor;
@@ -451,6 +470,7 @@ function kartusYolu(W, H, ic = 0) {
 /* Bütün çerçeve ve süsler: kutunun ölçüsüne göre tek SVG (dokunuş yutmaz) */
 function TezhipCerceve({ en, boy, theme, g }) {
   const a = altinTonlari(theme)
+  const { menu: zeminOpak } = useOrtaOpaklik()
   const W = en, H = boy, cx = W / 2, cy = H / 2
   const zeminUst = theme.surface
   return (
@@ -506,7 +526,7 @@ function TezhipCerceve({ en, boy, theme, g }) {
       ))}
 
       {/* zemin + çifte altın cetvel */}
-      <path d={kartusYolu(W, H)} fill={`url(#${g}-z)`} stroke={`url(#${g}-c)`} strokeWidth="2.2" />
+      <path d={kartusYolu(W, H)} fill={`url(#${g}-z)`} fillOpacity={zeminOpak} stroke={`url(#${g}-c)`} strokeWidth="2.2" />
       <path d={kartusYolu(W, H, 5)} fill="none" stroke={a.cizgi} strokeWidth="0.8" strokeOpacity="0.9" />
       <path d={kartusYolu(W, H, 7.5)} fill="none" stroke={a.altinSoluk} strokeWidth="0.5" />
 
@@ -662,6 +682,7 @@ export function OrtaIpucu({ menu, theme, metin = "Menüyü açmak için metne do
  * @param onYukseklik (px) — sayfanın alt payı / hap konumları için
  */
 export function BilgiSeridi({ theme, ogeler, olcek = 1, altPay = 0, onYukseklik }) {
+  const { bilgi: bilgiOpak } = useOrtaOpaklik()
   const ref = useRef(null)
   const dolu = (ogeler || []).filter(Boolean)
   const cbRef = useRef(onYukseklik)
@@ -695,15 +716,15 @@ export function BilgiSeridi({ theme, ogeler, olcek = 1, altPay = 0, onYukseklik 
       ...(altPay > 0 ? {
         bottom: `${altPay - 1}px`, zIndex: 92,
         borderRadius: "12px 12px 0 0", borderBottom: "none",
-        background: theme.surface, border: `1px solid ${theme.accent}25`,
+        background: yariSaydam(theme.surface, Math.max(bilgiOpak, 0.5)), border: `1px solid ${theme.accent}25`,
+        ...(bilgiOpak < 1 ? { backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)" } : null),
         padding: `${Math.round(3 * olcek)}px ${Math.round(14 * olcek)}px ${Math.round(2 * olcek)}px`,
         opacity: 1, boxShadow: `0 -3px 10px ${theme.accent}10`,
       } : {
         bottom: "calc(max(2px, env(safe-area-inset-bottom) - 14px))", zIndex: 70,
         padding: `${Math.round(4 * olcek)}px ${Math.round(12 * olcek)}px`, borderRadius: "999px",
-        background: `${theme.surface}c4`, border: `1px solid ${theme.accent}30`,
-        backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)",
-        opacity: 0.92,
+        background: yariSaydam(theme.surface, bilgiOpak), border: `1px solid ${theme.accent}30`,
+        ...(bilgiOpak < 1 ? { backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)" } : null),
       }),
       display: "flex", alignItems: "center", gap: "8px", maxWidth: "calc(100vw - 24px)", boxSizing: "border-box",
       color: theme.accent, fontSize: `${Math.round(11 * olcek)}px`, whiteSpace: "nowrap",
@@ -773,8 +794,37 @@ export function BarKonumSecici({ theme, deger, onSec, UstIkon, AltIkon, ikonBoy 
             </span>
             <IosSwitch acik={bilgiAcik} theme={theme} boyut={0.82} />
           </div>
+          <OpaklikAyari theme={theme} yaziBoy={yaziBoy} bilgiAcik={bilgiAcik} />
         </>
       )}
+    </>
+  )
+}
+
+/* Menü zemini / bilgi şeridi opaklığı — Bar konumu "Menü" seçiliyken */
+function OpaklikAyari({ theme, yaziBoy, bilgiAcik }) {
+  const o = useOrtaOpaklik()
+  const satir = (anahtar, ad, alt, min, deger, vars) => (
+    <div style={{ padding: "4px 10px 2px" }}>
+      <div style={{ display: "flex", alignItems: "baseline", gap: "8px", fontSize: `${yaziBoy}px`, color: theme.text }}>
+        <span style={{ flex: 1 }}>{ad}
+          <span style={{ display: "block", fontSize: `${Math.max(10.5, yaziBoy - 2)}px`, color: theme.textSecondary, marginTop: "2px" }}>{alt}</span>
+        </span>
+        <span style={{ fontWeight: 700, color: theme.accent, fontVariantNumeric: "tabular-nums" }}>%{Math.round(deger * 100)}</span>
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+        <input type="range" min={min} max={1} step={0.05} value={deger} aria-label={ad}
+          onChange={e => ortaOpaklikYaz({ [anahtar]: parseFloat(e.target.value) || 1 })}
+          style={{ flex: 1, minWidth: 0, accentColor: theme.accent, cursor: "pointer" }} />
+        <button onClick={() => ortaOpaklikYaz({ [anahtar]: vars })} title="Varsayılana döndür" aria-label={`${ad}: varsayılan`}
+          style={{ border: `1px solid ${theme.border}`, background: "transparent", color: theme.textSecondary, borderRadius: "50%", width: "24px", height: "24px", cursor: "pointer", fontSize: "12px", lineHeight: 1, padding: 0 }}>↺</button>
+      </div>
+    </div>
+  )
+  return (
+    <>
+      {satir("menu", "Menü zemini", "Ortada açılan menünün arka planı", 0.5, o.menu, OPAKLIK_VARSAYILAN.menu)}
+      {bilgiAcik && satir("bilgi", "Bilgi şeridi", "Alttaki sayfa, süre bilgisi şeridi", 0.3, o.bilgi, OPAKLIK_VARSAYILAN.bilgi)}
     </>
   )
 }

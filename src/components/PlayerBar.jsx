@@ -60,12 +60,22 @@ import OdakKonumAyari from "./OdakKonumAyari"
    • Bar ekranın alt kenarındayken (ana bar gizli / menülü düzen) içerik telefonun alt
      çizgisinden biraz yukarı alınır: alt iç boşluk = max(0, güvenli alan − 12 px) + seçilen
      ek boşluk (0–24 px, varsayılan 4). Zemin kenara kadar uzanır, yalnız içerik yükselir.
-   • Opaklık %60–100 (100'ün altında arkası hafifçe bulanıklaşır).
+   • Opaklık iki ayrı değer (4 Kasım 2026, kullanıcı: "arka planı daha az opak olsun,
+     butonlar daha fazla opak olsun"): ZEMİN %20–100 (100'ün altında arkası hafifçe
+     bulanıklaşır) ve DÜĞMELER %40–100 — zemin saydamlaşınca düğmelerin ve sûre yazısının
+     arkasına kendi küçük zemini çizilir (düğmenin kendi rengi bozulmadan, altında).
    • Âyetin karşılanacağı yer → OdakKonumAyari (sürüklemeli önizleme).
    Hepsi ayar kutusunun en altındaki "Görünüm ve konum" sayfasında. */
 const GORUNUM_ANAHTAR = "vukuf-oynatici-gorunum"
-const GORUNUM_VARSAYILAN = { bosluk: 4, opak: 1 }
-const gorunumOku = () => { try { return { ...GORUNUM_VARSAYILAN, ...(JSON.parse(localStorage.getItem(GORUNUM_ANAHTAR) || "null") || {}) } } catch { return { ...GORUNUM_VARSAYILAN } } }
+const GORUNUM_VARSAYILAN = { bosluk: 4, zemin: 1, dugme: 0.92 }
+const gorunumOku = () => {
+  try {
+    const k = JSON.parse(localStorage.getItem(GORUNUM_ANAHTAR) || "null") || {}
+    if (k.opak != null && k.zemin == null) k.zemin = k.opak          // eski tek "opak" değeri → zemin
+    delete k.opak
+    return { ...GORUNUM_VARSAYILAN, ...k }
+  } catch { return { ...GORUNUM_VARSAYILAN } }
+}
 import { Headphones, Music2, Moon } from "lucide-react"
 import { useMediaQuery } from "../data/hooks/useMediaQuery"
 import MushafPlayButton from "./MushafPlayButton"
@@ -272,7 +282,7 @@ export default function PlayerBar({
   }
 
   return (
-    <div ref={rootRef} onPointerDownCapture={() => setDokunus(n => n + 1)} style={{
+    <div ref={rootRef} className={gorunum.zemin < 1 ? "vk-pb-saydam" : undefined} onPointerDownCapture={() => setDokunus(n => n + 1)} style={{
       position: "fixed",
       left: 0,
       right: 0,
@@ -280,8 +290,8 @@ export default function PlayerBar({
       top: getTopPosition(),
       minHeight: `${playerBarHeight}px`,
       height: "auto",
-      background: gorunum.opak < 1 ? `color-mix(in srgb, ${theme.surface} ${Math.round(gorunum.opak * 100)}%, transparent)` : theme.surface,
-      ...(gorunum.opak < 1 ? { backdropFilter: "blur(10px) saturate(1.15)", WebkitBackdropFilter: "blur(10px) saturate(1.15)" } : null),
+      background: gorunum.zemin < 1 ? `color-mix(in srgb, ${theme.surface} ${Math.round(gorunum.zemin * 100)}%, transparent)` : theme.surface,
+      ...(gorunum.zemin < 1 ? { backdropFilter: "blur(10px) saturate(1.15)", WebkitBackdropFilter: "blur(10px) saturate(1.15)" } : null),
       borderTop: barKonum === "alt" ? `1px solid ${theme.accent}25` : "none",
       borderBottom: barKonum === "ust" ? `1px solid ${theme.accent}25` : "none",
       padding: isMobile ? "4px 16px" : "4px 24px",
@@ -309,6 +319,21 @@ export default function PlayerBar({
       maxWidth: "100%",
       boxSizing: "border-box",
     }}>
+      {gorunum.zemin < 1 && (
+        <style>{`
+          .vk-pb-saydam .vk-pb-grup { isolation: isolate; }
+          .vk-pb-saydam .vk-pb-grup > button { position: relative; }
+          .vk-pb-saydam .vk-pb-grup > button::before {
+            content: ""; position: absolute; inset: -2px; border-radius: 999px; z-index: -1; pointer-events: none;
+            background: color-mix(in srgb, ${theme.surface} ${Math.round(gorunum.dugme * 100)}%, transparent);
+            box-shadow: 0 1px 4px rgba(0,0,0,${(0.16 * gorunum.dugme).toFixed(2)});
+          }
+          .vk-pb-saydam .vk-pb-metin {
+            border-radius: 10px; padding: 2px 8px;
+            background: color-mix(in srgb, ${theme.surface} ${Math.round(gorunum.dugme * 100)}%, transparent);
+          }
+        `}</style>
+      )}
       {/* SES / HIZ BALONCUĞU — barın TAMAMINI kaplamaz; düğmesinin üstünde (ya da bar
           üstteyse altında) küçük bir kutu olarak açılır. Böylece sûre·âyet bilgisi ve
           oynatma düğmeleri gözden kaybolmaz, ayar için ekranın bir ucundan öbürüne
@@ -486,7 +511,7 @@ export default function PlayerBar({
       <OdakKonumAyari acik={konumAyarAcik} kapat={() => setKonumAyarAcik(false)} theme={theme} />
 
       {/* SOL grup: (sure·ayet + kâri adı) → Gözlük → Meal → İzleme */}
-      <div style={{
+      <div className="vk-pb-grup" style={{
         display: "flex",
         alignItems: "center",
         gap: isMobile ? "4px" : "6px",
@@ -495,7 +520,7 @@ export default function PlayerBar({
         paddingLeft: isMobile ? "3%" : "1%",
       }}>
         {/* sure · ayet · kari adı (yeri/gösterimi aynı) */}
-        <div style={{ minWidth: 0, overflow: "hidden" }}>
+        <div className="vk-pb-metin" style={{ minWidth: 0, overflow: "hidden" }}>
           <div style={{
             fontSize: `${Math.round((isMobile ? 12 : 11) * barUiOlcegi)}px`,
             fontWeight: "500",
@@ -584,7 +609,7 @@ export default function PlayerBar({
       </div>
 
       {/* SAĞ grup: oynatma düğmeleri → ses/hız menüsü */}
-      <div style={{
+      <div className="vk-pb-grup" style={{
         display: "flex",
         alignItems: "center",
         gap: isMobile ? "4px" : "6px",
@@ -699,13 +724,24 @@ function GorunumPaneli({ theme, gorunum, setGorunum, geri, konumAc, satirStil, i
         <span style={degerStil}>{gorunum.bosluk} px</span>
         <button onClick={() => setGorunum({ bosluk: GORUNUM_VARSAYILAN.bosluk })} title="Varsayılana döndür" style={sifirStil}><RotateCcw size={12} /></button>
       </div>
-      <div style={{ fontSize: "11px", color: theme.text, padding: "4px 0 0" }}>Opaklık</div>
+      <div style={{ fontSize: "11px", color: theme.text, padding: "4px 0 0" }}>Zemin opaklığı</div>
       <div style={satirStil}>
-        <input type="range" min={0.6} max={1} step={0.05} value={gorunum.opak} aria-label="Opaklık"
-          onChange={e => setGorunum({ opak: parseFloat(e.target.value) || 1 })}
+        <input type="range" min={0.2} max={1} step={0.05} value={gorunum.zemin} aria-label="Zemin opaklığı"
+          onChange={e => setGorunum({ zemin: parseFloat(e.target.value) || 1 })}
           style={{ flex: 1, minWidth: 0, accentColor: theme.accent, cursor: "pointer" }} />
-        <span style={degerStil}>%{Math.round(gorunum.opak * 100)}</span>
-        <button onClick={() => setGorunum({ opak: 1 })} title="Tam opak" style={sifirStil}><RotateCcw size={12} /></button>
+        <span style={degerStil}>%{Math.round(gorunum.zemin * 100)}</span>
+        <button onClick={() => setGorunum({ zemin: 1 })} title="Tam opak" style={sifirStil}><RotateCcw size={12} /></button>
+      </div>
+      <div style={{ fontSize: "11px", color: gorunum.zemin < 1 ? theme.text : theme.textSecondary, padding: "4px 0 0" }}>
+        Düğme opaklığı
+        <span style={{ display: "block", fontSize: "10px", color: theme.textSecondary }}>Zemin saydamken düğmelerin ve yazının arkası</span>
+      </div>
+      <div style={{ ...satirStil, opacity: gorunum.zemin < 1 ? 1 : 0.5 }}>
+        <input type="range" min={0.4} max={1} step={0.05} value={gorunum.dugme} aria-label="Düğme opaklığı" disabled={gorunum.zemin >= 1}
+          onChange={e => setGorunum({ dugme: parseFloat(e.target.value) || 1 })}
+          style={{ flex: 1, minWidth: 0, accentColor: theme.accent, cursor: "pointer" }} />
+        <span style={degerStil}>%{Math.round(gorunum.dugme * 100)}</span>
+        <button onClick={() => setGorunum({ dugme: GORUNUM_VARSAYILAN.dugme })} title="Varsayılana döndür" style={sifirStil}><RotateCcw size={12} /></button>
       </div>
       <div style={{ height: "1px", background: theme.border, opacity: 0.6, margin: "4px 2px" }} />
       <button onClick={konumAc} style={{ ...satirStil, width: "100%", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", textAlign: "left", padding: "6px 0" }}>

@@ -21,7 +21,9 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 import { useEffect, useRef, useState, useSyncExternalStore } from "react"
-import { KitapAmblem, KITAP_CSS } from "./SesliMiniHap"
+import { KitapAmblem, KITAP_CSS, sesliZamanlayici } from "./SesliMiniHap"
+import OtomatikDurdurmaSecici from "./OtomatikDurdurmaSecici"
+import { useZamanlayici } from "../data/otomatikDurdurma"
 import { useHapKonumu } from "./DonusDugmesi"
 import { SkipBack, SkipForward, Play, Pause, X, Settings2, Crosshair, Loader2, GripVertical, Glasses, Gauge, RotateCcw, SlidersHorizontal, Volume1, Volume2, VolumeX, Headphones, Timer } from "lucide-react"
 import {
@@ -128,6 +130,7 @@ export default function SesliOkumaKontrol({
   arapcaKapali = false,      // Evrad ve Ezkâr: Arapça yapay sesle okunmaz (16 Ekim 2026, kullanıcı)
 }) {
   const d = useSesliDurum()
+  const uyku = useZamanlayici(sesliZamanlayici)          // otomatik durdurma (4 Kasım 2026)
   const [ayar, setAyar] = useState(() => ayarOku())
   const [ayarAcik, setAyarAcik] = useState(false)
   const [sesler, setSesler] = useState({ tr: [], ar: [] })
@@ -925,6 +928,9 @@ export default function SesliOkumaKontrol({
                 }} />
               </span>
             </div>
+            <div style={{ height: "1px", background: theme.border, opacity: 0.6 }} />
+            {/* OTOMATİK DURDURMA — seçilen süre sonunda sesli okuma durur (ekrandan çıkılsa da) */}
+            <OtomatikDurdurmaSecici theme={theme} uyku={uyku} aciklama="Seçilen süre sonunda sesli okuma durur" />
             <div style={{ height: "1px", background: theme.border, opacity: 0.6 }} />
             {/* OTOMATİK GİZLEME — açıkken süre kaydırıcısı (3–30 sn) */}
             <div role="switch" aria-checked={!!ayar.gizle} onClick={() => ayarDegis({ gizle: !ayar.gizle })}

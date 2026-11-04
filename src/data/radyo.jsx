@@ -19,6 +19,13 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react"
 import { useOynatici } from "./oynatici"
+import { zamanlayiciOlustur, useZamanlayici } from "./otomatikDurdurma"
+
+/* OTOMATİK KAPANMA (4 Kasım 2026, kullanıcı: "Radyo dinlemede de otomatik kapanma
+   verelim") — süre dolunca radyo kapanır. Sayaç modül düzeyinde: Ekstralar'dan
+   çıkılınca da sürer; radyo elle kapatılınca iptal olur. */
+let radyoKapat = () => {}
+export const radyoZamanlayici = zamanlayiciOlustur(() => radyoKapat())
 
 export const YAYINLAR = [
   { id: "diyanet", ad: "Diyanet Radyo", kisa: "Diyanet Radyo", aciklama: "Sohbet, belgesel ve dinî programlar",
@@ -83,10 +90,14 @@ export function RadyoSaglayici({ children }) {
   }, [istasyonId, kurDurdur])
   const kapat = useCallback(() => {
     const a = sesRef.current
+    radyoZamanlayici.iptal()
     setDurum("kapali")
     setIstasyonId(null)
     if (a) { try { a.pause(); a.removeAttribute("src"); a.load() } catch { /* yoksay */ } }
   }, [])
+
+  radyoKapat = kapat
+  const uyku = useZamanlayici(radyoZamanlayici)
 
   // Kur'ân oynatıcısı başlarsa radyo duraklar
   useEffect(() => {
@@ -96,8 +107,8 @@ export function RadyoSaglayici({ children }) {
 
   const deger = useMemo(() => ({
     istasyon: YAYINLAR.find(x => x.id === istasyonId) || null,
-    durum, cal, duraklat, devam, kapat,
-  }), [istasyonId, durum, cal, duraklat, devam, kapat])
+    durum, cal, duraklat, devam, kapat, uyku,
+  }), [istasyonId, durum, cal, duraklat, devam, kapat, uyku.dk, uyku.bitis])
 
   return <RadyoBaglami.Provider value={deger}>{children}</RadyoBaglami.Provider>
 }

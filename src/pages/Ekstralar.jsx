@@ -19,17 +19,45 @@
      harita uygulamasında "cami" araması açılır (Google Haritalar / Apple Haritalar).
    • ZİKİRMATİK — dokundukça sayar, hedefe (33/99/100) gelince titreşir; sayı
      cihazda saklanır.
+   • OTOMATİK KAPANMA (4 Kasım 2026) — radyo kartında süre seçilir (data/otomatikDurdurma.js);
+     süre dolunca radyo kapanır, Ekstralar'dan çıkılmış olsa da.
+   • KONUM İZNİ / PİL (4 Kasım 2026) — kullanıcı: "1 kez izin alıp sürekli kullanmak
+     mobilde şarjı etkiler gibi geliyor. İzin sıfırlama ile 1 kez izin vermeyi
+     önerebiliriz, yapabiliyorsak buton ile izni sıfırlayabiliriz."
+     Konum yalnız düğmeye dokunulunca BİR KEZ okunur (watchPosition yok). Pusula
+     (yön algılayıcısı) sürekli dinlenen tek şey: sayfa arka plana geçince durur,
+     5 dk sonra kendiliğinden kapanır, elle de kapatılabilir. Tarayıcı izni web
+     sayfasından geri alınamıyor (Permissions API'de revoke yok) → "Konum izni"
+     kartı iznin durumunu gösterir, kayıtlı il/ilçeyi siler ve izni sıfırlamanın
+     yolunu cihaza göre anlatır; "Bir kez izin ver" seçeneği önerilir.
+   • CAMİ SAHNESİ + AÇILIR BÖLÜMLER (4 Kasım 2026) — kullanıcı: "Namaz vakitleri kısmına
+     tema bölümündeki Cami görseli gibi bir görselle süsleyelim. Kandil ve Mübarek
+     günler, Radyo, Pusula gibi diğer bölümler de açılıp kapanabilsin."
+     Sıradaki vakit ve kalan süre caminin mihrabında yazar (components/CamiVakit.jsx).
+     Her kartın başlığına dokunulunca açılır/kapanır; hangi bölümün açık olduğu
+     "vukuf-ekstralar-bolumler"de saklanır. Başlangıçta yalnız Namaz Vakitleri açık.
+     Kapalı kartın başlığında kısa özet görünür (sıradaki vakit, yaklaşan gün, çalan
+     radyo…). Kapalı kartın içi çizilmez → kıble pusulası kapanınca yön algılayıcısı da durur.
+   • YAKLAŞAN / SEÇİLEN VAKİT (4 Kasım 2026) — kullanıcı: "Sıradaki yerine Yaklaşan Vakit;
+     farklı bir vakit seçildiğinde kalan ya da üzerinden geçen zamanı yukarıda
+     gösterebiliriz. Saniye de küçük bir şekilde 'sn' ibaresiyle görüntülenebilir."
+     Vakit kutucuğuna dokunulunca mihrapta o vakte kalan ya da üzerinden geçen süre
+     yazar; aynı kutucuğa ya da yaklaşan vakte dokunulunca yaklaşan vakte dönülür.
+     Süre saniyeyle (küçük "sn") ve saniyede bir tazelenir — yalnız kart açıkken.
    • Hicrî tarih Namaz Vakitleri kartında, Diyanet'in takviminden gelir (3 Kasım 2026'da
      başlıktaki Ümmü'l-Kurâ hesabı kaldırıldı: Diyanet takviminden bir gün sapabiliyordu).
    ═══════════════════════════════════════════════════════════════════════════ */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { Radio, Compass, MapPin, Sparkles, Play, Pause, ExternalLink, RotateCcw, Navigation, Loader2, X, Clock, CalendarPlus, Moon, LocateFixed } from "lucide-react"
+import { ChevronDown, Radio, Compass, MapPin, Sparkles, Play, Pause, ExternalLink, RotateCcw, Navigation, Loader2, X, Clock, CalendarPlus, Moon, LocateFixed, ShieldCheck, Trash2, PowerOff } from "lucide-react"
 import { useApp } from "../AppContext"
-import { useRadyo, YAYINLAR } from "../data/radyo"
+import { useRadyo, YAYINLAR, radyoZamanlayici } from "../data/radyo"
+import { useZamanlayici } from "../data/otomatikDurdurma"
+import OtomatikDurdurmaSecici from "../components/OtomatikDurdurmaSecici"
+import CamiVakit from "../components/CamiVakit"
 import {
-  VAKITLER, sehirleriGetir, ilceleriGetir, vakitleriGetir, secimOku, secimYaz, durumHesapla, kalanMetni,
-  konumdanBul, icsIndir, yaklasanGunler,
+  VAKITLER, vakitAni, sehirleriGetir, ilceleriGetir, vakitleriGetir, secimOku, secimYaz, durumHesapla, kalanMetni,
+  konumdanBul, icsIndir, yaklasanGunler, konumBilgisiniSil, KONUM_SILINDI,
 } from "../data/namazVakitleri"
 
 // ── KIBLE ────────────────────────────────────────────────────────────────────
@@ -56,28 +84,92 @@ function konumAl() {
     if (!navigator.geolocation) { red(new Error("yok")); return }
     navigator.geolocation.getCurrentPosition(
       p => coz({ lat: p.coords.latitude, lng: p.coords.longitude, dogruluk: p.coords.accuracy }),
-      e => red(e), { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 })
+      // Kıble ve camiler için şehir düzeyi yeter → GPS açılmaz (pil), 10 dk içindeki konum yeniden kullanılır
+      e => red(e), { enableHighAccuracy: false, timeout: 15000, maximumAge: 600000 })
   })
 }
 const iosMu = () => typeof navigator !== "undefined" && (/iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1))
 
+// Süre yazısı: "1 sa 13 dk 42 sn" — saniye küçük ve soluk
+function SureYazisi({ ms }) {
+  const top = Math.max(0, Math.floor(Math.abs(ms) / 1000))
+  const sa = Math.floor(top / 3600), dk = Math.floor((top % 3600) / 60), sn = top % 60
+  const ana = [sa ? `${sa} sa` : "", sa || dk ? `${dk} dk` : ""].filter(Boolean).join(" ")
+  return (
+    <>
+      <span style={{ whiteSpace: "nowrap" }}>{ana}</span>
+      <span style={{ whiteSpace: "nowrap", display: "inline-block", fontSize: "0.5em", fontWeight: 600, opacity: 0.75, marginLeft: ana ? "0.35em" : 0 }}>
+        {String(sn).padStart(ana ? 2 : 1, "0")} sn
+      </span>
+    </>
+  )
+}
+
+// ── AÇILIR BÖLÜMLER ──────────────────────────────────────────────────────────
+// Hangi kartın açık olduğu cihazda saklanır; başlangıçta yalnız Namaz Vakitleri açık.
+const BOLUM_ANAHTAR = "vukuf-ekstralar-bolumler"
+const VARSAYILAN_ACIK = { namaz: true }
+const bolumleriOku = () => { try { return JSON.parse(localStorage.getItem(BOLUM_ANAHTAR) || "{}") || {} } catch { return {} } }
+function useBolum(id) {
+  const [acik, setAcik] = useState(() => { const m = bolumleriOku(); return id in m ? !!m[id] : !!VARSAYILAN_ACIK[id] })
+  const degis = useCallback(() => {
+    setAcik(a => {
+      const y = !a
+      try { const m = bolumleriOku(); m[id] = y; localStorage.setItem(BOLUM_ANAHTAR, JSON.stringify(m)) } catch { /* yoksay */ }
+      return y
+    })
+  }, [id])
+  return [acik, degis]
+}
+
 // ── ORTAK KART ───────────────────────────────────────────────────────────────
-function Kart({ theme, Ikon, baslik, alt, children }) {
+// `bolum` = [acik, degis] verilirse başlık dokunulabilir olur, içerik yalnız açıkken çizilir.
+// `ozet`: kapalıyken başlığın altında görünen kısa bilgi (verilmezse `alt`).
+function Kart({ theme, Ikon, baslik, alt, ozet, bolum, children }) {
+  const acilir = !!bolum
+  const acik = acilir ? bolum[0] : true
+  const altMetin = acik ? alt : (ozet ?? alt)
+  const baslikIci = (
+    <>
+      <span style={{ width: "34px", height: "34px", borderRadius: "10px", background: `${theme.accent}18`, color: theme.accent, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+        <Ikon size={18} />
+      </span>
+      <span style={{ minWidth: 0, flex: 1, display: "block" }}>
+        <span style={{ display: "block", fontSize: "15.5px", fontWeight: 600, color: theme.text }}>{baslik}</span>
+        {altMetin && (
+          <span style={{
+            display: "block", fontSize: "12px", marginTop: "1px",
+            color: !acik && ozet ? theme.accent : theme.textSecondary,
+            whiteSpace: acik ? "normal" : "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+          }}>{altMetin}</span>
+        )}
+      </span>
+      {acilir && (
+        <ChevronDown size={18} color={theme.textSecondary} aria-hidden="true"
+          style={{ flexShrink: 0, transition: "transform .2s ease", transform: acik ? "rotate(180deg)" : "none" }} />
+      )}
+    </>
+  )
   return (
     <section style={{
       background: theme.surface, border: `1px solid ${theme.border}`, borderRadius: "14px",
-      padding: "14px", marginBottom: "14px", boxShadow: "0 2px 10px rgba(0,0,0,0.05)",
+      padding: acik ? "14px" : "12px 14px", marginBottom: acik ? "14px" : "10px", boxShadow: "0 2px 10px rgba(0,0,0,0.05)",
     }}>
-      <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "10px" }}>
-        <span style={{ width: "34px", height: "34px", borderRadius: "10px", background: `${theme.accent}18`, color: theme.accent, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-          <Ikon size={18} />
-        </span>
-        <div style={{ minWidth: 0 }}>
-          <h2 style={{ margin: 0, fontSize: "15.5px", fontWeight: 600, color: theme.text }}>{baslik}</h2>
-          {alt && <div style={{ fontSize: "12px", color: theme.textSecondary, marginTop: "1px" }}>{alt}</div>}
-        </div>
-      </div>
-      {children}
+      {acilir ? (
+        <h2 style={{ margin: 0, fontSize: "inherit", fontWeight: "inherit" }}>
+          <button onClick={bolum[1]} aria-expanded={acik}
+            style={{
+              width: "100%", display: "flex", alignItems: "center", gap: "10px", padding: 0, margin: 0,
+              marginBottom: acik ? "10px" : 0, background: "none", border: "none", cursor: "pointer",
+              textAlign: "left", fontFamily: "inherit", color: "inherit",
+            }}>
+            {baslikIci}
+          </button>
+        </h2>
+      ) : (
+        <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "10px" }}>{baslikIci}</div>
+      )}
+      {acik && children}
     </section>
   )
 }
@@ -101,6 +193,7 @@ function NamazVakitleri({ theme }) {
   const [taslakSehir, setTaslakSehir] = useState("")
   const [konumAraniyor, setKonumAraniyor] = useState(false)
   const [, setTik] = useState(0)
+  const [seciliVakit, setSeciliVakit] = useState(null)   // dokunulan vakit (null = yaklaşan vakit)
 
   // Vakitleri getir
   useEffect(() => {
@@ -112,11 +205,8 @@ function NamazVakitleri({ theme }) {
       .catch(() => { if (!iptal) { setDurum("hata"); setHata("Vakitler alınamadı. İnternet bağlantısı ya da vakit sunucusu kaynaklı olabilir; biraz sonra tekrar denenebilir.") } })
     return () => { iptal = true }
   }, [secim])
-  // Kalan süre için tazele
-  useEffect(() => {
-    const t = setInterval(() => setTik(n => n + 1), 15000)
-    return () => clearInterval(t)
-  }, [])
+  // Konum değişince seçili vakit bırakılır
+  useEffect(() => { setSeciliVakit(null) }, [secim])
   // İl listesi (seçim kutusu açılınca)
   useEffect(() => {
     if (!seciyor || sehirler.length) return
@@ -127,6 +217,12 @@ function NamazVakitleri({ theme }) {
     ilceleriGetir(taslakSehir).then(setIlceler).catch(() => setIlceler([]))
   }, [taslakSehir])
 
+  // Konum izni kartından kayıtlı konum silinince baştan başla
+  useEffect(() => {
+    const f = () => { setSecim(null); setListe(null); setDurum("bos"); setSeciyor(true) }
+    window.addEventListener(KONUM_SILINDI, f)
+    return () => window.removeEventListener(KONUM_SILINDI, f)
+  }, [])
   const sec = (yeni) => { secimYaz(yeni); setSecim(yeni); setSeciyor(false); setListe(null) }
   const konumla = async () => {
     setKonumAraniyor(true); setHata("")
@@ -135,15 +231,22 @@ function NamazVakitleri({ theme }) {
     finally { setKonumAraniyor(false) }
   }
 
+  const bolum = useBolum("namaz")
+  // Kalan süre için tazele — kart açıkken saniyede bir (saniye gösteriliyor), kapalıyken 15 sn'de bir
+  useEffect(() => {
+    const t = setInterval(() => setTik(n => n + 1), bolum[0] ? 1000 : 15000)
+    return () => clearInterval(t)
+  }, [bolum[0]]) // eslint-disable-line
   const d = liste ? durumHesapla(liste) : null
   const sonrakiKalan = d?.sonraki ? d.sonraki.an - Date.now() : null
+  const ozet = d?.sonraki ? `${d.sonraki.ad} ${d.sonraki.saat} · ${kalanMetni(sonrakiKalan)} kaldı` : undefined
   const secStil = {
     width: "100%", padding: "9px 10px", borderRadius: "10px", fontFamily: "inherit", fontSize: "13.5px",
     color: theme.text, background: theme.background, border: `1px solid ${theme.border}`,
   }
 
   return (
-    <Kart theme={theme} Ikon={Clock} baslik="Namaz Vakitleri"
+    <Kart theme={theme} Ikon={Clock} baslik="Namaz Vakitleri" bolum={bolum} ozet={ozet}
       alt={secim ? `${secim.ilceAdi}${secim.sehirAdi && secim.sehirAdi !== secim.ilceAdi ? " · " + secim.sehirAdi : ""}` : "Diyanet aylık vakitleri"}>
       {seciyor ? (
         <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
@@ -181,31 +284,50 @@ function NamazVakitleri({ theme }) {
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-          {d.sonraki && (
-            <div style={{
-              textAlign: "center", padding: "12px", borderRadius: "12px",
-              background: `${theme.accent}12`, border: `1px solid ${theme.accent}33`,
-            }}>
-              <div style={{ fontSize: "12px", color: theme.textSecondary }}>{d.sonraki.yarin ? "Yarın" : "Sıradaki vakit"}: <strong style={{ color: theme.text }}>{d.sonraki.ad}</strong> · {d.sonraki.saat}</div>
-              <div style={{ fontSize: "26px", fontWeight: 700, color: theme.accent, marginTop: "2px", fontVariantNumeric: "tabular-nums" }}>{kalanMetni(sonrakiKalan)}</div>
-              <div style={{ fontSize: "11px", color: theme.textSecondary }}>kaldı</div>
-            </div>
-          )}
+          {/* Cami: mihrabında yaklaşan (ya da dokunulan) vakit ve kalan / geçen süre */}
+          {(() => {
+            const sec = seciliVakit && VAKITLER.find(v => v.k === seciliVakit)
+            if (sec) {
+              const fark = vakitAni(d.bugun, d.bugun[sec.k]) - Date.now()
+              return (
+                <CamiVakit theme={theme}
+                  ust={<><strong style={{ color: theme.text }}>{sec.ad}</strong> · {d.bugun[sec.k]}</>}
+                  buyuk={<SureYazisi ms={fark} />}
+                  alt={fark > 0 ? "kaldı" : "geçti"} />
+              )
+            }
+            return (
+              <CamiVakit theme={theme}
+                ust={d.sonraki ? <>{d.sonraki.yarin ? "Yarın" : "Yaklaşan vakit"}: <span style={{ whiteSpace: "nowrap" }}><strong style={{ color: theme.text }}>{d.sonraki.ad}</strong> · {d.sonraki.saat}</span></> : "Günün vakitleri"}
+                buyuk={d.sonraki ? <SureYazisi ms={sonrakiKalan} /> : null}
+                alt={d.sonraki ? "kaldı" : null} />
+            )
+          })()}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "6px" }}>
             {VAKITLER.map(v => {
               const sira = d.sonraki && !d.sonraki.yarin && d.sonraki.k === v.k
               const simdi = d.simdiki === v.k
+              const secili = seciliVakit === v.k
               return (
-                <div key={v.k} style={{
-                  padding: "8px 6px", borderRadius: "10px", textAlign: "center",
-                  border: `1px solid ${sira ? theme.accent : theme.border}`,
-                  background: simdi ? `${theme.accent}18` : sira ? `${theme.accent}0a` : "transparent",
-                }}>
+                <button key={v.k} aria-pressed={secili}
+                  title={secili ? "Yaklaşan vakte dön" : `${v.ad} vaktine kalan / geçen süre`}
+                  onClick={() => setSeciliVakit(secili || sira ? null : v.k)}
+                  style={{
+                    padding: "8px 6px", borderRadius: "10px", textAlign: "center", cursor: "pointer", fontFamily: "inherit",
+                    border: secili ? `2px solid ${theme.accent}` : `1px solid ${sira ? theme.accent : theme.border}`,
+                    margin: secili ? 0 : "1px",
+                    background: secili ? `${theme.accent}22` : simdi ? `${theme.accent}18` : sira ? `${theme.accent}0a` : "transparent",
+                  }}>
                   <div style={{ fontSize: "11.5px", color: theme.textSecondary }}>{v.ad}</div>
-                  <div style={{ fontSize: "16px", fontWeight: 700, color: sira || simdi ? theme.accent : theme.text, fontVariantNumeric: "tabular-nums" }}>{d.bugun[v.k]}</div>
-                </div>
+                  <div style={{ fontSize: "16px", fontWeight: 700, color: secili || sira || simdi ? theme.accent : theme.text, fontVariantNumeric: "tabular-nums" }}>{d.bugun[v.k]}</div>
+                </button>
               )
             })}
+          </div>
+          <div style={{ fontSize: "11px", color: theme.textSecondary, textAlign: "center", marginTop: "-6px" }}>
+            {seciliVakit
+              ? <button onClick={() => setSeciliVakit(null)} style={{ background: "none", border: "none", padding: "2px 6px", color: theme.accent, fontFamily: "inherit", fontSize: "11.5px", fontWeight: 600, cursor: "pointer" }}>Yaklaşan vakte dön</button>
+              : "Bir vakte dokunulunca o vakte kalan ya da üzerinden geçen süre görünür."}
           </div>
           {d.bugun.HicriTarihUzun && (
             <div style={{ fontSize: "12px", color: theme.textSecondary, textAlign: "center" }}>
@@ -230,8 +352,11 @@ const GUN_ADLARI = ["Pazar", "Pazartesi", "Salı", "Çarşamba", "Perşembe", "C
 const AY_ADLARI = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"]
 function DiniGunler({ theme }) {
   const gunler = useMemo(() => yaklasanGunler(8), [])
+  const bolum = useBolum("gunler")
+  const ilk = gunler[0]
+  const ozet = ilk ? `${ilk.ad} · ${ilk.kalanGun === 0 ? "bugün" : ilk.kalanGun === 1 ? "yarın" : `${ilk.kalanGun} gün sonra`}` : undefined
   return (
-    <Kart theme={theme} Ikon={Moon} baslik="Kandiller ve Mübarek Günler" alt="Diyanet dinî günler takvimi">
+    <Kart theme={theme} Ikon={Moon} baslik="Kandiller ve Mübarek Günler" alt="Diyanet dinî günler takvimi" bolum={bolum} ozet={ozet}>
       {gunler.length === 0 ? (
         <div style={{ fontSize: "12.5px", color: theme.textSecondary }}>Takvimdeki günler geride kaldı; yeni yılın takvimi eklenince burada görünecek.</div>
       ) : (
@@ -278,6 +403,11 @@ function Radyolar({ theme }) {
   }, [])
   const durum = radyo?.durum || "kapali"
   const aktif = radyo?.istasyon?.id || null
+  const uyku = useZamanlayici(radyoZamanlayici)
+  const bolum = useBolum("radyo")
+  const ozet = radyo?.istasyon
+    ? `${radyo.istasyon.kisa} · ${durum === "caliyor" ? "çalıyor" : durum === "yukleniyor" ? "bağlanıyor" : durum === "hata" ? "açılamadı" : "duraklatıldı"}`
+    : undefined
 
   const dokun = (y) => {
     if (!radyo) return
@@ -289,7 +419,7 @@ function Radyolar({ theme }) {
   }
 
   return (
-    <Kart theme={theme} Ikon={Radio} baslik="Diyanet Radyoları" alt="Canlı yayın">
+    <Kart theme={theme} Ikon={Radio} baslik="Diyanet Radyoları" alt="Canlı yayın" bolum={bolum} ozet={ozet}>
       {!hlsVar && (
         <div style={{ fontSize: "12.5px", color: theme.textSecondary, lineHeight: 1.5, marginBottom: "10px" }}>
           Bu tarayıcı canlı yayın biçimini doğrudan çalamayabilir. Çalmazsa yayının yanındaki bağlantıdan resmî sitede dinleyebilirsiniz; telefonda çoğunlukla sorunsuz çalar.
@@ -331,6 +461,12 @@ function Radyolar({ theme }) {
           )
         })}
       </div>
+      {aktif && (
+        <div style={{ marginTop: "10px", padding: "4px 10px", borderRadius: "11px", border: `1px solid ${theme.border}` }}>
+          <OtomatikDurdurmaSecici theme={theme} uyku={uyku} baslik="Otomatik kapanma" eylem="kapanacak"
+            aciklama="Seçilen süre sonunda radyo kapanır; başka ekrandayken de" />
+        </div>
+      )}
     </Kart>
   )
 }
@@ -345,11 +481,33 @@ function KiblePusulasi({ theme }) {
   const titrestiRef = useRef(false)
   const dinleyiciRef = useRef(null)
 
+  const [pusulaUyuyor, setPusulaUyuyor] = useState(false)   // pil için kapatıldı
+  const bolum = useBolum("kible")
   const pusulaDurdur = () => {
     const d = dinleyiciRef.current
     if (d) { window.removeEventListener(d.olay, d.f, true); dinleyiciRef.current = null }
   }
   useEffect(() => pusulaDurdur, [])
+  // PİL: pusula yalnız gerektiğinde — sayfa arka plana geçince dinleme durur, dönünce
+  // sürer; açıldıktan 5 dk sonra kendiliğinden kapanır (bir dokunuşla yeniden açılır).
+  const PUSULA_SURE = 5 * 60000
+  useEffect(() => {
+    if (durum !== "hazir" || pusulaUyuyor) return
+    const zaman = setTimeout(() => { pusulaDurdur(); setYon(null); setPusulaUyuyor(true) }, PUSULA_SURE)
+    const gorunur = () => {
+      const d = dinleyiciRef.current
+      if (!d) return
+      if (document.visibilityState === "hidden") window.removeEventListener(d.olay, d.f, true)
+      else window.addEventListener(d.olay, d.f, true)
+    }
+    document.addEventListener("visibilitychange", gorunur)
+    return () => { clearTimeout(zaman); document.removeEventListener("visibilitychange", gorunur) }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [durum, pusulaUyuyor])
+  const pusulaKapat = () => { pusulaDurdur(); setYon(null); setPusulaUyuyor(true) }
+  // Bölüm kapanınca pusula da kapanır (kart içi çizilmiyor; algılayıcı boşuna dinlenmesin)
+  useEffect(() => { if (!bolum[0] && dinleyiciRef.current) pusulaKapat() }, [bolum[0]]) // eslint-disable-line
+  const pusulaAc = async () => { setPusulaUyuyor(false); yumusakRef.current = null; await pusulaBaslat() }
 
   const pusulaBaslat = async () => {
     try {
@@ -381,7 +539,7 @@ function KiblePusulasi({ theme }) {
   }
 
   const baslat = async () => {
-    setHata(""); setDurum("konum")
+    setHata(""); setDurum("konum"); setPusulaUyuyor(false)
     // iPhone'da yön izni KULLANICI DOKUNUŞUNUN içinde istenmeli → önce pusula
     await pusulaBaslat()
     try {
@@ -406,7 +564,8 @@ function KiblePusulasi({ theme }) {
   const kadranDon = yon != null ? -yon : 0
   const yesil = "#2e9e5b"
   return (
-    <Kart theme={theme} Ikon={Compass} baslik="Kıble Pusulası" alt="Konumunuza göre Kâbe yönü">
+    <Kart theme={theme} Ikon={Compass} baslik="Kıble Pusulası" alt="Konumunuza göre Kâbe yönü" bolum={bolum}
+      ozet={kible != null ? `Kıble ${Math.round(kible)}° (${yonAdi(kible)})` : undefined}>
       {durum !== "hazir" ? (
         <div style={{ textAlign: "center", padding: "6px 0 4px" }}>
           <button onClick={baslat} disabled={durum === "konum"} style={dugmeStil(theme, true)}>
@@ -453,6 +612,8 @@ function KiblePusulasi({ theme }) {
               hizali
                 ? <strong style={{ color: yesil }}>Kıbleye dönüksünüz</strong>
                 : <>Kâbe işareti üstteki oka gelene kadar <strong>{fark > 0 ? "sağa" : "sola"}</strong> dönebilirsiniz ({Math.abs(Math.round(fark))}°).</>
+            ) : pusulaUyuyor ? (
+              <>Pusula pil için kapatıldı. Kıble, <strong>kuzeyden saat yönünde {Math.round(kible)}°</strong> ({yonAdi(kible)}) tarafındadır.</>
             ) : (
               <>Telefonun pusulası okunamadı. Kıble, <strong>kuzeyden saat yönünde {Math.round(kible)}°</strong> ({yonAdi(kible)}) tarafındadır.</>
             )}
@@ -465,9 +626,79 @@ function KiblePusulasi({ theme }) {
               </div>
             )}
           </div>
-          <button onClick={baslat} style={dugmeStil(theme, false)}><RotateCcw size={14} /> Konumu yenile</button>
+          <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", justifyContent: "center" }}>
+            {pusulaUyuyor
+              ? <button onClick={pusulaAc} style={dugmeStil(theme, true)}><Compass size={14} /> Pusulayı aç</button>
+              : yon != null && <button onClick={pusulaKapat} style={dugmeStil(theme, false)}><PowerOff size={14} /> Pusulayı kapat</button>}
+            <button onClick={baslat} style={dugmeStil(theme, false)}><RotateCcw size={14} /> Konumu yenile</button>
+          </div>
+          <div style={{ fontSize: "11px", color: theme.textSecondary, textAlign: "center", lineHeight: 1.45 }}>
+            Pil için pusula, uygulama arka plandayken çalışmaz ve 5 dakika sonra kendiliğinden kapanır.
+          </div>
         </div>
       )}
+    </Kart>
+  )
+}
+
+// ── KONUM İZNİ ───────────────────────────────────────────────────────────────
+// Tarayıcı izni web sayfasından geri alınamıyor (Permissions API'de revoke yok);
+// burada durumu gösterilir, kayıtlı il/ilçe silinir, sıfırlama yolu anlatılır.
+function KonumIzni({ theme }) {
+  const [izin, setIzin] = useState(null)        // granted | prompt | denied | null (bilinmiyor)
+  const [silindi, setSilindi] = useState(false)
+  const [kayitli, setKayitli] = useState(() => !!secimOku())
+  useEffect(() => {
+    let durum = null, iptal = false
+    try {
+      navigator.permissions?.query({ name: "geolocation" }).then(d => {
+        if (iptal) return
+        durum = d; setIzin(d.state)
+        d.onchange = () => setIzin(d.state)
+      }).catch(() => {})
+    } catch { /* yoksay */ }
+    const f = () => setKayitli(!!secimOku())
+    window.addEventListener(KONUM_SILINDI, f)
+    const t = setInterval(f, 5000)
+    return () => { iptal = true; if (durum) durum.onchange = null; window.removeEventListener(KONUM_SILINDI, f); clearInterval(t) }
+  }, [])
+  const ios = iosMu()
+  const android = typeof navigator !== "undefined" && /Android/i.test(navigator.userAgent)
+  const izinMetni = izin === "granted" ? "Konum izni verilmiş"
+    : izin === "denied" ? "Konum izni kapalı"
+    : izin === "prompt" ? "Her kullanımda sorulur"
+    : "İzin durumu bu tarayıcıda okunamıyor"
+  const bolum = useBolum("izin")
+  const sil = () => { konumBilgisiniSil(); setSilindi(true); setKayitli(false); setTimeout(() => setSilindi(false), 2500) }
+  return (
+    <Kart theme={theme} Ikon={ShieldCheck} baslik="Konum izni" alt={izinMetni} bolum={bolum}>
+      <div style={{ fontSize: "12.5px", color: theme.text, lineHeight: 1.55 }}>
+        Konum yalnız "Konumumdan bul", "Kıbleyi bul" ya da camiler düğmesine dokunulduğunda bir kez okunur; arka planda takip edilmez ve koordinatlar uygulamada saklanmaz. İl/ilçe bulunurken konum OpenStreetMap'e, camiler açılırken harita uygulamasına iletilir; saklanan yalnız seçilen il/ilçedir.
+        İzin istendiğinde <strong>"Bir kez izin ver"</strong> seçilirse izin saklanmaz, her kullanımda yeniden sorulur.
+      </div>
+      <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginTop: "10px" }}>
+        <button onClick={sil} disabled={!kayitli && !silindi} style={{ ...dugmeStil(theme, false), opacity: kayitli || silindi ? 1 : 0.55 }}>
+          <Trash2 size={14} /> {silindi ? "Silindi" : "Kayıtlı konumu sil"}
+        </button>
+      </div>
+      <div style={{ fontSize: "11.5px", color: theme.textSecondary, lineHeight: 1.55, marginTop: "10px" }}>
+        <strong style={{ color: theme.text }}>Tarayıcı iznini sıfırlamak için</strong> (izin uygulamanın içinden geri alınamıyor; menü adları sürüme göre biraz değişebilir):
+        {ios ? (
+          <ul style={{ margin: "4px 0 0", paddingLeft: "18px" }}>
+            <li>Safari'de: adres çubuğundaki <strong>aA</strong> → Web Sitesi Ayarları → Konum → <strong>Sor</strong>.</li>
+            <li>Ana ekrana eklenmiş uygulamada: Ayarlar → Gizlilik ve Güvenlik → Konum Servisleri → Safari Web Siteleri → <strong>Bir Dahaki Sefere Sor</strong>.</li>
+          </ul>
+        ) : android ? (
+          <ul style={{ margin: "4px 0 0", paddingLeft: "18px" }}>
+            <li>Chrome'da: adres çubuğunun solundaki simge → İzinler → <strong>İzinleri sıfırla</strong>.</li>
+            <li>Ana ekrana yüklenmiş uygulamada: uygulama simgesine basılı tutup Uygulama bilgileri → İzinler → Konum → <strong>Her zaman sor</strong>.</li>
+          </ul>
+        ) : (
+          <ul style={{ margin: "4px 0 0", paddingLeft: "18px" }}>
+            <li>Adres çubuğunun solundaki kilit/ayar simgesi → Konum → <strong>Sor</strong> ya da <strong>Sıfırla</strong>.</li>
+          </ul>
+        )}
+      </div>
     </Kart>
   )
 }
@@ -475,6 +706,7 @@ function KiblePusulasi({ theme }) {
 // ── YAKINDAKİ CAMİLER ────────────────────────────────────────────────────────
 function YakinCamiler({ theme }) {
   const [durum, setDurum] = useState("bos")
+  const bolum = useBolum("camiler")
   const ac = async (hangi) => {
     setDurum("konum")
     let k = null
@@ -489,7 +721,7 @@ function YakinCamiler({ theme }) {
     window.open(url, "_blank", "noopener")
   }
   return (
-    <Kart theme={theme} Ikon={MapPin} baslik="Yakındaki Camiler" alt="Harita uygulamasında açılır">
+    <Kart theme={theme} Ikon={MapPin} baslik="Yakındaki Camiler" alt="Harita uygulamasında açılır" bolum={bolum}>
       <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
         <button onClick={() => ac("google")} disabled={durum === "konum"} style={dugmeStil(theme, true)}>
           {durum === "konum" ? <Loader2 size={15} className="vk-don" /> : <MapPin size={15} />} Google Haritalar
@@ -523,10 +755,12 @@ function Zikirmatik({ theme }) {
       return doldu ? { ...o, sayi: 0, tur: o.tur + 1 } : { ...o, sayi }
     })
   }, [])
+  const bolum = useBolum("zikir")
   const yuzde = z.hedef > 0 ? z.sayi / z.hedef : 0
   const C = 2 * Math.PI * 64
   return (
-    <Kart theme={theme} Ikon={Sparkles} baslik="Zikirmatik" alt="Dokundukça sayar; hedefe gelince titreşir">
+    <Kart theme={theme} Ikon={Sparkles} baslik="Zikirmatik" alt="Dokundukça sayar; hedefe gelince titreşir" bolum={bolum}
+      ozet={z.sayi || z.tur ? `${z.sayi}${z.hedef ? ` / ${z.hedef}` : ""}${z.tur ? ` · ${z.tur} tur` : ""}` : undefined}>
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "12px" }}>
         <button onClick={say} aria-label={`Say (${z.sayi})`} style={{
           position: "relative", width: "160px", height: "160px", borderRadius: "50%", border: "none", cursor: "pointer",
@@ -565,7 +799,7 @@ export default function Ekstralar() {
     <div style={{
       minHeight: "100vh", background: theme.background, color: theme.text,
       padding: "18px 14px calc(70px + env(safe-area-inset-bottom))",
-      maxWidth: "760px", margin: "0 auto", boxSizing: "border-box",
+      width: "100%", maxWidth: "760px", margin: "0 auto", boxSizing: "border-box",
     }}>
       <style>{`@keyframes vk-don { to { transform: rotate(360deg) } } .vk-don { animation: vk-don 1s linear infinite }`}</style>
       <div style={{ display: "flex", alignItems: "baseline", gap: "9px", marginBottom: "14px", flexWrap: "wrap" }}>
@@ -578,6 +812,7 @@ export default function Ekstralar() {
       <KiblePusulasi theme={theme} />
       <YakinCamiler theme={theme} />
       <Zikirmatik theme={theme} />
+      <KonumIzni theme={theme} />
     </div>
   )
 }

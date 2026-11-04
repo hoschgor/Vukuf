@@ -22,6 +22,23 @@ import { Play, Pause, BookOpen, Square, Loader2, ChevronDown } from "lucide-reac
 import { useApp } from "../AppContext"
 import { sesliOkuyucu, sesKilidiAc } from "../data/sesliOkuma"
 import { useHapKonumu } from "./DonusDugmesi"
+import { zamanlayiciOlustur, useZamanlayici } from "../data/otomatikDurdurma"
+import { UykuRozeti } from "./OtomatikDurdurmaSecici"
+
+/* OTOMATİK DURDURMA (4 Kasım 2026, kullanıcı: "normal okuma ekranındaki dinleme
+   modunda da otomatik durdurma ekleyelim") — sayaç burada, modül düzeyinde: bu dosya
+   uygulamanın her ekranında yüklü olduğu için okuma ekranından çıkılınca (devamlı
+   okuma) da sürer. Seçici sesli okuma ayarlarında (SesliOkumaKontrol ⚙). Okuma
+   kendiliğinden biterse ya da elle durdurulursa sayaç iptal olur; her durum
+   değişiminde (cümle geçişleri) süre ayrıca denetlenir — arka planda sayaç gecikse de. */
+export const sesliZamanlayici = zamanlayiciOlustur(() => sesliOkuyucu.durdur())
+try {
+  sesliOkuyucu.abone(() => {
+    const s = sesliOkuyucu.durum()?.durum
+    if (s === "kapali" || s === "bitti") sesliZamanlayici.iptal()
+    else sesliZamanlayici.denetle()
+  })
+} catch { /* yoksay */ }
 
 const KUCUK_ANAHTAR = "vukuf-sesli-mini-kucuk"
 
@@ -110,6 +127,7 @@ function Hap({ d, kitapta }) {
   // Kur'ân küçük oynatıcısı ("mini") da görünüyorsa HAP_ADLARI sırası sayesinde ondan kaçar
   const k = useHapKonumu({ ad: "sesli-mini", yan: "orta", altta: true, altPay: kitapta ? 64 : 0, ek: kitapta ? 50 : 0, kaydirGecir: true })
   const b = sesliOkuyucu.bilgi()
+  const uyku = useZamanlayici(sesliZamanlayici)
   const okuyor = d.durum === "okuyor"
   const hazirlaniyor = d.durum === "hazirlaniyor" || (okuyor && d.bekliyor)
   const hal = hazirlaniyor ? "hazirlaniyor" : okuyor ? "okuyor" : "duraklatildi"
@@ -185,6 +203,7 @@ function Hap({ d, kitapta }) {
           </span>
           <span style={{ fontSize: "10.5px", color: theme.textSecondary, whiteSpace: "nowrap" }}>
             {okuyor ? `Sesli okuma${d.birim?.sayfa ? ` · s. ${d.birim.sayfa}` : ""}` : "Duraklatıldı"}
+            {uyku.bitis && <> · <UykuRozeti theme={theme} bitis={uyku.bitis} /></>}
           </span>
         </span>
         <button onClick={okumayaDon} aria-label="Okumaya dön" title="Okumaya dön — okunan yere"

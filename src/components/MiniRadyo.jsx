@@ -16,7 +16,9 @@ import { useEffect, useState } from "react"
 import { useLocation, useNavigate } from "react-router-dom"
 import { Play, Pause, Compass, ChevronDown, X } from "lucide-react"
 import { useApp } from "../AppContext"
-import { useRadyo } from "../data/radyo"
+import { useRadyo, radyoZamanlayici } from "../data/radyo"
+import { useZamanlayici } from "../data/otomatikDurdurma"
+import { UykuRozeti } from "./OtomatikDurdurmaSecici"
 import { useHapKonumu } from "./DonusDugmesi"
 
 const KUCUK_ANAHTAR = "vukuf-mini-radyo-kucuk"
@@ -78,6 +80,7 @@ function RadyoHapi({ radyo, kitapta }) {
 
   const k = useHapKonumu({ ad: "radyo", yan: "orta", altta: true, altPay: kitapta ? 64 : 0, ek: kitapta ? 50 : 0, kaydirGecir: true })
   const { istasyon, durum } = radyo
+  const uyku = useZamanlayici(radyoZamanlayici)          // otomatik kapanma kuruluysa ☾ N dk
   const calar = durum === "caliyor"
   const alt = durum === "hata" ? "Yayın açılamadı"
     : durum === "yukleniyor" ? "Bağlanıyor…"
@@ -123,6 +126,7 @@ function RadyoHapi({ radyo, kitapta }) {
                   : <span style={{ display: "inline-flex", alignItems: "center", gap: "3px", color: canliRenk }}>
                       · <span className="vk-radyo-canli" style={{ width: "6px", height: "6px", borderRadius: "50%", background: canliRenk }} /> CANLI
                     </span>}
+                {uyku.bitis && <span style={{ fontSize: "10px" }}>· <UykuRozeti theme={theme} bitis={uyku.bitis} /></span>}
               </span>
             </span>
             <button onClick={() => (calar || durum === "yukleniyor" ? radyo.duraklat() : radyo.devam())}

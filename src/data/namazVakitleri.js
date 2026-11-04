@@ -95,6 +95,21 @@ export async function vakitleriGetir(ilceId, { zorla = false } = {}) {
 }
 
 export function secimOku() { return oku(SECIM_ANAHTAR) }
+
+/* Kayıtlı il/ilçe seçimini ve vakit önbelleğini sil (Ekstralar → Konum izni,
+   4 Kasım 2026). Namaz kartı "vukuf-konum-silindi" olayıyla baştan başlar. */
+export const KONUM_SILINDI = "vukuf-konum-silindi"
+export function konumBilgisiniSil() {
+  try {
+    const sil = []
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i)
+      if (k === SECIM_ANAHTAR || (k && k.startsWith("vukuf-namaz-vakit-"))) sil.push(k)
+    }
+    sil.forEach(k => localStorage.removeItem(k))
+  } catch { /* yoksay */ }
+  try { window.dispatchEvent(new Event(KONUM_SILINDI)) } catch { /* yoksay */ }
+}
 export function secimYaz(s) { if (s) yaz(SECIM_ANAHTAR, s); else { try { localStorage.removeItem(SECIM_ANAHTAR) } catch { /* yoksay */ } } }
 
 /** Bugünün kaydı, sıradaki vakit ve kalan süre */

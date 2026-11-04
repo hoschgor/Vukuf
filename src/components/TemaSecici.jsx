@@ -117,7 +117,7 @@ const GECIS = "fill .35s ease, stroke .35s ease"
      ROZETLER: ana kubbede, iki yan kanatta ve mihrap köşeliklerinde — seçicideki
        çiçeğin aynısı (RozetSekli), temanın kendi renkleriyle
    Boyamalar `style` ile: tema değişince renkler CSS geçişiyle döner. */
-function RozetSekli({ cx, cy, r, t }) {
+export function RozetSekli({ cx, cy, r, t }) {
   const k = r / 32
   const dis = [], ic = []
   for (let i = 0; i < 8; i++) {
@@ -141,7 +141,7 @@ function RozetSekli({ cx, cy, r, t }) {
    direğin TAM ÜSTÜNDE ORTALI — dış çemberin EN ALT noktası direk ucuna
    (ux,uy) değiyor; o nokta hilalin dolu sırtında kaldığı için (boynuzlar
    ağız yönünden ±54°, alt nokta ağızdan 135° uzakta) direk gövdeye girer. */
-function hilalYolu(ux, uy, R, aci = -45) {
+export function hilalYolu(ux, uy, R, aci = -45) {
   const d = 0.45 * R, r2 = 0.82 * R
   const kx = (R * R - r2 * r2 + d * d) / (2 * d)
   const ky = Math.sqrt(Math.max(0, R * R - kx * kx))

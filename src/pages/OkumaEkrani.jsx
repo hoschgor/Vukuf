@@ -1388,6 +1388,8 @@ const [kitapModu, setKitapModu] = useKitapModu(KITAP_MODU_ESER)
 const guvenliUst = useGuvenliUst()
 const kitapElleRef = useRef(0)
 const kitapCiftRef = useRef(false)
+// Kitap modunda iki sayfa yan yanayken bar/şeritte "13-14" (5 Kasım 2026, kullanıcı isteği)
+const [kitapCift, setKitapCift] = useState(false)
 const kitapMevcutRef = useRef(mevcutSayfa)
 kitapMevcutRef.current = mevcutSayfa
 const kitapModuRef = useRef(kitapModu)
@@ -1404,6 +1406,14 @@ const kitapYon = useMemo(() => {
 }, [kitapMetni])
 // sayfa numarası ↔ sıra (1'den)
 const kitapSiraNo = useMemo(() => new Map(kitapMetni.map((sf, i) => [sf.sayfa, i + 1])), [kitapMetni])
+const sayfaEtiketi = (() => {
+  if (!kitapModu || !kitapCift) return mevcutSayfa
+  const i = kitapSiraNo.get(mevcutSayfa)
+  if (!i) return mevcutSayfa
+  const b = yayilimBasi(i, true)
+  const s1 = kitapMetni[b - 1], s2 = kitapMetni[b]
+  return s1 && s2 ? `${s1.sayfa}-${s2.sayfa}` : (s1 ? s1.sayfa : mevcutSayfa)
+})()
 // Kitap modunda konum kaydı (kaydırma takibi çalışmadığı için burada). Açılışta geri
 // yükleme bitmeden (okumaHazir) yazılmaz — yoksa kayıtlı yer 1. sayfayla ezilirdi.
 useEffect(() => {
@@ -4195,7 +4205,7 @@ const Bar = (
     {gorunurMu("sayfa") && (
       <button onClick={() => togglePanel(setSayfaGitAcik, !sayfaGitAcik)} style={{ ...barButonStil(sayfaGitAcik), background: `${theme.accent}15`, color: theme.text, ...barOge("sayfa") }}>
         <BookOpen size={bIkon(13)} color={theme.accent} />
-        {sayfaGosterim === "ikon" ? null : (sayfaGosterim === "sayfa" ? mevcutSayfa : `${mevcutSayfa} / ${kitapMetni.length}`)}
+        {sayfaGosterim === "ikon" ? null : (sayfaGosterim === "sayfa" ? sayfaEtiketi : `${sayfaEtiketi} / ${kitapMetni.length}`)}
       </button>
     )}
 
@@ -4367,7 +4377,7 @@ const BilgiSeridiOgesi = ortaSerit && (
       </span>
     ) : null,
     gorunurMu("sayfa") && sayfaGosterim !== "ikon" ? (
-      <><BookOpen size={Math.round(11 * barUiOlcegi)} />{sayfaGosterim === "sayfa" ? mevcutSayfa : `${mevcutSayfa} / ${kitapMetni.length}`}</>
+      <><BookOpen size={Math.round(11 * barUiOlcegi)} />{sayfaGosterim === "sayfa" ? sayfaEtiketi : `${sayfaEtiketi} / ${kitapMetni.length}`}</>
     ) : null,
     gorunurMu("sure") ? (<><Clock size={Math.round(11 * barUiOlcegi)} />{dakikaFormatla(bugunSure)}</>) : null,
   ]} />
@@ -4802,7 +4812,7 @@ return (
           setPopup(null)
           setMevcutSayfa(sf.sayfa); maxSayfaGuncelle(sf.sayfa)
         }}
-        onCift={(c) => { kitapCiftRef.current = c }}
+        onCift={(c) => { kitapCiftRef.current = c; setKitapCift(c) }}
         yon={kitapYon}
         theme={theme}
         olcekAnahtar={`${yaziBoyutu}|${satirAraligi}|${harfAraligi}|${kelimeAraligi}|${hizalama}|${metinFont}|${arapBoyutu}|${baslikBoyutu}`}

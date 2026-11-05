@@ -2610,6 +2610,10 @@ const hizbSayfalari = (cuzNo) => {
   const kitapModuRef = useRef(kitapModu)
   kitapModuRef.current = kitapModu
   const kitapCiftRef = useRef(false)
+  /* SAYFA ETİKETİ (5 Kasım 2026) — kullanıcı: "Yatay modda sayfa bilgisi 2'li olması daha
+     mantıklı olur, 13-14 gibi. Tek sayfa gösteriyorsa yine aynı kalabilir." Kitap modunda iki
+     sayfa yan yanayken bar ve bilgi şeridinde yayılımın iki sayfası yazılır. */
+  const [kitapCift, setKitapCift] = useState(false)
   const kitapElleRef = useRef(0)          // son elle çevirme anı (oynatıcı takibi bir süre beklesin)
   const kitapIlkRef = useRef(kitapModu)
   // Kipler arası geçiş: kitaptan kaydırmaya dönünce aynı sayfaya git; kitaba geçince içerik görünür
@@ -2654,6 +2658,12 @@ const hizbSayfalari = (cuzNo) => {
   // görülen EN BÜYÜK boy kullanılır (sayfa kutusu ve yazı boyu titremesin)
   const kitapOynaticiRef = useRef(0)
   if (playerBarYuksekligi > kitapOynaticiRef.current) kitapOynaticiRef.current = playerBarYuksekligi
+  const sayfaEtiketi = (() => {
+    if (!kitapModu || !kitapCift) return mevcutSayfa
+    const b = yayilimBasi(mevcutSayfa, true)
+    const s2 = Math.min(b + 1, toplamSayfa || b + 1)
+    return s2 > b ? `${b}-${s2}` : b
+  })()
   const kitapUstPay = barKonum === "ust"
     ? barYuksekligi + (player.durum !== "kapali" ? Math.max(playerBarYuksekligi, kitapOynaticiRef.current) : 0) + 6
     : ustCentik + 4
@@ -4611,7 +4621,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
           }}title="Sayfa bilgisi ve sayfaya gitme"
         >
           <BookOpen size={Math.round((isMobile ? 18 : 21) * barOlcegi)} />
-          {sayfaGosterim === "ikon" ? null : (sayfaGosterim === "sayfa" ? mevcutSayfa : `${mevcutSayfa} / ${toplamSayfa}`)}
+          {sayfaGosterim === "ikon" ? null : (sayfaGosterim === "sayfa" ? sayfaEtiketi : `${sayfaEtiketi} / ${toplamSayfa}`)}
         </button>
       )}
 
@@ -4840,7 +4850,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
           ? <><Layers size={Math.round(11 * barUiOlcegi)} />{mevcutSureBilgisi.isim}</> : null,
         // Menü modunda şeritteki sayfa bilgisi kendi ayarına bağlı (Ayarlar → Bilgi → Sayfa bilgisi)
         sayfaBilgisiGoster
-          ? <><BookOpen size={Math.round(11 * barUiOlcegi)} />{sayfaGosterim === "tam" ? `${mevcutSayfa} / ${toplamSayfa}` : mevcutSayfa}</> : null,
+          ? <><BookOpen size={Math.round(11 * barUiOlcegi)} />{sayfaGosterim === "tam" ? `${sayfaEtiketi} / ${toplamSayfa}` : sayfaEtiketi}</> : null,
         mevcutCuzHizb && (seritCuz || seritHizb)
           ? (seritCuz && seritHizb ? `${mevcutCuzHizb.cuz}. Cüz · ${mevcutCuzHizb.hizb}. Hizb` : seritCuz ? `${mevcutCuzHizb.cuz}. Cüz` : `${mevcutCuzHizb.hizb}. Hizb`) : null,
         sureGoster && sadeGorunur("okumaZamani")
@@ -6126,7 +6136,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
             toplam={toplamSayfa || sayfaListesi.length}
             sayfa={mevcutSayfa}
             onSayfa={(no) => { kitapElleRef.current = Date.now(); setPopup(null); setMevcutSayfa(no) }}
-            onCift={(c) => { kitapCiftRef.current = c }}
+            onCift={(c) => { kitapCiftRef.current = c; setKitapCift(c) }}
             yon="rtl"
             theme={theme}
             olcekAnahtar={`${yaziBoyutu}|${satirAraligi}|${harfAraligi}|${aktifArapcaFont.style}`}

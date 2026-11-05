@@ -1606,6 +1606,9 @@ function KitapRafi({ kitaplar: liste, rafId, duzenlemeMode, theme, sensors, kita
    "Gizlileri göster" hepsini birlikte geri getiriyor ve yedeğe de giriyor. Anahtar rafa
    özgü: aynı âlim bir Kısım rafında gizlenip Âlimler rafında görünür kalabilir. */
 const alimGizliAnahtar = (katId, alimId) => `alim:${katId}:${alimId}`
+// Özel rafın alt rafı (ikincil raf) — 5 Kasım 2026, kullanıcı: "Kitaplık içinde oluşturulan
+// özel raf ya da alim (ikincil raf) da istenirse gizlenebilmeli." Aynı listede, rafa özgü.
+const altGizliAnahtar = (rafId, altId) => `alt:${rafId}:${altId}`
 const alimEserSayisi = (a) => (a.altKategoriler
   ? a.altKategoriler.reduce((t, x) => t + (x.kitaplar || []).length, 0)
   : (a.kitaplar || []).length)
@@ -2143,7 +2146,8 @@ function SortableKategori({ kategori,
 
 // Özel rafın alt rafı — tıklayınca açılır (dinamikte varsayılan kapalı)
 function OzelAltRaf({ raf, alt, liste, theme, dinamikMod, duzenlemeMode, aramaAktif,
-  altDuzen, setAltDuzen, onAltRename, onAltSil, onKitapEkleAc, onKitapCikar, silinebilir, bolumsuz = false }) {
+  altDuzen, setAltDuzen, onAltRename, onAltSil, onKitapEkleAc, onKitapCikar, silinebilir, bolumsuz = false,
+  gizlemeMod = false, gizli = false, onGizle }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: alt.id })
   const sstyle = { transform: CSS.Transform.toString(transform), transition }
   const [acik, setAcik] = useState(() => {
@@ -2160,7 +2164,7 @@ function OzelAltRaf({ raf, alt, liste, theme, dinamikMod, duzenlemeMode, aramaAk
   const gosterilen = q ? liste.filter(k => normHarf(k.baslik).includes(q)) : liste
 
   return (
-    <div ref={setNodeRef} style={sstyle}>
+    <div ref={setNodeRef} style={{ ...sstyle, opacity: gizli ? 0.45 : 1 }}>
       <div
         onClick={duzenAd != null ? undefined : toggle}
         {...surukleProps(duzenlemeMode, attributes, listeners)}
@@ -2210,6 +2214,7 @@ function OzelAltRaf({ raf, alt, liste, theme, dinamikMod, duzenlemeMode, aramaAk
           )}
           {duzenAd == null && <RafArama theme={theme} acik={aramaAcik} setAcik={(v) => { setAramaAcik(v); if (!v) setArama("") }} deger={arama} setDeger={setArama} />}
           <span style={{ fontSize: "11px", color: theme.textSecondary }}>{liste.length} {gorunur ? "▲" : "▼"}</span>
+          {gizlemeMod && onGizle && <GozBtn gizli={gizli} onClick={onGizle} theme={theme} />}
         </div>
       </div>
       {aramaAcik && (
@@ -2282,7 +2287,7 @@ const bolumsuzMu = (alt, i) => i === 0 && (alt.baslik || "").trim() === "Kitapla
 
 function OzelKategori({ raf, havuz, theme, dinamikMod, duzenlemeMode, gizlemeMod, gizli, onGizle,
   onSil, onRename, onResim, onAltEkle, onAltSil, onAltRename, onKitapEkleAc, onKitapCikar, sensors, onAltSira,
-  acik, onToggle, yer }) {
+  acik, onToggle, yer, gizliRaflar = [], bosGizle = false }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: raf.id })
   const sstyle = { transform: CSS.Transform.toString(transform), transition, zIndex: isDragging ? 5 : undefined }
   const isMobile = useMediaQuery("(max-width: 768px)")
@@ -2294,8 +2299,13 @@ function OzelKategori({ raf, havuz, theme, dinamikMod, duzenlemeMode, gizlemeMod
   const [arama, setArama] = useState("")
 
   const toggle = () => onToggle(raf.id)
+  // Gizli alt raflar: elle gizlenenler + (seçenek açıksa) kitabı olmayanlar. Gizleme modunda
+  // hepsi görünür (gizliler soluk); raf önündeki sırtlar yalnız görünenlerden.
+  const altGizliMi = (a) => gizliRaflar.includes(altGizliAnahtar(raf.id, a.id))
+    || (bosGizle && !(a.kitapIdler || []).some(id => havuz.has(id)))
+  const gorunenAltlar = (raf.altRaflar || []).filter(a => !altGizliMi(a))
   const toplam = (raf.altRaflar || []).reduce((n, a) => n + (a.kitapIdler || []).length, 0)
-  const rafKitaplari = (raf.altRaflar || []).flatMap(a => (a.kitapIdler || []).map(id => havuz.get(id)).filter(Boolean))
+  const rafKitaplari = gorunenAltlar.flatMap(a => (a.kitapIdler || []).map(id => havuz.get(id)).filter(Boolean))
   const sirtlar = rafKitaplari.length
     ? rafKitaplari.map(k => ({ id: k.id, ad: k.baslik, n: 1, veri: k }))
     : susSirtlar(raf.id, 4)
@@ -2310,7 +2320,7 @@ function OzelKategori({ raf, havuz, theme, dinamikMod, duzenlemeMode, gizlemeMod
         p={yer.p} theme={theme} isMobile={isMobile} acik={acik} satirAcik={yer.satirAcik} gizli={gizli}
         sirtlar={sirtlar} kapak={{ tip: "semse", tohum: raf.id }} tohum={raf.id}
         resim={raf.resim && raf.resim.src ? raf.resim : null}
-        yataylar={(raf.altRaflar || []).length > 1 ? raf.altRaflar.filter((a, i) => !bolumsuzMu(a, i)).map(a => ({ id: a.id, ad: a.baslik, n: (a.kitapIdler || []).length })) : []}
+        yataylar={(raf.altRaflar || []).length > 1 ? raf.altRaflar.filter((a, i) => !bolumsuzMu(a, i) && !altGizliMi(a)).map(a => ({ id: a.id, ad: a.baslik, n: (a.kitapIdler || []).length })) : []}
         onSirt={rafKitaplari.length && !duzenlemeMode ? (s) => s.veri && navigate(kitapYolu(s.veri)) : undefined}
         onToggle={isimDuzen != null ? undefined : toggle}
         setNodeRef={setNodeRef} sortStil={sstyle}
@@ -2402,6 +2412,7 @@ function OzelKategori({ raf, havuz, theme, dinamikMod, duzenlemeMode, gizlemeMod
           >
             <SortableContext items={(raf.altRaflar || []).map(a => a.id)} strategy={verticalListSortingStrategy}>
               {(raf.altRaflar || []).map((alt, i) => {
+                if (!gizlemeMod && altGizliMi(alt)) return null
                 let liste = (alt.kitapIdler || []).map(id => havuz.get(id)).filter(Boolean)
                 if (q) liste = liste.filter(k => normHarf(k.baslik).includes(q))
                 if (aramaAktif && liste.length === 0) return null
@@ -2435,6 +2446,9 @@ function OzelKategori({ raf, havuz, theme, dinamikMod, duzenlemeMode, gizlemeMod
                     onKitapCikar={onKitapCikar}
                     silinebilir={raf.altRaflar.length > 1}
                     bolumsuz={bolumsuzMu(alt, i)}
+                    gizlemeMod={gizlemeMod}
+                    gizli={altGizliMi(alt)}
+                    onGizle={() => onGizle(altGizliAnahtar(raf.id, alt.id))}
                   />
                 )
               })}
@@ -2897,6 +2911,10 @@ export default function Kutuphane() {
   // Eseri olmayan âlimler (görünen raflarda) — "Boş rafları gizle" bunları da gizler
   const bosAlimSayisi = tamSira.filter(id => kategoriMap.has(id) && !bosMu(id))
     .reduce((t, id) => t + (kategoriMap.get(id).alimler || []).filter(a => alimEserSayisi(a) === 0).length, 0)
+  // Kitabı olmayan alt raflar (boş olmayan özel raflarda)
+  const bosAltSayisi = tamSira.filter(id => ozelMap.has(id) && !bosMu(id))
+    .reduce((t, id) => t + ((ozelMap.get(id).altRaflar || []).length > 1
+      ? ozelMap.get(id).altRaflar.filter(a => !(a.kitapIdler || []).some(k => havuz.has(k))).length : 0), 0)
   const gizliMi = (id) => gizliRaflar.includes(id) || (bosGizle && bosIdler.includes(id))
   const gorunenIdler = tamSira.filter(id => hepsiGoster || !gizliMi(id))
 
@@ -3267,8 +3285,8 @@ export default function Kutuphane() {
                 }}
               >
                 {bosGizle ? <Check size={14} /> : <PackageX size={14} />}
-                Boş rafları gizle{(bosIdler.length || bosAlimSayisi)
-                  ? ` (${[bosIdler.length && `${bosIdler.length} raf`, bosAlimSayisi && `${bosAlimSayisi} âlim`].filter(Boolean).join(", ")})`
+                Boş rafları gizle{(bosIdler.length || bosAlimSayisi || bosAltSayisi)
+                  ? ` (${[bosIdler.length && `${bosIdler.length} raf`, bosAlimSayisi && `${bosAlimSayisi} âlim`, bosAltSayisi && `${bosAltSayisi} alt raf`].filter(Boolean).join(", ")})`
                   : ""}
               </button>
             )}
@@ -3485,6 +3503,8 @@ export default function Kutuphane() {
               return (
                 <OzelKategori
                   key={id}
+                  gizliRaflar={gizliRaflar}
+                  bosGizle={bosGizle}
                   raf={ozelMap.get(id)}
                   havuz={havuz}
                   theme={theme}

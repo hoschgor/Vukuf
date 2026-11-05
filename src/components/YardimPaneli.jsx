@@ -101,9 +101,9 @@ const KONULAR = [
     ozet: "Kullanılmayan rafları görünümden kaldırmak.",
     nerede: "Kitaplık → Düzenle → göz simgesi",
     metin: [
-      "Göz simgesi gizleme modunu açar; her rafın levhasında beliren göze dokunularak raf gizlenebilir ya da geri getirilebilir. Bir raf açıldığında içindeki âlimlerin yanında da göz belirir; âlimler de aynı şekilde tek tek gizlenebilir. Gizliler bu modda soluk görünür.",
+      "Göz simgesi gizleme modunu açar; her rafın levhasında beliren göze dokunularak raf gizlenebilir ya da geri getirilebilir. Bir raf açıldığında içindeki âlimlerin yanında da göz belirir; âlimler de aynı şekilde tek tek gizlenebilir. Kendi oluşturduğunuz raflar ve bu rafların alt rafları da aynı yoldan gizlenebilir. Gizliler bu modda soluk görünür.",
       "Hepsini birden geri getirmek için \"Gizlileri göster\" düğmesi kullanılabilir.",
-      "Aynı yerdeki \"Boş rafları gizle\" seçeneği açıldığında içinde eser olmayan raflar ve âlimler kendiliğinden gizlenir; bir rafa sonradan eser eklenirse raf yeniden görünür. Seçenek tekrar dokunularak kapatılabilir.",
+      "Aynı yerdeki \"Boş rafları gizle\" seçeneği açıldığında içinde eser olmayan raflar, âlimler ve alt raflar kendiliğinden gizlenir; bir rafa sonradan eser eklenirse raf yeniden görünür. Seçenek tekrar dokunularak kapatılabilir.",
     ],
     anahtar: "sakla göster gizli raf boş eser yok âlim alim",
   },

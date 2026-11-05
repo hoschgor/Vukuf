@@ -665,16 +665,26 @@ export default function MushafKelime({
         paddingInlineStart: `${disBas ? yanDolgu : 0}px`,
         paddingInlineEnd: `${disSon ? yanDolgu : 0}px`,
         paddingBottom: "2px",
-        borderStartStartRadius: kose,
-        borderEndStartRadius: kose,
-        borderStartEndRadius: koseSon,
-        borderEndEndRadius: koseSon,
+        /* OKUNAN ÂYET TEK BANT (5 Kasım 2026) — kullanıcı: "kelimelerin arasındaki çizgiler
+           çok bariz, rahatsız edici görünüyor, bir bütün gibi görünmesi gerekiyor." Her kelime
+           köşeleri yuvarlak, YARI SAYDAM ayrı bir kutuydu: kutu kenarları (özellikle kitap
+           modunda ölçeklenince) ince açık/koyu çizgiler, köşeler çentik bırakıyordu. Artık
+           okunan kelimede köşe yok ve zemin OPAK (vurgu rengi zemine karıştırılmış): komşu
+           kutular üst üste binse de koyulaşmaz; kutu dışına aynı renkte ince bir taşma
+           (box-shadow yayılımı) piksel altı boşlukları da kapatır → satır boyunca kesintisiz bant. */
+        borderStartStartRadius: aktif ? 0 : kose,
+        borderEndStartRadius: aktif ? 0 : kose,
+        borderStartEndRadius: aktif ? 0 : koseSon,
+        borderEndEndRadius: aktif ? 0 : koseSon,
         background: kayitKonumModu
           ? "transparent"
           : aktif
-            ? `${theme.accent}22`
+            ? `color-mix(in srgb, ${theme.accent} 16%, ${theme.background})`
             : (hover || grupVurgu || obekVurgu) ? `${theme.accent}0a` : "transparent",
-        boxShadow: kayitKonumModu ? "none" : aktif ? `inset 0 -2px 0 ${theme.accent}` : "none",
+        // Kelime kelime alt çizgi de kaldırıldı: kelime aralarında kesiliyor, bandı yine parçalıyordu
+        boxShadow: kayitKonumModu ? "none"
+          : aktif ? `0 0 0 1.5px color-mix(in srgb, ${theme.accent} 16%, ${theme.background})`
+          : "none",
         // Birleşik kelimenin ortak bağı: grup boyunca kesintisiz ince nokta çizgi.
         // Kesintisiz olması için İÇ kenarlarda dolgu zaten sıfırlandı.
         // Bağ çizgisi: grupta KESİNTİSİZ (iç dolgu zaten sıfırlandı), öbekte

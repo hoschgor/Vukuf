@@ -101,11 +101,11 @@ const KONULAR = [
     ozet: "Kullanılmayan rafları görünümden kaldırmak.",
     nerede: "Kitaplık → Düzenle → göz simgesi",
     metin: [
-      "Göz simgesi gizleme modunu açar; her rafın levhasında beliren göze dokunularak raf gizlenebilir ya da geri getirilebilir. Gizli raflar bu modda soluk görünür.",
+      "Göz simgesi gizleme modunu açar; her rafın levhasında beliren göze dokunularak raf gizlenebilir ya da geri getirilebilir. Bir raf açıldığında içindeki âlimlerin yanında da göz belirir; âlimler de aynı şekilde tek tek gizlenebilir. Gizliler bu modda soluk görünür.",
       "Hepsini birden geri getirmek için \"Gizlileri göster\" düğmesi kullanılabilir.",
-      "Aynı yerdeki \"Boş rafları gizle\" seçeneği açıldığında içinde eser olmayan raflar kendiliğinden gizlenir; bir rafa sonradan eser eklenirse raf yeniden görünür. Seçenek tekrar dokunularak kapatılabilir.",
+      "Aynı yerdeki \"Boş rafları gizle\" seçeneği açıldığında içinde eser olmayan raflar ve âlimler kendiliğinden gizlenir; bir rafa sonradan eser eklenirse raf yeniden görünür. Seçenek tekrar dokunularak kapatılabilir.",
     ],
-    anahtar: "sakla göster gizli raf boş eser yok",
+    anahtar: "sakla göster gizli raf boş eser yok âlim alim",
   },
   {
     bolum: "kitaplik", ikon: Library, baslik: "Kitaplık modu",
@@ -246,6 +246,19 @@ const KONULAR = [
     anahtar: "sade odak gizle bar",
   },
   {
+    bolum: "kuran", ikon: BookOpen, baslik: "Kitap modu (sayfa sayfa)",
+    ozet: "Mushafı basılı nüsha gibi sayfa sayfa okumak.",
+    nerede: "Kur'ân-ı Kerîm → Ayarlar → Okuma Düzeni",
+    metin: [
+      "Kitap modu açıldığında mushaf kaydırılarak değil, sayfa sayfa okunur. Her sayfa süslü bir çerçeve içinde gösterilir; üstte sûre ve cüz levhaları, altta sayfa numarası bulunur. Süsler seçili temanın renklerini alır.",
+      "Sayfa sola doğru ilerler: sonraki sayfaya geçmek için parmak sağa çekilebilir ya da ekranın sol kenarına dokunulabilir; önceki sayfa için tersi. Klavyede ← ve → tuşları da kullanılabilir. Ortaya düz dokunmak barı ya da menüyü açar; parmakla çevirirken ve kenarlara dokunurken menü açılmaz.",
+      "Tablet ve bilgisayarda ekran yeterince genişse iki sayfa yan yana açılır. Sayfa ekrana sığmıyorsa yazı biraz küçültülerek sığdırılır; okunmayacak kadar küçülecekse sayfanın içi kaydırılabilir. Yazı boyutu ayarı bu modda da yazıyı büyütür (aşırıya kaçmadan); sığmayan kısım sayfanın içinde kaydırılır.",
+      "Kayıtlar sayfada dokunulan yere konur; iki sayfa yan yanayken sol sayfanın ayracı sol kenarda, aynalı görünür. Bir kayda, fihristten bir yere ya da dönüş noktasına gidildiğinde sayfa kısa bir çevirmeyle açılır.",
+      "Sûre menüsü, sayfaya gitme ve kayıtlar bu modda da çalışır. Okuma sürerken okunan âyet sonraki sayfaya geçince sayfa kendiliğinden çevrilir; elle sayfa çevrildiyse bir süre beklenir. Kitap modu kapatılınca kaydırmalı okumaya aynı sayfadan devam edilir.",
+    ],
+    anahtar: "kitap modu sayfa sayfa çevir mushaf çerçeve süs iki sayfa yan yana tablet",
+  },
+  {
     bolum: "kuran", ikon: Share2, baslik: "Âyet paylaşma",
     ozet: "Bir âyetin bağlantısını göndermek.",
     nerede: "Kur'ân-ı Kerîm → bardaki paylaş simgesi",
@@ -296,8 +309,9 @@ const KONULAR = [
     nerede: "Kur'ân-ı Kerîm → barın sağ tarafı",
     metin: [
       "Barın sağında bugünkü okuma süresi, bulunulan sûre ve cüz/hizb bilgisi yer alır. Her biri Ayarlar → Görüntüleme bölümünden açılıp kapatılabilir.",
+      "Bar konumu Menü seçiliyken bu bilgiler ekranın altındaki bilgi şeridinde görünür; şeride bulunulan sayfa da eklenebilir (Ayarlar → Görüntüleme → Bilgi → Sayfa bilgisi). Bar üstte ya da alttayken sayfa numarası zaten bardaki sayfa düğmesinde yazar.",
     ],
-    anahtar: "süre zaman sure cüz hizb bilgi",
+    anahtar: "süre zaman sure cüz hizb bilgi sayfa şerit",
   },
   {
     bolum: "kuran", ikon: Undo2, baslik: "Dönüş noktaları",
@@ -522,6 +536,18 @@ const KONULAR = [
       "Büyüteç simgesi eserin içinde arama yapar; sonuçlar çevresindeki cümleyle birlikte listelenir ve birine dokunulduğunda o yere gidilir.",
     ],
     anahtar: "bul ara kelime metin içi",
+  },
+  {
+    bolum: "kitap", ikon: BookOpen, baslik: "Kitap modu (sayfa sayfa)",
+    ozet: "Eseri basılı kitap gibi sayfa sayfa okumak.",
+    nerede: "Kitap okuma → Ayarlar → Okuma Düzeni",
+    metin: [
+      "Kitap modu açıldığında eser kaydırılarak değil, kendi sayfalarıyla tek tek okunur. Sayfalar sade bir çerçeve içinde gösterilir; üstte eserin adı, altta sayfa numarası bulunur.",
+      "Türkçe eserlerde sayfa sağa doğru ilerler: sonraki sayfa için parmak sola çekilebilir ya da sağ kenara dokunulabilir. Arapça eserlerde mushaf gibi sola doğru ilerler. Klavyede ← ve → tuşları da kullanılabilir; ortaya dokunmak barı açıp kapatır.",
+      "Uzun bir sayfa önce yazı biraz küçültülerek sığdırılmaya çalışılır; yine sığmazsa sayfanın içi kaydırılabilir. Yazı boyutu ayarı bu modda da yazıyı büyütür (aşırıya kaçmadan). Tablet ve bilgisayarda iki sayfa yan yana açılabilir; sol sayfanın ayraçları sol kenarda, aynalı görünür. Ortaya düz dokunmak barı ya da menüyü açar; parmakla çevirirken ve kenarlara dokunurken menü açılmaz.",
+      "Fihrist, sayfaya gitme, arama ve kayıtlar bu modda da çalışır; sesli okuma sürerken okunan yer sonraki sayfaya geçince sayfa kendiliğinden çevrilir. Vurgu modunda parmakla çevirme kapanır, sayfalar kenardaki oklarla ya da tuşlarla çevrilebilir.",
+    ],
+    anahtar: "kitap modu sayfa sayfa çevir çerçeve iki sayfa yan yana tablet",
   },
   {
     bolum: "kitap", ikon: Type, baslik: "Yazı ve okuma ayarları",

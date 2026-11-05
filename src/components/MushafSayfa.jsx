@@ -87,6 +87,12 @@ function MushafSayfa({
   isMobile = false,
   cuzBaslangic = null,   // bu sayfa yeni bir CÜZ başlatıyorsa cüz no
   hizbBaslangic = null,  // bu sayfa yeni bir HİZB başlatıyorsa hizb no (cüz başı değilse)
+  // KİTAP MODU (5 Kasım 2026): sayfa numarasını çerçeve (SayfaSusleri) gösteriyor → üstteki
+  // küçük numara çizilmez. Kaydırmalı düzende hep false; orada hiçbir şey değişmedi.
+  kitapModu = false,
+  // Kitap modunda SOL sayfanın ayraçları solda ve aynalı (5 Kasım 2026 — kullanıcı: "Ekranın
+  // solundaki sayfa ise kayıt da aksi yönde sol tarafta olması gerek, yansıma modu gibi")
+  ayracSol = false,
 }) {
   // DONME_SAYAC.sayfa++   // ⏸ dönme teşhisi (yorumda)
 
@@ -175,10 +181,10 @@ function MushafSayfa({
           style={{
             position: "absolute",
             top: `${(kayit.scrollY || 0) * 100}%`,   // ref yüksekliğine göre %
-            right: "4px",
+            ...(ayracSol ? { left: "4px" } : { right: "4px" }),
             zIndex: 50,
             pointerEvents: "auto",
-            transform: "translateY(-50%)",
+            transform: ayracSol ? "translateY(-50%) scaleX(-1)" : "translateY(-50%)",
           }}
         >
           <KitapAyraci
@@ -190,7 +196,7 @@ function MushafSayfa({
         </div>
       ))}
       {/* Sayfa numarası */}
-      <div style={{
+      {!kitapModu && <div style={{
         textAlign: "center",
         display: "flex",
         alignItems: "center",
@@ -211,7 +217,7 @@ function MushafSayfa({
           {sayfaNo}
         </span>
         <div style={{ flex: 1, height: "1px", background: `linear-gradient(to right, transparent, ${theme.accent}40, transparent)` }} />
-      </div>
+      </div>}
 
       {/* CÜZ / HİZB işareti — sayfa yeni bir cüz/hizb başlatıyorsa ortalı Arapça başlık.
           Cüz başı ise "الجزء N" (hizb başı da olduğundan cüz önceliklidir); yalnız hizb başı ise "الحزب N". */}
@@ -489,7 +495,9 @@ function mushafSayfaEsit(a, b) {
     a.kayitKonumModu !== b.kayitKonumModu ||
     a.isMobile !== b.isMobile ||
     a.cuzBaslangic !== b.cuzBaslangic ||
-    a.hizbBaslangic !== b.hizbBaslangic
+    a.hizbBaslangic !== b.hizbBaslangic ||
+    a.kitapModu !== b.kitapModu ||
+    a.ayracSol !== b.ayracSol
   ) return false
 
   // sayfaKayitlari her render'da YENİ dizi (filter) → referansla değil DEĞERLE karşılaştır

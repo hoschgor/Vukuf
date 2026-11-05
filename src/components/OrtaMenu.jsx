@@ -34,6 +34,7 @@
 import { Children, Fragment, cloneElement, isValidElement, useCallback, useEffect, useId, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react"
 import { hexHsl, hsl } from "./rafGorselleri"
 import IosSwitch from "./IosSwitch"
+import { kitapDokunusuMu } from "./SayfaKitabi"
 
 /* ── OPAKLIK (4 Kasım 2026) ──────────────────────────────────────────────────
    Kullanıcı: "bilgi kısmına ya da menü arka planına da opaklık verebilelim."
@@ -299,6 +300,8 @@ export function useOrtaMenu({ aktif, engelli, haric, secimKapsami = null, metinA
       if (!b || !t || b.akiyordu) return
       if (Math.abs(t.clientX - b.x) > 10 || Math.abs(t.clientY - b.y) > 10 || e.timeStamp - b.t > 350) return
       if (sayilmaz(e.target) || (b.nokta && sayilmaz(b.nokta))) return
+      // KİTAP MODU: kenar dokunuşu sayfa çevirir, parmakla çevirme sırasında/hemen sonrası sayılmaz
+      if (kitapDokunusuMu(t.clientX, t.clientY, b.nokta || e.target)) return
       ac()
       // Dokunuşun tıklaması iptal: açılan perdeye düşüp menüyü hemen kapatmasın
       if (e.cancelable) e.preventDefault()
@@ -310,6 +313,7 @@ export function useOrtaMenu({ aktif, engelli, haric, secimKapsami = null, metinA
       let nokta = null
       try { nokta = document.elementFromPoint(e.clientX, e.clientY) } catch { nokta = null }
       if (sayilmaz(e.target) || (nokta && sayilmaz(nokta))) return
+      if (kitapDokunusuMu(e.clientX, e.clientY, nokta || e.target)) return
       ac()
     }
     document.addEventListener("scroll", kaydir, { capture: true, passive: true })

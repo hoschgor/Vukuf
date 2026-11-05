@@ -88,6 +88,9 @@ import {
 } from "../data/hifz"
 import { barSatirOlc } from "../components/BarSiraPaneli"
 import GorselOlustur from "../components/GorselOlustur"
+// KİTAP MODU (5 Kasım 2026): sayfa sayfa okuma — kaydırmalı düzen aynen korunur
+import SayfaKitabi, { SayfaSigdir, useKitapModu, KITAP_MODU_KURAN, yayilimBasi } from "../components/SayfaKitabi"
+import { MushafCercevesi } from "../components/SayfaSusleri"
 import { useMushaf, sureBaslangicSayfasi, ayetSayfasi } from "../data/hooks/useMushaf"
 import { BESMELE_OKUYANLAR } from "../data/hooks/useAudioPlayer"
 // Oynatıcı artık uygulama kökünde (src/data/oynatici.jsx) — ekrandan çıkınca da sürebilsin
@@ -876,7 +879,7 @@ const KAYIT_PAYI = {
   pwaUstBar:   50,   // Pwa bölümü üst bar aktifken
   mobilUstBar: 30,   // mobil üst bar aktifken
   webUstBar:   30,   // web üst bar aktifken
-  pwaAltBar:   60,   // Pwa bölümü alt bar aktifken
+  pwaAltBar:   95,   // Pwa bölümü alt bar aktifken
   mobilAltBar: 30,   // mobil alt bar aktifken
   webAltBar:   30,   // web alt bar aktifken
 }
@@ -1349,6 +1352,9 @@ export default function KuranOkuma({ kitap }) {
   const [sureBilgisiGoster, setSureBilgisiGoster] = useState(() => localStorage.getItem("vukuf-sure-bilgisi") !== "false")
   const [cuzBilgisiGoster, setCuzBilgisiGoster] = useState(() => localStorage.getItem("vukuf-cuz-bilgisi") !== "false")
   const [hizbBilgisiGoster, setHizbBilgisiGoster] = useState(() => localStorage.getItem("vukuf-hizb-bilgisi") !== "false")
+  // SAYFA BİLGİSİ (5 Kasım 2026) — menü modunda alttaki bilgi şeridinde sayfa numarası.
+  // Bar (üst/alt) kipinde bardaki "Sayfaya Gitme" düğmesi zaten sayfayı gösteriyor.
+  const [sayfaBilgisiGoster, setSayfaBilgisiGoster] = useState(() => localStorage.getItem("vukuf-kuran-sayfa-bilgisi") !== "false")
   const [sureMenuGoster, setSureMenuGoster]   = useState(() => localStorage.getItem("vukuf-btn-sure")   !== "false")
   const [kayitGoster, setKayitGoster]         = useState(() => localStorage.getItem("vukuf-btn-kayit")  !== "false")
   const [sayfaGitGoster, setSayfaGitGoster]   = useState(() => localStorage.getItem("vukuf-btn-sayfa")  !== "false")
@@ -1550,6 +1556,7 @@ const maxWidth = useMemo(() =>
     localStorage.setItem("vukuf-sure-bilgisi", String(sureBilgisiGoster))
     localStorage.setItem("vukuf-cuz-bilgisi",  String(cuzBilgisiGoster))
     localStorage.setItem("vukuf-hizb-bilgisi", String(hizbBilgisiGoster))
+    localStorage.setItem("vukuf-kuran-sayfa-bilgisi", String(sayfaBilgisiGoster))
     localStorage.setItem("vukuf-btn-sure",     String(sureMenuGoster))
     localStorage.setItem("vukuf-btn-kayit",    String(kayitGoster))
     localStorage.setItem("vukuf-btn-sayfa",    String(sayfaGitGoster))
@@ -1562,7 +1569,7 @@ const maxWidth = useMemo(() =>
     localStorage.setItem("vukuf-btn-gorsel",   String(gorselGoster))
     localStorage.setItem("vukuf-btn-paylas",   String(paylasGoster))
     localStorage.setItem("vukuf-btn-hifz",     String(hifzGoster))
-  }, [sureGoster, sureBilgisiGoster, cuzBilgisiGoster, hizbBilgisiGoster, sureMenuGoster, kayitGoster, sayfaGitGoster, sadeModGoster, temaGoster, yaziTipiGoster, otoOynatGoster, tekrarBtnGoster, bilgiGoster, gorselGoster, paylasGoster, hifzGoster])
+  }, [sureGoster, sureBilgisiGoster, cuzBilgisiGoster, hizbBilgisiGoster, sayfaBilgisiGoster, sureMenuGoster, kayitGoster, sayfaGitGoster, sadeModGoster, temaGoster, yaziTipiGoster, otoOynatGoster, tekrarBtnGoster, bilgiGoster, gorselGoster, paylasGoster, hifzGoster])
   useEffect(() => { try { localStorage.setItem("vukuf-kuran-sade-gizli", JSON.stringify(sadeGizli)) } catch {} }, [sadeGizli])
 
 
@@ -2592,6 +2599,69 @@ const hizbSayfalari = (cuzNo) => {
     : (barGorunur ? barYuksekligi : 0) + (player.durum !== "kapali" ? playerBarYuksekligi : 0) + seritPay
   const hapUstPay = barKonum === "ust" ? hapDolu : 0
 
+  /* ══ KİTAP MODU (5 Kasım 2026) ════════════════════════════════════════════
+     Kullanıcı: "normal mod haricinde bir de sayfa ile okuma modu yapalım … Kur'ân-ı
+     Kerîm'de sayfa sola doğru ilerleyecek … Fakat bu hali hiç bozmamamız lazım."
+     Açıkken kaydırma kutusu GİZLENİR ve içine sayfa çizilmez (kaydırmalı düzenin
+     hiçbir satırı değişmedi); yerine components/SayfaKitabi gösterilir. Gösterilen
+     sayfa = mevcutSayfa → sureGit, sayfaya git, fihrist, kayıtlar onu zaten ayarlıyor,
+     kitap modunda da kendiliğinden doğru sayfayı açar. */
+  const [kitapModu, setKitapModu] = useKitapModu(KITAP_MODU_KURAN)
+  const kitapModuRef = useRef(kitapModu)
+  kitapModuRef.current = kitapModu
+  const kitapCiftRef = useRef(false)
+  const kitapElleRef = useRef(0)          // son elle çevirme anı (oynatıcı takibi bir süre beklesin)
+  const kitapIlkRef = useRef(kitapModu)
+  // Kipler arası geçiş: kitaptan kaydırmaya dönünce aynı sayfaya git; kitaba geçince içerik görünür
+  useEffect(() => {
+    if (kitapIlkRef.current === kitapModu) { if (kitapModu) konumuGoster(); return }
+    kitapIlkRef.current = kitapModu
+    if (kitapModu) { konumuGoster(); return }
+    const no = mevcutSayfa
+    const t = setTimeout(() => sayfayaGit(no), 30)
+    return () => clearTimeout(t)
+  }, [kitapModu]) // eslint-disable-line react-hooks/exhaustive-deps
+  // Kitap modunda konum kaydı (kaydırma takibi çalışmadığı için burada)
+  useEffect(() => {
+    if (!kitapModu || !mevcutSayfa) return
+    sonKonumRef.current = { sayfa: mevcutSayfa, oran: 0 }
+    try { localStorage.setItem("vukuf-son-konum", JSON.stringify(sonKonumRef.current)) } catch {}
+  }, [kitapModu, mevcutSayfa])
+  // Okunan âyet başka sayfaya geçince sayfayı çevir (elle çevrildiyse 8 sn bekle)
+  useEffect(() => {
+    if (!kitapModu) return
+    const a = player.aktifAyet
+    if (!a || !a.sureNo || player.durum !== "caliyor") return
+    const sf = ayetSayfasi(a.sureNo, a.ayetNo || 1, ayetSayfaLookup)
+    if (!sf) return
+    const cift = kitapCiftRef.current
+    if (yayilimBasi(sf, cift) === yayilimBasi(mevcutSayfa, cift)) return
+    if (Date.now() - kitapElleRef.current < 8000) return
+    setMevcutSayfa(sf)
+  }, [kitapModu, player.aktifAyet, player.durum]) // eslint-disable-line react-hooks/exhaustive-deps
+  // Sayfa başlığı bilgisi: sayfanın ilk âyetinin sûresi ve cüzü
+  const kitapSayfaBilgi = useMemo(() => {
+    const m = new Map()
+    for (const sf of sayfaListesi) {
+      const el = sf.elemanlar.find(e => e.sure && (e.tip === "kelime" || e.tip === "ayet-sonu")) || sf.elemanlar.find(e => e.sure)
+      if (!el) continue
+      const cuz = el.ayet && el.ayet.cuz != null ? Number(el.ayet.cuz) : null
+      m.set(sf.sayfaNo, { sure: el.sure.isimArapca || el.sure.isim || "", cuz })
+    }
+    return m
+  }, [sayfaListesi])
+  // Oynatıcı payı: ölçülen boy âyetten âyete 1-2 px oynayabiliyor → kitap modunda
+  // görülen EN BÜYÜK boy kullanılır (sayfa kutusu ve yazı boyu titremesin)
+  const kitapOynaticiRef = useRef(0)
+  if (playerBarYuksekligi > kitapOynaticiRef.current) kitapOynaticiRef.current = playerBarYuksekligi
+  const kitapUstPay = barKonum === "ust"
+    ? barYuksekligi + (player.durum !== "kapali" ? Math.max(playerBarYuksekligi, kitapOynaticiRef.current) : 0) + 6
+    : ustCentik + 4
+  const kitapOynatici = player.durum !== "kapali" ? kitapOynaticiRef.current : 0
+  const kitapAltPay = ortaBar
+    ? kitapOynatici + seritPay + 6
+    : barKonum === "alt" ? barYuksekligi + kitapOynatici + 6 : 6
+
   // ════════════════════════════════════════════════════
   // Font/boyut değişiminde OKUMA YERİNİ KORU (sayfa atlamasın)
   // En üstte görünen ayeti (data-sure+data-ayet) yakala; reflow sonrası aynı yere çek.
@@ -2838,6 +2908,8 @@ useEffect(() => {
   const sayfaGuncelle = () => {
     raf = 0
     if (!konumHazirRef.current) return
+    // KİTAP MODU: gizlenen kutunun sıfırlanan kaydırması mevcutSayfa'yı ezmesin (bkz. OkumaEkrani)
+    if (kitapModuRef.current) return
     // EKRAN DÖNERKEN BU TAKİP SUSAR. Gerekçe v146'da tersineydi ("altPencere
     // burada sürülüyor, durdurursak sayfalar mount olmaz") — ama dönmede YENİ
     // sayfa mount etmemiz gerekmiyor: aynı sayfada kalıyoruz ve çevresi zaten
@@ -3123,6 +3195,7 @@ function donuseGit(i) {
   const k = sonKonumRef.current
   const mevcut = k && k.sayfa ? { sayfa: k.sayfa, oran: k.oran || 0, etiket: kuranKonumEtiketi(k.sayfa, k.oran || 0) } : null
   setDonusNoktalari(noktayaDon("kuran", i, mevcut))
+  if (kitapModu) { setMevcutSayfa(n.sayfa); return }   // KİTAP MODU: yalnız sayfayı çevir
   pencereHazirla(n.sayfa)
   let tries = 0
   const git = () => {
@@ -4192,6 +4265,26 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
               GEZİNME (tam genişlik; içi: anahtar | açıklama)
             Dikeyde aynı sırayla alt alta; yatay telefonda iki sütun (yp-iki).
             Etiketler de OkumaEkrani gibi büyük harf, değer sağda yüzde. */}
+        {/* OKUMA DÜZENİ — kitap modu (5 Kasım 2026) */}
+        <div>
+          <div style={ayarEtiket}>OKUMA DÜZENİ</div>
+          <div onClick={() => setKitapModu(v => !v)} role="button" aria-pressed={kitapModu} style={{
+            display: "flex", alignItems: "center", gap: "9px", padding: "9px 10px", borderRadius: "9px",
+            cursor: "pointer", color: theme.text,
+            background: kitapModu ? `${theme.accent}12` : "transparent",
+            border: `1px solid ${kitapModu ? `${theme.accent}44` : theme.border}`,
+          }}>
+            <BookOpen size={16} color={theme.accent} style={{ flexShrink: 0 }} />
+            <span style={{ flex: 1, minWidth: 0 }}>
+              <span style={{ display: "block", fontSize: `${Math.round((isMobile ? 12 : 13) * barUiOlcegi)}px`, fontWeight: 600 }}>Kitap modu</span>
+              <span style={{ display: "block", fontSize: `${Math.round(11 * barUiOlcegi)}px`, color: theme.textSecondary, lineHeight: 1.35 }}>
+                Mushaf sayfa sayfa gösterilir; sayfa sola doğru çevrilir. Geniş ekranda iki sayfa yan yana.
+              </span>
+            </span>
+            <IosSwitch acik={kitapModu} theme={theme} boyut={0.82} />
+          </div>
+        </div>
+
         <div>
           <div style={ayarEtiket}>BAR KONUMU</div>
           <BarKonumSecici theme={theme} deger={barKonum} onSec={setBarKonum}
@@ -4290,6 +4383,8 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
             <AyarToggle etiket="Sûre bilgisi"       aktif={sureBilgisiGoster} onToggle={() => setSureBilgisiGoster(v => !v)} {...{theme, isMobile, barUiOlcegi}} />
             <AyarToggle etiket="Cüz bilgisi"  aktif={cuzBilgisiGoster}   onToggle={() => setCuzBilgisiGoster(v => !v)}   {...{theme, isMobile, barUiOlcegi}} />
             <AyarToggle etiket="Hizb bilgisi" aktif={hizbBilgisiGoster}  onToggle={() => setHizbBilgisiGoster(v => !v)}  {...{theme, isMobile, barUiOlcegi}} />
+            {/* Yalnız menü modunda (alttaki bilgi şeridi): bar kipinde sayfa zaten "Sayfaya Gitme" düğmesinde */}
+            {ortaBar && <AyarToggle etiket="Sayfa bilgisi" aktif={sayfaBilgisiGoster} onToggle={() => setSayfaBilgisiGoster(v => !v)} {...{theme, isMobile, barUiOlcegi}} />}
 
             <div style={{ fontSize: `${Math.round((isMobile ? 9 : 10) * barUiOlcegi)}px`, color: theme.textSecondary, opacity: .7, margin: "10px 0 6px", paddingLeft: "2px" }}>Menü Butonları</div>
             <AyarToggle etiket="Sûre Menüsü"   aktif={sureMenuGoster} onToggle={() => setSureMenuGoster(v => !v)} {...{theme, isMobile, barUiOlcegi}} />
@@ -4743,8 +4838,9 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
       ogeler={[
         mevcutSureBilgisi && sureBilgisiGoster && sadeGorunur("sureBilgisi")
           ? <><Layers size={Math.round(11 * barUiOlcegi)} />{mevcutSureBilgisi.isim}</> : null,
-        sayfaGitGoster && sadeGorunur("sayfaGit") && sayfaGosterim !== "ikon"
-          ? <><BookOpen size={Math.round(11 * barUiOlcegi)} />{sayfaGosterim === "sayfa" ? mevcutSayfa : `${mevcutSayfa} / ${toplamSayfa}`}</> : null,
+        // Menü modunda şeritteki sayfa bilgisi kendi ayarına bağlı (Ayarlar → Bilgi → Sayfa bilgisi)
+        sayfaBilgisiGoster
+          ? <><BookOpen size={Math.round(11 * barUiOlcegi)} />{sayfaGosterim === "tam" ? `${mevcutSayfa} / ${toplamSayfa}` : mevcutSayfa}</> : null,
         mevcutCuzHizb && (seritCuz || seritHizb)
           ? (seritCuz && seritHizb ? `${mevcutCuzHizb.cuz}. Cüz · ${mevcutCuzHizb.hizb}. Hizb` : seritCuz ? `${mevcutCuzHizb.cuz}. Cüz` : `${mevcutCuzHizb.hizb}. Hizb`) : null,
         sureGoster && sadeGorunur("okumaZamani")
@@ -5013,7 +5109,21 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
           kayitlar={kayitlar}
           mevcutSayfa={mevcutSayfa}
           scrollOran={scrollOranRef.current}
-          onSayfaGit={(sayfa, scrollY, kayitId) => { donusBirak("isaret", sayfa); kayitSayfaGit(sayfa, scrollY, kayitId) }}
+          onSayfaGit={(sayfa, scrollY, kayitId) => {
+            donusBirak("isaret", sayfa)
+            // KİTAP MODU: kaydırma yok → sayfayı çevir (SayfaKitabi kısa çevirme animasyonuyla
+            // getirir) ve ayracı vurgula. Kaydırmalı düzende eskisi gibi kayitSayfaGit.
+            if (kitapModu) {
+              setMevcutSayfa(sayfa); setPopup(null)
+              if (kayitId) {
+                if (odakAyracTimeoutRef.current) clearTimeout(odakAyracTimeoutRef.current)
+                setOdakAyrac(kayitId)
+                odakAyracTimeoutRef.current = setTimeout(() => { setOdakAyrac(null); odakAyracTimeoutRef.current = null }, 6000)
+              }
+              return
+            }
+            kayitSayfaGit(sayfa, scrollY, kayitId)
+          }}
           onKonumSec={() => {
             setKayitKonumModu(true)
             setKayitPaneliAcik(false)
@@ -5808,6 +5918,8 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
                yalnız hafif bir titreme olurdu. Oran ölçülerek seçildi. */
             ...(hifzAcik ? { "--hifz-bulanik": `${Math.max(4, Math.round(yaziBoyutu * 0.26))}px` } : null),
             flex: 1,
+            // KİTAP MODU: kaydırma kutusu yalnız gizlenir (başka hiçbir ölçüsü değişmez)
+            ...(kitapModu ? { display: "none" } : null),
             overflowY: "auto",
             overflowX: "hidden",
             overflowAnchor: "auto",   // DOĞAL scroll-anchoring AÇIK: üst sayfa mount olup büyüyünce
@@ -5950,7 +6062,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
               boxSizing: "border-box",
             }}
           >
-            {sayfaListesi.map((sayfa, i) => (
+            {!kitapModu && sayfaListesi.map((sayfa, i) => (
               <div
                 key={sayfa.sayfaNo}
                 ref={el => { if (el) sayfaRefs.current[sayfa.sayfaNo] = el }}
@@ -6005,6 +6117,85 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
             ))}
           </div>
         </div>
+
+        {/* ── KİTAP MODU (5 Kasım 2026) — sayfa sayfa, sola doğru ilerler ── */}
+        {kitapModu && sayfaListesi.length > 0 && (
+          <SayfaKitabi
+            className={hifzAcik ? PERDE_SINIF : undefined}
+            style={hifzAcik ? { "--hifz-bulanik": `${Math.max(4, Math.round(yaziBoyutu * 0.26))}px` } : undefined}
+            toplam={toplamSayfa || sayfaListesi.length}
+            sayfa={mevcutSayfa}
+            onSayfa={(no) => { kitapElleRef.current = Date.now(); setPopup(null); setMevcutSayfa(no) }}
+            onCift={(c) => { kitapCiftRef.current = c }}
+            yon="rtl"
+            theme={theme}
+            olcekAnahtar={`${yaziBoyutu}|${satirAraligi}|${harfAraligi}|${aktifArapcaFont.style}`}
+            ustPay={kitapUstPay}
+            altPay={kitapAltPay}
+            onOrtaDokunus={() => {
+              if (ortaBar) return   // menü modunda menüyü OrtaMenu açar (yalnız düz dokunuşta)
+              if (barKilitli || menuKapatildiRef.current) return
+              if (popup || aaAcik || temaAcik || ozelTemaPanelAcik || menuAcikRef.current) return
+              barToggle()
+            }}
+            onSayfaTikla={(no, oran) => {
+              if (!kayitKonumModu) return false
+              // Kayıt koyma: kaydırmalı düzendeki tıklamayla aynı kayıt (sayfa + sayfa içi oran)
+              setMevcutSayfa(no)
+              setKayitKonumModu(false)
+              if (kayitlar.length) { setBekleyenKayit({ sayfa: no, scrollY: oran }); return true }
+              const yeniKayit = { id: Date.now().toString(), sayfa: no, scrollY: oran, baslik: `Sayfa ${no}`, olusturma: Date.now() }
+              setKayitlar(prev => { const y = [...prev, yeniKayit]; localStorage.setItem("vukuf-kayitlar", JSON.stringify(y)); return y })
+              return true
+            }}
+            sayfaCiz={(no, { w, h, taraf }) => {
+              const sf = sayfaMap.get(no)
+              if (!sf) return null
+              const bilgi = kitapSayfaBilgi.get(no) || {}
+              return (
+                <MushafCercevesi theme={theme} w={w} h={h} sayfaNo={no} sureAdi={bilgi.sure} cuzNo={bilgi.cuz} taraf={taraf}>
+                  {(gw, gh) => (
+                    <SayfaSigdir w={gw} h={gh} minOlcek={0.5} carpan={Math.max(0.85, Math.min(1.45, yaziBoyutu / 20))} yenile={`${no}|${yaziBoyutu}|${satirAraligi}|${harfAraligi}|${aktifArapcaFont.style}`}>
+                      <MushafSayfa
+                        sayfaNo={no}
+                        elemanlar={sf}
+                        sureler={mushafData}
+                        theme={theme}
+                        arapcaFont={aktifArapcaFont.style}
+                        yaziBoyutu={yaziBoyutu}
+                        satirAraligi={satirAraligi}
+                        harfAraligi={harfAraligi}
+                        player={player}
+                        odakAyet={odakAyet}
+                        odakSure={odakSure}
+                        odakAyrac={odakAyrac}
+                        aktifAyet={player.aktifAyet}
+                        isMobile={isMobile}
+                        kitapModu
+                        ayracSol={taraf === "sol"}
+                        cuzBaslangic={sayfaCuzBaslangic[no] ?? null}
+                        hizbBaslangic={sayfaHizbBaslangic[no] ?? null}
+                        onKelimeTikla={kelimeTikla}
+                        onAyetTikla={ayetTikla}
+                        onSureTikla={(sure, e) => { if (kayitKonumModu) return; sureTikla(sure, e) }}
+                        kayitKonumModu={kayitKonumModu}
+                        sayfaKayitlari={kayitlar.filter(k => k.sayfa === no)}
+                        onKayitTikla={(kayit) => {
+                          if (window.confirm(`"${kayit.baslik}" kaydını silmek istiyor musun?`)) {
+                            const yeni = kayitlar.filter(k => k.id !== kayit.id)
+                            setKayitlar(yeni)
+                            localStorage.setItem("vukuf-kayitlar", JSON.stringify(yeni))
+                          }
+                        }}
+                        onYukseklikOlcum={NOOP_OLCUM}
+                      />
+                    </SayfaSigdir>
+                  )}
+                </MushafCercevesi>
+              )
+            }}
+          />
+        )}
 
         {/* ── KAPLAMA SCROLLBAR ──
             Kaydırma kutusunun ÜSTÜNDE, position:absolute ile duruyor; bu yüzden

@@ -1600,6 +1600,16 @@ function KitapRafi({ kitaplar: liste, rafId, duzenlemeMode, theme, sensors, kita
   )
 }
 
+/* GİZLİ ÂLİMLER (5 Kasım 2026) — kullanıcı: "Gizleme kısmında 'âlim' raflarında da gizleme
+   yapılabilmeli, içerisinde eser bulunmayanlar otomatik gizlenebilmeli."
+   Gizli âlimler büyük raflarla AYNI listede ("vukuf-gizli-raflar") tutuluyor; böylece
+   "Gizlileri göster" hepsini birlikte geri getiriyor ve yedeğe de giriyor. Anahtar rafa
+   özgü: aynı âlim bir Kısım rafında gizlenip Âlimler rafında görünür kalabilir. */
+const alimGizliAnahtar = (katId, alimId) => `alim:${katId}:${alimId}`
+const alimEserSayisi = (a) => (a.altKategoriler
+  ? a.altKategoriler.reduce((t, x) => t + (x.kitaplar || []).length, 0)
+  : (a.kitaplar || []).length)
+
 // Göz (gizle/göster) düğmesi
 function GozBtn({ gizli, onClick, theme }) {
   return (
@@ -1614,7 +1624,8 @@ function GozBtn({ gizli, onClick, theme }) {
   )
 }
 
-function SortableAlimRafi({ alim, duzenlemeMode, theme, sensors, kitapSiralama, setKitapSiralama, kitapArama, setKitapArama, dinamikMod, disArama }) {
+function SortableAlimRafi({ alim, duzenlemeMode, theme, sensors, kitapSiralama, setKitapSiralama, kitapArama, setKitapArama, dinamikMod, disArama,
+  gizlemeMod = false, gizli = false, onGizle }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: alim.id })
   const style = { transform: CSS.Transform.toString(transform), transition }
 
@@ -1686,7 +1697,7 @@ function SortableAlimRafi({ alim, duzenlemeMode, theme, sensors, kitapSiralama, 
   }
 
   return (
-    <div id={`alim-raf-${alim.id}`} ref={setNodeRef} style={{ ...style, gridColumn: gorunur ? "1 / -1" : undefined, minWidth: 0, marginBottom: "8px", background: theme.background, borderRadius: "8px", overflow: "hidden", border: `1px solid ${theme.border}`, scrollMarginTop: "80px" }}>
+    <div id={`alim-raf-${alim.id}`} ref={setNodeRef} style={{ ...style, opacity: gizli ? 0.45 : 1, gridColumn: gorunur ? "1 / -1" : undefined, minWidth: 0, marginBottom: "8px", background: theme.background, borderRadius: "8px", overflow: "hidden", border: `1px solid ${theme.border}`, scrollMarginTop: "80px" }}>
       <button
         onClick={toggleAlimRafi}
         {...surukleProps(duzenlemeMode, attributes, listeners)}
@@ -1725,6 +1736,8 @@ function SortableAlimRafi({ alim, duzenlemeMode, theme, sensors, kitapSiralama, 
           }}>
             {tumKitaplar.length}
           </span>
+
+          {gizlemeMod && onGizle && <GozBtn gizli={gizli} onClick={onGizle} theme={theme} />}
 
           {gorunur && (
             <span
@@ -1857,7 +1870,7 @@ function SortableKategori({ kategori,
   duzenlemeMode, theme, sensors, kitapSiralama, setKitapSiralama,
   acikRaflar, rafAc, alimSira, handleAlimDragEnd,
   kategoriArama, setKategoriArama, kitapArama, setKitapArama, dinamikMod,
-  gizlemeMod, gizli, onGizle, yer, onAlimSec }) {
+  gizlemeMod, gizli, onGizle, yer, onAlimSec, gizliRaflar = [], bosGizle = false }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: kategori.id })
   const style = { transform: CSS.Transform.toString(transform), transition, zIndex: isDragging ? 5 : undefined }
   const isMobile = useMediaQuery("(max-width: 768px)")
@@ -1869,11 +1882,16 @@ function SortableKategori({ kategori,
   // doğrudan eserler (10 Ekim 2026, kullanıcı: "alt başlık açılmayıp direkt eserler görünsün")
   const duzRaf = !kategori.kuran && kategori.alimler.length === 1 && GRUP_KAYITLARI.has(kategori.alimler[0].id) && !kategori.alimler[0].altKategoriler
   const siraIdleri = alimIdSirasi(kategori, alimSira[kategori.id])
+  // Gizli âlimler: elle gizlenenler + (seçenek açıksa) eseri olmayanlar. Gizleme modunda
+  // hepsi görünür (gizliler soluk); bölmedeki sırtlar ve sayaç yalnız görünenleri sayar.
+  const alimGizliMi = (a) => gizliRaflar.includes(alimGizliAnahtar(kategori.id, a.id)) || (bosGizle && alimEserSayisi(a) === 0)
+  const gorunenAlimSayisi = kategori.alimler.filter(a => !alimGizliMi(a)).length
 
   // Bölmedeki sırtlar: âlimler (kalınlık eser sayısına göre), sıralama kullanıcınınki
   const alimSirtlari = siraIdleri
     .map(id => kategori.alimler.find(a => a.id === id))
     .filter(Boolean)
+    .filter(a => !alimGizliMi(a))
     .map(a => ({
       id: a.id, ad: a.isim,
       n: a.altKategoriler ? a.altKategoriler.reduce((t, x) => t + x.kitaplar.length, 0) : (a.kitaplar || []).length,
@@ -1884,6 +1902,7 @@ function SortableKategori({ kategori,
     ...siraIdleri
       .map(id => kategori.alimler.find(a => a.id === id))
       .filter(Boolean)
+      .filter(a => !alimGizliMi(a))
       .flatMap(a => (a.altKategoriler ? a.altKategoriler.flatMap(x => x.kitaplar) : (a.kitaplar || [])))
       .map(k => ({ id: k.id, ad: k.baslik, veri: k })),
   ]
@@ -1965,7 +1984,7 @@ function SortableKategori({ kategori,
           )}
           <SayacOk theme={theme} acik={acik}>
             {/* Kur'ân ve Evrâd u Ezkâr rafında âlim yok → sayaç yazılmaz (10 Ekim 2026) */}
-            {kategori.kuran || kategori.id === "evrad-ezkar" ? null : `${kategori.alimler.length} ${kategori.id === "risale" ? "Eser Türü" : kategori.id === "alimler" ? "âlim" : "alim"}`}
+            {kategori.kuran || kategori.id === "evrad-ezkar" ? null : `${gorunenAlimSayisi} ${kategori.id === "risale" ? "Eser Türü" : kategori.id === "alimler" ? "âlim" : "alim"}`}
           </SayacOk>
         </div>
       </RafBolmesi>
@@ -2076,6 +2095,7 @@ function SortableKategori({ kategori,
                 {siraIdleri
                   .map(alimId => kategori.alimler.find(a => a.id === alimId))
                   .filter(Boolean)
+                  .filter(alim => gizlemeMod || !alimGizliMi(alim))
                   .filter(alim => {
                     const arama = (kategoriArama[kategori.id] || "").trim()
                     if (arama === "") return true
@@ -2103,6 +2123,9 @@ function SortableKategori({ kategori,
                         // Alim adının kendisi eşleşiyorsa tüm kitaplarını göster (kitap süzme yok)
                         return trLower(alim.isim).includes(trLower(arama)) ? "" : arama
                       })()}
+                      gizlemeMod={gizlemeMod}
+                      gizli={alimGizliMi(alim)}
+                      onGizle={() => onGizle(alimGizliAnahtar(kategori.id, alim.id))}
                     />
                   ))
                 }
@@ -2871,6 +2894,9 @@ export default function Kutuphane() {
     return false     // Son/Sık Okunanlar boşken zaten hiç gösterilmiyor
   }
   const bosIdler = tamSira.filter(bosMu)
+  // Eseri olmayan âlimler (görünen raflarda) — "Boş rafları gizle" bunları da gizler
+  const bosAlimSayisi = tamSira.filter(id => kategoriMap.has(id) && !bosMu(id))
+    .reduce((t, id) => t + (kategoriMap.get(id).alimler || []).filter(a => alimEserSayisi(a) === 0).length, 0)
   const gizliMi = (id) => gizliRaflar.includes(id) || (bosGizle && bosIdler.includes(id))
   const gorunenIdler = tamSira.filter(id => hepsiGoster || !gizliMi(id))
 
@@ -3232,7 +3258,7 @@ export default function Kutuphane() {
               <button
                 onClick={bosGizleDegis}
                 role="switch" aria-checked={bosGizle}
-                title="İçinde eser olmayan rafları gizle"
+                title="İçinde eser olmayan rafları ve âlimleri gizle"
                 style={{
                   display: "flex", alignItems: "center", gap: "6px", padding: "8px 12px", borderRadius: "10px",
                   background: bosGizle ? theme.accent : "transparent",
@@ -3241,7 +3267,9 @@ export default function Kutuphane() {
                 }}
               >
                 {bosGizle ? <Check size={14} /> : <PackageX size={14} />}
-                Boş rafları gizle{bosIdler.length ? ` (${bosIdler.length})` : ""}
+                Boş rafları gizle{(bosIdler.length || bosAlimSayisi)
+                  ? ` (${[bosIdler.length && `${bosIdler.length} raf`, bosAlimSayisi && `${bosAlimSayisi} âlim`].filter(Boolean).join(", ")})`
+                  : ""}
               </button>
             )}
 
@@ -3268,8 +3296,8 @@ export default function Kutuphane() {
         {gizlemeMod && (
           <div style={{ fontSize: "12px", color: theme.textSecondary, marginBottom: "14px", display: "flex", alignItems: "center", gap: "6px" }}>
             <Eye size={13} color={theme.accent} />
-            Göz simgesine dokunarak rafları gizleyebilir/gösterebilirsiniz. Gizli raflar bu modda soluk görünür.
-            {bosGizle ? " Boş raflar, içine eser eklenene kadar kendiliğinden gizli kalır." : ""}
+            Göz simgesine dokunarak rafları ve açılan rafların içindeki âlimleri gizleyebilir/gösterebilirsiniz. Gizliler bu modda soluk görünür.
+            {bosGizle ? " Eseri olmayan raflar ve âlimler kendiliğinden gizli kalır." : ""}
           </div>
         )}
 
@@ -3311,13 +3339,16 @@ export default function Kutuphane() {
                     const rafGizli = gizliRaflar.includes(kategori.id)
                     if (rafGizli && !gizliAramaDahil) return          // gizli bölüm aramada gösterilmez
                     kategori.alimler.forEach(alim => {
+                      const alimGizli = gizliRaflar.includes(alimGizliAnahtar(kategori.id, alim.id))
+                      if (alimGizli && !gizliAramaDahil) return
+                      const gizliSonuc = rafGizli || alimGizli
                       if (trLower(alim.isim).includes(aramaKucuk)) {
-                        sonuclar.push({ tip: "alim", isim: alim.isim, kategori: kategori.baslik, alimId: alim.id, kategoriId: kategori.id, gizli: rafGizli })
+                        sonuclar.push({ tip: "alim", isim: alim.isim, kategori: kategori.baslik, alimId: alim.id, kategoriId: kategori.id, gizli: gizliSonuc })
                       }
                       const kitaplarL = alim.altKategoriler ? alim.altKategoriler.flatMap(a => a.kitaplar) : alim.kitaplar
                       kitaplarL.forEach(kitap => {
                         if (trLower(kitap.baslik).includes(aramaKucuk)) {
-                          sonuclar.push({ tip: "kitap", baslik: kitap.baslik, yazar: alim.isim, kategori: kategori.baslik, kitapId: kitap.id, dosya: kitap.dosya, gizli: rafGizli })
+                          sonuclar.push({ tip: "kitap", baslik: kitap.baslik, yazar: alim.isim, kategori: kategori.baslik, kitapId: kitap.id, dosya: kitap.dosya, gizli: gizliSonuc })
                         }
                       })
                     })
@@ -3445,6 +3476,8 @@ export default function Kutuphane() {
                   onGizle={gizleToggle}
                   yer={yer}
                   onAlimSec={alimSirtSec}
+                  gizliRaflar={gizliRaflar}
+                  bosGizle={bosGizle}
                 />
               )
             }

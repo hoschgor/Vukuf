@@ -30,6 +30,7 @@ import { CSS } from "@dnd-kit/utilities"
 import {
   Pencil, Check, GripVertical, GripHorizontal, Search, X, BookOpen, Sparkles,
   ChevronLeft, ChevronRight, ChevronDown, Eye, EyeOff, Plus, Trash2, Clock, Star, FolderPlus, RotateCcw, ImagePlus,
+  ChevronsUpDown, ChevronsDownUp, PackageX,
 } from "lucide-react"
 // Özel raf resmi (19 Ekim 2026): hazır raf resimleri + cihazdan yüklenen resim
 import RafResimSecici from "../components/RafResimSecici"
@@ -101,6 +102,11 @@ const kitapYolu = (k) => (k && (k.kuran || k.id === "kuran")) ? "/kuran" : `/kit
 // Sayfa ilk yüklendikten sonra true olur → coverflow auto-scroll yalnızca
 // kullanıcı bir rafı SONRADAN açınca çalışsın (yüklemede sayfa zıplamasın)
 let sayfaYuklendi = false
+/* TOPLU AÇILIŞ (5 Kasım 2026) — "Tüm rafları aç" düğmesiyle raflar birlikte açılınca
+   her dinamik raf kendini ekranın ortasına çekmeye kalkıyordu (sayfa sıçrar). Bu süre
+   içinde açılan rafların kendiliğinden kaydırması yapılmıyor. */
+let topluAcilisZamani = 0
+const topluAcilisMi = () => Date.now() - topluAcilisZamani < 1500
 
 // Kapak görsellerini bir kez ön belleğe al (coverflow'da tekrar tekrar
 // yüklenip animasyonu takmasın). Image nesneleri referansta tutulur → GC etmez.
@@ -1249,7 +1255,7 @@ function DinamikRaf({ kitaplar: liste, rafId, theme, alimId, kitapSiralama }) {
   useEffect(() => { _dinamikAktif[rafId] = aktif }, [rafId, aktif])
 
   useEffect(() => {
-    if (!kitapSayisi || !sayfaYuklendi) return
+    if (!kitapSayisi || !sayfaYuklendi || topluAcilisMi()) return
     const t = setTimeout(() => {
       try { konteynerRef.current?.scrollIntoView({ block: "center", behavior: "smooth" }) } catch {}
     }, 90)
@@ -1467,7 +1473,7 @@ function DinamikRaf({ kitaplar: liste, rafId, theme, alimId, kitapSiralama }) {
 // Düzenleme modunda kullanılmaz (sürükle-bırak sarmalı düzende çalışıyor).
 function KitapIzgarasi({ sayi, padding, children }) {
   const ref = useRef(null)
-  const [satir, setSatir] = useState(0)          // 0 = sarmalı (eski düzen), 2 | 3 = yatay
+  const [satir, setSatir] = useState(0)          // 0 = sarmalı (eski düzen), 2 = yatay
   const BOSLUK = 12
   useLayoutEffect(() => {
     const el = ref.current
@@ -1479,7 +1485,8 @@ function KitapIzgarasi({ sayi, padding, children }) {
       const ic = el.clientWidth - parseFloat(cs.paddingLeft || 0) - parseFloat(cs.paddingRight || 0)
       const kart = ilk.offsetWidth || 80
       const sigan = Math.max(1, Math.floor((ic + BOSLUK) / (kart + BOSLUK)))
-      const yeni = sayi <= sigan * 2 ? 0 : (sayi > sigan * 3 ? 3 : 2)
+      // 5 Kasım 2026 — kullanıcı: "3'lü sıra yerine 2'li sıra yapalım" → en çok 2 satır
+      const yeni = sayi <= sigan * 2 ? 0 : 2
       setSatir(o => (o === yeni ? o : yeni))
     }
     olc()
@@ -1848,14 +1855,14 @@ function SortableAlimRafi({ alim, duzenlemeMode, theme, sensors, kitapSiralama, 
 
 function SortableKategori({ kategori,
   duzenlemeMode, theme, sensors, kitapSiralama, setKitapSiralama,
-  acikKategori, setAcikKategori, alimSira, handleAlimDragEnd,
+  acikRaflar, rafAc, alimSira, handleAlimDragEnd,
   kategoriArama, setKategoriArama, kitapArama, setKitapArama, dinamikMod,
   gizlemeMod, gizli, onGizle, yer, onAlimSec }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: kategori.id })
   const style = { transform: CSS.Transform.toString(transform), transition, zIndex: isDragging ? 5 : undefined }
   const isMobile = useMediaQuery("(max-width: 768px)")
   const kuranRef = useRef(null)
-  const acik = acikKategori === kategori.id
+  const acik = acikRaflar.includes(kategori.id)
 
   const aramaAcik = kategoriArama[kategori.id] !== undefined
   // Tek kaydı kişi olmayan bir grup olan raf (Evrâd u Ezkâr): âlim listesi yerine
@@ -1885,14 +1892,14 @@ function SortableKategori({ kategori,
   const kapak = kategori.kuran?.gorsel ? { tip: "gorsel", src: kategori.kuran.gorsel } : { tip: "semse", tohum: kategori.id }
 
   useEffect(() => {
-    if (dinamikMod && kategori.kuran && acikKategori === kategori.id && sayfaYuklendi) {
+    if (dinamikMod && kategori.kuran && acik && sayfaYuklendi && !topluAcilisMi()) {
       const t = setTimeout(() => {
         try { kuranRef.current?.scrollIntoView({ block: "center", behavior: "smooth" }) } catch {}
       }, 100)
       return () => clearTimeout(t)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [acikKategori, dinamikMod])
+  }, [acik, dinamikMod])
 
   const handleAramaClick = (e) => {
     e.stopPropagation()
@@ -1901,10 +1908,7 @@ function SortableKategori({ kategori,
       delete newState[kategori.id]
       setKategoriArama(newState)
     } else {
-      if (acikKategori !== kategori.id) {
-        setAcikKategori(kategori.id)
-        localStorage.setItem("vukuf-acik-kategori", JSON.stringify(kategori.id))
-      }
+      if (!acik) rafAc(kategori.id, true)
       setKategoriArama(prev => ({ ...prev, [kategori.id]: "" }))
     }
   }
@@ -1914,11 +1918,7 @@ function SortableKategori({ kategori,
   // Kur'ân kapağı arka plan görseli — yüksek kaliteli küçültülmüş kopya (bkz. useNetKapak)
   const kuranKapakSrc = useNetKapak(kategori.kuran?.gorsel, kuranW, kuranH, "cover")
 
-  const toggle = () => {
-    const yeni = acik ? null : kategori.id
-    setAcikKategori(yeni)
-    localStorage.setItem("vukuf-acik-kategori", JSON.stringify(yeni))
-  }
+  const toggle = () => rafAc(kategori.id, !acik)
 
   return (
     <>
@@ -2450,21 +2450,22 @@ function OzelKategori({ raf, havuz, theme, dinamikMod, duzenlemeMode, gizlemeMod
 // açıkken bunlar da açık kalabiliyordu. Kısım rafları tek bir `acikKategori`
 // üzerinden çalıştığı için "aynı anda tek raf" kuralı onlarda zaten vardı;
 // Son/Sık de aynı duruma bağlanınca üç sorun da kendiliğinden bitiyor:
+// (5 Kasım 2026: kullanıcı "Birden fazla raf aynı anda açılabilsin" dedi → ortak durum
+// artık bir LİSTE (`acikRaflar`); başlangıçta kapalı kalma ve kendiliğinden kaydırmama
+// korunuyor, ama birden çok raf birlikte açık olabiliyor.)
 // başlangıçta kapalı (kayıtlı değer yoksa null), ikisi aynı anda açılamaz,
 // bir Kısım açıkken de açılamaz. Eski `vukuf-otom-acik-*` anahtarları artık
 // okunmuyor (kullanıcıda `true` kalmış olabilir, onu da böylece yok sayıyoruz).
-function OtomatikKategori({ rafId, baslik, Ikon, kitaplar: liste, theme, dinamikMod, duzenlemeMode, gizlemeMod, gizli, onGizle, acikKategori, setAcikKategori, yer }) {
+function OtomatikKategori({ rafId, baslik, Ikon, kitaplar: liste, theme, dinamikMod, duzenlemeMode, gizlemeMod, gizli, onGizle, acikRaflar, rafAc, yer }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: rafId })
   const sstyle = { transform: CSS.Transform.toString(transform), transition, zIndex: isDragging ? 5 : undefined }
   const isMobile = useMediaQuery("(max-width: 768px)")
   const navigate = useNavigate()
-  const acik = acikKategori === rafId
+  const acik = acikRaflar.includes(rafId)
   const [aramaAcik, setAramaAcik] = useState(false)
   const [arama, setArama] = useState("")
   const toggle = () => {
-    const yeni = acik ? null : rafId
-    setAcikKategori(yeni)
-    try { localStorage.setItem("vukuf-acik-kategori", JSON.stringify(yeni)) } catch {}
+    rafAc(rafId, !acik)
     if (acik) { setAramaAcik(false); setArama("") }   // kapanınca arama da sıfırlansın
   }
   const q = aramaAcik && arama.trim() ? normHarf(arama) : ""
@@ -2655,10 +2656,29 @@ export default function Kutuphane() {
   const [modPenceresi, setModPenceresi] = useState(null)   // null | { ilk, adim }
   useEffect(() => { if (!kMod) setModPenceresi({ ilk: true, adim: "mod" }) }, [kMod])
   const gKategoriler = useMemo(() => kategorileriSuz(kategoriler, kMod || "tum", kSecim), [kMod, kSecim])
-  const [acikKategori, setAcikKategori] = useState(() => {
-    const kayitli = localStorage.getItem("vukuf-acik-kategori")
-    return kayitli ? JSON.parse(kayitli) : null
+  /* AÇIK RAFLAR (5 Kasım 2026) — kullanıcı: "Birden fazla raf aynı anda açılabilsin, tüm
+     rafları tek seferde aynı anda açma butonu göz yormayan uygun bir yerde bulunabilsin."
+     Eskiden tek bir `acikKategori` vardı (aynı anda tek raf). Artık açık rafların listesi
+     tutuluyor ("vukuf-acik-raflar"); eski tek kayıt bir kez listeye taşınıyor.
+     Özel raflar kendi açıklıklarını ayrıca tutuyor (ozelAcik). */
+  const [acikRaflar, setAcikRaflar] = useState(() => {
+    try {
+      const l = JSON.parse(localStorage.getItem("vukuf-acik-raflar") || "null")
+      if (Array.isArray(l)) return l.filter(x => typeof x === "string")
+      const eski = JSON.parse(localStorage.getItem("vukuf-acik-kategori") || "null")
+      return typeof eski === "string" ? [eski] : []
+    } catch { return [] }
   })
+  const acikRaflarKaydet = (l) => { try { localStorage.setItem("vukuf-acik-raflar", JSON.stringify(l)) } catch {} }
+  function rafAc(id, ac) {
+    setAcikRaflar(prev => {
+      const var_ = prev.includes(id)
+      if (ac === var_) return prev
+      const yeni = ac ? [...prev, id] : prev.filter(x => x !== id)
+      acikRaflarKaydet(yeni)
+      return yeni
+    })
+  }
   const [duzenlemeMode, setDuzenlemeMode] = useState(false)
   const [dinamikMod, setDinamikMod] = useState(() => localStorage.getItem("vukuf-dinamik-mod") === "1")
   const [gizlemeMod, setGizlemeMod] = useState(false)
@@ -2712,10 +2732,23 @@ export default function Kutuphane() {
     if (id in ozelAcik) return ozelAcik[id]
     try { const v = localStorage.getItem(`vukuf-ozel-acik-${id}`); return v ? JSON.parse(v) : true } catch { return true }
   }
-  function ozelToggle(id) {
-    const y = !ozelAcikMi(id)
+  function ozelAyarla(id, y) {
     setOzelAcik(prev => ({ ...prev, [id]: y }))
     try { localStorage.setItem(`vukuf-ozel-acik-${id}`, JSON.stringify(y)) } catch {}
+  }
+  function ozelToggle(id) { ozelAyarla(id, !ozelAcikMi(id)) }
+
+  /* BOŞ RAFLARI GİZLE (5 Kasım 2026) — kullanıcı: "Gizleme kısmında da eser olmayan rafları
+     gizleme seçeneği uygun yerde bulunsun." Bir seçenek (kalıcı): açıkken içinde eser
+     olmayan raflar kendiliğinden gizlenir, sonradan eser eklenen raf kendiliğinden
+     görünür. Gizleme modunda (Düzenle → göz) bu raflar da öbür gizliler gibi soluk görünür. */
+  const [bosGizle, setBosGizle] = useState(() => { try { return localStorage.getItem("vukuf-bos-raf-gizle") === "1" } catch { return false } })
+  function bosGizleDegis() {
+    setBosGizle(v => {
+      const y = !v
+      try { localStorage.setItem("vukuf-bos-raf-gizle", y ? "1" : "0") } catch {}
+      return y
+    })
   }
 
   // Dolabın sütun sayısı: ızgara eninden (telefonda 1, geniş ekranda ekrana göre)
@@ -2828,11 +2861,36 @@ export default function Kutuphane() {
     ...varsayilanUst.filter(id => mevcutIdler.has(id) && !kayitliSira.includes(id)),
   ]
   const hepsiGoster = duzenlemeMode && gizlemeMod
-  const gorunenIdler = tamSira.filter(id => hepsiGoster || !gizliRaflar.includes(id))
+  // Rafın eser sayısı (Kur'ân rafında mushaf da sayılır); boş raf gizleme için
+  const katEserSayisi = (k) => (k.kuran ? 1 : 0) + (k.alimler || []).reduce((t, a) => t + (a.altKategoriler
+    ? a.altKategoriler.reduce((s, x) => s + (x.kitaplar || []).length, 0)
+    : (a.kitaplar || []).length), 0)
+  const bosMu = (id) => {
+    if (kategoriMap.has(id)) return katEserSayisi(kategoriMap.get(id)) === 0
+    if (ozelMap.has(id)) return !(ozelMap.get(id).altRaflar || []).some(a => (a.kitapIdler || []).some(k => havuz.has(k)))
+    return false     // Son/Sık Okunanlar boşken zaten hiç gösterilmiyor
+  }
+  const bosIdler = tamSira.filter(bosMu)
+  const gizliMi = (id) => gizliRaflar.includes(id) || (bosGizle && bosIdler.includes(id))
+  const gorunenIdler = tamSira.filter(id => hepsiGoster || !gizliMi(id))
+
+  // TÜMÜNÜ AÇ / KAPAT — görünen bütün raflar (özel raflar dahil)
+  const rafAcikMi = (id) => (ozelMap.has(id) ? ozelAcikMi(id) : acikRaflar.includes(id))
+  const hepsiAcik = gorunenIdler.length > 0 && gorunenIdler.every(rafAcikMi)
+  function tumunuAcKapat() {
+    const ac = !hepsiAcik
+    topluAcilisZamani = ac ? Date.now() : 0
+    gorunenIdler.filter(id => ozelMap.has(id)).forEach(id => ozelAyarla(id, ac))
+    const digerleri = gorunenIdler.filter(id => !ozelMap.has(id))
+    setAcikRaflar(prev => {
+      const yeni = ac ? [...new Set([...prev, ...digerleri])] : prev.filter(id => !digerleri.includes(id))
+      acikRaflarKaydet(yeni)
+      return yeni
+    })
+  }
 
   // Yerleşim: bölme i → order 2i; açık bölmenin çekmecesi → satırının son bölmesinden hemen sonra.
   // Aynı satırda açık bölmesi olan satırın bütün bölmeleri yüksek (kitaplarıyla) görünür.
-  const rafAcikMi = (id) => (ozelMap.has(id) ? ozelAcikMi(id) : acikKategori === id)
   const acikSatirlar = new Set()
   gorunenIdler.forEach((id, i) => { if (rafAcikMi(id)) acikSatirlar.add(Math.floor(i / sutunSayisi)) })
   // Son satırı tamamlayan boş bölmeler de yuva sayılır (çekmece onların arkasına düşer)
@@ -2897,10 +2955,7 @@ export default function Kutuphane() {
 
   // Bölmedeki âlim sırtı: âlimin rafını aç ve ona kaydır (aramadaki âlim seçimiyle aynı)
   function alimSirtSec(kategoriId, alimId) {
-    if (acikKategori !== kategoriId) {
-      setAcikKategori(kategoriId)
-      try { localStorage.setItem("vukuf-acik-kategori", JSON.stringify(kategoriId)) } catch {}
-    }
+    rafAc(kategoriId, true)
     window.dispatchEvent(new CustomEvent("vukuf-alim-ac", { detail: alimId }))
     alimeOdakla(alimId)
   }
@@ -3022,12 +3077,12 @@ export default function Kutuphane() {
   // ── Sıfırla (3 onay)
   function sifirlaBas() {
     if (sifirlaSayac < 2) { setSifirlaSayac(s => s + 1); return }
-    ;["vukuf-ust-sira", "vukuf-kategori-sira", "vukuf-alim-sira", "vukuf-kitap-sira", "vukuf-acik-kategori"].forEach(k => { try { localStorage.removeItem(k) } catch {} })
+    ;["vukuf-ust-sira", "vukuf-kategori-sira", "vukuf-alim-sira", "vukuf-kitap-sira", "vukuf-acik-kategori", "vukuf-acik-raflar"].forEach(k => { try { localStorage.removeItem(k) } catch {} })
     gizliRaflarYaz([]); ozelRaflarYaz([]); okumaKayitSil()
     setUstSira([...kategoriler.map(k => k.id), "alimler", "son-okunanlar", "sik-okunanlar"])
     setAlimSira(Object.fromEntries(kategoriler.map(k => [k.id, k.alimler.map(a => a.id)])))
     setKitapSiralama({})
-    setAcikKategori(null)
+    setAcikRaflar([])
     setGizliRaflar([]); setOzelRaflar([]); setIstatistik({}); setOzelAcik({})
     setSifirlaSayac(0)
   }
@@ -3106,6 +3161,15 @@ export default function Kutuphane() {
             <button onClick={handleGenelAramaClick} style={btnStil(genelAramaAcik)}>
               <Search size={15} />
             </button>
+            {/* Tüm rafları aç / kapat — arama düğmesinin yanında, sade simge */}
+            {gorunenIdler.length > 1 && (
+              <button onClick={tumunuAcKapat}
+                title={hepsiAcik ? "Tüm rafları kapat" : "Tüm rafları aç"}
+                aria-label={hepsiAcik ? "Tüm rafları kapat" : "Tüm rafları aç"}
+                style={{ ...btnStil(false), background: "transparent", color: theme.textSecondary }}>
+                {hepsiAcik ? <ChevronsDownUp size={15} /> : <ChevronsUpDown size={15} />}
+              </button>
+            )}
 
             <button onClick={duzenleToggle} style={{
               display: "flex", alignItems: "center", gap: "6px", padding: "8px 12px", borderRadius: "8px",
@@ -3163,6 +3227,24 @@ export default function Kutuphane() {
               </button>
             )}
 
+            {/* Boş rafları gizle — yalnızca gizleme modunda; kalıcı seçenek */}
+            {gizlemeMod && (
+              <button
+                onClick={bosGizleDegis}
+                role="switch" aria-checked={bosGizle}
+                title="İçinde eser olmayan rafları gizle"
+                style={{
+                  display: "flex", alignItems: "center", gap: "6px", padding: "8px 12px", borderRadius: "10px",
+                  background: bosGizle ? theme.accent : "transparent",
+                  color: bosGizle ? "#fff" : theme.accent,
+                  border: `1px solid ${theme.accent}`, fontSize: "13px", cursor: "pointer",
+                }}
+              >
+                {bosGizle ? <Check size={14} /> : <PackageX size={14} />}
+                Boş rafları gizle{bosIdler.length ? ` (${bosIdler.length})` : ""}
+              </button>
+            )}
+
             <button
               onClick={sifirlaBas}
               style={{
@@ -3187,6 +3269,7 @@ export default function Kutuphane() {
           <div style={{ fontSize: "12px", color: theme.textSecondary, marginBottom: "14px", display: "flex", alignItems: "center", gap: "6px" }}>
             <Eye size={13} color={theme.accent} />
             Göz simgesine dokunarak rafları gizleyebilir/gösterebilirsiniz. Gizli raflar bu modda soluk görünür.
+            {bosGizle ? " Boş raflar, içine eser eklenene kadar kendiliğinden gizli kalır." : ""}
           </div>
         )}
 
@@ -3262,7 +3345,7 @@ export default function Kutuphane() {
                         <div
                           onClick={() => {
                             if (s.gizli) { setGizliUyari(true); return }
-                            setGenelArama(""); setGenelAramaAcik(false); setAcikKategori(s.kategoriId); alimeOdakla(s.alimId)
+                            setGenelArama(""); setGenelAramaAcik(false); rafAc(s.kategoriId, true); alimeOdakla(s.alimId)
                           }}
                           style={{ display: "flex", alignItems: "center", gap: "12px", padding: "12px 16px", color: s.gizli ? theme.textSecondary : theme.text, borderBottom: `1px solid ${theme.border}`, cursor: "pointer", transition: "background 0.15s", opacity: s.gizli ? 0.7 : 1 }}
                           onMouseEnter={(e) => e.currentTarget.style.background = `${theme.accent}10`}
@@ -3335,7 +3418,7 @@ export default function Kutuphane() {
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleUstDragEnd}>
         <SortableContext items={gorunenIdler} strategy={rectSortingStrategy}>
           {gorunenIdler.map((id, i) => {
-            const gizli = gizliRaflar.includes(id)
+            const gizli = gizliMi(id)
             const yer = yerlesim(i)
             if (kategoriMap.has(id)) {
               const kategori = kategoriMap.get(id)
@@ -3350,8 +3433,8 @@ export default function Kutuphane() {
                   setKategoriArama={setKategoriArama}
                   kitapSiralama={kitapSiralama}
                   setKitapSiralama={setKitapSiralama}
-                  acikKategori={acikKategori}
-                  setAcikKategori={setAcikKategori}
+                  acikRaflar={acikRaflar}
+                  rafAc={rafAc}
                   alimSira={alimSira}
                   handleAlimDragEnd={handleAlimDragEnd}
                   kitapArama={kitapArama}
@@ -3399,7 +3482,7 @@ export default function Kutuphane() {
                   key={id} rafId="son-okunanlar" baslik="Son Okunanlar" Ikon={Clock} kitaplar={sonListe}
                   theme={theme} dinamikMod={dinamikMod} duzenlemeMode={duzenlemeMode}
                   gizlemeMod={gizlemeMod} gizli={gizli} onGizle={gizleToggle}
-                  acikKategori={acikKategori} setAcikKategori={setAcikKategori}
+                  acikRaflar={acikRaflar} rafAc={rafAc}
                   yer={yer}
                 />
               )
@@ -3410,7 +3493,7 @@ export default function Kutuphane() {
                   key={id} rafId="sik-okunanlar" baslik="Sık Okunanlar" Ikon={Star} kitaplar={sikListe}
                   theme={theme} dinamikMod={dinamikMod} duzenlemeMode={duzenlemeMode}
                   gizlemeMod={gizlemeMod} gizli={gizli} onGizle={gizleToggle}
-                  acikKategori={acikKategori} setAcikKategori={setAcikKategori}
+                  acikRaflar={acikRaflar} rafAc={rafAc}
                   yer={yer}
                 />
               )

@@ -4727,7 +4727,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
   const OrtaMenu = ortaBar && (
     <OrtaMenuCercevesi menu={ortaMenu} theme={theme} olcek={barUiOlcegi} etiket="Mushaf menüsü">
       {barEtiketle(Bar, new Map(Object.entries({
-        geri: "Geri", sureMenu: "Menü", kayit: "Kayıt", sayfaGit: "Sayfa", tekrar: "Tekrar", bilgi: "İşaretler",
+        geri: "Geri", sureMenu: "Fihrist", kayit: "Kayıt", sayfaGit: "Sayfa", tekrar: "Tekrar", bilgi: "İşaretler",
         gorsel: "Görsel", paylas: "Paylaş", hifz: "Hıfz", yaziTipi: "Yazı", otoOynat: "Kaydır",
         sadeMod: "Sade", tema: "Tema", ayarlar: "Ayarlar",
       }).map(([k, ad]) => [barOge(k).order, ad])), { theme, olcek: barOlcegi })}

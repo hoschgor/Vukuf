@@ -60,8 +60,9 @@ const KONULAR = [
       "Her raf bir ilim dalını temsil eder. Rafa dokunulduğunda altında bir çekmece açılır ve o dalın âlimleri listelenir; âlimin adına dokunulunca eserleri görünür, bir esere dokunulduğunda okuma ekranı açılır.",
       "Rafın içindeki dikey kitaplar raftaki eserleri, yatay kitaplar ise âlimleri temsil eder. Bir dikey kitaba dokunarak doğrudan o esere, bir yatay cilde dokunarak da o âlimin bölümüne geçilebilir.",
       "Âlimler rafında bütün âlimler alfabe sırasıyla bir arada bulunur. Bir âlimin farklı raflardaki eserleri burada birlikte görülebilir; eserler yine aynı şekilde açılır.",
+      "Birden fazla raf aynı anda açık kalabilir. Kitaplık başlığının yanındaki, arama düğmesinin hemen sağındaki ok simgesiyle bütün raflar tek seferde açılıp kapatılabilir. Kalabalık bir rafta eserler iki sıra hâlinde yana doğru dizilir; raf yana kaydırılarak gezilebilir.",
     ],
-    anahtar: "raf çekmece alim âlim âlimler eser kitap aç kategori kısım alfabe",
+    anahtar: "raf çekmece alim âlim âlimler eser kitap aç kategori kısım alfabe tümünü aç kapat iki sıra",
   },
   {
     bolum: "kitaplik", ikon: Search, baslik: "Kitaplıkta arama",
@@ -102,8 +103,9 @@ const KONULAR = [
     metin: [
       "Göz simgesi gizleme modunu açar; her rafın levhasında beliren göze dokunularak raf gizlenebilir ya da geri getirilebilir. Gizli raflar bu modda soluk görünür.",
       "Hepsini birden geri getirmek için \"Gizlileri göster\" düğmesi kullanılabilir.",
+      "Aynı yerdeki \"Boş rafları gizle\" seçeneği açıldığında içinde eser olmayan raflar kendiliğinden gizlenir; bir rafa sonradan eser eklenirse raf yeniden görünür. Seçenek tekrar dokunularak kapatılabilir.",
     ],
-    anahtar: "sakla göster gizli raf",
+    anahtar: "sakla göster gizli raf boş eser yok",
   },
   {
     bolum: "kitaplik", ikon: Library, baslik: "Kitaplık modu",

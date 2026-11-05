@@ -4248,9 +4248,9 @@ const Bar = (
 // ════════════════════════════════════════════════════════════════
 
 // MENÜ GİBİ BAR — perde + tezhipli, dallı çerçeve (components/OrtaMenu.jsx). Bar içinde.
-// Menüde düğmelerin altında kısa adlar
+// Menüde düğmelerin altında kısa adlar (5 Kasım 2026: içindekiler düğmesi "Menü" → "Fihrist")
 const BAR_KISA_ADLAR = {
-  geri: "Geri", menu: "Menü", sayfa: "Sayfa", lugat: "Lügat", lugatAra: "Sözlük", yazi: "Yazı",
+  geri: "Geri", menu: "Fihrist", sayfa: "Sayfa", lugat: "Lügat", lugatAra: "Sözlük", yazi: "Yazı",
   vurgu: "Vurgu", kayit: "Kayıtlar", arama: "Ara", gorsel: "Görsel", sesli: "Dinle", paylas: "Paylaş",
   oto: "Kaydır", sade: "Sade", tema: "Tema", ayarlar: "Ayarlar",
 }

@@ -42,7 +42,7 @@ export default function OdakKonumAyari({ acik, kapat, theme }) {
   const EK = Math.round(-KONUM_SINIR[0] * Y) + 6   // telefonun üstünde eksi değerler için pay
   const satirlar = Array.from({ length: 16 }, (_, i) => i)
   return createPortal(
-    <div onClick={kapat} style={{ position: "fixed", inset: 0, zIndex: 400, background: "rgba(0,0,0,0.32)", display: "flex", alignItems: "center", justifyContent: "center", padding: "16px" }}>
+    <div onClick={kapat} data-orta-engel="" style={{ position: "fixed", inset: 0, zIndex: 400, background: "rgba(0,0,0,0.32)", display: "flex", alignItems: "center", justifyContent: "center", padding: "16px" }}>
       <div role="dialog" aria-modal="true" aria-label="Âyetin karşılanacağı yer" onClick={e => e.stopPropagation()}
         style={{ width: "min(360px, 100%)", background: theme.surface, color: theme.text, borderRadius: "18px", boxShadow: "0 18px 50px rgba(0,0,0,0.3)", padding: "14px 16px 16px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>

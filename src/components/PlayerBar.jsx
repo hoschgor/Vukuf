@@ -282,7 +282,7 @@ export default function PlayerBar({
   }
 
   return (
-    <div ref={rootRef} className={gorunum.zemin < 1 ? "vk-pb-saydam" : undefined} onPointerDownCapture={() => setDokunus(n => n + 1)} style={{
+    <div ref={rootRef} data-orta-disari="" className={gorunum.zemin < 1 ? "vk-pb-saydam" : undefined} onPointerDownCapture={() => setDokunus(n => n + 1)} style={{
       position: "fixed",
       left: 0,
       right: 0,
@@ -341,6 +341,7 @@ export default function PlayerBar({
       {ayarAcik && (
         <div
           ref={baloncukRef}
+          data-orta-engel=""
           onClick={e => e.stopPropagation()}
           style={{
             position: "absolute",

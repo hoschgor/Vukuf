@@ -256,7 +256,7 @@ const KONULAR = [
       "Bütün sayfalar basılı nüsha gibi aynı yazı boyuyla gösterilir; okuma sırasında, sayfa çevrilirken ya da kârî okurken yazı boyu değişmez. Daha dolu bir sayfa sığmazsa yazı küçülmez, sayfanın içi kaydırılır.",
       "Kayıtlar sayfada dokunulan yere konur; iki sayfa yan yanayken sol sayfanın ayracı sol kenarda, aynalı görünür. Bir kayda, fihristten bir yere ya da dönüş noktasına gidildiğinde sayfa kısa bir çevirmeyle açılır.",
       "İki sayfa yan yanayken bardaki ve alttaki bilgi şeridindeki sayfa bilgisi iki sayfayı birlikte gösterir (ör. 13-14); tek sayfada tek numara yazar.",
-      "Sûre menüsü, sayfaya gitme ve kayıtlar bu modda da çalışır. Okuma sürerken okunan âyet sonraki sayfaya geçince sayfa kendiliğinden çevrilir; elle sayfa çevrildiyse bir süre beklenir. Kitap modu kapatılınca kaydırmalı okumaya aynı sayfadan devam edilir.",
+      "Sûre menüsü, sayfaya gitme ve kayıtlar bu modda da çalışır. Okuma sürerken okunan âyet sonraki sayfaya geçince sayfa kendiliğinden çevrilir; elle sayfa çevrildiyse bir süre beklenir. Sürekli odak (gözlük) açıkken, içi kaydırılan bir sayfada okunan âyet aşağıda kalırsa tamamı görünecek kadar kaydırılır; ekrana sığmayan uzun âyetin başı üste getirilir. Kitap modu kapatılınca kaydırmalı okumaya aynı sayfadan devam edilir.",
     ],
     anahtar: "kitap modu sayfa sayfa çevir mushaf çerçeve süs iki sayfa yan yana tablet",
   },

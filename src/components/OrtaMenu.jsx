@@ -103,7 +103,7 @@ export const ORTA_OLCEK = 1.12
 const PERDE = 0.34
 
 /* Çift dokunmanın SAYILMADIĞI yerler (düğmeler, alanlar, paneller, menünün kendisi) */
-const DISARI = "button, a, input, textarea, select, label, [role=dialog], [role=button], .okuma-panel, .vukuf-panel, .okuma-bar, .mushaf-bar"
+const DISARI = "button, a, input, textarea, select, label, [role=dialog], [role=button], .okuma-panel, .vukuf-panel, .okuma-bar, .mushaf-bar, .vukuf-hap, [data-orta-disari]"
   // tek dokunmada: kendi penceresini açan kelimeler ve işaretler de sayılmaz
   + ", .lugat-kelime, [data-kelime], [data-ayet], [data-sure], [data-sure-baslik], sup"
 
@@ -275,8 +275,17 @@ export function useOrtaMenu({ aktif, engelli, haric, secimKapsami = null, metinA
   useEffect(() => {
     if (!aktif) return
     let bas = null, sonDokunma = -1e9, sonKaydirma = -1e9
+    // Dokunuş başladığında açık bir [data-orta-engel] penceresi var mıydı? (Dışarı dokunuş
+    // pencereyi pointerdown'da kapatıyor; dokunuş bittiğinde pencere çoktan gitmiş olur.)
+    let engelAni = -1e9
+    const engelBak = (e) => { try { if (document.querySelector("[data-orta-engel]")) engelAni = e.timeStamp } catch { /* yoksay */ } }
     const sayilmaz = (el) => {
       if (acikRef.current) return true
+      /* AÇIK KÜÇÜK PENCERE (5 Kasım 2026 — kullanıcı: "Playerbar ayarları açıkken bir şey
+         seçmek istediğimde menü açılabiliyor"). [data-orta-engel] taşıyan bir pencere açıkken
+         (oynatıcı ayar baloncuğu, karşılama yeri penceresi…) hiçbir dokunuş menüyü açmaz:
+         içeride seçim yapılıyordur ya da dışarı dokunuş o pencereyi kapatıyordur. */
+      try { if (document.querySelector("[data-orta-engel]")) return true } catch { /* yoksay */ }
       try { if (cb.current.engelli?.()) return true } catch { /* yoksay */ }
       try { if (el && cb.current.haric?.(el)) return true } catch { /* yoksay */ }
       return !!el?.closest?.(DISARI)
@@ -298,6 +307,7 @@ export function useOrtaMenu({ aktif, engelli, haric, secimKapsami = null, metinA
       const t = e.changedTouches[0], b = bas
       bas = null
       if (!b || !t || b.akiyordu) return
+      if (e.timeStamp - engelAni < 1500) return
       if (Math.abs(t.clientX - b.x) > 10 || Math.abs(t.clientY - b.y) > 10 || e.timeStamp - b.t > 350) return
       if (sayilmaz(e.target) || (b.nokta && sayilmaz(b.nokta))) return
       // KİTAP MODU: kenar dokunuşu sayfa çevirir, parmakla çevirme sırasında/hemen sonrası sayılmaz
@@ -309,6 +319,7 @@ export function useOrtaMenu({ aktif, engelli, haric, secimKapsami = null, metinA
     const tikla = (e) => {
       if (e.timeStamp - sonDokunma < 800) return   // dokunmanın ürettiği tıklama zaten sayıldı
       if (e.button !== 0) return
+      if (e.timeStamp - engelAni < 1500) return
       try { const sel = window.getSelection(); if (sel && !sel.isCollapsed) return } catch { /* yoksay */ }
       let nokta = null
       try { nokta = document.elementFromPoint(e.clientX, e.clientY) } catch { nokta = null }
@@ -317,11 +328,13 @@ export function useOrtaMenu({ aktif, engelli, haric, secimKapsami = null, metinA
       ac()
     }
     document.addEventListener("scroll", kaydir, { capture: true, passive: true })
+    window.addEventListener("pointerdown", engelBak, true)
     window.addEventListener("touchstart", basla, { capture: true, passive: true })
     window.addEventListener("touchend", bitir, { capture: true, passive: false })
     window.addEventListener("click", tikla, true)
     return () => {
       document.removeEventListener("scroll", kaydir, { capture: true })
+      window.removeEventListener("pointerdown", engelBak, true)
       window.removeEventListener("touchstart", basla, { capture: true })
       window.removeEventListener("touchend", bitir, { capture: true })
       window.removeEventListener("click", tikla, true)

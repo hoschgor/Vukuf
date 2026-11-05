@@ -89,8 +89,9 @@ import {
 import { barSatirOlc } from "../components/BarSiraPaneli"
 import GorselOlustur from "../components/GorselOlustur"
 // KİTAP MODU (5 Kasım 2026): sayfa sayfa okuma — kaydırmalı düzen aynen korunur
-import SayfaKitabi, { SayfaSigdir, useKitapModu, KITAP_MODU_KURAN, yayilimBasi } from "../components/SayfaKitabi"
+import SayfaKitabi, { SayfaSigdir, useKitapModu, KITAP_MODU_KURAN, yayilimBasi, kitapAyetGoster } from "../components/SayfaKitabi"
 import { MushafCercevesi } from "../components/SayfaSusleri"
+import { pencereKapatmaDokunusu } from "../data/pencereDokunusu"
 import { useMushaf, sureBaslangicSayfasi, ayetSayfasi } from "../data/hooks/useMushaf"
 import { BESMELE_OKUYANLAR } from "../data/hooks/useAudioPlayer"
 // Oynatıcı artık uygulama kökünde (src/data/oynatici.jsx) — ekrandan çıkınca da sürebilsin
@@ -2654,10 +2655,11 @@ const hizbSayfalari = (cuzNo) => {
     }
     return m
   }, [sayfaListesi])
-  // Oynatıcı payı: ölçülen boy âyetten âyete 1-2 px oynayabiliyor → kitap modunda
-  // görülen EN BÜYÜK boy kullanılır (sayfa kutusu ve yazı boyu titremesin)
-  const kitapOynaticiRef = useRef(0)
-  if (playerBarYuksekligi > kitapOynaticiRef.current) kitapOynaticiRef.current = playerBarYuksekligi
+  /* Oynatıcı payı: oynatıcının ÖLÇÜLEN gerçek boyu (playerYuk). Küçük yuvarlak düğmeye
+     indiğinde 0 → yer ayrılmaz. (5 Kasım 2026 — kullanıcı: "Mobilde kitap modu açıkken yan
+     döndürünce altta çok boşluk oluyor": önceki sürüm görülen EN BÜYÜK boyu ve oynatıcı
+     küçükken de varsayılan boyu ayırıyordu.) 1-2 px'lik oynamaları SayfaKitabi zaten yok sayar. */
+  const kitapOynatici = player.durum !== "kapali" ? (playerYuk || 0) : 0
   const sayfaEtiketi = (() => {
     if (!kitapModu || !kitapCift) return mevcutSayfa
     const b = yayilimBasi(mevcutSayfa, true)
@@ -2665,9 +2667,8 @@ const hizbSayfalari = (cuzNo) => {
     return s2 > b ? `${b}-${s2}` : b
   })()
   const kitapUstPay = barKonum === "ust"
-    ? barYuksekligi + (player.durum !== "kapali" ? Math.max(playerBarYuksekligi, kitapOynaticiRef.current) : 0) + 6
+    ? barYuksekligi + kitapOynatici + 6
     : ustCentik + 4
-  const kitapOynatici = player.durum !== "kapali" ? kitapOynaticiRef.current : 0
   const kitapAltPay = ortaBar
     ? kitapOynatici + seritPay + 6
     : barKonum === "alt" ? barYuksekligi + kitapOynatici + 6 : 6
@@ -3235,7 +3236,15 @@ function donuseGit(i) {
       .catch(() => { sarfIstendiRef.current = false })   // ağ hatası → bir daha denenebilsin
   }, [])
 
+  // Kelime/âyet dokunuşu açık paneli kapatsın (useCallback'ler bağımlılıksız → ref)
+  const panelleriKapatRef = useRef(() => {})
+  panelleriKapatRef.current = () => {
+    setMenuAcik(false); setKayitPaneliAcik(false); setBilgiAcik(false); setSayfaGitAcik(false)
+    setAaAcik(false); setTemaAcik(false); setAyarlarAcik(false); setDonguAyarAcik(false)
+  }
   const kelimeTikla = useCallback((kelime, sure, ayet, e) => {
+    // Açık bir panel/pencere varken yapılan dokunuş onu KAPATIR, yeni pencere açmaz (5 Kasım 2026)
+    if (pencereKapatmaDokunusu()) { panelleriKapatRef.current(); return }
     /* HIFZ MODU: kelime anlamı yerine İPUCU. Perdeli kelimeye dokununca yalnız
        o kelime açılıyor; sınıf DOM'a doğrudan yazılıyor çünkü React durumunda
        tutmak her dokunuşta sayfayı yeniden çizerdi. */
@@ -3560,6 +3569,28 @@ function donuseGit(i) {
   useEffect(() => { if (odakDurumu.surekli) { setOdakTakip(true); setOdakAskida(false) } }, [odakDurumu.surekli])
   const odakHizala = useCallback((zorla) => {
     const a = player.aktifAyet
+    /* KİTAP MODU (5 Kasım 2026): sayfayı oynatıcı takibi zaten çeviriyor; burada yalnız içi
+       kaydırılan sayfada âyet görünür kılınır (components/SayfaKitabi → kitapAyetGoster).
+       Sayfa yeni çevrildiyse çizilmesi beklenir. Kaydırmalı düzen aşağıda değişmeden. */
+    if (kitapModuRef.current) {
+      if (!a || a.besmeleIcin) return
+      odakDurdurRef.current()
+      let iptal = false, durdur = () => {}
+      const dene = (kalan) => {
+        if (iptal) return
+        const sayfalar = [...document.querySelectorAll("[data-kitap-sayfa]")].filter(e => !e.closest('[aria-hidden="true"]'))
+        const ogeler = []
+        for (const sf of sayfalar) {
+          ogeler.push(...sf.querySelectorAll(`[data-hifz="${a.sureNo}:${a.ayetNo}"]`))
+          ogeler.push(...sf.querySelectorAll(`[data-sure="${a.sureNo}"][data-ayet="${a.ayetNo}"]`))
+        }
+        if (!ogeler.length) { if (kalan > 0) t = setTimeout(() => dene(kalan - 1), 220); return }
+        durdur = kitapAyetGoster(ogeler)
+      }
+      let t = setTimeout(() => dene(4), 60)
+      odakDurdurRef.current = () => { iptal = true; clearTimeout(t); durdur() }
+      return
+    }
     const kap = scrollRef.current
     if (!a || !kap) return
     const sec = a.besmeleIcin ? `[data-sure-baslik="${a.besmeleIcin}"]` : `[data-sure="${a.sureNo}"][data-ayet="${a.ayetNo}"]`
@@ -3645,6 +3676,8 @@ function donuseGit(i) {
   }, [gorselVeri?.sureNo, mushafData])
 
   const ayetTikla = useCallback((sure, ayetNo, e) => {
+    // Açık bir panel/pencere varken yapılan dokunuş onu KAPATIR, yeni pencere açmaz (5 Kasım 2026)
+    if (pencereKapatmaDokunusu()) { panelleriKapatRef.current(); return }
     if (gorselModuRef.current) { gorselAcRef.current?.(sure, ayetNo); return }
     if (paylasModuRef.current) {
       setPaylasModu(false)
@@ -3662,6 +3695,8 @@ function donuseGit(i) {
   }, [])
 
   const sureTikla = useCallback((sure, e) => {
+    // Açık bir panel/pencere varken yapılan dokunuş onu KAPATIR, yeni pencere açmaz (5 Kasım 2026)
+    if (pencereKapatmaDokunusu()) { panelleriKapatRef.current(); return }
     setPopup({
       tip: "ayet",
       sure,
@@ -4844,7 +4879,8 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
   // Oynatıcı açıkken şerit gizlenmez; oynatıcının üst kenarına yapışık sekme olur (BilgiSeridi)
   const BilgiSeridiOgesi = ortaSerit && (
     <BilgiSeridi theme={theme} olcek={barUiOlcegi} onYukseklik={setSeritYuk}
-      altPay={player.durum !== "kapali" ? playerBarYuksekligi : 0}
+      // Oynatıcı küçük yuvarlak düğmedeyken (ölçülen boy 0) şerit oynatıcı payı bırakmaz
+      altPay={player.durum !== "kapali" ? (playerYuk || 0) : 0}
       ogeler={[
         mevcutSureBilgisi && sureBilgisiGoster && sadeGorunur("sureBilgisi")
           ? <><Layers size={Math.round(11 * barUiOlcegi)} />{mevcutSureBilgisi.isim}</> : null,

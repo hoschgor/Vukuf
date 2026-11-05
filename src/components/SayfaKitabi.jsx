@@ -29,6 +29,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useRef, useState } from "react"
 import { ChevronLeft, ChevronRight } from "lucide-react"
+import { yumusakKaydir } from "../data/odak"
 
 // ── AYAR ─────────────────────────────────────────────────────────────────────
 export const KITAP_MODU_KURAN = "vukuf-kitap-modu-kuran"
@@ -168,7 +169,7 @@ export function SayfaSigdir({ w, h, minOlcek = 0.62, carpan = 1, yenile, ortala 
     return () => { cancelAnimationFrame(raf); try { ro && ro.disconnect() } catch { /* yoksay */ } }
   }, [olc])
   return (
-    <div style={{ width: `${w}px`, height: `${h}px`, overflowX: "hidden", overflowY: tasiyor ? "auto" : "hidden", overscrollBehavior: "contain", touchAction: "pan-y" }}>
+    <div data-kitap-kaydir="" style={{ width: `${w}px`, height: `${h}px`, overflowX: "hidden", overflowY: tasiyor ? "auto" : "hidden", overscrollBehavior: "contain", touchAction: "pan-y" }}>
       <div ref={disRef} style={{ position: "relative", width: `${w}px`, overflow: "hidden" }}>
         <div ref={icRef} data-kitap-icerik="" style={{ position: "absolute", left: 0, top: 0, transformOrigin: "0 0" }}>
           {children}
@@ -176,6 +177,33 @@ export function SayfaSigdir({ w, h, minOlcek = 0.62, carpan = 1, yenile, ortala 
       </div>
     </div>
   )
+}
+
+/* SAYFA İÇİNDE TAKİP (5 Kasım 2026) — kullanıcı: "kitap modunda sürekli takip açıkken sayfanın
+   altında kaldıysa satırı kaydırması gerekiyor, âyetin tamamı görüntülenebilmeli ya da âyet
+   uzunsa yukarıya almalı ki okunabilsin. Aşırı uzun âyetlerde de üstte karşılaması yeterli."
+   Yalnız içi kaydırılan (sığmayan) sayfada iş yapar:
+     • öğeler zaten tamamen görünüyorsa → kımıldamaz;
+     • âyet kutuya sığıyorsa → tamamı görünecek kadar (en az kaydırmayla) kayar;
+     • sığmıyorsa → âyetin başı kutunun üstüne gelir.
+   ogeler: âyetin kelimeleri + sonu rozeti (hepsinin kapladığı alan ölçülür). Dönen işlev
+   kaydırmayı durdurur. */
+export function kitapAyetGoster(ogeler) {
+  const liste = (ogeler || []).filter(Boolean)
+  if (!liste.length) return () => {}
+  const kap = liste[0].closest?.("[data-kitap-kaydir]")
+  if (!kap || kap.scrollHeight <= kap.clientHeight + 1) return () => {}
+  const kr = kap.getBoundingClientRect()
+  let ust = Infinity, alt = -Infinity
+  for (const e of liste) { const r = e.getBoundingClientRect(); if (r.height || r.width) { ust = Math.min(ust, r.top); alt = Math.max(alt, r.bottom) } }
+  if (!isFinite(ust)) return () => {}
+  const pay = 6, H = kap.clientHeight
+  const u = ust - kr.top, a = alt - kr.top
+  if (u >= pay && a <= H - pay) return () => {}
+  let hedef
+  if (a - u <= H - 2 * pay) hedef = a > H - pay ? kap.scrollTop + (a - (H - pay)) : kap.scrollTop + (u - pay)
+  else hedef = kap.scrollTop + (u - pay)
+  return yumusakKaydir(kap, hedef, { sure: 650 })
 }
 
 // ── KİTAP ────────────────────────────────────────────────────────────────────
@@ -370,7 +398,13 @@ export default function SayfaKitabi({
   // ~1,2 sn içinde kendi sığma ölçeklerini bildirir; ortak ölçek bunların EN KÜÇÜĞÜ olur ve
   // sonra DONDURULUR → okuma boyunca (sayfa çevirme, kâri takibi, uzak gidiş) yazı boyu hiç
   // değişmez. Daha dolu bir sayfa ileride çıkarsa o sayfanın içi kaydırılır.
-  const olcekKey = `${Math.round(sayfaW)}x${Math.round(sayfaH)}|${olcekAnahtar}`
+  // Anahtarda yükseklik KABA tutulur: oynatıcı büyük çubuk ↔ küçük düğme arasında gidip
+  // geldikçe sayfa kutusu ~40 px uzayıp kısalır; yazı boyu bundan etkilenmesin (kutu büyür/
+  // küçülür, fazla yer ortalanır, sığmayan kaydırılır). Yükseklik %20'den çok değişirse
+  // (ekran dönmesi vb.) ölçek yeniden belirlenir.
+  const tabanHRef = useRef(sayfaH)
+  if (!tabanHRef.current || Math.abs(sayfaH - tabanHRef.current) > tabanHRef.current * 0.2) tabanHRef.current = sayfaH
+  const olcekKey = `${Math.round(sayfaW)}x${Math.round(tabanHRef.current)}|${olcekAnahtar}`
   const ornekRef = useRef({ key: "", min: null, ilk: 0, donuk: false })
   if (ornekRef.current.key !== olcekKey) ornekRef.current = { key: olcekKey, min: null, ilk: 0, donuk: false }
   const [ortak, setOrtak] = useState({ key: "", deger: null })
@@ -394,7 +428,12 @@ export default function SayfaKitabi({
     // rtl: ilk sayfa SAĞDA; ltr: ilk sayfa SOLDA
     const sira = rtl ? [...sayfalar].reverse() : sayfalar
     return (
-      <div style={{ display: "flex", justifyContent: "center", alignItems: "stretch", height: `${sayfaH}px`, filter: "drop-shadow(0 3px 10px rgba(0,0,0,0.18))" }}>
+      /* SAYFA KENARI (5 Kasım 2026) — kullanıcı: "mushafın sayfa bitişi … göz yormayan bir şey
+         olabilir, harici kısım da farklı renk değil mushafın arka planında olsa daha güzel
+         olacak, bir bütün gibi duracak." Sayfanın çevresi artık sayfayla AYNI renkte ve gölgesiz:
+         ayrı bir kâğıt kutusu görünmez, sayfanın sınırını yalnız süslü bordür çizer. İki sayfa
+         yan yanayken ortadaki ince cilt gölgesi kalır (iki sayfa olduğu belli olsun). */
+      <div style={{ display: "flex", justifyContent: "center", alignItems: "stretch", height: `${sayfaH}px` }}>
         {cift && sayfalar.length === 1 && rtl && <div style={{ width: `${sayfaW}px` }} />}
         {sira.map((no) => {
           const taraf = !cift ? "tek" : (no === b ? (rtl ? "sag" : "sol") : (rtl ? "sol" : "sag"))
@@ -406,7 +445,7 @@ export default function SayfaKitabi({
                 <div aria-hidden="true" style={{
                   position: "absolute", top: 0, bottom: 0, width: "26px", pointerEvents: "none",
                   [taraf === "sag" ? "left" : "right"]: 0,
-                  background: `linear-gradient(${taraf === "sag" ? "to right" : "to left"}, rgba(0,0,0,0.13), rgba(0,0,0,0))`,
+                  background: `linear-gradient(${taraf === "sag" ? "to right" : "to left"}, rgba(0,0,0,0.08), rgba(0,0,0,0))`,
                 }} />
               )}
             </div>
@@ -434,7 +473,7 @@ export default function SayfaKitabi({
       onClick={tikla}
       style={{
         position: "relative", flex: 1, minHeight: 0, overflow: "hidden",
-        background: `color-mix(in srgb, ${theme.background} 90%, ${theme.text})`,
+        background: theme.background,
         touchAction: "pan-y", userSelect: "text",
         ...style,
       }}

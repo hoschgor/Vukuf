@@ -32,6 +32,7 @@ import IosSwitch from "../components/IosSwitch"
 // KİTAP MODU (5 Kasım 2026): sayfa sayfa okuma — kaydırmalı düzen aynen korunur
 import SayfaKitabi, { SayfaSigdir, useKitapModu, useGuvenliUst, KITAP_MODU_ESER, yayilimBasi } from "../components/SayfaKitabi"
 import { EserCercevesi } from "../components/SayfaSusleri"
+import { pencereKapatmaDokunusu } from "../data/pencereDokunusu"
 import { useOrtaMenu, useOrtaBilgi, OrtaMenuCercevesi, OrtaIpucu, BilgiSeridi, BarKonumSecici, barKonumOku, barKonumYaz, ORTA_OLCEK, barEtiketle, OpaklikCekmecesi, useOrtaOpaklik, yariSaydam } from "../components/OrtaMenu"
 import DonusDugmesi, { KopruDugmesi, hapKonumlariniSifirla } from "../components/DonusDugmesi"
 import { History as GecmisIkon } from "lucide-react"
@@ -2881,6 +2882,8 @@ function fontSecimDegistir(grupId, fontId) {
 }
 
 function kelimeTikla(kelime, anlam, kavram, e, secenekler = null) {
+  // Açık bir panel/pencere varken yapılan dokunuş onu KAPATIR, lügat penceresi açmaz (5 Kasım 2026)
+  if (pencereKapatmaDokunusu()) { tumPanelleriKapat(); return }
   atifKaynakYakala(e)   // atıf için tıklanan satırı hatırla
   // Konum TIKLAMA noktasına göre değil, KELİMENİN kutusuna göre (rect); yerlesimEfekti ölçüp yerleştirir
   let rect = null
@@ -2893,6 +2896,7 @@ function kelimeTikla(kelime, anlam, kavram, e, secenekler = null) {
 }
 
 function dipnotTikla(metin, e, etiket = "DİPNOT") {
+  if (pencereKapatmaDokunusu()) { tumPanelleriKapat(); return }   // açık paneli kapatan dokunuş
   atifKaynakYakala(e)   // atıf için tıklanan satırı hatırla
   const gx = e?.clientX ?? window.innerWidth / 2
   const gy = e?.clientY ?? window.innerHeight / 2

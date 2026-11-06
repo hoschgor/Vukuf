@@ -1,7 +1,7 @@
 import { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo, } from "react"
 import { createPortal } from "react-dom"
 import { useNavigate } from "react-router-dom"
-import { useApp } from "../AppContext"
+import { useApp, ozelMi } from "../AppContext"
 import { okumaKaydet, KURAN_ID } from "../data/okumaKayit"
 import arapcaLugat from "../data/arapca-lugat.json"
 // KONUMA BAĞLI kelime anlamları (quran.com word-by-word, Türkçe) — wbw.py üretir.
@@ -899,6 +899,7 @@ export default function KuranOkuma({ kitap }) {
     // tercihleri bunun üstüne bindirilerek aşağıda `theme` üretilir.
     theme: temaTaban, currentTheme, setCurrentTheme,
     customTheme, ozelTemaKaydet: ozelTemaKaydetFromContext,
+    temaRenkYaz, temaTabanRengi,
   } = useApp()
   const navigate  = useNavigate()
   // ⚠ ÖNEMLİ: isMobile ARTIK DÖNMEDE DEĞİŞMİYOR. Eskiden yalnız
@@ -2637,7 +2638,13 @@ const hizbSayfalari = (cuzNo) => {
     if (!kitapModu) return
     const a = player.aktifAyet
     if (!a || !a.sureNo || player.durum !== "caliyor") return
-    const sf = ayetSayfasi(a.sureNo, a.ayetNo || 1, ayetSayfaLookup)
+    /* BESMELE (5 Kasım 2026 — kullanıcı: "Oynatıcı sûre başından başlarsa Fâtiha'ya gidip
+       geliyor"). Sûre başında önce besmele çalınıyor ve o sırada aktifAyet = Fâtiha 1
+       (sureNo 1), asıl sûre besmeleIcin'de. Bu yüzden sayfa önce Fâtiha'ya çevrilip sonra
+       geri dönüyordu. Besmele çalarken hedef, besmelesi okunan sûrenin başladığı sayfa. */
+    const sf = a.besmeleIcin
+      ? sureBaslangicSayfasi(a.besmeleIcin, sureSayfaLookup)
+      : ayetSayfasi(a.sureNo, a.ayetNo || 1, ayetSayfaLookup)
     if (!sf) return
     const cift = kitapCiftRef.current
     if (yayilimBasi(sf, cift) === yayilimBasi(mevcutSayfa, cift)) return
@@ -4125,7 +4132,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
           theme={theme}
           duzen="satir"
           kalemBoyu={Math.round((isMobile ? 18 : 21) * barUiOlcegi)}
-          onOzel={() => { setTemaAcik(false); setOzelTemaPanelAcik(true) }}
+          onOzel={(t) => { setOzelRenkler({ ...(t || customTheme) }); setTemaAcik(false); setOzelTemaPanelAcik(true) }}
           // Seçimden sonra panel AÇIK kalır (7 Ekim 2026, kullanıcı: "seçim sonrası
           // panel açık dursun ki okuma ekranında önizleme gibi görülsün") — ana menüdeki gibi.
           onSec={() => {}}
@@ -4135,10 +4142,13 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
         <div className="yp-renk" style={{ borderTop: `1px solid ${theme.border}`, marginTop: "10px", paddingTop: "10px" }}>
           <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px" }}>YAZI RENGİ</div>
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            {/* 5 Kasım 2026: renk artık ÖZEL TEMAYA işlenir (AppContext.temaRenkYaz) — hazır
+                temadaysa 1. özel tema o temadan kurulup seçilir; özel temadaysa o düzenlenir.
+                Eski "üstüne binen" tercih (yaziRengi) varsa ilk değişiklikte temizlenir. */}
             <input
               type="color"
               value={hexGuvenli(yaziRengi || temaTaban.text)}
-              onChange={e => setYaziRengi(e.target.value)}
+              onChange={e => { setYaziRengi(""); temaRenkYaz("text", e.target.value) }}
               style={{ width: "40px", height: "28px", border: `1px solid ${theme.border}`, borderRadius: "6px", background: theme.background, cursor: "pointer", padding: "2px", flexShrink: 0 }}
             />
             <span style={{
@@ -4146,8 +4156,8 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
               fontFamily: aktifArapcaFont.style, direction: "rtl",
               whiteSpace: "nowrap", overflow: "hidden", textOverflow: "clip",
             }}>بِسْمِ ٱللَّهِ</span>
-            {yaziRengi && (
-              <button onClick={() => setYaziRengi("")} title="Temaya sıfırla"
+            {(yaziRengi || (ozelMi(currentTheme) && temaTaban.text !== temaTabanRengi("text"))) && (
+              <button onClick={() => { setYaziRengi(""); if (ozelMi(currentTheme)) temaRenkYaz("text", temaTabanRengi("text")) }} title="Temaya sıfırla"
                 style={{ fontSize: "11px", color: theme.textSecondary, background: "none", border: "none", cursor: "pointer", flexShrink: 0 }}>Sıfırla</button>
             )}
           </div>
@@ -4160,7 +4170,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
             <input
               type="color"
               value={hexGuvenli(ayetNoRengi || temaTaban.ayetNoRengi || temaTaban.accent)}
-              onChange={e => setAyetNoRengi(e.target.value)}
+              onChange={e => { setAyetNoRengi(""); temaRenkYaz("ayetNoRengi", e.target.value) }}
               style={{ width: "40px", height: "28px", border: `1px solid ${theme.border}`, borderRadius: "6px", background: theme.background, cursor: "pointer", padding: "2px", flexShrink: 0 }}
             />
             {/* Önizleme, okuma ekranındaki ROZETİN TA KENDİSİ olmalı — ham ﴿﴾
@@ -4168,8 +4178,8 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
             <span style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center" }}>
               <MushafAyetRozeti sayi={255} size={26} ac={theme.ayetNoRengi || theme.accent} />
             </span>
-            {ayetNoRengi && (
-              <button onClick={() => setAyetNoRengi("")} title="Temaya sıfırla"
+            {(ayetNoRengi || (ozelMi(currentTheme) && temaTaban.ayetNoRengi !== temaTabanRengi("ayetNoRengi"))) && (
+              <button onClick={() => { setAyetNoRengi(""); if (ozelMi(currentTheme)) temaRenkYaz("ayetNoRengi", temaTabanRengi("ayetNoRengi")) }} title="Temaya sıfırla"
                 style={{ fontSize: "11px", color: theme.textSecondary, background: "none", border: "none", cursor: "pointer", flexShrink: 0 }}>Sıfırla</button>
             )}
           </div>
@@ -4196,7 +4206,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
         boxShadow: "0 8px 32px rgba(0,0,0,0.2)",
       }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "20px" }}>
-          <h2 style={{ fontSize: `${Math.round((isMobile ? 11 : 12) * barUiOlcegi)}px`, color: theme.text }}>Özel Tema</h2>
+          <h2 style={{ fontSize: `${Math.round((isMobile ? 11 : 12) * barUiOlcegi)}px`, color: theme.text }}>{ozelRenkler.name ? `${ozelRenkler.name} Tema` : "Özel Tema"}</h2>
           <button onClick={() => setOzelTemaPanelAcik(false)} style={{ color: theme.textSecondary, background: "none", border: "none", cursor: "pointer" }}>
             <X size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />
           </button>
@@ -4256,7 +4266,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
         </div>
         <button
           onClick={() => {
-            ozelTemaKaydetFromContext(ozelRenkler)
+            ozelTemaKaydetFromContext(ozelRenkler, ozelRenkler.id)
             // Tema panelindeki tek tek renk ezmeleri TEMANIN ÜSTÜNE biner. Burada
             // paletten seçilen yazı/âyet-no renkleri görünmezse kullanıcı sebebini
             // anlayamaz → özel tema kaydedilirken ezmeler temizlenir.
@@ -4264,7 +4274,6 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
             setAyetNoRengi("")
             setAktifRenk(null)
             setOzelTemaPanelAcik(false)
-            setCurrentTheme("custom")
           }}
           style={{
             width: "100%", marginTop: "16px", padding: "12px", borderRadius: "10px",

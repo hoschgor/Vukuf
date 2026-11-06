@@ -57,8 +57,34 @@ function sistemKoyuMu() {
   try { return window.matchMedia("(prefers-color-scheme: dark)").matches } catch { return false }
 }
 
+/* ── ÖZEL TEMALAR (5 Kasım 2026) ─────────────────────────────────────────────
+   Kullanıcı: "Birden fazla özel tema kaydedilebilsin (en fazla 3) … yazı ya da lügat, âyet
+   no gibi bir kısım değiştiğinde soru sormadan ilk özel temayı değiştirecek. 2. özel tema
+   oluşturmak isteyen kullanıcı 'tema ekle' diyecek ve seçili olan hazır tema renkleri
+   yüklenecek … renkler menü kapalıyken değiştirilirse seçili olan özel tema düzenlenmiş olacak."
+   Kimlikler: "custom" (1. — eski tek özel temanın kimliği aynen), "custom-2", "custom-3".
+   Kayıt: "vukuf-ozel-temalar" (dizi). 1. tema ayrıca eski "vukuf-ozel-tema" anahtarına da
+   yazılır (eski yedekler/okuyucular bozulmasın). `taban`: temanın türetildiği hazır tema
+   (renk "Sıfırla"sı ona döner). */
+export const OZEL_EN_COK = 3
+const OZEL_IDLER = ["custom", "custom-2", "custom-3"]
+export const ozelMi = (id) => typeof id === "string" && OZEL_IDLER.includes(id)
+const OZEL_ADLAR = { custom: "Özel", "custom-2": "Özel 2", "custom-3": "Özel 3" }
+
+function ozelleriOku() {
+  try {
+    const l = JSON.parse(oku("vukuf-ozel-temalar") || "null")
+    if (Array.isArray(l) && l.length) return l.filter(t => t && ozelMi(t.id)).slice(0, OZEL_EN_COK)
+  } catch { /* yoksay */ }
+  let ilk = defaultCustomTheme
+  try { const k = oku("vukuf-ozel-tema"); if (k) ilk = JSON.parse(k) } catch { /* yoksay */ }
+  return [{ ...ilk, id: "custom", name: "Özel" }]
+}
+
+let ozelListeRef = { current: [] }   // temaVarMi/temaNesnesi için en güncel liste (aşağıda bağlanır)
 function temaVarMi(id) {
-  return id === "custom" || Object.prototype.hasOwnProperty.call(themes, id)
+  if (ozelMi(id)) return ozelListeRef.current.some(t => t.id === id)
+  return Object.prototype.hasOwnProperty.call(themes, id)
 }
 
 // Kaldırılmış tema kimliği (light, dark, night, coffee, highcontrast) →
@@ -68,18 +94,13 @@ function cevir(id) {
 }
 
 export function AppProvider({ children }) {
-  const [customTheme, setCustomTheme] = useState(() => {
-    try {
-      const kayitli = oku("vukuf-ozel-tema")
-      return kayitli ? JSON.parse(kayitli) : defaultCustomTheme
-    } catch { return defaultCustomTheme }
-  })
-  // "custom" seçilirken tonunu doğru hesaplamak için EN GÜNCEL özel tema.
-  // ozelTemaKaydet ardından aynı tıklamada setCurrentTheme("custom") çağrılırsa
-  // (OkumaEkrani böyle yapıyor) state henüz güncellenmemiş olur; ref olur.
-  const ozelRef = useRef(customTheme)
+  const [ozelTemalar, setOzelTemalar] = useState(ozelleriOku)
+  // Seçilirken tonunu doğru hesaplamak için EN GÜNCEL liste (kaydet + seç aynı tıklamada
+  // çağrılınca state henüz güncellenmemiş olur; ref olur).
+  const ozelRef = useRef(ozelTemalar)
+  ozelListeRef = ozelRef
 
-  const temaNesnesi = (id) => (id === "custom" ? ozelRef.current : themes[id])
+  const temaNesnesi = (id) => (ozelMi(id) ? ozelRef.current.find(t => t.id === id) : themes[id])
 
   // Kayıtlı tema (eski anahtar, aynen). Geçersizse varsayılan.
   // (lazy state: localStorage her çizimde değil, yalnız ilk açılışta okunur)
@@ -122,7 +143,11 @@ export function AppProvider({ children }) {
     } catch { return {} }
   })
 
-  const theme = currentTheme === "custom" ? customTheme : (themes[currentTheme] || themes[defaultTheme])
+  const theme = ozelMi(currentTheme)
+    ? (ozelTemalar.find(t => t.id === currentTheme) || ozelTemalar[0] || defaultCustomTheme)
+    : (themes[currentTheme] || themes[defaultTheme])
+  // Geriye dönük: tek "customTheme" bekleyenler için seçili özel tema (yoksa 1.)
+  const customTheme = (ozelMi(currentTheme) && ozelTemalar.find(t => t.id === currentTheme)) || ozelTemalar[0] || defaultCustomTheme
 
   function temaUygula(id) {
     setCurrentThemeHam(id)
@@ -193,12 +218,78 @@ export function AppProvider({ children }) {
     if (hedef && hedef !== currentTheme) temaUygula(hedef)
   }
 
-  function ozelTemaKaydet(yeniTema) {
-    const kaydedilen = { ...yeniTema, name: "Özel" }
-    ozelRef.current = kaydedilen
-    setCustomTheme(kaydedilen)
-    yaz("vukuf-ozel-tema", JSON.stringify(kaydedilen))
+  function ozelleriYaz(liste) {
+    ozelRef.current = liste
+    setOzelTemalar(liste)
+    yaz("vukuf-ozel-temalar", JSON.stringify(liste))
+    const ilk = liste.find(t => t.id === "custom")
+    if (ilk) yaz("vukuf-ozel-tema", JSON.stringify(ilk))
+  }
+
+  /* Özel temayı kaydet ve seç. id verilmezse: seçili özel tema, o da yoksa 1. özel tema. */
+  function ozelTemaKaydet(yeniTema, id) {
+    const hedef = id || (ozelMi(currentTheme) ? currentTheme : (yeniTema && ozelMi(yeniTema.id) ? yeniTema.id : "custom"))
+    const eski = ozelRef.current.find(t => t.id === hedef)
+    const kaydedilen = { ...(eski || {}), ...yeniTema, id: hedef, name: OZEL_ADLAR[hedef] }
+    const liste = eski
+      ? ozelRef.current.map(t => (t.id === hedef ? kaydedilen : t))
+      : [...ozelRef.current, kaydedilen]
+    ozelleriYaz(liste)
+    temaDegistir(hedef)
+  }
+
+  /* "Yeni tema": şu an görünen temanın renkleriyle yeni bir özel tema (en çok 3) — seçilir.
+     Dönüş: yeni tema nesnesi (doluysa null). */
+  function ozelTemaEkle() {
+    const bos = OZEL_IDLER.find(i => !ozelRef.current.some(t => t.id === i))
+    if (!bos) return null
+    const kaynak = theme
+    const taban = ozelMi(currentTheme) ? (kaynak.taban || null) : currentTheme
+    const yeni = { ...kaynak, id: bos, name: OZEL_ADLAR[bos], taban }
+    ozelleriYaz([...ozelRef.current, yeni])
+    temaDegistir(bos)
+    return yeni
+  }
+
+  function ozelTemaSil(id) {
+    if (!ozelMi(id) || id === "custom") return
+    const liste = ozelRef.current.filter(t => t.id !== id)
+    ozelleriYaz(liste)
+    if (currentTheme === id) temaDegistir("custom")
+    // Ton favorisinde kaldıysa ilk özel temaya çevrilsin
+    setTonFavori(prev => {
+      const y = { ...prev }
+      let degisti = false
+      for (const k of ["acik", "koyu"]) if (y[k] === id) { y[k] = "custom"; degisti = true }
+      if (!degisti) return prev
+      yaz(TON_FAVORI_ANAHTAR, JSON.stringify(y))
+      return y
+    })
+  }
+
+  /* Tema panelindeki tek renk (yazı, lügat, Arapça, âyet no…) — SORU SORMADAN:
+     seçili tema özel ise onu düzenler; hazır tema seçiliyse 1. özel temayı o hazır temanın
+     renkleri + bu değişiklikle yeniden kurar ve seçer. */
+  function temaRenkYaz(alan, deger) {
+    if (ozelMi(currentTheme) && ozelRef.current.some(t => t.id === currentTheme)) {
+      const liste = ozelRef.current.map(t => (t.id === currentTheme ? { ...t, [alan]: deger } : t))
+      ozelleriYaz(liste)
+      return
+    }
+    const kaynak = themes[currentTheme] || theme
+    const ilk = { ...kaynak, [alan]: deger, id: "custom", name: OZEL_ADLAR.custom, taban: currentTheme, aciklama: undefined }
+    const liste = ozelRef.current.some(t => t.id === "custom")
+      ? ozelRef.current.map(t => (t.id === "custom" ? ilk : t))
+      : [ilk, ...ozelRef.current]
+    ozelleriYaz(liste)
     temaDegistir("custom")
+  }
+
+  /* Bir rengin "temanın kendi" değeri: özel temada türetildiği hazır temanınki. */
+  function temaTabanRengi(alan) {
+    if (!ozelMi(currentTheme)) return theme[alan]
+    const t = theme.taban && themes[theme.taban]
+    return (t || defaultCustomTheme)[alan]
   }
 
   function isaret_ekle(kitapId, sayfaNo) {
@@ -231,6 +322,12 @@ export function AppProvider({ children }) {
         setCurrentTheme: temaDegistir,
         customTheme,
         ozelTemaKaydet,
+        // Çoklu özel tema (5 Kasım 2026)
+        ozelTemalar,
+        ozelTemaEkle,
+        ozelTemaSil,
+        temaRenkYaz,
+        temaTabanRengi,
         // Ton seçici
         tonModu,
         tonSec,

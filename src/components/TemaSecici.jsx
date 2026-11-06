@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react"
-import { Sun, Moon, Pencil } from "lucide-react"
-import { useApp, temaTonu } from "../AppContext"
+import { Sun, Moon, Pencil, Plus, Trash2 } from "lucide-react"
+import { useApp, temaTonu, ozelMi, OZEL_EN_COK } from "../AppContext"
 import { themes } from "../styles/themes"
 import { mushafYukle, mushafHazirMi } from "../data/mushafVerisi"
 import { tecvidAyikla, ozelOkuyusAyikla } from "./MushafKelime"
@@ -457,24 +457,29 @@ function Rozet({ t, secili, boyut, halkaRengi }) {
  * @param kalemBoyu satir düzeninde Özel kalem simgesinin boyu (okuma barı ölçeği)
  * (sutun eski düzenden kalma; kabul ediliyor, kullanılmıyor)
  */
+/* ÇOKLU ÖZEL TEMA (5 Kasım 2026): en çok 3 özel tema listede ayrı ayrı. Dokununca SEÇİLİR
+   (hazır temalar gibi, anında); kalem düzenleme panelini açar; 2. ve 3. temada çöp kutusu
+   siler. Liste dolmadıysa sonda kısa "Yeni tema" düğmesi: görünen temanın renkleriyle yeni
+   bir özel tema kurar, seçer ve düzenleme panelini açar. onOzel(tema) düzenlenecek temayı alır. */
 export default function TemaSecici({ theme, duzen = "kart", onOzel, onSec, kalemBoyu }) {
   const {
     currentTheme, setCurrentTheme, customTheme,
     tonModu, tonSec, tonFavori, sistemTonu,
+    ozelTemalar = [], ozelTemaEkle, ozelTemaSil,
   } = useApp()
   const dar = duzen === "satir"
   const oto = tonModu === "oto"
   const gruplar = oto ? ["acik", "koyu"] : [tonModu]
-  const ozelTon = temaTonu(customTheme)
+  const ozelBul = (id) => ozelTemalar.find(t => t.id === id)
 
   // Otomatik'te öbür tonun rozetine dokununca tema hemen uygulanmıyor; önizleme
   // yine de onu göstersin. Görünen tema ya da mod değişince sıfırlanır.
   const [onizId, setOnizId] = useState(null)
   useEffect(() => { setOnizId(null) }, [currentTheme, tonModu])
   const gosterilen = onizId || currentTheme
-  const gt = gosterilen === "custom" ? customTheme : (themes[gosterilen] || theme)
-  const gAd = gosterilen === "custom" ? "Özel" : gt.name
-  const gAciklama = gosterilen === "custom" ? "Kişisel renk ayarları" : (gt.aciklama || "")
+  const gt = ozelMi(gosterilen) ? (ozelBul(gosterilen) || customTheme) : (themes[gosterilen] || theme)
+  const gAd = ozelMi(gosterilen) ? (gt.name || "Özel") : gt.name
+  const gAciklama = ozelMi(gosterilen) ? "Kişisel renk ayarları" : (gt.aciklama || "")
   const bekleyenTon = onizId ? temaTonu(gt) : null
 
   function ogeler(ton) {
@@ -483,14 +488,27 @@ export default function TemaSecici({ theme, duzen = "kart", onOzel, onSec, kalem
       .map(x => ({ ...x, t: themes[x.id] }))
     // Özel: Otomatik'te yalnız kendi tonunun grubunda (iki kez görünmesin);
     // elle seçilmiş tonda her zaman sonda — oluşturma/düzenleme kapısı kaybolmasın.
-    if (!oto || ozelTon === ton) {
-      liste.push({ id: "custom", aciklama: "Kişisel renk ayarları", t: customTheme, ozel: true })
+    for (const ot of ozelTemalar) {
+      if (!oto || temaTonu(ot) === ton) liste.push({ id: ot.id, aciklama: "Kişisel renk ayarları", t: ot, ozel: true })
     }
+    // "Yeni tema" — elle seçilmiş tonda sonda; Otomatik'te yalnız şu anki tonun grubunda
+    if (ozelTemalar.length < OZEL_EN_COK && (!oto || ton === sistemTonu)) liste.push({ id: "__yeni", yeni: true })
     return liste
   }
 
+  function duzenle(id) { const t = ozelBul(id); onOzel && onOzel(t || customTheme) }
+  function yeniEkle() {
+    const t = ozelTemaEkle && ozelTemaEkle()
+    if (t) onOzel && onOzel(t)
+  }
+  function sil(id) {
+    const t = ozelBul(id)
+    if (!t || !window.confirm(`"${t.name}" teması silinsin mi?`)) return
+    ozelTemaSil && ozelTemaSil(id)
+  }
+
   function sec(id) {
-    if (id === "custom") { onOzel && onOzel(); return }
+    if (id === "__yeni") { yeniEkle(); return }
     const uygulandi = !oto || temaTonu(themes[id]) === sistemTonu
     setCurrentTheme(id)
     setOnizId(uygulandi ? null : id)
@@ -553,8 +571,22 @@ export default function TemaSecici({ theme, duzen = "kart", onOzel, onSec, kalem
                Yatay telefonda satırlar 2-3 sütuna dağılıyor (vts-satirlar). */
             <div className="vts-satirlar">
               {ogeler(ton).map(x => {
+                if (x.yeni) return (
+                  <button key="__yeni" onClick={yeniEkle} title="Görünen temanın renkleriyle yeni bir özel tema"
+                    style={{
+                      width: "100%", boxSizing: "border-box", display: "flex", alignItems: "center", gap: "10px",
+                      padding: "6px 8px", borderRadius: "8px", fontSize: "13px", fontFamily: "inherit",
+                      color: theme.accent, background: "transparent", border: `1px dashed ${theme.accent}66`,
+                      cursor: "pointer", marginTop: "4px",
+                    }}>
+                    <span style={{ width: "36px", height: "36px", flexShrink: 0, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", border: `1px dashed ${theme.accent}88` }}>
+                      <Plus size={16} />
+                    </span>
+                    <span style={{ flex: 1, textAlign: "left" }}>Yeni tema</span>
+                  </button>
+                )
                 const secili = seciliMi(x.id, ton)
-                const ad = x.ozel ? "Özel" : x.t.name
+                const ad = x.ozel ? (x.t.name || "Özel") : x.t.name
                 return (
                   <button
                     key={x.id}
@@ -580,9 +612,22 @@ export default function TemaSecici({ theme, duzen = "kart", onOzel, onSec, kalem
                       </span>
                       <span style={{ display: "block", fontSize: "10px", color: theme.textSecondary }}>{x.aciklama}</span>
                     </span>
-                    {x.ozel
-                      ? <Pencil size={kalemBoyu || 12} color={theme.textSecondary} />
-                      : secili && <span style={{ fontSize: "10px", color: theme.accent }}>✓</span>}
+                    {x.ozel ? (
+                      <span style={{ display: "flex", alignItems: "center", gap: "10px", flexShrink: 0 }}>
+                        {x.id !== "custom" && (
+                          <span role="button" aria-label={`${ad} temasını sil`} title="Sil"
+                            onClick={(e) => { e.stopPropagation(); sil(x.id) }}
+                            style={{ display: "flex", padding: "2px", color: theme.textSecondary }}>
+                            <Trash2 size={(kalemBoyu || 12) - 1} />
+                          </span>
+                        )}
+                        <span role="button" aria-label={`${ad} temasını düzenle`} title="Düzenle"
+                          onClick={(e) => { e.stopPropagation(); duzenle(x.id) }}
+                          style={{ display: "flex", padding: "2px", color: theme.textSecondary }}>
+                          <Pencil size={kalemBoyu || 12} />
+                        </span>
+                      </span>
+                    ) : secili && <span style={{ fontSize: "10px", color: theme.accent }}>✓</span>}
                   </button>
                 )
               })}
@@ -594,8 +639,20 @@ export default function TemaSecici({ theme, duzen = "kart", onOzel, onSec, kalem
               gap: dar ? "10px 2px" : "14px 4px",
             }}>
               {ogeler(ton).map(x => {
+                if (x.yeni) return (
+                  <button key="__yeni" onClick={yeniEkle} title="Görünen temanın renkleriyle yeni bir özel tema"
+                    style={{
+                      display: "flex", flexDirection: "column", alignItems: "center", gap: "5px",
+                      padding: "4px 0", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", minWidth: 0,
+                    }}>
+                    <span style={{ width: `${boyut}px`, height: `${boyut}px`, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", border: `1.5px dashed ${theme.accent}88`, color: theme.accent }}>
+                      <Plus size={Math.round(boyut * 0.38)} />
+                    </span>
+                    <span style={{ fontSize: dar ? "10.5px" : "11.5px", color: theme.accent }}>Yeni tema</span>
+                  </button>
+                )
                 const secili = seciliMi(x.id, ton)
-                const ad = x.ozel ? "Özel" : x.t.name
+                const ad = x.ozel ? (x.t.name || "Özel") : x.t.name
                 return (
                   <button
                     key={x.id}
@@ -612,13 +669,27 @@ export default function TemaSecici({ theme, duzen = "kart", onOzel, onSec, kalem
                   >
                     <Rozet t={x.t} secili={secili} boyut={boyut} halkaRengi={theme.accent} />
                     {x.ozel && (
-                      <span style={{
+                      <span role="button" aria-label={`${ad} temasını düzenle`} title="Düzenle"
+                        onClick={(e) => { e.stopPropagation(); duzenle(x.id) }}
+                        style={{
                         position: "absolute", top: `${boyut - 12}px`, left: "50%", marginLeft: `${boyut / 2 - 12}px`,
-                        width: "18px", height: "18px", borderRadius: "50%", display: "flex",
+                        width: "20px", height: "20px", borderRadius: "50%", display: "flex",
                         alignItems: "center", justifyContent: "center",
                         background: theme.surface, border: `1px solid ${theme.border}`,
                       }}>
-                        <Pencil size={10} color={theme.textSecondary} />
+                        <Pencil size={11} color={theme.textSecondary} />
+                      </span>
+                    )}
+                    {x.ozel && x.id !== "custom" && (
+                      <span role="button" aria-label={`${ad} temasını sil`} title="Sil"
+                        onClick={(e) => { e.stopPropagation(); sil(x.id) }}
+                        style={{
+                        position: "absolute", top: `${boyut - 12}px`, left: "50%", marginLeft: `${-boyut / 2 - 6}px`,
+                        width: "20px", height: "20px", borderRadius: "50%", display: "flex",
+                        alignItems: "center", justifyContent: "center",
+                        background: theme.surface, border: `1px solid ${theme.border}`,
+                      }}>
+                        <Trash2 size={10} color={theme.textSecondary} />
                       </span>
                     )}
                     <span style={{

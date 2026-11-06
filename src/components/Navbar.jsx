@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { Link, useLocation } from "react-router-dom"
 import { BookOpen, Search, Shuffle, Menu, X, Palette, Info, Type, Sparkles, Settings, HardDrive, Brain, History, HelpCircle, Library, Compass } from "lucide-react"
-import { useApp } from "../AppContext"
+import { useApp, ozelMi } from "../AppContext"
 import { useMediaQuery } from "../data/hooks/useMediaQuery"
 import IosSwitch from "./IosSwitch"
 import AltSayfa from "./AltSayfa"
@@ -218,11 +218,12 @@ export default function Navbar() {
   ]
 
   // Tema listesi artık TemaSecici.jsx'te (üç ekranda ortak). Burada yalnız özet.
-  const temaAdi = currentTheme === "custom" ? "Özel" : (themes[currentTheme]?.name || "")
+  const temaAdi = ozelMi(currentTheme) ? (customTheme?.name || "Özel") : (themes[currentTheme]?.name || "")
   const temaOzeti = tonModu === "oto" ? `${temaAdi} · otomatik` : temaAdi
 
-  function ozelPanelAc() {
-    setOzelRenkler({ ...customTheme })
+  // Düzenlenecek özel tema TemaSecici'den gelir (çoklu özel tema, 5 Kasım 2026)
+  function ozelPanelAc(t) {
+    setOzelRenkler({ ...(t || customTheme) })
     setOzelPanelAcik(true)
     setAyarlarAcik(false)       // iki katman üst üste binmesin
   }
@@ -232,7 +233,7 @@ export default function Navbar() {
   }
 
   function kaydet() {
-    ozelTemaKaydet(ozelRenkler)
+    ozelTemaKaydet(ozelRenkler, ozelRenkler.id)
     setOzelPanelAcik(false)
     setAktifRenk(null)
   }
@@ -598,7 +599,7 @@ export default function Navbar() {
           }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "20px" }}>
               <h2 style={{ fontSize: "16px", color: theme.text, fontFamily: "PlayfairDisplay, serif" }}>
-                Özel Tema
+                {ozelRenkler.name ? `${ozelRenkler.name} Tema` : "Özel Tema"}
               </h2>
               <button onClick={() => setOzelPanelAcik(false)} style={{ color: theme.textSecondary }}>
                 <X size={18} />

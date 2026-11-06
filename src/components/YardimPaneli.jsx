@@ -277,8 +277,9 @@ const KONULAR = [
     nerede: "Kur'ân-ı Kerîm ve kitaplar → bardaki palet simgesi",
     metin: [
       "Palet simgesi, yazının ve ekran öğelerinin temasını değiştirmeye yarar.",
+      "Aynı paneldeki renkler (yazı rengi, âyet numarası; kitaplarda yazı, Arapça harf ve lügat rengi) değiştirildiğinde değişiklik özel temaya işlenir: hazır bir tema seçiliyse 1. özel tema o temanın renkleriyle kurulup seçilir, bir özel tema seçiliyse o düzenlenir. \"Sıfırla\" rengi temanın kendi rengine döndürür.",
     ],
-    anahtar: "tema renk gece gündüz karanlık",
+    anahtar: "tema renk gece gündüz karanlık yazı rengi lügat rengi arapça özel tema",
   },
   {
     bolum: "kuran", ikon: LayoutGrid, baslik: "Bar konumu ve menü",
@@ -659,7 +660,7 @@ const KONULAR = [
     nerede: "Ayarlar → Tema",
     metin: [
       "Açık ve koyu temalar arasından seçim yapılabilir; \"otomatik\" seçildiğinde cihazın gece/gündüz ayarına uyulur.",
-      "Kendi renklerinizle bir özel tema da oluşturulabilir; önizlemede renklerin nasıl görüneceği hemen izlenebilir.",
+      "Kendi renklerinizle en çok üç özel tema oluşturulabilir. \"Yeni tema\" görünen temanın renkleriyle yeni bir özel tema açar; kalem simgesiyle renkleri düzenlenir, çöp kutusuyla silinir (ilk özel tema silinmez). Özel temaya dokunmak onu seçer; önizlemede renklerin nasıl görüneceği hemen izlenebilir.",
     ],
     anahtar: "tema renk karanlık gece açık koyu özel",
   },

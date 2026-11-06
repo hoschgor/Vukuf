@@ -1,7 +1,7 @@
 import KuranOkuma from "./KuranOkuma"
 import { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo } from "react"
 import { useParams, useNavigate } from "react-router-dom"
-import { useApp } from "../AppContext"
+import { useApp, ozelMi } from "../AppContext"
 import { kitaplar, kategoriler } from "../data/kitaplar"
 import { okumaKaydet, trFold } from "../data/okumaKayit"
 import { esnekBul, esnekHazirla } from "../data/esnekArama"
@@ -1196,6 +1196,7 @@ const {
   lugatActive, setLugatActive,
   isaretler, isaret_ekle, isaret_sil,
   customTheme, ozelTemaKaydet,
+  temaRenkYaz, temaTabanRengi,
 } = useApp()
 
 // ── Kitap
@@ -2901,8 +2902,18 @@ function dipnotTikla(metin, e, etiket = "DİPNOT") {
   const gx = e?.clientX ?? window.innerWidth / 2
   const gy = e?.clientY ?? window.innerHeight / 2
   const x = Math.max(10, Math.min(gx - 150, window.innerWidth - 310))
-  const y = gy + 12 + 260 > window.innerHeight ? Math.max(10, gy - 260) : gy + 12
-  setDipnotPopup({ metin, x, y, etiket })
+  /* Altta yer yoksa pencere dokunulan yerin HEMEN ÜSTÜNE oturur: alt kenarı dokunuşa
+     bağlanır (eskiden üst kenarı 260 px yukarı konuyordu; kısa metinde pencere — ör. menü
+     modunda alttaki bilgi şeridinin kısım bilgisi — dokunulan yerden çok uzakta kalıyordu.
+     5 Kasım 2026, kullanıcı: "çok alakasız bir yere gidiyor, kısım bilgisine yakın olmalı"). */
+  const H = window.innerHeight
+  if (gy + 12 + 260 > H) {
+    const kutu = e?.currentTarget?.getBoundingClientRect?.()
+    const ust = kutu && kutu.height && kutu.height < 120 ? kutu.top : gy
+    setDipnotPopup({ metin, x, y: null, alt: Math.max(10, H - ust + 8), maxH: Math.max(120, ust - 20), etiket })
+    return
+  }
+  setDipnotPopup({ metin, x, y: gy + 12, etiket })
 }
 
 // Toplam sayılar
@@ -3426,22 +3437,40 @@ const TemaPanel = temaAcik && (
       <TemaSecici
         theme={theme}
         duzen="satir"
-        onOzel={() => { setTemaAcik(false); setOzelTemaPanelAcik(true) }}
+        onOzel={(t) => { setOzelRenkler({ ...(t || customTheme) }); setTemaAcik(false); setOzelTemaPanelAcik(true) }}
         // Seçimden sonra panel AÇIK kalır (7 Ekim 2026, kullanıcı: "seçim sonrası
         // panel açık dursun ki okuma ekranında önizleme gibi görülsün") — ana menüdeki gibi.
         onSec={() => {}}
       />
 
-      {/* Arapça harf rengi */}
+      {/* RENKLER (5 Kasım 2026) — yazı, Arapça ve lügat rengi artık ÖZEL TEMAYA işlenir
+          (AppContext.temaRenkYaz): hazır temadaysa 1. özel tema o temadan kurulup seçilir,
+          özel temadaysa o düzenlenir; soru sorulmaz. Eski "üstüne binen" tercihler
+          (arapcaRenk / lugatRenkOzel) ilk değişiklikte temizlenir. */}
+      {/* Yazı rengi */}
       <div className="yp-renk" style={{ borderTop: `1px solid ${theme.border}`, marginTop: "10px", paddingTop: "10px" }}>
+        <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px" }}>YAZI RENGİ</div>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <input type="color" value={theme.text}
+            onChange={e => temaRenkYaz("text", e.target.value)}
+            style={{ width: "40px", height: "28px", border: `1px solid ${theme.border}`, borderRadius: "6px", background: theme.background, cursor: "pointer", padding: "2px" }} />
+          <span style={{ flex: 1, fontSize: "12px", color: theme.text }}>Okunan metin</span>
+          {ozelMi(currentTheme) && theme.text !== temaTabanRengi("text") && (
+            <button onClick={() => temaRenkYaz("text", temaTabanRengi("text"))} title="Temaya sıfırla" style={{ fontSize: "11px", color: theme.textSecondary, background: "none", border: "none", cursor: "pointer" }}>Sıfırla</button>
+          )}
+        </div>
+      </div>
+
+      {/* Arapça harf rengi */}
+      <div className="yp-renk" style={{ marginTop: "10px" }}>
         <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px" }}>ARAPÇA HARF RENGİ</div>
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
           <input type="color" value={arapcaRenk || theme.arabicHighlight}
-            onChange={e => setArapcaRenk(e.target.value)}
+            onChange={e => { setArapcaRenk(""); temaRenkYaz("arabicHighlight", e.target.value) }}
             style={{ width: "40px", height: "28px", border: `1px solid ${theme.border}`, borderRadius: "6px", background: theme.background, cursor: "pointer", padding: "2px" }} />
           <span style={{ flex: 1, fontSize: "12px", color: arapcaRenk || theme.arabicHighlight }}>بِسْمِ اللّٰه · Bismillâh</span>
-          {arapcaRenk && (
-            <button onClick={() => setArapcaRenk("")} title="Temaya sıfırla" style={{ fontSize: "11px", color: theme.textSecondary, background: "none", border: "none", cursor: "pointer" }}>Sıfırla</button>
+          {(arapcaRenk || (ozelMi(currentTheme) && theme.arabicHighlight !== temaTabanRengi("arabicHighlight"))) && (
+            <button onClick={() => { setArapcaRenk(""); if (ozelMi(currentTheme)) temaRenkYaz("arabicHighlight", temaTabanRengi("arabicHighlight")) }} title="Temaya sıfırla" style={{ fontSize: "11px", color: theme.textSecondary, background: "none", border: "none", cursor: "pointer" }}>Sıfırla</button>
           )}
         </div>
       </div>
@@ -3451,11 +3480,11 @@ const TemaPanel = temaAcik && (
         <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px" }}>LÜGAT RENGİ</div>
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
           <input type="color" value={lugatRenkOzel || theme.lugatHighlight}
-            onChange={e => setLugatRenkOzel(e.target.value)}
+            onChange={e => { setLugatRenkOzel(""); temaRenkYaz("lugatHighlight", e.target.value) }}
             style={{ width: "40px", height: "28px", border: `1px solid ${theme.border}`, borderRadius: "6px", background: theme.background, cursor: "pointer", padding: "2px" }} />
           <span style={{ flex: 1, fontSize: "12px", color: lugatRenkOzel || theme.lugatHighlight }}>nasihat · hakikat</span>
-          {lugatRenkOzel && (
-            <button onClick={() => setLugatRenkOzel("")} title="Temaya sıfırla" style={{ fontSize: "11px", color: theme.textSecondary, background: "none", border: "none", cursor: "pointer" }}>Sıfırla</button>
+          {(lugatRenkOzel || (ozelMi(currentTheme) && theme.lugatHighlight !== temaTabanRengi("lugatHighlight"))) && (
+            <button onClick={() => { setLugatRenkOzel(""); if (ozelMi(currentTheme)) temaRenkYaz("lugatHighlight", temaTabanRengi("lugatHighlight")) }} title="Temaya sıfırla" style={{ fontSize: "11px", color: theme.textSecondary, background: "none", border: "none", cursor: "pointer" }}>Sıfırla</button>
           )}
         </div>
       </div>
@@ -3696,7 +3725,7 @@ const OzelTemaPanel = ozelTemaPanelAcik && (
     }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "20px" }}>
         <h2 style={{ fontSize: "16px", color: theme.text, fontFamily: "PlayfairDisplay, serif" }}>
-          Özel Tema
+          {ozelRenkler.name ? `${ozelRenkler.name} Tema` : "Özel Tema"}
         </h2>
         <button onClick={() => setOzelTemaPanelAcik(false)} style={{ color: theme.textSecondary }}>
           <X size={18} />
@@ -3805,10 +3834,10 @@ const OzelTemaPanel = ozelTemaPanelAcik && (
 
       <button
         onClick={() => { 
-          ozelTemaKaydet(ozelRenkler); 
+          ozelTemaKaydet(ozelRenkler, ozelRenkler.id);
+          setArapcaRenk(""); setLugatRenkOzel("");   // eski ezmeler paletteki seçimi gölgelemesin
           setAktifRenk(null); 
           setOzelTemaPanelAcik(false);
-          setCurrentTheme("custom");
         }}
         style={{
           width: "100%",
@@ -4548,10 +4577,12 @@ return (
       <>
         <div onClick={() => setDipnotPopup(null)} style={{ position: "fixed", inset: 0, zIndex: 299 }} />
         <div style={{
-          position: "fixed", left: dipnotPopup.x, top: dipnotPopup.y,
+          position: "fixed", left: dipnotPopup.x,
+          ...(dipnotPopup.alt != null ? { bottom: dipnotPopup.alt } : { top: dipnotPopup.y }),
           background: theme.surface, border: `1px solid ${theme.border}`,
           borderRadius: "12px", padding: "14px 16px", zIndex: 300,
-          width: "300px", maxWidth: "92vw", maxHeight: "45vh", overflowY: "auto",
+          width: "300px", maxWidth: "92vw", overflowY: "auto",
+          maxHeight: dipnotPopup.maxH ? `min(45vh, ${dipnotPopup.maxH}px)` : "45vh",
           boxShadow: "0 8px 24px rgba(0,0,0,0.18)",
         }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>

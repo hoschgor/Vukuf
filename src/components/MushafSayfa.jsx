@@ -8,6 +8,8 @@ import SureSonu from "./SureSonu"
 import { useRef, useEffect, useState, useMemo, memo } from "react"
 import kelimeGrup from "../data/kelime-grup.json"
 import kelimeObek from "../data/kelime-obek.json"
+import { ayetTecvidOnbellek, TECVID_KURAL } from "../data/tecvid"
+import { useTecvidAyar, tecvidImza } from "../data/tecvidAyar"
 // GEÇİCİ — dönme teşhisi sayacı (ölçüm bitince silinecek)
 // import { SAYAC as DONME_SAYAC } from "../data/donmeTeshis"   // ⏸ dönme teşhisi (yorumda)
 
@@ -117,6 +119,35 @@ function MushafSayfa({
     }
     return sira
   }, [elemanlar])
+
+  /* RENKLİ TECVİD (7 Kasım 2026) — kapalıyken hiçbir şey hesaplanmaz. Açıkken her kelime için
+     küme (harf) başına renk dizisi: kural motoru âyetin TAMAMINA bakar (sonraki kelimenin ilk
+     harfi, âyet sonu), sayfa âyeti ortadan bölse bile bağlam doğru kalır. Ayar store'dan okunur;
+     memo karşılaştırması bunu engellemez (store aboneliği bileşenin kendi durumu sayılır). */
+  const tecvidAyar = useTecvidAyar()
+  const tImza = tecvidImza(tecvidAyar)
+  const tecvidRenkleri = useMemo(() => {
+    if (!tImza) return null
+    const acik = new Set(tImza.split(","))
+    const harita = new Map()
+    for (const el of elemanlar) {
+      if (el.tip !== "kelime" || !el.ayet?.kelimeler) continue
+      const kel = el.ayet.kelimeler
+      const r = ayetTecvidOnbellek(`${el.sure.id}:${el.ayet.no}`, () => kel.map(k => k.arabic))
+      const n = Number(String(el.kelime.id).split(":")[2]) - 1
+      const wi = kel[n] && kel[n].id === el.kelime.id ? n : kel.findIndex(k => k.id === el.kelime.id)
+      const satir = wi >= 0 ? r[wi] : null
+      if (!satir) continue
+      let var_ = false
+      const renk = satir.map(id => {
+        if (!id || !acik.has(id)) return null
+        var_ = true
+        return TECVID_KURAL[id].renk
+      })
+      if (var_) harita.set(el.kelime.id, renk)
+    }
+    return harita
+  }, [elemanlar, tImza])
 
   // Secde ayetlerini topla
   const secdeAyetleriMap = new Map()
@@ -396,6 +427,7 @@ function MushafSayfa({
                         harfAraligi={harfAraligi}
                         isMobile={isMobile}
                         kayitKonumModu={kayitKonumModu}
+                        tecvidRenk={tecvidRenkleri?.get(el.kelime.id) || null}
                         grupKonum={grup_?.konum || null}
                         grupVurgu={!!grup_ && hoverGrup === grup_.anahtar}
                         obekKonum={obek_?.konum || null}

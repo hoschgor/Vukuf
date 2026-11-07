@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { BIRLESIK_TECVID } from "../data/tecvid"
 // GEÇİCİ — dönme teşhisi sayacı (ölçüm bitince silinecek)
 // import { SAYAC as DONME_SAYAC } from "../data/donmeTeshis"   // ⏸ dönme teşhisi (yorumda)
 
@@ -264,6 +265,34 @@ export function ozelOkuyusAyikla(metin) {
   return { metin: kalan.join(''), ozeller }
 }
 
+// ── RENKLİ TECVİD: küme renklerini karaktere yay, aynı renkli komşuları tek span'de topla ──
+// Renk dizisi kural motorundan KÜME (taban harf) sırasıyla gelir. Buradaki metinden bazı
+// işaretler çıkarılmış olsa da hepsi birleşen işaret → küme sırası aynı kalır.
+// Kümenin TAMAMI (harf + harekeleri) aynı span'de boyanır; harekeyi harfinden ayırmak bazı
+// tarayıcılarda işaretin yerini kaydırıyor.
+function harfRenkleri(metin, renk) {
+  const out = []
+  let idx = -1
+  for (const c of metin) {
+    if (!(BIRLESIK_TECVID.test(c) && idx >= 0)) idx++
+    out.push(renk[idx] || null)
+  }
+  return out
+}
+function boyaliParca(karakterler, renkler, bas, son, anahtar) {
+  const dugum = []
+  let i = bas
+  while (i < son) {
+    const r = renkler[i]
+    let j = i + 1
+    while (j < son && renkler[j] === r) j++
+    const t = karakterler.slice(i, j).join("")
+    dugum.push(r ? <span key={`${anahtar}-${i}`} style={{ color: r }}>{t}</span> : t)
+    i = j
+  }
+  return dugum
+}
+
 function besmeleMi(kelimeId) {
   const [sure, ayet, kelime] = kelimeId.split(':').map(Number)
   if (sure === 1 && ayet === 1) return true
@@ -342,6 +371,8 @@ export default function MushafKelime({
   // ortak bağ çizgisi çiziliyor.
   obekKonum = null,
   obekVurgu = false,
+  // RENKLİ TECVİD: küme başına renk dizisi (MushafSayfa hesaplar) — kapalıyken null
+  tecvidRenk = null,
 }) {
   // DONME_SAYAC.kelime++   // ⏸ dönme teşhisi (yorumda)
   const [hover, setHover] = useState(false)
@@ -368,6 +399,11 @@ export default function MushafKelime({
   // Bakara 2:14 مُسْتَهْزِؤُ۫نَ'de "مد" ؤ'nin altında olmalıyken kelimenin ucunda duruyordu.
   // Yatay konum artık tecvid işaretleriyle aynı taban-harf sayımından geliyor (`sol`).
   const { metin: temizArabic, ozeller } = ozelOkuyusAyikla(tecvidsizArabic)
+  // Lafzatullah ve besmele kendi renginde kalır (renkli tecvid onları boyamaz)
+  const tecvidAktif = !!tecvidRenk && !lafizkontrol && !besmelekontrol
+  const tKarakter = tecvidAktif ? [...temizArabic] : null
+  const tRenk = tecvidAktif ? harfRenkleri(temizArabic, tecvidRenk) : null
+  const boya = (bas, son, anahtar) => boyaliParca(tKarakter, tRenk, bas, son, anahtar)
   // Metnin İÇİNDE mutlak konumlu çizilen vakıf işareti var mı (aşağıdaki VAKIF_CPS
   // dalı)? Onlar da kutudan taşabiliyor → kelime aynı nedenle üst kata alınıyor.
   const icVakif = [...temizArabic].some(c => VAKIF_CPS.has(c.codePointAt(0)))
@@ -535,7 +571,7 @@ export default function MushafKelime({
           const isKfgqpc = arapcaFont.toLowerCase().includes('kfgqpc')
 
           if (arapcaFont.toLowerCase().includes('kufi') || arapcaFont.toLowerCase().includes('kûfi')) {
-            return <span style={{ letterSpacing: 0 }}>{temizArabic}</span>
+            return <span style={{ letterSpacing: 0 }}>{tecvidAktif ? boya(0, tKarakter.length, "t") : temizArabic}</span>
           }
 
           // NOT: tecvid işaretleri temizArabic'te YOK (yukarıda çıkarıldı) → kelime tek parça,
@@ -544,6 +580,7 @@ export default function MushafKelime({
 
           if (!hasOzel) {
             // sade kelimede iç <span> de yok (yalnız metin)
+            if (tecvidAktif) return <span>{boya(0, tKarakter.length, "t")}</span>
             return sade ? temizArabic : <span>{temizArabic}</span>
           }
 
@@ -556,13 +593,16 @@ export default function MushafKelime({
           // boyu kadar SAĞA (kelimenin üstüne) kayıyor, yan yana duruyorlar.
           // Sola değil: solda âyet sonu rozeti var, işaret rozetin süsüne biniyordu.
           let vakifSira = 0
+          // normalBuf'un metindeki başlangıç sırası — renkli tecvid parçayı buna göre boyar
+          let bufBas = 0
+          const bufIcerik = () => tecvidAktif ? boya(bufBas, bufBas + [...normalBuf].length, `b${bufBas}`) : normalBuf
 
           chars.forEach((c, i) => {
             if (atla) { atla = false; return }
             const cp = c.codePointAt(0)
 
             if (cp === 0x06DA) {
-            if (normalBuf) { spans.push(<span key={`n-${i}`}>{normalBuf}</span>); normalBuf = '' }
+            if (normalBuf) { spans.push(<span key={`n-${i}`}>{bufIcerik()}</span>); normalBuf = '' }
             const nextCp = chars[i+1]?.codePointAt(0)
             const f = arapcaFont.toLowerCase()
             const cimTop = f.includes('nastaleeq')
@@ -581,10 +621,10 @@ export default function MushafKelime({
               spans.push(<span key={i} style={{ position: 'absolute', top: cimTop, color: '#2ecc71' }}>{c}</span>)
             }
           } else if (cp === 0x06DB) {
-              if (normalBuf) { spans.push(<span key={`n-${i}`}>{normalBuf}</span>); normalBuf = '' }
+              if (normalBuf) { spans.push(<span key={`n-${i}`}>{bufIcerik()}</span>); normalBuf = '' }
               spans.push(<span key={i} style={{ position: 'absolute', top: `-${yaziBoyutu * 0.25}px`, color: '#9b59b6' }}>{c}</span>)
             } else if (VAKIF_CPS.has(cp)) {
-              if (normalBuf) { spans.push(<span key={`n-${i}`}>{normalBuf}</span>); normalBuf = '' }
+              if (normalBuf) { spans.push(<span key={`n-${i}`}>{bufIcerik()}</span>); normalBuf = '' }
               const fallbackGerekli = arapcaFont.toLowerCase().includes('kfgqpc')
                 || arapcaFont.toLowerCase().includes('me_quran')
                 || arapcaFont.toLowerCase().includes('mequran')
@@ -621,11 +661,12 @@ export default function MushafKelime({
             // overlay olarak, ait oldukları harfin hizasında çiziliyor. Burada
             // kalsaydı ölü kod olurdu ve `right: 0` hatasını diri tutardı.
             } else {
+              if (!normalBuf) bufBas = i
               normalBuf += c
             }
           })
 
-          if (normalBuf) spans.push(<span key="n-last">{normalBuf}</span>)
+          if (normalBuf) spans.push(<span key="n-last">{bufIcerik()}</span>)
 
           return (
             <span style={{ position: 'relative', display: 'inline-block' }}>

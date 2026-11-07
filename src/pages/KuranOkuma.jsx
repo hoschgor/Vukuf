@@ -18,6 +18,7 @@ import Besmele from "../components/Besmele"
 import MushafSayfa from "../components/MushafSayfa"
 import MushafAyetRozeti from "../components/MushafAyetRozeti"
 import { gorselIcinTemizle, tecvidAyikla, ozelOkuyusAyikla, VAKIF_HARF_KOD } from "../components/MushafKelime"
+import RenkliTecvidBolumu from "../components/RenkliTecvidBolumu"
 import PlayerBar from "../components/PlayerBar"
 import KitapAyraci from "../components/KitapAyraci"
 import KayitPaneli from "../components/KayitPaneli"
@@ -6473,6 +6474,8 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
 
               {/* İçerik */}
               <div style={{ overflowY: "auto", padding: "12px 14px", flex: 1 }}>
+                {/* Renkli tecvid — ayrı bölüm, ana anahtarı başta kapalı (7 Kasım 2026) */}
+                <RenkliTecvidBolumu theme={theme} isMobile={isMobile} arapcaFont={aktifArapcaFont.style} />
                 {BILGI_BOLUMLERI.map(bolum => (
                   <div key={bolum.baslik} style={{ marginBottom: "14px" }}>
                     <div style={{

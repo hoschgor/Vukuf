@@ -217,6 +217,17 @@ const KONULAR = [
     anahtar: "vakıf durak tecvid işaret lazım caiz örnek âyete git",
   },
   {
+    bolum: "kuran", ikon: Gem, baslik: "Renkli tecvid",
+    ozet: "Tecvid kurallarının geçtiği harfleri renkle göstermek.",
+    nerede: "Kur'ân-ı Kerîm → mücevher simgesi → Renkli Tecvid",
+    metin: [
+      "Mücevher panelinin başındaki \"Renkli Tecvid\" bölümünden açılabilir; başta kapalıdır. Açıldığında ihfâ, idğâm, iklâb, ğunne, kalkale, lâm-ı şemsiyye ve medlerin geçtiği harfler kendi renkleriyle gösterilir.",
+      "Her kuralın yanında rengi, kısa açıklaması ve mushaftan bir örneği bulunur; kurallar tek tek açılıp kapatılabilir. Çok sık geçtiği için medd-i tabiî ve okunmayan harfler başta kapalıdır.",
+      "Kurallar, bu uygulamadaki mushafın (Diyanet imlâsı) metninden çıkarılır; Medine mushafına göre hazırlanmış renkli mushaflarla küçük farklar görülebilir. Lafzatullah ve besmele kendi renginde kalır.",
+    ],
+    anahtar: "renkli tecvid ihfa idgam iklab gunne kalkale med medd muttasıl munfasıl lazım arız şemsi renk",
+  },
+  {
     bolum: "kuran", ikon: Feather, baslik: "Yazı tercihleri",
     ozet: "Yazı tipi, boyutu ve renkleri.",
     nerede: "Kur'ân-ı Kerîm → bardaki kuş tüyü simgesi",

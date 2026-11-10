@@ -825,6 +825,34 @@ export function BarKonumSecici({ theme, deger, onSec, UstIkon, AltIkon, ikonBoy 
 /* OPAKLIK ÇEKMECESİ — okuma ekranlarının Ayarlar panelinde ayrı, açılıp kapanan bölüm.
    etiketStil: ekranın kendi bölüm başlığı stili (BAR KONUMU vb. ile aynı görünsün) */
 const CEKMECE_ANAHTAR = "vukuf-opaklik-cekmece"
+/* OPAKLIK AYARLARI — yalnız kaydırıcılar (başlıksız). Ayarlar paneli çekmece düzenine
+   geçince (10 Kasım 2026) "Menü ve Bar" çekmecesinin içinde AltCekmece altında kullanılıyor. */
+export function OpaklikAyarlari({ theme, yaziBoy = 13 }) {
+  const o = useOrtaOpaklik()
+  const satir = (anahtar, ad, alt, min, deger, vars) => (
+    <div style={{ padding: "4px 2px 2px" }}>
+      <div style={{ display: "flex", alignItems: "baseline", gap: "8px", fontSize: `${yaziBoy}px`, color: theme.text }}>
+        <span style={{ flex: 1 }}>{ad}
+          <span style={{ display: "block", fontSize: `${Math.max(10.5, yaziBoy - 2)}px`, color: theme.textSecondary, marginTop: "2px" }}>{alt}</span>
+        </span>
+        <span style={{ fontWeight: 700, color: theme.accent, fontVariantNumeric: "tabular-nums" }}>%{Math.round(deger * 100)}</span>
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+        <input type="range" min={min} max={1} step={0.05} value={deger} aria-label={ad}
+          onChange={e => ortaOpaklikYaz({ [anahtar]: parseFloat(e.target.value) || 1 })}
+          style={{ flex: 1, minWidth: 0, accentColor: theme.accent, cursor: "pointer" }} />
+        <button onClick={() => ortaOpaklikYaz({ [anahtar]: vars })} title="Varsayılana döndür" aria-label={`${ad}: varsayılan`}
+          style={{ border: `1px solid ${theme.border}`, background: "transparent", color: theme.textSecondary, borderRadius: "50%", width: "24px", height: "24px", cursor: "pointer", fontSize: "12px", lineHeight: 1, padding: 0 }}>↺</button>
+      </div>
+    </div>
+  )
+  return (
+    <>
+      {satir("menu", "Bar ya da menü zemini", "Bar üstte/alttaysa barın, Menü seçiliyse ortadaki menünün arka planı", 0.3, o.menu, OPAKLIK_VARSAYILAN.menu)}
+      {satir("bilgi", "Bilgi şeridi", "Menü düzeninde alttaki sayfa, süre bilgisi şeridi", 0.3, o.bilgi, OPAKLIK_VARSAYILAN.bilgi)}
+    </>
+  )
+}
 export function OpaklikCekmecesi({ theme, yaziBoy = 13, etiketStil }) {
   const o = useOrtaOpaklik()
   const [acik, setAcik] = useState(() => { try { return localStorage.getItem(CEKMECE_ANAHTAR) === "1" } catch { return false } })

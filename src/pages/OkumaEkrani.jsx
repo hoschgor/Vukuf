@@ -33,7 +33,8 @@ import IosSwitch from "../components/IosSwitch"
 import SayfaKitabi, { SayfaSigdir, useKitapModu, useGuvenliUst, KITAP_MODU_ESER, yayilimBasi } from "../components/SayfaKitabi"
 import { EserCercevesi } from "../components/SayfaSusleri"
 import { pencereKapatmaDokunusu } from "../data/pencereDokunusu"
-import { useOrtaMenu, useOrtaBilgi, OrtaMenuCercevesi, OrtaIpucu, BilgiSeridi, BarKonumSecici, barKonumOku, barKonumYaz, ORTA_OLCEK, barEtiketle, OpaklikCekmecesi, useOrtaOpaklik, yariSaydam } from "../components/OrtaMenu"
+import { useOrtaMenu, useOrtaBilgi, OrtaMenuCercevesi, OrtaIpucu, BilgiSeridi, BarKonumSecici, barKonumOku, barKonumYaz, ORTA_OLCEK, barEtiketle, OpaklikAyarlari, useOrtaOpaklik, yariSaydam } from "../components/OrtaMenu"
+import { AyarCekmecesi, AltCekmece, AltBaslik } from "../components/AyarCekmecesi"
 import DonusDugmesi, { KopruDugmesi, hapKonumlariniSifirla } from "../components/DonusDugmesi"
 import { History as GecmisIkon } from "lucide-react"
 import { useOkumaGecmisi, OKUMA_HEDEF_ANAHTAR } from "../data/gecmis"
@@ -3501,11 +3502,14 @@ const AyarlarPanel = ayarlarAcik && (
   <>
     <div onClick={() => setAyarlarAcik(false)} style={{ position: "fixed", inset: 0, zIndex: 95 }} />
     {/* YATAY TELEFON: yp-iki → iki sütun */}
-    <div className="okuma-panel yp-panel yp-genis yp-sag yp-iki" style={{ ...panelStil("right", 640), width: "280px", maxHeight: "80vh", overflowY: "auto", display: "flex", flexDirection: "column", gap: "16px" }}>
+    <div className="okuma-panel yp-panel yp-genis yp-sag yp-iki" style={{ ...panelStil("right", 640), width: "280px", maxHeight: "80vh", overflowY: "auto", display: "flex", flexDirection: "column", gap: "8px" }}>
 
-      {/* OKUMA DÜZENİ — kitap modu (5 Kasım 2026) */}
-      <div>
-        <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px" }}>OKUMA DÜZENİ</div>
+      {/* ── ÇEKMECELER (10 Kasım 2026) — Kur'ân ekranıyla aynı düzen: Okuma Düzeni ·
+            Menü ve Bar · Öge Görüntüleme · Gezinme. Başlıkta kısa özet; açık/kapalı
+            durumu cihazda saklanıyor. Yatay telefonda (yp-iki) iki sütun. */}
+
+      {/* OKUMA DÜZENİ — kitap modu (+ otomatik kaydırma açıksa hızı) */}
+      <AyarCekmecesi id="eser-okuma-duzeni" baslik="Okuma Düzeni" ozet={kitapModu ? "Kitap modu" : "Kaydırmalı"} theme={theme}>
         <div onClick={() => {
           // Kaydırmalıdan kitaba geçerken ekranın ÜSTÜNDEKİ satırın sayfası esas alınır
           // (mevcutSayfa ekranın ortasındaki sayfayı tutuyor; okunan yer üstteki satırdır)
@@ -3526,154 +3530,130 @@ const AyarlarPanel = ayarlarAcik && (
           </span>
           <IosSwitch acik={kitapModu} theme={theme} boyut={0.82} />
         </div>
-      </div>
 
-      {/* Bar konumu */}
-      <div>
-        <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px" }}>BAR KONUMU</div>
-        <BarKonumSecici theme={theme} deger={barKonum} onSec={setBarKonum}
-          UstIkon={ChevronsUp} AltIkon={ChevronsDown} ikonBoy={13} yaziBoy={13}
-          bilgiAcik={ortaBilgi} onBilgi={setOrtaBilgi} />
-      </div>
-
-      {/* OPAKLIK — ayrı çekmece; bar konumu ne olursa olsun bar ya da menü zeminine uygulanır */}
-      <OpaklikCekmecesi theme={theme} yaziBoy={13}
-        etiketStil={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px" }} />
-
-      {/* Otomatik gizleme */}
-      <div>
-        <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px" }}>OTOMATİK GİZLEME</div>
-        <div onClick={() => setOtomatikGizleme(!otomatikGizleme)} role="button" aria-pressed={otomatikGizleme} style={{
-          width: "100%", padding: "7px 10px", borderRadius: "8px", fontSize: "13px",
-          color: theme.text,
-          cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px",
-        }}>
-          <span>Otomatik gizleme</span>
-          <IosSwitch acik={otomatikGizleme} theme={theme} boyut={0.82} />
-        </div>
-        {otomatikGizleme && (
-          <div style={{ marginTop: "8px" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", color: theme.textSecondary, marginBottom: "4px" }}>
-              <span>Gizlenme süresi</span><span>{gizlemeSuresi} sn.</span>
-            </div>
-            <input type="range" min="2" max="15" value={gizlemeSuresi}
-              onChange={e => setGizlemeSuresi(Number(e.target.value))}
+        {/* Otomatik kaydırma hızı — yalnız otomatik kaydırma açıkken */}
+        {otomatikKaydirma && (
+          <div>
+            <AltBaslik theme={theme}>Kaydırma hızı</AltBaslik>
+            <input type="range" min="1" max="20" value={kaydirmaHizi}
+              aria-label="Kaydırma hızı"
+              onChange={e => setKaydirmaHizi(Number(e.target.value))}
               style={{ width: "100%", accentColor: theme.accent }}
             />
           </div>
         )}
-      </div>
+      </AyarCekmecesi>
 
-      {/* Otomatik kaydırma hızı */}
-      {otomatikKaydirma && (
+      {/* MENÜ VE BAR — konum (+ bilgi şeridi), opaklık, boyutlar, otomatik gizleme */}
+      <AyarCekmecesi id="eser-menu-bar" baslik="Menü ve Bar"
+        ozet={barKonum === "orta" ? "Menü" : barKonum === "alt" ? "Altta" : "Üstte"} theme={theme}>
         <div>
-          <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px" }}>KAYDIRMA HIZI</div>
-          <input type="range" min="1" max="20" value={kaydirmaHizi}
-            onChange={e => setKaydirmaHizi(Number(e.target.value))}
-            style={{ width: "100%", accentColor: theme.accent }}
-          />
+          <AltBaslik theme={theme}>Bar konumu</AltBaslik>
+          <BarKonumSecici theme={theme} deger={barKonum} onSec={setBarKonum}
+            UstIkon={ChevronsUp} AltIkon={ChevronsDown} ikonBoy={13} yaziBoy={13}
+            bilgiAcik={ortaBilgi} onBilgi={setOrtaBilgi} />
         </div>
-      )}
 
-      {/* Arayüz (bar) boyutu */}
-      <div>
-        <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", color: theme.textSecondary, marginBottom: "6px", letterSpacing: "1px" }}>
-          <span>ARAYÜZ BOYUTU</span>
-          <span style={{ color: theme.accent, fontWeight: "bold" }}>{Math.round(barUiOlcegi * 100)}%</span>
-        </div>
-        <input type="range" min="0.8" max="1.3" step="0.05" value={barUiOlcegi}
-          onChange={e => setBarUiOlcegi(parseFloat(e.target.value))}
-          style={{ width: "100%", accentColor: theme.accent }}
-        />
-      </div>
+        <AltCekmece id="eser-opaklik" baslik="Opaklık" theme={theme}>
+          <OpaklikAyarlari theme={theme} yaziBoy={13} />
+        </AltCekmece>
 
-      {/* Bilgi menüsü (hover/popup) boyutu */}
-      <div>
-        <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", color: theme.textSecondary, marginBottom: "6px", letterSpacing: "1px" }}>
-          <span>BİLGİ MENÜSÜ BOYUTU</span>
-          <span style={{ color: theme.accent, fontWeight: "bold" }}>{Math.round(bilgiOlcegi * 100)}%</span>
-        </div>
-        <input type="range" min="0.85" max="1.6" step="0.05" value={bilgiOlcegi}
-          onChange={e => setBilgiOlcegi(parseFloat(e.target.value))}
-          style={{ width: "100%", accentColor: theme.accent }}
-        />
-      </div>
-
-      {/* Görüntüle — bar öğelerini göster/gizle (açılır) */}
-      <div>
-        <button onClick={() => setGorunumAcik(v => !v)} style={{
-          width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
-          background: "transparent", border: "none", cursor: "pointer", padding: "2px 0",
-          fontSize: "11px", color: theme.textSecondary, letterSpacing: "1px", fontFamily: "inherit",
-        }}>
-          <span>GÖRÜNTÜLE</span>
-          {gorunumAcik ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-        </button>
-        {gorunumAcik && (
-          <div style={{ marginTop: "8px" }}>
-            <button
-              onClick={() => setSiraAcik(true)}
-              style={{
-                width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
-                gap: "8px", padding: "9px 10px", marginBottom: "10px",
-                background: `${theme.accent}12`, border: `1px solid ${theme.accent}33`,
-                borderRadius: "9px", cursor: "pointer", color: theme.text, fontSize: "13px", fontFamily: "inherit",
-              }}
-            >
-              <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <GripVertical size={15} color={theme.accent} />
-                Buton Sıralaması
-              </span>
-              <ChevronRight size={15} color={theme.textSecondary} />
-            </button>
-            {BAR_OGELERI.map(o => (
-              <AyarToggle key={o.key} etiket={o.label} theme={theme}
-                aktif={ogeGorunur[o.key] !== false}
-                onToggle={() => setOgeGorunur(p => ({ ...p, [o.key]: (p[o.key] === false) }))}
+        <AltCekmece id="eser-boyut" baslik="Boyut ayarları" theme={theme}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+            <div>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px", color: theme.text, marginBottom: "2px" }}>
+                <span>Arayüz</span>
+                <span style={{ color: theme.accent, fontWeight: "bold" }}>{Math.round(barUiOlcegi * 100)}%</span>
+              </div>
+              <input type="range" min="0.8" max="1.3" step="0.05" value={barUiOlcegi}
+                aria-label="Arayüz boyutu"
+                onChange={e => setBarUiOlcegi(parseFloat(e.target.value))}
+                style={{ width: "100%", accentColor: theme.accent }}
               />
-            ))}
+            </div>
+            {/* Bilgi menüsü (hover/popup) boyutu */}
+            <div>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px", color: theme.text, marginBottom: "2px" }}>
+                <span>Bilgi menüsü</span>
+                <span style={{ color: theme.accent, fontWeight: "bold" }}>{Math.round(bilgiOlcegi * 100)}%</span>
+              </div>
+              <input type="range" min="0.85" max="1.6" step="0.05" value={bilgiOlcegi}
+                aria-label="Bilgi menüsü boyutu"
+                onChange={e => setBilgiOlcegi(parseFloat(e.target.value))}
+                style={{ width: "100%", accentColor: theme.accent }}
+              />
+            </div>
           </div>
-        )}
-      </div>
+        </AltCekmece>
 
-      {/* Sade Mod içeriği — sade modda gizlenecek öğeler (açılır) */}
-      <div>
-        <button onClick={() => setSadeIcerikAcik(v => !v)} style={{
-          width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
-          background: "transparent", border: "none", cursor: "pointer", padding: "2px 0",
-          fontSize: "11px", color: theme.textSecondary, letterSpacing: "1px", fontFamily: "inherit",
-        }}>
-          <span>SADE MOD İÇERİKLERİ</span>
-          {sadeIcerikAcik ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-        </button>
-        {/* Sade modun kendisi — bar düğmesi sade modda gizli olabileceği için burada da */}
+        <div>
+          <div onClick={() => setOtomatikGizleme(!otomatikGizleme)} role="button" aria-pressed={otomatikGizleme} style={{
+            width: "100%", padding: "7px 4px", borderRadius: "8px", fontSize: "13px",
+            color: theme.text, boxSizing: "border-box",
+            cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px",
+          }}>
+            <span>Otomatik gizleme</span>
+            <IosSwitch acik={otomatikGizleme} theme={theme} boyut={0.82} />
+          </div>
+          {otomatikGizleme && (
+            <div style={{ marginTop: "6px", padding: "0 4px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", color: theme.textSecondary, marginBottom: "4px" }}>
+                <span>Gizlenme süresi</span><span>{gizlemeSuresi} sn.</span>
+              </div>
+              <input type="range" min="2" max="15" value={gizlemeSuresi}
+                aria-label="Gizlenme süresi"
+                onChange={e => setGizlemeSuresi(Number(e.target.value))}
+                style={{ width: "100%", accentColor: theme.accent }}
+              />
+            </div>
+          )}
+        </div>
+      </AyarCekmecesi>
+
+      {/* ÖGE GÖRÜNTÜLEME — menü ögeleri ve sade mod ögeleri (iki iç çekmece korunuyor) */}
+      <AyarCekmecesi id="eser-oge" baslik="Öge Görüntüleme" ozet={sadeMode ? "Sade mod açık" : ""} theme={theme}>
+        <AltCekmece baslik="Menü ögeleri" acik={gorunumAcik} onDegis={() => setGorunumAcik(v => !v)} theme={theme}>
+          <button
+            onClick={() => setSiraAcik(true)}
+            style={{
+              width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
+              gap: "8px", padding: "9px 10px", marginBottom: "10px",
+              background: `${theme.accent}12`, border: `1px solid ${theme.accent}33`,
+              borderRadius: "9px", cursor: "pointer", color: theme.text, fontSize: "13px", fontFamily: "inherit",
+            }}
+          >
+            <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <GripVertical size={15} color={theme.accent} />
+              Buton Sıralaması
+            </span>
+            <ChevronRight size={15} color={theme.textSecondary} />
+          </button>
+          {BAR_OGELERI.map(o => (
+            <AyarToggle key={o.key} etiket={o.label} theme={theme}
+              aktif={ogeGorunur[o.key] !== false}
+              onToggle={() => setOgeGorunur(p => ({ ...p, [o.key]: (p[o.key] === false) }))}
+            />
+          ))}
+        </AltCekmece>
+
+        {/* Sade modun kendisi iç çekmecenin DIŞINDA — bar düğmesi sade modda gizli olabilir */}
         <AyarToggle etiket="Sade mod" theme={theme} aktif={sadeMode} onToggle={() => setSadeMode(!sadeMode)} />
-        {sadeIcerikAcik && (
-          <div style={{ marginTop: "8px" }}>
-            {/* Düz mantık: anahtar AÇIK = öğe sade modda GÖSTERİLİR. ogeSade[key]=true "gizli"
-                anlamına geldiği için anahtar bunun TERSİ (gösteriliyor mu). */}
-            {BAR_OGELERI.map(o => (
-              <AyarToggle key={o.key} etiket={o.label} theme={theme}
-                aktif={!ogeSade[o.key]}
-                onToggle={() => setOgeSade(p => ({ ...p, [o.key]: !p[o.key] }))}
-              />
-            ))}
-          </div>
-        )}
-      </div>
+        <AltCekmece baslik="Sade mod ögeleri" acik={sadeIcerikAcik} onDegis={() => setSadeIcerikAcik(v => !v)} theme={theme}>
+          <AltBaslik theme={theme}>Sade modda görünecek ögeler</AltBaslik>
+          {/* Düz mantık: anahtar AÇIK = öğe sade modda GÖSTERİLİR. ogeSade[key]=true "gizli"
+              anlamına geldiği için anahtar bunun TERSİ (gösteriliyor mu). */}
+          {BAR_OGELERI.map(o => (
+            <AyarToggle key={o.key} etiket={o.label} theme={theme}
+              aktif={!ogeSade[o.key]}
+              onToggle={() => setOgeSade(p => ({ ...p, [o.key]: !p[o.key] }))}
+            />
+          ))}
+        </AltCekmece>
+      </AyarCekmecesi>
 
-      {/* GEZİNME — dönüş noktaları (3 Ekim 2026). Ayar öbür okuma ekranıyla ortak.
-          4 Ekim 2026 (kullanıcı): yatayda açıklama sağ sütuna, SADE MOD'un altına
-          düşüyor ve onun açıklaması sanılıyordu. ARTIK tek bir çerçeveli kutu:
-          başlık + kısa alt yazı + "Düğme konumlarını sıfırla" bağlantısı solda,
-          anahtar sağda. Yatayda iki sütunu birden kaplar (yp-tam); kutu kendi
-          içinde bütün olduğundan hiçbir sütuna ait görünmez. */}
-      <div className="yp-tam">
-        <div className="yp-tam-baslik" style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px" }}>GEZİNME</div>
-        <div style={{
-          display: "flex", alignItems: "center", gap: "12px", padding: "10px 12px",
-          borderRadius: "10px", background: `${theme.accent}0d`, border: `1px solid ${theme.border}`,
-        }}>
+      {/* GEZİNME — dönüş noktaları (ayar öbür okuma ekranıyla ortak) */}
+      <AyarCekmecesi id="eser-gezinme" baslik="Gezinme" ozet={donusAcik ? "Dönüş noktaları açık" : "Kapalı"} theme={theme}>
+        <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "2px 4px" }}>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div onClick={() => setDonusAcik(!donusAcik)} role="button" style={{ fontSize: "13px", color: theme.text, cursor: "pointer" }}>
               Dönüş noktaları
@@ -3691,10 +3671,11 @@ const AyarlarPanel = ayarlarAcik && (
             <IosSwitch acik={donusAcik} theme={theme} boyut={0.82} />
           </div>
         </div>
-      </div>
+      </AyarCekmecesi>
     </div>
     </>
 )
+
 
 // ════════════════════════════════════════════════════════════════
 // ÖZEL TEMA PANELİ

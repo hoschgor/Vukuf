@@ -27,7 +27,8 @@ import SayfaFarkiBildirimi, { sayfaFarkiOlustur } from "../components/SayfaFarki
 import KelimePopup from "../components/KelimePopup"
 import YuklemeEkrani from "../components/YuklemeEkrani"
 import IosSwitch from "../components/IosSwitch"
-import { useOrtaMenu, useOrtaBilgi, OrtaMenuCercevesi, OrtaIpucu, BilgiSeridi, BarKonumSecici, barKonumOku, barKonumYaz, ORTA_OLCEK, barEtiketle, OpaklikCekmecesi, useOrtaOpaklik, yariSaydam } from "../components/OrtaMenu"
+import { useOrtaMenu, useOrtaBilgi, OrtaMenuCercevesi, OrtaIpucu, BilgiSeridi, BarKonumSecici, barKonumOku, barKonumYaz, ORTA_OLCEK, barEtiketle, OpaklikAyarlari, useOrtaOpaklik, yariSaydam } from "../components/OrtaMenu"
+import { AyarCekmecesi, AltCekmece, AltBaslik } from "../components/AyarCekmecesi"
 import PanelAyirac, { PanelAcilir, panelBolumeHizala } from "../components/PanelAyirac"
 import GeriIkonu from "../components/GeriIkonu"
 import TemaSecici from "../components/TemaSecici"
@@ -266,7 +267,7 @@ function MealOlcekAyari({ theme, etiketStil }) {
   return (
     <div>
       <div style={{ ...etiketStil, display: "flex", justifyContent: "space-between" }}>
-        <span>MEAL PENCERESİ BOYUTU</span>
+        <span>Meal penceresi</span>
         <span style={{ color: theme.accent, fontWeight: "bold" }}>{Math.round(olcek * 100)}%</span>
       </div>
       <input
@@ -4319,12 +4320,10 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
   // AYARLAR PANELİ
   // ════════════════════════════════════════════════════════════════
 
-  // Ayarlar panelindeki bölüm başlıkları — OkumaEkrani'yla aynı görünüm (büyük harf,
-  // harf aralıklı), boyut arayüz ölçeğine bağlı.
-  const ayarEtiket = {
-    fontSize: `${Math.round((isMobile ? 11 : 12) * barUiOlcegi)}px`,
-    color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px",
-  }
+
+  // Çekmece içindeki satır yazı boyları (arayüz ölçeğine bağlı)
+  const ayarYazi = Math.round((isMobile ? 12 : 13) * barUiOlcegi)
+  const ayarAlt = Math.round(11 * barUiOlcegi)
 
   const AyarlarPanel = ayarlarAcik && (
     <>
@@ -4335,21 +4334,20 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
         width: "270px", 
         display: "flex", 
         flexDirection: "column", 
-        gap: "16px", 
+        gap: "8px", 
         zIndex: 200,
         maxHeight: "80vh",
         overflowY: "auto",
       }}>
-        {/* SIRA (29 Eylül 2026, kullanıcı isteği) — OkumaEkrani'yla AYNI düzen:
-              BAR KONUMU        | OTOMATİK GİZLEME
-              ARAYÜZ BOYUTU     | MEAL PENCERESİ BOYUTU
-              GÖRÜNTÜLEME       | SADE MOD İÇERİKLERİ
-              GEZİNME (tam genişlik; içi: anahtar | açıklama)
-            Dikeyde aynı sırayla alt alta; yatay telefonda iki sütun (yp-iki).
-            Etiketler de OkumaEkrani gibi büyük harf, değer sağda yüzde. */}
-        {/* OKUMA DÜZENİ — kitap modu (5 Kasım 2026) */}
-        <div>
-          <div style={ayarEtiket}>OKUMA DÜZENİ</div>
+        {/* ── ÇEKMECELER (10 Kasım 2026) — kullanıcı: "Ayarlar kısımlarını da sadeleştirelim,
+              Okuma Düzeni, Meal, Menü ve Bar, Öge Görüntüleme, Gezinme başlıkları altında
+              çekmece stiline geçelim." Her çekmecenin başlığında kısa bir özet var (mevcut
+              durum açmadan görülsün); açık/kapalı durumu cihazda saklanıyor.
+              Yatay telefonda (yp-iki) çekmeceler iki sütuna diziliyor. */}
+
+        {/* OKUMA DÜZENİ — kitap modu */}
+        <AyarCekmecesi id="kuran-okuma-duzeni" baslik="Okuma Düzeni" ozet={kitapModu ? "Kitap modu" : "Kaydırmalı"}
+          theme={theme} olcek={barUiOlcegi} isMobile={isMobile}>
           <div onClick={() => setKitapModu(v => !v)} role="button" aria-pressed={kitapModu} style={{
             display: "flex", alignItems: "center", gap: "9px", padding: "9px 10px", borderRadius: "9px",
             cursor: "pointer", color: theme.text,
@@ -4358,114 +4356,108 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
           }}>
             <BookOpen size={16} color={theme.accent} style={{ flexShrink: 0 }} />
             <span style={{ flex: 1, minWidth: 0 }}>
-              <span style={{ display: "block", fontSize: `${Math.round((isMobile ? 12 : 13) * barUiOlcegi)}px`, fontWeight: 600 }}>Kitap modu</span>
-              <span style={{ display: "block", fontSize: `${Math.round(11 * barUiOlcegi)}px`, color: theme.textSecondary, lineHeight: 1.35 }}>
+              <span style={{ display: "block", fontSize: `${ayarYazi}px`, fontWeight: 600 }}>Kitap modu</span>
+              <span style={{ display: "block", fontSize: `${ayarAlt}px`, color: theme.textSecondary, lineHeight: 1.35 }}>
                 Mushaf sayfa sayfa gösterilir; sayfa sola doğru çevrilir. Geniş ekranda iki sayfa yan yana.
               </span>
             </span>
             <IosSwitch acik={kitapModu} theme={theme} boyut={0.82} />
           </div>
-        </div>
+        </AyarCekmecesi>
 
-        {/* MEAL — kelime ve âyet meali ayrı ayrı (10 Kasım 2026) */}
-        <div>
-          <div style={ayarEtiket}>MEAL</div>
-          {[
-            { etiket: "Kelime meali", acik: kelimeMeali, degis: () => setKelimeMeali(v => !v),
-              aciklama: "Kelimeye dokununca anlamı gösterilir." },
-            { etiket: "Âyet meali", acik: ayetMeali, degis: () => setAyetMeali(v => !v),
-              aciklama: "Âyet numarasına dokununca açılan balonda meal yer alır." },
-          ].map(m => (
-            <div key={m.etiket} onClick={m.degis} role="button" aria-pressed={m.acik} style={{
-              width: "100%", padding: "7px 10px", borderRadius: "8px", boxSizing: "border-box",
-              color: theme.text, cursor: "pointer",
-              display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px",
-            }}>
-              <span style={{ flex: 1, minWidth: 0 }}>
-                <span style={{ display: "block", fontSize: `${Math.round((isMobile ? 12 : 13) * barUiOlcegi)}px` }}>{m.etiket}</span>
-                <span style={{ display: "block", fontSize: `${Math.round(11 * barUiOlcegi)}px`, color: theme.textSecondary, lineHeight: 1.35 }}>{m.aciklama}</span>
-              </span>
-              <IosSwitch acik={m.acik} theme={theme} boyut={0.82} />
-            </div>
-          ))}
-        </div>
-
-        <div>
-          <div style={ayarEtiket}>BAR KONUMU</div>
-          <BarKonumSecici theme={theme} deger={barKonum} onSec={setBarKonum}
-            UstIkon={ChevronsUp} AltIkon={ChevronsDown}
-            ikonBoy={Math.round((isMobile ? 18 : 21) * barUiOlcegi)}
-            yaziBoy={Math.round((isMobile ? 11 : 12) * barUiOlcegi)}
-            bilgiAcik={ortaBilgi} onBilgi={setOrtaBilgi} />
-        </div>
-
-        {/* OPAKLIK — ayrı çekmece; bar konumu ne olursa olsun bar ya da menü zeminine uygulanır */}
-        <OpaklikCekmecesi theme={theme} etiketStil={ayarEtiket} yaziBoy={Math.round((isMobile ? 11 : 12) * barUiOlcegi)} />
-
-        <div>
-          <div style={ayarEtiket}>OTOMATİK GİZLEME</div>
-          <div onClick={() => setOtomatikGizleme(!otomatikGizleme)} role="button" aria-pressed={otomatikGizleme} style={{
-            width: "100%", padding: "7px 10px", borderRadius: "8px", fontSize: `${Math.round((isMobile ? 12 : 13) * barUiOlcegi)}px`,
-            color: theme.text, boxSizing: "border-box",
-            cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px",
-          }}>
-            <span>Otomatik gizleme</span>
-            <IosSwitch acik={otomatikGizleme} theme={theme} boyut={0.82} />
-          </div>
-          {otomatikGizleme && (
-            <div style={{ marginTop: "8px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: `${Math.round((isMobile ? 11 : 12) * barUiOlcegi)}px`, color: theme.textSecondary, marginBottom: "4px" }}>
-                <span>Gizlenme süresi</span><span>{gizlemeSuresi} sn.</span>
+        {/* MEAL — kelime ve âyet meali ayrı ayrı */}
+        <AyarCekmecesi id="kuran-meal" baslik="Meal"
+          ozet={`Kelime ${kelimeMeali ? "açık" : "kapalı"} · Âyet ${ayetMeali ? "açık" : "kapalı"}`}
+          theme={theme} olcek={barUiOlcegi} isMobile={isMobile}>
+          <div>
+            {[
+              { etiket: "Kelime meali", acik: kelimeMeali, degis: () => setKelimeMeali(v => !v),
+                aciklama: "Kelimeye dokununca anlamı gösterilir. Kapalıyken kelimeye dokunmak menüyü açar." },
+              { etiket: "Âyet meali", acik: ayetMeali, degis: () => setAyetMeali(v => !v),
+                aciklama: "Âyet numarasına dokununca açılan balonda meal yer alır." },
+            ].map(m => (
+              <div key={m.etiket} onClick={m.degis} role="button" aria-pressed={m.acik} style={{
+                width: "100%", padding: "7px 4px", borderRadius: "8px", boxSizing: "border-box",
+                color: theme.text, cursor: "pointer",
+                display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px",
+              }}>
+                <span style={{ flex: 1, minWidth: 0 }}>
+                  <span style={{ display: "block", fontSize: `${ayarYazi}px` }}>{m.etiket}</span>
+                  <span style={{ display: "block", fontSize: `${ayarAlt}px`, color: theme.textSecondary, lineHeight: 1.35 }}>{m.aciklama}</span>
+                </span>
+                <IosSwitch acik={m.acik} theme={theme} boyut={0.82} />
               </div>
-              <input type="range" min="2" max="15" value={gizlemeSuresi}
-                onChange={e => setGizlemeSuresi(Number(e.target.value))}
-                style={{ width: "100%", accentColor: theme.accent }}
-              />
-            </div>
-          )}
-        </div>
-
-        <div>
-          <div style={{ ...ayarEtiket, display: "flex", justifyContent: "space-between" }}>
-            <span>ARAYÜZ BOYUTU</span>
-            <span style={{ color: theme.accent, fontWeight: "bold" }}>{Math.round(barUiOlcegi * 100)}%</span>
+            ))}
           </div>
-          <input
-            type="range" min="0.8" max="1.6" step="0.1"
-            value={barUiOlcegi}
-            onChange={e => setBarUiOlcegi(parseFloat(e.target.value))}
-            style={{ width: "100%", accentColor: theme.accent }}
-          />
-        </div>
+        </AyarCekmecesi>
 
-        {/* MEAL PENCERESİ BOYUTU — OkumaEkrani'daki "Bilgi menüsü boyutu"nun karşılığı.
-            Sesli okumada açılan meal penceresini (yazı, başlık, düğmeler, genişlik)
-            birlikte büyütür. Meal yazı boyutu (pencerenin kendi ayarı) ayrıca duruyor;
-            bu oran onun ÜSTÜNE çarpılıyor. Kayıt: izlemeAyar → meal.olcek. */}
-        <MealOlcekAyari theme={theme} etiketStil={ayarEtiket} />
+        {/* MENÜ VE BAR — konum (+ bilgi şeridi), opaklık, boyutlar, otomatik gizleme */}
+        <AyarCekmecesi id="kuran-menu-bar" baslik="Menü ve Bar"
+          ozet={barKonum === "orta" ? "Menü" : barKonum === "alt" ? "Altta" : "Üstte"}
+          theme={theme} olcek={barUiOlcegi} isMobile={isMobile}>
+          <div>
+            <AltBaslik theme={theme} olcek={barUiOlcegi} isMobile={isMobile}>Bar konumu</AltBaslik>
+            <BarKonumSecici theme={theme} deger={barKonum} onSec={setBarKonum}
+              UstIkon={ChevronsUp} AltIkon={ChevronsDown}
+              ikonBoy={Math.round((isMobile ? 18 : 21) * barUiOlcegi)}
+              yaziBoy={ayarAlt + 1}
+              bilgiAcik={ortaBilgi} onBilgi={setOrtaBilgi} />
+          </div>
 
-        <div>
-        {/* Açılır başlık */}
-        <button
-          onClick={() => setGorunumAcik(v => !v)}
-          style={{
-            width: "100%", padding: "4px 0", background: "none", border: "none",
-            cursor: "pointer", display: "flex", alignItems: "center",
-            justifyContent: "space-between",
-            fontSize: `${Math.round((isMobile ? 11 : 12) * barUiOlcegi)}px`,
-            color: theme.textSecondary, letterSpacing: "1px", fontFamily: "inherit",
-          }}
-        >
-          <span>GÖRÜNTÜLEME</span>
-          {gorunumAcik
-            ? <ChevronDown size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />
-            : <ChevronRight size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />}
-        </button>
+          <AltCekmece id="kuran-opaklik" baslik="Opaklık" theme={theme} olcek={barUiOlcegi} isMobile={isMobile}>
+            <OpaklikAyarlari theme={theme} yaziBoy={ayarAlt + 1} />
+          </AltCekmece>
 
-        {/* İçerik — sadece açıkken */}
-        {gorunumAcik && (
-          <div style={{ marginTop: "10px" }}>
-            {/* Görüntüleme'nin İLK seçeneği */}
+          <AltCekmece id="kuran-boyut" baslik="Boyut ayarları" theme={theme} olcek={barUiOlcegi} isMobile={isMobile}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+              <div>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: `${ayarAlt + 1}px`, color: theme.text, marginBottom: "2px" }}>
+                  <span>Arayüz</span>
+                  <span style={{ color: theme.accent, fontWeight: "bold" }}>{Math.round(barUiOlcegi * 100)}%</span>
+                </div>
+                <input
+                  type="range" min="0.8" max="1.6" step="0.1"
+                  value={barUiOlcegi}
+                  aria-label="Arayüz boyutu"
+                  onChange={e => setBarUiOlcegi(parseFloat(e.target.value))}
+                  style={{ width: "100%", accentColor: theme.accent }}
+                />
+              </div>
+              {/* MEAL PENCERESİ BOYUTU — sesli okumada açılan meal penceresini (yazı, başlık,
+                  düğmeler, genişlik) birlikte büyütür. Kayıt: izlemeAyar → meal.olcek. */}
+              <MealOlcekAyari theme={theme} etiketStil={{ fontSize: `${ayarAlt + 1}px`, color: theme.text, marginBottom: "2px" }} />
+            </div>
+          </AltCekmece>
+
+          <div>
+            <div onClick={() => setOtomatikGizleme(!otomatikGizleme)} role="button" aria-pressed={otomatikGizleme} style={{
+              width: "100%", padding: "7px 4px", borderRadius: "8px", fontSize: `${ayarYazi}px`,
+              color: theme.text, boxSizing: "border-box",
+              cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px",
+            }}>
+              <span>Otomatik gizleme</span>
+              <IosSwitch acik={otomatikGizleme} theme={theme} boyut={0.82} />
+            </div>
+            {otomatikGizleme && (
+              <div style={{ marginTop: "6px", padding: "0 4px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: `${ayarAlt}px`, color: theme.textSecondary, marginBottom: "4px" }}>
+                  <span>Gizlenme süresi</span><span>{gizlemeSuresi} sn.</span>
+                </div>
+                <input type="range" min="2" max="15" value={gizlemeSuresi}
+                  aria-label="Gizlenme süresi"
+                  onChange={e => setGizlemeSuresi(Number(e.target.value))}
+                  style={{ width: "100%", accentColor: theme.accent }}
+                />
+              </div>
+            )}
+          </div>
+        </AyarCekmecesi>
+
+        {/* ÖGE GÖRÜNTÜLEME — menü ögeleri ve sade mod ögeleri (iki iç çekmece korunuyor) */}
+        <AyarCekmecesi id="kuran-oge" baslik="Öge Görüntüleme" ozet={sadeMode ? "Sade mod açık" : ""}
+          theme={theme} olcek={barUiOlcegi} isMobile={isMobile}>
+          <AltCekmece baslik="Menü ögeleri" acik={gorunumAcik} onDegis={() => setGorunumAcik(v => !v)}
+            theme={theme} olcek={barUiOlcegi} isMobile={isMobile}>
             <button
               onClick={siraPaneliAc}
               style={{
@@ -4473,7 +4465,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
                 gap: "8px", padding: "9px 10px", marginBottom: "10px",
                 background: `${theme.accent}12`, border: `1px solid ${theme.accent}33`,
                 borderRadius: "9px", cursor: "pointer", color: theme.text,
-                fontSize: `${Math.round((isMobile ? 12 : 13) * barUiOlcegi)}px`, fontFamily: "inherit",
+                fontSize: `${ayarYazi}px`, fontFamily: "inherit",
               }}
             >
               <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
@@ -4483,7 +4475,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
               <ChevronRight size={15} color={theme.textSecondary} />
             </button>
 
-            <div style={{ fontSize: `${Math.round((isMobile ? 9 : 10) * barUiOlcegi)}px`, color: theme.textSecondary, opacity: .7, marginBottom: "6px", paddingLeft: "2px" }}>Bilgi</div>
+            <AltBaslik theme={theme} olcek={barUiOlcegi} isMobile={isMobile}>Bilgi</AltBaslik>
             <AyarToggle etiket="Okuma zamanı"       aktif={sureGoster}        onToggle={() => setSureGoster(v => !v)}        {...{theme, isMobile, barUiOlcegi}} />
             <AyarToggle etiket="Sûre bilgisi"       aktif={sureBilgisiGoster} onToggle={() => setSureBilgisiGoster(v => !v)} {...{theme, isMobile, barUiOlcegi}} />
             <AyarToggle etiket="Cüz bilgisi"  aktif={cuzBilgisiGoster}   onToggle={() => setCuzBilgisiGoster(v => !v)}   {...{theme, isMobile, barUiOlcegi}} />
@@ -4491,7 +4483,8 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
             {/* Yalnız menü modunda (alttaki bilgi şeridi): bar kipinde sayfa zaten "Sayfaya Gitme" düğmesinde */}
             {ortaBar && <AyarToggle etiket="Sayfa bilgisi" aktif={sayfaBilgisiGoster} onToggle={() => setSayfaBilgisiGoster(v => !v)} {...{theme, isMobile, barUiOlcegi}} />}
 
-            <div style={{ fontSize: `${Math.round((isMobile ? 9 : 10) * barUiOlcegi)}px`, color: theme.textSecondary, opacity: .7, margin: "10px 0 6px", paddingLeft: "2px" }}>Menü Butonları</div>
+            <div style={{ height: "8px" }} />
+            <AltBaslik theme={theme} olcek={barUiOlcegi} isMobile={isMobile}>Menü butonları</AltBaslik>
             <AyarToggle etiket="Sûre Menüsü"   aktif={sureMenuGoster} onToggle={() => setSureMenuGoster(v => !v)} {...{theme, isMobile, barUiOlcegi}} />
             <AyarToggle etiket="Kayıt Menüsü"  aktif={kayitGoster}    onToggle={() => setKayitGoster(v => !v)}    {...{theme, isMobile, barUiOlcegi}} />
             <AyarToggle etiket="Sayfaya Gitme" aktif={sayfaGitGoster} onToggle={() => setSayfaGitGoster(v => !v)} {...{theme, isMobile, barUiOlcegi}} />
@@ -4500,70 +4493,40 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
             <AyarToggle etiket="Görsel / Video" aktif={gorselGoster} onToggle={() => setGorselGoster(v => !v)} {...{theme, isMobile, barUiOlcegi}} />
             <AyarToggle etiket="Paylaş" aktif={paylasGoster} onToggle={() => setPaylasGoster(v => !v)} {...{theme, isMobile, barUiOlcegi}} />
             <AyarToggle etiket="Hıfz Modu" aktif={hifzGoster} onToggle={() => setHifzGoster(v => !v)} {...{theme, isMobile, barUiOlcegi}} />
-
-
             <AyarToggle etiket="Yazı Tipi"         aktif={yaziTipiGoster} onToggle={() => setYaziTipiGoster(v => !v)} {...{theme, isMobile, barUiOlcegi}} />
             <AyarToggle etiket="Otomatik Oynatma"  aktif={otoOynatGoster} onToggle={() => setOtoOynatGoster(v => !v)} {...{theme, isMobile, barUiOlcegi}} />
             <AyarToggle etiket="Sade Mod"      aktif={sadeModGoster}  onToggle={() => setSadeModGoster(v => !v)}  {...{theme, isMobile, barUiOlcegi}} />
             <AyarToggle etiket="Tema Paneli"   aktif={temaGoster}     onToggle={() => setTemaGoster(v => !v)}     {...{theme, isMobile, barUiOlcegi}} />
-          </div>
-        )}
-      </div>
+          </AltCekmece>
 
-        {/* Sade Mod İçerikleri — sade modda hangi öğeler GÖSTERİLSİN (anahtar açık = görünür) */}
-        <div>
-          <button
-            onClick={() => setSadeIcerikAcik(v => !v)}
-            style={{
-              width: "100%", padding: "4px 0", background: "none", border: "none",
-              cursor: "pointer", display: "flex", alignItems: "center",
-              justifyContent: "space-between",
-              fontSize: `${Math.round((isMobile ? 11 : 12) * barUiOlcegi)}px`,
-              color: theme.textSecondary, letterSpacing: "1px", fontFamily: "inherit",
-            }}
-          >
-            <span>SADE MOD İÇERİKLERİ</span>
-            {sadeIcerikAcik
-              ? <ChevronDown size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />
-              : <ChevronRight size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />}
-          </button>
-          {/* Sade modun kendisi — bar düğmesi sade modda gizli olabileceği için burada da */}
+          {/* Sade modun kendisi iç çekmecenin DIŞINDA — bar düğmesi sade modda gizli olabilir */}
           <AyarToggle etiket="Sade mod" aktif={sadeMode} onToggle={() => setSadeMode(!sadeMode)} {...{theme, isMobile, barUiOlcegi}} />
-          {sadeIcerikAcik && (
-            <div style={{ marginTop: "10px" }}>
-              <div style={{ fontSize: `${Math.round((isMobile ? 9 : 10) * barUiOlcegi)}px`, color: theme.textSecondary, opacity: .7, marginBottom: "6px", paddingLeft: "2px" }}>Sade modda görünecek öğeler</div>
-              {SADE_OGELERI.map(o => (
-                <AyarToggle key={o.key} etiket={o.label}
-                  aktif={!sadeGizli[o.key]}
-                  onToggle={() => setSadeGizli(p => ({ ...p, [o.key]: !p[o.key] }))}
-                  {...{theme, isMobile, barUiOlcegi}} />
-              ))}
-            </div>
-          )}
-        </div>
+          <AltCekmece baslik="Sade mod ögeleri" acik={sadeIcerikAcik} onDegis={() => setSadeIcerikAcik(v => !v)}
+            theme={theme} olcek={barUiOlcegi} isMobile={isMobile}>
+            <AltBaslik theme={theme} olcek={barUiOlcegi} isMobile={isMobile}>Sade modda görünecek ögeler</AltBaslik>
+            {SADE_OGELERI.map(o => (
+              <AyarToggle key={o.key} etiket={o.label}
+                aktif={!sadeGizli[o.key]}
+                onToggle={() => setSadeGizli(p => ({ ...p, [o.key]: !p[o.key] }))}
+                {...{theme, isMobile, barUiOlcegi}} />
+            ))}
+          </AltCekmece>
+        </AyarCekmecesi>
 
-        {/* GEZİNME — dönüş noktaları (3 Ekim 2026). Ayar öbür okuma ekranıyla ortak.
-            4 Ekim 2026 (kullanıcı): yatayda açıklama sağ sütuna, SADE MOD'un altına
-            düşüyor ve onun açıklaması sanılıyordu. ARTIK tek bir çerçeveli kutu:
-            başlık + kısa alt yazı + "Düğme konumlarını sıfırla" bağlantısı solda,
-            anahtar sağda. Yatayda iki sütunu birden kaplar (yp-tam); kutu kendi
-            içinde bütün olduğundan hiçbir sütuna ait görünmez. */}
-        <div className="yp-tam">
-          <div className="yp-tam-baslik" style={ayarEtiket}>GEZİNME</div>
-          <div style={{
-            display: "flex", alignItems: "center", gap: "12px", padding: "10px 12px",
-            borderRadius: "10px", background: `${theme.accent}0d`, border: `1px solid ${theme.border}`,
-          }}>
+        {/* GEZİNME — dönüş noktaları (ayar öbür okuma ekranıyla ortak) */}
+        <AyarCekmecesi id="kuran-gezinme" baslik="Gezinme" ozet={donusAcik ? "Dönüş noktaları açık" : "Kapalı"}
+          theme={theme} olcek={barUiOlcegi} isMobile={isMobile}>
+          <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "2px 4px" }}>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div onClick={() => setDonusAcik(!donusAcik)} role="button" style={{ fontSize: `${Math.round((isMobile ? 12 : 13) * barUiOlcegi)}px`, color: theme.text, cursor: "pointer" }}>
+              <div onClick={() => setDonusAcik(!donusAcik)} role="button" style={{ fontSize: `${ayarYazi}px`, color: theme.text, cursor: "pointer" }}>
                 Dönüş noktaları
               </div>
-              <div style={{ fontSize: `${Math.round((isMobile ? 10 : 11) * barUiOlcegi)}px`, color: theme.textSecondary, lineHeight: 1.45, marginTop: "2px" }}>
+              <div style={{ fontSize: `${ayarAlt}px`, color: theme.textSecondary, lineHeight: 1.45, marginTop: "2px" }}>
                 Başka yere gitmeden önce okuduğunuz yere "Geri dön" ile dönülür.
               </div>
               <button onClick={hapKonumlariniSifirla} style={{
                 marginTop: "6px", padding: 0, background: "none", border: "none", cursor: "pointer",
-                fontSize: `${Math.round((isMobile ? 10 : 11) * barUiOlcegi)}px`, fontFamily: "inherit", color: theme.accent,
+                fontSize: `${ayarAlt}px`, fontFamily: "inherit", color: theme.accent,
                 textDecoration: "underline", textUnderlineOffset: "2px",
               }}>Düğme konumlarını sıfırla</button>
             </div>
@@ -4571,7 +4534,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
               <IosSwitch acik={donusAcik} theme={theme} boyut={0.82} />
             </div>
           </div>
-        </div>
+        </AyarCekmecesi>
 
         {/* Kârî seçimi 4 Kasım 2026'da buradan kaldırıldı (kullanıcı: "diğer tarafta zaten var")
             — oynatıcının ayar düğmesinde (PlayerBar) duruyor. */}

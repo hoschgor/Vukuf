@@ -243,7 +243,7 @@ const KONULAR = [
     ozet: "Sayfanın kendiliğinden ilerlemesi.",
     nerede: "Kur'ân-ı Kerîm → bardaki oynat simgesi",
     metin: [
-      "Oynat simgesi sayfayı kendiliğinden kaydırır; tekrar dokunulduğunda durur. Kaydırma hızı ayarlardan değiştirilebilir.",
+      "Oynat simgesi sayfayı kendiliğinden kaydırır; tekrar dokunulduğunda durur. Kaydırma hızı, otomatik kaydırma açıkken Ayarlar → Okuma Düzeni bölümünden değiştirilebilir.",
     ],
     anahtar: "kaydır otomatik akış hız",
   },
@@ -252,7 +252,7 @@ const KONULAR = [
     ozet: "Barı sadeleştirip yalnız metne odaklanmak.",
     nerede: "Kur'ân-ı Kerîm → bardaki daire simgesi",
     metin: [
-      "Daire simgesi barı sadeleştirir. Sade modda hangi öğelerin gizleneceği Ayarlar → Sade Mod İçerikleri bölümünden seçilebilir; sade mod da aynı bölümdeki anahtarla açılıp kapatılabilir.",
+      "Daire simgesi barı sadeleştirir. Sade modda hangi öğelerin görüneceği Ayarlar → Öge Görüntüleme → Sade mod ögeleri bölümünden seçilebilir; sade mod da aynı çekmecedeki anahtarla açılıp kapatılabilir.",
       "Uygulamanın ilk açılışında Sade ya da Tam okuma ekranı seçilebilir; bu seçim sonradan ana menüdeki Ayarlar → Okuma ekranı bölümünden değiştirilebilir. Değiştirildiğinde iki okuma ekranı da seçilen modun başlangıç düzenine döner.",
       "Sade modda başlangıçta düğmelerden Geri, içerik menüsü (sûre menüsü ya da içindekiler), Yazı tipi, Otomatik kaydırma ve Ayarlar görünür. Bilgilerden yalnız okuma süresi ve hizb bilgisi gizlenir; sayfa, sûre, cüz ve kısım bilgisi görünür. Diğer öğeler istenince açılabilir.",
     ],
@@ -297,14 +297,14 @@ const KONULAR = [
   {
     bolum: "kuran", ikon: LayoutGrid, baslik: "Bar konumu ve menü",
     ozet: "Bar üstte, altta ya da ortada açılan bir menü olarak.",
-    nerede: "Kur'ân-ı Kerîm ve kitaplar → Ayarlar (dişli) → Bar konumu",
+    nerede: "Kur'ân-ı Kerîm ve kitaplar → Ayarlar (dişli) → Menü ve Bar",
     metin: [
       "Bar üç biçimde kullanılabilir: Üst, Alt ve Menü. Başlangıçta Menü seçilidir.",
       "Menü seçiliyken bar ekranda durmaz; metne dokunulunca (bilgisayarda tıklanınca) ekranın ortasında tezhipli bir çerçeve içinde açılır. Düğmelerin altında kısa adları yazar; sûre menüsünü ya da içindekileri açan düğmenin adı \"Fihrist\"tir. Başka bir yere dokunulunca ya da bir panel açılınca kendiliğinden kapanır. Tema paneli açıldığında menü açık kalır, böylece yeni tema menüde de görülebilir.",
       "Lügat kelimeleri, mushaftaki kelimeler ve âyet numaraları dokununca kendi pencerelerini açar; menü bunların dışındaki boş yere dokunularak açılır. Sayfa kayarken dokunmak yalnız kaydırmayı durdurur.",
       "Bazı telefonlarda metin seçilince altta tarayıcının arama çubuğu çıkıp alttaki barı örtebiliyor; Menü bu durumda da rahat kullanılabilsin diye ortada açılır.",
       "Bir bölüm seçiliyken metne dokunulursa seçim korunur: menünün başında \"Seçili\" olarak görünür ve görsel oluşturma gibi işlerde kullanılır. Yanındaki × ile bırakılabilir.",
-      "Bilgi şeridindeki kısım adına dokunulunca o kısmın açıklaması açılır. Mushafta oynatıcı açıkken şerit oynatıcının üst kenarına yapışık bir sekme olarak durur; kitaplarda sesli okuma denetimi şeridin üstüne yerleşir. Ayarlar'daki Opaklık çekmecesinden barın ya da menünün zemini (bar konumu ne olursa olsun) ve bilgi şeridinin opaklığı ayrı ayrı seçilebilir.",
+      "Bilgi şeridindeki kısım adına dokunulunca o kısmın açıklaması açılır. Mushafta oynatıcı açıkken şerit oynatıcının üst kenarına yapışık bir sekme olarak durur; kitaplarda sesli okuma denetimi şeridin üstüne yerleşir. Ayarlar → Menü ve Bar → Opaklık bölümünden barın ya da menünün zemini (bar konumu ne olursa olsun) ve bilgi şeridinin opaklığı ayrı ayrı seçilebilir.",
       "Menü seçiliyken \"Altta bilgi şeridi\" anahtarıyla sayfa, kısım, okuma süresi gibi bilgiler ekranın altında yarı saydam bir şeritte gösterilebilir. Şeritte hangi bilgilerin yer alacağı, bar öğelerinin açık/kapalı ayarına göre belirlenir.",
     ],
     anahtar: "bar konum üst alt orta menü dokun tek dokunuş tezhip bilgi şeridi kısım google arama çubuğu seçim düğme adı",
@@ -314,8 +314,9 @@ const KONULAR = [
     ozet: "Konum, gizlenme, boyut ve hangi öğelerin görüneceği.",
     nerede: "Kur'ân-ı Kerîm → bardaki dişli simgesi",
     metin: [
-      "Barın üstte mi, altta mı yoksa ortada açılan bir menü olarak mı duracağı (bkz. \"Bar konumu ve menü\"), kaydırırken kendiliğinden gizlenip gizlenmeyeceği ve arayüz boyutu buradan seçilebilir.",
-      "Görüntüleme bölümünde bardaki öğeler tek tek açılıp kapatılabilir. \"Bardaki görünüm tipi\" ile öğelerin sırası ve sağa ya da sola yaslanması da düzenlenebilir.",
+      "Ayarlar başlıklar altında açılıp kapanan çekmecelerde toplanır: Okuma Düzeni, Meal, Menü ve Bar, Öge Görüntüleme ve Gezinme. Her başlığın yanında o bölümün mevcut durumu kısaca yazar; çekmeceler açık bırakıldıkları gibi hatırlanır.",
+      "Menü ve Bar çekmecesinde barın üstte mi, altta mı yoksa ortada açılan bir menü olarak mı duracağı (bkz. \"Bar konumu ve menü\"), opaklık, arayüz ve meal penceresi boyutu ile kaydırırken kendiliğinden gizlenip gizlenmeyeceği seçilebilir.",
+      "Öge Görüntüleme çekmecesinde, Menü ögeleri bölümünden bardaki öğeler tek tek açılıp kapatılabilir; \"Buton Sıralaması\" ile öğelerin sırası ve sağa ya da sola yaslanması düzenlenebilir. Sade mod anahtarı ve sade modda görünecek öğeler de aynı çekmecededir.",
     ],
     anahtar: "bar üst alt gizle boyut sırala görünüm ayar",
   },
@@ -324,15 +325,15 @@ const KONULAR = [
     ozet: "Okuma süresi, sûre ve cüz/hizb bilgisi.",
     nerede: "Kur'ân-ı Kerîm → barın sağ tarafı",
     metin: [
-      "Barın sağında bugünkü okuma süresi, bulunulan sûre ve cüz/hizb bilgisi yer alır. Her biri Ayarlar → Görüntüleme bölümünden açılıp kapatılabilir.",
-      "Bar konumu Menü seçiliyken bu bilgiler ekranın altındaki bilgi şeridinde görünür; şeride bulunulan sayfa da eklenebilir (Ayarlar → Görüntüleme → Bilgi → Sayfa bilgisi). Bar üstte ya da alttayken sayfa numarası zaten bardaki sayfa düğmesinde yazar.",
+      "Barın sağında bugünkü okuma süresi, bulunulan sûre ve cüz/hizb bilgisi yer alır. Her biri Ayarlar → Öge Görüntüleme → Menü ögeleri bölümünden açılıp kapatılabilir.",
+      "Bar konumu Menü seçiliyken bu bilgiler ekranın altındaki bilgi şeridinde görünür; şeride bulunulan sayfa da eklenebilir (Ayarlar → Öge Görüntüleme → Menü ögeleri → Sayfa bilgisi). Bar üstte ya da alttayken sayfa numarası zaten bardaki sayfa düğmesinde yazar.",
     ],
     anahtar: "süre zaman sure cüz hizb bilgi sayfa şerit",
   },
   {
     bolum: "kuran", ikon: Undo2, baslik: "Dönüş noktaları",
     ozet: "Atlamadan önceki yere geri dönmek.",
-    nerede: "Ayarlar → Gezinme → Dönüş noktaları",
+    nerede: "Okuma ekranları → Ayarlar → Gezinme → Dönüş noktaları",
     metin: [
       "Sûre menüsü, arama, sayfaya gitme ya da bir kayıtla başka bir yere geçildiğinde ekranda küçük bir \"Geri dön\" düğmesi belirir; dokunulduğunda önceki yere dönülür. Birden fazla nokta varsa yanındaki sayıyla liste açılır.",
       "Düğme sürüklenerek istenen yere taşınabilir; yerler \"Düğme konumlarını sıfırla\" ile eski hâline getirilebilir.",
@@ -571,7 +572,7 @@ const KONULAR = [
     ozet: "Yazı tipi, boyut ve aralıklar.",
     nerede: "Kitap → Ayarlar (dişli)",
     metin: [
-      "Yazı tipi, boyutu, satır, harf ve kelime aralıkları ile bar konumu (Üst, Alt ya da Menü), arayüz ve bilgi penceresi boyutu ayarlardan değiştirilebilir. Görüntüle bölümünden bardaki öğeler gizlenebilir; sade modda gizlenecekler de ayrıca seçilebilir.",
+      "Yazı tipi, boyutu, satır, harf ve kelime aralıkları ayarlardan değiştirilebilir. Ayarlar çekmecelerde toplanır: Menü ve Bar çekmecesinde bar konumu (Üst, Alt ya da Menü), opaklık, arayüz ve bilgi menüsü boyutu; Öge Görüntüleme çekmecesinde bardaki öğeler ve sade modda görünecekler seçilebilir.",
     ],
     anahtar: "font yazı boyut aralık satır harf kelime bar",
   },

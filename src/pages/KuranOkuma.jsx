@@ -71,7 +71,7 @@ function useState(ilk) {
   }
   return sonuc
 }
-const KURAN_DURUM_ADLARI = ["odakAyet", "odakSure", "odakAyrac", "donusTip", "donusYol", "tekrarModu", "donguAyarAcik", "tmMod", "tmSayfaBas", "tmSayfaSon", "tmSure", "tmSureArama", "tmAyetBas", "tmAyetSon", "tmBesmele", "kariSecAcik", "sureUyari", "kayitPaneliAcik", "mushafData", "yukleniyor", "scrollKilitli", "popup", "mevcutSayfa", "?", "konumHazir", "acilisOrtu", "sayfaGirdi", "sayfaGirdiAcik", "kayitKonumModu", "gorselModu", "gorselVeri", "mealModu", "izlemeModu", "hifzAcik", "hifzEzber", "hifzKismi", "hifzYon", "hifzTekrarYontem", "hifzBagla", "hifzDonus", "hifzManuel", "hifzSureSira", "hifzEzberSurum", "hifzKademe", "hifzZincir", "hifzTekrar", "hifzBirim", "hifzAktif", "hifzIpucu", "hifzDokunAc", "hifzDokunSes", "kayitlar", "yaziBoyutu", "satirAraligi", "ustCentik", "mealOlcu", "tamGenislik", "kenarBosluk", "harfAraligi", "barGorunur", "barKonum", "sadeMode", "otomatikGizleme", "gizlemeSuresi", "sureGoster", "barKilitli", "sureBilgisiGoster", "cuzBilgisiGoster", "hizbBilgisiGoster", "sureMenuGoster", "kayitGoster", "sayfaGitGoster", "sadeModGoster", "temaGoster", "yaziTipiGoster", "otoOynatGoster", "tekrarBtnGoster", "bilgiGoster", "gorselGoster", "hifzGoster", "bilgiAcik", "butonSirasi", "butonTaraf", "siraAcik", "siraTaslak", "tarafTaslak", "sifirlaOnay", "sadeGizli", "sadeIcerikAcik", "gorunumAcik", "scrollbarGorunur", "aaAcik", "temaAcik", "ayarlarAcik", "ozelTemaPanelAcik", "sayfaGitAcik", "sayfaGitInput", "sayfaGosterim", "sayfaGosterimAcik", "ozelRenkler", "aktifRenk", "acikBolum", "aaSekme", "arapcaFontId", "yaziRengi", "ayetNoRengi", "bugunSure", "menuAcik", "menuArama", "acikSure", "anaBaslik", "sureSira", "cuzArama", "acikCuz", "ayetArama", "otomatikKaydirma", "kaydirmaHizi", "duraklatildi", "barYuksekligi", "barDugumu", "pwaModu", "playerYuk", "barCokSatir", "barSatirKes", "barUiOlcegi", "sarfSozluk"]
+const KURAN_DURUM_ADLARI = ["odakAyet", "odakSure", "odakAyrac", "donusTip", "donusYol", "tekrarModu", "donguAyarAcik", "tmMod", "tmSayfaBas", "tmSayfaSon", "tmSure", "tmSureArama", "tmAyetBas", "tmAyetSon", "tmBesmele", "kariSecAcik", "sureUyari", "kayitPaneliAcik", "mushafData", "yukleniyor", "scrollKilitli", "popup", "mevcutSayfa", "?", "konumHazir", "acilisOrtu", "sayfaGirdi", "sayfaGirdiAcik", "kayitKonumModu", "gorselModu", "gorselVeri", "mealModu", "kelimeMeali", "ayetMeali", "izlemeModu", "hifzAcik", "hifzEzber", "hifzKismi", "hifzYon", "hifzTekrarYontem", "hifzBagla", "hifzDonus", "hifzManuel", "hifzSureSira", "hifzEzberSurum", "hifzKademe", "hifzZincir", "hifzTekrar", "hifzBirim", "hifzAktif", "hifzIpucu", "hifzDokunAc", "hifzDokunSes", "kayitlar", "yaziBoyutu", "satirAraligi", "ustCentik", "mealOlcu", "tamGenislik", "kenarBosluk", "harfAraligi", "barGorunur", "barKonum", "sadeMode", "otomatikGizleme", "gizlemeSuresi", "sureGoster", "barKilitli", "sureBilgisiGoster", "cuzBilgisiGoster", "hizbBilgisiGoster", "sureMenuGoster", "kayitGoster", "sayfaGitGoster", "sadeModGoster", "temaGoster", "yaziTipiGoster", "otoOynatGoster", "tekrarBtnGoster", "bilgiGoster", "gorselGoster", "hifzGoster", "bilgiAcik", "butonSirasi", "butonTaraf", "siraAcik", "siraTaslak", "tarafTaslak", "sifirlaOnay", "sadeGizli", "sadeIcerikAcik", "gorunumAcik", "scrollbarGorunur", "aaAcik", "temaAcik", "ayarlarAcik", "ozelTemaPanelAcik", "sayfaGitAcik", "sayfaGitInput", "sayfaGosterim", "sayfaGosterimAcik", "ozelRenkler", "aktifRenk", "acikBolum", "aaSekme", "arapcaFontId", "yaziRengi", "ayetNoRengi", "bugunSure", "menuAcik", "menuArama", "acikSure", "anaBaslik", "sureSira", "cuzArama", "acikCuz", "ayetArama", "otomatikKaydirma", "kaydirmaHizi", "duraklatildi", "barYuksekligi", "barDugumu", "pwaModu", "playerYuk", "barCokSatir", "barSatirKes", "barUiOlcegi", "sarfSozluk"]
 donmeDurumAdlari(KURAN_DURUM_ADLARI)
 */
 import AyetPopup from "../components/AyetPopup"
@@ -1149,6 +1149,31 @@ export default function KuranOkuma({ kitap }) {
   useEffect(() => {
     try { localStorage.setItem("vukuf-meal-modu", String(mealModu)) } catch { /* yoksay */ }
   }, [mealModu])
+
+  // KELİME / ÂYET MEALİ (10 Kasım 2026) — ayarlardan ayrı ayrı açılıp kapanır.
+  //   Kelime meali BAŞTA KAPALI: kapalıyken kelimeye dokunmak bir şey açmaz
+  //   (açık bir pencere varsa yine onu kapatır; hıfz ipucu bundan etkilenmez).
+  //   Âyet meali BAŞTA AÇIK: kapalıyken âyet balonu yine açılır (Âyeti dinle /
+  //   Buradan oku), yalnız meal metni gösterilmez. Sûre başlığı balonu (sûre
+  //   bilgisi) bu ayardan etkilenmez — o meal değil.
+  //   Kelime dokunuşu sabit kimlikli (useCallback) → değer REF'ten okunur; âyet
+  //   balonundaki meal ise çizimde ayetMeali'ye bakar (açıkken değiştirilse de uyar).
+  const [kelimeMeali, setKelimeMeali] = useState(() => {
+    try { return localStorage.getItem("vukuf-kelime-meali") === "true" } catch { return false }
+  })
+  const [ayetMeali, setAyetMeali] = useState(() => {
+    try { return localStorage.getItem("vukuf-ayet-meali") !== "false" } catch { return true }
+  })
+  const kelimeMealiRef = useRef(kelimeMeali)
+  useEffect(() => {
+    kelimeMealiRef.current = kelimeMeali
+    try { localStorage.setItem("vukuf-kelime-meali", String(kelimeMeali)) } catch { /* yoksay */ }
+    // Kapatılınca açık kelime balonu da kapansın
+    if (!kelimeMeali) setPopup(p => (p?.tip === "kelime" ? null : p))
+  }, [kelimeMeali])
+  useEffect(() => {
+    try { localStorage.setItem("vukuf-ayet-meali", String(ayetMeali)) } catch { /* yoksay */ }
+  }, [ayetMeali])
 
   // İZLEME MODU — tam ekran. Kalıcı DEĞİL: uygulama izleme ekranında açılmasın.
   const [izlemeModu, setIzlemeModu] = useState(false)
@@ -3304,6 +3329,8 @@ function donuseGit(i) {
       if (ipucu) { setHifzIpucu(n => n + 1); ipucuAlindi(anahtar) }
       return
     }
+    // Kelime meali kapalı (varsayılan): dokunuş bir şey açmaz
+    if (!kelimeMealiRef.current) return
     sarfIste()
     // 1) ÖNCE konuma bağlı anlam (quran.com hizalaması). Doğru olan bu:
     //    sözlükteki "من → 710 anlam" gibi yığılmalar burada yaşanmaz, çünkü
@@ -4340,6 +4367,29 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
           </div>
         </div>
 
+        {/* MEAL — kelime ve âyet meali ayrı ayrı (10 Kasım 2026) */}
+        <div>
+          <div style={ayarEtiket}>MEAL</div>
+          {[
+            { etiket: "Kelime meali", acik: kelimeMeali, degis: () => setKelimeMeali(v => !v),
+              aciklama: "Kelimeye dokununca anlamı gösterilir." },
+            { etiket: "Âyet meali", acik: ayetMeali, degis: () => setAyetMeali(v => !v),
+              aciklama: "Âyet numarasına dokununca açılan balonda meal yer alır." },
+          ].map(m => (
+            <div key={m.etiket} onClick={m.degis} role="button" aria-pressed={m.acik} style={{
+              width: "100%", padding: "7px 10px", borderRadius: "8px", boxSizing: "border-box",
+              color: theme.text, cursor: "pointer",
+              display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px",
+            }}>
+              <span style={{ flex: 1, minWidth: 0 }}>
+                <span style={{ display: "block", fontSize: `${Math.round((isMobile ? 12 : 13) * barUiOlcegi)}px` }}>{m.etiket}</span>
+                <span style={{ display: "block", fontSize: `${Math.round(11 * barUiOlcegi)}px`, color: theme.textSecondary, lineHeight: 1.35 }}>{m.aciklama}</span>
+              </span>
+              <IosSwitch acik={m.acik} theme={theme} boyut={0.82} />
+            </div>
+          ))}
+        </div>
+
         <div>
           <div style={ayarEtiket}>BAR KONUMU</div>
           <BarKonumSecici theme={theme} deger={barKonum} onSec={setBarKonum}
@@ -4956,6 +5006,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
           sure={popup.sure}
           ayetNo={popup.ayetNo}
           meal={popup.meal}
+          mealGizli={popup.ayetNo != null && !ayetMeali}   // sûre bilgisi balonu (ayetNo yok) etkilenmez
           konum={popup.konum}
           player={player}
           theme={theme}

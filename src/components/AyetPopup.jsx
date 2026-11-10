@@ -2,7 +2,7 @@ import { useRef } from "react"
 import { Play, Pause, X } from "lucide-react"
 import { useEkranIcinde, BALONCUK_MAX_BOY } from "../data/hooks/useEkranIcinde"
 
-export default function AyetPopup({ sure, ayetNo, meal, konum, player, theme, onKapat }) {
+export default function AyetPopup({ sure, ayetNo, meal, mealGizli = false, konum, player, theme, onKapat }) {
   // KONUM ÖLÇÜLEREK (29 Eylül 2026) — yatayda baloncuğun başı ekran dışına
   // taşıyordu (bkz. useEkranIcinde). Kanca `return`'den ÖNCE olmalı.
   const kutuRef = useRef(null)
@@ -117,8 +117,8 @@ export default function AyetPopup({ sure, ayetNo, meal, konum, player, theme, on
           </button>
         </div>
 
-        {/* Meal */}
-        <div style={{
+        {/* Meal — ayarlardan "Âyet meali" kapalıysa çizilmez (balon yine açılır) */}
+        {!mealGizli && <div style={{
           fontSize: "13px",
           color: theme.text,
           lineHeight: "1.75",
@@ -133,7 +133,7 @@ export default function AyetPopup({ sure, ayetNo, meal, konum, player, theme, on
               Bu âyet için meal henüz eklenmemiş.
             </span>
           )}
-        </div>
+        </div>}
 
         {/* Alt: ses butonları */}
         {ayetNo && (

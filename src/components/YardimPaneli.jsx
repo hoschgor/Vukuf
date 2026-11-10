@@ -182,10 +182,12 @@ const KONULAR = [
     bolum: "kuran", ikon: MousePointerClick, baslik: "Kelime ve âyete dokunma",
     ozet: "Kelime anlamı, âyet meali ve dinleme.",
     metin: [
-      "Arapça bir kelimeye dokunulduğunda kelimenin anlamı ve okunuşu küçük bir pencerede görünür; kelime buradan tek başına dinlenebilir.",
+      "Kelime meali açıkken Arapça bir kelimeye dokunulduğunda kelimenin anlamı ve okunuşu küçük bir pencerede görünür; kelime buradan tek başına dinlenebilir.",
       "Âyet numarasına dokunulduğunda âyetin meali ve dinleme düğmeleri açılır: âyet tek başına ya da o âyetten itibaren sûre dinlenebilir.",
+      "Kelime meali ve âyet meali, Ayarlar → Meal bölümünden ayrı ayrı açılıp kapatılabilir. Başlangıçta kelime meali kapalı, âyet meali açıktır. Âyet meali kapalıyken balon yine açılır, yalnız meal metni gösterilmez.",
     ],
-    anahtar: "kelime anlam meal çeviri tercüme dinle ses âyet numarası",
+    nerede: "Kur'ân-ı Kerîm → Ayarlar → Meal",
+    anahtar: "kelime anlam meal çeviri tercüme dinle ses âyet numarası kelime meali âyet meali kapat aç ayar",
   },
   {
     bolum: "kuran", ikon: Bookmark, baslik: "Kayıtlar (ayraç)",

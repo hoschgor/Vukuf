@@ -184,7 +184,7 @@ const KONULAR = [
     metin: [
       "Kelime meali açıkken Arapça bir kelimeye dokunulduğunda kelimenin anlamı ve okunuşu küçük bir pencerede görünür; kelime buradan tek başına dinlenebilir.",
       "Âyet numarasına dokunulduğunda âyetin meali ve dinleme düğmeleri açılır: âyet tek başına ya da o âyetten itibaren sûre dinlenebilir.",
-      "Kelime meali ve âyet meali, Ayarlar → Meal bölümünden ayrı ayrı açılıp kapatılabilir. Başlangıçta kelime meali kapalı, âyet meali açıktır. Âyet meali kapalıyken balon yine açılır, yalnız meal metni gösterilmez.",
+      "Kelime meali ve âyet meali, Ayarlar → Meal bölümünden ayrı ayrı açılıp kapatılabilir. Başlangıçta kelime meali kapalı, âyet meali açıktır. Kelime meali kapalıyken kelimeler düz metin gibidir; dokunulduğunda menü açılır (kitap modunda sayfa kenarına dokunmak sayfayı çevirir). Âyet meali kapalıyken balon yine açılır, yalnız meal metni gösterilmez.",
     ],
     nerede: "Kur'ân-ı Kerîm → Ayarlar → Meal",
     anahtar: "kelime anlam meal çeviri tercüme dinle ses âyet numarası kelime meali âyet meali kapat aç ayar",

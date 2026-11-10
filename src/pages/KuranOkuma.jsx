@@ -6074,7 +6074,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
             if (menuKapatildiRef.current) return
             if (popup || aaAcik || temaAcik || ozelTemaPanelAcik || menuAcikRef.current) return
             // Kelime / âyet no / sûre başı-play (etkileşimli öğe) tıklanınca bar durumu DEĞİŞMESİN
-            if (e.target?.closest?.("button, [data-kelime], [data-sure], [data-ayet], [data-sure-baslik]")) return
+            if (e.target?.closest?.('button, [data-kelime="1"], [data-sure], [data-ayet], [data-sure-baslik]')) return
             barToggle()
           }}
           onTouchStart={(e) => {
@@ -6131,7 +6131,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
               return
             }
             // Kelime / âyet no / sûre başı-play (etkileşimli öğe) tıklanınca bar durumu DEĞİŞMESİN
-            if (e.target?.closest?.("button, [data-kelime], [data-sure], [data-ayet], [data-sure-baslik]")) {
+            if (e.target?.closest?.('button, [data-kelime="1"], [data-sure], [data-ayet], [data-sure-baslik]')) {
               return
             }
             // Tıklama ise bar'ı toggle et
@@ -6208,6 +6208,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
                         sureTikla(sure, e)
                       }}
                       kayitKonumModu={kayitKonumModu}
+                      kelimeEtkilesimli={kelimeMeali || hifzAcik}
                       sayfaKayitlari={kayitlar.filter(k => k.sayfa === sayfa.sayfaNo)}
                       onKayitTikla={(kayit) => {
                         if (window.confirm(`"${kayit.baslik}" kaydını silmek istiyor musun?`)) {
@@ -6286,6 +6287,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
                         onAyetTikla={ayetTikla}
                         onSureTikla={(sure, e) => { if (kayitKonumModu) return; sureTikla(sure, e) }}
                         kayitKonumModu={kayitKonumModu}
+                        kelimeEtkilesimli={kelimeMeali || hifzAcik}
                         sayfaKayitlari={kayitlar.filter(k => k.sayfa === no)}
                         onKayitTikla={(kayit) => {
                           if (window.confirm(`"${kayit.baslik}" kaydını silmek istiyor musun?`)) {

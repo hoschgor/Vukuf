@@ -373,6 +373,8 @@ export default function MushafKelime({
   obekVurgu = false,
   // RENKLİ TECVİD: küme başına renk dizisi (MushafSayfa hesaplar) — kapalıyken null
   tecvidRenk = null,
+  // false: kelime meali kapalı — düz metin gibi (imleç yok, üzerine gelme vurgusu yok)
+  etkilesimli = true,
 }) {
   // DONME_SAYAC.kelime++   // ⏸ dönme teşhisi (yorumda)
   const [hover, setHover] = useState(false)
@@ -684,7 +686,7 @@ export default function MushafKelime({
       data-hifz={hifzAnahtar || undefined}
       data-hs={hifzAnahtar ? hifzSira : undefined}
       onClick={(e) => onTikla?.(kelime, e)}
-      onMouseEnter={() => { if (!kayitKonumModu) { setHover(true); onGrupHover?.(true) } }}
+      onMouseEnter={() => { if (!kayitKonumModu && etkilesimli) { setHover(true); onGrupHover?.(true) } }}
       onMouseLeave={() => { setHover(false); onGrupHover?.(false) }}
       style={{
         position: sade ? undefined : "relative",   // sade kelimede katmansız
@@ -699,7 +701,7 @@ export default function MushafKelime({
         // Yalnız işaretli kelimelerde — geri kalan binlerce kelime eskisi gibi.
         zIndex: isaretli ? 1 : undefined,
         display: "inline-block",
-        cursor: kayitKonumModu ? "crosshair" : "pointer",
+        cursor: kayitKonumModu ? "crosshair" : (etkilesimli ? "pointer" : "inherit"),
         marginTop: hasUpperIndicator ? `${yaziBoyutu * 0.35}px` : "0",
         // Grubun İÇ kenarındaki dolgu sıfırlanır → iki kelime bitişik görünür,
         // dış kenarlardaki dolgu korunur (kelime aralığı bozulmaz).

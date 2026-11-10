@@ -95,6 +95,11 @@ function MushafSayfa({
   // Kitap modunda SOL sayfanın ayraçları solda ve aynalı (5 Kasım 2026 — kullanıcı: "Ekranın
   // solundaki sayfa ise kayıt da aksi yönde sol tarafta olması gerek, yansıma modu gibi")
   ayracSol = false,
+  // KELİME ETKİLEŞİMİ (10 Kasım 2026): kelime meali kapalıysa (hıfz da kapalıysa) kelime düz
+  // metin gibi davranır — sarmalayıcı data-kelime="0" olur (OrtaMenu / SayfaKitabi / bar
+  // dokunuşu yalnız "1"i etkileşimli sayar), imleç ve üzerine gelme vurgusu çıkar.
+  // Sarmalayıcı ve özniteliğin KENDİSİ kalıyor: sureGit hizalaması onu arıyor.
+  kelimeEtkilesimli = true,
 }) {
   // DONME_SAYAC.sayfa++   // ⏸ dönme teşhisi (yorumda)
 
@@ -413,7 +418,7 @@ function MushafSayfa({
                     // data-kelime SARMALAYICI span → okuma alanı tık koruması kelimeyi tanısın
                     // (kelimeye dokununca bar durumu değişmesin). Ayrı attribute → sureGit'in
                     // [data-sure][data-ayet] hizalamasını ETKİLEMEZ. display:contents → düzeni bozmaz.
-                    <span key={el.kelime.id} data-kelime="1" style={{ display: "contents" }}>
+                    <span key={el.kelime.id} data-kelime={kelimeEtkilesimli ? "1" : "0"} style={{ display: "contents" }}>
                       <MushafKelime
                         hifzAnahtar={`${el.sure.id}:${el.ayet.no}`}
                         hifzSira={kelimeSirasi.get(el.kelime.id) || 1}
@@ -427,6 +432,7 @@ function MushafSayfa({
                         harfAraligi={harfAraligi}
                         isMobile={isMobile}
                         kayitKonumModu={kayitKonumModu}
+                        etkilesimli={kelimeEtkilesimli}
                         tecvidRenk={tecvidRenkleri?.get(el.kelime.id) || null}
                         grupKonum={grup_?.konum || null}
                         grupVurgu={!!grup_ && hoverGrup === grup_.anahtar}
@@ -529,7 +535,8 @@ function mushafSayfaEsit(a, b) {
     a.cuzBaslangic !== b.cuzBaslangic ||
     a.hizbBaslangic !== b.hizbBaslangic ||
     a.kitapModu !== b.kitapModu ||
-    a.ayracSol !== b.ayracSol
+    a.ayracSol !== b.ayracSol ||
+    a.kelimeEtkilesimli !== b.kelimeEtkilesimli
   ) return false
 
   // sayfaKayitlari her render'da YENİ dizi (filter) → referansla değil DEĞERLE karşılaştır

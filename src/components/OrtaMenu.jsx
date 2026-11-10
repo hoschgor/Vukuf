@@ -105,7 +105,10 @@ const PERDE = 0.34
 /* Çift dokunmanın SAYILMADIĞI yerler (düğmeler, alanlar, paneller, menünün kendisi) */
 const DISARI = "button, a, input, textarea, select, label, [role=dialog], [role=button], .okuma-panel, .vukuf-panel, .okuma-bar, .mushaf-bar, .vukuf-hap, [data-orta-disari]"
   // tek dokunmada: kendi penceresini açan kelimeler ve işaretler de sayılmaz
-  + ", .lugat-kelime, [data-kelime], [data-ayet], [data-sure], [data-sure-baslik], sup"
+  // [data-kelime="1"]: yalnız ETKİLEŞİMLİ mushaf kelimesi. Kelime meali kapalıyken (ve hıfz
+  // kapalıyken) değer "0" olur → kelime düz metin sayılır, dokununca menü açılır — OkumaEkrani'nda
+  // lügat kapalıyken olduğu gibi (10 Kasım 2026).
+  + ', .lugat-kelime, [data-kelime="1"], [data-ayet], [data-sure], [data-sure-baslik], sup'
 
 // ── KONUM ────────────────────────────────────────────────────────────────────
 // VARSAYILAN "orta" (29 Ekim 2026 — kullanıcı: "Varsayılanı orta menü seçeneği yapalım").

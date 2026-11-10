@@ -92,7 +92,7 @@ export function kitapDokunusuMu(x, y, el) {
 
 const hareketAzMi = () => { try { return window.matchMedia("(prefers-reduced-motion: reduce)").matches } catch { return false } }
 // Sayfa içindeki etkileşimli öğeler: dokunuş sayfa çevirmesin, bar açıp kapatmasın
-const ETKILESIMLI = "button, a, input, textarea, select, label, [role='button'], [data-kelime], [data-sure], [data-ayet], [data-sure-baslik], [data-etkilesim]"
+const ETKILESIMLI = "button, a, input, textarea, select, label, [role='button'], [data-kelime='1'], [data-sure], [data-ayet], [data-sure-baslik], [data-etkilesim]"
 
 // ── SIĞDIRMA ─────────────────────────────────────────────────────────────────
 /* carpan (5 Kasım 2026) — kullanıcı: "Normal kaydırma kısmındaki yazı boyutu, sayfa

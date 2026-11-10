@@ -3652,7 +3652,7 @@ const AyarlarPanel = ayarlarAcik && (
       </AyarCekmecesi>
 
       {/* GEZİNME — dönüş noktaları (ayar öbür okuma ekranıyla ortak) */}
-      <AyarCekmecesi id="eser-gezinme" baslik="Gezinme" ozet={donusAcik ? "Dönüş noktaları açık" : "Kapalı"} theme={theme}>
+      <AyarCekmecesi id="eser-gezinme" baslik="Gezinme" ozet={donusAcik ? "Açık" : "Kapalı"} theme={theme}>
         <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "2px 4px" }}>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div onClick={() => setDonusAcik(!donusAcik)} role="button" style={{ fontSize: "13px", color: theme.text, cursor: "pointer" }}>

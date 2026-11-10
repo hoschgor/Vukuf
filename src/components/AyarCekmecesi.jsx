@@ -36,15 +36,17 @@ export function AyarCekmecesi({ id, baslik, ozet, theme, olcek = 1, isMobile = f
         padding: "10px 12px", background: "none", border: "none", cursor: "pointer",
         fontFamily: "inherit", textAlign: "left", color: theme.text,
       }}>
-        <span style={{ flex: 1, minWidth: 0, fontSize: `${bas}px`, letterSpacing: "1px", fontWeight: 600, color: acik ? theme.accent : theme.textSecondary }}>
+        {/* Başlık hiç daralmaz; uzun özet sağda kısalır (…) — iç içe geçmesin */}
+        <span style={{ flexShrink: 0, whiteSpace: "nowrap", fontSize: `${bas}px`, letterSpacing: "1px", fontWeight: 600, color: acik ? theme.accent : theme.textSecondary }}>
           {baslik.toLocaleUpperCase("tr-TR")}
         </span>
         {ozet ? (
           <span style={{
+            flex: 1, minWidth: 0, textAlign: "right",
             fontSize: `${Math.round(11 * olcek)}px`, color: theme.textSecondary, opacity: 0.85,
-            whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "55%",
+            whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
           }}>{ozet}</span>
-        ) : null}
+        ) : <span style={{ flex: 1 }} />}
         <ChevronRight size={Math.round(16 * olcek)} color={theme.textSecondary} style={{
           flexShrink: 0, transition: "transform .2s ease", transform: acik ? "rotate(90deg)" : "none",
         }} />

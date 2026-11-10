@@ -4514,7 +4514,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
         </AyarCekmecesi>
 
         {/* GEZİNME — dönüş noktaları (ayar öbür okuma ekranıyla ortak) */}
-        <AyarCekmecesi id="kuran-gezinme" baslik="Gezinme" ozet={donusAcik ? "Dönüş noktaları açık" : "Kapalı"}
+        <AyarCekmecesi id="kuran-gezinme" baslik="Gezinme" ozet={donusAcik ? "Açık" : "Kapalı"}
           theme={theme} olcek={barUiOlcegi} isMobile={isMobile}>
           <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "2px 4px" }}>
             <div style={{ flex: 1, minWidth: 0 }}>

@@ -100,6 +100,8 @@ function MushafSayfa({
   // dokunuşu yalnız "1"i etkileşimli sayar), imleç ve üzerine gelme vurgusu çıkar.
   // Sarmalayıcı ve özniteliğin KENDİSİ kalıyor: sureGit hizalaması onu arıyor.
   kelimeEtkilesimli = true,
+  // Balonu açık kelime(ler)in kimlikleri, virgülle ("2:40:1,2:40:2") — yazı rengi değişir
+  seciliKelime = "",
 }) {
   // DONME_SAYAC.sayfa++   // ⏸ dönme teşhisi (yorumda)
 
@@ -153,6 +155,8 @@ function MushafSayfa({
     }
     return harita
   }, [elemanlar, tImza])
+
+  const seciliKume = useMemo(() => new Set(seciliKelime ? seciliKelime.split(",") : []), [seciliKelime])
 
   // Secde ayetlerini topla
   const secdeAyetleriMap = new Map()
@@ -433,6 +437,7 @@ function MushafSayfa({
                         isMobile={isMobile}
                         kayitKonumModu={kayitKonumModu}
                         etkilesimli={kelimeEtkilesimli}
+                        secili={seciliKume.has(el.kelime.id)}
                         tecvidRenk={tecvidRenkleri?.get(el.kelime.id) || null}
                         grupKonum={grup_?.konum || null}
                         grupVurgu={!!grup_ && hoverGrup === grup_.anahtar}
@@ -566,6 +571,13 @@ function mushafSayfaEsit(a, b) {
   if (osA !== osB) {
     if (sayfadaSureVar(b.elemanlar, a.odakSure && a.odakSure.id) ||
         sayfadaSureVar(b.elemanlar, b.odakSure && b.odakSure.id)) return false
+  }
+
+  // Seçili kelime (balonu açık) → yalnız o kelimenin sûresini içeren sayfa
+  if (a.seciliKelime !== b.seciliKelime) {
+    const sureOf = (k) => (k ? Number(String(k).split(":")[0]) : null)
+    if (sayfadaSureVar(b.elemanlar, sureOf(a.seciliKelime)) ||
+        sayfadaSureVar(b.elemanlar, sureOf(b.seciliKelime))) return false
   }
 
   // Kayıt ayracı vurgusu → yalnız o ayracı içeren sayfa

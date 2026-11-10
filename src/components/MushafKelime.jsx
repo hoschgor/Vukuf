@@ -293,6 +293,13 @@ function boyaliParca(karakterler, renkler, bas, son, anahtar) {
   return dugum
 }
 
+// Fareyle gerçekten üzerine gelinebilen cihaz mı? Dokunmatikte "hover" dokunuştan sonra
+// takılı kalıp kelimenin etrafında kutu bırakıyordu; orada üzerine gelme vurgusu çizilmez.
+const UZERINE_GELME = (() => {
+  try { return typeof window !== "undefined" && !!window.matchMedia?.("(hover: hover) and (pointer: fine)").matches }
+  catch { return false }
+})()
+
 function besmeleMi(kelimeId) {
   const [sure, ayet, kelime] = kelimeId.split(':').map(Number)
   if (sure === 1 && ayet === 1) return true
@@ -375,6 +382,8 @@ export default function MushafKelime({
   tecvidRenk = null,
   // false: kelime meali kapalı — düz metin gibi (imleç yok, üzerine gelme vurgusu yok)
   etkilesimli = true,
+  // Balonu açık kelime: etrafına kutu yerine YAZI RENGİ değişir (10 Kasım 2026)
+  secili = false,
 }) {
   // DONME_SAYAC.kelime++   // ⏸ dönme teşhisi (yorumda)
   const [hover, setHover] = useState(false)
@@ -402,7 +411,8 @@ export default function MushafKelime({
   // Yatay konum artık tecvid işaretleriyle aynı taban-harf sayımından geliyor (`sol`).
   const { metin: temizArabic, ozeller } = ozelOkuyusAyikla(tecvidsizArabic)
   // Lafzatullah ve besmele kendi renginde kalır (renkli tecvid onları boyamaz)
-  const tecvidAktif = !!tecvidRenk && !lafizkontrol && !besmelekontrol
+  // Seçili kelime bütünüyle vurgu renginde görünsün diye o an tecvid boyaması da atlanır
+  const tecvidAktif = !!tecvidRenk && !lafizkontrol && !besmelekontrol && !secili
   const tKarakter = tecvidAktif ? [...temizArabic] : null
   const tRenk = tecvidAktif ? harfRenkleri(temizArabic, tecvidRenk) : null
   const boya = (bas, son, anahtar) => boyaliParca(tKarakter, tRenk, bas, son, anahtar)
@@ -557,7 +567,8 @@ export default function MushafKelime({
           fontFamily: arapcaFont,
           fontSize: `${yaziBoyutu}px`,
           lineHeight: lineHeight,
-          color: (lafizkontrol || besmelekontrol) ? (theme.lugatHighlight || theme.accent) : theme.text,
+          color: secili ? theme.accent
+            : (lafizkontrol || besmelekontrol) ? (theme.lugatHighlight || theme.accent) : theme.text,
           display: "inline",
           // `opacity: aktif ? 1 : 0.95` KALDIRILDI (28 Eylül 2026). 1'in altındaki
           // her opaklık bu metin kutusunu ayrı bir katmana alıyor; iPhone bu katmanı
@@ -723,7 +734,7 @@ export default function MushafKelime({
           ? "transparent"
           : aktif
             ? `color-mix(in srgb, ${theme.accent} 16%, ${theme.background})`
-            : (hover || grupVurgu || obekVurgu) ? `${theme.accent}0a` : "transparent",
+            : (!secili && UZERINE_GELME && (hover || grupVurgu || obekVurgu)) ? `${theme.accent}0a` : "transparent",
         // Kelime kelime alt çizgi de kaldırıldı: kelime aralarında kesiliyor, bandı yine parçalıyordu
         boxShadow: kayitKonumModu ? "none"
           : aktif ? `0 0 0 1.5px color-mix(in srgb, ${theme.accent} 16%, ${theme.background})`
@@ -734,7 +745,8 @@ export default function MushafKelime({
         // kelimeler arası boşluk durduğu için çizgi de kelime kelime kesilir —
         // bu doğru: "aynı anlamı paylaşıyorlar" der, "tek kelimedir" demez.
         // Öbek çizgisi daha SOLUK, karışmasın diye.
-        borderBottom: kayitKonumModu
+        // Kelime meali kapalıyken (etkilesimli=false) öbek/birleşik kelime çizgileri de çizilmez
+        borderBottom: (kayitKonumModu || !etkilesimli)
           ? undefined
           : grupta
             ? `1px dotted ${theme.accent}${grupVurgu ? "88" : "44"}`

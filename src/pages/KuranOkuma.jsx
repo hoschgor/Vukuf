@@ -1175,6 +1175,13 @@ export default function KuranOkuma({ kitap }) {
   useEffect(() => {
     try { localStorage.setItem("vukuf-ayet-meali", String(ayetMeali)) } catch { /* yoksay */ }
   }, [ayetMeali])
+  // SEÇİLİ KELİME (10 Kasım 2026) — kelime balonu açıkken o kelimenin YAZI RENGİ değişir
+  // (etrafına kutu çizilmez). Birleşik kelimede (يَا + بَنٖي) iki üye birden. Metin anahtar:
+  // MushafSayfa'nın memo karşılaştırması ucuz kalsın, yalnız ilgili sayfa yeniden çizilsin.
+  const seciliKelime = popup?.tip === "kelime" && popup.kelime?.id
+    ? (Array.isArray(popup.kelime.grupUyeleri) && popup.kelime.grupUyeleri.length
+        ? popup.kelime.grupUyeleri.join(",") : String(popup.kelime.id))
+    : ""
 
   // İZLEME MODU — tam ekran. Kalıcı DEĞİL: uygulama izleme ekranında açılmasın.
   const [izlemeModu, setIzlemeModu] = useState(false)
@@ -6172,6 +6179,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
                       }}
                       kayitKonumModu={kayitKonumModu}
                       kelimeEtkilesimli={kelimeMeali || hifzAcik}
+                      seciliKelime={seciliKelime}
                       sayfaKayitlari={kayitlar.filter(k => k.sayfa === sayfa.sayfaNo)}
                       onKayitTikla={(kayit) => {
                         if (window.confirm(`"${kayit.baslik}" kaydını silmek istiyor musun?`)) {
@@ -6251,6 +6259,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
                         onSureTikla={(sure, e) => { if (kayitKonumModu) return; sureTikla(sure, e) }}
                         kayitKonumModu={kayitKonumModu}
                         kelimeEtkilesimli={kelimeMeali || hifzAcik}
+                        seciliKelime={seciliKelime}
                         sayfaKayitlari={kayitlar.filter(k => k.sayfa === no)}
                         onKayitTikla={(kayit) => {
                           if (window.confirm(`"${kayit.baslik}" kaydını silmek istiyor musun?`)) {

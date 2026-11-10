@@ -2,6 +2,17 @@ import { useState, useEffect, useRef, useCallback } from "react"
 
 // Kariler (everyayah.com)
 export const KARILAR = [
+  // ── TÜRK HAFIZLAR — Diyanet Kur'an Portalı (10 Kasım 2026) ──────────────────
+  // Âyet âyet kayıtlar; adres kalıbı kullanıcının tarayıcısında portalın ağ
+  // isteklerinden alındı: …/Sound/<hafız>/<sûre>_<âyet>.mp3 (sıfır dolgusuz).
+  // Kimlik "diyanet:" önekiyle tutuluyor → everyayah klasör adlarıyla karışmaz.
+  // Listenin BAŞINDA (kullanıcı isteği, 10 Kasım 2026). Varsayılan kâri yine
+  // VARSAYILAN_KARI (Alafasy) — sıranın değişmesi yeni kurulumların kârisini değiştirmesin.
+  { id: "diyanet:ar_osmanSahin",      label: "Osman Şahin",      kaynak: "diyanet" },
+  { id: "diyanet:ar_ishakdemir",      label: "İshak Danış",      kaynak: "diyanet" },   // portaldaki kimlik "ishakdemir", ad kullanıcının düzeltmesiyle
+  { id: "diyanet:ar_TayyarAltikulac", label: "Tayyar Altıkulaç", kaynak: "diyanet" },
+  { id: "diyanet:ar_mehmetcevik",     label: "Mehmet Çevik",     kaynak: "diyanet" },
+  { id: "diyanet:ar_davutkaya",       label: "Davut Kaya",       kaynak: "diyanet" },
   { id: "Alafasy_128kbps",            label: "Mishary Alafasy" },
   { id: "AbdulSamad_64kbps_QuranExplorer.Com", label: "Abdulbasit Abdussamed" },
   { id: "MaherAlMuaiqly128kbps", label: "Maher  Al Muaiqly" },
@@ -20,18 +31,10 @@ export const KARILAR = [
   { id: "Nabil_Rifa3i_48kbps",      label: "Nabil Rifai" },
   { id: "mahmoud_ali_al_banna_32kbps",      label: "Mahmoud Ali Al Banna" },
   { id: "Minshawy_Mujawwad_192kbps",      label: "Minshawy Mujawwad" },
-  // ── TÜRK HAFIZLAR — Diyanet Kur'an Portalı (10 Kasım 2026) ──────────────────
-  // Âyet âyet kayıtlar; adres kalıbı kullanıcının tarayıcısında portalın ağ
-  // isteklerinden alındı: …/Sound/<hafız>/<sûre>_<âyet>.mp3 (sıfır dolgusuz).
-  // Kimlik "diyanet:" önekiyle tutuluyor → everyayah klasör adlarıyla karışmaz.
-  { id: "diyanet:ar_osmanSahin",      label: "Osman Şahin",      kaynak: "diyanet" },
-  { id: "diyanet:ar_ishakdemir",      label: "İshak Demir",      kaynak: "diyanet" },
-  { id: "diyanet:ar_TayyarAltikulac", label: "Tayyar Altıkulaç", kaynak: "diyanet" },
-  { id: "diyanet:ar_mehmetcevik",     label: "Mehmet Çevik",     kaynak: "diyanet" },
-  { id: "diyanet:ar_davutkaya",       label: "Davut Kaya",       kaynak: "diyanet" },
 ]
 
 const BASE_URL = "https://everyayah.com/data"
+export const VARSAYILAN_KARI = "Alafasy_128kbps"
 export const DIYANET_ONEK = "diyanet:"
 export const DIYANET_SES_URL = "https://kuran.diyanet.gov.tr/api/audio/kuran/kuranikerim/Sound"
 
@@ -50,6 +53,25 @@ export function mp3Url(kariId, sureNo, ayetNo) {
   const a = String(ayetNo).padStart(3, "0");
   let gercekKariId = kariId;
   return `${BASE_URL}/${gercekKariId}/${s}${a}.mp3`;
+}
+
+/* ── SES KAYNAĞINI ATA (Diyanet için CORS kipinde) ───────────────────────────
+   Diyanet sunucusu ses dosyalarında `Cross-Origin-Resource-Policy: same-site`
+   gönderiyor. Düz <audio> isteği "no-cors" kipinde gider ve bu başlık yüzünden
+   başka siteden yüklenemez (Chrome: ERR_BLOCKED_BY_RESPONSE.NotSameSite).
+   CORP yalnız no-cors isteklerde uygulanır; sunucu `Access-Control-Allow-Origin: *`
+   de verdiği için eleman `crossorigin="anonymous"` ile CORS kipine alınınca dosya
+   sorunsuz geliyor (kullanıcının cihazında curl ile doğrulandı).
+   Yalnız Diyanet adreslerinde açılıyor; everyayah ve yerel blob kaynakları eskisi
+   gibi — orada çalışan hiçbir şey değişmesin. Öznitelik src'den ÖNCE kurulmalı. */
+export function sesKaynagiAta(el, kaynak) {
+  if (!el) return
+  const diyanet = typeof kaynak === "string" && kaynak.startsWith(DIYANET_SES_URL)
+  try {
+    if (diyanet) { if (el.crossOrigin !== "anonymous") el.crossOrigin = "anonymous" }
+    else if (el.hasAttribute && el.hasAttribute("crossorigin")) el.removeAttribute("crossorigin")
+  } catch { /* eski tarayıcı */ }
+  el.src = kaynak
 }
 
 export function besmeleUrl(kariId) {
@@ -265,7 +287,7 @@ export default function useAudioPlayer() {
   const kuyrukIndisRef = useRef(0)
 
   const [kariId, setKariId] = useState(
-    () => localStorage.getItem("vukuf-kari") || "Alafasy_128kbps"
+    () => localStorage.getItem("vukuf-kari") || VARSAYILAN_KARI
   )
   const [durum, setDurum] = useState("kapali")
   const [aktifAyet, setAktifAyet] = useState(null)
@@ -536,7 +558,7 @@ export default function useAudioPlayer() {
         // elemanı gerçekten doldurduğu için aynı dosya iki kez inerdi. Baytlar
         // gelince bu işlev tekrar çağrılıp yerel kaynağa geçiliyor.
         b.preload = (kaynak === url && k && k.durum === "iniyor") ? "none" : "auto"
-        b.dataset.url = url; b.dataset.kaynak = kaynak; b.src = kaynak
+        b.dataset.url = url; b.dataset.kaynak = kaynak; sesKaynagiAta(b, kaynak)
         b.playbackRate = hizRef.current
         b.volume = sesRef.current
         b.load()
@@ -637,7 +659,7 @@ export default function useAudioPlayer() {
     const kaynak = kaynakAl(url)
     if (a.dataset.url !== url || a.dataset.kaynak !== kaynak) {
       a.preload = "auto"
-      a.dataset.url = url; a.dataset.kaynak = kaynak; a.src = kaynak
+      a.dataset.url = url; a.dataset.kaynak = kaynak; sesKaynagiAta(a, kaynak)
     }
     try { if (a.currentTime !== 0) a.currentTime = 0 } catch {}
     a.playbackRate = hizRef.current

@@ -330,7 +330,7 @@ export default function Hakkinda() {
               "Sesli okumada ve Kur'ân oynatıcısında âyetlerin hafız kayıtları",
               { href: "https://everyayah.com/" })}
             {kaynak(Headphones, "Diyanet Kur'an Portalı",
-              "Türk hafızların (Osman Şahin, İshak Demir, Tayyar Altıkulaç, Mehmet Çevik, Davut Kaya) âyet âyet kayıtları — T.C. Diyanet İşleri Başkanlığı",
+              "Türk hafızların (Osman Şahin, İshak Danış, Tayyar Altıkulaç, Mehmet Çevik, Davut Kaya) âyet âyet kayıtları — T.C. Diyanet İşleri Başkanlığı",
               { href: "https://kuran.diyanet.gov.tr/" })}
             {kaynak(Globe, "ONNX Runtime Web · espeak-ng",
               "Seslerin tarayıcıda çalıştığı motor (ONNX Runtime Web, Microsoft, MIT lisansı) ve Kerîm sesinin fonemleyicisi (espeak-ng, GPL-3.0; @diffusionstudio/piper-wasm)",

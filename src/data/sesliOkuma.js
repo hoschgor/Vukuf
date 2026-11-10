@@ -37,7 +37,7 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 import { sureAdi } from "./sureAdlari"
-import { mp3Url, KARILAR } from "./hooks/useAudioPlayer"
+import { mp3Url, KARILAR, sesKaynagiAta, VARSAYILAN_KARI } from "./hooks/useAudioPlayer"
 
 export const SESLI_AYAR_ANAHTAR = "vukuf-sesli-okuma"
 export const SESLI_KONUM_ANAHTAR = "vukuf-sesli-konum"     // { kitap: { sayfa, satir } }
@@ -58,7 +58,7 @@ export const SESLI_VARSAYILAN = {
 export function kariSec(ayar) {
   let id = ayar?.kari || ""
   if (!id) { try { id = localStorage.getItem("vukuf-kari") || "" } catch { /* yoksay */ } }
-  return KARILAR.some(k => k.id === id) ? id : KARILAR[0].id
+  return KARILAR.some(k => k.id === id) ? id : VARSAYILAN_KARI
 }
 export { KARILAR }
 
@@ -630,7 +630,7 @@ function motorKur() {
       try { sesOgesi.playbackRate = 1 } catch { /* yoksay */ }   // tilâvet hızlandırılmaz
       try { sesOgesi.volume = Math.max(0, Math.min(1, Number(ayar.ses ?? 1))) } catch { /* yoksay */ }
       calanKazanc = 1
-      sesOgesi.src = mp3Url(kariSec(ayar), b.sureNo, b.ayetNo)
+      sesKaynagiAta(sesOgesi, mp3Url(kariSec(ayar), b.sureNo, b.ayetNo))   // Diyanet: CORS kipi (bkz. useAudioPlayer)
       // Hiç başlayamazsa takılı kalınmasın
       bekci = setTimeout(() => { if (sesOgesi && sesOgesi.currentTime === 0) ilerleK() }, 12000)
       try { await sesOgesi.play() }

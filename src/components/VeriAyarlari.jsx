@@ -30,7 +30,7 @@ import Katlanir from "./Katlanir"
 import { destekVar, swSurum, onbellekDokumu, onbellegiTemizle, kabukDurumu, onYukle } from "../data/cevrimdisi"
 import { kategoriler } from "../data/kitaplar"
 import { normHarf } from "../data/okumaKayit"
-import { KARILAR, sesTeshisMetni, sesTeshisTemizle } from "../data/hooks/useAudioPlayer"
+import { KARILAR, VARSAYILAN_KARI, sesTeshisMetni, sesTeshisTemizle } from "../data/hooks/useAudioPlayer"
 // GEÇİCİ — dönme teşhisi (ölçüm bitince bu satır ve aşağıdaki bölüm silinecek)
 import { DENEY, deneyAyarla, teshisAcikMi, teshisAyarla, donmeTeshisMetni, donmeTeshisTemizle } from "../data/donmeTeshis"
 import {
@@ -534,7 +534,7 @@ export default function VeriAyarlari({ theme }) {
 
   // ── SESLER ───────────────────────────────────────────────────────────────
   const [kari, setKari] = useState(() => {
-    try { return localStorage.getItem("vukuf-kari") || KARILAR[0].id } catch { return KARILAR[0].id }
+    try { return localStorage.getItem("vukuf-kari") || VARSAYILAN_KARI } catch { return VARSAYILAN_KARI }
   })
   const [mushaf, setMushaf] = useState(null)
   const [sesSekme, setSesSekme] = useState("cuz")

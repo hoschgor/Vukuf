@@ -20,9 +20,20 @@ export const KARILAR = [
   { id: "Nabil_Rifa3i_48kbps",      label: "Nabil Rifai" },
   { id: "mahmoud_ali_al_banna_32kbps",      label: "Mahmoud Ali Al Banna" },
   { id: "Minshawy_Mujawwad_192kbps",      label: "Minshawy Mujawwad" },
+  // ── TÜRK HAFIZLAR — Diyanet Kur'an Portalı (10 Kasım 2026) ──────────────────
+  // Âyet âyet kayıtlar; adres kalıbı kullanıcının tarayıcısında portalın ağ
+  // isteklerinden alındı: …/Sound/<hafız>/<sûre>_<âyet>.mp3 (sıfır dolgusuz).
+  // Kimlik "diyanet:" önekiyle tutuluyor → everyayah klasör adlarıyla karışmaz.
+  { id: "diyanet:ar_osmanSahin",      label: "Osman Şahin",      kaynak: "diyanet" },
+  { id: "diyanet:ar_ishakdemir",      label: "İshak Demir",      kaynak: "diyanet" },
+  { id: "diyanet:ar_TayyarAltikulac", label: "Tayyar Altıkulaç", kaynak: "diyanet" },
+  { id: "diyanet:ar_mehmetcevik",     label: "Mehmet Çevik",     kaynak: "diyanet" },
+  { id: "diyanet:ar_davutkaya",       label: "Davut Kaya",       kaynak: "diyanet" },
 ]
 
 const BASE_URL = "https://everyayah.com/data"
+export const DIYANET_ONEK = "diyanet:"
+export const DIYANET_SES_URL = "https://kuran.diyanet.gov.tr/api/audio/kuran/kuranikerim/Sound"
 
 // Kayıtlarında sûre başındaki besmeleyi ZATEN okuyan kâriler → ayrı besmele (Fatiha 1:1) EKLENMEZ
 export const BESMELE_OKUYANLAR = [
@@ -30,6 +41,11 @@ export const BESMELE_OKUYANLAR = [
 ]
 
 export function mp3Url(kariId, sureNo, ayetNo) {
+  // Diyanet: <sûre>_<âyet>.mp3, dolgusuz. Besmele (sûre başı) yine 1_1 (Fâtiha'nın
+  // ilk âyeti) olarak çalınıyor — everyayah kârileriyle aynı yol.
+  if (typeof kariId === "string" && kariId.startsWith(DIYANET_ONEK)) {
+    return `${DIYANET_SES_URL}/${kariId.slice(DIYANET_ONEK.length)}/${Number(sureNo)}_${Number(ayetNo)}.mp3`
+  }
   const s = String(sureNo).padStart(3, "0");
   const a = String(ayetNo).padStart(3, "0");
   let gercekKariId = kariId;

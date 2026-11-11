@@ -26,6 +26,8 @@ import {
   useKuranDinle, KARILER, TURLER, AYET_SAYILARI, kariBul, kaynakBilgisi, parcaAdi,
   useParcaListesi, useDinleZamani, sureYazisi, sonKonumOku,
 } from "../data/kuranDinle"
+// Çalar paneli küçük hapla aynı görünüm (12 Kasım 2026): rahle amblemi + yuvarlak düğmeler
+import { DinleAmblemi, DINLE_HAP_CSS } from "./MiniKuranDinle"
 
 const KARI_ANAHTAR = "vukuf-kuran-dinle-kari"
 const TUR_ANAHTAR = "vukuf-kuran-dinle-tur"           // { kariId: "cuz" | "sure" | "ayet" }
@@ -101,6 +103,12 @@ export default function KuranDinleKarti({ theme }) {
   }
 
   const kaynak = kaynakBilgisi(kari.kaynaklar[tur])
+  // Küçük haptaki yuvarlak düğmeler (MiniKuranDinle / MiniRadyo ile aynı ölçü ve renk)
+  const yuvarlak = (vurgu) => ({
+    width: "34px", height: "34px", borderRadius: "50%", flexShrink: 0, padding: 0,
+    display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
+    border: "none", background: vurgu ? ac : "transparent", color: vurgu ? "#fff" : theme.textSecondary,
+  })
   const varSayisi = liste.parcalar.filter(p => p.var && p.no !== "dua").length
   const toplamSayi = tur === "cuz" ? 30 : 114
 
@@ -260,28 +268,38 @@ export default function KuranDinleKarti({ theme }) {
       )}
 
       {/* ÇALAN */}
+      {/* ÇALAR — küçük hapın görünümü (12 Kasım 2026, kullanıcı: "sürekli oynatma kısmında
+          görünen play butonları güzel oldu; aynı şekilde Ekstralar'daki durdurma ve play
+          butonlarına da alalım"): kesik çizgili kapsül, rahle amblemi (çalarken dalgalar
+          atar), vurgu renkli yuvarlak oynat/duraklat, yanında yuvarlak sade düğmeler. */}
       {calan && (
-        <div style={{ marginTop: "12px", padding: "10px", borderRadius: "12px", border: `1px solid ${ac}66`, background: `${ac}0d`, display: "flex", flexDirection: "column", gap: "8px" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <button onClick={() => (calarDurum ? dinle.duraklat() : dinle.devam())} aria-label={calarDurum ? "Duraklat" : "Dinle"}
-              style={{ width: "42px", height: "42px", borderRadius: "50%", border: "none", flexShrink: 0, cursor: "pointer", background: ac, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              {durum === "yukleniyor" ? <Loader2 size={18} className="vk-don" /> : durum === "caliyor" ? <Pause size={18} /> : <Play size={18} style={{ marginLeft: "2px" }} />}
-            </button>
-            <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{
+          marginTop: "12px", padding: "5px 5px 8px", borderRadius: "22px",
+          border: `1.5px dashed ${ac}`, background: `linear-gradient(90deg, ${ac}12, ${theme.surface} 45%)`, backgroundColor: theme.surface,
+          display: "flex", flexDirection: "column", gap: "6px",
+        }}>
+          <style>{DINLE_HAP_CSS}</style>
+          <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+            <DinleAmblemi ac={ac} zemin={theme.surface} calar={durum === "caliyor"} boy={40} />
+            <div style={{ flex: 1, minWidth: 0, padding: "0 4px" }}>
               <div style={{ fontSize: "14px", fontWeight: 600, color: theme.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                 {parcaAdi(calan.tur, calan.parca, calan.ayet)}
               </div>
               <div style={{ fontSize: "11.5px", color: durum === "hata" ? "#c0392b" : theme.textSecondary, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                {durum === "hata" ? "Kayıt şu an açılamadı; biraz sonra yeniden denenebilir."
+                {durum === "hata" ? "Kayıt açılamadı · ▶ ile yeniden denenebilir"
                   : durum === "bitti" ? `${kariBul(calan.kariId)?.ad} · bitti`
                   : `${kariBul(calan.kariId)?.ad}${calan.tur === "ayet" && calan.ayet > 0 ? ` · ${calan.ayet} / ${AYET_SAYILARI[calan.parca - 1]}` : ""}`}
               </div>
             </div>
-            <button onClick={() => dinle.atla(-1)} aria-label="Önceki" title="Önceki" style={{ background: "none", border: "none", cursor: "pointer", color: theme.textSecondary, display: "flex", padding: "6px" }}><SkipBack size={17} /></button>
-            <button onClick={() => dinle.atla(1)} aria-label="Sonraki" title="Sonraki" style={{ background: "none", border: "none", cursor: "pointer", color: theme.textSecondary, display: "flex", padding: "6px" }}><SkipForward size={17} /></button>
-            <button onClick={() => dinle.kapat()} aria-label="Kapat" title="Kapat" style={{ background: "none", border: "none", cursor: "pointer", color: theme.textSecondary, display: "flex", padding: "6px" }}><X size={17} /></button>
+            <button onClick={() => dinle.atla(-1)} aria-label="Önceki" title="Önceki" style={yuvarlak(false)}><SkipBack size={15} /></button>
+            <button onClick={() => (calarDurum ? dinle.duraklat() : dinle.devam())} aria-label={calarDurum ? "Duraklat" : "Dinle"} title={calarDurum ? "Duraklat" : "Dinle"}
+              style={yuvarlak(true)}>
+              {durum === "yukleniyor" ? <Loader2 size={16} className="vk-kd-don" /> : durum === "caliyor" ? <Pause size={16} /> : <Play size={16} style={{ marginLeft: "2px" }} />}
+            </button>
+            <button onClick={() => dinle.atla(1)} aria-label="Sonraki" title="Sonraki" style={yuvarlak(false)}><SkipForward size={15} /></button>
+            <button onClick={() => dinle.kapat()} aria-label="Kapat" title="Kapat" style={yuvarlak(false)}><X size={15} /></button>
           </div>
-          {calan.tur !== "ayet" && <Ilerleme theme={theme} dinle={dinle} />}
+          {calan.tur !== "ayet" && <div style={{ padding: "0 8px" }}><Ilerleme theme={theme} dinle={dinle} /></div>}
         </div>
       )}
 

@@ -23,7 +23,8 @@ import { useHapKonumu } from "./DonusDugmesi"
 import { useEkstraDuzen } from "../data/ekstraDuzen"
 
 const KUCUK_ANAHTAR = "vukuf-mini-radyo-kucuk"
-const CSS = `@keyframes vk-radyo-dalga{0%,100%{opacity:.25}50%{opacity:1}}
+// Ekstralar → radyo kartı da aynı amblemi/canlandırmayı kullanıyor
+export const RADYO_HAP_CSS = `@keyframes vk-radyo-dalga{0%,100%{opacity:.25}50%{opacity:1}}
 .vk-radyo-d1{animation:vk-radyo-dalga 1.4s ease-in-out infinite}
 .vk-radyo-d2{animation:vk-radyo-dalga 1.4s ease-in-out .25s infinite}
 .vk-radyo-d3{animation:vk-radyo-dalga 1.4s ease-in-out .5s infinite}
@@ -96,7 +97,7 @@ function RadyoHapi({ radyo, kitapta }) {
 
   return (
     <>
-      <style>{CSS}</style>
+      <style>{RADYO_HAP_CSS}</style>
       <div ref={k.ref} className="vukuf-hap" {...k.olaylar}
         onPointerDownCapture={() => { if (!kucuk) setDokunus(n => n + 1) }}
         style={{ ...k.stil, zIndex: k.surukleniyor ? 130 : 125 }}>

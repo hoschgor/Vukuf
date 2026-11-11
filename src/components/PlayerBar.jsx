@@ -77,7 +77,8 @@ const gorunumOku = () => {
   } catch { return { ...GORUNUM_VARSAYILAN } }
 }
 import { Headphones, Music2, Moon, Sprout } from "lucide-react"
-import { useOkunanGorunum, okunanGorunumYaz, OKUNAN_ARKALAR, OKUNAN_ALT_BANTLAR } from "../data/okunanGorunum"
+import RenkSeciciPencere from "./RenkSeciciPencere"
+import { useOkunanGorunum, okunanGorunumYaz, OKUNAN_ARKALAR, OKUNAN_ALT_BANTLAR, OKUNAN_HARF_RENKLERI, okunanHarfRengi } from "../data/okunanGorunum"
 import { useMediaQuery } from "../data/hooks/useMediaQuery"
 import MushafPlayButton from "./MushafPlayButton"
 
@@ -189,6 +190,8 @@ export default function PlayerBar({
       const t = e.target
       if (baloncukRef.current?.contains(t)) return
       if (ayarDugmeRef.current?.contains(t)) return
+      // Kutudan açılan yüzen pencereler (renk seçici) body'de durur; onlara dokunmak kutuyu kapatmasın
+      if (t && t.closest && t.closest("[data-yuzen-pencere]")) return
       setAyarAcik(false)
     }
     const tus = (e) => { if (e.key === "Escape") setAyarAcik(false) }
@@ -819,6 +822,49 @@ function GorunumPaneli({ theme, gorunum, setGorunum, geri, konumAc, satirStil, i
 /* ── OKUNAN ÂYET GÖRÜNÜMÜ SAYFASI (ayar kutusunun içinde, 11 Kasım 2026) ──────────
    Kullanıcı: "…yorup yormadığına bakmak için de playerbar ayarları içinde okunan kısım
    için görünüm ayarı bölümü ekleyip burayı düzenleriz." Değişiklik anında sayfaya yansır. */
+/* HARF RENGİ (12 Kasım 2026, kullanıcı: "'Harfleri renklendir' kısmında kullanıcı farklı renk
+   seçebilsin"). Yuvarlak renk düğmeleri: ilk üçü temanın kendi renkleri (vurgu, lügat, âyet
+   rozeti — tema değişince onlar da değişir), sonra sabit renkler, en sonda gökkuşağı düğmesi
+   dilediği rengi seçtirir (tarayıcının renk seçicisi). Seçim data/okunanGorunum.js'te. */
+const harfRenkAdi = (id) => OKUNAN_HARF_RENKLERI.find(r => r.id === id)?.ad || (id && id.startsWith("#") ? "özel renk" : "tema rengi")
+function HarfRenkSecici({ theme, deger }) {
+  const ozelRef = useRef(null)
+  const [ozelAcik, setOzelAcik] = useState(false)
+  const ozel = typeof deger === "string" && deger.startsWith("#") && !OKUNAN_HARF_RENKLERI.some(r => r.id === deger)
+  const benek = (renk, secili) => ({
+    width: "24px", height: "24px", borderRadius: "50%", padding: 0, flexShrink: 0, cursor: "pointer",
+    background: renk, position: "relative",
+    border: `2px solid ${secili ? theme.text : "transparent"}`,
+    boxShadow: secili ? `0 0 0 2px ${theme.surface} inset` : `0 0 0 1px ${theme.border}`,
+  })
+  return (
+    <div role="radiogroup" aria-label="Harf rengi" style={{ display: "flex", flexWrap: "wrap", gap: "6px", padding: "2px 0 8px 2px" }}>
+      {OKUNAN_HARF_RENKLERI.map(r => {
+        const sec = deger === r.id
+        const renk = okunanHarfRengi(r.id, theme)
+        return (
+          <button key={r.id} role="radio" aria-checked={sec} aria-label={r.ad} title={r.ad}
+            onClick={() => okunanGorunumYaz({ harfRenk: r.id })} style={benek(renk, sec)}>
+            {/* temadan gelen renkler küçük bir "T" ile ayrılır */}
+            {!r.id.startsWith("#") && (
+              <span aria-hidden="true" style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "9px", fontWeight: 800, color: "#fff", textShadow: "0 0 2px rgba(0,0,0,.5)" }}>T</span>
+            )}
+          </button>
+        )
+      })}
+      {/* Özel renk: gökkuşağı düğmesi uygulamanın kendi renk penceresini açar — tarayıcının
+          seçicisi web'de ekranın dışına açılabiliyordu (12 Kasım 2026) */}
+      <button ref={ozelRef} type="button" title="Özel renk" aria-label="Özel renk seç" aria-haspopup="dialog" aria-expanded={ozelAcik}
+        onClick={() => setOzelAcik(true)}
+        style={benek(ozel ? deger : "conic-gradient(#e74c3c, #f1c40f, #2ecc71, #3498db, #9b59b6, #e74c3c)", ozel)} />
+      <RenkSeciciPencere acik={ozelAcik} capa={ozelRef.current} theme={theme} baslik="Harf rengi"
+        deger={ozel ? deger : (okunanHarfRengi(deger, theme) || "#c0392b")}
+        onSec={(hex) => okunanGorunumYaz({ harfRenk: hex.toLowerCase() })}
+        onKapat={() => setOzelAcik(false)} />
+    </div>
+  )
+}
+
 function OkunanPaneli({ theme, geri, satirStil, ikonDugme }) {
   const g = useOkunanGorunum()
   const anahtar = (acik, onDegis, ad, alt, pasif = false) => (
@@ -873,7 +919,9 @@ function OkunanPaneli({ theme, geri, satirStil, ikonDugme }) {
       {secim("Arka plan", OKUNAN_ARKALAR, g.arka, (id) => okunanGorunumYaz({ arka: id }))}
       {secim("Alt bant", OKUNAN_ALT_BANTLAR, g.altBant, (id) => okunanGorunumYaz({ altBant: id }))}
       <div style={{ height: "1px", background: theme.border, opacity: 0.6, margin: "4px 2px" }} />
-      {anahtar(g.harf, (v) => okunanGorunumYaz({ harf: v }), "Harfleri renklendir", "Okunan âyetin yazısı vurgu renginde")}
+      {anahtar(g.harf, (v) => okunanGorunumYaz({ harf: v }), "Harfleri renklendir",
+        g.harf ? `Okunan âyetin yazısı: ${harfRenkAdi(g.harfRenk)}` : "Okunan âyetin yazısı seçilen renkte")}
+      {g.harf && <HarfRenkSecici theme={theme} deger={g.harfRenk} />}
       {anahtar(g.rozetDal, (v) => okunanGorunumYaz({ rozetDal: v }), "Rozet dalı", "Âyet sonu rozetinin üstünde ve altında yapraklı dallar")}
       {anahtar(g.hareket, (v) => okunanGorunumYaz({ hareket: v }), "Dallar hafifçe salınsın",
         g.rozetDal ? "Akıcılık düşerse kapatılabilir" : "Rozet dalı açıkken", !g.rozetDal)}

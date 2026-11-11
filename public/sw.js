@@ -35,7 +35,7 @@
      de çalışır ama eski varlıklar önbellekte birikir.
    ═══════════════════════════════════════════════════════════════════════════ */
 
-const SURUM = "12-11-2026-2"
+const SURUM = "12-11-2026-4"
 
 const KABUK = `vukuf-kabuk-${SURUM}`
 const VARLIK = `vukuf-varlik-${SURUM}`
@@ -183,11 +183,27 @@ self.addEventListener("activate", (olay) => {
       kuruluyor.
 
    Önbellek AYRI (`vukuf-ses`): yüzlerce MB olabiliyor, kullanıcı metinleri
-   silmeden sesleri silebilsin ve kota hesabı karışmasın diye. */
-const SES_KOKU = "https://everyayah.com/"
+   silmeden sesleri silebilsin ve kota hesabı karışmasın diye.
+
+   ── DİYANET HAFIZLARI (12 Kasım 2026) ─────────────────────────────────────
+   Türk hafızların âyet âyet kayıtları kuran.diyanet.gov.tr'den geliyor
+   (data/hooks/useAudioPlayer.js → DIYANET_SES_URL). Bu kök listede değilken
+   toplu indirme onları "veri" sanıp CORS'suz çekiyordu → yanıt opak → hiçbiri
+   saklanmıyordu (internetsiz dinleme çalışmıyordu). Artık ses sayılıyor:
+   CORS kipinde indirilip `vukuf-ses`e giriyor, çalarken oradan veriliyor.
+   Sunucu `Cross-Origin-Resource-Policy: same-site` gönderdiği için oynatıcı bu
+   adresleri zaten `crossorigin="anonymous"` ile istiyor; işçi isteği olduğu gibi
+   iletiyor, önbellekten verilen yanıt da sayfa tarafında sorunsuz çalıyor.
+   Ekstralar → Kur'an Dinle'nin uzun kayıtları (archive.org, way2quran) burada
+   YOK: indirilmiyorlar, doğrudan akıyorlar — işçi onlara dokunmuyor. */
+const SES_KOKLERI = [
+  "https://everyayah.com/",
+  "https://kuran.diyanet.gov.tr/api/audio/",
+]
 
 function sesMi(url) {
-  return String(url).startsWith(SES_KOKU)
+  const u = String(url)
+  return SES_KOKLERI.some(k => u.startsWith(k))
 }
 
 function saklanabilirSes(y) {

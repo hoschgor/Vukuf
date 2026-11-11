@@ -602,7 +602,7 @@ export default function MushafKelime({
           lineHeight: lineHeight,
           color: secili ? theme.accent
             : (lafizkontrol || besmelekontrol) ? (theme.lugatHighlight || theme.accent)
-            : (aktif && aktifHarf) ? theme.accent : theme.text,
+            : (aktif && aktifHarf) ? (aktifGorunum?.harfRengi || theme.accent) : theme.text,
           display: "inline",
           // `opacity: aktif ? 1 : 0.95` KALDIRILDI (28 Eylül 2026). 1'in altındaki
           // her opaklık bu metin kutusunu ayrı bir katmana alıyor; iPhone bu katmanı

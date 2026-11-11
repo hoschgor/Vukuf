@@ -82,6 +82,8 @@ import { DndContext, closestCenter, KeyboardSensor, MouseSensor, TouchSensor, us
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
 import { GOZ_UZERINE_CSS } from "../components/gozUzerine"
+// Radyo satırları küçük radyo hapının görünümünde (12 Kasım 2026)
+import { RadyoAmblemi, RADYO_HAP_CSS } from "../components/MiniRadyo"
 import { useEkstraDuzen, ekstraDuzenYaz, ekstraGizleDegis, ekstraSirala } from "../data/ekstraDuzen"
 import {
   VAKITLER, vakitAni, sehirleriGetir, ilceleriGetir, vakitleriGetir, secimOku, secimYaz, durumHesapla, kalanMetni,
@@ -534,37 +536,58 @@ function Radyolar({ theme }) {
           Bu tarayıcı canlı yayın biçimini doğrudan çalamayabilir. Çalmazsa yayının yanındaki bağlantıdan resmî sitede dinleyebilirsiniz; telefonda çoğunlukla sorunsuz çalar.
         </div>
       )}
+      {/* HAP GÖRÜNÜMÜ (12 Kasım 2026, kullanıcı: "sürekli oynatma kısmında görünen play
+          butonları güzel oldu; aynı şekilde Ekstralar'daki durdurma ve play butonlarına da
+          alalım"): her yayın küçük radyo hapı gibi — kule amblemi (çalarken dalgalar atar),
+          vurgu renkli yuvarlak oynat/duraklat, yanında yuvarlak sade düğmeler. Açık yayın
+          kesik çizgili kapsül ve "CANLI" noktasıyla. */}
+      <style>{RADYO_HAP_CSS}</style>
       <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
         {YAYINLAR.map(y => {
           const bu = aktif === y.id
           const caliyor = bu && durum === "caliyor"
           const yukleniyor = bu && durum === "yukleniyor"
+          const ac = theme.accent
+          const yuvarlak = (vurgu) => ({
+            width: "34px", height: "34px", borderRadius: "50%", flexShrink: 0, padding: 0,
+            display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", textDecoration: "none",
+            border: "none", background: vurgu ? ac : "transparent", color: vurgu ? "#fff" : theme.textSecondary,
+          })
           return (
             <div key={y.id} style={{
-              display: "flex", alignItems: "center", gap: "10px", padding: "8px 10px", borderRadius: "11px",
-              border: `1px solid ${bu ? theme.accent + "66" : theme.border}`, background: bu ? `${theme.accent}0d` : "transparent",
+              display: "flex", alignItems: "center", gap: "4px", padding: "4px 5px", borderRadius: "24px",
+              border: bu ? `1.5px dashed ${ac}` : `1px solid ${theme.border}`,
+              background: bu ? `linear-gradient(90deg, ${ac}12, ${theme.surface} 45%)` : "transparent",
             }}>
-              <button onClick={() => dokun(y)} aria-label={caliyor ? `${y.ad} — duraklat` : `${y.ad} — dinle`}
-                style={{ width: "40px", height: "40px", borderRadius: "50%", border: "none", flexShrink: 0, cursor: "pointer",
-                  background: theme.accent, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                {yukleniyor ? <Loader2 size={18} className="vk-don" /> : caliyor ? <Pause size={18} /> : <Play size={18} style={{ marginLeft: "2px" }} />}
-              </button>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: "14px", fontWeight: 600, color: theme.text }}>{y.ad}</div>
+              <span style={{ opacity: bu ? 1 : 0.75, display: "flex" }}>
+                <RadyoAmblemi ac={ac} zemin={theme.surface} calar={caliyor} boy={38} />
+              </span>
+              <div style={{ flex: 1, minWidth: 0, padding: "0 4px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "14px", fontWeight: 600, color: theme.text }}>
+                  <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{y.ad}</span>
+                  {caliyor && (
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: "3px", flexShrink: 0, fontSize: "9.5px", letterSpacing: "0.08em", fontWeight: 700, color: "#d64545" }}>
+                      <span className="vk-radyo-canli" style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#d64545" }} /> CANLI
+                    </span>
+                  )}
+                </div>
                 <div style={{ fontSize: "11.5px", color: bu && durum === "hata" ? "#c0392b" : theme.textSecondary }}>
                   {bu && durum === "hata" ? "Yayın şu an açılamadı; resmî siteden deneyebilirsiniz."
                     : yukleniyor ? "Bağlanıyor…" : caliyor ? "Çalıyor" : bu && durum === "duraklatildi" ? "Duraklatıldı" : y.aciklama}
                 </div>
               </div>
+              <button onClick={() => dokun(y)} aria-label={caliyor ? `${y.ad} — duraklat` : `${y.ad} — dinle`}
+                title={caliyor ? "Duraklat" : "Dinle"} style={yuvarlak(true)}>
+                {yukleniyor ? <Loader2 size={16} className="vk-don" /> : caliyor ? <Pause size={16} /> : <Play size={16} style={{ marginLeft: "2px" }} />}
+              </button>
               {bu && (
-                <button onClick={() => radyo.kapat()} aria-label={`${y.ad} — kapat`} title="Kapat"
-                  style={{ color: theme.textSecondary, background: "none", border: "none", cursor: "pointer", display: "flex", padding: "6px" }}>
-                  <X size={16} />
+                <button onClick={() => radyo.kapat()} aria-label={`${y.ad} — kapat`} title="Kapat" style={yuvarlak(false)}>
+                  <X size={15} />
                 </button>
               )}
               <a href={y.site} target="_blank" rel="noopener noreferrer" aria-label={`${y.ad} resmî sitesi`} title="Resmî site"
-                style={{ color: theme.textSecondary, display: "flex", padding: "6px" }}>
-                <ExternalLink size={16} />
+                style={yuvarlak(false)}>
+                <ExternalLink size={15} />
               </a>
             </div>
           )

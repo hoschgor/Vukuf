@@ -21,7 +21,8 @@ import { useHapKonumu } from "./DonusDugmesi"
 import { useEkstraDuzen } from "../data/ekstraDuzen"
 
 const KUCUK_ANAHTAR = "vukuf-mini-kuran-dinle-kucuk"
-const CSS = `@keyframes vk-kd-dalga{0%,100%{opacity:.2}50%{opacity:1}}
+// Ekstralar → Kur'an Dinle kartındaki çalar da aynı amblemi/canlandırmayı kullanıyor
+export const DINLE_HAP_CSS = `@keyframes vk-kd-dalga{0%,100%{opacity:.2}50%{opacity:1}}
 .vk-kd-d1{animation:vk-kd-dalga 1.6s ease-in-out infinite}
 .vk-kd-d2{animation:vk-kd-dalga 1.6s ease-in-out .3s infinite}
 @keyframes vk-kd-don{to{transform:rotate(360deg)}}.vk-kd-don{animation:vk-kd-don 1s linear infinite}
@@ -97,7 +98,7 @@ function DinleHapi({ dinle, kitapta }) {
 
   return (
     <>
-      <style>{CSS}</style>
+      <style>{DINLE_HAP_CSS}</style>
       <div ref={k.ref} className="vukuf-hap" {...k.olaylar}
         onPointerDownCapture={() => { if (!kucuk) setDokunus(n => n + 1) }}
         style={{ ...k.stil, zIndex: k.surukleniyor ? 130 : 125 }}>

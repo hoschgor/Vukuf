@@ -11,7 +11,7 @@ import kelimeGrup from "../data/kelime-grup.json"
 import kelimeObek from "../data/kelime-obek.json"
 import { ayetTecvidOnbellek, TECVID_KURAL } from "../data/tecvid"
 import { useTecvidAyar, tecvidImza } from "../data/tecvidAyar"
-import { useOkunanGorunum } from "../data/okunanGorunum"
+import { useOkunanGorunum, okunanHarfRengi } from "../data/okunanGorunum"
 import OkunanDalSusu from "./OkunanDalSusu"
 // GEÇİCİ — dönme teşhisi sayacı (ölçüm bitince silinecek)
 // import { SAYAC as DONME_SAYAC } from "../data/donmeTeshis"   // ⏸ dönme teşhisi (yorumda)
@@ -136,7 +136,11 @@ function MushafSayfa({
      memo karşılaştırması bunu engellemez (store aboneliği bileşenin kendi durumu sayılır). */
   const tecvidAyar = useTecvidAyar()
   // Okunan âyetin görünümü (oynatıcı ayarı) — dal / bant / renk + harf rengi + hareket
-  const okunanGorunum = useOkunanGorunum()
+  const okunanGorunumHam = useOkunanGorunum()
+  // Harf rengi seçimi temaya göre gerçek renge çevrilip kelimelere gider (12 Kasım 2026)
+  const okunanGorunum = useMemo(
+    () => ({ ...okunanGorunumHam, harfRengi: okunanHarfRengi(okunanGorunumHam.harfRenk, theme) }),
+    [okunanGorunumHam, theme])
   // Âyet rozeti stili (Çini / Klasik) — bir kez okunur, rozetlere prop olarak gider
   const rozetStili = useAyetRozeti()
   const tImza = tecvidImza(tecvidAyar)

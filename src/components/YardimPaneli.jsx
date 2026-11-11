@@ -439,8 +439,8 @@ const KONULAR = [
     ozet: "Okunan âyetin arka planı, alt bandı ve harf rengi.",
     nerede: "Oynatıcı → ayar düğmesi → Okunan âyet görünümü",
     metin: [
-      "Kâri okurken okunan âyetin işareti parça parça seçilir. Arka plan: Yok, Hafif ya da Belirgin. Alt bant: Yok, Bant (kelimelerin altında ince düz şerit) ya da Dal (ince dal şeridi). İsteğe bağlı \"Rozet dalı\" âyet sonu rozetinin üstüne ve altına yapraklı dallar ekler.",
-      "\"Harfleri renklendir\" açıkken okunan âyetin yazısı vurgu renginde görünür. Rozet dalları hafifçe salınabilir; telefonda akıcılık düşerse bu hareket aynı yerden kapatılabilir.",
+      "Kâri okurken okunan âyetin işareti parça parça seçilir. Arka plan: Yok, Hafif ya da Belirgin. Alt bant: Yok, Bant (kelimelerin altında ince düz şerit) ya da Dal (ince dal şeridi). İsteğe bağlı \"Rozet dalı\" âyet sonu rozetinin üstüne ve altına yapraklı dallar ekler. Başlangıçta arka plan yok, alt bant dal, harfler tema renginde, rozet dalı ve salınımı açıktır; hepsi değiştirilebilir.",
+      "\"Harfleri renklendir\" açıkken okunan âyetin yazısı seçilen renkte görünür. Altındaki yuvarlak düğmelerden renk seçilir: \"T\" işaretli ilk üçü temanın kendi renkleridir (vurgu, lügat ve âyet rozeti rengi; tema değişince onlar da değişir), ardından sabit renkler gelir; en sondaki gökkuşağı düğmesi, hemen yanında küçük bir renk penceresi açar: alanda ve renk şeridinde sürükleyerek ya da renk kodu (#rrggbb) yazarak seçilip \"Seç\" ile uygulanır. Rozet dalları hafifçe salınabilir; telefonda akıcılık düşerse bu hareket aynı yerden kapatılabilir.",
       "Oynatıcıdaki küçük ok, takip (gözlük), meal ve izleme düğmeleriyle önceki ve sonraki âyet düğmelerini gizleyip gösterir; oynat, durdur ve ayar düğmeleri yerinden oynamaz. Kapalıyken takip, meal ya da izlemeden biri açıksa okun üstünde küçük bir nokta görünür.",
     ],
     anahtar: "okunan âyet işaret vurgu dal süs zemin arka plan alt bant renk harf hareket salınım rozet oynatıcı ok gizle düğme",

@@ -1706,6 +1706,8 @@ useEffect(() => { barGoster() }, [])
 // ── MENÜ GİBİ BAR ("orta") — ortak davranış components/OrtaMenu.jsx'te (mushafla aynı)
 const ortaMenu = useOrtaMenu({
   aktif: ortaBar,
+  // Otomatik kaydırma sürerken tek dokunuş menüyü açsın (kayma "akarken dokunma" sayılmasın)
+  otoKaydiriyor: () => otomatikKaydirma && !duraklatildi,
   // Bir panel / pencere açıkken çift dokunma menüyü açmaz
   // Bir pencere (lügat, dipnot) açıkken dokunuş onu kapatır, menüyü açmaz (tek dokunma)
   engelli: () => herhangiPanelAcik || lugatAramaAcik || !!gorselVeri || !!paylasVeri || paylasSecim || kayitKonumModu
@@ -4375,7 +4377,8 @@ const BAR_KISA_ADLAR = {
 }
 const OrtaMenu = ortaBar && (
   <OrtaMenuCercevesi menu={ortaMenu} theme={theme} olcek={barUiOlcegi}>
-    {barEtiketle(Bar, new Map(Object.entries(BAR_KISA_ADLAR).map(([k, ad]) => [barOge(k).order, ad])), { theme, olcek: barOlcegi })}
+    {/* Kayarken "Kaydır" düğmesi durdurur → adı "Durdur" (11 Kasım 2026) */}
+    {barEtiketle(Bar, new Map(Object.entries({ ...BAR_KISA_ADLAR, oto: otomatikKaydirma ? "Durdur" : "Kaydır" }).map(([k, ad]) => [barOge(k).order, ad])), { theme, olcek: barOlcegi })}
   </OrtaMenuCercevesi>
 )
 // Alt bilgi şeridi — içerik bar öğelerinin açık/kapalı ayarından

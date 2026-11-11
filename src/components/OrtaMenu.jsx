@@ -159,7 +159,7 @@ function vurguyuKaldir() {
  * @param acilinca     menü açılırken çağrılır (ör. açık lügat penceresini kapat)
  * @param kapatanlar   bool dizisi — biri KAPALIDAN AÇIĞA geçince menü kapanır (paneller)
  */
-export function useOrtaMenu({ aktif, engelli, haric, secimKapsami = null, metinAl = null, acilinca, kapatanlar = [] }) {
+export function useOrtaMenu({ aktif, engelli, haric, secimKapsami = null, metinAl = null, acilinca, kapatanlar = [], otoKaydiriyor = null }) {
   const [acik, setAcik] = useState(false)
   const [ipucu, setIpucu] = useState(false)
   const [korunan, setKorunan] = useState(null)      // { metin, ust, alt } | null
@@ -170,7 +170,7 @@ export function useOrtaMenu({ aktif, engelli, haric, secimKapsami = null, metinA
   acikRef.current = acik
   // Her render'da tazelenen geri çağırmalar (dinleyiciler yeniden kurulmasın)
   const cb = useRef({})
-  cb.current = { engelli, haric, metinAl, acilinca }
+  cb.current = { engelli, haric, metinAl, acilinca, otoKaydiriyor }
 
   // Konum "orta"dan çıkınca menü kapanır
   useEffect(() => { if (!aktif) { setAcik(false); setIpucu(false) } }, [aktif])
@@ -302,7 +302,11 @@ export function useOrtaMenu({ aktif, engelli, haric, secimKapsami = null, metinA
       let nokta = null
       try { nokta = t ? document.elementFromPoint(t.clientX, t.clientY) : null } catch { nokta = null }
       bas = (t && e.touches.length === 1)
-        ? { x: t.clientX, y: t.clientY, t: e.timeStamp, akiyordu: e.timeStamp - sonKaydirma < 140, nokta }
+        // OTOMATİK KAYDIRMA (11 Kasım 2026 — kullanıcı: "Otomatik kaydırma açıkken menü 1 tıklama
+        // ile açılması gerekiyor"): sayfa kendiliğinden kayarken her dokunuş "akarken dokunma"
+        // sayılıyor ve menü hiç açılmıyordu. Otomatik kaydırma sürerken bu bekçi devre dışı.
+        ? { x: t.clientX, y: t.clientY, t: e.timeStamp, nokta,
+            akiyordu: !(cb.current.otoKaydiriyor && cb.current.otoKaydiriyor()) && e.timeStamp - sonKaydirma < 140 }
         : null
     }
     const bitir = (e) => {

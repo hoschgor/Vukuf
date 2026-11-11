@@ -579,8 +579,8 @@ const KOSELER = [
    Okuma ekranı "vukuf-sade-mode", mushaf "vukuf-sade-mod" anahtarını okuyor; ikisi
    de yazılır. */
 const OKUMA_MODLARI = [
-  { id: "sade", ad: "Sade", aciklama: "Barda temel öğeler: içerik menüsü, yazı tipi, otomatik kaydırma, ayarlar ve sayfa bilgisi. Diğerleri Ayarlar'dan açılabilir." },
-  { id: "tam",  ad: "Tam",  aciklama: "Bütün öğeler barda görünür (lügat, arama, kayıtlar, görsel, paylaş…)." },
+  { id: "sade", ad: "Sade", aciklama: "Barda temel öğeler: içerik menüsü, yazı tipi, otomatik kaydırma, ayarlar ve sayfa bilgisi. Kelime ve âyet meali kapalı başlar. Diğerleri Ayarlar'dan açılabilir." },
+  { id: "tam",  ad: "Tam",  aciklama: "Bütün öğeler barda görünür (lügat, arama, kayıtlar, görsel, paylaş…); kelime ve âyet meali açık başlar." },
 ]
 /* Seçilen mod "sıfırdan" uygulanır (3 Kasım 2026 — kullanıcı: "Başlangıçtaki mod da
    ayarlar kısmından değiştirilebilsin, değiştirildiğinde sıfırdan (seçtiğimiz şekilde)
@@ -594,6 +594,11 @@ export function okumaModuYaz(okuma) {
   try {
     localStorage.setItem("vukuf-sade-mode", v); localStorage.setItem("vukuf-sade-mod", v)
     localStorage.removeItem("vukuf-bar-sade"); localStorage.removeItem("vukuf-kuran-sade-gizli")
+    // MEAL (11 Kasım 2026 — kullanıcı: "Açılışta tam mod seçilirse kelime meali de açılsın,
+    // sade mod seçilirse kelime ve âyet meal kısmı kapansın"). Kur'ân ekranı açılışta okur.
+    const tam = okuma !== "sade"
+    localStorage.setItem("vukuf-kelime-meali", String(tam))
+    localStorage.setItem("vukuf-ayet-meali", String(tam))
   } catch { /* yoksay */ }
 }
 export function OkumaModuSecici({ theme, deger, onSec }) {

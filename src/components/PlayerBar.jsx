@@ -76,7 +76,8 @@ const gorunumOku = () => {
     return { ...GORUNUM_VARSAYILAN, ...k }
   } catch { return { ...GORUNUM_VARSAYILAN } }
 }
-import { Headphones, Music2, Moon } from "lucide-react"
+import { Headphones, Music2, Moon, Sprout } from "lucide-react"
+import { useOkunanGorunum, okunanGorunumYaz, OKUNAN_ARKALAR, OKUNAN_ALT_BANTLAR } from "../data/okunanGorunum"
 import { useMediaQuery } from "../data/hooks/useMediaQuery"
 import MushafPlayButton from "./MushafPlayButton"
 
@@ -200,6 +201,12 @@ export default function PlayerBar({
     }
   }, [baloncukAcik])
 
+  // EK DÜĞMELER AÇ/KAPA (11 Kasım 2026 — kullanıcı: "Playerbardaki fazlalık butonlar
+  // animasyonla açılıp kapanabilsin"). Gözlük · Meal · İzleme küçük bir okla gizlenip
+  // açılır; tercih cihazda saklanır. Kapalıyken bunlardan biri etkinse ok üstünde nokta.
+  const [ekAcik, setEkAcik] = useState(() => { try { return localStorage.getItem("vukuf-pb-ek") !== "0" } catch { return true } })
+  const ekDegis = () => setEkAcik(v => { const y = !v; try { localStorage.setItem("vukuf-pb-ek", y ? "1" : "0") } catch { /* yoksay */ } return y })
+
   // Gerçek yüksekliği ölç → ebeveyn (KuranOkuma) menü/içerik ofsetlerinde kullanır
   const rootRef = useRef(null)
   useEffect(() => {
@@ -250,6 +257,12 @@ export default function PlayerBar({
     flexShrink: 0,
     touchAction: "manipulation",
   })
+
+  // Ok kapalıyken önceki/sonraki düğmeleri: görünmez ve dokunulmaz ama yerleri durur
+  const ekGizliStil = {
+    transition: "opacity .25s ease",
+    ...(ekAcik ? null : { opacity: 0, pointerEvents: "none" }),
+  }
 
   const kucukButonStil = () => ({
     display: "flex", 
@@ -363,44 +376,16 @@ export default function PlayerBar({
             zIndex: 3,
           }}
         >
-          {altPanel === "gorunum" ? (
+          {altPanel === "okunan" ? (
+            <OkunanPaneli theme={theme} geri={() => setAltPanel(null)} satirStil={satirStil} ikonDugme={ikonDugme} />
+          ) : altPanel === "gorunum" ? (
             <GorunumPaneli theme={theme} gorunum={gorunum} setGorunum={setGorunum} geri={() => setAltPanel(null)}
               konumAc={() => { setAyarAcik(false); setKonumAyarAcik(true) }}
               satirStil={satirStil} ikonDugme={ikonDugme} degerStil={degerStil} sifirStil={sifirStil}
               kenarda={barKonum === "alt" && !barGorunur} />
           ) : (<>
-          {/* SES — simgeye dokunmak sessize alır / eski seviyeye döndürür */}
-          <div style={satirStil}>
-            <button
-              onClick={() => sesAyarla && sesAyarla(ses === 0 ? (oncekiSesRef.current || 1) : 0)}
-              title={ses === 0 ? "Sesi aç" : "Sessize al"}
-              style={{ ...ikonDugme, color: ses === 0 ? "#c0392b" : theme.accent }}
-            >
-              <SesIkon size={16} />
-            </button>
-            <input type="range" min={0} max={1} step={0.01} value={ses}
-              aria-label="Ses seviyesi"
-              onChange={e => sesAyarla && sesAyarla(parseFloat(e.target.value))}
-              style={{ flex: 1, minWidth: 0, accentColor: theme.accent, cursor: "pointer" }} />
-            <span style={degerStil}>%{Math.round(ses * 100)}</span>
-            <button onClick={() => sesAyarla && sesAyarla(1)} title="Tam sese getir" style={sifirStil}>
-              <RotateCcw size={12} />
-            </button>
-          </div>
-          <div style={{ height: "1px", background: theme.border, opacity: 0.6, margin: "0 2px" }} />
-          {/* HIZ */}
-          <div style={satirStil}>
-            <span style={{ ...ikonDugme, cursor: "default" }}><Gauge size={16} color={theme.accent} /></span>
-            <input type="range" min={0.5} max={2} step={0.05} value={hiz}
-              aria-label="Çalma hızı"
-              onChange={e => hizAyarla && hizAyarla(parseFloat(e.target.value))}
-              style={{ flex: 1, minWidth: 0, accentColor: theme.accent, cursor: "pointer" }} />
-            <span style={degerStil}>{hiz}×</span>
-            <button onClick={() => hizAyarla && hizAyarla(1)} title="1×'e getir" style={sifirStil}>
-              <RotateCcw size={12} />
-            </button>
-          </div>
-          <div style={{ height: "1px", background: theme.border, opacity: 0.6, margin: "0 2px" }} />
+          {/* SIRA (11 Kasım 2026, kullanıcı): Kârî · Sürekli odak · Devamlı oynatma · Otomatik
+              durdurma · Otomatik gizleme · Okunan âyet görünümü · Görünüm ve konum · Hız · Ses */}
           {/* KÂRÎ — 3 Kasım 2026 (kullanıcı: "Playerbar içine karileri alalım, hız ayarı altına") */}
           {setKariId && (
             <div style={satirStil}>
@@ -417,9 +402,26 @@ export default function PlayerBar({
             </div>
           )}
           <div style={{ height: "1px", background: theme.border, opacity: 0.6, margin: "0 2px" }} />
-          {/* OTOMATİK DURDURMA — seçilen (ya da özel) süre sonunda oynatıcı kapanır; ortak seçici */}
-          <OtomatikDurdurmaSecici theme={theme} uyku={uyku} girinti={24}
-            aciklama="Seçilen süre sonunda oynatıcı kapanır" />
+          {/* SÜREKLİ ODAK — mushaf okunan âyeti takip eder; öbür ekranlarda odak penceresi açık kalır */}
+          <div role="switch" aria-checked={odakDurumu.surekli} onClick={() => surekliAyarla(!odakDurumu.surekli)}
+            title="Kur'ân ekranında okunan âyet hep takip edilsin; ekrandan çıkınca okunan âyetler odak penceresinde görünsün"
+            style={{ ...satirStil, cursor: "pointer" }}>
+            <span style={{ ...ikonDugme, cursor: "pointer" }}><Glasses size={16} color={odakDurumu.surekli ? theme.accent : theme.textSecondary} /></span>
+            <span style={{ flex: 1, minWidth: 0, fontSize: "12px", color: theme.text, lineHeight: 1.25 }}>
+              Sürekli odak
+              <span style={{ display: "block", fontSize: "10px", color: theme.textSecondary }}>Okunan âyet hep takip edilsin</span>
+            </span>
+            <span aria-hidden="true" style={{
+              width: "30px", height: "18px", borderRadius: "999px", flexShrink: 0, position: "relative",
+              background: odakDurumu.surekli ? theme.accent : `${theme.textSecondary}44`, transition: "background .15s ease",
+            }}>
+              <span style={{
+                position: "absolute", top: "2px", left: odakDurumu.surekli ? "14px" : "2px",
+                width: "14px", height: "14px", borderRadius: "50%", background: "#fff",
+                boxShadow: "0 1px 3px rgba(0,0,0,0.25)", transition: "left .15s ease",
+              }} />
+            </span>
+          </div>
           <div style={{ height: "1px", background: theme.border, opacity: 0.6, margin: "0 2px" }} />
           {/* DEVAMLI OYNATMA — satırın tamamı dokunulabilir; sağda küçük anahtar */}
           <div role="switch" aria-checked={arkaCalma} onClick={() => setArkaCalma(!arkaCalma)}
@@ -442,26 +444,9 @@ export default function PlayerBar({
             </span>
           </div>
           <div style={{ height: "1px", background: theme.border, opacity: 0.6, margin: "0 2px" }} />
-          {/* SÜREKLİ ODAK — mushaf okunan âyeti takip eder; öbür ekranlarda odak penceresi açık kalır */}
-          <div role="switch" aria-checked={odakDurumu.surekli} onClick={() => surekliAyarla(!odakDurumu.surekli)}
-            title="Kur'ân ekranında okunan âyet hep takip edilsin; ekrandan çıkınca okunan âyetler odak penceresinde görünsün"
-            style={{ ...satirStil, cursor: "pointer" }}>
-            <span style={{ ...ikonDugme, cursor: "pointer" }}><Glasses size={16} color={odakDurumu.surekli ? theme.accent : theme.textSecondary} /></span>
-            <span style={{ flex: 1, minWidth: 0, fontSize: "12px", color: theme.text, lineHeight: 1.25 }}>
-              Sürekli odak
-              <span style={{ display: "block", fontSize: "10px", color: theme.textSecondary }}>Okunan âyet hep takip edilsin</span>
-            </span>
-            <span aria-hidden="true" style={{
-              width: "30px", height: "18px", borderRadius: "999px", flexShrink: 0, position: "relative",
-              background: odakDurumu.surekli ? theme.accent : `${theme.textSecondary}44`, transition: "background .15s ease",
-            }}>
-              <span style={{
-                position: "absolute", top: "2px", left: odakDurumu.surekli ? "14px" : "2px",
-                width: "14px", height: "14px", borderRadius: "50%", background: "#fff",
-                boxShadow: "0 1px 3px rgba(0,0,0,0.25)", transition: "left .15s ease",
-              }} />
-            </span>
-          </div>
+          {/* OTOMATİK DURDURMA — seçilen (ya da özel) süre sonunda oynatıcı kapanır; ortak seçici */}
+          <OtomatikDurdurmaSecici anahtarli theme={theme} uyku={uyku} girinti={24}
+            aciklama="Seçilen süre sonunda oynatıcı kapanır" />
           <div style={{ height: "1px", background: theme.border, opacity: 0.6, margin: "0 2px" }} />
           {/* OTOMATİK GİZLEME — açıkken süre (3–30 sn) */}
           <div role="switch" aria-checked={gizle.acik} onClick={() => setGizle({ acik: !gizle.acik })}
@@ -497,6 +482,16 @@ export default function PlayerBar({
             </div>
           )}
           <div style={{ height: "1px", background: theme.border, opacity: 0.6, margin: "0 2px" }} />
+          {/* OKUNAN ÂYET GÖRÜNÜMÜ — dallı / bant / renk, harf rengi, dal hareketi (11 Kasım 2026) */}
+          <button onClick={() => setAltPanel("okunan")} style={{ ...satirStil, width: "100%", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", textAlign: "left", padding: "6px 0" }}>
+            <span style={{ ...ikonDugme, cursor: "pointer" }}><Sprout size={15} color={theme.textSecondary} /></span>
+            <span style={{ flex: 1, minWidth: 0, fontSize: "12px", color: theme.text, lineHeight: 1.25 }}>
+              Okunan âyet görünümü
+              <span style={{ display: "block", fontSize: "10px", color: theme.textSecondary }}>Arka plan, alt bant, harf rengi</span>
+            </span>
+            <ChevronRight size={15} color={theme.textSecondary} />
+          </button>
+          <div style={{ height: "1px", background: theme.border, opacity: 0.6, margin: "0 2px" }} />
           {/* GÖRÜNÜM VE KONUM — gelişmiş ayarlar ayrı sayfada, ana liste sade kalsın */}
           <button onClick={() => setAltPanel("gorunum")} style={{ ...satirStil, width: "100%", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", textAlign: "left", padding: "6px 0" }}>
             <span style={{ ...ikonDugme, cursor: "pointer" }}><SlidersHorizontal size={15} color={theme.textSecondary} /></span>
@@ -506,6 +501,38 @@ export default function PlayerBar({
             </span>
             <ChevronRight size={15} color={theme.textSecondary} />
           </button>
+          <div style={{ height: "1px", background: theme.border, opacity: 0.6, margin: "0 2px" }} />
+          {/* HIZ */}
+          <div style={satirStil}>
+            <span style={{ ...ikonDugme, cursor: "default" }}><Gauge size={16} color={theme.accent} /></span>
+            <input type="range" min={0.5} max={2} step={0.05} value={hiz}
+              aria-label="Çalma hızı"
+              onChange={e => hizAyarla && hizAyarla(parseFloat(e.target.value))}
+              style={{ flex: 1, minWidth: 0, accentColor: theme.accent, cursor: "pointer" }} />
+            <span style={degerStil}>{hiz}×</span>
+            <button onClick={() => hizAyarla && hizAyarla(1)} title="1×'e getir" style={sifirStil}>
+              <RotateCcw size={12} />
+            </button>
+          </div>
+          <div style={{ height: "1px", background: theme.border, opacity: 0.6, margin: "0 2px" }} />
+          {/* SES — simgeye dokunmak sessize alır / eski seviyeye döndürür */}
+          <div style={satirStil}>
+            <button
+              onClick={() => sesAyarla && sesAyarla(ses === 0 ? (oncekiSesRef.current || 1) : 0)}
+              title={ses === 0 ? "Sesi aç" : "Sessize al"}
+              style={{ ...ikonDugme, color: ses === 0 ? "#c0392b" : theme.accent }}
+            >
+              <SesIkon size={16} />
+            </button>
+            <input type="range" min={0} max={1} step={0.01} value={ses}
+              aria-label="Ses seviyesi"
+              onChange={e => sesAyarla && sesAyarla(parseFloat(e.target.value))}
+              style={{ flex: 1, minWidth: 0, accentColor: theme.accent, cursor: "pointer" }} />
+            <span style={degerStil}>%{Math.round(ses * 100)}</span>
+            <button onClick={() => sesAyarla && sesAyarla(1)} title="Tam sese getir" style={sifirStil}>
+              <RotateCcw size={12} />
+            </button>
+          </div>
           </>)}
         </div>
       )}
@@ -549,6 +576,32 @@ export default function PlayerBar({
           </div>
         </div>
 
+        {/* EK DÜĞMELERİ AÇ/KAPA — ok döner; kapalıyken etkin bir ek varsa küçük nokta */}
+        <button
+          onClick={ekDegis}
+          aria-expanded={ekAcik}
+          title={ekAcik ? "Ek düğmeleri gizle" : "Ek düğmeleri göster (takip, meal, izleme, önceki/sonraki âyet)"}
+          style={{
+            position: "relative", display: "flex", alignItems: "center", justifyContent: "center",
+            width: isMobile ? "20px" : "22px", height: isMobile ? "28px" : "30px", borderRadius: "8px",
+            border: "none", cursor: "pointer", background: "transparent", padding: 0, flexShrink: 0,
+            color: theme.textSecondary, touchAction: "manipulation",
+          }}
+        >
+          <ChevronRight size={isMobile ? 15 : 16} style={{ transition: "transform .28s ease", transform: ekAcik ? "rotate(180deg)" : "none" }} />
+          {!ekAcik && (odakDurum !== "kapali" || ceviriAktif || izlemeAktif) && (
+            <span aria-hidden="true" style={{ position: "absolute", top: "4px", right: "1px", width: "5px", height: "5px", borderRadius: "50%", background: theme.accent }} />
+          )}
+        </button>
+
+        {/* EK DÜĞMELER — genişlik + opaklık geçişiyle açılıp kapanır (yalnız bu küçük kutu) */}
+        <div aria-hidden={!ekAcik} style={{
+          display: "flex", alignItems: "center", gap: isMobile ? "4px" : "6px",
+          maxWidth: ekAcik ? "140px" : "0px", opacity: ekAcik ? 1 : 0,
+          overflow: "hidden", flexShrink: 0,
+          transition: "max-width .3s ease, opacity .22s ease",
+          pointerEvents: ekAcik ? "auto" : "none",
+        }}>
         {/* GÖZLÜK — okunan âyeti yumuşakça takip et (4 Kasım 2026; KuranOkuma → gozlukTikla) */}
         <button
           onClick={onOdaklan}
@@ -604,6 +657,7 @@ export default function PlayerBar({
             <IzlemeIkonu size={isMobile ? 16 : 17} />
           </button>
         )}
+        </div>
 
         {/* DÖNGÜ düğmesi KALDIRILDI (28 Eylül 2026) — ana barda zaten var.
             `onDonguAyar`/`tekrarAktif` prop'ları geriye uyum için kabul ediliyor. */}
@@ -618,9 +672,12 @@ export default function PlayerBar({
         marginRight: isMobile ? "3%" : "1%",
       }}>
         {/* Kontrol butonları */}
+        {/* Önceki/sonraki de ok ile gizlenir; YER KAPLAMAYA DEVAM EDER (opaklık) → oynat,
+            durdur ve ayar düğmeleri yerinden oynamaz (11 Kasım 2026, kullanıcı isteği) */}
         <button 
           onClick={oncekiAyet} 
-          style={kucukButonStil()} 
+          style={{ ...kucukButonStil(), ...ekGizliStil }} 
+          aria-hidden={!ekAcik} tabIndex={ekAcik ? undefined : -1}
           title="Önceki âyet"
           onMouseEnter={e => e.currentTarget.style.background = `${theme.accent}12`}
           onMouseLeave={e => e.currentTarget.style.background = "transparent"}
@@ -664,7 +721,8 @@ export default function PlayerBar({
         
         <button 
           onClick={sonrakiAyet} 
-          style={kucukButonStil()} 
+          style={{ ...kucukButonStil(), ...ekGizliStil }} 
+          aria-hidden={!ekAcik} tabIndex={ekAcik ? undefined : -1}
           title="Sonraki âyet"
           onMouseEnter={e => e.currentTarget.style.background = `${theme.accent}12`}
           onMouseLeave={e => e.currentTarget.style.background = "transparent"}
@@ -754,6 +812,71 @@ function GorunumPaneli({ theme, gorunum, setGorunum, geri, konumAc, satirStil, i
         <span style={degerStil}>{konum < 0 ? "−" : ""}%{Math.abs(Math.round(konum * 100))}</span>
         <ChevronRight size={15} color={theme.textSecondary} />
       </button>
+    </>
+  )
+}
+
+/* ── OKUNAN ÂYET GÖRÜNÜMÜ SAYFASI (ayar kutusunun içinde, 11 Kasım 2026) ──────────
+   Kullanıcı: "…yorup yormadığına bakmak için de playerbar ayarları içinde okunan kısım
+   için görünüm ayarı bölümü ekleyip burayı düzenleriz." Değişiklik anında sayfaya yansır. */
+function OkunanPaneli({ theme, geri, satirStil, ikonDugme }) {
+  const g = useOkunanGorunum()
+  const anahtar = (acik, onDegis, ad, alt, pasif = false) => (
+    <div role="switch" aria-checked={acik} aria-disabled={pasif} onClick={() => { if (!pasif) onDegis(!acik) }}
+      style={{ ...satirStil, cursor: pasif ? "default" : "pointer", opacity: pasif ? 0.5 : 1 }}>
+      <span style={{ flex: 1, minWidth: 0, fontSize: "12px", color: theme.text, lineHeight: 1.25 }}>
+        {ad}
+        <span style={{ display: "block", fontSize: "10px", color: theme.textSecondary }}>{alt}</span>
+      </span>
+      <span aria-hidden="true" style={{
+        width: "30px", height: "18px", borderRadius: "999px", flexShrink: 0, position: "relative",
+        background: acik ? theme.accent : `${theme.textSecondary}44`, transition: "background .15s ease",
+      }}>
+        <span style={{
+          position: "absolute", top: "2px", left: acik ? "14px" : "2px",
+          width: "14px", height: "14px", borderRadius: "50%", background: "#fff",
+          boxShadow: "0 1px 3px rgba(0,0,0,0.25)", transition: "left .15s ease",
+        }} />
+      </span>
+    </div>
+  )
+  // Seçenek öbeği: başlık + düğmeler + seçilenin kısa açıklaması
+  const secim = (baslik, liste, deger, sec) => (
+    <>
+      <div style={{ fontSize: "11px", color: theme.text, padding: "6px 0 4px" }}>{baslik}</div>
+      <div role="radiogroup" aria-label={baslik} style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
+        {liste.map(st => {
+          const se = deger === st.id
+          return (
+            <button key={st.id} role="radio" aria-checked={se} onClick={() => sec(st.id)} title={st.aciklama}
+              style={{
+                flex: "1 1 0", minWidth: "44px", padding: "6px 3px", borderRadius: "8px", cursor: "pointer", fontFamily: "inherit",
+                fontSize: "11px", fontWeight: se ? 700 : 500,
+                border: `1px solid ${se ? theme.accent : theme.border}`,
+                background: se ? `${theme.accent}1f` : "transparent",
+                color: se ? theme.accent : theme.text,
+              }}>{st.ad}</button>
+          )
+        })}
+      </div>
+      <div style={{ fontSize: "10px", color: theme.textSecondary, padding: "4px 2px 2px", lineHeight: 1.35 }}>
+        {liste.find(st => st.id === deger)?.aciklama}
+      </div>
+    </>
+  )
+  return (
+    <>
+      <button onClick={geri} style={{ ...satirStil, border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", padding: "4px 0", color: theme.accent, fontSize: "12px", fontWeight: 700 }}>
+        <ChevronLeft size={15} /> Okunan âyet görünümü
+      </button>
+      <div style={{ height: "1px", background: theme.border, opacity: 0.6, margin: "0 2px" }} />
+      {secim("Arka plan", OKUNAN_ARKALAR, g.arka, (id) => okunanGorunumYaz({ arka: id }))}
+      {secim("Alt bant", OKUNAN_ALT_BANTLAR, g.altBant, (id) => okunanGorunumYaz({ altBant: id }))}
+      <div style={{ height: "1px", background: theme.border, opacity: 0.6, margin: "4px 2px" }} />
+      {anahtar(g.harf, (v) => okunanGorunumYaz({ harf: v }), "Harfleri renklendir", "Okunan âyetin yazısı vurgu renginde")}
+      {anahtar(g.rozetDal, (v) => okunanGorunumYaz({ rozetDal: v }), "Rozet dalı", "Âyet sonu rozetinin üstünde ve altında yapraklı dallar")}
+      {anahtar(g.hareket, (v) => okunanGorunumYaz({ hareket: v }), "Dallar hafifçe salınsın",
+        g.rozetDal ? "Akıcılık düşerse kapatılabilir" : "Rozet dalı açıkken", !g.rozetDal)}
     </>
   )
 }

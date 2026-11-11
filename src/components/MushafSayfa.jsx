@@ -1,5 +1,6 @@
 import MushafKelime from "./MushafKelime"
-import MushafAyetRozeti from "./MushafAyetRozeti"
+import AyetRozeti from "./AyetRozeti"
+import { useAyetRozeti } from "../data/ayetRozeti"
 import KitapAyraci from "./KitapAyraci"
 import SecdeKenar from "./SecdeKenar"
 import SureBasligi from "./SureBasligi"
@@ -10,6 +11,8 @@ import kelimeGrup from "../data/kelime-grup.json"
 import kelimeObek from "../data/kelime-obek.json"
 import { ayetTecvidOnbellek, TECVID_KURAL } from "../data/tecvid"
 import { useTecvidAyar, tecvidImza } from "../data/tecvidAyar"
+import { useOkunanGorunum } from "../data/okunanGorunum"
+import OkunanDalSusu from "./OkunanDalSusu"
 // GEÇİCİ — dönme teşhisi sayacı (ölçüm bitince silinecek)
 // import { SAYAC as DONME_SAYAC } from "../data/donmeTeshis"   // ⏸ dönme teşhisi (yorumda)
 
@@ -132,6 +135,10 @@ function MushafSayfa({
      harfi, âyet sonu), sayfa âyeti ortadan bölse bile bağlam doğru kalır. Ayar store'dan okunur;
      memo karşılaştırması bunu engellemez (store aboneliği bileşenin kendi durumu sayılır). */
   const tecvidAyar = useTecvidAyar()
+  // Okunan âyetin görünümü (oynatıcı ayarı) — dal / bant / renk + harf rengi + hareket
+  const okunanGorunum = useOkunanGorunum()
+  // Âyet rozeti stili (Çini / Klasik) — bir kez okunur, rozetlere prop olarak gider
+  const rozetStili = useAyetRozeti()
   const tImza = tecvidImza(tecvidAyar)
   const tecvidRenkleri = useMemo(() => {
     if (!tImza) return null
@@ -438,6 +445,7 @@ function MushafSayfa({
                         kayitKonumModu={kayitKonumModu}
                         etkilesimli={kelimeEtkilesimli}
                         secili={seciliKume.has(el.kelime.id)}
+                        aktifGorunum={okunanGorunum}
                         tecvidRenk={tecvidRenkleri?.get(el.kelime.id) || null}
                         grupKonum={grup_?.konum || null}
                         grupVurgu={!!grup_ && hoverGrup === grup_.anahtar}
@@ -487,12 +495,19 @@ function MushafSayfa({
                       }}
                       title={`${el.sure.isim} · ${el.ayet.no}. Âyet`}
                     >
-                      <MushafAyetRozeti
+                      <AyetRozeti
+                        stil={rozetStili}
+                        theme={theme}
                         sayi={el.ayet.no}
                         size={fontSize * 1.4}
                         ac={theme.ayetNoRengi || theme.accent}
                         aktif={odakAyet?.sureNo === el.sure.id && odakAyet?.ayetNo === el.ayet.no}
                       />
+                      {/* ROZET DALI — isteğe bağlı; yalnız OKUNAN âyetin rozetinde */}
+                      {okunanGorunum.rozetDal &&
+                        aktifAyet?.sureNo === el.sure.id && aktifAyet?.ayetNo === el.ayet.no && !aktifAyet?.besmeleIcin && (
+                        <OkunanDalSusu size={fontSize * 1.4} renk={theme.ayetNoRengi || theme.accent} hareket={okunanGorunum.hareket} />
+                      )}
                     </span>
                   )
                 }

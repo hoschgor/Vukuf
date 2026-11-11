@@ -27,7 +27,7 @@ import { useApp } from "../AppContext"
 import { useOynatici } from "../data/oynatici"
 import { sesliOkuyucu, sesKilidiAc } from "../data/sesliOkuma"
 import { sureAdi } from "../data/sureAdlari"
-import MushafAyetRozeti from "./MushafAyetRozeti"
+import AyetRozeti from "./AyetRozeti"
 import {
   useOdak, odakAc, odakKapat, surekliAyarla, hizayaGetir, odakBandi, mushafYukle, mealYukle, ayetMetni,
   BOYUT_ANAHTAR, GORUNUM_ANAHTAR,
@@ -264,7 +264,7 @@ function KuranOdak({ player, surekli, kapat }) {
                 {ar && (
                   <p lang="ar" dir="rtl" style={{ margin: 0, textAlign: "right", fontFamily: "'KFGQPC Uthmanic', serif", fontSize: `${boyut * 1.6}px`, lineHeight: 2.05, color: theme.text }}>
                     {ar}{" "}
-                    <span style={{ display: "inline-block", verticalAlign: "middle" }}><MushafAyetRozeti sayi={ay.no} size={boyut * 2.2} ac={theme.ayetNoRengi || ac} /></span>
+                    <span style={{ display: "inline-block", verticalAlign: "middle" }}><AyetRozeti theme={theme} sayi={ay.no} size={boyut * 2.2} ac={theme.ayetNoRengi || ac} /></span>
                   </p>
                 )}
                 {m && (

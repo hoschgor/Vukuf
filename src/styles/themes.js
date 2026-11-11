@@ -165,7 +165,11 @@ export const themes = {
     accent: "#A98546",
     lugatHighlight: "#e8c880",
     arabicHighlight: "#7fd6e6",
-    ayetNoRengi: "#8cc4ea",
+    // Âyet no MAVİDEN MERCANA (11 Kasım 2026 — kullanıcı: "rozet renkleri tema rengine zıt
+    // bir renkten seçilmeli … Derya ve Arduvaz'da mavi tonlar çok kullanıldığı için âyet
+    // rozetleri belirgin olmuyor"). Gece denizi lâciverdine karşı sıcak mercan — denizle de
+    // uyumlu; pirinç vurgudan ve lügat altınından ayrışıyor. (Arduvaz'da farklı: gül kurusu.)
+    ayetNoRengi: "#ef9f7f",
     border: "#243647",
   },
   arduvaz: {
@@ -178,7 +182,12 @@ export const themes = {
     accent: "#8fb0cf",
     lugatHighlight: "#e6c27a",
     arabicHighlight: "#f2c46d",
-    ayetNoRengi: "#9dc0e0",
+    // Mavi → GÜL KURUSU (11 Kasım 2026). Kullanıcı: "Arduvaz ve Derya'da aynı renk rozet olmaması
+    // gerekiyor, ikisi farklı tema." Derya gece denizi (lâcivert zemin, pirinç vurgu) → mercan;
+    // Arduvaz nötr kurşuni taş + çelik mavisi vurgu, lügat ve Arapça altın → turuncu ailesi
+    // (mercan/kiremit) burada Derya'nın tekrarı olurdu; taş grisiyle uyumlu, altından ve
+    // maviden ayrışan soluk gül tonu seçildi. Karşıtlık zemin üzerinde ~6:1.
+    ayetNoRengi: "#d98ea4",
     border: "#383d43",
   },
   kehribar: {

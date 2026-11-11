@@ -219,6 +219,16 @@ const KONULAR = [
     anahtar: "vakıf durak tecvid işaret lazım caiz örnek âyete git",
   },
   {
+    bolum: "kuran", ikon: Gem, baslik: "Âyet rozeti",
+    ozet: "Âyet numarasının çiçekli ya da klasik çerçevesi.",
+    nerede: "Kur'ân-ı Kerîm → Ayarlar → Okuma Düzeni → Âyet rozeti",
+    metin: [
+      "Âyet numaraları iki biçimde çerçevelenebilir. Çiçekli rozette klasik rozetin uçları aynen durur; ortadaki kavis inceltilmiştir ve ortasında, cami kitâbelerindeki gibi kat kat yapraklı bir hatâyî çiçeği vardır, çiçekten uçlara ince dallar uzanır. Klasik rozet önceki görünümdür.",
+      "Rozetin renkleri temanın âyet no renginden türetilir; Ayarlar → Tema'dan âyet no rengi değiştirilirse rozet de ona uyar.",
+    ],
+    anahtar: "âyet rozeti numara parantez çiçekli hatayi kitâbe klasik çerçeve çiçek",
+  },
+  {
     bolum: "kuran", ikon: Gem, baslik: "Renkli tecvid",
     ozet: "Tecvid kurallarının geçtiği harfleri renkle göstermek.",
     nerede: "Kur'ân-ı Kerîm → mücevher simgesi → Renkli Tecvid",
@@ -366,7 +376,7 @@ const KONULAR = [
       { alt: "Kur'ân-ı Kerîm" },
       "Kârî (okuyucu) oynatıcının ayar düğmesinden seçilebilir. Oynatıcıdan değiştirildiğinde okuma kesilmez, aynı âyetten yeni kârînin sesiyle sürer.",
       "Ses seviyesi ve okuma hızı oynatıcının ayar düğmesinden değiştirilebilir; yanlarındaki küçük düğmeler değerleri tek dokunuşla varsayılana döndürür.",
-      "Otomatik durdurma: aynı kutudan bir süre (5–90 dk ya da \"Özel\" ile istenen dakika) seçilirse oynatıcı o sürenin sonunda kendiliğinden kapanır; kalan süre kutuda görünür. Kur'ân ekranından çıkılıp dinlemeye devam edilirken de çalışır.",
+      "Otomatik durdurma: aynı kutudaki anahtar açılınca süreler görünür; bir süre (5–90 dk ya da \"Özel\" ile istenen dakika) seçilirse oynatıcı o sürenin sonunda kendiliğinden kapanır, kalan süre kutuda görünür. Anahtar kapatılınca sayaç durur. Kur'ân ekranından çıkılıp dinlemeye devam edilirken de çalışır.",
       { alt: "Türkçe eserler" },
       "Sesli okuma denetimindeki ayar düğmesi (üzerinde okuma hızı yazar) ses, hız ve devamlı okuma kutusunu açar. Hız 0,5× ile 2× arasında ayarlanabilir; ses simgesine dokunulduğunda ses kısılır, yeniden dokunulduğunda eski seviyesine döner.",
       "Otomatik durdurma: aynı kutudan bir süre (5–90 dk ya da \"Özel\" ile istenen dakika) seçilirse sesli okuma o sürenin sonunda kendiliğinden durur; kalan süre kutuda ve ekrandan çıkılınca görünen küçük oynatıcıda (☾) görünür.",
@@ -421,6 +431,17 @@ const KONULAR = [
       "Küçük düğme sürüklenerek istenen yere taşınabilir. Dokunulduğunda oynatıcı yeniden açılır: Kur'ân'da barın yanındaki yerinde (alt ya da üst), eserlerde sesli okuma denetiminin son bırakıldığı yerde.",
     ],
     anahtar: "otomatik gizle gizleme küçült küçük düğme saniye süre oynatıcı sürükle",
+  },
+  {
+    bolum: "dinleme", ikon: Sparkles, baslik: "Okunan âyetin görünümü",
+    ozet: "Okunan âyetin arka planı, alt bandı ve harf rengi.",
+    nerede: "Oynatıcı → ayar düğmesi → Okunan âyet görünümü",
+    metin: [
+      "Kâri okurken okunan âyetin işareti parça parça seçilir. Arka plan: Yok, Hafif ya da Belirgin. Alt bant: Yok, Bant (kelimelerin altında ince düz şerit) ya da Dal (ince dal şeridi). İsteğe bağlı \"Rozet dalı\" âyet sonu rozetinin üstüne ve altına yapraklı dallar ekler.",
+      "\"Harfleri renklendir\" açıkken okunan âyetin yazısı vurgu renginde görünür. Rozet dalları hafifçe salınabilir; telefonda akıcılık düşerse bu hareket aynı yerden kapatılabilir.",
+      "Oynatıcıdaki küçük ok, takip (gözlük), meal ve izleme düğmeleriyle önceki ve sonraki âyet düğmelerini gizleyip gösterir; oynat, durdur ve ayar düğmeleri yerinden oynamaz. Kapalıyken takip, meal ya da izlemeden biri açıksa okun üstünde küçük bir nokta görünür.",
+    ],
+    anahtar: "okunan âyet işaret vurgu dal süs zemin arka plan alt bant renk harf hareket salınım rozet oynatıcı ok gizle düğme",
   },
   {
     bolum: "dinleme", ikon: MessageSquareText, baslik: "Meal penceresi",

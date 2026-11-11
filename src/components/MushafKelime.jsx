@@ -293,6 +293,22 @@ function boyaliParca(karakterler, renkler, bas, son, anahtar) {
   return dugum
 }
 
+// Okunan âyetin "Dallı" zemini için ince dal şeridi (renge göre bir kez üretilir)
+const dalSeridiBellek = new Map()
+function dalSeridi(renk) {
+  let v = dalSeridiBellek.get(renk)
+  if (!v) {
+    const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 8' preserveAspectRatio='none'>`
+      + `<path d='M0 5 Q10 1.5 20 5 T40 5' fill='none' stroke='${renk}' stroke-opacity='.7' stroke-width='.9'/>`
+      + `<path d='M9 3.6 q3 -3.4 7 -1.4 q-3.4 2.4 -7 1.4z' fill='${renk}' fill-opacity='.75'/>`
+      + `<path d='M29 6.4 q3 2.2 7 0.6 q-3.4 -2 -7 -0.6z' fill='${renk}' fill-opacity='.75'/>`
+      + `</svg>`
+    v = `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`
+    dalSeridiBellek.set(renk, v)
+  }
+  return v
+}
+
 // Fareyle gerçekten üzerine gelinebilen cihaz mı? Dokunmatikte "hover" dokunuştan sonra
 // takılı kalıp kelimenin etrafında kutu bırakıyordu; orada üzerine gelme vurgusu çizilmez.
 const UZERINE_GELME = (() => {
@@ -384,6 +400,9 @@ export default function MushafKelime({
   etkilesimli = true,
   // Balonu açık kelime: etrafına kutu yerine YAZI RENGİ değişir (10 Kasım 2026)
   secili = false,
+  // OKUNAN ÂYET GÖRÜNÜMÜ (11 Kasım 2026) — { arka: "yok"|"hafif"|"belirgin", altBant: "yok"|"bant"|"dal", harf }
+  // arka: zemin tonu (%0 / %8 / %16) · altBant: kelime altında düz şerit ya da ince dal · harf: yazı vurgu renginde
+  aktifGorunum = null,
 }) {
   // DONME_SAYAC.kelime++   // ⏸ dönme teşhisi (yorumda)
   const [hover, setHover] = useState(false)
@@ -435,6 +454,20 @@ export default function MushafKelime({
   const disBas = !grupta || grupKonum === "bas"      // birimin başlangıç kenarı
   const disSon = !grupta || grupKonum === "son"      // birimin bitiş kenarı
   const kose = `${disBas ? 3 : 0}px`
+  // Okunan âyet: arka plan tonu ve alt bant AYRI (ayarsızsa eski görünüm: belirgin zemin)
+  const aktifArkaTipi = aktifGorunum?.arka || "belirgin"
+  const aktifAltBant = aktifGorunum?.altBant || "yok"
+  const aktifHarf = !!aktifGorunum?.harf
+  const aktifYuzde = aktifArkaTipi === "yok" ? 0 : aktifArkaTipi === "belirgin" ? 16 : 8
+  const aktifZemin = aktifYuzde ? `color-mix(in srgb, ${theme.accent} ${aktifYuzde}%, ${theme.background})` : null
+  // Alt bant katmanı (statik — hareket yok, sayfa düzenine dokunmaz):
+  //   dal  → tekrar eden ince dal resmi · bant → kelimenin altında ince düz şerit
+  const altKatman = aktifAltBant === "dal"
+    ? `url("${dalSeridi(theme.accent)}") left bottom / ${Math.round(yaziBoyutu * 2)}px ${Math.max(5, Math.round(yaziBoyutu * 0.3))}px repeat-x`
+    : aktifAltBant === "bant"
+      ? `linear-gradient(color-mix(in srgb, ${theme.accent} 55%, ${theme.background}), color-mix(in srgb, ${theme.accent} 55%, ${theme.background})) left bottom / 100% ${Math.max(2, Math.round(yaziBoyutu * 0.09))}px no-repeat`
+      : null
+  const aktifArka = altKatman ? `${altKatman}, ${aktifZemin || "transparent"}` : aktifZemin
   const koseSon = `${disSon ? 3 : 0}px`
   const yanDolgu = isMobile ? 2 + harfAraligi * 3 : 3
 
@@ -568,7 +601,8 @@ export default function MushafKelime({
           fontSize: `${yaziBoyutu}px`,
           lineHeight: lineHeight,
           color: secili ? theme.accent
-            : (lafizkontrol || besmelekontrol) ? (theme.lugatHighlight || theme.accent) : theme.text,
+            : (lafizkontrol || besmelekontrol) ? (theme.lugatHighlight || theme.accent)
+            : (aktif && aktifHarf) ? theme.accent : theme.text,
           display: "inline",
           // `opacity: aktif ? 1 : 0.95` KALDIRILDI (28 Eylül 2026). 1'in altındaki
           // her opaklık bu metin kutusunu ayrı bir katmana alıyor; iPhone bu katmanı
@@ -732,12 +766,12 @@ export default function MushafKelime({
         borderEndEndRadius: aktif ? 0 : koseSon,
         background: kayitKonumModu
           ? "transparent"
-          : aktif
-            ? `color-mix(in srgb, ${theme.accent} 16%, ${theme.background})`
+          : (aktif && aktifArka)
+            ? aktifArka
             : (!secili && UZERINE_GELME && (hover || grupVurgu || obekVurgu)) ? `${theme.accent}0a` : "transparent",
         // Kelime kelime alt çizgi de kaldırıldı: kelime aralarında kesiliyor, bandı yine parçalıyordu
         boxShadow: kayitKonumModu ? "none"
-          : aktif ? `0 0 0 1.5px color-mix(in srgb, ${theme.accent} 16%, ${theme.background})`
+          : (aktif && aktifZemin) ? `0 0 0 1.5px ${aktifZemin}`
           : "none",
         // Birleşik kelimenin ortak bağı: grup boyunca kesintisiz ince nokta çizgi.
         // Kesintisiz olması için İÇ kenarlarda dolgu zaten sıfırlandı.

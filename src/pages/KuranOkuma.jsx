@@ -16,7 +16,8 @@ import sayfaHaritaJson from "../data/sayfa-harita.json"
 import SureBasligi from "../components/SureBasligi"
 import Besmele from "../components/Besmele"
 import MushafSayfa from "../components/MushafSayfa"
-import MushafAyetRozeti from "../components/MushafAyetRozeti"
+import AyetRozeti from "../components/AyetRozeti"
+import { useAyetRozeti, ayetRozetiYaz, AYET_ROZETLERI } from "../data/ayetRozeti"
 import { gorselIcinTemizle, tecvidAyikla, ozelOkuyusAyikla, VAKIF_HARF_KOD } from "../components/MushafKelime"
 import RenkliTecvidBolumu from "../components/RenkliTecvidBolumu"
 import PlayerBar from "../components/PlayerBar"
@@ -1166,6 +1167,8 @@ export default function KuranOkuma({ kitap }) {
     try { return localStorage.getItem("vukuf-ayet-meali") !== "false" } catch { return true }
   })
   const kelimeMealiRef = useRef(kelimeMeali)
+  // Âyet rozeti stili (Çini / Klasik) — Ayarlar → Okuma Düzeni
+  const rozetStili = useAyetRozeti()
   useEffect(() => {
     kelimeMealiRef.current = kelimeMeali
     try { localStorage.setItem("vukuf-kelime-meali", String(kelimeMeali)) } catch { /* yoksay */ }
@@ -1877,6 +1880,8 @@ const cokSatir = wrapAktif && barYuksekligi > tekSatirYuksekligi * 1.0
   // ── MENÜ GİBİ BAR ("orta") ─────────────────────────────────────────────────
   const ortaMenu = useOrtaMenu({
     aktif: ortaBar,
+    // Otomatik kaydırma sürerken tek dokunuş menüyü açsın (kayma "akarken dokunma" sayılmasın)
+    otoKaydiriyor: () => otomatikKaydirma && !duraklatildi,
     // Bir panel açıkken dokunma menüyü açmaz
     engelli: () => ayarlarAcik || aaAcik || temaAcik || ozelTemaPanelAcik || sayfaGitAcik || menuAcik
       || kayitPaneliAcik || donguAyarAcik || bilgiAcik || !!gorselVeri || kayitKonumModu || izlemeModu || kariSecAcik
@@ -4212,7 +4217,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
             {/* Önizleme, okuma ekranındaki ROZETİN TA KENDİSİ olmalı — ham ﴿﴾
                 karakterleri farklı görünür ve yönü bidi'ye göre değişir. */}
             <span style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center" }}>
-              <MushafAyetRozeti sayi={255} size={26} ac={theme.ayetNoRengi || theme.accent} />
+              <AyetRozeti theme={theme} sayi={255} size={26} ac={theme.ayetNoRengi || theme.accent} />
             </span>
             {(ayetNoRengi || (ozelMi(currentTheme) && temaTaban.ayetNoRengi !== temaTabanRengi("ayetNoRengi"))) && (
               <button onClick={() => { setAyetNoRengi(""); if (ozelMi(currentTheme)) temaRenkYaz("ayetNoRengi", temaTabanRengi("ayetNoRengi")) }} title="Temaya sıfırla"
@@ -4353,7 +4358,8 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
               Yatay telefonda (yp-iki) çekmeceler iki sütuna diziliyor. */}
 
         {/* OKUMA DÜZENİ — kitap modu */}
-        <AyarCekmecesi id="kuran-okuma-duzeni" baslik="Okuma Düzeni" ozet={kitapModu ? "Kitap modu" : "Kaydırmalı"}
+        <AyarCekmecesi id="kuran-okuma-duzeni" baslik="Okuma Düzeni"
+          ozet={`${kitapModu ? "Kitap modu" : "Kaydırmalı"} · ${rozetStili === "klasik" ? "Klasik" : "Çiçekli"} rozet`}
           theme={theme} olcek={barUiOlcegi} isMobile={isMobile}>
           <div onClick={() => setKitapModu(v => !v)} role="button" aria-pressed={kitapModu} style={{
             display: "flex", alignItems: "center", gap: "9px", padding: "9px 10px", borderRadius: "9px",
@@ -4369,6 +4375,27 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
               </span>
             </span>
             <IosSwitch acik={kitapModu} theme={theme} boyut={0.82} />
+          </div>
+          {/* ÂYET ROZETİ — Çiçekli (klasik uçlar + ortada hatâyî) / Klasik (11 Kasım 2026) */}
+          <div>
+            <AltBaslik theme={theme} olcek={barUiOlcegi} isMobile={isMobile}>Âyet rozeti</AltBaslik>
+            <div role="radiogroup" aria-label="Âyet rozeti" style={{ display: "flex", gap: "6px" }}>
+              {AYET_ROZETLERI.map(r => {
+                const sec = rozetStili === r.id
+                return (
+                  <button key={r.id} role="radio" aria-checked={sec} onClick={() => ayetRozetiYaz(r.id)} style={{
+                    flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: "4px",
+                    padding: "4px 6px", borderRadius: "9px", cursor: "pointer", fontFamily: "inherit",
+                    fontSize: `${ayarAlt + 1}px`, fontWeight: sec ? 700 : 500,
+                    border: `1px solid ${sec ? theme.accent : theme.border}`,
+                    background: sec ? `${theme.accent}14` : "transparent", color: sec ? theme.accent : theme.text,
+                  }}>
+                    <AyetRozeti stil={r.id} theme={theme} sayi={7} size={30} ac={theme.ayetNoRengi || theme.accent} />
+                    {r.ad}
+                  </button>
+                )
+              })}
+            </div>
           </div>
         </AyarCekmecesi>
 
@@ -4898,7 +4925,9 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
     <OrtaMenuCercevesi menu={ortaMenu} theme={theme} olcek={barUiOlcegi} etiket="Mushaf menüsü">
       {barEtiketle(Bar, new Map(Object.entries({
         geri: "Geri", sureMenu: "Fihrist", kayit: "Kayıt", sayfaGit: "Sayfa", tekrar: "Tekrar", bilgi: "İşaretler",
-        gorsel: "Görsel", paylas: "Paylaş", hifz: "Hıfz", yaziTipi: "Yazı", otoOynat: "Kaydır",
+        gorsel: "Görsel", paylas: "Paylaş", hifz: "Hıfz", yaziTipi: "Yazı",
+        // Kayarken düğme durdurur → adı da "Durdur" (11 Kasım 2026)
+        otoOynat: otomatikKaydirma ? "Durdur" : "Kaydır",
         sadeMod: "Sade", tema: "Tema", ayarlar: "Ayarlar",
       }).map(([k, ad]) => [barOge(k).order, ad])), { theme, olcek: barOlcegi })}
     </OrtaMenuCercevesi>
@@ -6535,7 +6564,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
                             </>
                           ) : s.rozet ? (
                             /* Sayfadaki âyet sonu rozetinin aynısı */
-                            <MushafAyetRozeti sayi={1} size={20} ac={theme.ayetNoRengi || theme.accent} />
+                            <AyetRozeti theme={theme} sayi={1} size={20} ac={theme.ayetNoRengi || theme.accent} />
                           ) : s.blok ? (
                             /* Sayfa içindeki cüz/hizb işaretinin aynısı: "الجزء" veya "الحزب"
                                + rakam yeri BOŞ (gerçek sayfada oraya numara gelir). */

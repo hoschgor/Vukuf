@@ -4,7 +4,7 @@ import { useApp, temaTonu, ozelMi, OZEL_EN_COK } from "../AppContext"
 import { themes } from "../styles/themes"
 import { mushafYukle, mushafHazirMi } from "../data/mushafVerisi"
 import { tecvidAyikla, ozelOkuyusAyikla } from "./MushafKelime"
-import MushafAyetRozeti from "./MushafAyetRozeti"
+import AyetRozeti from "./AyetRozeti"
 import { dalPaleti } from "./DalSusu"
 // Yatay telefonda kart düzeni iki sütun, satır düzeni çok sütun (bkz. yatayDuzen.js)
 import "./yatayDuzen"
@@ -390,7 +390,7 @@ function CamiOnizleme({ t, ad }) {
             {ayet}
             {" "}
             <span style={{ display: "inline-block", verticalAlign: "middle" }}>
-              <MushafAyetRozeti sayi={ORNEK_AYET} size={ayetFs * 1.9} ac={t.ayetNoRengi || t.accent} />
+              <AyetRozeti theme={t} sayi={ORNEK_AYET} size={ayetFs * 1.9} ac={t.ayetNoRengi || t.accent} />
             </span>
             {/* Rozetin yanında sûre adı hattı ("Sûretü'l-Bakara") — kaynak gösterir gibi */}
             {hatVar && (

@@ -18,54 +18,92 @@ import MushafPlayButton from "./MushafPlayButton"
 const NABIZ_SINIF = "sure-oynat-nabiz"
 const NABIZ_PERIYOT = 9000
 const NABIZ_ARALIK = 1600          // iki nabız arası en az
+/* KAYDIRMA BEKLEMESİ (11 Kasım 2026; ilk sürümde "ekranda 1 sn kalma" şartıydı) — kullanıcı: "Sure başlık
+   player animasyonu ekranda 1 sn kalınması durumunda gösterilsin; kayarken animasyonu
+   çalıştırmak için kaydırmayı kısa süreli donduruyor."
+   • Sayfa kayıyorsa nabız ertelenir; kaydırma durunca kısa bir beklemeyle atar.
+   • Animasyon artık YALNIZ transform + opacity: eski sürümdeki `filter` (hue-rotate +
+     drop-shadow) her karede yeniden boyama istiyordu, kaydırmayı donduran asıl yük oydu.
+     Hale, düğmenin arkasında ayrı bir katmanda (radial-gradient) yalnız opaklık/ölçekle
+     yanıp sönüyor — ikisi de ekran kartında (compositor) çalışır. */
+// GÜNCELLEME (11 Kasım 2026 — kullanıcı: "1 saniye beklemek yerine kaymanın durmasını bekleyelim,
+// çok minik bir bekleme ile verebiliriz"): asıl şart artık KAYMANIN DURMASI. Sayfa durduktan
+// 220 ms sonra (parmak kalkıp momentum bitince) nabız atar; ekranda en az 150 ms görünmüş
+// olması yeterli (kayıp geçen başlık yine oynamaz, çünkü kayma sürdükçe hep ertelenir).
+const GORUNME_SURESI = 150
+const KAYDIRMA_SESSIZ = 220
 const nabiz = (() => {
-  const gorunen = new Set()
-  let gozcu = null, zaman = 0, son = 0
+  const gorunen = new Map()          // el → ekrana girdiği an
+  let gozcu = null, zaman = 0, son = 0, sonKaydirma = 0
   const hareketAz = () => { try { return window.matchMedia("(prefers-reduced-motion: reduce)").matches } catch { return false } }
+  const kur_ = (ms) => { clearTimeout(zaman); zaman = setTimeout(vur, ms) }
   const vur = () => {
     clearTimeout(zaman)
     if (!gorunen.size) return
+    const simdi = Date.now()
+    // Kayıyorsa bekle: kaydırma bitince atsın
+    const kayiyor = simdi - sonKaydirma
+    if (kayiyor < KAYDIRMA_SESSIZ) { kur_(KAYDIRMA_SESSIZ - kayiyor + 60); return }
+    // En erken ne zaman 1 sn'yi dolduracak bir başlık var?
+    let enYakin = Infinity, attiMi = false
     if (!document.hidden && !hareketAz()) {
-      son = Date.now()
-      gorunen.forEach(el => {
+      gorunen.forEach((giris, el) => {
+        const gecen = simdi - giris
+        if (gecen < GORUNME_SURESI) { enYakin = Math.min(enYakin, GORUNME_SURESI - gecen); return }
         if (el.dataset.caliyor === "1") return
         el.classList.remove(NABIZ_SINIF)
         void el.offsetWidth                       // animasyon baştan başlasın
         el.classList.add(NABIZ_SINIF)
+        attiMi = true
       })
     }
-    zaman = setTimeout(vur, NABIZ_PERIYOT)
+    if (attiMi) son = simdi
+    // Süresini henüz doldurmamış başlık varsa onu bekle; yoksa periyot
+    kur_(attiMi || enYakin === Infinity ? NABIZ_PERIYOT : Math.max(60, enYakin))
   }
   const yeniGorundu = () => {
-    clearTimeout(zaman)
-    // Aynı kaydırmada ekrana gelenler toplansın; az önce nabız attıysa aralık beklensin
-    const bekle = Math.max(350, NABIZ_ARALIK - (Date.now() - son))
-    zaman = setTimeout(vur, bekle)
+    // Aynı anda ekrana gelenler toplansın; az önce nabız attıysa aralık beklensin
+    const bekle = Math.max(GORUNME_SURESI, NABIZ_ARALIK - (Date.now() - son))
+    kur_(bekle)
   }
+  const kaydirmaDinle = () => { sonKaydirma = Date.now() }
   const kur = () => {
     if (gozcu || typeof IntersectionObserver === "undefined") return
     gozcu = new IntersectionObserver((girdiler) => {
       let yeni = false
+      const simdi = Date.now()
       for (const g of girdiler) {
         if (g.isIntersecting && g.intersectionRatio >= 0.6) {
-          if (!gorunen.has(g.target)) { gorunen.add(g.target); yeni = true }
+          if (!gorunen.has(g.target)) { gorunen.set(g.target, simdi); yeni = true }
         } else gorunen.delete(g.target)
       }
       if (yeni) yeniGorundu()
       else if (!gorunen.size) clearTimeout(zaman)
     }, { threshold: [0, 0.6, 1] })
+    // Kaydırma kabı iç içe olabilir → belge düzeyinde, yakalama evresinde, pasif
+    try { document.addEventListener("scroll", kaydirmaDinle, { capture: true, passive: true }) } catch { /* yoksay */ }
     if (!document.getElementById("sure-oynat-nabiz-stil")) {
       const st = document.createElement("style")
       st.id = "sure-oynat-nabiz-stil"
       st.textContent = `
 @keyframes sureOynatNabiz {
-  0%   { transform: rotate(0deg) scale(1); filter: none; }
-  30%  { transform: rotate(150deg) scale(1.14); filter: hue-rotate(26deg) saturate(1.5) brightness(1.12) drop-shadow(0 0 7px var(--nabiz-hale)); }
-  65%  { transform: rotate(330deg) scale(1.06); filter: hue-rotate(-14deg) saturate(1.3) brightness(1.05) drop-shadow(0 0 4px var(--nabiz-hale)); }
-  100% { transform: rotate(360deg) scale(1); filter: none; }
+  0%   { transform: rotate(0deg) scale(1); }
+  30%  { transform: rotate(150deg) scale(1.14); }
+  65%  { transform: rotate(330deg) scale(1.06); }
+  100% { transform: rotate(360deg) scale(1); }
 }
-.${NABIZ_SINIF} { animation: sureOynatNabiz 1.4s cubic-bezier(.45,.05,.3,1) both; }
-@media (prefers-reduced-motion: reduce) { .${NABIZ_SINIF} { animation: none; } }`
+@keyframes sureOynatHale {
+  0%   { opacity: 0; transform: scale(.7); }
+  30%  { opacity: .95; transform: scale(1.05); }
+  100% { opacity: 0; transform: scale(1.3); }
+}
+.${NABIZ_SINIF} { animation: sureOynatNabiz 1.4s cubic-bezier(.45,.05,.3,1) both; will-change: transform; }
+.${NABIZ_SINIF}::after {
+  content: ""; position: absolute; inset: -22%; border-radius: 50%; z-index: -1; pointer-events: none;
+  background: radial-gradient(circle, var(--nabiz-hale) 0%, transparent 68%);
+  animation: sureOynatHale 1.4s ease-out both;
+}
+@media (prefers-reduced-motion: reduce) { .${NABIZ_SINIF}, .${NABIZ_SINIF}::after { animation: none; } }`
       document.head.appendChild(st)
     }
   }
@@ -74,7 +112,7 @@ const nabiz = (() => {
       kur()
       if (!gozcu || !el) return () => {}
       gozcu.observe(el)
-      const bitti = () => el.classList.remove(NABIZ_SINIF)
+      const bitti = (e) => { if (e.target === el && e.animationName === "sureOynatNabiz") el.classList.remove(NABIZ_SINIF) }
       el.addEventListener("animationend", bitti)
       return () => { gozcu.unobserve(el); gorunen.delete(el); el.removeEventListener("animationend", bitti) }
     },
@@ -1301,7 +1339,7 @@ export default function SureBasligi({ sure, theme, onTikla, player, vurgulu = fa
             onMouseLeave={e => e.currentTarget.style.opacity = "0.85"}
           >
             <span ref={nabizRef} data-caliyor={caliniyor ? "1" : "0"}
-              style={{ display: "inline-block", lineHeight: 0, transformOrigin: "50% 50%", "--nabiz-hale": `${ac}b3` }}>
+              style={{ display: "inline-block", position: "relative", isolation: "isolate", lineHeight: 0, transformOrigin: "50% 50%", "--nabiz-hale": `${ac}b3` }}>
               <MushafPlayButton
                 ac={theme.accent}
                 playing={caliniyor}

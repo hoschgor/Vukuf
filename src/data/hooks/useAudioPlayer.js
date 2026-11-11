@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react"
+import { disSesEylem } from "../disSes"
 
 // Kariler (everyayah.com)
 export const KARILAR = [
@@ -856,18 +857,21 @@ export default function useAudioPlayer() {
 
     if ("mediaSession" in navigator) {
       try {
+        // Ekstralar → Kur'an Dinle çalarken kilit ekranı düğmeleri onu yönetir (data/disSes.js)
         navigator.mediaSession.setActionHandler("play",  () => {
+          if (disSesEylem("play")) return
           const a = aktifEl(); if (!a) return
           const b = bostaEl(); if (b && b !== a && !b.paused) { b.__erkenCikis = 0; try { b.pause() } catch {} }   // çift ses guard
           a.play().then(() => { setDurum("caliyor"); try { navigator.mediaSession.playbackState = "playing" } catch {} }).catch(() => {})
         })
         navigator.mediaSession.setActionHandler("pause", () => {
+          if (disSesEylem("pause")) return
           for (const el of elsRef.current) { if (el) { el.__erkenCikis = 0; try { el.pause() } catch {} } }   // her iki tamponu da durdur
           setDurum("duraklatildi")
           try { navigator.mediaSession.playbackState = "paused" } catch {}
         })
-        navigator.mediaSession.setActionHandler("nexttrack",     () => sonrakiAyetCalRef.current(true))
-        navigator.mediaSession.setActionHandler("previoustrack", () => oncekiAyetRef.current && oncekiAyetRef.current())
+        navigator.mediaSession.setActionHandler("nexttrack",     () => { if (!disSesEylem("nexttrack")) sonrakiAyetCalRef.current(true) })
+        navigator.mediaSession.setActionHandler("previoustrack", () => { if (!disSesEylem("previoustrack")) oncekiAyetRef.current && oncekiAyetRef.current() })
       } catch {}
     }
 

@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useRef, useState } from "react"
 import { Link, useLocation } from "react-router-dom"
 import { BookOpen, Search, Shuffle, Menu, X, Palette, Info, Type, Sparkles, Settings, HardDrive, Brain, History, HelpCircle, Library, Compass } from "lucide-react"
 import { useApp, ozelMi } from "../AppContext"
@@ -8,7 +8,7 @@ import AltSayfa from "./AltSayfa"
 import VeriAyarlari from "./VeriAyarlari"
 import Katlanir from "./Katlanir"
 import { saatSeridiOku, saatSeridiYaz } from "../data/saatSeridi"
-import TemaSecici from "./TemaSecici"
+import TemaSecici, { TemaOnizlemesi } from "./TemaSecici"
 import { ypDegisken } from "./yatayDuzen"
 import { themes } from "../styles/themes"
 import { useGecmisAyari, gecmisOku, useGecmisBayragi, OKUNAN_SAYFA_AYAR, GECEN_SURE_AYAR } from "../data/gecmis"
@@ -78,6 +78,18 @@ function AyarSatiri({ baslik, aciklama, acik, onToggle, theme }) {
   )
 }
 
+// Yatay Ayarlar düzeni (bkz. Navbar → yatayAyar). Sol sütun: cami en çok 400 px; telefon
+// yatayda ekran boyuna sığacak kadar küçülür (cami ≈ 1,14 × en + bilgi satırı).
+const AYAR_YATAY_STIL = `
+.ayr-yatay { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 22px; align-items: start; }
+.ayr-sol { position: sticky; top: 0; width: min(400px, 42vw, calc((100dvh - 96px) / 1.16)); padding-bottom: 6px; }
+.ayr-sol .vts-cami { margin-top: 4px !important; }
+.ayr-sag { display: flex; flex-direction: column; min-width: 0; }
+@keyframes ayr-one { from { opacity: .35; transform: translateY(10px) } to { opacity: 1; transform: none } }
+.ayr-one { animation: ayr-one .24s ease }
+@media (prefers-reduced-motion: reduce) { .ayr-one { animation: none } }
+`
+
 export default function Navbar() {
   const { theme, currentTheme, customTheme, ozelTemaKaydet, tonModu } = useApp()
   const location = useLocation()
@@ -89,9 +101,26 @@ export default function Navbar() {
   // Ayarlar paneli de akordiyon: aynı anda tek bölüm açık, panel kısa kalıyor.
   // TEMA varsayılan olarak açık — en sık dokunulan yer orası.
   const [acikBolum, setAcikBolum] = useState("tema")
+  /* YATAY AYARLAR (11 Kasım 2026) — kullanıcı: "yatay format kullanılırken camiyi ve tema
+     bilgilerini aynı boyutta sola alıp diğer ögeleri sağ tarafa alabiliriz; herhangi bir ayar
+     seçildiğinde ayar öne gelir ve içeriği açılır. Mobilde yatayda da bu kısım küçültülüp
+     uygun şekilde sığdırılabilir." Yatay ve yeterince genişse (≥700 px): solda cami önizlemesi
+     sabit (yapışkan), sağda bölümler; açılan bölüm sağ sütunun başına geçer (CSS order) ve
+     sütun başa kayar. Telefon yatayda cami ekran boyuna göre küçülür. Dikeyde hiçbir şey değişmez. */
+  const yatayAyar = useMediaQuery("(orientation: landscape) and (min-width: 700px)")
+  const sagRef = useRef(null)
+  const basaKay = () => {
+    let el = sagRef.current && sagRef.current.parentElement
+    while (el && !(el.scrollHeight > el.clientHeight && /(auto|scroll)/.test(getComputedStyle(el).overflowY))) el = el.parentElement
+    if (el) { try { el.scrollTo({ top: 0, behavior: "smooth" }) } catch { el.scrollTop = 0 } }
+  }
   const kapak = (id) => ({
     acik: acikBolum === id,
-    onAc: () => setAcikBolum(x => (x === id ? null : id)),
+    onAc: () => {
+      setAcikBolum(x => (x === id ? null : id))
+      if (yatayAyar && acikBolum !== id) requestAnimationFrame(basaKay)
+    },
+    ...(yatayAyar ? { stil: { order: acikBolum === id ? -1 : 0 }, className: acikBolum === id ? "ayr-one" : undefined } : null),
   })
 
   const [dinamik, setDinamik] = useState(() => {
@@ -334,8 +363,17 @@ export default function Navbar() {
           kapat={() => setAyarlarAcik(false)}
           theme={theme}
           baslik="AYARLAR"
-          maxYukseklik="86vh"
+          maxYukseklik={yatayAyar ? "92vh" : "86vh"}
+          maxGenislik={yatayAyar ? "960px" : undefined}
         >
+          <style>{AYAR_YATAY_STIL}</style>
+          <div className={yatayAyar ? "ayr-yatay" : undefined}>
+          {yatayAyar && (
+            <div className="ayr-sol">
+              <TemaOnizlemesi theme={theme} />
+            </div>
+          )}
+          <div ref={sagRef} className={yatayAyar ? "ayr-sag" : undefined}>
           {/* ── TEMA ──────────────────────────────────────────────────── */}
           <Katlanir
             theme={theme} ikon={Palette} baslik="Tema"
@@ -349,6 +387,7 @@ export default function Navbar() {
             duzen="kart"
             sutun={isMobile ? 2 : 3}
             onOzel={ozelPanelAc}
+            onizlemesiz={yatayAyar}
           />
 
           </Katlanir>
@@ -568,6 +607,8 @@ export default function Navbar() {
             <VeriAyarlari theme={theme} />
           </Katlanir>
 
+          </div>
+          </div>
           {/* Panelin sonunda nefes payı — son düğme ekranın en dibine yapışmasın */}
           <div style={{ height: "8px" }} />
         </AltSayfa>

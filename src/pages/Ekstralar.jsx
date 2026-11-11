@@ -55,12 +55,21 @@
      PDF'ten otomatik indirip dönüştürebiliriz." Diyanet Din Hizmetleri'nin hutbe
      listesi robots.txt ile otomatik okumaya kapalı ve sitede yeniden yayım izni
      bulunamadı → metin uygulamaya alınmıyor; kart resmî sayfalara götürüyor.
+   • KUR'AN DİNLE (11 Kasım 2026) — Türk hafızlardan cüz / sûre / âyet kayıtları, doğrudan
+     akış (indirme yok). Kâriye göre olmayan biçimler kapalı belirteçle; sürekli çalma,
+     otomatik kapanma, kaldığı yer. components/KuranDinleKarti.jsx, data/kuranDinle.jsx.
+   • DÜZENLE (11 Kasım 2026) — kullanıcı: "Ekstralar kısmına bir düzenleme simgesi butonu
+     ekleyelim, buna bastığımızda gizleme seçeneği olsun. Ana menüdeki gibi kullanacağız.
+     Sıralamayı da kullanıcı isterse değiştirebilecek." Kitaplık'taki gibi: "Düzenle" →
+     bölümler kısa satırlara iner, sürüklenerek sıralanır; göz düğmesiyle gizleme kipi açılır,
+     her satırda göz çıkar. "Gizlileri göster" / "Sırayı sıfırla" iki dokunuşla onaylanır.
+     Sıra ve gizliler data/ekstraDuzen.js'te ("vukuf-ekstralar-duzen").
    • Hicrî tarih Namaz Vakitleri kartında, Diyanet'in takviminden gelir (3 Kasım 2026'da
      başlıktaki Ümmü'l-Kurâ hesabı kaldırıldı: Diyanet takviminden bir gün sapabiliyordu).
    ═══════════════════════════════════════════════════════════════════════════ */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { ScrollText, BellRing, Table2, Radio, Compass, MapPin, Sparkles, Play, Pause, ExternalLink, RotateCcw, Navigation, Loader2, X, Clock, CalendarPlus, Moon, LocateFixed, ShieldCheck, Trash2, PowerOff } from "lucide-react"
+import { ScrollText, BellRing, Table2, Radio, Compass, MapPin, Sparkles, Play, Pause, ExternalLink, RotateCcw, Navigation, Loader2, X, Clock, CalendarPlus, Moon, LocateFixed, ShieldCheck, Trash2, PowerOff, Pencil, Check, Eye, EyeOff, GripVertical, ListChecks, Headphones } from "lucide-react"
 import { useApp } from "../AppContext"
 import { useRadyo, YAYINLAR, radyoZamanlayici } from "../data/radyo"
 import { useZamanlayici } from "../data/otomatikDurdurma"
@@ -68,6 +77,12 @@ import OtomatikDurdurmaSecici from "../components/OtomatikDurdurmaSecici"
 import CamiVakit from "../components/CamiVakit"
 import { Kart, useBolum, dugmeStil } from "../components/EkstraKart"
 import NamazHatimTakibi from "../components/NamazHatimTakibi"
+import KuranDinleKarti from "../components/KuranDinleKarti"
+import { DndContext, closestCenter, KeyboardSensor, MouseSensor, TouchSensor, useSensor, useSensors } from "@dnd-kit/core"
+import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable"
+import { CSS } from "@dnd-kit/utilities"
+import { GOZ_UZERINE_CSS } from "../components/gozUzerine"
+import { useEkstraDuzen, ekstraDuzenYaz, ekstraGizleDegis, ekstraSirala } from "../data/ekstraDuzen"
 import {
   VAKITLER, vakitAni, sehirleriGetir, ilceleriGetir, vakitleriGetir, secimOku, secimYaz, durumHesapla, kalanMetni,
   konumdanBul, icsIndir, yaklasanGunler, konumBilgisiniSil, KONUM_SILINDI,
@@ -555,12 +570,11 @@ function Radyolar({ theme }) {
           )
         })}
       </div>
-      {aktif && (
-        <div style={{ marginTop: "10px", padding: "4px 10px", borderRadius: "11px", border: `1px solid ${theme.border}` }}>
-          <OtomatikDurdurmaSecici theme={theme} uyku={uyku} baslik="Otomatik kapanma" eylem="kapanacak"
-            aciklama="Seçilen süre sonunda radyo kapanır; başka ekrandayken de" />
-        </div>
-      )}
+      {/* Otomatik kapanma — Kur'an Dinle ve Kur'ân oynatıcısındaki gibi anahtarlı (11 Kasım 2026) */}
+      <div style={{ marginTop: "10px", padding: "4px 10px", borderRadius: "11px", border: `1px solid ${theme.border}` }}>
+        <OtomatikDurdurmaSecici anahtarli theme={theme} uyku={uyku} baslik="Otomatik kapanma" eylem="kapanacak"
+          aciklama="Seçilen süre sonunda radyo kapanır; başka ekrandayken de" />
+      </div>
     </Kart>
   )
 }
@@ -887,8 +901,92 @@ function Zikirmatik({ theme }) {
 }
 
 // ── SAYFA ────────────────────────────────────────────────────────────────────
+// Bölümler (varsayılan sıra). `id` sıra/gizleme kaydının anahtarı — değişmesin.
+const BOLUMLER = [
+  { id: "namaz",   ad: "Namaz Vakitleri",             Ikon: Clock,       Bilesen: NamazVakitleri },
+  { id: "gunler",  ad: "Kandiller ve Mübarek Günler", Ikon: Moon,        Bilesen: DiniGunler },
+  { id: "hutbe",   ad: "Cuma Hutbesi",                Ikon: ScrollText,  Bilesen: CumaHutbesi },
+  { id: "dinle",   ad: "Kur'an Dinle",                Ikon: Headphones,  Bilesen: KuranDinleKarti },
+  { id: "radyo",   ad: "Diyanet Radyoları",           Ikon: Radio,       Bilesen: Radyolar },
+  { id: "kible",   ad: "Kıble Pusulası",              Ikon: Compass,     Bilesen: KiblePusulasi },
+  { id: "camiler", ad: "Yakındaki Camiler",           Ikon: MapPin,      Bilesen: YakinCamiler },
+  { id: "zikir",   ad: "Zikirmatik",                  Ikon: Sparkles,    Bilesen: Zikirmatik },
+  { id: "izin",    ad: "Konum izni",                  Ikon: ShieldCheck, Bilesen: KonumIzni },
+  { id: "takip",   ad: "Namaz & Hatim Takibi",        Ikon: ListChecks,  Bilesen: NamazHatimTakibi },
+]
+const VARSAYILAN_SIRA = BOLUMLER.map(b => b.id)
+const bolumBul = (id) => BOLUMLER.find(b => b.id === id)
+
+// Düzenleme kipinde bölüm satırı: satırın tamamı sürüklenir; göz düğmesi sürüklemeyi başlatmaz
+function DuzenSatiri({ b, theme, gizli, gizlemeMod }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: b.id })
+  const ac = theme.accent
+  return (
+    <div ref={setNodeRef} {...attributes} {...listeners} data-goz-kap=""
+      style={{
+        transform: CSS.Transform.toString(transform), transition,
+        display: "flex", alignItems: "center", gap: "10px", padding: "10px 12px", marginBottom: "8px",
+        borderRadius: "12px", background: theme.surface,
+        border: `1px ${gizli ? "dashed" : "solid"} ${isDragging ? ac : theme.border}`,
+        boxShadow: isDragging ? "0 10px 24px rgba(0,0,0,0.22)" : "0 2px 8px rgba(0,0,0,0.04)",
+        opacity: gizli ? 0.5 : 1, position: "relative", zIndex: isDragging ? 5 : "auto",
+        cursor: "grab", touchAction: "manipulation", userSelect: "none", WebkitUserSelect: "none",
+        WebkitTouchCallout: "none", WebkitTapHighlightColor: "transparent",
+      }}>
+      <GripVertical size={17} color={theme.textSecondary} style={{ flexShrink: 0, touchAction: "none" }} />
+      <span style={{ width: "30px", height: "30px", borderRadius: "9px", background: `${ac}18`, color: ac, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+        <b.Ikon size={16} />
+      </span>
+      <span style={{ flex: 1, minWidth: 0, fontSize: "14.5px", fontWeight: 600, color: theme.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+        {b.ad}
+        {gizli && <span style={{ fontSize: "11px", fontWeight: 500, color: theme.textSecondary, marginLeft: "8px" }}>gizli</span>}
+      </span>
+      {/* Gizleme kipinde hep görünür; kapalıyken fareli cihazda satırın üzerine gelince belirir */}
+      {(
+        <button type="button" className={gizlemeMod ? undefined : "vk-goz-uzerine"} onMouseDown={(e) => e.stopPropagation()} onTouchStart={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}
+          onClick={(e) => { e.stopPropagation(); ekstraGizleDegis(b.id) }}
+          aria-label={gizli ? `${b.ad} — göster` : `${b.ad} — gizle`} aria-pressed={gizli}
+          title={gizli ? "Bölümü göster" : "Bölümü gizle"}
+          style={{ ...(gizlemeMod ? { display: "flex" } : null), alignItems: "center", padding: "4px", background: "none", border: "none", cursor: "pointer", color: gizli ? theme.textSecondary : ac }}>
+          {gizli ? <EyeOff size={18} /> : <Eye size={18} />}
+        </button>
+      )}
+    </div>
+  )
+}
+
 export default function Ekstralar() {
   const { theme } = useApp()
+  const duzen = useEkstraDuzen()
+  const sira = useMemo(() => ekstraSirala(duzen.sira, VARSAYILAN_SIRA), [duzen.sira])
+  const gizliMi = (id) => duzen.gizli.includes(id)
+  const [duzenleme, setDuzenleme] = useState(false)
+  const [gizlemeMod, setGizlemeMod] = useState(false)
+  const [gizliSifirla, setGizliSifirla] = useState(0)
+  const [siraSifirla, setSiraSifirla] = useState(0)
+  const ozelSira = sira.join() !== VARSAYILAN_SIRA.join()
+  const sensors = useSensors(
+    useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 170, tolerance: 6 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  )
+  const duzenleDegis = () => {
+    setDuzenleme(d => !d); setGizlemeMod(false); setGizliSifirla(0); setSiraSifirla(0)
+  }
+  const surukBitti = ({ active, over }) => {
+    if (!over || active.id === over.id) return
+    const a = sira.indexOf(active.id), b = sira.indexOf(over.id)
+    if (a < 0 || b < 0) return
+    ekstraDuzenYaz({ sira: arrayMove(sira, a, b) })
+    setSiraSifirla(0)
+  }
+  const aracStil = (dolu, renk = theme.accent) => ({
+    display: "flex", alignItems: "center", gap: "6px", padding: "8px 12px", borderRadius: "10px",
+    background: dolu ? renk : "transparent", color: dolu ? "#fff" : renk,
+    border: `1px solid ${renk}`, fontSize: "13px", cursor: "pointer", fontFamily: "inherit",
+  })
+  const gorunenler = sira.filter(id => !gizliMi(id))
+
   return (
     <div style={{
       minHeight: "100vh", background: theme.background, color: theme.text,
@@ -898,20 +996,77 @@ export default function Ekstralar() {
       <style>{`@keyframes vk-don { to { transform: rotate(360deg) } } .vk-don { animation: vk-don 1s linear infinite }
         @keyframes vk-kerahat { 0%,100% { opacity: 1 } 50% { opacity: .3 } } .vk-kerahat-nokta { animation: vk-kerahat 1.6s ease-in-out infinite }
         @media (prefers-reduced-motion: reduce) { .vk-kerahat-nokta { animation: none } }`}</style>
-      <div style={{ display: "flex", alignItems: "baseline", gap: "9px", marginBottom: "14px", flexWrap: "wrap" }}>
+      <style>{GOZ_UZERINE_CSS}</style>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "9px", marginBottom: "14px", flexWrap: "wrap" }}>
         <h1 style={{ margin: 0, fontSize: "19px", fontWeight: 600 }}>Ekstralar</h1>
-
+        {/* Yalnız simge — oynatıcı barındaki ayar düğmesi gibi yuvarlak, çerçevesiz (Kitaplık'la aynı) */}
+        <button onClick={duzenleDegis} aria-pressed={duzenleme}
+          aria-label={duzenleme ? "Düzenlemeyi bitir" : "Düzenle"} title={duzenleme ? "Bitti" : "Düzenle"}
+          style={{
+            display: "flex", alignItems: "center", justifyContent: "center", padding: 0,
+            width: "34px", height: "34px", borderRadius: "50%", border: "none", cursor: "pointer",
+            touchAction: "manipulation", flexShrink: 0,
+            background: duzenleme ? `${theme.accent}33` : "transparent",
+            color: duzenleme ? theme.accent : theme.textSecondary,
+          }}>
+          {duzenleme ? <Check size={17} /> : <Pencil size={16} />}
+        </button>
       </div>
-      <NamazVakitleri theme={theme} />
-      <DiniGunler theme={theme} />
-      <CumaHutbesi theme={theme} />
-      <Radyolar theme={theme} />
-      <KiblePusulasi theme={theme} />
-      <YakinCamiler theme={theme} />
-      <Zikirmatik theme={theme} />
-      <KonumIzni theme={theme} />
-      {/* En altta: Namaz & Hatim takibi (4 Kasım 2026) */}
-      <NamazHatimTakibi theme={theme} />
+
+      {duzenleme ? (
+        <>
+          {/* Araç çubuğu: göz (gizleme kipi) · gizlileri göster · sırayı sıfırla */}
+          <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "12px", flexWrap: "wrap" }}>
+            <button onClick={() => { setGizlemeMod(m => !m); setGizliSifirla(0) }} title="Bölümleri gizle / göster"
+              aria-pressed={gizlemeMod} style={aracStil(gizlemeMod)}>
+              {gizlemeMod ? <EyeOff size={15} /> : <Eye size={15} />}
+            </button>
+            {gizlemeMod && duzen.gizli.length > 0 && (
+              <button onClick={() => {
+                if (gizliSifirla < 1) { setGizliSifirla(1); return }
+                ekstraDuzenYaz({ gizli: [] }); setGizliSifirla(0)
+              }} style={aracStil(gizliSifirla > 0)}>
+                <RotateCcw size={14} />
+                {gizliSifirla === 0 ? "Gizlileri göster" : "Emin misiniz? (tekrar dokunun)"}
+              </button>
+            )}
+            {ozelSira && (
+              <button onClick={() => {
+                if (siraSifirla < 1) { setSiraSifirla(1); return }
+                ekstraDuzenYaz({ sira: [] }); setSiraSifirla(0)
+              }} style={aracStil(siraSifirla > 0)}>
+                <RotateCcw size={14} />
+                {siraSifirla === 0 ? "Sırayı sıfırla" : "Emin misiniz? (tekrar dokunun)"}
+              </button>
+            )}
+          </div>
+          <div style={{ fontSize: "12px", color: theme.textSecondary, lineHeight: 1.5, margin: "0 2px 12px" }}>
+            {gizlemeMod
+              ? "Göz simgesiyle bölümler gizlenebilir ya da yeniden gösterilebilir. Sıralama için satırlar sürüklenebilir."
+              : "Sıralamak için satırlar sürüklenebilir (dokunmatikte kısa basılı tutup). Gizlemek için göz düğmesi kullanılabilir; bilgisayarda satırın üzerine gelince de göz belirir."}
+          </div>
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={surukBitti}>
+            <SortableContext items={sira} strategy={verticalListSortingStrategy}>
+              {sira.map(id => {
+                const b = bolumBul(id)
+                return b ? <DuzenSatiri key={id} b={b} theme={theme} gizli={gizliMi(id)} gizlemeMod={gizlemeMod} /> : null
+              })}
+            </SortableContext>
+          </DndContext>
+        </>
+      ) : (
+        <>
+          {gorunenler.map(id => {
+            const B = bolumBul(id)?.Bilesen
+            return B ? <B key={id} theme={theme} /> : null
+          })}
+          {gorunenler.length === 0 && (
+            <div style={{ padding: "18px 14px", borderRadius: "14px", border: `1px dashed ${theme.border}`, textAlign: "center", fontSize: "13px", color: theme.textSecondary, lineHeight: 1.5 }}>
+              Bütün bölümler gizli. "Düzenle" ile yeniden gösterilebilir.
+            </div>
+          )}
+        </>
+      )}
     </div>
   )
 }

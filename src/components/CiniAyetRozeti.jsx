@@ -41,7 +41,9 @@ const KUTU = { x: -72, y: -36, w: 144, h: 72 }
    • ORTADA kat kat yuvarlak bir hatâyî (kitâbe panosundaki gül gibi); üstünden ve altından
      birer ince dal uçlara uzanır, üzerlerinde küçük yapraklar.
    Sol yarı yerel koordinatta (translate(-50 0)); sağ yarı aynası. */
-function Yarim({ p }) {
+/* Sol yarının ÇİZİMİ (yerel koordinat, merkez hilâlin ortası) — Tema Seçici'deki
+   caminin yan kanatlarında da aynısı kullanılıyor (TemaSecici → RozetYarisi). */
+export function CicekliYarimCizim({ p }) {
   const ac = p.ana
   const k = { stroke: p.kontur, strokeWidth: 0.45, strokeLinejoin: "round" }
   const halka = (n, r, rx, ry, renk, kay = 0) => Array.from({ length: n }, (_, i) => (
@@ -49,7 +51,7 @@ function Yarim({ p }) {
       style={{ fill: renk, ...k }} />
   ))
   return (
-    <g transform="translate(-50 0)">
+    <g>
       {/* GÖVDE — eski hilâlin dış kenarı aynı, iç kenarı dışa yaklaştırıldı (ince) */}
       <path d="M0 -19 C-11 -18.5 -17 -10 -17 0 C-17 10 -11 18.5 0 19 C-9.5 17.2 -14.6 9.5 -14.6 0 C-14.6 -9.5 -9.5 -17.2 0 -19 Z"
         fill={ac} opacity=".95" />
@@ -86,6 +88,10 @@ function Yarim({ p }) {
       </g>
     </g>
   )
+}
+
+function Yarim({ p }) {
+  return <g transform="translate(-50 0)"><CicekliYarimCizim p={p} /></g>
 }
 
 export function ciniPalet(ac, zemin = "#ffffff", yazi = "#222222", vurgu = null) {

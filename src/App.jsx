@@ -12,6 +12,9 @@ import { OynaticiSaglayici } from "./data/oynatici"
 import MiniOynatici from "./components/MiniOynatici"
 import { RadyoSaglayici } from "./data/radyo"
 import MiniRadyo from "./components/MiniRadyo"
+// Ekstralar → Kur'an Dinle (11 Kasım 2026): radyo gibi kökte, sayfadan çıkınca da çalar
+import { KuranDinleSaglayici } from "./data/kuranDinle"
+import MiniKuranDinle from "./components/MiniKuranDinle"
 import OdakPenceresi from "./components/OdakPenceresi"
 // Paylaşılan bağlantı (18 Ekim 2026): önce ana sayfa, oradan paylaşılan yere köprü
 import { gelenPaylasim, paylasimiHazirla } from "./data/paylasim"
@@ -282,6 +285,7 @@ export default function App() {
           sayfa değişince ses kesilmez ("devamlı oynatma" açıksa). */}
       <OynaticiSaglayici>
       <RadyoSaglayici>
+      <KuranDinleSaglayici>
       <ParcaHatasi theme={theme} yol={location.pathname}>
       <Suspense fallback={<SayfaYukleniyor theme={theme} />}>
       <Routes>
@@ -322,8 +326,11 @@ export default function App() {
       <MiniOynatici />
       {/* Ekstralar'dan açılan radyo, öbür ekranlarda (3 Kasım 2026) */}
       <MiniRadyo />
+      {/* Ekstralar → Kur'an Dinle, öbür ekranlarda (11 Kasım 2026) */}
+      <MiniKuranDinle />
       {/* Gözlük: okuma ekran dışında sürerken odak penceresi (4 Kasım 2026) */}
       <OdakPenceresi />
+      </KuranDinleSaglayici>
       </RadyoSaglayici>
       </OynaticiSaglayici>
     </div>

@@ -1,4 +1,4 @@
-import { useState, useEffect, useLayoutEffect, useRef, useMemo } from "react"
+import { useState, useEffect, useLayoutEffect, useRef, useMemo, createContext, useContext } from "react"
 import { useMediaQuery } from "../data/hooks/useMediaQuery"
 import { useApp } from "../AppContext"
 import { Link, useNavigate } from "react-router-dom"
@@ -37,6 +37,8 @@ import RafResimSecici from "../components/RafResimSecici"
 import { rafPaleti, rafResmiBul, HAZIR_RAF_RESIMLERI } from "../components/rafGorselleri"
 // Kitaplık modu (26 Ekim 2026): tüm eserler · seçilen eserler · Risale-i Nûr — components/KitaplikModu.jsx
 import { useKitaplikModu, kategorileriSuz, modOzeti, ModPenceresi, MODLAR } from "../components/KitaplikModu"
+// Fareli cihazda üzerine gelince beliren göz (11 Kasım 2026) — Ekstralar da kullanıyor
+import { GOZ_UZERINE_CSS } from "../components/gozUzerine"
 
 // ════════════════════════════════════════════════════════════════
 // SÜRÜKLEME ERGONOMİSİ
@@ -821,6 +823,7 @@ function RafBolmesi({ p, theme, isMobile, acik, satirAcik, gizli, sirtlar, yatay
     <div
       ref={setNodeRef}
       onClick={onToggle}
+      data-goz-kap=""
       {...suruklemeProps}
       style={{
         ...sortStil, order: sira, minWidth: 0, position: "relative",
@@ -904,19 +907,24 @@ function BosBolme({ p, theme, isMobile, satirAcik, sira, sagDirek, tohum, icYuk,
 }
 
 // Açılan rafın içeriği: o satırın altında, tam genişlikte çekmece (iki yanda direk sürer)
-function RafCekmecesi({ theme, p, isMobile, sira, children }) {
+// Çekmece kendi sütununda (yan yana) açıldıysa içindeki kitap ızgarası 3 sıra dizilir
+const CekmeceDarBaglami = createContext(false)
+
+// yan = { sutun, son } → çekmece yalnız rafının sütununda (aynı satırda birden çok açık raf);
+// sol direği her zaman, sağ direği yalnız son sütunda çizer → ortadaki direk tek kalır.
+function RafCekmecesi({ theme, p, isMobile, sira, yan = null, children }) {
   const en = direkEni(isMobile)
   return (
-    <div style={{ order: sira, gridColumn: "1 / -1", minWidth: 0, display: "flex" }}>
+    <div style={{ order: sira, gridColumn: yan ? `${yan.sutun + 1} / span 1` : "1 / -1", minWidth: 0, display: "flex" }}>
       <RafDirek p={p} en={en} />
       <div style={{
         flex: 1, minWidth: 0, background: theme.surface,
         boxShadow: "inset 0 10px 12px -8px rgba(0,0,0,0.55), inset 0 -6px 8px -6px rgba(0,0,0,0.4)",
         borderTop: `3px solid ${p.c1}`, borderBottom: `3px solid ${p.c1}`,
       }}>
-        {children}
+        <CekmeceDarBaglami.Provider value={!!yan}>{children}</CekmeceDarBaglami.Provider>
       </div>
-      <RafDirek p={p} en={en} />
+      {(!yan || yan.son) && <RafDirek p={p} en={en} />}
     </div>
   )
 }
@@ -1473,6 +1481,9 @@ function DinamikRaf({ kitaplar: liste, rafId, theme, alimId, kitapSiralama }) {
 // Düzenleme modunda kullanılmaz (sürükle-bırak sarmalı düzende çalışıyor).
 function KitapIzgarasi({ sayi, padding, children }) {
   const ref = useRef(null)
+  // Yan yana açılmış (yarım en) çekmecede 3 sıra (11 Kasım 2026); tam en çekmecede 2
+  const dar = useContext(CekmeceDarBaglami)
+  const SIRA = dar ? 3 : 2
   const [satir, setSatir] = useState(0)          // 0 = sarmalı (eski düzen), 2 = yatay
   const BOSLUK = 12
   useLayoutEffect(() => {
@@ -1486,14 +1497,14 @@ function KitapIzgarasi({ sayi, padding, children }) {
       const kart = ilk.offsetWidth || 80
       const sigan = Math.max(1, Math.floor((ic + BOSLUK) / (kart + BOSLUK)))
       // 5 Kasım 2026 — kullanıcı: "3'lü sıra yerine 2'li sıra yapalım" → en çok 2 satır
-      const yeni = sayi <= sigan * 2 ? 0 : 2
+      const yeni = sayi <= sigan * SIRA ? 0 : SIRA
       setSatir(o => (o === yeni ? o : yeni))
     }
     olc()
     let ro
     try { ro = new ResizeObserver(olc); ro.observe(el) } catch { ro = null }
     return () => { try { ro && ro.disconnect() } catch { /* yoksay */ } }
-  }, [sayi])
+  }, [sayi, SIRA])
   return (
     <div ref={ref} style={satir ? {
       display: "grid", gridAutoFlow: "column",
@@ -1614,13 +1625,20 @@ const alimEserSayisi = (a) => (a.altKategoriler
   : (a.kitaplar || []).length)
 
 // Göz (gizle/göster) düğmesi
-function GozBtn({ gizli, onClick, theme }) {
+/* ÜZERİNE GELİNCE (11 Kasım 2026, kullanıcı: "web için gizleme için kullandığımız göz simgesini
+   hover efekti ile verelim, nasılsa PC'de yorulmaz"). Düzenleme kipinde, gizleme kipi kapalıyken
+   de fareli cihazlarda raf ya da başlık satırının üzerine gelince göz belirir (uzerine=true);
+   dokunmatikte görünmez — orada araç çubuğundaki göz düğmesi gizleme kipini açar. */
+function GozBtn({ gizli, onClick, theme, uzerine = false }) {
   return (
     <span
       data-nodrag="1"
+      className={uzerine ? "vk-goz-uzerine" : undefined}
+      role="button" tabIndex={0} aria-label={gizli ? "Rafı göster" : "Rafı gizle"}
       onClick={(e) => { e.stopPropagation(); onClick() }}
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); onClick() } }}
       title={gizli ? "Rafı göster" : "Rafı gizle"}
-      style={{ display: "flex", alignItems: "center", cursor: "pointer", color: gizli ? theme.textSecondary : theme.accent, padding: "2px" }}
+      style={{ ...(uzerine ? null : { display: "flex" }), alignItems: "center", cursor: "pointer", color: gizli ? theme.textSecondary : theme.accent, padding: "2px" }}
     >
       {gizli ? <EyeOff size={18} /> : <Eye size={18} />}
     </span>
@@ -1740,7 +1758,7 @@ function SortableAlimRafi({ alim, duzenlemeMode, theme, sensors, kitapSiralama, 
             {tumKitaplar.length}
           </span>
 
-          {gizlemeMod && onGizle && <GozBtn gizli={gizli} onClick={onGizle} theme={theme} />}
+          {(gizlemeMod || duzenlemeMode) && onGizle && <GozBtn gizli={gizli} onClick={onGizle} theme={theme} uzerine={!gizlemeMod} />}
 
           {gorunur && (
             <span
@@ -1961,7 +1979,7 @@ function SortableKategori({ kategori,
               <GripVertical size={18} />
             </span>
           )}
-          {gizlemeMod && <GozBtn gizli={gizli} onClick={() => onGizle(kategori.id)} theme={theme} />}
+          {(gizlemeMod || duzenlemeMode) && <GozBtn gizli={gizli} onClick={() => onGizle(kategori.id)} theme={theme} uzerine={!gizlemeMod} />}
           {!duzenlemeMode && !gizlemeMod && <RafSimgesi id={kategori.id} baslik={kategori.baslik} renk={theme.accent} />}
           <span style={rafAdiStil(theme, isMobile)}>
             {kategori.baslik.toLocaleUpperCase('tr-TR')}
@@ -1993,7 +2011,7 @@ function SortableKategori({ kategori,
       </RafBolmesi>
 
       {acik && (
-        <RafCekmecesi theme={theme} p={yer.p} isMobile={isMobile} sira={yer.cekmeceSira}>
+        <RafCekmecesi theme={theme} p={yer.p} isMobile={isMobile} sira={yer.cekmeceSira} yan={yer.cekmeceSutun}>
         <div style={{ animation: dinamikMod ? "vukuf-raf-ac 0.4s cubic-bezier(.22,.61,.36,1)" : "none" }}>
           {aramaAcik && (
             <div style={{ padding: "12px 16px", borderBottom: `1px solid ${theme.border}` }}>
@@ -2214,7 +2232,7 @@ function OzelAltRaf({ raf, alt, liste, theme, dinamikMod, duzenlemeMode, aramaAk
           )}
           {duzenAd == null && <RafArama theme={theme} acik={aramaAcik} setAcik={(v) => { setAramaAcik(v); if (!v) setArama("") }} deger={arama} setDeger={setArama} />}
           <span style={{ fontSize: "11px", color: theme.textSecondary }}>{liste.length} {gorunur ? "▲" : "▼"}</span>
-          {gizlemeMod && onGizle && <GozBtn gizli={gizli} onClick={onGizle} theme={theme} />}
+          {(gizlemeMod || duzenlemeMode) && onGizle && <GozBtn gizli={gizli} onClick={onGizle} theme={theme} uzerine={!gizlemeMod} />}
         </div>
       </div>
       {aramaAcik && (
@@ -2333,7 +2351,7 @@ function OzelKategori({ raf, havuz, theme, dinamikMod, duzenlemeMode, gizlemeMod
               <GripVertical size={18} />
             </span>
           )}
-          {gizlemeMod && <GozBtn gizli={gizli} onClick={() => onGizle(raf.id)} theme={theme} />}
+          {(gizlemeMod || duzenlemeMode) && <GozBtn gizli={gizli} onClick={() => onGizle(raf.id)} theme={theme} uzerine={!gizlemeMod} />}
           {duzenlemeMode && <FolderPlus size={18} color={theme.accent} style={{ flexShrink: 0 }} />}
           {!duzenlemeMode && !gizlemeMod && <SemseIkon renk={theme.accent} />}
           {duzenlemeMode && isimDuzen != null ? (
@@ -2387,7 +2405,7 @@ function OzelKategori({ raf, havuz, theme, dinamikMod, duzenlemeMode, gizlemeMod
       </RafBolmesi>
 
       {acik && (
-        <RafCekmecesi theme={theme} p={yer.p} isMobile={isMobile} sira={yer.cekmeceSira}>
+        <RafCekmecesi theme={theme} p={yer.p} isMobile={isMobile} sira={yer.cekmeceSira} yan={yer.cekmeceSutun}>
         <div style={{ animation: dinamikMod ? "vukuf-raf-ac 0.4s cubic-bezier(.22,.61,.36,1)" : "none", padding: "6px 0 10px" }}>
           {aramaAcik && (
             <div style={{ padding: "10px 16px", borderBottom: `1px solid ${theme.border}` }}>
@@ -2527,7 +2545,7 @@ function OtomatikKategori({ rafId, baslik, Ikon, kitaplar: liste, theme, dinamik
               <GripVertical size={18} />
             </span>
           )}
-          {gizlemeMod && <GozBtn gizli={gizli} onClick={() => onGizle(rafId)} theme={theme} />}
+          {(gizlemeMod || duzenlemeMode) && <GozBtn gizli={gizli} onClick={() => onGizle(rafId)} theme={theme} uzerine={!gizlemeMod} />}
           <Ikon size={18} color={theme.accent} style={{ flexShrink: 0 }} />
           <span style={rafAdiStil(theme, isMobile)}>
             {baslik.toLocaleUpperCase('tr-TR')}
@@ -2539,7 +2557,7 @@ function OtomatikKategori({ rafId, baslik, Ikon, kitaplar: liste, theme, dinamik
         </div>
       </RafBolmesi>
       {acik && (
-        <RafCekmecesi theme={theme} p={yer.p} isMobile={isMobile} sira={yer.cekmeceSira}>
+        <RafCekmecesi theme={theme} p={yer.p} isMobile={isMobile} sira={yer.cekmeceSira} yan={yer.cekmeceSutun}>
         <div style={{ animation: dinamikMod ? "vukuf-raf-ac 0.4s cubic-bezier(.22,.61,.36,1)" : "none", padding: "6px 0 10px" }}>
           {aramaAcik && (
             <div style={{ padding: "10px 16px", borderBottom: `1px solid ${theme.border}` }}>
@@ -2775,6 +2793,34 @@ export default function Kutuphane() {
   }
   function ozelToggle(id) { ozelAyarla(id, !ozelAcikMi(id)) }
 
+  /* DÜZENLERKEN SADE VE KAPALI (11 Kasım 2026) — kullanıcı: "Ana menüde düzenleme açık ise,
+     resimli modda ya da farklı bir modda ise, sade moda geçilip raf düzenlemesi tamamlansın,
+     sonrasında hangi seçenek aktifse ona geri dönsün. Ekstralarda açık raflar kapalı
+     başlamış, aynı şekilde burada da." Düzenleme açılınca raf görünümü geçici olarak "sade"
+     (ayar değişmez, yalnız çizim) ve açık raflar kapanır; düzenlerken raf açılabilir.
+     Düzenleme bitince açık raflar düzenlemeden önceki hâline döner, görünüm de ayardakine. */
+  const duzenOncesiRef = useRef(null)
+  useEffect(() => {
+    if (duzenlemeMode) {
+      if (duzenOncesiRef.current) return
+      const ozel = {}
+      for (const r of ozelRaflar) ozel[r.id] = ozelAcikMi(r.id)
+      duzenOncesiRef.current = { acik: acikRaflar, ozel }
+      setAcikRaflar([])
+      setOzelAcik(Object.fromEntries(Object.keys(ozel).map(id => [id, false])))
+      return
+    }
+    const once = duzenOncesiRef.current
+    if (!once) return
+    duzenOncesiRef.current = null
+    setAcikRaflar(once.acik); acikRaflarKaydet(once.acik)
+    setOzelAcik(prev => ({ ...prev, ...once.ozel }))
+    for (const [id, v] of Object.entries(once.ozel)) {
+      try { localStorage.setItem(`vukuf-ozel-acik-${id}`, JSON.stringify(v)) } catch {}
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [duzenlemeMode])
+
   /* BOŞ RAFLARI GİZLE (5 Kasım 2026) — kullanıcı: "Gizleme kısmında da eser olmayan rafları
      gizleme seçeneği uygun yerde bulunsun." Bir seçenek (kalıcı): açıkken içinde eser
      olmayan raflar kendiliğinden gizlenir, sonradan eser eklenen raf kendiliğinden
@@ -2793,6 +2839,8 @@ export default function Kutuphane() {
   const [sutunSayisi, setSutunSayisi] = useState(1)
   const [izgaraEn, setIzgaraEn] = useState(0)
   const [rafGorunum, setRafGorunum] = useState(rafGorunumOku)
+  // Düzenlerken her zaman sade çizilir (ayar değişmez) — bkz. "DÜZENLERKEN SADE VE KAPALI"
+  const gorunumEtkin = duzenlemeMode ? "sade" : rafGorunum
   useEffect(() => {
     const h = (e) => setRafGorunum(typeof e.detail === "string" ? e.detail : rafGorunumOku())
     window.addEventListener("vukuf-raf-gorunum", h)
@@ -2935,24 +2983,39 @@ export default function Kutuphane() {
 
   // Yerleşim: bölme i → order 2i; açık bölmenin çekmecesi → satırının son bölmesinden hemen sonra.
   // Aynı satırda açık bölmesi olan satırın bütün bölmeleri yüksek (kitaplarıyla) görünür.
+  /* AYNI SATIRDA BİRDEN FAZLA AÇIK RAF (11 Kasım 2026, kullanıcı: "yatay hizada birden fazla
+     raf aynı anda açıkken 2 sıra alt alta yapıyordu; bunun yerine soldaki raf 3'er kitap
+     sıralaması ile kendi bölümünde gösterilir, bu sayede orta çizgi de korunmuş olur").
+     Böyle bir satırda her çekmece tam en yerine KENDİ SÜTUNUNDA açılır (yan yana; ortadaki
+     direk korunur) ve içindeki kitap ızgarası 2 yerine 3 sıra dizilir (CekmeceDarBaglami).
+     Satırda tek raf açıksa çekmece eskisi gibi tam en. */
   const acikSatirlar = new Set()
-  gorunenIdler.forEach((id, i) => { if (rafAcikMi(id)) acikSatirlar.add(Math.floor(i / sutunSayisi)) })
+  const satirAcikSayisi = {}
+  gorunenIdler.forEach((id, i) => {
+    if (!rafAcikMi(id)) return
+    const st = Math.floor(i / sutunSayisi)
+    acikSatirlar.add(st)
+    satirAcikSayisi[st] = (satirAcikSayisi[st] || 0) + 1
+  })
   // Son satırı tamamlayan boş bölmeler de yuva sayılır (çekmece onların arkasına düşer)
   const bosSayisi = gorunenIdler.length ? (sutunSayisi - (gorunenIdler.length % sutunSayisi)) % sutunSayisi : 0
   const yuvaSayisi = gorunenIdler.length + bosSayisi
   // Bölme içi yüksekliği: resimli modda enine göre (resim her ekranda aynı oranda), diğerinde sabit
   const bolmeEn = izgaraEn ? izgaraEn / sutunSayisi - direkEni(isMobile) : 0
-  const icYukHesap = rafGorunum === "sade" ? 0
-    : rafGorunum === "resimli" && bolmeEn
+  const icYukHesap = gorunumEtkin === "sade" ? 0
+    : gorunumEtkin === "resimli" && bolmeEn
       ? Math.max(isMobile ? 76 : 92, Math.min(170, Math.round(bolmeEn / RESIM_ORANI)))
       : (isMobile ? 76 : 92)
   const yerlesim = (i) => {
     const satir = Math.floor(i / sutunSayisi)
     const satirSonu = Math.min(yuvaSayisi - 1, satir * sutunSayisi + sutunSayisi - 1)
+    const yanYana = sutunSayisi > 1 && (satirAcikSayisi[satir] || 0) > 1
     return {
       p: ahsap, sira: i * 2, cekmeceSira: satirSonu * 2 + 1, satirAcik: acikSatirlar.has(satir),
+      // yan yana çekmece: { sutun, son } — son sütun sağ direği de çizer
+      cekmeceSutun: yanYana ? { sutun: i % sutunSayisi, son: i % sutunSayisi === sutunSayisi - 1 } : null,
       sagDirek: i === satirSonu,          // satırın son yuvası sağ direği de çizer
-      icYuk: icYukHesap, gorunum: rafGorunum,
+      icYuk: icYukHesap, gorunum: gorunumEtkin,
     }
   }
 
@@ -3151,6 +3214,7 @@ export default function Kutuphane() {
       padding: isMobile ? "34px 10px 40px" : "40px 20px 48px",
       userSelect: "none", WebkitUserSelect: "none",
     }}>
+      <style>{GOZ_UZERINE_CSS}</style>
       <style>{`
         @keyframes vukuf-raf-ac {
           from { opacity: 0; transform: scale(0.965) translateY(-6px); }
@@ -3215,14 +3279,19 @@ export default function Kutuphane() {
               </button>
             )}
 
-            <button onClick={duzenleToggle} style={{
-              display: "flex", alignItems: "center", gap: "6px", padding: "8px 12px", borderRadius: "8px",
-              background: duzenlemeMode ? `${theme.accent}20` : "transparent",
-              border: `1px solid ${duzenlemeMode ? theme.accent : theme.border}`,
-              color: duzenlemeMode ? theme.accent : theme.textSecondary, fontSize: "13px", cursor: "pointer",
-            }}>
-              {duzenlemeMode ? <Check size={15} /> : <Pencil size={15} />}
-              {duzenlemeMode ? "Bitti" : "Düzenle"}
+            {/* Yalnız simge (11 Kasım 2026, kullanıcı: "'Düzenle' yazısı olmadan, tıpkı
+                playerbardaki sağ taraftaki ayar butonu gibi") — yuvarlak, çerçevesiz;
+                düzenlerken vurgu zeminli ve ✓ simgeli. */}
+            <button onClick={duzenleToggle} aria-pressed={duzenlemeMode}
+              aria-label={duzenlemeMode ? "Düzenlemeyi bitir" : "Düzenle"} title={duzenlemeMode ? "Bitti" : "Düzenle"}
+              style={{
+                display: "flex", alignItems: "center", justifyContent: "center", padding: 0,
+                width: "34px", height: "34px", borderRadius: "50%", border: "none", cursor: "pointer",
+                touchAction: "manipulation", flexShrink: 0,
+                background: duzenlemeMode ? `${theme.accent}33` : "transparent",
+                color: duzenlemeMode ? theme.accent : theme.textSecondary,
+              }}>
+              {duzenlemeMode ? <Check size={17} /> : <Pencil size={16} />}
             </button>
           </div>
         </div>

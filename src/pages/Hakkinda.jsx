@@ -265,8 +265,8 @@ export default function Hakkinda() {
           margin: "20px auto 0", maxWidth: "560px",
           color: theme.text, fontSize: "15.5px", lineHeight: 1.9, textAlign: "center",
         }}>
-          Vukuf; İslâm âlimlerinin istifade edilmesi ümit edilen seçkin eserlerini ve diğer
-          islâmî eserleri kolaylıkla okuyabilmeyi ve inceleyebilmeyi amaçlayarak derlenmiştir.
+          Vukuf; Ana İslâmi eserleri ve İslâm âlimlerinin istifade edilmesi ümit edilen seçkin
+          eserlerini kolaylıkla okuyabilmeyi ve inceleyebilmeyi amaçlayarak derlenmiştir.
           Herhangi bir ticarî amacı yoktur.
         </p>
 
@@ -332,6 +332,12 @@ export default function Hakkinda() {
             {kaynak(Headphones, "Diyanet Kur'an Portalı",
               "Türk hafızların (Osman Şahin, İshak Danış, Tayyar Altıkulaç, Mehmet Çevik, Davut Kaya) âyet âyet kayıtları — T.C. Diyanet İşleri Başkanlığı",
               { href: "https://kuran.diyanet.gov.tr/" })}
+            {kaynak(Headphones, "Internet Archive",
+              "Ekstralar → Kur'an Dinle'deki hatim ve sûre kayıtları (Fatih Çollak ve 70 hafız, Mehmet Emin Ay, Abdulkadir Şehitoğlu, İhsan Atasoy, Davut Kaya, Tayyar Altıkulaç, İshak Danış) — kayıtlar archive.org'dan doğrudan çalınır",
+              { href: "https://archive.org/" })}
+            {kaynak(Headphones, "way2quran",
+              "Ekstralar → Kur'an Dinle'de İsmail Biçer'in sûre kayıtları",
+              { href: "https://way2quran.com/" })}
             {kaynak(Globe, "ONNX Runtime Web · espeak-ng",
               "Seslerin tarayıcıda çalıştığı motor (ONNX Runtime Web, Microsoft, MIT lisansı) ve Kerîm sesinin fonemleyicisi (espeak-ng, GPL-3.0; @diffusionstudio/piper-wasm)",
               { href: "https://github.com/microsoft/onnxruntime" })}

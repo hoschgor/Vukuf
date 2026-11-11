@@ -60,7 +60,7 @@ const KONULAR = [
       "Her raf bir ilim dalını temsil eder. Rafa dokunulduğunda altında bir çekmece açılır ve o dalın âlimleri listelenir; âlimin adına dokunulunca eserleri görünür, bir esere dokunulduğunda okuma ekranı açılır.",
       "Rafın içindeki dikey kitaplar raftaki eserleri, yatay kitaplar ise âlimleri temsil eder. Bir dikey kitaba dokunarak doğrudan o esere, bir yatay cilde dokunarak da o âlimin bölümüne geçilebilir.",
       "Âlimler rafında bütün âlimler alfabe sırasıyla bir arada bulunur. Bir âlimin farklı raflardaki eserleri burada birlikte görülebilir; eserler yine aynı şekilde açılır.",
-      "Birden fazla raf aynı anda açık kalabilir. Kitaplık başlığının yanındaki, arama düğmesinin hemen sağındaki ok simgesiyle bütün raflar tek seferde açılıp kapatılabilir. Kalabalık bir rafta eserler iki sıra hâlinde yana doğru dizilir; raf yana kaydırılarak gezilebilir.",
+      "Birden fazla raf aynı anda açık kalabilir. Geniş ekranda raflar yan yana dizilir. Aynı hizadaki iki raf birlikte açılırsa çekmeceleri de yan yana, her biri kendi rafının altında açılır (ortadaki direk korunur) ve eserler üç sıra hâlinde dizilir; hizada tek raf açıksa çekmece dolabın bütün enince açılır. Kitaplık başlığının yanındaki, arama düğmesinin hemen sağındaki ok simgesiyle bütün raflar tek seferde açılıp kapatılabilir. Kalabalık bir rafta eserler iki sıra hâlinde yana doğru dizilir; raf yana kaydırılarak gezilebilir.",
     ],
     anahtar: "raf çekmece alim âlim âlimler eser kitap aç kategori kısım alfabe tümünü aç kapat iki sıra",
   },
@@ -78,17 +78,18 @@ const KONULAR = [
   {
     bolum: "kitaplik", ikon: Pencil, baslik: "Düzenleme ve sıralama",
     ozet: "Rafları, âlimleri ve eserleri sürükleyerek yeniden dizmek.",
-    nerede: "Kitaplık → Düzenle",
+    nerede: "Kitaplık → kalem simgesi",
     metin: [
-      "Düzenle düğmesiyle düzenleme moduna geçilir. Bu modda raflar, âlimler ve eserler sürüklenerek yeniden sıralanabilir; telefonda kısa bir süre basılı tutulduktan sonra sürükleme başlar.",
-      "İş bitince Bitti düğmesi düzenlemeyi kapatır. Sıralama cihazınızda saklanır ve bir sonraki açılışta aynen durur.",
+      "Sağ üstteki kalem simgeli düğmeyle düzenleme moduna geçilir. Bu modda raflar, âlimler ve eserler sürüklenerek yeniden sıralanabilir; telefonda kısa bir süre basılı tutulduktan sonra sürükleme başlar.",
+      "Düzenlerken kitaplık kısa ve sade görünür: raflar resimsiz levhalara iner ve açık raflar kapanır, böylece bütün raflar bir bakışta sıralanabilir. Âlimleri ya da eserleri sıralamak için bir raf yine açılabilir. Düzenleme bitince seçili raf görünümüne (resimli, çizimli ya da sade) dönülür ve önceden açık olan raflar yeniden açılır.",
+      "İş bitince aynı yerdeki onay (✓) düğmesi düzenlemeyi kapatır. Sıralama cihazınızda saklanır ve bir sonraki açılışta aynen durur.",
     ],
     anahtar: "sürükle taşı sırala sıra yer değiştir",
   },
   {
     bolum: "kitaplik", ikon: FolderPlus, baslik: "Özel raf oluşturma",
     ozet: "Sevdiğiniz eserleri kendi rafınızda toplamak.",
-    nerede: "Kitaplık → Düzenle → Raf Ekle",
+    nerede: "Kitaplık → kalem → Raf Ekle",
     metin: [
       "Raf Ekle düğmesiyle önce rafa bir isim verilir, ardından listeden kitaplar seçilir.",
       "Özel rafa alt raflar eklenebilir; isimler kalem simgesiyle değiştirilebilir, kitaplar \"+ Kitap\" düğmesiyle eklenip kırmızı çarpıyla çıkarılabilir. Çöp kutusu simgesi, onay istendikten sonra rafı siler.",
@@ -99,9 +100,10 @@ const KONULAR = [
   {
     bolum: "kitaplik", ikon: EyeOff, baslik: "Rafları gizleme",
     ozet: "Kullanılmayan rafları görünümden kaldırmak.",
-    nerede: "Kitaplık → Düzenle → göz simgesi",
+    nerede: "Kitaplık → kalem → göz simgesi",
     metin: [
       "Göz simgesi gizleme modunu açar; her rafın levhasında beliren göze dokunularak raf gizlenebilir ya da geri getirilebilir. Bir raf açıldığında içindeki âlimlerin yanında da göz belirir; âlimler de aynı şekilde tek tek gizlenebilir. Kendi oluşturduğunuz raflar ve bu rafların alt rafları da aynı yoldan gizlenebilir. Gizliler bu modda soluk görünür.",
+      "Bilgisayarda (fareyle) düzenleme modundayken gizleme modunu açmaya gerek yoktur: bir rafın, âlimin ya da alt rafın üzerine gelince göz simgesi belirir, ona tıklanarak gizlenebilir.",
       "Hepsini birden geri getirmek için \"Gizlileri göster\" düğmesi kullanılabilir.",
       "Aynı yerdeki \"Boş rafları gizle\" seçeneği açıldığında içinde eser olmayan raflar, âlimler ve alt raflar kendiliğinden gizlenir; bir rafa sonradan eser eklenirse raf yeniden görünür. Seçenek tekrar dokunularak kapatılabilir.",
     ],
@@ -151,7 +153,7 @@ const KONULAR = [
   {
     bolum: "kitaplik", ikon: RotateCcw, baslik: "Kitaplığı sıfırlama",
     ozet: "Sıralamayı ve özel rafları başlangıç hâline döndürmek.",
-    nerede: "Kitaplık → Düzenle → Sıfırla",
+    nerede: "Kitaplık → kalem → Sıfırla",
     metin: [
       "Sıfırla düğmesi sıralamayı, gizli ve özel rafları ve okuma istatistiklerini başlangıç hâline döndürür. Yanlışlıkla dokunulmasın diye üç kez onay ister; \"vazgeç\" ile iptal edilebilir.",
     ],
@@ -645,10 +647,11 @@ const KONULAR = [
 
   {
     bolum: "arama", ikon: Compass, baslik: "Ekstralar",
-    ozet: "Namaz vakitleri, mübarek günler, Diyanet radyoları, kıble, camiler, zikirmatik.",
+    ozet: "Namaz vakitleri, mübarek günler, Kur'an dinle, Diyanet radyoları, kıble, camiler, zikirmatik.",
     nerede: "Ana menü → Ekstralar",
     metin: [
       "Bölümler başlıklarına dokunularak açılıp kapatılır; hangi bölümün açık kaldığı hatırlanır. Başlangıçta yalnız Namaz Vakitleri açıktır. Kapalı bölümün başlığında kısa bir özet görünür: sıradaki vakit, yaklaşan mübarek gün, çalan radyo, kıble açısı ya da zikir sayısı.",
+      "Sağ üstteki kalem simgeli düğmeyle bölümler kısa satırlara iner: satırlar sürüklenerek sıralanabilir (dokunmatikte kısa basılı tutup). Göz düğmesi gizleme kipini açar; her satırdaki gözle bölüm gizlenir ya da yeniden gösterilir. Bilgisayarda satırın üzerine gelince de göz belirir. \"Gizlileri göster\" ve \"Sırayı sıfırla\" iki dokunuşla onaylanır; onay (✓) düğmesiyle sayfaya dönülür. Radyo ya da Kur'an Dinle kartı gizlenmişse küçük hapı Ekstralar'da da görünür.",
       { alt: "Namaz vakitleri" },
       "Konumdan bulunabilir ya da il ve ilçe seçilebilir. Yaklaşan vakit ve kalan süre (saniyesiyle) caminin mihrabında yazar. Bir vakte dokunulunca mihrapta o vakte kalan ya da üzerinden geçen süre görünür; \"Yaklaşan vakte dön\" ile ya da aynı vakte yeniden dokunularak geri dönülür. Altında günün vakitleri, miladî ve hicrî tarih görünür. Cami çizimi seçili temanın renklerini alır; üstündeki gökte gündüz güneş, gece ay (o günkü evresiyle) doğudan batıya doğru ilerler. Vakitler Diyanet'in aylık vakitlerinden alınır ve cihazda saklanır; internetsiz de görünür.",
       "\"Takvime ekle\" elde olan yaklaşık 30 günün vakitlerini telefonun takvimine aktarır; ay dolunca yeniden eklenebilir. İndirmeden önce hatırlatma seçilebilir (vaktinde ya da 5–30 dk önce); uyarıyı telefonun takvimi verir, uygulama kapalıyken de çalışır. Bazı takvim uygulamaları dosyadaki hatırlatmayı almayabilir.",
@@ -658,9 +661,16 @@ const KONULAR = [
       "Bu haftanın Cuma'sını ve Diyanet'in hutbe sayfasını gösterir. Hutbe metni ve sesli hutbe Diyanet'in sayfasında açılır; uygulamaya kopyalanmaz.",
       { alt: "Kandiller ve mübarek günler" },
       "Diyanet'in dinî günler takviminden yaklaşan kandiller, Ramazan, bayramlar ve diğer mübarek günler kalan gün sayısıyla listelenir. Kandiller o günün akşamı idrak edilir.",
+      { alt: "Kur'an dinle" },
+      "Türk hafızlardan Kur'ân kayıtları internet üzerinden dinlenir; cihaza bir şey indirilmez. Önce kâri seçilir. Kârinin kaydı cüz cüz ise Cüz, sûre sûre ise Sûre, âyet âyet ise Âyet seçeneği açık olur; kaydı bulunmayan seçenekler çizgili koyu bir belirteçle kapalı görünür. Bazı kâriler birden çok biçimde dinlenebilir (ör. Davut Kaya: sûre ve âyet).",
+      "Listeden cüze, sûreye ya da âyete dokunulunca çalmaya başlar; çalan parçaya yeniden dokunulunca duraklar. Kayıtta bulunmayan tek tek cüz ya da sûreler de aynı belirteçle kapalıdır. Âyet kipinde sûre seçilip başlanacak âyete dokunulur; sûre başında besmele okunur.",
+      "Sürekli çalma açıkken parça bitince sıradaki cüz ya da sûre çalar (kayıtta olmayanlar atlanır); âyet kipinde sûre bitince sıradaki sûreye geçilir. Otomatik kapanma anahtarı açılınca süre seçilebilir; süre dolunca dinleme durur.",
+      "Kaldığınız yer saklanır: kart kapalıyken başlığında, açıkken listenin altında \"Kaldığınız yer\" görünür; uzun cüz kayıtlarında dakikasıyla birlikte. \"Devam\" ile oradan sürer.",
+      "Dinleme sayfadan çıkınca da sürer; diğer ekranlarda rahle amblemli küçük bir hap görünür (duraklat, sonraki, Ekstralar'a dön, küçült, kapat). Kur'ân oynatıcısı ya da radyo başlarsa Kur'an Dinle duraklar; Kur'an Dinle başlarsa ötekiler susar. Kilit ekranındaki ve kulaklıktaki düğmeler de çalan kaydı yönetir.",
+      "Kaynaklar: İsmail Biçer — way2quran.com; hatim ve sûre kayıtları — Internet Archive (archive.org); âyet âyet kayıtlar — Diyanet Kur'an portalı. Her kârinin kaynağı kartta bağlantı olarak durur.",
       { alt: "Diyanet radyoları" },
       "Diyanet Radyo, Diyanet Kur'an Radyo ve Diyanet Risalet Radyo canlı dinlenebilir. Radyo sayfadan çıkınca da çalmaya devam eder; diğer ekranlarda \"Ekstralar · Canlı\" yazılı küçük radyo hapı görünür. Hap sürüklenebilir, küçültülebilir; pusula düğmesi Ekstralar'a döner, çarpı radyoyu kapatır.",
-      "Otomatik kapanma: bir radyo açıkken kartın altından süre (5–90 dk ya da \"Özel\" ile istenen dakika) seçilebilir; süre dolunca radyo kendiliğinden kapanır, başka ekrandayken de. Kalan süre küçük radyo hapında görünür.",
+      "Otomatik kapanma: kartın altındaki anahtar açılınca süre (5–90 dk ya da \"Özel\" ile istenen dakika) seçilebilir; süre dolunca radyo kendiliğinden kapanır, başka ekrandayken de. Kalan süre küçük radyo hapında görünür.",
       "Radyo başlarken Kur'ân oynatıcısı çalıyorsa duraklatılır; Kur'ân dinlenmeye başlanınca da radyo duraklar. Yayını doğrudan çalamayan tarayıcılarda resmî siteye bağlantı vardır.",
       { alt: "Kıble, camiler, zikirmatik" },
       "Kıble pusulası konuma göre Kâbe yönünü ve uzaklığını gösterir. Telefonun pusulası varsa kadran telefonla birlikte döner; Kâbe işareti üstteki oka gelince kıbleye dönülmüş olur. iPhone'da hareket ve yön izni istenir.",
@@ -675,7 +685,7 @@ const KONULAR = [
       "Hatim: başlangıç ve bitiş tarihiyle bir hatim planı kurulur; okunan cüzler işaretlenir, günlük hedef ve plana göre ileride/geride olma görünür. Sıradaki cüz tek dokunuşla Kur'ân ekranında açılır, oradaki dönüş düğmesi takibe getirir.",
       "Grup hatmi: grup adı, tarih aralığı, hatim sayısı ve katılımcılar girilir; cüzler sırayla ya da dönüşümlü dağıtılır, sonra elle de değiştirilebilir. Her kişiye kendi cüzlerinin bağlantısı paylaşılır; bağlantıyı açan kişi cüzlerini kendi cihazında görür, okuduklarını işaretleyip \"Okuduğumu bildir\" ile grubu kurana bir bağlantı gönderir. Grubu kuran o bağlantıyı açınca liste kendiliğinden güncellenir. Ortak bir sunucu kullanılmaz; kayıtlar cihazlarda tutulur.",
     ],
-    anahtar: "ekstra namaz vakit ezan imsak öğle ikindi akşam yatsı kalan süre takvim ics kandil mübarek gün bayram ramazan radyo diyanet canlı otomatik kapanma uyku kıble pusula yön kabe cami harita zikir tesbih zikirmatik hicri konum izin sıfırla pil şarj bir kez bölüm aç kapat cami hatırlatma alarm aylık tablo imsakiye kerahat mekruh hutbe cuma kaza günlük hatim cüz grup dağıt davet takip",
+    anahtar: "ekstra düzenle sırala gizle sıfırla kuran dinle hafız kâri hatim cüz sûre âyet ismail biçer sürekli çalma kaldığım yer namaz vakit ezan imsak öğle ikindi akşam yatsı kalan süre takvim ics kandil mübarek gün bayram ramazan radyo diyanet canlı otomatik kapanma uyku kıble pusula yön kabe cami harita zikir tesbih zikirmatik hicri konum izin sıfırla pil şarj bir kez bölüm aç kapat cami hatırlatma alarm aylık tablo imsakiye kerahat mekruh hutbe cuma kaza günlük hatim cüz grup dağıt davet takip",
   },
 
   // ── AYARLAR ────────────────────────────────────────────────────────────
@@ -696,8 +706,10 @@ const KONULAR = [
     metin: [
       "Açık ve koyu temalar arasından seçim yapılabilir; \"otomatik\" seçildiğinde cihazın gece/gündüz ayarına uyulur.",
       "Kendi renklerinizle en çok üç özel tema oluşturulabilir. \"Yeni tema\" görünen temanın renkleriyle yeni bir özel tema açar; kalem simgesiyle renkleri düzenlenir, çöp kutusuyla silinir (ilk özel tema silinmez). Özel temaya dokunmak onu seçer; önizlemede renklerin nasıl görüneceği hemen izlenebilir.",
+      "Caminin mihrabında seçilen temanın renkleriyle bir âyet ve bir söz görünür. Sözdeki işaretli kelimeye (saadet) dokunulunca, okuma ekranındaki gibi lügat penceresi açılıp anlamını gösterir. Caminin yan kanatlarındaki parantezler seçili âyet rozetine (Çiçekli ya da Klasik) uyar.",
+      "Ekran yatayken Ayarlar iki sütun olur: cami ve tema bilgisi solda sabit durur, ayar bölümleri sağdadır. Bir bölüme dokunulunca o bölüm listenin başına gelir ve açılır. Telefon yatayken cami ekrana sığacak kadar küçülür.",
     ],
-    anahtar: "tema renk karanlık gece açık koyu özel",
+    anahtar: "tema renk karanlık gece açık koyu özel cami mihrap lügat saadet yatay iki sütun",
   },
   {
     bolum: "ayarlar", ikon: HardDrive, baslik: "Yedek, geri yükleme ve sıfırlama",

@@ -1,10 +1,13 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react"
-import { Sun, Moon, Pencil, Plus, Trash2 } from "lucide-react"
+import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react"
+import { createPortal } from "react-dom"
+import { Sun, Moon, Pencil, Plus, Trash2, X } from "lucide-react"
 import { useApp, temaTonu, ozelMi, OZEL_EN_COK } from "../AppContext"
 import { themes } from "../styles/themes"
 import { mushafYukle, mushafHazirMi } from "../data/mushafVerisi"
 import { tecvidAyikla, ozelOkuyusAyikla } from "./MushafKelime"
 import AyetRozeti from "./AyetRozeti"
+import { CicekliYarimCizim, ciniPalet } from "./CiniAyetRozeti"
+import { useAyetRozeti } from "../data/ayetRozeti"
 import { dalPaleti } from "./DalSusu"
 // Yatay telefonda kart düzeni iki sütun, satır düzeni çok sütun (bkz. yatayDuzen.js)
 import "./yatayDuzen"
@@ -193,7 +196,18 @@ function useOrnekAyet(etkin) {
 /* Âyet sonu rozetinin bir yarısı — MushafAyetRozeti'nin (GorselOlustur'daki canvas
    sürümüyle aynı yollar) sol parçası. Yan kanatlarda pencere yerine: solda açılış,
    sağda aynalanmış kapanış; mihrabı âyet gibi çerçeveliyor. */
-function RozetYarisi({ x, y, k = 1, ayna = false, renk }) {
+/* ÇİÇEKLİ SÜRÜM (11 Kasım 2026, kullanıcı: "ana menüdeki cami etrafındaki parantezi de yeni
+   versiyonu ile güncelleyelim") — Ayarlar'daki âyet rozeti seçimine uyar: Çiçekli seçiliyse
+   CiniAyetRozeti'nin yarısı (aynı yollar, aynı palet), Klasik seçiliyse eski çizim. */
+function RozetYarisi({ x, y, k = 1, ayna = false, renk, t }) {
+  const stil = useAyetRozeti()
+  if (stil !== "klasik" && t) {
+    return (
+      <g transform={`translate(${x} ${y}) scale(${ayna ? -k : k} ${k})`}>
+        <CicekliYarimCizim p={ciniPalet(renk, t.surface, t.text, t.lugatHighlight)} />
+      </g>
+    )
+  }
   return (
     <g transform={`translate(${x} ${y}) scale(${ayna ? -k : k} ${k})`} style={{ fill: renk, transition: GECIS }}>
       <path d="M0 -19 C-11 -18.5 -17 -10 -17 0 C-17 10 -11 18.5 0 19 C-6 13 -6.5 -13 0 -19 Z" opacity=".92" />
@@ -255,6 +269,70 @@ function AyiracDali({ y, t }) {
   )
 }
 
+/* ── ÖRNEK LÜGAT KELİMESİ (11 Kasım 2026) ─────────────────────────────────
+   Kullanıcı: "'saadetine' kısmındaki 'saadet' kısmı işaretli kalsın, aynı bizdeki gibi
+   tıklanabilir olsun, bizdeki gibi pop up açılıp anlamını göstersin." Yalnız kök kelime
+   işaretli (eki düz yazı); dokununca okuma ekranındaki lügat penceresinin aynısı açılır.
+   Anlam uygulamanın lügatinden (data/lugat.json) — 2,5 MB olduğu için ana pakete girmesin
+   diye ilk dokunuşta ayrı parça olarak yüklenir. Pencere body'ye taşınıyor (portal): alt
+   sayfa transform'lu, içindeki position:fixed ona göre konumlanırdı. */
+let lugatBellek = null
+function lugatAnlami(kelime) {
+  if (lugatBellek) return Promise.resolve(lugatBellek[kelime] || null)
+  return import("../data/lugat.json").then(m => { lugatBellek = m.default || m; return lugatBellek[kelime] || null })
+}
+function OrnekLugat({ t, kelime }) {
+  const { theme } = useApp()
+  const [p, setP] = useState(null)
+  const kutuRef = useRef(null)
+  const ac = (e) => {
+    e.stopPropagation()
+    const r = e.currentTarget.getBoundingClientRect()
+    const pw = Math.min(300, window.innerWidth * 0.92)
+    const x = Math.max(8, Math.min(r.left + r.width / 2 - pw / 2, window.innerWidth - pw - 8))
+    const altta = r.bottom + 8 + 120 <= window.innerHeight
+    setP({ x, y: altta ? r.bottom + 8 : null, alt: altta ? null : window.innerHeight - r.top + 8, anlam: undefined })
+    lugatAnlami(kelime).then(a => setP(o => (o ? { ...o, anlam: a } : o))).catch(() => setP(o => (o ? { ...o, anlam: null } : o)))
+  }
+  useEffect(() => {
+    if (!p) return
+    const tus = (e) => { if (e.key === "Escape") setP(null) }
+    window.addEventListener("keydown", tus)
+    return () => window.removeEventListener("keydown", tus)
+  }, [p])
+  const th = theme || t
+  return (
+    <>
+      <span role="button" tabIndex={0} onClick={ac} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); ac(e) } }}
+        aria-label={`${kelime} — lügat`}
+        style={{ color: t.lugatHighlight, borderBottom: `1px dotted ${t.lugatHighlight}`, transition: "color .35s ease", cursor: "pointer", pointerEvents: "auto" }}>
+        {kelime}
+      </span>
+      {p && typeof document !== "undefined" && createPortal(
+        <>
+          <div onClick={() => setP(null)} style={{ position: "fixed", inset: 0, zIndex: 1299 }} />
+          <div ref={kutuRef} role="dialog" aria-label={`${kelime} anlamı`} style={{
+            position: "fixed", left: p.x, ...(p.y != null ? { top: p.y } : { bottom: p.alt }),
+            background: th.surface, border: `1px solid ${th.border}`,
+            borderRadius: "12px", padding: "14px 18px", zIndex: 1300,
+            width: "300px", maxWidth: "92vw", maxHeight: "25vh", overflowY: "auto", boxSizing: "border-box",
+            boxShadow: "0 8px 24px rgba(0,0,0,0.15)", fontFamily: "inherit", textAlign: "left",
+          }}>
+            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "8px" }}>
+              <div style={{ color: th.accent, fontWeight: "bold", fontSize: "16px", marginBottom: "6px" }}>{kelime}</div>
+              <button onClick={() => setP(null)} aria-label="Kapat" style={{ background: "none", border: "none", cursor: "pointer", color: th.textSecondary, padding: "2px", display: "flex" }}><X size={14} /></button>
+            </div>
+            <div style={{ color: th.textSecondary, fontSize: "14px", lineHeight: "1.5" }}>
+              {p.anlam === undefined ? "…" : (p.anlam || "Lügatte bulunamadı.")}
+            </div>
+          </div>
+        </>,
+        document.body,
+      )}
+    </>
+  )
+}
+
 function CamiOnizleme({ t, ad }) {
   const f = (fill, stroke, sw, ek) => ({ fill, stroke, strokeWidth: sw, transition: GECIS, ...ek })
   const yuzey = f(t.surface, t.border, 1.2)
@@ -300,7 +378,10 @@ function CamiOnizleme({ t, ad }) {
     if (el.scrollHeight > el.clientHeight + 1 && ayetOlcek > 0.8) setAyetOlcek(o => +(o * 0.94).toFixed(3))
   })
   // Kullanıcı: "piksel biraz artmalı, rozet de dengeli büyümeli; 2 satırdan fazla olabilir"
-  const ayetFs = Math.max(14, 14.6 * k * ayetOlcek)
+  // SIKIŞIK (11 Kasım 2026): yatay telefonda Ayarlar'ın sol sütununda cami ekran boyuna
+  // sığsın diye ~250 px'e iniyor → alt sınırlar küçülür, künye kısalır (taşmasın).
+  const sikisik = k < 0.95
+  const ayetFs = Math.max(sikisik ? 10 : 14, 14.6 * k * ayetOlcek)
 
   const minare = (x) => (
     <g>
@@ -351,8 +432,8 @@ function CamiOnizleme({ t, ad }) {
         {/* yan kanatlar: çiçek + âyet rozetinin açılış / kapanış yarısı */}
         <RozetSekli cx={49} cy={160} r={12} t={t} />
         <RozetSekli cx={251} cy={160} r={12} t={t} />
-        <RozetYarisi x={54} y={246} k={0.95} renk={t.ayetNoRengi || t.accent} />
-        <RozetYarisi x={246} y={246} k={0.95} ayna renk={t.ayetNoRengi || t.accent} />
+        <RozetYarisi x={54} y={246} k={0.95} renk={t.ayetNoRengi || t.accent} t={t} />
+        <RozetYarisi x={246} y={246} k={0.95} ayna renk={t.ayetNoRengi || t.accent} t={t} />
 
         {/* MİHRAP: çerçeve (pîştak) + sivri kemerli niş — metin için genişletildi */}
         <rect x="68" y="144" width="164" height={ZEMIN - 144} style={f(t.surface, t.accent, 1.1)} />
@@ -410,14 +491,15 @@ function CamiOnizleme({ t, ad }) {
         height: `${((ZEMIN - 5 - SOZ_UST) / (VB_Y2 - VB_Y)) * 100}%`,
         display: "flex", flexDirection: "column", justifyContent: "flex-end",
         textAlign: "center", color: t.textSecondary, transition: "color .35s ease",
-        fontSize: `${Math.max(9.5, 8.6 * k)}px`, lineHeight: 1.35, fontFamily: "inherit",
+        fontSize: `${Math.max(sikisik ? 8 : 9.5, 8.6 * k)}px`, lineHeight: sikisik ? 1.28 : 1.35, fontFamily: "inherit",
       }}>
         <div style={{ color: t.text, transition: "color .35s ease" }}>
           İlim bizzat lezzetlidir; âhiret{" "}
-          <span style={{ color: t.lugatHighlight, borderBottom: `1px dotted ${t.lugatHighlight}`, transition: "color .35s ease" }}>saadetine</span>
-          {" "}de vesiledir.
+          <OrnekLugat t={t} kelime="saadet" />ine{" "}de vesiledir.
         </div>
-        <div style={{ fontSize: `${Math.max(8.5, 7.2 * k)}px`, marginTop: `${1.5 * k}px`, opacity: 0.85 }}>İmam Gazâlî · İhyâ, Kitâbü'l-İlm</div>
+        <div style={{ fontSize: `${Math.max(sikisik ? 7.5 : 8.5, 7.2 * k)}px`, marginTop: `${1.5 * k}px`, opacity: 0.85 }}>
+          {sikisik ? "İmam Gazâlî · İhyâ" : "İmam Gazâlî · İhyâ, Kitâbü'l-İlm"}
+        </div>
       </div>
     </div>
   )
@@ -461,12 +543,61 @@ function Rozet({ t, secili, boyut, halkaRengi }) {
    (hazır temalar gibi, anında); kalem düzenleme panelini açar; 2. ve 3. temada çöp kutusu
    siler. Liste dolmadıysa sonda kısa "Yeni tema" düğmesi: görünen temanın renkleriyle yeni
    bir özel tema kurar, seçer ve düzenleme panelini açar. onOzel(tema) düzenlenecek temayı alır. */
-export default function TemaSecici({ theme, duzen = "kart", onOzel, onSec, kalemBoyu }) {
+/* ── GÖSTERİLEN TEMA (önizleme) — ortak depo (11 Kasım 2026) ──────────────
+   Yatay ekranda Ayarlar iki sütun: cami önizlemesi SOLDA ayrı (TemaOnizlemesi), rozetler
+   SAĞDA Tema bölümünde (TemaSecici onizlemesiz). Otomatik tonda öbür tonun rozetine
+   dokununca önizleme onu göstermeli → "önizlenen tema" iki bileşen arasında paylaşılıyor. */
+let onizDurum = null
+const onizDinleyici = new Set()
+function onizYaz(v) { if (onizDurum === v) return; onizDurum = v; onizDinleyici.forEach(f => f()) }
+const onizAbone = (f) => { onizDinleyici.add(f); return () => onizDinleyici.delete(f) }
+function useGosterilenTema(theme) {
+  const { currentTheme, customTheme, ozelTemalar = [] } = useApp()
+  const onizId = useSyncExternalStore(onizAbone, () => onizDurum, () => onizDurum)
+  const ozelBul = (id) => ozelTemalar.find(t => t.id === id)
+  const gosterilen = onizId || currentTheme
+  const gt = ozelMi(gosterilen) ? (ozelBul(gosterilen) || customTheme) : (themes[gosterilen] || theme)
+  const gAd = ozelMi(gosterilen) ? (gt.name || "Özel") : gt.name
+  const gAciklama = ozelMi(gosterilen) ? "Kişisel renk ayarları" : (gt.aciklama || "")
+  const bekleyenTon = onizId ? temaTonu(gt) : null
+  return { gt, gAd, gAciklama, bekleyenTon }
+}
+
+function OnizlemeAlani({ theme, dar = false }) {
+  const { gt, gAd, gAciklama, bekleyenTon } = useGosterilenTema(theme)
+  return (
+    <>
+      {/* Önizleme panel genişliğince büyür (400 px'e kadar) — mihraptaki âyet ve
+          söz küçük ekranda da okunaklı kalsın (kullanıcı: "böyle hiç okunmuyor"). */}
+      <div className="vts-cami" style={{ maxWidth: "400px", margin: "18px auto 0", padding: "0 2px" }}>
+        <CamiOnizleme t={gt} ad={gAd} />
+      </div>
+      <div style={{
+        textAlign: "center", fontSize: dar ? "10.5px" : "11.5px", color: theme.textSecondary,
+        margin: "6px 4px 0", minHeight: "1.3em", lineHeight: 1.35,
+      }}>
+        {bekleyenTon
+          ? <>Cihaz {TON_ADI[bekleyenTon].toLocaleLowerCase("tr")} tona geçince uygulanacak</>
+          : gAciklama}
+      </div>
+    </>
+  )
+}
+
+/* Yatay Ayarlar'ın sol sütunu: cami + tema bilgisi (TemaSecici onizlemesiz ile birlikte) */
+export function TemaOnizlemesi({ theme }) {
+  const { currentTheme, tonModu } = useApp()
+  useEffect(() => { onizYaz(null) }, [currentTheme, tonModu])
+  return <div className="vts-onizleme-yan"><OnizlemeAlani theme={theme} /></div>
+}
+
+export default function TemaSecici({ theme, duzen = "kart", onOzel, onSec, kalemBoyu, onizlemesiz = false }) {
   const {
     currentTheme, setCurrentTheme, customTheme,
     tonModu, tonSec, tonFavori, sistemTonu,
     ozelTemalar = [], ozelTemaEkle, ozelTemaSil,
   } = useApp()
+  const setOnizId = onizYaz
   const dar = duzen === "satir"
   const oto = tonModu === "oto"
   const gruplar = oto ? ["acik", "koyu"] : [tonModu]
@@ -474,13 +605,7 @@ export default function TemaSecici({ theme, duzen = "kart", onOzel, onSec, kalem
 
   // Otomatik'te öbür tonun rozetine dokununca tema hemen uygulanmıyor; önizleme
   // yine de onu göstersin. Görünen tema ya da mod değişince sıfırlanır.
-  const [onizId, setOnizId] = useState(null)
-  useEffect(() => { setOnizId(null) }, [currentTheme, tonModu])
-  const gosterilen = onizId || currentTheme
-  const gt = ozelMi(gosterilen) ? (ozelBul(gosterilen) || customTheme) : (themes[gosterilen] || theme)
-  const gAd = ozelMi(gosterilen) ? (gt.name || "Özel") : gt.name
-  const gAciklama = ozelMi(gosterilen) ? "Kişisel renk ayarları" : (gt.aciklama || "")
-  const bekleyenTon = onizId ? temaTonu(gt) : null
+  useEffect(() => { setOnizId(null) }, [currentTheme, tonModu])   // eslint-disable-line react-hooks/exhaustive-deps
 
   function ogeler(ton) {
     const liste = TEMALAR
@@ -519,31 +644,19 @@ export default function TemaSecici({ theme, duzen = "kart", onOzel, onSec, kalem
   const boyut = dar ? 44 : 54
 
   return (
-    <div className={dar ? "yp-tam" : "vts-kart"}>
+    <div className={dar ? "yp-tam" : onizlemesiz ? undefined : "vts-kart"}>
     {/* YATAY TELEFON (kart düzeni): cami önizleme solda sabit, ton anahtarı ve
         rozetler sağda — kabuk ≥540 px ise (yatayDuzen.js, kap sorgusu). Kap
         kendi kendini biçimleyemediği için ızgara bu iç sarmalayıcıda. */}
-    <div className={dar ? undefined : "vts-kart-ic"}>
+    <div className={dar || onizlemesiz ? undefined : "vts-kart-ic"}>
       <style>{STIL}</style>
       <TonAnahtari theme={theme} tonModu={tonModu} tonSec={tonSec} dar={dar} />
 
       {/* ── Cami önizleme (ortada mihrap) — YALNIZ Ayarlar'da. Okuma panelleri
           dar ve zaten arkalarında sayfanın kendisi görünüyor; orada cami yok,
           liste satırlarında soldaki küçük kutu yerine tezhip çiçeği var. ── */}
-      {!dar && <div className="vts-onizleme">
-      {/* Önizleme panel genişliğince büyür (400 px'e kadar) — mihraptaki âyet ve
-          söz küçük ekranda da okunaklı kalsın (kullanıcı: "böyle hiç okunmuyor"). */}
-      <div className="vts-cami" style={{ maxWidth: "400px", margin: "18px auto 0", padding: "0 2px" }}>
-        <CamiOnizleme t={gt} ad={gAd} />
-      </div>
-      <div style={{
-        textAlign: "center", fontSize: dar ? "10.5px" : "11.5px", color: theme.textSecondary,
-        margin: "6px 4px 0", minHeight: "1.3em", lineHeight: 1.35,
-      }}>
-        {bekleyenTon
-          ? <>Cihaz {TON_ADI[bekleyenTon].toLocaleLowerCase("tr")} tona geçince uygulanacak</>
-          : gAciklama}
-      </div>
+      {!dar && !onizlemesiz && <div className="vts-onizleme">
+        <OnizlemeAlani theme={theme} dar={dar} />
       </div>}
 
       {oto && (

@@ -22,9 +22,10 @@
 
 import { ChevronDown } from "lucide-react"
 
-export default function Katlanir({ theme, ikon: Ikon, baslik, ozet, acik, onAc, children }) {
+// stil / className (11 Kasım 2026): yatay Ayarlar'da açılan bölüm öne alınıyor (order), Navbar verir
+export default function Katlanir({ theme, ikon: Ikon, baslik, ozet, acik, onAc, children, stil, className }) {
   return (
-    <div style={{ borderBottom: `1px solid ${theme.border}` }}>
+    <div className={className} style={{ borderBottom: `1px solid ${theme.border}`, ...stil }}>
       <button
         onClick={onAc}
         aria-expanded={acik}

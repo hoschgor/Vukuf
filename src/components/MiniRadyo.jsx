@@ -20,6 +20,7 @@ import { useRadyo, radyoZamanlayici } from "../data/radyo"
 import { useZamanlayici } from "../data/otomatikDurdurma"
 import { UykuRozeti } from "./OtomatikDurdurmaSecici"
 import { useHapKonumu } from "./DonusDugmesi"
+import { useEkstraDuzen } from "../data/ekstraDuzen"
 
 const KUCUK_ANAHTAR = "vukuf-mini-radyo-kucuk"
 const CSS = `@keyframes vk-radyo-dalga{0%,100%{opacity:.25}50%{opacity:1}}
@@ -54,7 +55,9 @@ export function RadyoAmblemi({ ac, zemin, calar, boy = 34 }) {
 export default function MiniRadyo() {
   const radyo = useRadyo()
   const location = useLocation()
-  if (!radyo || !radyo.istasyon || location.pathname === "/ekstralar") return null
+  // Ekstralar'da radyo kartı varken hap gizli; kart gizlendiyse hap orada da görünür (11 Kasım 2026)
+  const duzen = useEkstraDuzen()
+  if (!radyo || !radyo.istasyon || (location.pathname === "/ekstralar" && !duzen.gizli.includes("radyo"))) return null
   return <RadyoHapi radyo={radyo} kitapta={location.pathname.startsWith("/kitap/")} />
 }
 

@@ -3833,16 +3833,20 @@ function donuseGit(i) {
      büyüyor fakat kutulara sığmayabiliyor … sûre menüsü gibi menüler sağa sola gezilebiliyor").
      Panellerin eni sabit px'ti, içindeki yazılar ise arayüz ölçeğiyle büyüyordu → taşma ve yatay
      kaydırma. Artık en de ölçekle büyür (küçülürken eski en kalır), ekranı aşmaz. */
-  const olcekliEn = (n) => `min(${Math.round(n * Math.max(1, barUiOlcegi))}px, calc(100vw - 56px))`
+  // EKRANI KAPLAMASIN (12 Kasım 2026): en en çok ×1,3 büyür ve ekranın %78'ini geçmez;
+  // büyük yazı içeride satır kırarak sığar.
+  const olcekliEn = (n) => `min(${Math.round(n * Math.min(1.3, Math.max(1, barUiOlcegi)))}px, 78vw, calc(100vw - 56px))`
   const panelStil = (konum, en = 620) => ({
     position: "fixed",
     overflowX: "hidden",                 // yatay kaydırma olmasın (yazılar sarar)
-    // MENÜ MODUNDA bar yok: panel üstten küçük bir payla başlar (oynatıcı altta)
+    // MENÜ MODUNDA bar yok ve menü ortada açılıyor → öbür pencereler de ekranın ORTASINDA
+    // açılır (12 Kasım 2026, kullanıcı: "ortalanmış menü aktifken ayarlar gibi diğer pencerelerin
+    // de ortalanması gerekiyor"). Oynatıcı açıksa onun yüksekliği kadar yukarıda ortalanır.
     ...(ortaBar
-      ? { top: "max(12px, env(safe-area-inset-top))" }
+      ? { top: `calc(50% - ${player.durum !== "kapali" ? Math.round(playerBarYuksekligi / 2) : 0}px)`, left: "50%", transform: "translate(-50%, -50%)" }
       : { [barKonum === "alt" ? "bottom" : "top"]: `${panelPayi}px` }),
     ...ypDegisken({ pay: ortaBar ? 24 + (player.durum !== "kapali" ? playerBarYuksekligi : 0) : panelPayi + 12, en, cizgi: theme.border }),
-    ...(konum === "right"
+    ...(ortaBar ? null : konum === "right"
       ? { right: "12px" }
       : konum === "left"
       ? { left: "12px" }
@@ -3858,7 +3862,10 @@ function donuseGit(i) {
   })
 
   // Menü modunda bar öğeleri büyür
-  const barOlcegi = ortaBar ? barUiOlcegi * ORTA_OLCEK : barUiOlcegi
+  // MENÜ MODUNDA ölçek yumuşatılır (12 Kasım 2026): arayüz %160'ta menü düğmeleri ×1,79 oluyor,
+  // orta menü ekranı kaplıyordu. Artık arayüz büyümesinin %60'ı yansır (×1,52) — düğmeler yine
+  // rahat seçilir ama menü ekranı doldurmaz.
+  const barOlcegi = ortaBar ? (1 + (barUiOlcegi - 1) * 0.6) * ORTA_OLCEK : barUiOlcegi
   const barButonStil = (aktif = false) => ({
   display: "flex", alignItems: "center", gap: "4px",
   padding: isMobile 

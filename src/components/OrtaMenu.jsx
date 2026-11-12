@@ -615,7 +615,8 @@ export function OrtaMenuCercevesi({ menu, theme, olcek = 1, etiket = "Okuma men�
           position: "fixed", left: "50%", top: ust, zIndex: 90,
           transform: `translate(-50%, -50%) scale(${acik ? 1 : 0.95})`,
           // Yanlarda palmetlere yer
-          width: `min(calc(100vw - ${2 * TASMA_YAN}px), ${Math.round(460 * olcek)}px)`,
+          // En arayüz boyutuyla en çok ×1,3 büyür — menü ekranı kaplamasın (12 Kasım 2026)
+          width: `min(calc(100vw - ${2 * TASMA_YAN}px), ${Math.round(460 * Math.min(1.3, olcek))}px)`,
           maxHeight: `min(84vh, calc(100vh - ${2 * TASMA_UST + 40}px))`,
           boxSizing: "border-box", padding: "18px 22px",
           display: "flex", flexDirection: "column",

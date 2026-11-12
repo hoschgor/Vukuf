@@ -2937,7 +2937,10 @@ if (yukleniyor) return <YuklemeEkrani theme={theme} yukseklik="100vh" />
 // ════════════════════════════════════════════════════
 
 // Menü modunda bar öğeleri büyür (dokunması rahat olsun)
-const barOlcegi = ortaBar ? barUiOlcegi * ORTA_OLCEK : barUiOlcegi
+// MENÜ MODUNDA ölçek yumuşatılır (12 Kasım 2026): arayüz %160'ta menü düğmeleri ×1,79 oluyor,
+// orta menü ekranı kaplıyordu. Artık arayüz büyümesinin %60'ı yansır (×1,52) — düğmeler yine
+// rahat seçilir ama menü ekranı doldurmaz.
+const barOlcegi = ortaBar ? (1 + (barUiOlcegi - 1) * 0.6) * ORTA_OLCEK : barUiOlcegi
 const barButonStil = (aktif = false) => ({
   color: theme.accent,
   display: "flex", alignItems: "center", gap: "4px",
@@ -3019,16 +3022,21 @@ const gorselYap = () => {
 // (56 px bar payı + karşı kenarda 12 px). Dikey düzende etkisi yok (yatayDuzen.js).
 // ARAYÜZ BOYUTU → PANEL ENİ (12 Kasım 2026): yazılar arayüz ölçeğiyle büyürken panel eni sabit
 // kalıyor, içerik taşıyordu. En de ölçekle büyür (küçülürken eski en kalır), ekranı aşmaz.
-const olcekliEn = (n) => `min(${Math.round(n * Math.max(1, barUiOlcegi))}px, calc(100vw - 56px))`
+// EKRANI KAPLAMASIN (12 Kasım 2026, kullanıcı: "arayüz boyutunun çok büyük olması açılan menülerin
+// ekranı kaplamasına sebep oluyor"): en, yazıyla birlikte değil en çok ×1,3 büyür ve ekranın
+// %78'ini geçmez; büyük yazı içeride satır kırarak sığar.
+const olcekliEn = (n) => `min(${Math.round(n * Math.min(1.3, Math.max(1, barUiOlcegi)))}px, 78vw, calc(100vw - 56px))`
 const panelStil = (konum = "center", en = 620) => ({
   position: "fixed",
   overflowX: "hidden",                 // yatay kaydırma olmasın (yazılar sarar)
-  // MENÜ MODUNDA bar yok: panel üstten küçük bir payla başlar (bar varmış gibi 56 px bırakılmaz)
+  // MENÜ MODUNDA bar yok ve menü ortada açılıyor → öbür pencereler de (Ayarlar, Tema…)
+  // ekranın ORTASINDA açılır (12 Kasım 2026, kullanıcı: "ortalanmış menü aktifken ayarlar gibi
+  // diğer pencerelerin de ortalanması gerekiyor").
   ...(ortaBar
-    ? { top: "max(12px, env(safe-area-inset-top))" }
+    ? { top: "50%", left: "50%", transform: "translate(-50%, -50%)" }
     : { [barKonum === "alt" ? "bottom" : "top"]: "56px" }),
   ...ypDegisken({ pay: ortaBar ? 24 : 68, en, cizgi: theme.border }),
-  ...(konum === "center"
+  ...(ortaBar ? null : konum === "center"
     ? { left: "50%", transform: "translateX(-50%)" }
     : { [konum]: "16px" }),
   background: theme.surface,
@@ -4065,7 +4073,7 @@ const MenuPanel = menuAcik && (
   <>
     <div onClick={() => setMenuAcik(false)} style={{ position: "fixed", inset: 0, zIndex: 149 }} />
     <div className="okuma-panel" style={{
-      position: "fixed", left: 0, width: `${Math.round(300 * barUiOlcegi)}px`, maxWidth: "85vw", overflowX: "hidden",
+      position: "fixed", left: 0, width: `${Math.round(300 * Math.min(1.3, Math.max(1, barUiOlcegi)))}px`, maxWidth: "82vw", overflowX: "hidden",
       // MENÜ BARIN ÜSTÜNE BİNMEZ — mushaf tarafındaki sûre menüsüyle aynı mantık.
       // Eskiden `top: 0, bottom: 0` idi ve panel (zIndex 150) barı (zIndex 90)
       // tamamen örtüyordu: menü açıkken bar görünmüyor, son öge de barın altında
@@ -4322,10 +4330,11 @@ const Bar = (
     {/* Hız kutusu oto düğmesiyle AYNI order'ı alır → sıralamada onun yanında kalır.
         order verilmezse 0'a düşüp barın en başına atlıyordu. */}
     {gorunurMu("oto") && otomatikKaydirma && (
-      <div style={{ display: "flex", alignItems: "center", gap: "4px", ...barOge("oto") }}>
-        <button onClick={() => setKaydirmaHizi(Math.max(1, kaydirmaHizi - 1))} style={{ ...barButonStil(), padding: "2px" }}><Minus size={bIkon(13)} /></button>
-        <span style={{ fontSize: "12px", color: theme.textSecondary }}>{kaydirmaHizi}</span>
-        <button onClick={() => setKaydirmaHizi(Math.min(20, kaydirmaHizi + 1))} style={{ ...barButonStil(), padding: "2px" }}><Plus size={bIkon(13)} /></button>
+      // Hız rakamı ve düğmeleri de arayüz boyutuyla büyür (12 Kasım 2026 — rakam 12 px'te sabit kalıyordu)
+      <div style={{ display: "flex", alignItems: "center", gap: `${Math.round(4 * barOlcegi)}px`, ...barOge("oto") }}>
+        <button onClick={() => setKaydirmaHizi(Math.max(1, kaydirmaHizi - 1))} aria-label="Yavaşlat" style={{ ...barButonStil(), padding: `${Math.round(3 * barOlcegi)}px` }}><Minus size={bIkon(14)} /></button>
+        <span style={{ fontSize: `${Math.round(13 * barOlcegi)}px`, fontWeight: 600, color: theme.text, minWidth: `${Math.round(16 * barOlcegi)}px`, textAlign: "center", fontVariantNumeric: "tabular-nums" }}>{kaydirmaHizi}</span>
+        <button onClick={() => setKaydirmaHizi(Math.min(20, kaydirmaHizi + 1))} aria-label="Hızlandır" style={{ ...barButonStil(), padding: `${Math.round(3 * barOlcegi)}px` }}><Plus size={bIkon(14)} /></button>
       </div>
     )}
 

@@ -7,7 +7,6 @@ import { mushafYukle, mushafHazirMi } from "../data/mushafVerisi"
 import { tecvidAyikla, ozelOkuyusAyikla } from "./MushafKelime"
 import AyetRozeti from "./AyetRozeti"
 import { CicekliYarimCizim, ciniPalet } from "./CiniAyetRozeti"
-import { useAyetRozeti } from "../data/ayetRozeti"
 import { dalPaleti } from "./DalSusu"
 // Yatay telefonda kart düzeni iki sütun, satır düzeni çok sütun (bkz. yatayDuzen.js)
 import "./yatayDuzen"
@@ -193,40 +192,14 @@ function useOrnekAyet(etkin) {
   return metin
 }
 
-/* Âyet sonu rozetinin bir yarısı — MushafAyetRozeti'nin (GorselOlustur'daki canvas
-   sürümüyle aynı yollar) sol parçası. Yan kanatlarda pencere yerine: solda açılış,
-   sağda aynalanmış kapanış; mihrabı âyet gibi çerçeveliyor. */
-/* ÇİÇEKLİ SÜRÜM (11 Kasım 2026, kullanıcı: "ana menüdeki cami etrafındaki parantezi de yeni
-   versiyonu ile güncelleyelim") — Ayarlar'daki âyet rozeti seçimine uyar: Çiçekli seçiliyse
-   CiniAyetRozeti'nin yarısı (aynı yollar, aynı palet), Klasik seçiliyse eski çizim. */
+/* Âyet sonu rozetinin bir yarısı — yan kanatlarda pencere yerine: solda açılış, sağda
+   aynalanmış kapanış; mihrabı âyet gibi çerçeveliyor. 11 Kasım 2026'dan beri çiçekli rozetin
+   yarısı (CiniAyetRozeti ile aynı yollar, aynı palet); 12 Kasım 2026'da klasik dal kaldırıldı
+   (yedeği MushafAyetRozeti.jsx.yedek). */
 function RozetYarisi({ x, y, k = 1, ayna = false, renk, t }) {
-  const stil = useAyetRozeti()
-  if (stil !== "klasik" && t) {
-    return (
-      <g transform={`translate(${x} ${y}) scale(${ayna ? -k : k} ${k})`}>
-        <CicekliYarimCizim p={ciniPalet(renk, t.surface, t.text, t.lugatHighlight)} />
-      </g>
-    )
-  }
   return (
-    <g transform={`translate(${x} ${y}) scale(${ayna ? -k : k} ${k})`} style={{ fill: renk, transition: GECIS }}>
-      <path d="M0 -19 C-11 -18.5 -17 -10 -17 0 C-17 10 -11 18.5 0 19 C-6 13 -6.5 -13 0 -19 Z" opacity=".92" />
-      <path d="M-2 -14 C-7 -13.5 -12 -6.5 -12 0 C-12 6.5 -7 13.5 -2 14" fill="none" stroke={renk} strokeWidth=".6" opacity=".45" />
-      <path d="M-8 -24 C-9.5 -17 -8 -8.5 -7 0 C-8 8.5 -9.5 17 -8 24" fill="none" stroke={renk} strokeWidth=".8" opacity=".5" />
-      <path d="M-2 -19 C1 -22 3 -26 2 -31 C-2 -30 -6 -24 -1 -18.5 Z" />
-      <path d="M-2 19 C1 22 3 26 2 31 C-2 30 -6 24 -1 18.5 Z" />
-      <path d="M-8 -17 C-12 -18 -15.5 -16.5 -17 -13.5 C-14.5 -13 -12 -14 -10.5 -16 C-11 -13.5 -12.5 -11.5 -15.5 -11 C-12.5 -10 -9 -12 -7.5 -15 Z" opacity=".85" />
-      <path d="M-8 17 C-12 18 -15.5 16.5 -17 13.5 C-14.5 13 -12 14 -10.5 16 C-11 13.5 -12.5 11.5 -15.5 11 C-12.5 10 -9 12 -7.5 15 Z" opacity=".85" />
-      <path d="M-16.5 -1.8 L-15 0 L-16.5 1.8 L-18 0 Z" opacity=".55" />
-      <path d="M-5.5 -7.5 C-7.5 -8.5 -10 -8 -11 -6 C-9 -5.5 -7 -6 -5.5 -7.5 Z" opacity=".7" />
-      <path d="M-5.5 7.5 C-7.5 8.5 -10 8 -11 6 C-9 5.5 -7 6 -5.5 7.5 Z" opacity=".7" />
-      <circle cx="-12" cy="-22" r="0.9" opacity=".5" /><circle cx="-14.5" cy="-20.5" r="0.5" opacity=".35" />
-      <circle cx="-12" cy="22" r="0.9" opacity=".5" /><circle cx="-14.5" cy="20.5" r="0.5" opacity=".35" />
-      <circle cx="-9" cy="-3.5" r="0.7" opacity=".55" /><circle cx="-9" cy="3.5" r="0.7" opacity=".55" />
-      <path d="M-4 -19 C-6 -24 -9 -27 -14 -27 C-11 -24 -8 -21 -4 -19 Z" opacity=".7" />
-      <path d="M-1 -19 C1 -24 3 -27 8 -27 C5 -24 2 -21 -1 -19 Z" opacity=".5" />
-      <path d="M-4 19 C-6 24 -9 27 -14 27 C-11 24 -8 21 -4 19 Z" opacity=".7" />
-      <path d="M-1 19 C1 24 3 27 8 27 C5 24 2 21 -1 19 Z" opacity=".5" />
+    <g transform={`translate(${x} ${y}) scale(${ayna ? -k : k} ${k})`}>
+      <CicekliYarimCizim p={ciniPalet(renk, t.surface, t.text, t.lugatHighlight)} />
     </g>
   )
 }

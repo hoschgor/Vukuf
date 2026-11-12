@@ -1,18 +1,12 @@
-// ÂYET ROZETİ — seçili stile göre Çini ya da Klasik rozeti çizer (11 Kasım 2026).
-// `stil` verilirse onu kullanır (MushafSayfa stili bir kez okuyup geçiriyor — her rozet ayrı
-// abone olmasın); verilmezse ayarı kendisi okur (bilgi paneli, tema önizlemesi vb.).
-import MushafAyetRozeti from "./MushafAyetRozeti"
+// ÂYET ROZETİ — çiçekli rozet (CiniAyetRozeti) temanın renkleriyle (11 Kasım 2026).
+// 12 Kasım 2026: klasik rozet kaldırıldı (kullanıcı: "Artık çiçekli olan rozetimiz varsayılan,
+// öncekini kaldırabiliriz"); eski çizim ve seçim deposu MushafAyetRozeti.jsx.yedek dosyasında.
+// `stil` prop'u artık yok sayılıyor (eski çağrılar bozulmasın diye kabul ediliyor).
 import CiniAyetRozeti from "./CiniAyetRozeti"
-import { useAyetRozeti } from "../data/ayetRozeti"
 
-function Sec({ stil, theme, ...p }) {
-  if (stil === "klasik" || !theme) return <MushafAyetRozeti {...p} />
-  return <CiniAyetRozeti {...p} zemin={theme.background} yazi={theme.text} vurgu={theme.lugatHighlight || null} />
-}
-function Kendi(props) {
-  const stil = useAyetRozeti()
-  return <Sec {...props} stil={stil} />
-}
-export default function AyetRozeti({ stil, ...props }) {
-  return stil ? <Sec {...props} stil={stil} /> : <Kendi {...props} />
+// Eski seçimin cihazda kalan kaydı temizlensin (bir kez)
+try { localStorage.removeItem("vukuf-ayet-rozeti") } catch { /* yoksay */ }
+
+export default function AyetRozeti({ stil: _stil, theme, ...p }) { // eslint-disable-line no-unused-vars
+  return <CiniAyetRozeti {...p} zemin={theme?.background} yazi={theme?.text} vurgu={theme?.lugatHighlight || null} />
 }

@@ -222,11 +222,12 @@ const KONULAR = [
   },
   {
     bolum: "kuran", ikon: Gem, baslik: "Âyet rozeti",
-    ozet: "Âyet numarasının çiçekli ya da klasik çerçevesi.",
-    nerede: "Kur'ân-ı Kerîm → Ayarlar → Okuma Düzeni → Âyet rozeti",
+    ozet: "Âyet numarasının çiçekli çerçevesi.",
+    nerede: "Kur'ân-ı Kerîm → âyet numaraları",
     metin: [
-      "Âyet numaraları iki biçimde çerçevelenebilir. Çiçekli rozette klasik rozetin uçları aynen durur; ortadaki kavis inceltilmiştir ve ortasında, cami kitâbelerindeki gibi kat kat yapraklı bir hatâyî çiçeği vardır, çiçekten uçlara ince dallar uzanır. Klasik rozet önceki görünümdür.",
-      "Rozetin renkleri temanın âyet no renginden türetilir; Ayarlar → Tema'dan âyet no rengi değiştirilirse rozet de ona uyar.",
+      "Âyet numaraları çiçekli bir rozetle çerçevelenir: iki yanda rûmî uçlu ince birer kavis, ortalarında da cami kitâbelerindeki gibi kat kat yapraklı bir hatâyî çiçeği yer alır; çiçekten uçlara ince dallar uzanır.",
+      "Aynı rozet mushaf sayfasında, âyet bilgi pencerelerinde, izleme modunda ve oluşturulan görsel ile videolarda kullanılır.",
+      "Rozetin renkleri temanın âyet no renginden türetilir; Ayarlar → Tema'dan âyet no rengi değiştirilirse rozet de ona uyar. İzleme modunda ve görsellerde rozet, yazı renginde ve kat kat saydamlıkla çizilir.",
     ],
     anahtar: "âyet rozeti numara parantez çiçekli hatayi kitâbe klasik çerçeve çiçek",
   },

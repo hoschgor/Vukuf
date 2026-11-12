@@ -17,7 +17,6 @@ import SureBasligi from "../components/SureBasligi"
 import Besmele from "../components/Besmele"
 import MushafSayfa from "../components/MushafSayfa"
 import AyetRozeti from "../components/AyetRozeti"
-import { useAyetRozeti, ayetRozetiYaz, AYET_ROZETLERI } from "../data/ayetRozeti"
 import { gorselIcinTemizle, tecvidAyikla, ozelOkuyusAyikla, VAKIF_HARF_KOD } from "../components/MushafKelime"
 import RenkliTecvidBolumu from "../components/RenkliTecvidBolumu"
 import PlayerBar from "../components/PlayerBar"
@@ -1167,8 +1166,6 @@ export default function KuranOkuma({ kitap }) {
     try { return localStorage.getItem("vukuf-ayet-meali") !== "false" } catch { return true }
   })
   const kelimeMealiRef = useRef(kelimeMeali)
-  // Âyet rozeti stili (Çini / Klasik) — Ayarlar → Okuma Düzeni
-  const rozetStili = useAyetRozeti()
   useEffect(() => {
     kelimeMealiRef.current = kelimeMeali
     try { localStorage.setItem("vukuf-kelime-meali", String(kelimeMeali)) } catch { /* yoksay */ }
@@ -4373,7 +4370,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
 
         {/* OKUMA DÜZENİ — kitap modu */}
         <AyarCekmecesi id="kuran-okuma-duzeni" baslik="Okuma Düzeni"
-          ozet={`${kitapModu ? "Kitap modu" : "Kaydırmalı"} · ${rozetStili === "klasik" ? "Klasik" : "Çiçekli"} rozet`}
+          ozet={kitapModu ? "Kitap modu" : "Kaydırmalı"}
           theme={theme} olcek={barUiOlcegi} isMobile={isMobile}>
           <div onClick={() => setKitapModu(v => !v)} role="button" aria-pressed={kitapModu} style={{
             display: "flex", alignItems: "center", gap: "9px", padding: "9px 10px", borderRadius: "9px",
@@ -4389,27 +4386,6 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
               </span>
             </span>
             <IosSwitch acik={kitapModu} theme={theme} boyut={0.82} />
-          </div>
-          {/* ÂYET ROZETİ — Çiçekli (klasik uçlar + ortada hatâyî) / Klasik (11 Kasım 2026) */}
-          <div>
-            <AltBaslik theme={theme} olcek={barUiOlcegi} isMobile={isMobile}>Âyet rozeti</AltBaslik>
-            <div role="radiogroup" aria-label="Âyet rozeti" style={{ display: "flex", gap: "6px" }}>
-              {AYET_ROZETLERI.map(r => {
-                const sec = rozetStili === r.id
-                return (
-                  <button key={r.id} role="radio" aria-checked={sec} onClick={() => ayetRozetiYaz(r.id)} style={{
-                    flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: "4px",
-                    padding: "4px 6px", borderRadius: "9px", cursor: "pointer", fontFamily: "inherit",
-                    fontSize: `${ayarAlt + 1}px`, fontWeight: sec ? 700 : 500,
-                    border: `1px solid ${sec ? theme.accent : theme.border}`,
-                    background: sec ? `${theme.accent}14` : "transparent", color: sec ? theme.accent : theme.text,
-                  }}>
-                    <AyetRozeti stil={r.id} theme={theme} sayi={7} size={30} ac={theme.ayetNoRengi || theme.accent} />
-                    {r.ad}
-                  </button>
-                )
-              })}
-            </div>
           </div>
         </AyarCekmecesi>
 

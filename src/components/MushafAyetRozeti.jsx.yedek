@@ -1,3 +1,21 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   YEDEK — KLASİK ÂYET ROZETİ (12 Kasım 2026'da kullanımdan kaldırıldı)
+   src/components/MushafAyetRozeti.jsx.yedek
+
+   Kullanıcı: "Artık çiçekli olan rozetimiz varsayılan, öncekini kaldırabiliriz … önceki
+   versiyonu da yedeğe alıp … ileride lazım olursa diye yedek bir dosyada tutabiliriz."
+   Çiçekli rozet (CiniAyetRozeti) artık her yerde tek rozet: mushaf, bilgi pencereleri,
+   tema önizlemesi, ana menüdeki cami, izleme modu ve görsel/video oluşturma.
+
+   ".yedek" uzantılı olduğu için derlemeye girmez (index.css.yedek gibi). Geri almak için:
+     1) Aşağıdaki birinci bölümü MushafAyetRozeti.jsx olarak geri koymak,
+     2) ikinci bölümü data/ayetRozeti.js olarak geri koymak (yorumları açarak),
+     3) AyetRozeti.jsx'te stile göre seçimi, TemaSecici'de RozetYarisi'nin klasik
+        dalını, GorselOlustur'da ROZET_GRUP'u ve KuranOkuma Ayarlar'daki seçiciyi
+        (aşağıdaki bölümler) geri eklemek yeterli.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ─── 1) components/MushafAyetRozeti.jsx (olduğu gibi) ─────────────────────── */
 
 
 import React from "react"
@@ -478,3 +496,100 @@ export default function MushafAyetRozeti({
     </svg>
   )
 }
+
+/* ─── 2) data/ayetRozeti.js — stil seçimi deposu ("cini" | "klasik") ─────── */
+// // ÂYET ROZETİ STİLİ (11 Kasım 2026) — "cini" (adı "Çiçekli"): klasik rozetin uçları + ortada
+// // hatâyî çiçeği (varsayılan) · "klasik": önceki rozet. Kimlik "cini" ilk denemeden kaldı.
+// // Ayarlar → Okuma Düzeni'nden seçilir.
+// import { useSyncExternalStore } from "react"
+//
+// export const AYET_ROZETI_ANAHTAR = "vukuf-ayet-rozeti"
+// export const AYET_ROZETLERI = [
+//   { id: "cini", ad: "Çiçekli" },
+//   { id: "klasik", ad: "Klasik" },
+// ]
+// function oku() {
+//   try { const v = localStorage.getItem(AYET_ROZETI_ANAHTAR); return v === "klasik" ? "klasik" : "cini" } catch { return "cini" }
+// }
+// let durum = oku()
+// const dinleyiciler = new Set()
+// export function ayetRozetiYaz(v) {
+//   durum = v === "klasik" ? "klasik" : "cini"
+//   try { localStorage.setItem(AYET_ROZETI_ANAHTAR, durum) } catch { /* yoksay */ }
+//   for (const f of dinleyiciler) f()
+// }
+// const abone = (f) => { dinleyiciler.add(f); return () => dinleyiciler.delete(f) }
+// export function useAyetRozeti() {
+//   return useSyncExternalStore(abone, () => durum, () => durum)
+// }
+
+/* ─── 3) TemaSecici.jsx → RozetYarisi'nin klasik dalı (ana menüdeki caminin yan kanatları) ─── */
+//   return (
+//     <g transform={`translate(${x} ${y}) scale(${ayna ? -k : k} ${k})`} style={{ fill: renk, transition: GECIS }}>
+//       <path d="M0 -19 C-11 -18.5 -17 -10 -17 0 C-17 10 -11 18.5 0 19 C-6 13 -6.5 -13 0 -19 Z" opacity=".92" />
+//       <path d="M-2 -14 C-7 -13.5 -12 -6.5 -12 0 C-12 6.5 -7 13.5 -2 14" fill="none" stroke={renk} strokeWidth=".6" opacity=".45" />
+//       <path d="M-8 -24 C-9.5 -17 -8 -8.5 -7 0 C-8 8.5 -9.5 17 -8 24" fill="none" stroke={renk} strokeWidth=".8" opacity=".5" />
+//       <path d="M-2 -19 C1 -22 3 -26 2 -31 C-2 -30 -6 -24 -1 -18.5 Z" />
+//       <path d="M-2 19 C1 22 3 26 2 31 C-2 30 -6 24 -1 18.5 Z" />
+//       <path d="M-8 -17 C-12 -18 -15.5 -16.5 -17 -13.5 C-14.5 -13 -12 -14 -10.5 -16 C-11 -13.5 -12.5 -11.5 -15.5 -11 C-12.5 -10 -9 -12 -7.5 -15 Z" opacity=".85" />
+//       <path d="M-8 17 C-12 18 -15.5 16.5 -17 13.5 C-14.5 13 -12 14 -10.5 16 C-11 13.5 -12.5 11.5 -15.5 11 C-12.5 10 -9 12 -7.5 15 Z" opacity=".85" />
+//       <path d="M-16.5 -1.8 L-15 0 L-16.5 1.8 L-18 0 Z" opacity=".55" />
+//       <path d="M-5.5 -7.5 C-7.5 -8.5 -10 -8 -11 -6 C-9 -5.5 -7 -6 -5.5 -7.5 Z" opacity=".7" />
+//       <path d="M-5.5 7.5 C-7.5 8.5 -10 8 -11 6 C-9 5.5 -7 6 -5.5 7.5 Z" opacity=".7" />
+//       <circle cx="-12" cy="-22" r="0.9" opacity=".5" /><circle cx="-14.5" cy="-20.5" r="0.5" opacity=".35" />
+//       <circle cx="-12" cy="22" r="0.9" opacity=".5" /><circle cx="-14.5" cy="20.5" r="0.5" opacity=".35" />
+//       <circle cx="-9" cy="-3.5" r="0.7" opacity=".55" /><circle cx="-9" cy="3.5" r="0.7" opacity=".55" />
+//       <path d="M-4 -19 C-6 -24 -9 -27 -14 -27 C-11 -24 -8 -21 -4 -19 Z" opacity=".7" />
+//       <path d="M-1 -19 C1 -24 3 -27 8 -27 C5 -24 2 -21 -1 -19 Z" opacity=".5" />
+//       <path d="M-4 19 C-6 24 -9 27 -14 27 C-11 24 -8 21 -4 19 Z" opacity=".7" />
+//       <path d="M-1 19 C1 24 3 27 8 27 C5 24 2 21 -1 19 Z" opacity=".5" />
+//     </g>
+//   )
+
+/* ─── 4) GorselOlustur.jsx → klasik rozetin canvas sürümü (izleme modu + görsel oluşturma) ─── */
+// const ROZET_GRUP = (t) => `<g transform="${t}">`
+//   + `<path d="M0 -19 C-11 -18.5 -17 -10 -17 0 C-17 10 -11 18.5 0 19 C-6 13 -6.5 -13 0 -19 Z" opacity=".92"/>`
+//   + `<path d="M-2 -14 C-7 -13.5 -12 -6.5 -12 0 C-12 6.5 -7 13.5 -2 14" fill="none" stroke="#000" stroke-width=".6" opacity=".45"/>`
+//   + `<path d="M-8 -24 C-9.5 -17 -8 -8.5 -7 0 C-8 8.5 -9.5 17 -8 24" fill="none" stroke="#000" stroke-width=".8" opacity=".5"/>`
+//   + `<path d="M-2 -19 C1 -22 3 -26 2 -31 C-2 -30 -6 -24 -1 -18.5 Z"/>`
+//   + `<path d="M-2 19 C1 22 3 26 2 31 C-2 30 -6 24 -1 18.5 Z"/>`
+//   + `<path d="M-8 -17 C-12 -18 -15.5 -16.5 -17 -13.5 C-14.5 -13 -12 -14 -10.5 -16 C-11 -13.5 -12.5 -11.5 -15.5 -11 C-12.5 -10 -9 -12 -7.5 -15 Z" opacity=".85"/>`
+//   + `<path d="M-8 17 C-12 18 -15.5 16.5 -17 13.5 C-14.5 13 -12 14 -10.5 16 C-11 13.5 -12.5 11.5 -15.5 11 C-12.5 10 -9 12 -7.5 15 Z" opacity=".85"/>`
+//   + `<path d="M-16.5 -1.8 L-15 0 L-16.5 1.8 L-18 0 Z" opacity=".55"/>`
+//   + `<path d="M-5.5 -7.5 C-7.5 -8.5 -10 -8 -11 -6 C-9 -5.5 -7 -6 -5.5 -7.5 Z" opacity=".7"/>`
+//   + `<path d="M-5.5 7.5 C-7.5 8.5 -10 8 -11 6 C-9 5.5 -7 6 -5.5 7.5 Z" opacity=".7"/>`
+//   + `<circle cx="-12" cy="-22" r="0.9" opacity=".5"/><circle cx="-14.5" cy="-20.5" r="0.5" opacity=".35"/>`
+//   + `<circle cx="-12" cy="22" r="0.9" opacity=".5"/><circle cx="-14.5" cy="20.5" r="0.5" opacity=".35"/>`
+//   + `<circle cx="-9" cy="-3.5" r="0.7" opacity=".55"/><circle cx="-9" cy="3.5" r="0.7" opacity=".55"/>`
+//   + `<path d="M-4 -19 C-6 -24 -9 -27 -14 -27 C-11 -24 -8 -21 -4 -19 Z" opacity=".7"/>`
+//   + `<path d="M-1 -19 C1 -24 3 -27 8 -27 C5 -24 2 -21 -1 -19 Z" opacity=".5"/>`
+//   + `<path d="M-4 19 C-6 24 -9 27 -14 27 C-11 24 -8 21 -4 19 Z" opacity=".7"/>`
+//   + `<path d="M-1 19 C1 24 3 27 8 27 C5 24 2 21 -1 19 Z" opacity=".5"/>`
+//   + `</g>`
+// // NOT: Safari, canvas'a çizilecek SVG görselinde AÇIK width/height ister (yalnız viewBox
+// // varsa iOS'ta 0×0 çizip hiçbir şey göstermez) → width/height açıkça verilir.
+// const ROZET_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="140" height="68" viewBox="-70 -34 140 68" fill="#000">`
+//   + ROZET_GRUP("translate(-50 0)") + ROZET_GRUP("translate(50 0) scale(-1 1)") + `</svg>`
+
+/* ─── 5) KuranOkuma.jsx → Ayarlar · Okuma Düzeni'ndeki "Âyet rozeti" seçicisi ─── */
+//           {/* ÂYET ROZETİ — Çiçekli (klasik uçlar + ortada hatâyî) / Klasik (11 Kasım 2026) */}
+//           <div>
+//             <AltBaslik theme={theme} olcek={barUiOlcegi} isMobile={isMobile}>Âyet rozeti</AltBaslik>
+//             <div role="radiogroup" aria-label="Âyet rozeti" style={{ display: "flex", gap: "6px" }}>
+//               {AYET_ROZETLERI.map(r => {
+//                 const sec = rozetStili === r.id
+//                 return (
+//                   <button key={r.id} role="radio" aria-checked={sec} onClick={() => ayetRozetiYaz(r.id)} style={{
+//                     flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: "4px",
+//                     padding: "4px 6px", borderRadius: "9px", cursor: "pointer", fontFamily: "inherit",
+//                     fontSize: `${ayarAlt + 1}px`, fontWeight: sec ? 700 : 500,
+//                     border: `1px solid ${sec ? theme.accent : theme.border}`,
+//                     background: sec ? `${theme.accent}14` : "transparent", color: sec ? theme.accent : theme.text,
+//                   }}>
+//                     <AyetRozeti stil={r.id} theme={theme} sayi={7} size={30} ac={theme.ayetNoRengi || theme.accent} />
+//                     {r.ad}
+//                   </button>
+//                 )
+//               })}
+//             </div>
+//           </div>

@@ -17,38 +17,38 @@ import GaleriDuzenleyici, { GaleriKolaj, GaleriOzeti } from "./GaleriDuzenleyici
 // Özel okuyuş işaretlerinin (kasr/medd/nûn-i sağîre) kuralı TEK YERDE, mushaf
 // sayfasıyla aynı tabloda duruyor. Burada yalnız ÇİZİM var, kural yok.
 import { ozelOkuyusAyikla } from "./MushafKelime"
+import { renderToStaticMarkup } from "react-dom/server"
+import { CicekliYarimCizim } from "./CiniAyetRozeti"
 
-// ── ÂYET SONU ROZETİ — MushafAyetRozeti.jsx'in canvas sürümü ─────────────────────────────
+// ── ÂYET SONU ROZETİ — çiçekli rozetin (CiniAyetRozeti) canvas sürümü ──────────────────
+// 12 Kasım 2026: klasik rozet kaldırıldı, izleme modu ve görsel/video oluşturma da çiçekli
+// rozeti çiziyor (eski canvas çizimi MushafAyetRozeti.jsx.yedek'te).
 // Süsleme (rakam HARİÇ) tek renk (#000) rasterize edilir; çizerken 'source-in' ile metnin
 // rengine boyanır → senkron çalışır (video karesinde görüntü beklemesi olmaz). Rakam ayrıca
-// Scheherazade ile canvas'a yazılır. viewBox, süslemenin taşan uçları kırpılmasın diye geniş.
-const ROZET_GRUP = (t) => `<g transform="${t}">`
-  + `<path d="M0 -19 C-11 -18.5 -17 -10 -17 0 C-17 10 -11 18.5 0 19 C-6 13 -6.5 -13 0 -19 Z" opacity=".92"/>`
-  + `<path d="M-2 -14 C-7 -13.5 -12 -6.5 -12 0 C-12 6.5 -7 13.5 -2 14" fill="none" stroke="#000" stroke-width=".6" opacity=".45"/>`
-  + `<path d="M-8 -24 C-9.5 -17 -8 -8.5 -7 0 C-8 8.5 -9.5 17 -8 24" fill="none" stroke="#000" stroke-width=".8" opacity=".5"/>`
-  + `<path d="M-2 -19 C1 -22 3 -26 2 -31 C-2 -30 -6 -24 -1 -18.5 Z"/>`
-  + `<path d="M-2 19 C1 22 3 26 2 31 C-2 30 -6 24 -1 18.5 Z"/>`
-  + `<path d="M-8 -17 C-12 -18 -15.5 -16.5 -17 -13.5 C-14.5 -13 -12 -14 -10.5 -16 C-11 -13.5 -12.5 -11.5 -15.5 -11 C-12.5 -10 -9 -12 -7.5 -15 Z" opacity=".85"/>`
-  + `<path d="M-8 17 C-12 18 -15.5 16.5 -17 13.5 C-14.5 13 -12 14 -10.5 16 C-11 13.5 -12.5 11.5 -15.5 11 C-12.5 10 -9 12 -7.5 15 Z" opacity=".85"/>`
-  + `<path d="M-16.5 -1.8 L-15 0 L-16.5 1.8 L-18 0 Z" opacity=".55"/>`
-  + `<path d="M-5.5 -7.5 C-7.5 -8.5 -10 -8 -11 -6 C-9 -5.5 -7 -6 -5.5 -7.5 Z" opacity=".7"/>`
-  + `<path d="M-5.5 7.5 C-7.5 8.5 -10 8 -11 6 C-9 5.5 -7 6 -5.5 7.5 Z" opacity=".7"/>`
-  + `<circle cx="-12" cy="-22" r="0.9" opacity=".5"/><circle cx="-14.5" cy="-20.5" r="0.5" opacity=".35"/>`
-  + `<circle cx="-12" cy="22" r="0.9" opacity=".5"/><circle cx="-14.5" cy="20.5" r="0.5" opacity=".35"/>`
-  + `<circle cx="-9" cy="-3.5" r="0.7" opacity=".55"/><circle cx="-9" cy="3.5" r="0.7" opacity=".55"/>`
-  + `<path d="M-4 -19 C-6 -24 -9 -27 -14 -27 C-11 -24 -8 -21 -4 -19 Z" opacity=".7"/>`
-  + `<path d="M-1 -19 C1 -24 3 -27 8 -27 C5 -24 2 -21 -1 -19 Z" opacity=".5"/>`
-  + `<path d="M-4 19 C-6 24 -9 27 -14 27 C-11 24 -8 21 -4 19 Z" opacity=".7"/>`
-  + `<path d="M-1 19 C1 24 3 27 8 27 C5 24 2 21 -1 19 Z" opacity=".5"/>`
-  + `</g>`
-// NOT: Safari, canvas'a çizilecek SVG görselinde AÇIK width/height ister (yalnız viewBox
-// varsa iOS'ta 0×0 çizip hiçbir şey göstermez) → width/height açıkça verilir.
-const ROZET_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="140" height="68" viewBox="-70 -34 140 68" fill="#000">`
-  + ROZET_GRUP("translate(-50 0)") + ROZET_GRUP("translate(50 0) scale(-1 1)") + `</svg>`
+// Scheherazade ile canvas'a yazılır.
+// Çiçekli rozet çok tonlu (koyu / ana / açık …) ve parçaları arasında zemin renginde ince
+// kontur var; tek renge boyanınca bunlar kaybolmasın diye çizim bir LUMİNANS MASKESİ olarak
+// kuruluyor: beyaz = tam, gri tonlar = yarı saydam, kontur = siyah (oyuk). Maske siyah bir
+// dikdörtgene uygulanınca tonlar saydamlık farkı olarak kalıyor; 'source-in' de saydamlığı
+// koruduğu için fotoğraf üstünde metin renginde, kat kat görünüyor.
+const ROZET_MASKE_PALET = { koyu: "#ffffff", ana: "#e2e2e2", acik: "#8f8f8f", cokAcik: "#5e5e5e", merkez: "#ffffff", kontur: "#000000" }
+let rozetSvgBellek = null
+const rozetSvg = () => {
+  if (rozetSvgBellek) return rozetSvgBellek
+  const yari = (t) => `<g transform="${t}">` + renderToStaticMarkup(<CicekliYarimCizim p={ROZET_MASKE_PALET} />) + `</g>`
+  // NOT: Safari, canvas'a çizilecek SVG görselinde AÇIK width/height ister (yalnız viewBox
+  // varsa iOS'ta 0×0 çizip hiçbir şey göstermez) → width/height açıkça verilir.
+  rozetSvgBellek = `<svg xmlns="http://www.w3.org/2000/svg" width="140" height="68" viewBox="-70 -34 140 68">`
+    + `<defs><mask id="r" maskUnits="userSpaceOnUse" x="-70" y="-34" width="140" height="68">`
+    + `<rect x="-70" y="-34" width="140" height="68" fill="#000"/>`
+    + yari("translate(-50 0)") + yari("translate(50 0) scale(-1 1)")
+    + `</mask></defs><rect x="-70" y="-34" width="140" height="68" fill="#000" mask="url(#r)"/></svg>`
+  return rozetSvgBellek
+}
 const ROZET_ORAN = 140 / 68          // rozet genişlik/yükseklik oranı (viewBox)
 export const rozetGorseliUret = () => {
   const im = new Image()
-  im.src = "data:image/svg+xml;utf8," + encodeURIComponent(ROZET_SVG)
+  im.src = "data:image/svg+xml;utf8," + encodeURIComponent(rozetSvg())
   return im
 }
 const arapcaRakamGorsel = (sayi) => {
@@ -584,7 +584,7 @@ function satirlaraBol(ctx, metin, maxW) {
 // ════════════════════════════════════════════════════════════════
 export async function gorselCiz(ctx, ayar) {
   const { W, H, arka, cerceve, karartma, arapca, meal, kaynak, arapcaFont, yaziRengi } = ayar
-  // rozetNo: âyet numarası (varsa MushafAyetRozeti çizilir). secde: secde âyeti rozeti.
+  // rozetNo: âyet numarası (varsa çiçekli âyet rozeti çizilir). secde: secde âyeti rozeti.
   // rozetImg: ön-yüklenmiş süsleme görseli (source-in ile boyanır).
   const rozetNo = ayar.rozetNo || null
   const secde = !!ayar.secde

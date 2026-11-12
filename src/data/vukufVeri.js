@@ -165,7 +165,7 @@ export const KATEGORILER = [
       "vukuf-baslik-boyutu", "vukuf-satir-araligi", "vukuf-harf-araligi",
       "vukuf-kelime-araligi", "vukuf-hizalama",
       // Meal tercihleri (Kur'ân)
-      "vukuf-kelime-meali", "vukuf-ayet-meali", "vukuf-okunan-gorunum", "vukuf-ayet-rozeti",
+      "vukuf-kelime-meali", "vukuf-ayet-meali", "vukuf-okunan-gorunum",
       "vukuf-kuran-dinle-kari", "vukuf-kuran-dinle-tur", "vukuf-kuran-dinle-surekli", "vukuf-kuran-dinle-son", "vukuf-ekstralar-duzen", "vukuf-kuran-dinle-ek",
       // Sayfa düzeni
       "vukuf-kenar-bosluk", "vukuf-okuma-kenar-bosluk",

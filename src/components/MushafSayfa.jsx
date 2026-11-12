@@ -1,6 +1,5 @@
 import MushafKelime from "./MushafKelime"
 import AyetRozeti from "./AyetRozeti"
-import { useAyetRozeti } from "../data/ayetRozeti"
 import KitapAyraci from "./KitapAyraci"
 import SecdeKenar from "./SecdeKenar"
 import SureBasligi from "./SureBasligi"
@@ -141,8 +140,6 @@ function MushafSayfa({
   const okunanGorunum = useMemo(
     () => ({ ...okunanGorunumHam, harfRengi: okunanHarfRengi(okunanGorunumHam.harfRenk, theme) }),
     [okunanGorunumHam, theme])
-  // Âyet rozeti stili (Çini / Klasik) — bir kez okunur, rozetlere prop olarak gider
-  const rozetStili = useAyetRozeti()
   const tImza = tecvidImza(tecvidAyar)
   const tecvidRenkleri = useMemo(() => {
     if (!tImza) return null
@@ -500,7 +497,6 @@ function MushafSayfa({
                       title={`${el.sure.isim} · ${el.ayet.no}. Âyet`}
                     >
                       <AyetRozeti
-                        stil={rozetStili}
                         theme={theme}
                         sayi={el.ayet.no}
                         size={fontSize * 1.4}

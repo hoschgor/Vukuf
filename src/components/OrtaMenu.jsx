@@ -664,40 +664,70 @@ export function OrtaMenuCercevesi({ menu, theme, olcek = 1, etiket = "Okuma men�
 const VURGU_CSS = `@keyframes vk-menu-vurgu{0%,100%{box-shadow:0 0 0 0 var(--vk-vurgu-hale)}50%{box-shadow:0 0 0 6px transparent}}
 .vk-menu-vurgu{animation:vk-menu-vurgu 1.8s ease-in-out infinite}
 @media (prefers-reduced-motion: reduce){.vk-menu-vurgu{animation:none}}`
+/* KAYDIRMA DENETİMİ EN ALTTA (12 Kasım 2026, kullanıcı: "durdurma ya da hız ayarı olan kısım,
+   kaydırma açıksa, orta menü kullanılıyorsa, kaydırma butonunun konulduğu sıra fark etmeksizin
+   en altta kontrol edilsin. Durdurulursa minik güzel bir animasyon ile kendi sırasına geçebilir.")
+   `vurgulu` sıradaki öğeler (Durdur düğmesi + aynı sıradaki hız kutusu) bardan çıkarılıp barın
+   ALTINDA ayrı bir satırda gösterilir. Kayma durunca düğme kendi yerine döner; dönüşte kısa bir
+   "yerine otur" canlandırması oynar (bkz. sonVurgulu / donusAni).
+   "Önceki hâlin minik görünmesi" (kullanıcı: "durdurma butonu açılmadan önce minik bir şekilde
+   önceki hali gösteriliyor") bar düğmelerindeki `transition: all` yüzündendi: düğme eski
+   (küçük, saydam) görünümünden yeni görünüme kayarak geçiyordu. Vurgulu düğmede geçiş kapalı;
+   ayrıca alt satırda yeni bir öğe olarak çizildiği için arada hiçbir ara görünüm yok. */
+const YERINE_CSS = `@keyframes vk-menu-yerine{0%{opacity:0;transform:translateY(10px) scale(.7)}60%{opacity:1;transform:translateY(-2px) scale(1.06)}100%{opacity:1;transform:none}}
+.vk-menu-yerine{animation:vk-menu-yerine .45s cubic-bezier(.3,.7,.4,1) both}
+@keyframes vk-menu-alt-gir{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.vk-menu-alt-gir{animation:vk-menu-alt-gir .25s ease-out both}
+@media (prefers-reduced-motion: reduce){.vk-menu-yerine,.vk-menu-alt-gir{animation:none}}`
+let sonVurgulu = new Set()
+const donusAni = new Map()          // order → yerine dönüş zamanı (ms)
+const DONUS_SURE = 700
+
 export function barEtiketle(bar, etiketler, { theme, olcek = 1, vurgulu = [] } = {}) {
   if (!isValidElement(bar)) return bar
   const vurguKume = new Set(vurgulu)
+  const simdi = Date.now()
+  for (const o of sonVurgulu) if (!vurguKume.has(o)) donusAni.set(o, simdi)   // az önce durdu
+  sonVurgulu = vurguKume
   const ac = theme?.accent || "#8b6a2b"
   const etiketStil = {
     fontSize: `${Math.max(9, Math.round(9.5 * olcek))}px`, lineHeight: 1.1, fontWeight: 500,
     color: theme?.textSecondary, whiteSpace: "nowrap", letterSpacing: "0.01em",
   }
+  const alta = []                    // en alttaki denetim satırına taşınanlar
+  const vurguDugmesi = (c, ad) => cloneElement(c, {
+    key: `alt-d-${c.props.style?.order}`,
+    className: [c.props.className, "vk-menu-vurgu"].filter(Boolean).join(" "),
+    style: {
+      ...c.props.style, order: undefined,
+      "--vk-vurgu-hale": `${ac}66`,
+      background: ac, color: "#fff", border: "none", transition: "none",
+      borderRadius: `${Math.round(14 * olcek)}px`,
+      display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "3px",
+      minWidth: `${Math.round(64 * olcek)}px`,
+      padding: `${Math.round(7 * olcek)}px ${Math.round(10 * olcek)}px`,
+    },
+    "aria-label": c.props["aria-label"] || ad,
+  },
+  <span style={{ display: "flex", alignItems: "center", gap: "3px", color: "#fff" }}>{c.props.children}</span>,
+  <span style={{ ...etiketStil, color: "#fff", fontWeight: 700 }}>{ad}</span>)
   const isle = (c) => {
     if (!isValidElement(c)) return c
     if (c.type === Fragment) return cloneElement(c, {}, Children.map(c.props.children, isle))
-    if (c.type !== "button") return c
-    const ad = etiketler.get(c.props.style?.order)
-    if (!ad) return c
-    if (vurguKume.has(c.props.style?.order)) {
-      return cloneElement(c, {
-        className: [c.props.className, "vk-menu-vurgu"].filter(Boolean).join(" "),
-        style: {
-          ...c.props.style,
-          "--vk-vurgu-hale": `${ac}66`,
-          background: ac, color: "#fff", border: "none",
-          borderRadius: `${Math.round(14 * olcek)}px`,
-          flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "3px",
-          minWidth: `${Math.round(58 * olcek)}px`,
-          padding: `${Math.round(7 * olcek)}px ${Math.round(8 * olcek)}px`,
-          margin: `0 ${Math.round(3 * olcek)}px`,
-          transform: "scale(1.06)",
-        },
-        "aria-label": c.props["aria-label"] || ad,
-      },
-      <span style={{ display: "flex", alignItems: "center", gap: "3px", color: "#fff" }}>{c.props.children}</span>,
-      <span style={{ ...etiketStil, color: "#fff", fontWeight: 700 }}>{ad}</span>)
+    const order = c.props?.style?.order
+    // Vurgulu sıradaki her öğe (düğme + hız kutusu) alt satıra
+    if (order != null && vurguKume.has(order)) {
+      const ad = c.type === "button" ? etiketler.get(order) : null
+      alta.push(ad ? vurguDugmesi(c, ad)
+        : cloneElement(c, { key: `alt-${alta.length}`, style: { ...c.props.style, order: undefined, margin: 0 } }))
+      return null
     }
+    if (c.type !== "button") return c
+    const ad = etiketler.get(order)
+    if (!ad) return c
+    const donuyor = donusAni.has(order) && simdi - donusAni.get(order) < DONUS_SURE
     return cloneElement(c, {
+      className: donuyor ? [c.props.className, "vk-menu-yerine"].filter(Boolean).join(" ") : c.props.className,
       style: {
         background: "transparent", border: "none",     // düz <button> görünümü kalmasın
         ...c.props.style,
@@ -711,7 +741,20 @@ export function barEtiketle(bar, etiketler, { theme, olcek = 1, vurgulu = [] } =
     <span style={etiketStil}>{ad}</span>)
   }
   const ic = Children.map(bar.props.children, isle)
-  return cloneElement(bar, {}, vurguKume.size ? [<style key="vk-vurgu-css">{VURGU_CSS}</style>, ...(ic || [])] : ic)
+  const yeniBar = cloneElement(bar, {}, [<style key="vk-menu-css">{VURGU_CSS + YERINE_CSS}</style>, ...(ic || [])])
+  if (!alta.length) return yeniBar
+  return (
+    <>
+      {yeniBar}
+      <div className="vk-menu-alt-gir" role="group" aria-label="Otomatik kaydırma" style={{
+        display: "flex", alignItems: "center", justifyContent: "center", flexWrap: "wrap",
+        gap: `${Math.round(10 * olcek)}px`, marginTop: `${Math.round(12 * olcek)}px`,
+        paddingTop: `${Math.round(10 * olcek)}px`, borderTop: `1px solid ${theme?.border || "rgba(0,0,0,.12)"}`,
+      }}>
+        {alta}
+      </div>
+    </>
+  )
 }
 
 // ── İLK AÇILIŞ NOTU ─────────────────────────────────────────────────────────
@@ -818,10 +861,11 @@ export function BarKonumSecici({ theme, deger, onSec, UstIkon, AltIkon, ikonBoy 
   ]
   return (
     <>
-      <div style={{ display: "flex", gap: "6px" }}>
+      {/* Büyük arayüz boyutunda (ör. %160) düğmeler kutudan taşmasın: sığmazsa alt satıra geçer */}
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
         {SECENEK.map(({ k, ad, Ikon }) => (
           <button key={k} onClick={() => onSec(k)} aria-pressed={deger === k} style={{
-            flex: 1, padding: "8px 4px", borderRadius: "8px", fontSize: `${yaziBoy}px`, fontFamily: "inherit",
+            flex: "1 1 auto", minWidth: 0, padding: "8px 6px", whiteSpace: "nowrap", borderRadius: "8px", fontSize: `${yaziBoy}px`, fontFamily: "inherit",
             background: deger === k ? theme.accent : `${theme.accent}15`,
             color: deger === k ? "#fff" : theme.text,
             display: "flex", alignItems: "center", justifyContent: "center", gap: "4px",

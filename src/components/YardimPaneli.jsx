@@ -255,7 +255,7 @@ const KONULAR = [
     ozet: "Sayfanın kendiliğinden ilerlemesi.",
     nerede: "Kur'ân-ı Kerîm → bardaki oynat simgesi",
     metin: [
-      "Oynat simgesi sayfayı kendiliğinden kaydırır; tekrar dokunulduğunda durur. Menülü düzende kaydırma sürerken menü tek dokunuşla açılır ve \"Durdur\" düğmesi vurgu renginde, belirgin bir kapsül olarak öne çıkar. Kaydırma hızı, otomatik kaydırma açıkken Ayarlar → Okuma Düzeni bölümünden değiştirilebilir.",
+      "Oynat simgesi sayfayı kendiliğinden kaydırır; tekrar dokunulduğunda durur. Menülü düzende kaydırma sürerken menü tek dokunuşla açılır; \"Durdur\" düğmesi (ve varsa hız ayarı), bardaki sırası ne olursa olsun menünün en altında, vurgu renginde belirgin bir kapsül olarak durur. Kaydırma durunca düğme kısa bir canlandırmayla kendi sırasına döner. Kaydırma hızı, otomatik kaydırma açıkken Ayarlar → Okuma Düzeni bölümünden değiştirilebilir.",
     ],
     anahtar: "kaydır otomatik akış hız",
   },

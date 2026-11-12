@@ -3829,8 +3829,14 @@ function donuseGit(i) {
   // boyu ekranın gerçekten kalan kısmına bağlanıyor (yatayDuzen.js). `en` yatayda
   // istenen genişlik; dikey düzende hiçbir etkisi yok.
   const panelPayi = barYuksekligi + (player.durum !== "kapali" ? playerBarYuksekligi : 4)
+  /* ARAYÜZ BOYUTU → PANEL ENİ (12 Kasım 2026, kullanıcı: "arayüz boyutu büyüdüğünde yazılar
+     büyüyor fakat kutulara sığmayabiliyor … sûre menüsü gibi menüler sağa sola gezilebiliyor").
+     Panellerin eni sabit px'ti, içindeki yazılar ise arayüz ölçeğiyle büyüyordu → taşma ve yatay
+     kaydırma. Artık en de ölçekle büyür (küçülürken eski en kalır), ekranı aşmaz. */
+  const olcekliEn = (n) => `min(${Math.round(n * Math.max(1, barUiOlcegi))}px, calc(100vw - 56px))`
   const panelStil = (konum, en = 620) => ({
     position: "fixed",
+    overflowX: "hidden",                 // yatay kaydırma olmasın (yazılar sarar)
     // MENÜ MODUNDA bar yok: panel üstten küçük bir payla başlar (oynatıcı altta)
     ...(ortaBar
       ? { top: "max(12px, env(safe-area-inset-top))" }
@@ -3876,7 +3882,8 @@ function donuseGit(i) {
 
 const menuStil = {
   position: "fixed",
-  width: "280px",
+  width: olcekliEn(280),
+  overflowX: "hidden",
   flexShrink: 0,
   background: theme.surface,
   borderRight: `1px solid ${theme.border}`,
@@ -3912,7 +3919,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
   const SayfaGitPopup = sayfaGitAcik && (
   <>
     <div onClick={() => setSayfaGitAcik(false)} style={{ position: "fixed", inset: 0, zIndex: 95 }} />
-    <div className="vukuf-panel yp-panel" style={{ ...panelStil("center"), width: "280px", zIndex: 96 }}>
+    <div className="vukuf-panel yp-panel" style={{ ...panelStil("center"), width: olcekliEn(280), zIndex: 96 }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px" }}>
         <div style={{ fontSize: "12px", color: theme.textSecondary }}>SAYFAYA GİT (1 – {toplamSayfa})</div>
         <button onClick={() => setSayfaGosterimAcik(v => !v)} title="Bardaki görünüm tipi"
@@ -4014,7 +4021,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
           dolgusuna taşıyınca sticky doğrudan `top: 0`a oturuyor — arada kaçacak
           boşluk kalmıyor. */}
       {/* YATAY TELEFON: yp-aa → önizleme solda sabit, sekmeler ve ayarlar sağda */}
-      <div ref={aaPanelRef} className="vukuf-panel yp-panel yp-genis yp-aa" style={{ ...panelStil("center", 640), padding: "0 12px 12px", width: "300px", maxHeight: "80vh", overflowY: "auto", zIndex: 200 }}>
+      <div ref={aaPanelRef} className="vukuf-panel yp-panel yp-genis yp-aa" style={{ ...panelStil("center", 640), padding: "0 12px 12px", width: olcekliEn(300), maxHeight: "80vh", overflowY: "auto", zIndex: 200 }}>
 
         {/* TEK ÖNİZLEME — panelin üstünde sabit durur, aşağıdaki BÜTÜN ayarlar
             (boyut, satır aralığı, harf aralığı, yazı tipi) bunu anında değiştirir.
@@ -4162,7 +4169,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
       {/* Renk bölümleri eklendiği için panel uzayabilir → kısa ekranlarda kaydırılabilsin */}
       {/* YATAY TELEFON: yp-tema → tema satırları 2-3 sütun, renk ayarları yan yana */}
       <div className="vukuf-panel yp-panel yp-genis yp-sag yp-tema" style={{
-        ...panelStil("right", 600), width: "240px", zIndex: 200,
+        ...panelStil("right", 600), width: olcekliEn(240), zIndex: 200,
         maxHeight: "80vh", overflowY: "auto", overscrollBehavior: "contain",
       }}>
         <div className="yp-tam yp-tam-baslik" style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "10px", letterSpacing: "1px" }}>TEMA</div>
@@ -4243,7 +4250,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
         position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)",
         background: theme.surface, border: `1px solid ${theme.border}`,
         borderRadius: "24px", padding: "24px", zIndex: 400,
-        width: "320px", maxHeight: "90vh", overflowY: "auto", overscrollBehavior: "contain",
+        width: olcekliEn(320), maxHeight: "90vh", overflowY: "auto", overscrollBehavior: "contain",
         boxShadow: "0 8px 32px rgba(0,0,0,0.2)",
       }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "20px" }}>
@@ -4343,7 +4350,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
       {/* YATAY TELEFON: yp-iki → iki sütun */}
       <div className="vukuf-panel yp-panel yp-genis yp-sag yp-iki" style={{ 
         ...panelStil("right", 640), 
-        width: "270px", 
+        width: olcekliEn(270), 
         display: "flex", 
         flexDirection: "column", 
         gap: "8px", 

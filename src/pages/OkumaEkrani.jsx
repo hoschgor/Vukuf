@@ -3017,8 +3017,12 @@ const gorselYap = () => {
 
 // YATAY TELEFON: `en` yatayda istenen genişlik; boy ekranın kalanına bağlı
 // (56 px bar payı + karşı kenarda 12 px). Dikey düzende etkisi yok (yatayDuzen.js).
+// ARAYÜZ BOYUTU → PANEL ENİ (12 Kasım 2026): yazılar arayüz ölçeğiyle büyürken panel eni sabit
+// kalıyor, içerik taşıyordu. En de ölçekle büyür (küçülürken eski en kalır), ekranı aşmaz.
+const olcekliEn = (n) => `min(${Math.round(n * Math.max(1, barUiOlcegi))}px, calc(100vw - 56px))`
 const panelStil = (konum = "center", en = 620) => ({
   position: "fixed",
+  overflowX: "hidden",                 // yatay kaydırma olmasın (yazılar sarar)
   // MENÜ MODUNDA bar yok: panel üstten küçük bir payla başlar (bar varmış gibi 56 px bırakılmaz)
   ...(ortaBar
     ? { top: "max(12px, env(safe-area-inset-top))" }
@@ -3052,7 +3056,7 @@ const AaPanel = aaAcik && (
         Üst dolguyu bloğun KENDİ dolgusuna taşıyınca sticky doğrudan `top: 0`a
         oturuyor; telafi edilecek bir sayı kalmadığı için yanlış da olamıyor. */}
     {/* YATAY TELEFON: yp-aa → önizleme solda sabit; hizalama, sekmeler ve ayarlar sağda */}
-    <div ref={aaPanelRef} className="okuma-panel yp-panel yp-genis yp-aa" style={{ ...panelStil("center", 660), padding: "0 16px 16px", width: "300px", maxHeight: "80vh", overflowY: "auto" }}>
+    <div ref={aaPanelRef} className="okuma-panel yp-panel yp-genis yp-aa" style={{ ...panelStil("center", 660), padding: "0 16px 16px", width: olcekliEn(300), maxHeight: "80vh", overflowY: "auto" }}>
 
       {/* TEK ÖNİZLEME — panelin tepesinde SABİT durur; aşağıdaki BÜTÜN ayarlar
           (boyutlar, aralıklar, hizalama, yazı tipleri) onu anında değiştirir.
@@ -3256,7 +3260,7 @@ const AaPanel = aaAcik && (
 const KayitPanel = kayitAcik && (
   <>
     <div onClick={() => { setKayitAcik(false); setIsaretDuzenle(false) }} style={{ position: "fixed", inset: 0, zIndex: 95 }} />
-    <div className="okuma-panel yp-panel yp-genis" style={{ ...panelStil("center", 520), width: "320px", maxHeight: "480px", display: "flex", flexDirection: "column" }}>
+    <div className="okuma-panel yp-panel yp-genis" style={{ ...panelStil("center", 520), width: olcekliEn(320), maxHeight: "480px", display: "flex", flexDirection: "column" }}>
 
       {/* Sekmeler */}
       <div style={{ display: "flex", gap: "4px", marginBottom: "12px" }}>
@@ -3432,7 +3436,7 @@ const TemaPanel = temaAcik && (
     <div onClick={() => setTemaAcik(false)} style={{ position: "fixed", inset: 0, zIndex: 95 }} />
     {/* Ton anahtarı ve Otomatik'teki iki grup paneli uzatabiliyor → kısa ekranda kaydırılsın */}
     {/* YATAY TELEFON: yp-tema → tema satırları 2-3 sütun, renk ayarları yan yana */}
-    <div className="okuma-panel yp-panel yp-genis yp-sag yp-tema" style={{ ...panelStil("right", 600), width: "240px", maxHeight: "80vh", overflowY: "auto" }}>
+    <div className="okuma-panel yp-panel yp-genis yp-sag yp-tema" style={{ ...panelStil("right", 600), width: olcekliEn(240), maxHeight: "80vh", overflowY: "auto" }}>
       <div className="yp-tam yp-tam-baslik" style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "10px", letterSpacing: "1px" }}>TEMA</div>
       {/* Ton anahtarı + önizlemeli liste — ortak bileşen (components/TemaSecici.jsx).
           Hazır tema seçilince panel eskisi gibi kapanır; yalnız Otomatik modda
@@ -3504,7 +3508,7 @@ const AyarlarPanel = ayarlarAcik && (
   <>
     <div onClick={() => setAyarlarAcik(false)} style={{ position: "fixed", inset: 0, zIndex: 95 }} />
     {/* YATAY TELEFON: yp-iki → iki sütun */}
-    <div className="okuma-panel yp-panel yp-genis yp-sag yp-iki" style={{ ...panelStil("right", 640), width: "280px", maxHeight: "80vh", overflowY: "auto", display: "flex", flexDirection: "column", gap: "8px" }}>
+    <div className="okuma-panel yp-panel yp-genis yp-sag yp-iki" style={{ ...panelStil("right", 640), width: olcekliEn(280), maxHeight: "80vh", overflowY: "auto", display: "flex", flexDirection: "column", gap: "8px" }}>
 
       {/* ── ÇEKMECELER (10 Kasım 2026) — Kur'ân ekranıyla aynı düzen: Okuma Düzeni ·
             Menü ve Bar · Öge Görüntüleme · Gezinme. Başlıkta kısa özet; açık/kapalı
@@ -3701,7 +3705,7 @@ const OzelTemaPanel = ozelTemaPanelAcik && (
       borderRadius: "24px",
       padding: "24px",
       zIndex: 400,
-      width: "320px",
+      width: olcekliEn(320),
       maxHeight: "90vh",
       overflowY: "auto",
       boxShadow: "0 8px 32px rgba(0,0,0,0.2)",
@@ -3847,7 +3851,7 @@ const OzelTemaPanel = ozelTemaPanelAcik && (
 const AramaPanel = aramaAcik && (
   <>
     <div onClick={() => setAramaAcik(false)} style={{ position: "fixed", inset: 0, zIndex: 95 }} />
-    <div className="okuma-panel yp-panel" style={{ ...panelStil("center"), width: "300px" }}>
+    <div className="okuma-panel yp-panel" style={{ ...panelStil("center"), width: olcekliEn(300) }}>
       <div style={{ display: "flex", gap: "8px", alignItems: "center", marginBottom: "10px" }}>
         <Search size={14} color={theme.textSecondary} />
         <input
@@ -3916,7 +3920,7 @@ const AramaPanel = aramaAcik && (
 const SayfaGitPopup = sayfaGitAcik && (
   <>
     <div onClick={() => setSayfaGitAcik(false)} style={{ position: "fixed", inset: 0, zIndex: 95 }} />
-    <div className="okuma-panel yp-panel" style={{ ...panelStil("center"), width: "280px" }}>
+    <div className="okuma-panel yp-panel" style={{ ...panelStil("center"), width: olcekliEn(280) }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px" }}>
         <div style={{ fontSize: "12px", color: theme.textSecondary }}>SAYFAYA GİT (1 – {kitapMetni.length})</div>
         <button onClick={() => setSayfaGosterimAcik(v => !v)} title="Bardaki görünüm tipi"
@@ -4061,7 +4065,7 @@ const MenuPanel = menuAcik && (
   <>
     <div onClick={() => setMenuAcik(false)} style={{ position: "fixed", inset: 0, zIndex: 149 }} />
     <div className="okuma-panel" style={{
-      position: "fixed", left: 0, width: `${Math.round(300 * barUiOlcegi)}px`, maxWidth: "85vw",
+      position: "fixed", left: 0, width: `${Math.round(300 * barUiOlcegi)}px`, maxWidth: "85vw", overflowX: "hidden",
       // MENÜ BARIN ÜSTÜNE BİNMEZ — mushaf tarafındaki sûre menüsüyle aynı mantık.
       // Eskiden `top: 0, bottom: 0` idi ve panel (zIndex 150) barı (zIndex 90)
       // tamamen örtüyordu: menü açıkken bar görünmüyor, son öge de barın altında

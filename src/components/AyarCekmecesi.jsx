@@ -37,7 +37,8 @@ export function AyarCekmecesi({ id, baslik, ozet, theme, olcek = 1, isMobile = f
         fontFamily: "inherit", textAlign: "left", color: theme.text,
       }}>
         {/* Başlık hiç daralmaz; uzun özet sağda kısalır (…) — iç içe geçmesin */}
-        <span style={{ flexShrink: 0, whiteSpace: "nowrap", fontSize: `${bas}px`, letterSpacing: "1px", fontWeight: 600, color: acik ? theme.accent : theme.textSecondary }}>
+        {/* Büyük arayüz boyutunda bile kutudan taşmasın: en çok %72, gerekirse … ile kısalır */}
+        <span style={{ flexShrink: 0, maxWidth: "72%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: `${bas}px`, letterSpacing: "1px", fontWeight: 600, color: acik ? theme.accent : theme.textSecondary }}>
           {baslik.toLocaleUpperCase("tr-TR")}
         </span>
         {ozet ? (

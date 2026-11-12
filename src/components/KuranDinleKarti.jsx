@@ -17,7 +17,7 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 import { useEffect, useMemo, useState } from "react"
-import { Headphones, Play, Pause, SkipBack, SkipForward, X, Loader2, ExternalLink, Repeat, RotateCcw, History } from "lucide-react"
+import { Headphones, Play, Pause, SkipBack, SkipForward, X, Loader2, ExternalLink, Repeat, RotateCcw, History, Search } from "lucide-react"
 import { Kart, useBolum, dugmeStil } from "./EkstraKart"
 import IosSwitch from "./IosSwitch"
 import OtomatikDurdurmaSecici from "./OtomatikDurdurmaSecici"
@@ -25,6 +25,7 @@ import { sureAdi, SURE_ADLARI } from "../data/sureAdlari"
 import {
   useKuranDinle, KARILER, TURLER, AYET_SAYILARI, kariBul, kaynakBilgisi, parcaAdi,
   useParcaListesi, useDinleZamani, sureYazisi, sonKonumOku,
+  useEkKariler, ekKariEkle, ekKariSil, way2Dizin, way2Ara, rivayetAdi, sureAra,
 } from "../data/kuranDinle"
 // Çalar paneli küçük hapla aynı görünüm (12 Kasım 2026): rahle amblemi + yuvarlak düğmeler
 import { DinleAmblemi, DINLE_HAP_CSS } from "./MiniKuranDinle"
@@ -60,12 +61,86 @@ function Ilerleme({ theme, dinle }) {
   )
 }
 
+/* WAY2QURAN KÂRİ ARAMASI (12 Kasım 2026) — kayıtlı kâriler değişmez; buradan seçilen kâri
+   "ek kâri" olur (listenin altında ayrı çipler). Dizin ilk açılışta indirilir (~100 KB). */
+function KariArama({ theme, onSec, onKapat }) {
+  const ac = theme.accent
+  const [sorgu, setSorgu] = useState("")
+  const [dizin, setDizin] = useState(null)
+  const [durum, setDurum] = useState("yukleniyor")      // yukleniyor | hazir | yok
+  const [deneme, setDeneme] = useState(0)
+  useEffect(() => {
+    let iptal = false
+    setDurum("yukleniyor")
+    way2Dizin().then(d => { if (!iptal) { setDizin(d); setDurum("hazir") } }).catch(() => { if (!iptal) setDurum("yok") })
+    return () => { iptal = true }
+  }, [deneme])
+  const sonuc = useMemo(() => (dizin && sorgu.trim().length >= 2 ? way2Ara(dizin, sorgu, 40) : []), [dizin, sorgu])
+  // Dizin değeri: 114 | [sûre no…] | { n: 114 | […], f: {…} }
+  const sayiOf = (v) => {
+    const n = v && typeof v === "object" && !Array.isArray(v) ? v.n : v
+    return Array.isArray(n) ? n.length : Number(n) || 0
+  }
+  return (
+    <div style={{ margin: "0 0 12px", padding: "10px", borderRadius: "14px", border: `1px solid ${ac}55`, background: `${ac}08` }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+        <Search size={15} color={theme.textSecondary} style={{ flexShrink: 0 }} />
+        <input value={sorgu} onChange={e => setSorgu(e.target.value)} autoFocus placeholder="Kâri adı (ör. Alafasy, Minshawi)"
+          aria-label="Kâri ara" enterKeyHint="search"
+          style={{ flex: 1, minWidth: 0, padding: "7px 10px", borderRadius: "10px", border: `1px solid ${theme.border}`, background: theme.background, color: theme.text, fontFamily: "inherit", fontSize: "13px" }} />
+        <button onClick={onKapat} aria-label="Aramayı kapat" title="Kapat"
+          style={{ width: "30px", height: "30px", borderRadius: "50%", border: "none", background: "transparent", color: theme.textSecondary, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+          <X size={15} />
+        </button>
+      </div>
+      <div style={{ fontSize: "11px", color: theme.textSecondary, margin: "6px 2px 0", lineHeight: 1.45 }}>
+        {durum === "yukleniyor" && <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}><Loader2 size={12} className="vk-don" /> Kâri dizini hazırlanıyor…</span>}
+        {durum === "yok" && (
+          <span>Kâri dizini şu an alınamadı. <button onClick={() => setDeneme(x => x + 1)} style={{ background: "none", border: "none", padding: 0, color: ac, cursor: "pointer", fontFamily: "inherit", fontSize: "11px", textDecoration: "underline" }}>Tekrar dene</button></span>
+        )}
+        {durum === "hazir" && sorgu.trim().length < 2 && `${dizin.length.toLocaleString("tr-TR")} kâri arasında aranabilir · kayıtlar way2quran.com'dan çalınır`}
+        {durum === "hazir" && sorgu.trim().length >= 2 && !sonuc.length && "Bu adla bir kâri bulunamadı."}
+      </div>
+      {sonuc.length > 0 && (
+        <div style={{ marginTop: "8px", maxHeight: "260px", overflowY: "auto", overscrollBehavior: "contain", display: "flex", flexDirection: "column", gap: "4px" }}>
+          {sonuc.map(x => {
+            const rivayetler = Object.entries(x.r)
+            return (
+              <div key={x.s} style={{ display: "flex", alignItems: "center", gap: "8px", padding: "7px 8px", borderRadius: "10px", border: `1px solid ${theme.border}`, background: theme.surface }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: "13px", fontWeight: 600, color: theme.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{x.a}</div>
+                </div>
+                <div style={{ display: "flex", gap: "4px", flexWrap: "wrap", justifyContent: "flex-end" }}>
+                  {rivayetler.map(([rv, v]) => (
+                    <button key={rv} onClick={() => onSec({ slug: x.s, ad: x.a, rivayet: rv, kapsam: v })}
+                      title={`${x.a} · ${rivayetAdi(rv)} · ${sayiOf(v)} sûre`}
+                      style={{ padding: "5px 9px", borderRadius: "999px", border: "none", background: ac, color: "#fff", cursor: "pointer", fontFamily: "inherit", fontSize: "11.5px", fontWeight: 600, whiteSpace: "nowrap" }}>
+                      {rivayetler.length > 1 ? rivayetAdi(rv) : "Seç"}
+                      <span style={{ fontWeight: 400, opacity: 0.85 }}> · {sayiOf(v)}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function KuranDinleKarti({ theme }) {
   const dinle = useKuranDinle()
   const bolum = useBolum("kuran-dinle")
   const ac = theme.accent
   const [kariId, setKariIdD] = useState(() => (kariBul(oku(KARI_ANAHTAR, null)) ? oku(KARI_ANAHTAR, null) : KARILER[0].id))
   const [turlar, setTurlar] = useState(() => oku(TUR_ANAHTAR, {}) || {})
+  const ekKariler = useEkKariler()          // aramadan eklenenler (değişince yeniden çizilsin)
+  const [aramaAcik, setAramaAcik] = useState(false)
+  // Sûre araması (Sûre ve Âyet kipinde) — 12 Kasım 2026
+  const [sureAramaAcik, setSureAramaAcik] = useState(false)
+  const [sureSorgu, setSureSorgu] = useState("")
+  const sureSonuc = useMemo(() => (sureSorgu.trim() ? sureAra(sureSorgu) : null), [sureSorgu])
   const kari = kariBul(kariId) || KARILER[0]
   const ilkTur = TURLER.find(t => kari.kaynaklar[t.id])?.id
   const tur = turlar[kari.id] && kari.kaynaklar[turlar[kari.id]] ? turlar[kari.id] : ilkTur
@@ -133,10 +208,24 @@ export default function KuranDinleKarti({ theme }) {
   const ayetNolari = useMemo(() => Array.from({ length: ayetSayisi }, (_, i) => i + 1), [ayetSayisi])
 
   return (
-    <Kart theme={theme} Ikon={Headphones} baslik="Kur'an Dinle" alt="Türk hafızlardan cüz, sûre ve âyet kayıtları" bolum={bolum} ozet={ozet}>
-      {/* KÂRİ */}
-      <div style={{ fontSize: "11px", letterSpacing: "0.5px", color: theme.textSecondary, margin: "2px 0 6px 2px" }}>KÂRİ</div>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginBottom: "12px" }}>
+    <Kart theme={theme} Ikon={Headphones} baslik="Kur'an Dinle" alt="Hafızlardan cüz, sûre ve âyet kayıtları" bolum={bolum} ozet={ozet}>
+      {/* KÂRİ — sağda arama düğmesi (way2quran'daki bütün kâriler) */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "2px 0 6px 2px" }}>
+        <span style={{ fontSize: "11px", letterSpacing: "0.5px", color: theme.textSecondary }}>KÂRİ</span>
+        <button onClick={() => setAramaAcik(v => !v)} aria-pressed={aramaAcik} aria-label="Başka kâri ara" title="Başka kâri ara (way2quran)"
+          style={{
+            width: "32px", height: "32px", borderRadius: "50%", border: "none", cursor: "pointer", padding: 0,
+            display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+            background: aramaAcik ? `${ac}33` : "transparent", color: aramaAcik ? ac : theme.textSecondary,
+          }}>
+          <Search size={16} />
+        </button>
+      </div>
+      {aramaAcik && (
+        <KariArama theme={theme} onKapat={() => setAramaAcik(false)}
+          onSec={(e) => { const id = ekKariEkle(e); setKari(id); setAramaAcik(false) }} />
+      )}
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginBottom: ekKariler.length ? "8px" : "12px" }}>
         {KARILER.map(k => {
           const sec = k.id === kari.id
           const calarK = calan && calan.kariId === k.id && durum === "caliyor"
@@ -155,6 +244,38 @@ export default function KuranDinleKarti({ theme }) {
           )
         })}
       </div>
+      {/* ARAMADAN EKLENENLER — ayrı çipler; × listeden kaldırır */}
+      {ekKariler.length > 0 && (
+        <>
+          <div style={{ fontSize: "10px", letterSpacing: "0.5px", color: theme.textSecondary, margin: "0 0 5px 2px" }}>ARAMADAN</div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginBottom: "12px" }}>
+            {ekKariler.map(k => {
+              const sec = k.id === kari.id
+              const calarK = calan && calan.kariId === k.id && durum === "caliyor"
+              return (
+                <span key={k.id} style={{
+                  display: "inline-flex", alignItems: "center", borderRadius: "999px",
+                  border: `1px dashed ${sec ? ac : theme.border}`, background: sec ? ac : "transparent",
+                }}>
+                  <button onClick={() => setKari(k.id)} aria-pressed={sec} title={`${k.ad} · ${k.alt} · way2quran`}
+                    style={{
+                      display: "inline-flex", alignItems: "center", gap: "5px", padding: "6px 4px 6px 11px", border: "none", background: "none",
+                      fontFamily: "inherit", fontSize: "12.5px", cursor: "pointer", color: sec ? "#fff" : theme.text, fontWeight: sec ? 600 : 500,
+                    }}>
+                    {calarK && <span aria-hidden="true" className="vk-kerahat-nokta" style={{ width: 6, height: 6, borderRadius: "50%", background: sec ? "#fff" : ac }} />}
+                    {k.ad}
+                    {k.alt !== "Hafs" && <span style={{ fontSize: "10.5px", opacity: 0.8 }}>· {k.alt}</span>}
+                  </button>
+                  <button onClick={() => { if (sec) setKari(KARILER[0].id); ekKariSil(k.id) }} aria-label={`${k.ad} — listeden kaldır`} title="Listeden kaldır"
+                    style={{ display: "flex", alignItems: "center", padding: "6px 9px 6px 3px", border: "none", background: "none", cursor: "pointer", color: sec ? "#fff" : theme.textSecondary }}>
+                    <X size={12} />
+                  </button>
+                </span>
+              )
+            })}
+          </div>
+        </>
+      )}
 
       {/* TÜR — kaydı olmayanlar çizgili koyu belirteçle kapalı */}
       <div role="radiogroup" aria-label="Okuma biçimi" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "6px", marginBottom: "4px" }}>
@@ -181,15 +302,67 @@ export default function KuranDinleKarti({ theme }) {
       </div>
       {kaynak && (
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", fontSize: "11px", color: theme.textSecondary, margin: "6px 2px 8px" }}>
-          <span>
-            {liste.durum === "hazir" && tur !== "ayet" && varSayisi < toplamSayi && !liste.yedek
-              ? `Bu kayıtta ${varSayisi} / ${toplamSayi} ${tur === "cuz" ? "cüz" : "sûre"} var`
-              : tur === "ayet" ? "Sûre seçilip başlanacak âyete dokunulabilir" : tur === "cuz" ? "Tam hatim · 30 cüz" : "114 sûre"}
+          {/* Sûre arama düğmesi soldaki yazının yanında (12 Kasım 2026, kullanıcı: "arama butonunu
+              'Sûre' yazısı yanına alalım, böyle yanlışlıkla siteye tıklanabilir") — sağdaki kaynak
+              bağlantısından uzak dursun */}
+          <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", minWidth: 0 }}>
+            <span>
+              {liste.durum === "hazir" && tur !== "ayet" && varSayisi < toplamSayi && !liste.yedek
+                ? `Bu kayıtta ${varSayisi} / ${toplamSayi} ${tur === "cuz" ? "cüz" : "sûre"} var`
+                : tur === "ayet" ? "Sûre seçilip başlanacak âyete dokunulabilir" : tur === "cuz" ? "Tam hatim · 30 cüz" : "114 sûre"}
+            </span>
+            {(tur === "sure" || tur === "ayet") && (
+              <button onClick={() => { setSureAramaAcik(v => !v); setSureSorgu("") }} aria-pressed={sureAramaAcik}
+                aria-label="Sûre ara" title="Sûre ara"
+                style={{
+                  width: "28px", height: "28px", borderRadius: "50%", border: "none", cursor: "pointer", padding: 0, flexShrink: 0,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  background: sureAramaAcik ? `${ac}33` : "transparent", color: sureAramaAcik ? ac : theme.textSecondary,
+                }}>
+                <Search size={14} />
+              </button>
+            )}
           </span>
           <a href={kaynak.sayfa} target="_blank" rel="noopener noreferrer"
-            style={{ display: "inline-flex", alignItems: "center", gap: "3px", color: theme.textSecondary, textDecoration: "none", whiteSpace: "nowrap" }}>
+            style={{ display: "inline-flex", alignItems: "center", gap: "3px", color: theme.textSecondary, textDecoration: "none", whiteSpace: "nowrap", flexShrink: 0 }}>
             {kaynak.ad} <ExternalLink size={11} />
           </a>
+        </div>
+      )}
+      {/* SÛRE ARAMASI — ad (Türkçe büyük/küçük harf, şapka, tire fark etmez) ya da numara */}
+      {sureAramaAcik && (tur === "sure" || tur === "ayet") && (
+        <div style={{ marginBottom: "8px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            <input value={sureSorgu} onChange={e => setSureSorgu(e.target.value)} autoFocus enterKeyHint="search"
+              placeholder="Sûre adı ya da numarası (ör. Âl-i İmrân, Yâsîn, 36)" aria-label="Sûre ara"
+              onKeyDown={e => {
+                if (e.key === "Enter" && sureSonuc && sureSonuc.length) {
+                  if (tur === "ayet") { setAyetSure(sureSonuc[0]); setSureAramaAcik(false); setSureSorgu("") }
+                }
+                if (e.key === "Escape") { setSureAramaAcik(false); setSureSorgu("") }
+              }}
+              style={{ flex: 1, minWidth: 0, padding: "7px 10px", borderRadius: "10px", border: `1px solid ${theme.border}`, background: theme.background, color: theme.text, fontFamily: "inherit", fontSize: "13px" }} />
+            {sureSorgu && (
+              <button onClick={() => setSureSorgu("")} aria-label="Aramayı temizle"
+                style={{ width: "28px", height: "28px", borderRadius: "50%", border: "none", background: "transparent", color: theme.textSecondary, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <X size={14} />
+              </button>
+            )}
+          </div>
+          {sureSonuc && !sureSonuc.length && (
+            <div style={{ fontSize: "11px", color: theme.textSecondary, margin: "6px 2px 0" }}>Bu adla bir sûre bulunamadı.</div>
+          )}
+          {/* Âyet kipinde: bulunan sûreler düğme olarak — dokununca o sûrenin âyetleri açılır */}
+          {tur === "ayet" && sureSonuc && sureSonuc.length > 0 && (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "5px", marginTop: "6px" }}>
+              {sureSonuc.slice(0, 12).map(n => (
+                <button key={n} onClick={() => { setAyetSure(n); setSureAramaAcik(false); setSureSorgu("") }}
+                  style={{ ...parcaStil(true, n === ayetSure, true), padding: "5px 9px", flex: "0 0 auto" }}>
+                  <span style={{ opacity: 0.6 }}>{n}</span> {sureAdi(n)}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -226,7 +399,9 @@ export default function KuranDinleKarti({ theme }) {
       {liste.durum === "hazir" && tur === "sure" && (
         <div style={{ maxHeight: "300px", overflowY: "auto", overscrollBehavior: "contain", paddingRight: "2px",
           display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(132px, 1fr))", gap: "6px" }}>
-          {liste.parcalar.map(p => (
+          {(sureAramaAcik && sureSonuc
+            ? sureSonuc.map(n => liste.parcalar.find(p => p.no === n)).filter(Boolean)
+            : liste.parcalar).map(p => (
             <button key={p.no} disabled={!p.var} aria-label={`${sureAdi(p.no)} Sûresi${p.var ? "" : " — kayıtta yok"}`}
               title={p.var ? `${p.no}. ${sureAdi(p.no)}` : "Bu sûre kayıtta bulunmuyor"}
               onClick={() => p.var && dokun(p.no)} style={parcaStil(p.var, aktifMi(p.no), true)}>

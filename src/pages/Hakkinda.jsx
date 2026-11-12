@@ -336,7 +336,7 @@ export default function Hakkinda() {
               "Ekstralar → Kur'an Dinle'deki hatim ve sûre kayıtları (Fatih Çollak ve 70 hafız, Mehmet Emin Ay, Abdulkadir Şehitoğlu, İhsan Atasoy, Davut Kaya, Tayyar Altıkulaç, İshak Danış) — kayıtlar archive.org'dan doğrudan çalınır",
               { href: "https://archive.org/" })}
             {kaynak(Headphones, "way2quran",
-              "Ekstralar → Kur'an Dinle'de İsmail Biçer'in sûre kayıtları",
+              "Ekstralar → Kur'an Dinle'de İsmail Biçer, Mahmoud Ali Al-Banna ve İslam Sobhi'nin sûre kayıtları; Kur'an Dinle aramasından seçilen kârilerin kayıtları",
               { href: "https://way2quran.com/" })}
             {kaynak(Globe, "ONNX Runtime Web · espeak-ng",
               "Seslerin tarayıcıda çalıştığı motor (ONNX Runtime Web, Microsoft, MIT lisansı) ve Kerîm sesinin fonemleyicisi (espeak-ng, GPL-3.0; @diffusionstudio/piper-wasm)",

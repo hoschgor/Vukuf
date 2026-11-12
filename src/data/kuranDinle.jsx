@@ -89,13 +89,160 @@ export const KARILER = [
       ayet: { tip: "diyanet", kimlik: "ar_osmanSahin" } } },
   { id: "mehmet-cevik", ad: "Mehmet Çevik", kaynaklar: {
       ayet: { tip: "diyanet", kimlik: "ar_mehmetcevik" } } },
+  // 12 Kasım 2026 — kullanıcı: "Okuyanlara bir de Mahmoud Ali Al Banna'yı ekleyelim."
+  // Sûre sûre way2quran (Hafs, 114 sûre, 320 kbps); âyet âyet everyayah (32 kbps — Kur'ân
+  // oynatıcısındaki kayıt).
+  { id: "mahmoud-ali-al-banna", ad: "Mahmoud Ali Al-Banna", kaynaklar: {
+      sure: { tip: "way2", slug: "mahmoud-ali-al-banna", rivayet: "hafs-an-asim" },
+      ayet: { tip: "everyayah", klasor: "mahmoud_ali_al_banna_32kbps" } } },
+  // 12 Kasım 2026 — kullanıcı: "way2quran.com/tr/reciters/islam-sobhi bu kâriyi de ana listeye alalım."
+  // Hangi sûrelerin olduğu kâri dizininden okunur (dizinde yoksa hepsi açık görünür).
+  { id: "islam-sobhi", ad: "İslam Sobhi", kaynaklar: {
+      sure: { tip: "way2", slug: "islam-sobhi", rivayet: "hafs-an-asim" } } },
 ]
-export const kariBul = (id) => KARILER.find(k => k.id === id) || null
+
+/* ── WAY2QURAN ARAMASI — EK KÂRİLER (12 Kasım 2026) ─────────────────────────
+   Kullanıcı: "Bu sayfada bulunan kâriler için bir arama butonu yapıp, yine way2 üzerinden
+   bizim sistemimizde okutabilelim. Bizim seçtiğimiz kârileri değiştirmeyeceğiz, ek olarak
+   bir arama butonu koyup way2 üzerinden çalacağız."
+   way2quran'ın açık bir API'si yok, sayfaları da başka siteden okunamıyor (CORS); ses
+   dosyaları ise her siteye açık (media.way2quran.com, ACAO *). Bu yüzden kâri DİZİNİ bir kez
+   üretilip uygulamayla yayınlanıyor: public/way2quran-kariler.json (araclar/way2quran_dizin.py).
+   Biçim: [{ s: slug, a: ad, r: { rivayet: 114 | [sûre no…] | { n: 114|[…], f: { no: "dosya" } } } }]
+   — 114 = tam. `f`: dosya adı alışılmış "NNN" değilse (12 Kasım 2026: İslam Sobhi'de çoğu
+   sûre "1.mp3", "8.mp3" diye dolgusuz; birinde "037-001.mp3" ek parça) o sûrenin gerçek adı.
+   Aramadan seçilen kâri "ek kâri" olarak cihazda saklanır (son 8), listede ayrı çiplerde durur;
+   kayıtlı kâriler değişmez. Kimlik: "way2:<slug>:<rivayet>". */
+export const WAY2_DIZIN = "/way2quran-kariler.json"
+// Dizindeki değer → { sureler: Set | null (tam), dosya: { no: "ad" } | null }
+export function way2KapsamCoz(v) {
+  if (Array.isArray(v)) return { sureler: new Set(v), dosya: null }
+  if (v && typeof v === "object") {
+    return {
+      sureler: Array.isArray(v.n) ? new Set(v.n) : null,
+      dosya: v.f && typeof v.f === "object" ? v.f : null,
+    }
+  }
+  return { sureler: null, dosya: null }
+}
+// Kayıtlı way2 kârilerinin kapsamı dizinden öğrenilir: "slug|rivayet" → { sureler, dosya }
+const way2Kapsam = new Map()
+const kapsamAnahtar = (k) => `${k.slug}|${k.rivayet}`
+function way2KapsamAl(k) {
+  const a = kapsamAnahtar(k)
+  if (way2Kapsam.has(a)) return Promise.resolve(way2Kapsam.get(a))
+  return way2Dizin().then(d => {
+    const x = d.find(y => y.s === k.slug)
+    const c = way2KapsamCoz(x && x.r ? x.r[k.rivayet] : null)
+    way2Kapsam.set(a, c)
+    return c
+  })
+}
+// Kapsam eldeyse hemen: aramadan eklenen kâride kendi üstünde (k.kapsam), kayıtlıda dizinden
+function way2KapsamEl(k) {
+  if (k.kapsam !== undefined) return k._kapsam || (k._kapsam = way2KapsamCoz(k.kapsam))
+  return way2Kapsam.get(kapsamAnahtar(k)) || null
+}
+const way2KapsamHemen = (k) => way2KapsamEl(k)?.sureler || null
+let dizinSozu = null
+export function way2Dizin() {
+  if (!dizinSozu) {
+    dizinSozu = fetch(WAY2_DIZIN)
+      .then(r => {
+        const tur = (r.headers.get("content-type") || "").toLowerCase()
+        if (!r.ok || tur.includes("text/html")) throw new Error("dizin yok")
+        return r.json()
+      })
+      .then(j => {
+        if (!Array.isArray(j)) throw new Error("bozuk")
+        return j.filter(x => x && typeof x.s === "string" && x.r && typeof x.r === "object")
+      })
+      .catch(e => { dizinSozu = null; throw e })
+  }
+  return dizinSozu
+}
+
+const RIVAYET_ADLARI = {
+  "hafs-an-asim": "Hafs", "warsh-an-nafi": "Verş", "qalun-an-nafi": "Kâlûn", "shubah-an-asim": "Şu'be",
+  "al-duri-an-abi-amr": "Dûrî (Ebû Amr)", "al-susi-an-abi-amr": "Sûsî", "al-bazzi-an-ibn-kathir": "Bezzî",
+  "qunbul-an-ibn-kathir": "Kunbül", "khalaf-an-hamzah": "Halef", "khallad-an-hamzah": "Hallâd",
+  "al-duri-an-al-kisai": "Dûrî (Kisâî)", "hisham-an-ibn-amir": "Hişâm", "ibn-dhakwan-an-ibn-amir": "İbn Zekvân",
+}
+export function rivayetAdi(slug) {
+  if (RIVAYET_ADLARI[slug]) return RIVAYET_ADLARI[slug]
+  return String(slug || "").split("-").filter(Boolean).map(w => w[0].toLocaleUpperCase("tr-TR") + w.slice(1)).join(" ")
+}
+
+const EK_ANAHTAR = "vukuf-kuran-dinle-ek"
+const EK_EN_COK = 8
+function ekOku() {
+  try {
+    const l = JSON.parse(localStorage.getItem(EK_ANAHTAR) || "[]")
+    if (Array.isArray(l)) return l.filter(e => e && typeof e.slug === "string" && typeof e.rivayet === "string")
+  } catch { /* yoksay */ }
+  return []
+}
+let ekListe = ekOku()
+const ekDinleyici = new Set()
+const ekYay = (l) => {
+  ekListe = l
+  try { localStorage.setItem(EK_ANAHTAR, JSON.stringify(l)) } catch { /* yoksay */ }
+  ekDinleyici.forEach(f => f())
+}
+export const ekKimlik = (e) => `way2:${e.slug}:${e.rivayet}`
+const ekBellek = new Map()
+function ekNesne(e) {
+  const id = ekKimlik(e)
+  const o = ekBellek.get(id)
+  if (o && o._e === e) return o
+  const n = {
+    id, ad: e.ad || e.slug, alt: rivayetAdi(e.rivayet), ek: true, _e: e,
+    // kapsam: dizindeki değer (eski kayıtlarda yalnız `sureler` dizisi vardı)
+    kaynaklar: { sure: { tip: "way2", slug: e.slug, rivayet: e.rivayet, kapsam: e.kapsam !== undefined ? e.kapsam : (Array.isArray(e.sureler) ? e.sureler : 114) } },
+  }
+  ekBellek.set(id, n)
+  return n
+}
+export function useEkKariler() {
+  const l = useSyncExternalStore((f) => { ekDinleyici.add(f); return () => ekDinleyici.delete(f) }, () => ekListe, () => ekListe)
+  return useMemo(() => l.map(ekNesne), [l])
+}
+// Aramadan seçilen kâriyi başa ekle (varsa öne al); kimliğini döndür
+export function ekKariEkle(e) {
+  const y = { slug: e.slug, ad: e.ad, rivayet: e.rivayet, kapsam: e.kapsam !== undefined ? e.kapsam : 114 }
+  const id = ekKimlik(y)
+  ekYay([y, ...ekListe.filter(x => ekKimlik(x) !== id)].slice(0, EK_EN_COK))
+  return id
+}
+export function ekKariSil(id) { ekYay(ekListe.filter(x => ekKimlik(x) !== id)) }
+
+// Dizinde arama: ad ya da kimlik (slug) içinde sorgunun bütün kelimeleri (Türkçe/aksan duyarsız)
+const aramaMetni = (x) => (sade(x.a) + " " + sade(String(x.s).replace(/-/g, " "))).replace(/[^a-z0-9 ]/g, "")
+export function way2Ara(dizin, sorgu, sinir = 40) {
+  const kel = sade(sorgu).replace(/[^a-z0-9 ]/g, " ").split(/\s+/).filter(Boolean)
+  if (!kel.length || !Array.isArray(dizin)) return []
+  const sonuc = []
+  for (const x of dizin) {
+    const m = x._m || (x._m = aramaMetni(x))
+    if (kel.every(k => m.includes(k))) { sonuc.push(x); if (sonuc.length >= sinir) break }
+  }
+  return sonuc
+}
+
+export const kariBul = (id) => {
+  if (!id) return null
+  const k = KARILER.find(x => x.id === id)
+  if (k) return k
+  const e = ekListe.find(x => ekKimlik(x) === id)
+  return e ? ekNesne(e) : null
+}
 
 export function kaynakBilgisi(k) {
   if (!k) return null
   if (k.tip === "arsiv") return { ad: "Internet Archive", sayfa: arsivSayfa(k.kimlik) }
   if (k.tip === "diyanet") return { ad: "Diyanet Kur'an portalı", sayfa: "https://kuran.diyanet.gov.tr/" }
+  if (k.tip === "way2") return { ad: "way2quran.com", sayfa: `https://way2quran.com/tr/reciters/${k.slug}` }
+  if (k.tip === "everyayah") return { ad: "EveryAyah", sayfa: "https://everyayah.com/" }
   return { ad: k.kaynak, sayfa: k.sayfa }
 }
 
@@ -119,6 +266,32 @@ const AD_TABLOSU = (() => {
   return m
 })()
 const ATILAN = /\b(suresi|sure|surah|kbit|kbps|ishak|danis|tayyar|altikulac|hafiz)\b/g
+/* SÛRE ARAMASI (12 Kasım 2026, kullanıcı: "sûre kısmına arama butonu koyalım; büyük/küçük
+   harf ayarı da gerekecek, ör. 'ali imran' yazan doğru sûreye ulaşabilmeli"). Yazılanın
+   harfleri sadeleşir (Türkçe büyük/küçük, şapka, kesme, tire, boşluk yok sayılır): "ALİ İMRAN",
+   "al-i imran", "âl-i İmrân" hepsi aynı. Ad ya da bilinen öbür adı (Gâfir, Şerh, Lokman…) ile ve
+   sûre numarasıyla bulunur; adın başı tutanlar öne alınır. Dönüş: [sûre no…] */
+export function sureAra(sorgu) {
+  const ham = String(sorgu || "").trim()
+  if (!ham) return []
+  const sayi = /^\d{1,3}$/.test(ham) ? +ham : null
+  const q = anahtar(ham)
+  const tam = [], bas = [], ic = []
+  if (sayi && sayi >= 1 && sayi <= 114) tam.push(sayi)
+  if (q) {
+    const adlar = Array.from({ length: 114 }, () => [])
+    for (const [k, no] of AD_TABLOSU) adlar[no - 1].push(k)
+    for (let i = 0; i < 114; i++) {
+      const no = i + 1
+      if (no === sayi) continue
+      if (adlar[i].includes(q)) tam.push(no)
+      else if (adlar[i].some(k => k.startsWith(q))) bas.push(no)
+      else if (adlar[i].some(k => k.includes(q))) ic.push(no)
+    }
+  }
+  return [...tam, ...bas, ...ic]
+}
+
 export function sureAdindanNo(metin) {
   const s = sade(metin).replace(/\(.*?\)/g, " ").replace(/\d+/g, " ").replace(ATILAN, " ")
   const k = s.replace(/[^a-z]/g, "")
@@ -217,6 +390,15 @@ function urlHemen(kari, tur, no, ayet) {
   const k = kari?.kaynaklar?.[tur]
   if (!k) return { url: null }
   if (k.tip === "sablon") return { url: k.url(no) }
+  if (k.tip === "way2") {
+    const c = way2KapsamEl(k)
+    if (!c) return { bekle: true }                   // kayıtlı kâri: dosya adları dizinden gelecek
+    return { url: `https://media.way2quran.com/${k.slug}/${k.rivayet}/${encodeURIComponent((c.dosya && c.dosya[no]) || p3(no))}.mp3` }
+  }
+  if (k.tip === "everyayah") {
+    const a = ayet === 0 ? 1 : ayet, s = ayet === 0 ? 1 : no      // besmele: Fâtiha 1
+    return { url: `https://everyayah.com/data/${k.klasor}/${p3(s)}${p3(a)}.mp3` }
+  }
   if (k.tip === "diyanet") {
     const a = ayet === 0 ? 1 : ayet, s = ayet === 0 ? 1 : no      // besmele: Fâtiha 1 (oynatıcıdaki gibi)
     return { url: `${DIYANET_SES_URL}/${k.kimlik}/${Number(s)}_${Number(a)}.mp3` }
@@ -234,6 +416,11 @@ async function urlBekle(kari, tur, no, ayet) {
   const k = kari?.kaynaklar?.[tur]
   const h = urlHemen(kari, tur, no, ayet)
   if (!h.bekle) return h.url
+  if (k.tip === "way2") {
+    // Dizin alınamazsa alışılmış "NNN.mp3" adıyla denenir
+    try { await way2KapsamAl(k) } catch { way2Kapsam.set(kapsamAnahtar(k), { sureler: null, dosya: null }) }
+    return urlHemen(kari, tur, no, ayet).url
+  }
   try {
     await arsivDosyalari(k.kimlik)
     return urlHemen(kari, tur, no, ayet).url
@@ -249,6 +436,13 @@ export function useParcaListesi(kari, tur) {
   const [s, setS] = useState(0)                       // liste gelince yeniden çiz
   const [deneme, setDeneme] = useState(0)             // "Tekrar dene"
   const [hata, setHata] = useState(null)
+  // way2 kâri (kayıtlı): eksik sûreler varsa dizinden öğrenilir; dizin yoksa hepsi açık kalır
+  useEffect(() => {
+    if (!k || k.tip !== "way2" || k.kapsam !== undefined) return
+    let iptal = false
+    way2KapsamAl(k).then(() => { if (!iptal) setS(x => x + 1) }).catch(() => {})
+    return () => { iptal = true }
+  }, [k])
   useEffect(() => {
     setHata(null)
     if (!k || k.tip !== "arsiv") return
@@ -264,6 +458,10 @@ export function useParcaListesi(kari, tur) {
     const sayi = parcaSayisi(tur)
     const hepsi = (v) => Array.from({ length: sayi }, (_, i) => ({ no: i + 1, var: v }))
     if (k.tip === "sablon") return { durum: "hazir", parcalar: hepsi(true) }
+    if (k.tip === "way2") {
+      const var_ = way2KapsamHemen(k)
+      return { durum: "hazir", parcalar: hepsi(true).map(p => ({ ...p, var: !var_ || var_.has(p.no) })) }
+    }
     const dosyalar = hazir.get(k.kimlik) || listeOku(k.kimlik)
     if (dosyalar) {
       const h = arsivEslemi(k, dosyalar)
@@ -292,6 +490,7 @@ function komsuParca(kari, tur, no, yon) {
     const d = hazir.get(k.kimlik) || listeOku(k.kimlik)
     if (d) harita = arsivEslemi(k, d)
   }
+  if (k.tip === "way2") harita = way2KapsamHemen(k)
   const varMi = (n) => (!harita ? true : harita.has(n))
   const duaVar = harita ? harita.has("dua") : !!k.dua
   if (yon > 0) {

@@ -267,23 +267,47 @@ function NamazVakitleri({ theme }) {
               </>
             )
             const ramGun = d.bugun && Date.now() >= vakitAni(d.bugun, d.bugun.Aksam) && d.yarin ? d.yarin : d.bugun
-            const sag = kerahat ? (
-              <span role="status" style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", padding: "0.35em 0.5em", borderRadius: "0.6em", border: `1px solid ${theme.accent}`, background: `${theme.accent}14` }}>
-                <span style={{ display: "flex", alignItems: "center", gap: "0.3em", fontWeight: 700, color: theme.accent }}>
-                  <span className="vk-kerahat-nokta" style={{ width: "0.55em", height: "0.55em", borderRadius: "50%", background: theme.accent }} />Kerahat vakti
+            /* SAĞ KÖŞE (12 Kasım 2026, kullanıcı: "cami üzerine (sağ tarafa) en yakın mübarek günü
+               ve kaldığı günü yazalım. Kerahat vaktine 1 saatten az kalmışsa, vakit içindeyken
+               yazdığımız yere 'xx dk xx sn kaldı' diye yazalım"). Üstte kerahat bildirimi (içindeyken
+               ya da başlamasına 1 saatten az kalmışken; saniyeli geri sayım) ya da Ramazan'da sahur/
+               iftar; altta en yakın mübarek gün ve kalan gün. */
+            const simdiMs = Date.now()
+            const dkSn = (ms) => { const t = Math.max(0, Math.ceil(ms / 1000)); return `${Math.floor(t / 60)} dk ${String(t % 60).padStart(2, "0")} sn` }
+            const yaklasanKerahat = !kerahat ? araliklar.find(a => a.bas > simdiMs && a.bas - simdiMs <= 3600000) : null
+            const mubarek = yaklasanGunler(1)[0] || null
+            const kerahatKutusu = (icinde, k) => (
+              <span role="status" style={{
+                display: "flex", flexDirection: "column", alignItems: "flex-end", padding: "0.3em 0.45em", borderRadius: "0.6em",
+                border: `1px ${icinde ? "solid" : "dashed"} ${theme.accent}`, background: icinde ? `${theme.accent}14` : "transparent",
+              }}>
+                <span style={{ display: "flex", alignItems: "center", gap: "0.3em", fontWeight: 700, color: theme.accent, whiteSpace: "nowrap" }}>
+                  {icinde && <span className="vk-kerahat-nokta" style={{ width: "0.55em", height: "0.55em", borderRadius: "50%", background: theme.accent }} />}
+                  {icinde ? "Kerahat vakti" : "Kerahat vaktine"}
                 </span>
-                <span style={{ fontSize: "0.9em" }}>{kerahat.kisa}</span>
-                <span style={{ color: theme.text, fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>bitiş {kerahat.bitSaat}</span>
-                <span style={{ fontSize: "0.9em" }}>{kalanMetni(kerahat.bit - Date.now())} kaldı</span>
+                <span style={{ fontSize: "0.9em", whiteSpace: "nowrap" }}>{k.kisa} · {icinde ? `bitiş ${k.bitSaat}` : k.basSaat}</span>
+                <span style={{ color: theme.text, fontWeight: 600, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>{dkSn((icinde ? k.bit : k.bas) - simdiMs)} kaldı</span>
               </span>
-            ) : ramGun && ramazanMi(ramGun) ? (
-              <>
-                <span style={{ display: "block", fontSize: "0.88em" }}>Sahur</span>
-                <span style={{ display: "block", fontWeight: 600, color: theme.text, fontVariantNumeric: "tabular-nums", marginBottom: "0.25em" }}>{ramGun.Imsak}</span>
-                <span style={{ display: "block", fontSize: "0.88em" }}>İftar</span>
-                <span style={{ display: "block", fontWeight: 600, color: theme.text, fontVariantNumeric: "tabular-nums" }}>{ramGun.Aksam}</span>
-              </>
-            ) : null
+            )
+            const ust = kerahat ? kerahatKutusu(true, kerahat)
+              : yaklasanKerahat ? kerahatKutusu(false, yaklasanKerahat)
+              : ramGun && ramazanMi(ramGun) ? (
+                <>
+                  <span style={{ display: "block", fontSize: "0.88em" }}>Sahur</span>
+                  <span style={{ display: "block", fontWeight: 600, color: theme.text, fontVariantNumeric: "tabular-nums", marginBottom: "0.25em" }}>{ramGun.Imsak}</span>
+                  <span style={{ display: "block", fontSize: "0.88em" }}>İftar</span>
+                  <span style={{ display: "block", fontWeight: 600, color: theme.text, fontVariantNumeric: "tabular-nums" }}>{ramGun.Aksam}</span>
+                </>
+              ) : null
+            const gunYazisi = mubarek && (
+              <span title={`${mubarek.ad}${mubarek.gece ? " (akşamı)" : ""}`} style={{ display: "block", marginTop: ust ? "0.35em" : 0 }}>
+                <span style={{ display: "block", fontSize: "0.88em", fontWeight: 700, color: theme.textSecondary, lineHeight: 1.05 }}>{mubarek.ad}</span>
+                <span style={{ display: "block", fontWeight: 600, color: mubarek.kalanGun === 0 ? theme.accent : theme.text, whiteSpace: "nowrap" }}>
+                  {mubarek.kalanGun === 0 ? "Bugün" : mubarek.kalanGun === 1 ? "Yarın" : `${mubarek.kalanGun} gün kaldı`}
+                </span>
+              </span>
+            )
+            const sag = (ust || gunYazisi) ? <>{ust}{gunYazisi}</> : null
             if (sec) {
               const fark = vakitAni(d.bugun, d.bugun[sec.k]) - Date.now()
               return (

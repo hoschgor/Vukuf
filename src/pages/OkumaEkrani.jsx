@@ -4378,7 +4378,9 @@ const BAR_KISA_ADLAR = {
 const OrtaMenu = ortaBar && (
   <OrtaMenuCercevesi menu={ortaMenu} theme={theme} olcek={barUiOlcegi}>
     {/* Kayarken "Kaydır" düğmesi durdurur → adı "Durdur" (11 Kasım 2026) */}
-    {barEtiketle(Bar, new Map(Object.entries({ ...BAR_KISA_ADLAR, oto: otomatikKaydirma ? "Durdur" : "Kaydır" }).map(([k, ad]) => [barOge(k).order, ad])), { theme, olcek: barOlcegi })}
+    {/* Kayarken "Durdur" vurgu renginde dolu kapsül olarak öne çıkar (12 Kasım 2026) */}
+    {barEtiketle(Bar, new Map(Object.entries({ ...BAR_KISA_ADLAR, oto: otomatikKaydirma ? "Durdur" : "Kaydır" }).map(([k, ad]) => [barOge(k).order, ad])),
+      { theme, olcek: barOlcegi, vurgulu: otomatikKaydirma ? [barOge("oto").order] : [] })}
   </OrtaMenuCercevesi>
 )
 // Alt bilgi şeridi — içerik bar öğelerinin açık/kapalı ayarından

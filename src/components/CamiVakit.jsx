@@ -145,7 +145,9 @@ export default function CamiVakit({ theme, ust, buyuk, alt, sol = null, sag = nu
           position: "absolute", boxSizing: "border-box", ...yuzde(kose.x, kose.y),
           width: `${(kose.g / VB_G) * 100}%`, height: `${(kose.h / yH) * 100}%`,
           display: "flex", flexDirection: "column", justifyContent: "flex-start", alignItems: hiza,
-          textAlign: i ? "right" : "left", overflow: "hidden",
+          // Sağ köşe sola doğru taşabilir (12 Kasım 2026): kerahat geri sayımı ("34 dk 07 sn kaldı")
+          // dar ekranda köşeye sığmıyor, kesilmesin — taşan kısım yan kubbenin üstündeki boş göğe düşer
+          textAlign: i ? "right" : "left", overflow: i ? "visible" : "hidden",
           fontSize: `${Math.max(8.5, 8.2 * k)}px`, lineHeight: 1.12, color: t.textSecondary,
         }}>{icerik}</div>
       ))}

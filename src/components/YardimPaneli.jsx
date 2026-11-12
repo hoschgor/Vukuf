@@ -255,7 +255,7 @@ const KONULAR = [
     ozet: "Sayfanın kendiliğinden ilerlemesi.",
     nerede: "Kur'ân-ı Kerîm → bardaki oynat simgesi",
     metin: [
-      "Oynat simgesi sayfayı kendiliğinden kaydırır; tekrar dokunulduğunda durur. Kaydırma hızı, otomatik kaydırma açıkken Ayarlar → Okuma Düzeni bölümünden değiştirilebilir.",
+      "Oynat simgesi sayfayı kendiliğinden kaydırır; tekrar dokunulduğunda durur. Menülü düzende kaydırma sürerken menü tek dokunuşla açılır ve \"Durdur\" düğmesi vurgu renginde, belirgin bir kapsül olarak öne çıkar. Kaydırma hızı, otomatik kaydırma açıkken Ayarlar → Okuma Düzeni bölümünden değiştirilebilir.",
     ],
     anahtar: "kaydır otomatik akış hız",
   },
@@ -656,7 +656,7 @@ const KONULAR = [
       "Konumdan bulunabilir ya da il ve ilçe seçilebilir. Yaklaşan vakit ve kalan süre (saniyesiyle) caminin mihrabında yazar. Bir vakte dokunulunca mihrapta o vakte kalan ya da üzerinden geçen süre görünür; \"Yaklaşan vakte dön\" ile ya da aynı vakte yeniden dokunularak geri dönülür. Altında günün vakitleri, miladî ve hicrî tarih görünür. Cami çizimi seçili temanın renklerini alır; üstündeki gökte gündüz güneş, gece ay (o günkü evresiyle) doğudan batıya doğru ilerler. Vakitler Diyanet'in aylık vakitlerinden alınır ve cihazda saklanır; internetsiz de görünür.",
       "\"Takvime ekle\" elde olan yaklaşık 30 günün vakitlerini telefonun takvimine aktarır; ay dolunca yeniden eklenebilir. İndirmeden önce hatırlatma seçilebilir (vaktinde ya da 5–30 dk önce); uyarıyı telefonun takvimi verir, uygulama kapalıyken de çalışır. Bazı takvim uygulamaları dosyadaki hatırlatmayı almayabilir.",
       "\"Aylık vakitler\" elde olan günlerin vakitlerini tablo hâlinde gösterir; bugünün satırı vurguludur.",
-      "Caminin solundaki boşlukta günün kerahat vakitleri (şurûk, istivâ, gurûb) liste hâlinde yazar; içinde bulunulan aralık vurgulanır, geçenler soluklaşır. Kerahat vaktindeyken caminin sağında bitiş saati ve kalan süreyle bir bildirim görünür. Aralıklar Diyanet'in fetvalarında Merğînânî'ye (el-Hidâye) dayanarak verilen sürelerden alınmıştır: güneşin doğuşundan sonraki 50 dk, öğle vaktinden önceki 10 dk ve akşam vaktinden önceki 50 dk.",
+      "Caminin solundaki boşlukta günün kerahat vakitleri (şurûk, istivâ, gurûb) liste hâlinde yazar; içinde bulunulan aralık vurgulanır, geçenler soluklaşır. Kerahat vaktindeyken caminin sağında bitiş saati ve kalan süreyle (dakika ve saniye) bir bildirim görünür; bir sonraki kerahat vaktine bir saatten az kalınca da aynı yerde başlangıç saati ve geri sayım belirir. Altında en yakın mübarek gün ve kalan gün sayısı yazar. Aralıklar Diyanet'in fetvalarında Merğînânî'ye (el-Hidâye) dayanarak verilen sürelerden alınmıştır: güneşin doğuşundan sonraki 50 dk, öğle vaktinden önceki 10 dk ve akşam vaktinden önceki 50 dk.",
       { alt: "Cuma hutbesi" },
       "Bu haftanın Cuma'sını ve Diyanet'in hutbe sayfasını gösterir. Hutbe metni ve sesli hutbe Diyanet'in sayfasında açılır; uygulamaya kopyalanmaz.",
       { alt: "Kandiller ve mübarek günler" },

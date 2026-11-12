@@ -656,8 +656,18 @@ export function OrtaMenuCercevesi({ menu, theme, olcek = 1, etiket = "Okuma men�
 // altına kısa adı eklenir. Hangi düğmenin hangi öğe olduğu, barOge()'nin verdiği
 // `order` değerinden bulunur (etiketler: order → ad). Düğme olmayanlar (süre, kısım
 // bilgisi, hız kutusu) ve iç düğmeler olduğu gibi kalır.
-export function barEtiketle(bar, etiketler, { theme, olcek = 1 } = {}) {
+/* VURGULU DÜĞME (12 Kasım 2026, kullanıcı: "Otomatik kaydırma aktifken menü açıldığında
+   durdur butonu daha çok öne çıksın, daha kolayca durdurulabilsin"). `vurgulu`: öne çıkacak
+   düğmelerin `order` değerleri. Böyle bir düğme vurgu renginde dolu bir kapsül olur (beyaz
+   simge ve ad, biraz daha iri, çevresinde yavaşça atan bir hale) — menünün öbür düğmeleri
+   arasında ilk bakışta seçilir ve dokunma alanı büyür. */
+const VURGU_CSS = `@keyframes vk-menu-vurgu{0%,100%{box-shadow:0 0 0 0 var(--vk-vurgu-hale)}50%{box-shadow:0 0 0 6px transparent}}
+.vk-menu-vurgu{animation:vk-menu-vurgu 1.8s ease-in-out infinite}
+@media (prefers-reduced-motion: reduce){.vk-menu-vurgu{animation:none}}`
+export function barEtiketle(bar, etiketler, { theme, olcek = 1, vurgulu = [] } = {}) {
   if (!isValidElement(bar)) return bar
+  const vurguKume = new Set(vurgulu)
+  const ac = theme?.accent || "#8b6a2b"
   const etiketStil = {
     fontSize: `${Math.max(9, Math.round(9.5 * olcek))}px`, lineHeight: 1.1, fontWeight: 500,
     color: theme?.textSecondary, whiteSpace: "nowrap", letterSpacing: "0.01em",
@@ -668,6 +678,25 @@ export function barEtiketle(bar, etiketler, { theme, olcek = 1 } = {}) {
     if (c.type !== "button") return c
     const ad = etiketler.get(c.props.style?.order)
     if (!ad) return c
+    if (vurguKume.has(c.props.style?.order)) {
+      return cloneElement(c, {
+        className: [c.props.className, "vk-menu-vurgu"].filter(Boolean).join(" "),
+        style: {
+          ...c.props.style,
+          "--vk-vurgu-hale": `${ac}66`,
+          background: ac, color: "#fff", border: "none",
+          borderRadius: `${Math.round(14 * olcek)}px`,
+          flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "3px",
+          minWidth: `${Math.round(58 * olcek)}px`,
+          padding: `${Math.round(7 * olcek)}px ${Math.round(8 * olcek)}px`,
+          margin: `0 ${Math.round(3 * olcek)}px`,
+          transform: "scale(1.06)",
+        },
+        "aria-label": c.props["aria-label"] || ad,
+      },
+      <span style={{ display: "flex", alignItems: "center", gap: "3px", color: "#fff" }}>{c.props.children}</span>,
+      <span style={{ ...etiketStil, color: "#fff", fontWeight: 700 }}>{ad}</span>)
+    }
     return cloneElement(c, {
       style: {
         background: "transparent", border: "none",     // düz <button> görünümü kalmasın
@@ -681,7 +710,8 @@ export function barEtiketle(bar, etiketler, { theme, olcek = 1 } = {}) {
     <span style={{ display: "flex", alignItems: "center", gap: "3px" }}>{c.props.children}</span>,
     <span style={etiketStil}>{ad}</span>)
   }
-  return cloneElement(bar, {}, Children.map(bar.props.children, isle))
+  const ic = Children.map(bar.props.children, isle)
+  return cloneElement(bar, {}, vurguKume.size ? [<style key="vk-vurgu-css">{VURGU_CSS}</style>, ...(ic || [])] : ic)
 }
 
 // ── İLK AÇILIŞ NOTU ─────────────────────────────────────────────────────────

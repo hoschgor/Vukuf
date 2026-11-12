@@ -4929,7 +4929,11 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
         // Kayarken düğme durdurur → adı da "Durdur" (11 Kasım 2026)
         otoOynat: otomatikKaydirma ? "Durdur" : "Kaydır",
         sadeMod: "Sade", tema: "Tema", ayarlar: "Ayarlar",
-      }).map(([k, ad]) => [barOge(k).order, ad])), { theme, olcek: barOlcegi })}
+      }).map(([k, ad]) => [barOge(k).order, ad])), {
+        theme, olcek: barOlcegi,
+        // Kayarken "Durdur" öne çıkar (12 Kasım 2026)
+        vurgulu: otomatikKaydirma ? [barOge("otoOynat").order] : [],
+      })}
     </OrtaMenuCercevesi>
   )
   // Alt bilgi şeridi — içerik bar öğelerinin açık/kapalı ayarından; oynatıcı açıksa onun üstünde

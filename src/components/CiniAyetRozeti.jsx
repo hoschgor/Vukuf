@@ -70,21 +70,21 @@ export function CicekliYarimCizim({ p }) {
       <path d="M-1 19 C1 24 3 27 8 27 C5 24 2 21 -1 19 Z" fill={ac} opacity=".5" />
 
       {/* DALLAR — çiçekten uçlara (üst ve alt), üzerlerinde küçük yapraklar */}
-      <path d="M-7 -6 C-6.5 -10.5 -5 -14.5 -2.2 -18.2" fill="none" style={{ stroke: p.koyu, strokeWidth: 0.9, strokeLinecap: "round" }} />
-      <path d="M-7 6 C-6.5 10.5 -5 14.5 -2.2 18.2" fill="none" style={{ stroke: p.koyu, strokeWidth: 0.9, strokeLinecap: "round" }} />
-      <path d="M-5.8 -11.2 C-3.4 -12.4 -1.4 -12 0.3 -10.4 C-1.8 -9.6 -3.9 -9.9 -5.8 -11.2 Z" style={{ fill: p.acik, ...k }} />
-      <path d="M-5.8 11.2 C-3.4 12.4 -1.4 12 0.3 10.4 C-1.8 9.6 -3.9 9.9 -5.8 11.2 Z" style={{ fill: p.acik, ...k }} />
-      <path d="M-6.4 -9 C-8.6 -10.6 -10.8 -10.6 -12.4 -9.2 C-10.4 -8 -8.4 -7.9 -6.4 -9 Z" style={{ fill: p.ana, ...k }} />
-      <path d="M-6.4 9 C-8.6 10.6 -10.8 10.6 -12.4 9.2 C-10.4 8 -8.4 7.9 -6.4 9 Z" style={{ fill: p.ana, ...k }} />
+      <path d="M-7 -6 C-6.5 -10.5 -5 -14.5 -2.2 -18.2" fill="none" style={{ stroke: p.dal || p.koyu, strokeWidth: 0.9, strokeLinecap: "round" }} />
+      <path d="M-7 6 C-6.5 10.5 -5 14.5 -2.2 18.2" fill="none" style={{ stroke: p.dal || p.koyu, strokeWidth: 0.9, strokeLinecap: "round" }} />
+      <path d="M-5.8 -11.2 C-3.4 -12.4 -1.4 -12 0.3 -10.4 C-1.8 -9.6 -3.9 -9.9 -5.8 -11.2 Z" style={{ fill: p.yaprakAcik || p.acik, ...k }} />
+      <path d="M-5.8 11.2 C-3.4 12.4 -1.4 12 0.3 10.4 C-1.8 9.6 -3.9 9.9 -5.8 11.2 Z" style={{ fill: p.yaprakAcik || p.acik, ...k }} />
+      <path d="M-6.4 -9 C-8.6 -10.6 -10.8 -10.6 -12.4 -9.2 C-10.4 -8 -8.4 -7.9 -6.4 -9 Z" style={{ fill: p.yaprak || p.ana, ...k }} />
+      <path d="M-6.4 9 C-8.6 10.6 -10.8 10.6 -12.4 9.2 C-10.4 8 -8.4 7.9 -6.4 9 Z" style={{ fill: p.yaprak || p.ana, ...k }} />
       {/* ÇİÇEĞİN İKİ YANINDA çanak yaprakları (içe ve dışa) */}
-      <path d="M-7 0 C-4.5 -2.6 -1.5 -2.6 0.8 0 C-1.5 2.6 -4.5 2.6 -7 0 Z" style={{ fill: p.cokAcik, ...k }} />
+      <path d="M-7 0 C-4.5 -2.6 -1.5 -2.6 0.8 0 C-1.5 2.6 -4.5 2.6 -7 0 Z" style={{ fill: p.canak || p.cokAcik, ...k }} />
 
       {/* HATÂYÎ — kat kat yuvarlak çiçek */}
       <g transform="translate(-7.6 0) scale(1.15)">
-        {halka(12, 4.4, 1.55, 2.15, p.koyu)}
-        {halka(8, 2.7, 1.3, 1.7, p.ana, 22.5)}
-        {halka(6, 1.4, 0.9, 1.15, p.acik)}
-        <circle r="1" style={{ fill: p.merkez, ...k, strokeWidth: 0.35 }} />
+        {halka(12, 4.4, 1.55, 2.15, p.tacDis || p.koyu)}
+        {halka(8, 2.7, 1.3, 1.7, p.tacOrta || p.ana, 22.5)}
+        {halka(6, 1.4, 0.9, 1.15, p.tacIc || p.acik)}
+        <circle r="1" style={{ fill: p.gobek || p.merkez, ...k, strokeWidth: 0.35 }} />
       </g>
     </g>
   )
@@ -92,6 +92,61 @@ export function CicekliYarimCizim({ p }) {
 
 function Yarim({ p }) {
   return <g transform="translate(-50 0)"><CicekliYarimCizim p={p} /></g>
+}
+
+/* ÇİÇEĞİN RENKLERİ (13 Kasım 2026) — kullanıcı: "Ortasındaki çiçek bazı temalarda daha güzel.
+   Birden fazla ve farklı renkler kullanılınca çiçeğe daha çok benziyor. Şekli değiştirmeden
+   renkler üzerinde değişiklik yaparak çiçeğe daha çok benzetebiliriz."
+   Eskiden çiçeğin bütün katları âyet no renginin tonlarıydı (yalnız göbek temanın vurgu
+   rengi) → koyu temalarda altın göbekle güzel, açık temalarda tek renk leke gibiydi.
+   Artık İznik çinisinin renk dili: dış taç temanın koyu tonu (kendi renginden kopmasın),
+   orta taç mercan kırmızısı, iç taç açık gül pembesi, göbek altın, dal ve yapraklar yeşil.
+   Sabit renkler temaya %15 karıştırılıyor (uyum), koyu zeminde biraz açılıyor (parlasın).
+   Âyet no rengi kırmızımsı olan temalarda (Kurugül, Gülnar…) orta taç altına, göbek
+   kırmızıya dönüyor — dış taçla orta taç birbirine karışmasın. Âyet no rengi beyaz/gri
+   gibi renksizse (izleme modunda beyaz yazı) dış taç kobalt mavisi oluyor. */
+const CICEK = {
+  kirmizi: "#c9463d", pembe: "#f4cbbf", altin: "#e3a935", yesil: "#4b8a4d", yesilAcik: "#a6c98f", kobalt: "#3d64a8",
+}
+// 0..1 göreli parlaklık (yaklaşık)
+function parlaklik(h) {
+  const c = hexRgb(h)
+  if (!c) return 1
+  return (0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]) / 255
+}
+// { h (derece), s (0..1) }
+function tonDoygunluk(h) {
+  const c = hexRgb(h)
+  if (!c) return { h: 0, s: 0 }
+  const [r, g, b] = c.map(v => v / 255)
+  const mx = Math.max(r, g, b), mn = Math.min(r, g, b), d = mx - mn
+  let t = 0
+  if (d) {
+    if (mx === r) t = ((g - b) / d) % 6
+    else if (mx === g) t = (b - r) / d + 2
+    else t = (r - g) / d + 4
+    t *= 60; if (t < 0) t += 360
+  }
+  return { h: t, s: mx ? d / mx : 0 }
+}
+export function cicekRenkleri(ac, zemin = "#ffffff", yazi = "#222222") {
+  const koyuZemin = parlaklik(zemin) < 0.45
+  const { h, s } = tonDoygunluk(ac)
+  const renksiz = s < 0.18
+  const kirmizimsi = !renksiz && (h >= 320 || h <= 28)
+  const uyum = (c) => (renksiz ? c : karis(c, ac, 85))
+  const parlat = (c, o = 78) => (koyuZemin ? karis(c, "#ffffff", o) : c)
+  const disTac = renksiz ? parlat(CICEK.kobalt, 72) : karis(ac, yazi, koyuZemin ? 88 : 68)
+  return {
+    tacDis: disTac,
+    tacOrta: parlat(uyum(kirmizimsi ? CICEK.altin : CICEK.kirmizi), 88),
+    tacIc: uyum(CICEK.pembe),
+    gobek: parlat(uyum(kirmizimsi ? CICEK.kirmizi : CICEK.altin), 92),
+    dal: koyuZemin ? parlat(uyum(CICEK.yesil), 70) : karis(uyum(CICEK.yesil), yazi, 78),
+    yaprak: parlat(uyum(CICEK.yesil), 75),
+    yaprakAcik: parlat(uyum(CICEK.yesilAcik), 90),
+    canak: koyuZemin ? karis(uyum(CICEK.yesilAcik), zemin, 70) : karis(uyum(CICEK.yesilAcik), zemin, 75),
+  }
 }
 
 export function ciniPalet(ac, zemin = "#ffffff", yazi = "#222222", vurgu = null) {
@@ -102,9 +157,10 @@ export function ciniPalet(ac, zemin = "#ffffff", yazi = "#222222", vurgu = null)
     cokAcik: karis(ac, zemin, 25),
     zeminTon: karis(ac, zemin, 10),
     kose: karis(ac, zemin, 32),          // kavsin dışındaki köşelik
-    merkez: vurgu || karis(ac, yazi, 45), // gül göbeği
+    merkez: vurgu || karis(ac, yazi, 45), // (eski) gül göbeği — artık `gobek`
     vurgu: vurgu || karis(ac, zemin, 70), // lâle goncası
     kontur: zemin,
+    ...cicekRenkleri(ac, zemin, yazi),
   }
 }
 

@@ -27,9 +27,9 @@
    kar/yağmur karartmanın ALTINDA solmasın, yazının altında parlak kalsın. */
 
 import { useEffect, useMemo, useRef, useState } from "react"
-import { X, Settings2, SkipBack, SkipForward, Play, Pause } from "lucide-react"
+import { X, Settings2, SkipBack, SkipForward, Play, Pause, Volume1, Volume2, VolumeX } from "lucide-react"
 import { DESENLER, GORSELLER } from "../data/arkaplanlar"
-import { gorselCiz, rozetGorseliUret, karartmaCiz } from "./GorselOlustur"
+import { gorselCiz, rozetGorseliUret, renkliRozetDinle, karartmaCiz } from "./GorselOlustur"
 import { useIzlemeAyar } from "../data/izlemeAyar"
 import { resimCiz, gecisCiz, havaKur, havaCiz, isikCiz, kareHizi, GECIS_SN, videoCiz, videoSigar, videoKalis } from "../data/izlemeSahne"
 import { galeriBlobu, eskiGorselVarsaTasi } from "../data/izlemeGaleri"
@@ -66,6 +66,19 @@ export default function IzlemeModu({
   const aktif = player?.aktifAyet || null
   const caliyor = player?.durum === "caliyor"
 
+  /* SES (13 Kasım 2026) — kullanıcı: "İzleme moduna ses butonu da ekleyelim." Oynatıcının
+     ses seviyesini kullanır (PlayerBar'daki ses kutusu ile aynı): susturunca önceki seviye
+     hatırlanır, tekrar açınca ona dönülür. Seviye ortak olduğu için çıkınca da korunur. */
+  const ses = typeof player?.ses === "number" ? player.ses : 1
+  const oncekiSesRef = useRef(ses > 0 ? ses : 1)
+  useEffect(() => { if (ses > 0) oncekiSesRef.current = ses }, [ses])
+  const sesDegistir = () => player?.sesAyarla?.(ses === 0 ? (oncekiSesRef.current || 1) : 0)
+  const SesIkon = ses === 0 ? VolumeX : ses < 0.5 ? Volume1 : Volume2
+  /* 13 Kasım 2026 — kullanıcı: "izleme modundaki ses butonu ile ses kısılabilmeli de."
+     Ses düğmesi artık küçük bir ses kutusu açıyor: susturma düğmesi + kaydırıcı + yüzde.
+     Kutu açıkken düğmeler solmuyor; düğmeler gizlenince kutu da kapanıyor. */
+  const [sesKutusu, setSesKutusu] = useState(false)
+
   /* Arka plan tanımı — görsel modundaki çözümlemenin aynısı. */
   const arka = useMemo(() => {
     if (iz.arka === "galeri") return { id: "galeri", ad: "Galeriden", koyu: true, tip: "galeri" }
@@ -77,6 +90,9 @@ export default function IzlemeModu({
     const d = DESENLER.find(x => x.id === iz.arka) || DESENLER[0]
     return { ...d, tip: "desen" }
   }, [iz.arka, iz.ozelGorsel])
+
+  /* Renkli rozet (yazı rengine göre, 13 Kasım 2026) hazır olunca yazı katmanı yeniden çizilsin */
+  useEffect(() => renkliRozetDinle(() => setArkaSurum(v => v + 1)), [])
 
   /* Âyet sonu madalyonu — görsel moduyla aynı kaynak. */
   useEffect(() => {
@@ -429,10 +445,11 @@ export default function IzlemeModu({
   }, [acik, ayarAcik, kapat])
 
   useEffect(() => {
-    if (!acik || !kontrolGorunur || ayarAcik) return
+    if (!acik || !kontrolGorunur || ayarAcik || sesKutusu) return
     const t = setTimeout(() => setKontrolGorunur(false), KONTROL_SURESI)
     return () => clearTimeout(t)
-  }, [acik, kontrolGorunur, ayarAcik, aktif])
+  }, [acik, kontrolGorunur, ayarAcik, aktif, sesKutusu])
+  useEffect(() => { if (!kontrolGorunur || !acik) setSesKutusu(false) }, [kontrolGorunur, acik])
 
 
   // Kapanınca bayrak sıfırlanır; bir sonraki açılış yine takassız başlar.
@@ -452,7 +469,8 @@ export default function IzlemeModu({
        `kontrolGorunur`u kapatıyordu; kap `pointerEvents:"none"` olunca ardından
        gelen `click` düğmeye hiç ulaşmıyordu. Belirti tam olarak "düğmeler
        görünüyor ama hiçbiri çalışmıyor, dokununca kaybolup geri geliyor". */
-    if (e.target && e.target.closest && e.target.closest("button")) {
+    // (Ses kutusundaki kaydırıcı da: sürüklemesi âyet değiştirmesin.)
+    if (e.target && e.target.closest && e.target.closest("button, input, [data-izleme-ses]")) {
       hareketRef.current = null
       return
     }
@@ -535,7 +553,7 @@ export default function IzlemeModu({
         {tuval(cvA, ustte === 0)}
         {tuval(cvB, ustte === 1)}
 
-        {/* ÜST — ayarlar ve çıkış. GİZLİ DÜĞME MODUNDA HİÇ ÇİZİLMİYOR:
+        {/* ÜST — ses, ayarlar ve çıkış. GİZLİ DÜĞME MODUNDA HİÇ ÇİZİLMİYOR:
             ekranda yazı da simge de kalmıyor, gerçek tam ekran. O modda ayarlara
             YUKARI sürükleyerek, çıkışa AŞAĞI sürükleyerek ulaşılıyor. */}
         {!iz.gizliDugme && (
@@ -548,8 +566,41 @@ export default function IzlemeModu({
             transition: "opacity 0.3s ease",
             pointerEvents: kontrolGorunur ? "auto" : "none",
           }}>
+            {player?.sesAyarla && yuvarlak(sesKutusu ? "Ses ayarını kapat" : "Ses", SesIkon, () => setSesKutusu(v => !v))}
             {yuvarlak("İzleme ayarları", Settings2, () => setAyarAcik(true))}
             {yuvarlak("İzleme modundan çık", X, kapat)}
+          </div>
+        )}
+
+        {/* SES KUTUSU — üstteki ses düğmesinin altında */}
+        {!iz.gizliDugme && sesKutusu && player?.sesAyarla && (
+          <div data-izleme-ses="" role="group" aria-label="Ses düzeyi"
+            style={{
+              position: "absolute", right: "14px",
+              top: "calc(env(safe-area-inset-top) + 62px)",
+              display: "flex", alignItems: "center", gap: "10px",
+              padding: "8px 14px 8px 8px", borderRadius: "999px",
+              width: "min(300px, calc(100vw - 28px))", boxSizing: "border-box",
+              border: "1px solid rgba(255,255,255,0.28)",
+              background: "rgba(0,0,0,0.5)", color: "#fff",
+              backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)",
+              opacity: kontrolGorunur ? 1 : 0, transition: "opacity 0.3s ease",
+            }}>
+            <button onClick={(e) => { e.stopPropagation(); sesDegistir() }}
+              title={ses === 0 ? "Sesi aç" : "Sessize al"} aria-label={ses === 0 ? "Sesi aç" : "Sessize al"}
+              style={{
+                width: "34px", height: "34px", borderRadius: "50%", flexShrink: 0, padding: 0, cursor: "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                border: "none", background: ses === 0 ? "rgba(192,57,43,0.85)" : "rgba(255,255,255,0.14)", color: "#fff",
+              }}>
+              <SesIkon size={17} />
+            </button>
+            <input type="range" min={0} max={1} step={0.01} value={ses} aria-label="Ses düzeyi"
+              onChange={(e) => player.sesAyarla(parseFloat(e.target.value))}
+              style={{ flex: 1, minWidth: 0, accentColor: "#fff", cursor: "pointer", touchAction: "none" }} />
+            <span style={{ fontSize: "12.5px", fontWeight: 600, minWidth: "38px", textAlign: "right", fontVariantNumeric: "tabular-nums" }}>
+              %{Math.round(ses * 100)}
+            </span>
           </div>
         )}
 

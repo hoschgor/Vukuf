@@ -496,8 +496,9 @@ const KONULAR = [
     metin: [
       "İzleme modu tam ekran bir okuma sahnesi açar: âyet okundukça yazısı ve meali değişir, arkada seçilen resim ya da resimler (slayt) hareketli efektlerle akar.",
       "Yazı rengi, kar ve yağmur gibi efektler, ışıklar ve galeriden eklenen kendi resimleriniz ayarlardan seçilebilir.",
+      "Üstteki ses simgesi küçük bir ses kutusu açar: kaydırıcıyla ses kısılıp açılabilir, kutudaki simgeye dokunulduğunda ses tamamen kısılır ve yeniden dokunulduğunda eski seviyesine döner. Seviye oynatıcıdaki sesle ortaktır.",
     ],
-    anahtar: "tam ekran slayt arka plan efekt kar yağmur galeri",
+    anahtar: "tam ekran slayt arka plan efekt kar yağmur galeri ses sessiz",
   },
 
   // ── KİTAP OKUMA ────────────────────────────────────────────────────────

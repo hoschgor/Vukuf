@@ -18,7 +18,7 @@ import GaleriDuzenleyici, { GaleriKolaj, GaleriOzeti } from "./GaleriDuzenleyici
 // sayfasıyla aynı tabloda duruyor. Burada yalnız ÇİZİM var, kural yok.
 import { ozelOkuyusAyikla } from "./MushafKelime"
 import { renderToStaticMarkup } from "react-dom/server"
-import { CicekliYarimCizim } from "./CiniAyetRozeti"
+import { CicekliYarimCizim, ciniPalet } from "./CiniAyetRozeti"
 
 // ── ÂYET SONU ROZETİ — çiçekli rozetin (CiniAyetRozeti) canvas sürümü ──────────────────
 // 12 Kasım 2026: klasik rozet kaldırıldı, izleme modu ve görsel/video oluşturma da çiçekli
@@ -46,6 +46,44 @@ const rozetSvg = () => {
   return rozetSvgBellek
 }
 const ROZET_ORAN = 140 / 68          // rozet genişlik/yükseklik oranı (viewBox)
+/* RENKLİ ROZET (13 Kasım 2026) — kullanıcı: "İzleme ve Görsel modunda beyaz seçilse bile
+   birden fazla renk ile aynı şekilde süsleyebiliriz." Rozetin gövdesi ve uçları YAZI
+   RENGİNDE kalıyor; çiçek mushaftaki gibi çok renkli (dış taç, mercan, pembe, altın göbek,
+   yeşil dal ve yapraklar — CiniAyetRozeti → cicekRenkleri). Yazı rengi beyaz/gri gibi
+   renksizse dış taç kobalt mavisi oluyor. Parçalar arasındaki ince kontur fotoğraf üstünde
+   yarı saydam koyu (açık yazıda) ya da açık (koyu yazıda) — her zeminde ayrışsın.
+   Görsel renge bağlı ve asenkron yükleniyor: yazı rengi başına bir kez üretilip saklanıyor;
+   hazır olana dek yukarıdaki tek renkli maske sürümü çiziliyor, hazır olunca dinleyiciler
+   (görsel önizlemesi, izleme modu) yeniden çizim yapıyor. */
+const renkliRozetBellek = new Map()
+const renkliRozetDinleyiciler = new Set()
+export const renkliRozetDinle = (f) => { renkliRozetDinleyiciler.add(f); return () => renkliRozetDinleyiciler.delete(f) }
+const acikMi = (hex) => {
+  const m = /^#?([0-9a-f]{6})$/i.exec(String(hex || "").trim())
+  if (!m) return true
+  const n = parseInt(m[1], 16)
+  return (0.2126 * ((n >> 16) & 255) + 0.7152 * ((n >> 8) & 255) + 0.0722 * (n & 255)) / 255 > 0.5
+}
+function renkliRozetAl(yaziRenk) {
+  const anahtar = String(yaziRenk || "").toLowerCase()
+  let k = renkliRozetBellek.get(anahtar)
+  if (!k) {
+    const acik = acikMi(yaziRenk)
+    const zemin = acik ? "#1a1a1a" : "#f6f3ee"
+    const p = { ...ciniPalet(yaziRenk, zemin, yaziRenk), kontur: acik ? "rgba(0,0,0,0.5)" : "rgba(255,255,255,0.8)" }
+    const yari = (t) => `<g transform="${t}">` + renderToStaticMarkup(<CicekliYarimCizim p={p} />) + `</g>`
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="140" height="68" viewBox="-70 -34 140 68">`
+      + yari("translate(-50 0)") + yari("translate(50 0) scale(-1 1)") + `</svg>`
+    const img = new Image()
+    k = { img, hazir: false }
+    img.onload = () => { k.hazir = true; for (const f of renkliRozetDinleyiciler) { try { f() } catch { /* yoksay */ } } }
+    img.onerror = () => {}
+    img.src = "data:image/svg+xml;utf8," + encodeURIComponent(svg)
+    if (img.complete && img.naturalWidth > 0) k.hazir = true
+    renkliRozetBellek.set(anahtar, k)
+  }
+  return k.hazir ? k.img : null
+}
 export const rozetGorseliUret = () => {
   const im = new Image()
   im.src = "data:image/svg+xml;utf8," + encodeURIComponent(rozetSvg())
@@ -1040,20 +1078,26 @@ export async function gorselCiz(ctx, ayar) {
         y += b.yuk
       }
     } else if (b.tip === "rozet") {
-      // Süslemeyi metin rengine boya (source-in) ve ortala; rakamı Scheherazade ile yaz.
+      // Renkli rozet hazırsa olduğu gibi; değilse tek renkli süslemeyi metin rengine boya
+      // (source-in). Ortalı; rakam Scheherazade ile yazılır.
       const rh = b.rh
       const rw = rh * ROZET_ORAN
       const rTop = y + b.gapUst
-      try {
-        const tmp = document.createElement("canvas")
-        tmp.width = Math.max(1, Math.ceil(rw)); tmp.height = Math.max(1, Math.ceil(rh))
-        const tctx = tmp.getContext("2d")
-        tctx.drawImage(rozetImg, 0, 0, rw, rh)
-        tctx.globalCompositeOperation = "source-in"
-        tctx.fillStyle = yaziRenk
-        tctx.fillRect(0, 0, rw, rh)
-        ctx.drawImage(tmp, W / 2 - rw / 2, rTop)
-      } catch { /* rozet çizilemedi → yalnız rakam */ }
+      const renkli = renkliRozetAl(yaziRenk)
+      if (renkli) {
+        try { ctx.drawImage(renkli, W / 2 - rw / 2, rTop, rw, rh) } catch { /* yalnız rakam */ }
+      } else {
+        try {
+          const tmp = document.createElement("canvas")
+          tmp.width = Math.max(1, Math.ceil(rw)); tmp.height = Math.max(1, Math.ceil(rh))
+          const tctx = tmp.getContext("2d")
+          tctx.drawImage(rozetImg, 0, 0, rw, rh)
+          tctx.globalCompositeOperation = "source-in"
+          tctx.fillStyle = yaziRenk
+          tctx.fillRect(0, 0, rw, rh)
+          ctx.drawImage(tmp, W / 2 - rw / 2, rTop)
+        } catch { /* rozet çizilemedi → yalnız rakam */ }
+      }
       ctx.fillStyle = yaziRenk
       ctx.font = `900 ${Math.round(rh * 0.5)}px 'Scheherazade New', 'me_quran', serif`
       ctx.textAlign = "center"; ctx.textBaseline = "middle"
@@ -1232,7 +1276,7 @@ export default function GorselOlustur({
   const slaytVideo = izOrtak.slaytVideo === "ayetle" ? "ayetle" : "sonuna"
   const videoHareket = izOrtak.videoHareket === "resim" ? "resim" : "sabit"
   const videoYerlesim = ["kapla", "sigdir"].includes(izOrtak.videoYerlesim) ? izOrtak.videoYerlesim : "oto"
-  // Video VARSAYILAN SESSİZ üretilir; kullanıcı isterse önizlemedeki ses ikonundan açar.
+  // Video VARSAYILAN SESSİZ üretilir; kullanıcı isterse ayarlardaki "Ses" seçiminden açar.
   const [sesAcik, setSesAcik] = useState(false)
   // DİNLEME (monitör): kayıt SIRASINDA sesin hoparlörden duyulup duyulmayacağı. Kapalı başlar —
   // çıktı alırken kullanıcıya zorla ses çalmaz. Kâri sesinin videoya KAYDEDİLMESİ ayrı ayardır
@@ -1377,6 +1421,8 @@ export default function GorselOlustur({
     if (rim.complete && rim.naturalWidth > 0) rozetImgRef.current = rim
     return () => { iptal = true }
   }, [])
+  // Renkli rozet (yazı rengine göre) hazır olunca yeniden çiz
+  useEffect(() => renkliRozetDinle(() => setVarliklarSurum(v => v + 1)), [])
 
   // SÛRE ADI FONTU — canvas, CSS'teki @font-face'i KENDİLİĞİNDEN yüklemez; font
   // hazır değilken çizilirse yedek yazı tipiyle boş kutu çıkar ve bir daha yenilenmez.
@@ -2343,24 +2389,10 @@ export default function GorselOlustur({
                   background: theme.surface,
                 }}
               />
-              {/* Video: sessiz üretilir. Önizlemedeki ikon ile kullanıcı kâri sesini açar. */}
-              {mod === "video" && ayet && sesUrlAl && (
-                <button
-                  onClick={() => setSesAcik(v => !v)}
-                  title={sesAcik ? "Kâri sesi açık — kapatmak için dokunun" : "Sessiz — kâri sesini açmak için dokunun"}
-                  style={{
-                    position: "absolute", top: "8px", right: "8px",
-                    width: "34px", height: "34px", borderRadius: "999px",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    border: "none", cursor: "pointer",
-                    background: sesAcik ? theme.accent : "rgba(0,0,0,0.55)",
-                    color: "#fff", boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
-                    backdropFilter: "blur(2px)",
-                  }}
-                >
-                  {sesAcik ? <Volume2 size={17} /> : <VolumeX size={17} />}
-                </button>
-              )}
+              {/* (13 Kasım 2026) Önizlemenin üstündeki ses düğmesi kaldırıldı — kullanıcı: "video
+                  oluşturmak artık daha kısa sürdüğü için ve ses çalmadığı için onu da oradan
+                  kaldırabiliriz". Kâri sesinin videoya girip girmeyeceği ayarlardaki "Ses"
+                  seçiminden (Kâri okusun / Sessiz) belirleniyor. */}
             </div>
           </div>
 

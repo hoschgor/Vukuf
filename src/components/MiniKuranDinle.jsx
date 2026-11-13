@@ -19,6 +19,7 @@ import { useZamanlayici } from "../data/otomatikDurdurma"
 import { UykuRozeti } from "./OtomatikDurdurmaSecici"
 import { useHapKonumu } from "./DonusDugmesi"
 import { useEkstraDuzen } from "../data/ekstraDuzen"
+import EkstraSesDugmesi from "./EkstraSesDugmesi"
 
 const KUCUK_ANAHTAR = "vukuf-mini-kuran-dinle-kucuk"
 // Ekstralar → Kur'an Dinle kartındaki çalar da aynı amblemi/canlandırmayı kullanıyor
@@ -136,6 +137,7 @@ function DinleHapi({ dinle, kitapta }) {
             <button onClick={() => dinle.atla(1)} aria-label="Sonraki" title="Sonraki" style={yuvarlak(false)}>
               <SkipForward size={15} />
             </button>
+            <EkstraSesDugmesi theme={theme} stil={yuvarlak(false)} />
             <button onClick={() => navigate("/ekstralar")} aria-label="Ekstralar'a git" title="Ekstralar'a git"
               style={{ ...yuvarlak(false), color: ac, background: `${ac}14` }}>
               <Compass size={15} />

@@ -36,6 +36,7 @@ import { zamanlayiciOlustur, useZamanlayici } from "./otomatikDurdurma"
 import { DIYANET_SES_URL, sesKaynagiAta } from "./hooks/useAudioPlayer"
 import { SURE_ADLARI, sureAdi } from "./sureAdlari"
 import { disSesKaydet, disSesBirak } from "./disSes"
+import { ekstraSesBagla } from "./ekstraSes"
 
 // ── SABİTLER ─────────────────────────────────────────────────────────────────
 // Sûre başına âyet sayıları (Hafs) — uygulamanın meal verisinden sayıldı (toplam 6236)
@@ -586,6 +587,7 @@ export function KuranDinleSaglayici({ children }) {
       })
       a.addEventListener("loadedmetadata", () => zamanYay({ su: a.currentTime || 0, toplam: isFinite(a.duration) ? a.duration : 0 }))
       a.addEventListener("ended", () => bittiRef.current())
+      ekstraSesBagla(a)          // Ekstralar ses düzeyi (13 Kasım 2026)
       sesRef.current = a
     }
     return sesRef.current

@@ -84,6 +84,7 @@ import { CSS } from "@dnd-kit/utilities"
 import { GOZ_UZERINE_CSS } from "../components/gozUzerine"
 // Radyo satırları küçük radyo hapının görünümünde (12 Kasım 2026)
 import { RadyoAmblemi, RADYO_HAP_CSS } from "../components/MiniRadyo"
+import EkstraSesDugmesi from "../components/EkstraSesDugmesi"
 import { useEkstraDuzen, ekstraDuzenYaz, ekstraGizleDegis, ekstraSirala } from "../data/ekstraDuzen"
 import {
   VAKITLER, vakitAni, sehirleriGetir, ilceleriGetir, vakitleriGetir, secimOku, secimYaz, durumHesapla, kalanMetni,
@@ -604,6 +605,8 @@ function Radyolar({ theme }) {
                 title={caliyor ? "Duraklat" : "Dinle"} style={yuvarlak(true)}>
                 {yukleniyor ? <Loader2 size={16} className="vk-don" /> : caliyor ? <Pause size={16} /> : <Play size={16} style={{ marginLeft: "2px" }} />}
               </button>
+              {/* Ses düzeyi — Kur'an Dinle ile ortak (13 Kasım 2026) */}
+              {bu && <EkstraSesDugmesi theme={theme} stil={yuvarlak(false)} />}
               {bu && (
                 <button onClick={() => radyo.kapat()} aria-label={`${y.ad} — kapat`} title="Kapat" style={yuvarlak(false)}>
                   <X size={15} />

@@ -20,6 +20,8 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react"
 import { useOynatici } from "./oynatici"
 import { zamanlayiciOlustur, useZamanlayici } from "./otomatikDurdurma"
+import { ekstraSesBagla } from "./ekstraSes"
+
 
 /* OTOMATİK KAPANMA (4 Kasım 2026, kullanıcı: "Radyo dinlemede de otomatik kapanma
    verelim") — süre dolunca radyo kapanır. Sayaç modül düzeyinde: Ekstralar'dan
@@ -56,6 +58,7 @@ export function RadyoSaglayici({ children }) {
       a.addEventListener("waiting", () => setDurum(d => (d === "kapali" ? d : "yukleniyor")))
       a.addEventListener("pause", () => setDurum(d => (d === "kapali" || d === "hata" ? d : "duraklatildi")))
       a.addEventListener("error", () => setDurum(d => (d === "kapali" ? d : "hata")))
+      ekstraSesBagla(a)          // Ekstralar ses düzeyi (13 Kasım 2026)
       sesRef.current = a
     }
     return sesRef.current

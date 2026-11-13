@@ -21,6 +21,7 @@ import { useZamanlayici } from "../data/otomatikDurdurma"
 import { UykuRozeti } from "./OtomatikDurdurmaSecici"
 import { useHapKonumu } from "./DonusDugmesi"
 import { useEkstraDuzen } from "../data/ekstraDuzen"
+import EkstraSesDugmesi from "./EkstraSesDugmesi"
 
 const KUCUK_ANAHTAR = "vukuf-mini-radyo-kucuk"
 // Ekstralar → radyo kartı da aynı amblemi/canlandırmayı kullanıyor
@@ -137,6 +138,8 @@ function RadyoHapi({ radyo, kitapta }) {
               aria-label={calar ? "Duraklat" : "Dinle"} title={calar ? "Duraklat" : "Dinle"} style={yuvarlak(true)}>
               {calar || durum === "yukleniyor" ? <Pause size={15} /> : <Play size={15} style={{ marginLeft: "2px" }} />}
             </button>
+            {/* Ses düzeyi — Kur'an Dinle ile ortak (13 Kasım 2026) */}
+            <EkstraSesDugmesi theme={theme} stil={yuvarlak(false)} />
             <button onClick={() => navigate("/ekstralar")} aria-label="Ekstralar'a git" title="Ekstralar'a git"
               style={{ ...yuvarlak(false), color: ac, background: `${ac}14` }}>
               <Compass size={15} />

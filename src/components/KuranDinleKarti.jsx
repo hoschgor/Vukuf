@@ -29,6 +29,7 @@ import {
 } from "../data/kuranDinle"
 // Çalar paneli küçük hapla aynı görünüm (12 Kasım 2026): rahle amblemi + yuvarlak düğmeler
 import { DinleAmblemi, DINLE_HAP_CSS } from "./MiniKuranDinle"
+import EkstraSesDugmesi from "./EkstraSesDugmesi"
 
 const KARI_ANAHTAR = "vukuf-kuran-dinle-kari"
 const TUR_ANAHTAR = "vukuf-kuran-dinle-tur"           // { kariId: "cuz" | "sure" | "ayet" }
@@ -472,6 +473,8 @@ export default function KuranDinleKarti({ theme }) {
               {durum === "yukleniyor" ? <Loader2 size={16} className="vk-kd-don" /> : durum === "caliyor" ? <Pause size={16} /> : <Play size={16} style={{ marginLeft: "2px" }} />}
             </button>
             <button onClick={() => dinle.atla(1)} aria-label="Sonraki" title="Sonraki" style={yuvarlak(false)}><SkipForward size={15} /></button>
+            {/* Ses düzeyi — radyo ile ortak (13 Kasım 2026) */}
+            <EkstraSesDugmesi theme={theme} stil={yuvarlak(false)} />
             <button onClick={() => dinle.kapat()} aria-label="Kapat" title="Kapat" style={yuvarlak(false)}><X size={15} /></button>
           </div>
           {calan.tur !== "ayet" && <div style={{ padding: "0 8px" }}><Ilerleme theme={theme} dinle={dinle} /></div>}

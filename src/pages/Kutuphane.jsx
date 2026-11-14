@@ -39,6 +39,7 @@ import { rafPaleti, rafResmiBul, HAZIR_RAF_RESIMLERI } from "../components/rafGo
 import { useKitaplikModu, kategorileriSuz, modOzeti, ModPenceresi, MODLAR } from "../components/KitaplikModu"
 // Fareli cihazda üzerine gelince beliren göz (11 Kasım 2026) — Ekstralar da kullanıyor
 import { GOZ_UZERINE_CSS } from "../components/gozUzerine"
+import NamazKutuphaneKarti from "../components/NamazKutuphaneKarti"
 
 // ════════════════════════════════════════════════════════════════
 // SÜRÜKLEME ERGONOMİSİ
@@ -3523,6 +3524,12 @@ export default function Kutuphane() {
       {/* ═══ KİTAPLIK DOLABI: taç + bölmeler (direkleri paylaşır) + kaide ═══ */}
       <div style={{ boxShadow: "0 18px 30px -12px rgba(0,0,0,0.5)", borderRadius: "6px 6px 4px 4px" }}>
         <DolapTaci p={ahsap} isMobile={isMobile} />
+        {/* NAMAZ VAKTİ RAFI (14 Kasım 2026) — Ekstralar → Namaz Vakitleri → İşlevler →
+            "Kütüphane'ye kart olarak ekle" ile dolabın EN ÜST bölmesi (bütün genişlikte,
+            aradaki boşluksuz; sürüklenmez). Resimli modda içi cami fotoğrafı; açılınca
+            fotoğraf kapanır, vakitler yükselir. */}
+        <NamazKutuphaneKarti theme={theme} isMobile={isMobile} p={ahsap} Direk={RafDirek} RafIci={RafIci}
+          direkEn={direkEni(isMobile)} gorunum={gorunumEtkin} icYuk={icYukHesap || undefined} />
         <div>
           <div
             ref={izgaraRef}

@@ -17,6 +17,8 @@
    cihaz saat dilimi farklı olsa da doğru an hesaplanır.
    ═══════════════════════════════════════════════════════════════════════════ */
 
+import { useSyncExternalStore } from "react"
+
 const API = "https://ezanvakti.emushaf.net"
 const TURKIYE = 2
 const SECIM_ANAHTAR = "vukuf-namaz-konum"
@@ -111,6 +113,21 @@ export function konumBilgisiniSil() {
   try { window.dispatchEvent(new Event(KONUM_SILINDI)) } catch { /* yoksay */ }
 }
 export function secimYaz(s) { if (s) yaz(SECIM_ANAHTAR, s); else { try { localStorage.removeItem(SECIM_ANAHTAR) } catch { /* yoksay */ } } }
+
+/* KİTAPLIK KARTI (14 Kasım 2026) — kullanıcı: "Namaz vakitleri için oluşturulan kart,
+   kütüphanede üst kısma istek dahilinde alınabilsin." Ekstralar → Namaz Vakitleri →
+   İşlevler'deki "Kütüphane'ye kart olarak ekle / Kütüphaneden kaldır" ile değişir. */
+export const NAMAZ_KARTI_ANAHTAR = "vukuf-namaz-kutuphane-karti"
+let namazKarti = (() => { try { return localStorage.getItem(NAMAZ_KARTI_ANAHTAR) === "1" } catch { return false } })()
+const namazKartiDinleyici = new Set()
+export function namazKartiYaz(v) {
+  namazKarti = !!v
+  try { if (namazKarti) localStorage.setItem(NAMAZ_KARTI_ANAHTAR, "1"); else localStorage.removeItem(NAMAZ_KARTI_ANAHTAR) } catch { /* yoksay */ }
+  namazKartiDinleyici.forEach(f => f())
+}
+export function useNamazKarti() {
+  return useSyncExternalStore((f) => { namazKartiDinleyici.add(f); return () => namazKartiDinleyici.delete(f) }, () => namazKarti, () => namazKarti)
+}
 
 /** Bugünün kaydı, sıradaki vakit ve kalan süre */
 export function durumHesapla(liste, simdi = Date.now()) {

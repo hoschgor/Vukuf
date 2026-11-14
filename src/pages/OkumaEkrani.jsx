@@ -476,6 +476,9 @@ function lugatZemin(renk) {
 
 function MetinParcasi({
   metin, sayfaNo, lugatAktif, onKelimeTikla,
+  // kayitModu (14 Kasım 2026): kayıt koyma kipinde lügat kelimesine dokunmak lügat açmaz;
+  // dokunuş yalnız kaydın yerini seçer (kapsayıcının tıklaması işler)
+  kayitModu = false,
   theme, fontSize, baslikBoyutu = 2, hizalama, metinFont, arapcaFont, arapBoyut = 6,
   vurguModu, vurguRengi, sayfaVurgulari, onVurguEkle, duzenleMod, onVurguKelimeSil,
   dipnotlar, satirAraligi = 1.9, harfAraligi = 0, kelimeAraligi = 0, onDipnotTikla,
@@ -755,7 +758,7 @@ function MetinParcasi({
                 return (
                   <span key={ki}>
                     <span className="lugat-kelime"
-                      onClick={e => { if (!vurguModu) { basiliYak(lgKey); birlesikTikla(bil.secenekler, e) } }}
+                      onClick={e => { if (!vurguModu && !kayitModu) { basiliYak(lgKey); birlesikTikla(bil.secenekler, e) } }}
                       style={{ color: lugatRenk, cursor: vurguModu ? "text" : "pointer", userSelect: "text", ...basiliZemin(lgKey) }}>
                       {on}
                     </span>
@@ -788,7 +791,7 @@ function MetinParcasi({
                   data-vurgu={vurgulu ? vurgulu.id : undefined}
                   onMouseDown={e => kelimeMouseDown(si, ki, e)}
                   onMouseUp={() => kelimeMouseUp(si, ki)}
-                  onClick={e => { if (!vurguModu && lugatliMi) {
+                  onClick={e => { if (!vurguModu && !kayitModu && lugatliMi) {
                     basiliYak(lgKey)
                     // Birleşikte pop-up başlığı = EŞLEŞEN kısım (secenekler[0].kelime), tüm kelime değil
                     if (secenekler && secenekler.length > 1) onKelimeTikla(secenekler[0].kelime, secenekler[0].anlam, secenekler[0].kavram, e, secenekler)
@@ -2886,6 +2889,7 @@ function fontSecimDegistir(grupId, fontId) {
 }
 
 function kelimeTikla(kelime, anlam, kavram, e, secenekler = null) {
+  if (kayitKonumModu) return          // kayıt koyma kipinde lügat açılmaz (14 Kasım 2026)
   // Açık bir panel/pencere varken yapılan dokunuş onu KAPATIR, lügat penceresi açmaz (5 Kasım 2026)
   if (pencereKapatmaDokunusu()) { tumPanelleriKapat(); return }
   atifKaynakYakala(e)   // atıf için tıklanan satırı hatırla
@@ -4279,7 +4283,13 @@ const Bar = (
     )}
 
     {gorunurMu("kayit") && (
-      <button onClick={() => togglePanel(setKayitAcik, !kayitAcik)} style={{ ...barButonStil(kayitAcik), ...barOge("kayit") }} title="Kayıtlar">
+      <button onClick={() => {
+        // 14 Kasım 2026 — kullanıcı: "Kayıt menüsü ayarını normal okuma ekranına da uygulayalım."
+        // Kur'ân ekranındaki gibi: düğme doğrudan kayıt koyma kipini açar (yeniden basınca kapatır);
+        // kayıt menüsü (İşaretler · Notlar · Vurgular) alttaki şeridin liste düğmesinden açılır.
+        if (kayitKonumModu) { setKayitKonumModu(false); return }
+        tumPanelleriKapat(); setPopup(null); setKayitKonumModu(true)
+      }} style={{ ...barButonStil(kayitAcik || kayitKonumModu), ...barOge("kayit") }} title={kayitKonumModu ? "Kayıt koymaktan vazgeç" : "Kayıt koy"}>
         <Bookmark size={bIkon(15)} />
         {toplamKayit > 0 && (
           <span style={{ fontSize: "10px", background: theme.accent, color: "#fff", borderRadius: "10px", padding: "1px 5px", marginLeft: "2px" }}>
@@ -4508,6 +4518,42 @@ return (
       onYeni={() => { const b = bekleyenKayit; setBekleyenKayit(null); if (b) kayitEkle(b.sayfa, b.oran, `Sayfa ${b.sayfa}`) }}
       onYerine={(kid) => { const b = bekleyenKayit; setBekleyenKayit(null); if (b) kayitYerineKoy(kid, b.sayfa, b.oran) }}
     />
+    {/* KAYIT KOYMA ŞERİDİ (14 Kasım 2026) — Kur'ân ekranındakiyle aynı: altta (bar üstteyse üstte)
+        açıklama + kayıt menüsü (liste) + vazgeç. Eskiden metnin başında yapışkan bir bant vardı. */}
+    {kayitKonumModu && (() => {
+      const yz = Math.round((isMobile ? 12 : 13) * barUiOlcegi)
+      const dg = Math.round(34 * Math.min(1.3, barUiOlcegi))
+      const ik = Math.round(16 * Math.min(1.3, barUiOlcegi))
+      const yuvarlak = {
+        width: `${dg}px`, height: `${dg}px`, borderRadius: "50%", flexShrink: 0, padding: 0, cursor: "pointer",
+        display: "flex", alignItems: "center", justifyContent: "center", border: "none", fontFamily: "inherit",
+      }
+      return (
+        <div role="status" className="okuma-panel" onClick={(e) => e.stopPropagation()} style={{
+          position: "fixed", left: 0, right: 0, margin: "0 auto", width: "max-content", zIndex: 140,
+          top: barKonum === "ust" ? `calc(${(barGorunur ? barYuk : 0) + 14}px + env(safe-area-inset-top))` : "auto",
+          bottom: barKonum === "ust" ? "auto" : `calc(${(barGorunur && barKonum === "alt" ? barYuk : 0) + seritPay + 14}px + env(safe-area-inset-bottom))`,
+          display: "flex", alignItems: "center", gap: "8px",
+          padding: "6px 6px 6px 14px", borderRadius: "999px",
+          maxWidth: "calc(100vw - 24px)", boxSizing: "border-box",
+          background: theme.surface, color: theme.text,
+          border: `1.5px dashed ${theme.accent}`, boxShadow: "0 6px 22px rgba(0,0,0,0.18)",
+        }}>
+          <Bookmark size={Math.round(15 * barUiOlcegi)} color={theme.accent} style={{ flexShrink: 0 }} />
+          <span style={{ fontSize: `${yz}px`, lineHeight: 1.25, minWidth: 0 }}>İşaret koymak istediğiniz yere dokunun</span>
+          <button onClick={(e) => { e.stopPropagation(); setKayitKonumModu(false); setKayitSekme("isaretler"); setKayitAcik(true) }}
+            title="Kayıt menüsü" aria-label="Kayıt menüsü"
+            style={{ ...yuvarlak, background: `${theme.accent}18`, color: theme.accent }}>
+            <List size={ik} />
+          </button>
+          <button onClick={(e) => { e.stopPropagation(); setKayitKonumModu(false) }}
+            title="Vazgeç" aria-label="İşaret koymaktan vazgeç"
+            style={{ ...yuvarlak, background: "transparent", color: theme.textSecondary }}>
+            <X size={ik} />
+          </button>
+        </div>
+      )
+    })()}
     <SayfaFarkiBildirimi
       bildirim={sayfaFarki}
       theme={theme}
@@ -4693,22 +4739,6 @@ return (
         boxSizing: "border-box",
       }}>
 
-        {/* İşaret ekleme modu bandı */}
-        {kayitKonumModu && (
-          <div style={{
-            position: "sticky", top: 0, zIndex: 50,
-            background: theme.accent, padding: "6px 12px", borderRadius: "8px",
-            marginBottom: "12px", fontSize: "12px", color: "#fff",
-            display: "flex", alignItems: "center", gap: "8px",
-          }}>
-            <Bookmark size={13} />
-            İşaret için metinde bir yere dokun
-            <button onClick={() => setKayitKonumModu(false)} style={{ marginLeft: "auto", background: "none", border: "none", cursor: "pointer", color: "#fff" }}>
-              <X size={13} />
-            </button>
-          </div>
-        )}
-
         {/* Vurgulama modu bandı */}
         {vurguModu && (
           <div style={{
@@ -4782,6 +4812,7 @@ return (
                     metin={sayfa.metin}
                     sayfaNo={sayfa.sayfa}
                     lugatAktif={lugatActive}
+                    kayitModu={kayitKonumModu}
                     onKelimeTikla={kelimeTikla}
                     aktifLugatKey={aktifLugatKey}
                     onLugatSecim={setAktifLugatKey}
@@ -4851,7 +4882,7 @@ return (
         theme={theme}
         olcekAnahtar={`${yaziBoyutu}|${satirAraligi}|${harfAraligi}|${kelimeAraligi}|${hizalama}|${metinFont}|${arapBoyutu}|${baslikBoyutu}`}
         style={{ userSelect: vurguModu ? "text" : "none", WebkitTapHighlightColor: "transparent" }}
-        etkilesimli=".lugat-kelime, sup, .okuma-bar, .okuma-panel, [data-secim-disi]"
+        etkilesimli={kayitKonumModu ? ".okuma-bar, .okuma-panel, [data-secim-disi]" : ".lugat-kelime, sup, .okuma-bar, .okuma-panel, [data-secim-disi]"}
         jestKapali={vurguModu}
         ustPay={barKonum === "ust" ? barYuk + 6 : guvenliUst + 6}
         altPay={barKonum === "alt" ? barYuk + 6 : barKonum === "orta" ? Math.max(10, seritPay + 10) : 10}
@@ -4896,6 +4927,7 @@ return (
                       metin={sayfa.metin}
                       sayfaNo={sayfa.sayfa}
                       lugatAktif={lugatActive}
+                      kayitModu={kayitKonumModu}
                       onKelimeTikla={kelimeTikla}
                       aktifLugatKey={aktifLugatKey}
                       onLugatSecim={setAktifLugatKey}

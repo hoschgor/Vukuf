@@ -566,9 +566,10 @@ const KONULAR = [
     ozet: "Metinde bir yeri işaretlemek, not almak.",
     nerede: "Kitap → bardaki ayraç simgesi",
     metin: [
-      "\"Yeni işaret ekle\" seçildikten sonra metinde bir yere dokunularak o konum kaydedilir. Kayda dokunulduğunda tam o satıra gidilir; notlar da aynı panelde tutulur.",
+      "Bardaki ayraç simgesine dokunulduğunda işaret koyma kipi açılır: metinde bir yere dokunularak o konum kaydedilir. Bu sırada lügat kelimelerine dokunmak lügat penceresini açmaz; dokunulan yer yalnız işaret için kullanılır.",
+      "Kip açıkken altta beliren şeritteki liste simgesi kayıt menüsünü (İşaretler · Notlar · Vurgular) açar, çarpı ise işaret koymaktan vazgeçer. Menüdeki \"Yeni işaret ekle\" de aynı kipi açar. Bir işarete dokunulduğunda tam o satıra gidilir.",
     ],
-    anahtar: "işaret ayraç not kaldığım yer",
+    anahtar: "işaret ayraç not kaldığım yer kayıt menüsü",
   },
   {
     bolum: "kitap", ikon: Search, baslik: "Eser içinde arama",

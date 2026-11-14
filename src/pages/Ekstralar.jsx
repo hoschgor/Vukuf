@@ -69,7 +69,7 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { ScrollText, BellRing, Table2, Radio, Compass, MapPin, Sparkles, Play, Pause, ExternalLink, RotateCcw, Navigation, Loader2, X, Clock, CalendarPlus, Moon, LocateFixed, ShieldCheck, Trash2, PowerOff, Pencil, Check, Eye, EyeOff, GripVertical, ListChecks, Headphones } from "lucide-react"
+import { ScrollText, BellRing, Table2, Radio, Compass, MapPin, Sparkles, Play, Pause, ExternalLink, RotateCcw, Navigation, Loader2, X, Clock, CalendarPlus, Moon, LocateFixed, ShieldCheck, Trash2, PowerOff, Pencil, Check, Eye, EyeOff, GripVertical, ListChecks, Headphones, Tv } from "lucide-react"
 import { useApp } from "../AppContext"
 import { useRadyo, YAYINLAR, radyoZamanlayici } from "../data/radyo"
 import { useZamanlayici } from "../data/otomatikDurdurma"
@@ -78,6 +78,7 @@ import CamiVakit from "../components/CamiVakit"
 import { Kart, useBolum, dugmeStil } from "../components/EkstraKart"
 import NamazHatimTakibi from "../components/NamazHatimTakibi"
 import KuranDinleKarti from "../components/KuranDinleKarti"
+import DiyanetTvKarti from "../components/DiyanetTvKarti"
 import { DndContext, closestCenter, KeyboardSensor, MouseSensor, TouchSensor, useSensor, useSensors } from "@dnd-kit/core"
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
@@ -958,6 +959,7 @@ const BOLUMLER = [
   { id: "hutbe",   ad: "Cuma Hutbesi",                Ikon: ScrollText,  Bilesen: CumaHutbesi },
   { id: "dinle",   ad: "Kur'an Dinle",                Ikon: Headphones,  Bilesen: KuranDinleKarti },
   { id: "radyo",   ad: "Diyanet Radyoları",           Ikon: Radio,       Bilesen: Radyolar },
+  { id: "tv",      ad: "Diyanet TV",                  Ikon: Tv,          Bilesen: DiyanetTvKarti },   // 14 Kasım 2026
   { id: "kible",   ad: "Kıble Pusulası",              Ikon: Compass,     Bilesen: KiblePusulasi },
   { id: "camiler", ad: "Yakındaki Camiler",           Ikon: MapPin,      Bilesen: YakinCamiler },
   { id: "zikir",   ad: "Zikirmatik",                  Ikon: Sparkles,    Bilesen: Zikirmatik },

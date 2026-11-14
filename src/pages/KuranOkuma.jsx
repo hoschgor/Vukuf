@@ -113,7 +113,7 @@ import {
   Settings, Circle, Clock, ChevronsUp, ChevronsDown,
   ChevronLeft, Bookmark, BookOpen, Feather,
   Layers, Check, Shuffle, Mic, Repeat, Gem, UnfoldHorizontal, GripVertical, RotateCcw, Save, AlignLeft, AlignRight,
-  Camera, FoldHorizontal, ChevronUp, ImagePlay, Brain, History, Share2, Library, ListChecks,
+  Camera, FoldHorizontal, ChevronUp, ImagePlay, Brain, History, Share2, Library, ListChecks, List,
 } from "lucide-react"
 // Paylaşma (18 Ekim 2026): âyet rozetine dokunarak paylaşma penceresi
 import PaylasimPenceresi, { PaylasimNotu } from "../components/PaylasimPenceresi"
@@ -1645,16 +1645,12 @@ const maxWidth = useMemo(() =>
     } catch {}
   }, [arapcaFontId])
 
-  // kayitKonumModu true olduğunda 3 sn sonra iptal et
-  useEffect(() => {
-    if (kayitKonumModu) {
-      setBarKilitli(true)
-      const timer = setTimeout(() => setKayitKonumModu(false), 3000)
-      return () => clearTimeout(timer)
-    } else {
-      setBarKilitli(false)
-    }
-  }, [kayitKonumModu])
+  // KAYIT KOYMA KİPİ (14 Kasım 2026) — kullanıcı: "Kayıt butonuna basıldığında yeni kayıt
+  // oluşturmak için açtığımız kısım açılsın, direkt işaret atılabilsin … çarpı butonuna
+  // basılırsa da kayıt alma kısmı kapansın." Eskiden kip 3 sn sonra kendiliğinden kapanıyordu;
+  // artık satıra dokununca, alttaki şeridin çarpısıyla ya da Kayıt düğmesine yeniden basınca
+  // kapanır. Kip açıkken bar kilitli (gizlenmez).
+  useEffect(() => { setBarKilitli(kayitKonumModu) }, [kayitKonumModu])
   
   useEffect(() => {
     fetch("/kuran-mushaf.json")
@@ -4673,14 +4669,11 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
       {kayitGoster && sadeGorunur("kayit") && (
         <button
           onClick={() => {
-            if (kayitlar.length > 0) {
-              setKayitPaneliAcik(!kayitPaneliAcik)
-            } else {
-              setKayitKonumModu(true)
-              setKayitPaneliAcik(false)
-            }
+            // Doğrudan kayıt koyma kipi; kayıt listesi kipin şeridindeki liste düğmesinden
+            setKayitPaneliAcik(false)
+            setKayitKonumModu(v => !v)
           }}
-          style={{ ...barOge("kayit") }}title="Kayıt menüsü"
+          style={{ ...barOge("kayit") }} title={kayitKonumModu ? "Kayıt koymaktan vazgeç" : "Kayıt koy"}
         >
           <Bookmark color={theme.accent}
             size={Math.round((isMobile ? 18 : 21) * barOlcegi)}
@@ -5317,24 +5310,46 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
         altBosluk={altBarDolu}
       />
 
-      {kayitKonumModu && (
-        <div style={{
-          position: "fixed",
-          top: "50%", left: "50%",
-          transform: "translate(-50%, -50%)",
-          background: theme.surface,
-          border: `1px solid ${theme.accent}`,
-          borderRadius: "12px",
-          padding: "12px 20px",
-          fontSize: `${Math.round((isMobile ? 11 : 12) * barUiOlcegi)}px`,
-          color: theme.text,
-          zIndex: 499,
-          pointerEvents: "none",
-          boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
-        }}>
-          Kayıt koymak istediğiniz satıra dokunun
-        </div>
-      )}
+      {/* KAYIT KOYMA ŞERİDİ (14 Kasım 2026): altta, barın üstünde — açıklama + kayıt listesi
+          düğmesi + vazgeç. Kullanıcı: "altta kayıt menüsü simgesi belirsin, bu simgeye basılırsa
+          kayıt menüsü açılsın, çarpı butonuna basılırsa da kayıt alma kısmı kapansın". */}
+      {kayitKonumModu && (() => {
+        const yz = Math.round((isMobile ? 12 : 13) * barUiOlcegi)
+        const dg = Math.round(34 * Math.min(1.3, barUiOlcegi))
+        const yuvarlak = {
+          width: `${dg}px`, height: `${dg}px`, borderRadius: "50%", flexShrink: 0, padding: 0, cursor: "pointer",
+          display: "flex", alignItems: "center", justifyContent: "center", border: "none", fontFamily: "inherit",
+        }
+        return (
+          <div role="status" style={{
+            // left/right 0 + margin auto + max-content: "left:50% + translate" ile şerit yarım
+            // ekrana sıkışıp yazı dikine kırılıyordu (ölçüldü)
+            position: "fixed", left: 0, right: 0, margin: "0 auto", width: "max-content",
+            bottom: barKonum === "ust" ? "auto" : `calc(${altBarDolu + 14}px + env(safe-area-inset-bottom))`,
+            top: barKonum === "ust" ? `calc(${(barGorunur ? barYuksekligi : 0) + 14}px + env(safe-area-inset-top))` : "auto",
+            display: "flex", alignItems: "center", gap: "8px",
+            padding: "6px 6px 6px 14px", borderRadius: "999px",
+            maxWidth: "calc(100vw - 24px)", boxSizing: "border-box",
+            background: theme.surface, color: theme.text,
+            border: `1.5px dashed ${theme.accent}`,
+            boxShadow: "0 6px 22px rgba(0,0,0,0.18)",
+            zIndex: 499,
+          }}>
+            <Bookmark size={Math.round(15 * barUiOlcegi)} color={theme.accent} style={{ flexShrink: 0 }} />
+            <span style={{ fontSize: `${yz}px`, lineHeight: 1.25, minWidth: 0 }}>Kayıt koymak istediğiniz satıra dokunun</span>
+            <button onClick={(e) => { e.stopPropagation(); setKayitKonumModu(false); setKayitPaneliAcik(true) }}
+              title="Kayıt menüsü" aria-label="Kayıt menüsü"
+              style={{ ...yuvarlak, background: `${theme.accent}18`, color: theme.accent }}>
+              <List size={Math.round(16 * Math.min(1.3, barUiOlcegi))} />
+            </button>
+            <button onClick={(e) => { e.stopPropagation(); setKayitKonumModu(false) }}
+              title="Vazgeç" aria-label="Kayıt koymaktan vazgeç"
+              style={{ ...yuvarlak, background: "transparent", color: theme.textSecondary }}>
+              <X size={Math.round(16 * Math.min(1.3, barUiOlcegi))} />
+            </button>
+          </div>
+        )
+      })()}
       {gorselModu && (
         <div style={{
           position: "fixed",

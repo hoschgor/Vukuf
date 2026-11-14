@@ -175,7 +175,7 @@ export function rivayetAdi(slug) {
 }
 
 const EK_ANAHTAR = "vukuf-kuran-dinle-ek"
-const EK_EN_COK = 8
+const EK_EN_COK = 40          // 14 Kasım 2026: aramadan eklenenler artık ana listede → sınır genişletildi
 function ekOku() {
   try {
     const l = JSON.parse(localStorage.getItem(EK_ANAHTAR) || "[]")
@@ -216,6 +216,54 @@ export function ekKariEkle(e) {
   return id
 }
 export function ekKariSil(id) { ekYay(ekListe.filter(x => ekKimlik(x) !== id)) }
+
+/* KÂRİ LİSTESİ DÜZENİ (14 Kasım 2026) — kullanıcı: "arama yapıldıktan sonra çıkan kâri,
+   listeye eklenebilsin. Listedeki varsayılan kâriler de gizlenebilsin ya da düzenlenebilsin.
+   Liste çok kalabalık olursa diye bir de çekmece butonumuz olsun."
+   Depo "vukuf-kuran-dinle-kari-duzen" = { sira: [id…], gizli: [id…], kapali: bool }.
+   sira: kayıtlı + aramadan eklenen kârilerin birlikte sırası (Ekstralar'daki gibi; yeni
+   eklenen kâri sırada yoksa varsayılan yerine girer) · gizli: listede görünmeyenler ·
+   kapali: çekmece kapalı (yalnız seçili kâri görünür). */
+const DUZEN_ANAHTAR = "vukuf-kuran-dinle-kari-duzen"
+function duzenOku() {
+  try {
+    const v = JSON.parse(localStorage.getItem(DUZEN_ANAHTAR) || "null")
+    if (v && typeof v === "object") {
+      return {
+        sira: Array.isArray(v.sira) ? v.sira.filter(x => typeof x === "string") : [],
+        gizli: Array.isArray(v.gizli) ? v.gizli.filter(x => typeof x === "string") : [],
+        kapali: !!v.kapali,
+      }
+    }
+  } catch { /* bozuk kayıt */ }
+  return { sira: [], gizli: [], kapali: false }
+}
+let kariDuzen = duzenOku()
+const duzenDinleyici = new Set()
+export function kariDuzenYaz(yama) {
+  kariDuzen = { ...kariDuzen, ...yama }
+  try { localStorage.setItem(DUZEN_ANAHTAR, JSON.stringify(kariDuzen)) } catch { /* yoksay */ }
+  duzenDinleyici.forEach(f => f())
+}
+export function useKariDuzen() {
+  return useSyncExternalStore((f) => { duzenDinleyici.add(f); return () => duzenDinleyici.delete(f) }, () => kariDuzen, () => kariDuzen)
+}
+export function kariGizleDegis(id) {
+  const g = kariDuzen.gizli.includes(id) ? kariDuzen.gizli.filter(x => x !== id) : [...kariDuzen.gizli, id]
+  kariDuzenYaz({ gizli: g })
+}
+// Kayıtlı sıra + varsayılan sıra → görünen sıra (bilinmeyenler atılır, yeniler yerine girer)
+export function kariSirala(kayitli, varsayilan) {
+  const bilinen = new Set(varsayilan)
+  const l = (kayitli || []).filter((x, i, a) => bilinen.has(x) && a.indexOf(x) === i)
+  varsayilan.forEach((id, i) => {
+    if (l.includes(id)) return
+    let yer = 0
+    for (let j = i - 1; j >= 0; j--) { const k = l.indexOf(varsayilan[j]); if (k >= 0) { yer = k + 1; break } }
+    l.splice(yer, 0, id)
+  })
+  return l
+}
 
 // Dizinde arama: ad ya da kimlik (slug) içinde sorgunun bütün kelimeleri (Türkçe/aksan duyarsız)
 const aramaMetni = (x) => (sade(x.a) + " " + sade(String(x.s).replace(/-/g, " "))).replace(/[^a-z0-9 ]/g, "")

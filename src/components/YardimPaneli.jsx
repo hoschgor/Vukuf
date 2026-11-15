@@ -664,6 +664,7 @@ const KONULAR = [
       "Caminin solundaki boşlukta günün kerahat vakitleri (şurûk, istivâ, gurûb) liste hâlinde yazar; içinde bulunulan aralık vurgulanır, geçenler soluklaşır. Kerahat vaktindeyken caminin sağında bitiş saati ve kalan süreyle (dakika ve saniye) bir bildirim görünür; bir sonraki kerahat vaktine bir saatten az kalınca da aynı yerde başlangıç saati ve geri sayım belirir. Altında en yakın mübarek gün ve kalan gün sayısı yazar. Aralıklar Diyanet'in fetvalarında Merğînânî'ye (el-Hidâye) dayanarak verilen sürelerden alınmıştır: güneşin doğuşundan sonraki 50 dk, öğle vaktinden önceki 10 dk ve akşam vaktinden önceki 50 dk.",
       { alt: "Cuma hutbesi" },
       "Bu haftanın Cuma'sını ve Diyanet'in hutbe sayfasını gösterir. Hutbe metni ve sesli hutbe Diyanet'in sayfasında açılır; uygulamaya kopyalanmaz.",
+      "Hava durumu: caminin göğünün sol üst köşesinde o anki sıcaklık yazar; kapalı havada bulut, yağmurda damla, karda kar tanesi, gök gürültüsünde şimşek, siste sis çizgileri çizilir (açık havada gökte güneş ya da ay vardır). Hava yarım saatte bir tazelenir; Kitaplık'taki vakit rafının levhasında da görünür. Veriler Open-Meteo'dan alınır.",
       { alt: "Kandiller ve mübarek günler" },
       "Diyanet'in dinî günler takviminden yaklaşan kandiller, Ramazan, bayramlar ve diğer mübarek günler kalan gün sayısıyla listelenir. Kandiller o günün akşamı idrak edilir.",
       { alt: "Kur'an dinle" },

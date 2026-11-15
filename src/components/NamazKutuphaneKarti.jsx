@@ -33,6 +33,8 @@
 import { useEffect, useState } from "react"
 import { Clock, ChevronDown } from "lucide-react"
 import NamazVakitGorunumu from "./NamazVakitGorunumu"
+import HavaSimgesi from "./HavaSimgesi"
+import { useHavaDurumu } from "../data/havaDurumu"
 import {
   secimOku, vakitleriGetir, durumHesapla, useNamazKarti, KONUM_SILINDI, kalanMetni, ramazanHedefi, kerahatDurumu,
 } from "../data/namazVakitleri"
@@ -58,6 +60,7 @@ function Raf({ theme, isMobile, p, Direk, RafIci, direkEn, gorunum = "resimli", 
   const [kucuk, setKucukD] = useState(() => { try { return localStorage.getItem(KUCUK_ANAHTAR) !== "0" } catch { return true } })
   const setKucuk = (v) => { setKucukD(v); try { localStorage.setItem(KUCUK_ANAHTAR, v ? "1" : "0") } catch { /* yoksay */ } }
   const [, setTik] = useState(0)
+  const hava = useHavaDurumu(secim)          // 15 Kasım 2026: levhada ve caminin göğünde
 
   useEffect(() => {
     const f = () => { setSecim(null); setListe(null) }
@@ -132,7 +135,7 @@ function Raf({ theme, isMobile, p, Direk, RafIci, direkEn, gorunum = "resimli", 
                 background: theme.surface, borderRadius: "6px", padding: isMobile ? "8px 8px 10px" : "10px 12px 12px",
                 boxShadow: `inset 0 0 0 1px ${p.oyma}, 0 2px 6px rgba(0,0,0,0.35)`,
               }}>
-                <NamazVakitGorunumu theme={theme} d={d} seciliVakit={seciliVakit} setSeciliVakit={setSeciliVakit} />
+                <NamazVakitGorunumu theme={theme} d={d} seciliVakit={seciliVakit} setSeciliVakit={setSeciliVakit} hava={hava} />
               </div>
             </div>
           </div>
@@ -162,6 +165,8 @@ function Raf({ theme, isMobile, p, Direk, RafIci, direkEn, gorunum = "resimli", 
                 {ozet}
               </span>
             </span>
+            {/* Hava: derece + bulut / yağmur / kar (açıkta güneş ya da ay) */}
+            <HavaSimgesi hava={hava} theme={theme} boy={isMobile ? 22 : 24} yazi={isMobile ? 13 : 14} />
             {/* Kerahat vakti içindeysek: sağda küçük rozet (kalan süre) */}
             {kerahat && (
               <span role="status" title={`${kerahat.ad} · ${kerahat.basSaat}–${kerahat.bitSaat}`} style={{

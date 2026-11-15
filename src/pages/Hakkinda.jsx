@@ -285,6 +285,9 @@ export default function Hakkinda() {
             {kaynak(Globe, "Necati Aksu",
               "İmam Gazzâlî Eserleri, Abdülkâdir Geylânî Eserleri",
               { href: "https://necatiaksu.net/" })}
+            {kaynak(Globe, "Open-Meteo",
+              "Ekstralar ve Kitaplık'taki namaz vakti kartlarında hava durumu (derece ve gök) — Open-Meteo.com, veriler CC BY 4.0",
+              { href: "https://open-meteo.com/" })}
           </div>
         </div>
 

@@ -19,6 +19,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import { hilalYolu, RozetSekli } from "./TemaSecici"
+import { HavaGlifi, HAVA_CSS } from "./HavaSimgesi"
 
 // VB_Y −42: caminin üstünde güneşin / ayın dolaştığı gök şeridi (4 Kasım 2026)
 const VB_G = 300, VB_Y = -42, VB_Y2 = 212, ZEMIN = 206
@@ -62,7 +63,13 @@ function Ay({ x, y, evre, t }) {
 }
 const YILDIZLAR = [[58, -30], [92, -18], [126, -36], [178, -32], [214, -20], [246, -34], [270, -14], [40, -16]]
 
-export default function CamiVakit({ theme, ust, buyuk, alt, sol = null, sag = null, gok = null }) {
+/* HAVA (15 Kasım 2026) — kullanıcı: "Bu kartlara hava durumunu da ekleyelim … sadece derece
+   olsa yeterli. Yağmurlu ise yağmur damlası, karlı ise kar tanesi, kapalı ise bulut çizimi."
+   `hava` = { derece, tur, gunduz } (data/havaDurumu.js). Göğün sol üst köşesinde: bulut
+   (gerekiyorsa damla / kar tanesi / şimşek / sis) ve yanında derece. Bulut güneşten/aydan
+   sonra çizilir — önünden geçen güneşi örter. Açık havada yalnız derece (gökte güneş/ay var). */
+const HAVA_YER = { x: 2, y: -42, olcek: 1.25 }
+export default function CamiVakit({ theme, ust, buyuk, alt, sol = null, sag = null, gok = null, hava = null }) {
   const t = { ...theme, ayetNoRengi: theme.ayetNoRengi || theme.accent }
   const f = (fill, stroke, sw, ek) => ({ fill, stroke, strokeWidth: sw, transition: GECIS, ...ek })
   const yuzey = f(t.surface, t.border, 1.2)
@@ -111,6 +118,12 @@ export default function CamiVakit({ theme, ust, buyuk, alt, sol = null, sag = nu
           const n = yayNoktasi(gok.oran)
           return gok.tur === "gunes" ? <Gunes x={n.x} y={n.y} /> : <Ay x={n.x} y={n.y} evre={gok.evre ?? 0.5} t={t} />
         })()}
+        {/* HAVA — bulut ve yağış */}
+        {hava && hava.tur && hava.tur !== "acik" && (
+          <g transform={`translate(${HAVA_YER.x} ${HAVA_YER.y}) scale(${HAVA_YER.olcek})`}>
+            <HavaGlifi tur={hava.tur} dolgu={t.surface} cizgi={t.accent} vurgu={t.accent} />
+          </g>
+        )}
         {minare(20)}
         {minare(280)}
         {/* yan kubbeler, kasnak + pencereler, ana kubbe, alem */}
@@ -138,6 +151,18 @@ export default function CamiVakit({ theme, ust, buyuk, alt, sol = null, sag = nu
         <RozetSekli cx={220} cy={117} r={6} t={t} />
         <line x1="2" y1={ZEMIN + 0.5} x2="298" y2={ZEMIN + 0.5} style={f("none", t.border, 1.4)} />
       </svg>
+
+      {/* HAVA — derece (bulutun sağında; açık havada köşede tek başına) */}
+      {hava && (
+        <>
+          <style>{HAVA_CSS}</style>
+          <div title={`${hava.derece}°`} style={{
+            position: "absolute", ...yuzde(hava.tur && hava.tur !== "acik" ? HAVA_YER.x + 44 : HAVA_YER.x + 4, HAVA_YER.y + 10),
+            fontSize: `${Math.max(11, 12 * k)}px`, fontWeight: 700, lineHeight: 1, color: t.text,
+            fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap", pointerEvents: "none",
+          }}>{hava.derece}°</div>
+        </>
+      )}
 
       {/* GÖKYÜZÜ KÖŞELERİ: solda liste, sağda bildirim */}
       {[[sol, SOL_KOSE, "flex-start"], [sag, SAG_KOSE, "flex-end"]].map(([icerik, kose, hiza], i) => icerik && (

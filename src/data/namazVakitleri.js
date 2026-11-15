@@ -106,7 +106,7 @@ export function konumBilgisiniSil() {
     const sil = []
     for (let i = 0; i < localStorage.length; i++) {
       const k = localStorage.key(i)
-      if (k === SECIM_ANAHTAR || (k && k.startsWith("vukuf-namaz-vakit-"))) sil.push(k)
+      if (k === SECIM_ANAHTAR || (k && (k.startsWith("vukuf-namaz-vakit-") || k.startsWith("vukuf-hava-")))) sil.push(k)
     }
     sil.forEach(k => localStorage.removeItem(k))
   } catch { /* yoksay */ }
@@ -269,7 +269,9 @@ export async function konumdanBul() {
   const ilce = ilceler.find(i => ilceAdaylari.some(a => adNorm(a) === adNorm(i.IlceAdi)))
     || ilceler.find(i => adNorm(i.IlceAdi) === adNorm(sehir.SehirAdi))
     || ilceler[0]
-  return { sehirId: sehir.SehirID, sehirAdi: sehir.SehirAdi, ilceId: ilce.IlceID, ilceAdi: ilce.IlceAdi, kaynak: "konum" }
+  // lat/lng (15 Kasım 2026): hava durumu için (data/havaDurumu.js) — yer adı araması gerekmesin
+  return { sehirId: sehir.SehirID, sehirAdi: sehir.SehirAdi, ilceId: ilce.IlceID, ilceAdi: ilce.IlceAdi, kaynak: "konum",
+    lat: Math.round(k.latitude * 100) / 100, lng: Math.round(k.longitude * 100) / 100 }
 }
 
 // ── TAKVİM DOSYASI (.ics) ────────────────────────────────────────────────────

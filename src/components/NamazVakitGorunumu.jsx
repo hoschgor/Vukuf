@@ -37,8 +37,9 @@ export function SureYazisi({ ms }) {
  * @param seciliVakit     dokunulan vakit anahtarı (null = yaklaşan vakit)
  * @param setSeciliVakit
  * @param ipucu           ızgaranın altındaki satır (yoksa hiç çizilmez)
+ * @param hava            { derece, tur, gunduz } — caminin göğünde (data/havaDurumu.js)
  */
-export default function NamazVakitGorunumu({ theme, d, seciliVakit, setSeciliVakit, ipucu = null }) {
+export default function NamazVakitGorunumu({ theme, d, seciliVakit, setSeciliVakit, ipucu = null, hava = null }) {
   const sonrakiKalan = d?.sonraki ? d.sonraki.an - Date.now() : null
   const ramazan = ramazanHedefi(d)
   const kerahat = d?.bugun ? kerahatDurumu(d.bugun) : null
@@ -108,7 +109,7 @@ export default function NamazVakitGorunumu({ theme, d, seciliVakit, setSeciliVak
         if (sec) {
           const fark = vakitAni(d.bugun, d.bugun[sec.k]) - Date.now()
           return (
-            <CamiVakit theme={theme} sol={sol} sag={sag} gok={gok}
+            <CamiVakit theme={theme} sol={sol} sag={sag} gok={gok} hava={hava}
               ust={<><strong style={{ color: theme.text }}>{sec.ad}</strong> · {d.bugun[sec.k]}</>}
               buyuk={<SureYazisi ms={fark} />}
               alt={fark > 0 ? "kaldı" : "geçti"} />
@@ -117,14 +118,14 @@ export default function NamazVakitGorunumu({ theme, d, seciliVakit, setSeciliVak
         // Ramazan: iftara / sahura kalan (kendiliğinden)
         if (ramazan) {
           return (
-            <CamiVakit theme={theme} sol={sol} sag={sag} gok={gok}
+            <CamiVakit theme={theme} sol={sol} sag={sag} gok={gok} hava={hava}
               ust={<>{ramazan.tur === "iftar" ? "İftara kalan" : "Sahura kalan"}: <span style={{ whiteSpace: "nowrap" }}><strong style={{ color: theme.text }}>{ramazan.ad}</strong> · {ramazan.saat}</span></>}
               buyuk={<SureYazisi ms={ramazan.an - Date.now()} />}
               alt="kaldı" />
           )
         }
         return (
-          <CamiVakit theme={theme} sol={sol} sag={sag} gok={gok}
+          <CamiVakit theme={theme} sol={sol} sag={sag} gok={gok} hava={hava}
             ust={d.sonraki ? <>{d.sonraki.yarin ? "Yarın" : "Yaklaşan vakit"}: <span style={{ whiteSpace: "nowrap" }}><strong style={{ color: theme.text }}>{d.sonraki.ad}</strong> · {d.sonraki.saat}</span></> : "Günün vakitleri"}
             buyuk={d.sonraki ? <SureYazisi ms={sonrakiKalan} /> : null}
             alt={d.sonraki ? "kaldı" : null} />

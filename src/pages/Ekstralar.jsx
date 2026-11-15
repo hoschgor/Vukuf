@@ -93,6 +93,7 @@ import {
   useNamazKarti, namazKartiYaz,
 } from "../data/namazVakitleri"
 import NamazVakitGorunumu from "../components/NamazVakitGorunumu"
+import { useHavaDurumu } from "../data/havaDurumu"
 
 // ── KIBLE ────────────────────────────────────────────────────────────────────
 const KABE = { lat: 21.422487, lng: 39.826206 }
@@ -144,6 +145,7 @@ function NamazVakitleri({ theme }) {
   // 'Takvime Ekle' 'Aylık vakitler' 'Konumu Değiştir' 'Kütüphaneye kart olarak ekle' çekmeceden açılsın")
   const [islevlerAcik, setIslevlerAcik] = useState(false)
   const kutuphaneKarti = useNamazKarti()
+  const hava = useHavaDurumu(secim)          // 15 Kasım 2026: caminin göğünde derece + bulut/yağış
   // İPUCU 3 sn (14 Kasım 2026, kullanıcı: "o bilgi kısmı da 3 sn sonra silinecek şekilde görüntülensin")
   const [ipucuGorunur, setIpucuGorunur] = useState(true)
   // "Vakitler cihazda saklanır…" notu da bir süre sonra gizlenir (14 Kasım 2026)
@@ -204,7 +206,7 @@ function NamazVakitleri({ theme }) {
   }, [vakitlerHazir])
   const ozet = ramazan
     ? `${ramazan.tur === "iftar" ? "İftara" : "Sahura"} ${kalanMetni(ramazan.an - Date.now())} · ${ramazan.ad} ${ramazan.saat}`
-    : d?.sonraki ? `${d.sonraki.ad} ${d.sonraki.saat} · ${kalanMetni(sonrakiKalan)} kaldı` : undefined
+    : d?.sonraki ? `${d.sonraki.ad} ${d.sonraki.saat} · ${kalanMetni(sonrakiKalan)} kaldı${hava ? ` · ${hava.derece}°` : ""}` : undefined
   const ramazanAyi = !!(d?.bugun && (ramazanMi(d.bugun) || ramazanMi(d.yarin)))
   const secStil = {
     width: "100%", padding: "9px 10px", borderRadius: "10px", fontFamily: "inherit", fontSize: "13.5px",
@@ -251,7 +253,7 @@ function NamazVakitleri({ theme }) {
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
           {/* Cami + vakitler + tarih — Kitaplık kartıyla ortak (components/NamazVakitGorunumu.jsx) */}
-          <NamazVakitGorunumu theme={theme} d={d} seciliVakit={seciliVakit} setSeciliVakit={setSeciliVakit}
+          <NamazVakitGorunumu theme={theme} d={d} seciliVakit={seciliVakit} setSeciliVakit={setSeciliVakit} hava={hava}
             ipucu={(seciliVakit || ipucuGorunur) ? (
               <div style={{ fontSize: "11px", color: theme.textSecondary, textAlign: "center", marginTop: "-6px", minHeight: "16px" }}>
                 {seciliVakit

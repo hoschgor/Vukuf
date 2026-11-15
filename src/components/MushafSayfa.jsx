@@ -11,9 +11,12 @@ import kelimeObek from "../data/kelime-obek.json"
 import { ayetTecvidOnbellek, TECVID_KURAL } from "../data/tecvid"
 import { useTecvidAyar, tecvidImza } from "../data/tecvidAyar"
 import { useOkunanGorunum, okunanHarfRengi } from "../data/okunanGorunum"
-import { useRenkliHareke, harekeRenkleri, useKelimeRenkleri, kelimeRengiBulucu } from "../data/harekeRenk"
+import { useRenkliHareke, harekeRenkleri, useKelimeRenkleri, kelimeRenkHaritasi } from "../data/harekeRenk"
 import { useHarekeFont, harekeFontKimligi } from "../data/harekeFont"
 import OkunanDalSusu from "./OkunanDalSusu"
+import kelimeAnlam from "../data/kelime-anlam.json"
+import ayetMeal from "../data/ayet-meal.json"
+import { okumaRenkleri, ayetRengi } from "../data/mealGorunum"
 // GEÇİCİ — dönme teşhisi sayacı (ölçüm bitince silinecek)
 // import { SAYAC as DONME_SAYAC } from "../data/donmeTeshis"   // ⏸ dönme teşhisi (yorumda)
 
@@ -68,6 +71,11 @@ function arapcaRakamla(sayi) {
 function MushafSayfa({
   sayfaNo,
   elemanlar = [],
+  secimRengi = null,          // kelime/kalıp renklendirmede seçilenler: { renk, ids: "s:a:k,…" } → önizleme rengi
+  // MEAL ALTINDA (15 Kasım 2026, data/mealGorunum.js): "k" kelime anlamı kelimenin altında,
+  // "a" âyet meali âyetin altında, "r<tohum>" kelimeler rastgele renkli. KuranOkuma kurar
+  // (ilgili meal kapalıysa ya da hıfz açıksa harfi koymaz). Boş = eskisi gibi.
+  mealAltinda = "",
   sureler = [],
   theme,
   arapcaFont,
@@ -111,6 +119,12 @@ function MushafSayfa({
 
   const fontSize = isMobile ? yaziBoyutu : yaziBoyutu + 2
   const lineHeight = satirAraligi || (isMobile ? 2.2 : 2.0) // Azaltıldı
+  const kelimeAlt = mealAltinda.includes("k")
+  const ayetAlt = mealAltinda.includes("a")
+  const renkTohum = (/r(\d+)/.exec(mealAltinda) || [])[1]
+  // "R<tohum>": âyet meali altında + âyetler rastgele renkli (Arapça ve meal aynı renk)
+  const ayetTohum = (/R(\d+)/.exec(mealAltinda) || [])[1]
+  const ayetRenk = (sureNo, ayetNo) => (ayetTohum ? ayetRengi(sureNo, ayetNo, Number(ayetTohum), theme.background) : null)
 
   /* HIFZ PERDESİ İÇİN KELİME SIRASI — her kelimenin ÂYET İÇİNDEKİ kaçıncı
      kelime olduğu. Perde "baştan n kelime açık" diye çalıştığı için bu sıra
@@ -159,7 +173,15 @@ function MushafSayfa({
     return { taban: a.taban, katmanlar }
   }, [harekeAyar, harekeFont, theme])
   const kelimeKurallari = useKelimeRenkleri()
-  const kelimeRengi = useMemo(() => kelimeRengiBulucu(kelimeKurallari), [kelimeKurallari])
+  // Tek kelime + çok kelimeli kalıp kuralları sayfanın kelime dizisi üzerinde (kalıp bitişik arar)
+  const kelimeRenkleri = useMemo(() => kelimeRenkHaritasi(kelimeKurallari,
+    elemanlar.filter(el => el.tip === "kelime" && el.kelime).map(el => ({ id: el.kelime.id, arabic: el.kelime.arabic }))),
+  [kelimeKurallari, elemanlar])
+  // Rastgele okuma renkleri (kelime anlamı altındayken, isteğe bağlı)
+  const okumaRenkHaritasi = useMemo(() => (renkTohum
+    ? okumaRenkleri(elemanlar.filter(el => el.tip === "kelime" && el.kelime).map(el => el.kelime.id), Number(renkTohum), theme.background)
+    : null), [renkTohum, elemanlar, theme.background])
+  const secimKume = useMemo(() => new Set(secimRengi?.ids ? secimRengi.ids.split(",") : []), [secimRengi?.ids])
 
   const tImza = tecvidImza(tecvidAyar)
   const tecvidRenkleri = useMemo(() => {
@@ -216,6 +238,11 @@ function MushafSayfa({
       gruplar.push({ tip: "block", eleman: el })
     } else {
       mevcutInlineElemanlar.push(el)
+      // Âyet meali altında: her âyet kendi paragrafı, ardından meali
+      if (ayetAlt && el.tip === "ayet-sonu") {
+        inlineGrupKapat()
+        gruplar.push({ tip: "meal", sure: el.sure, ayetNo: el.ayet.no })
+      }
     }
   })
   inlineGrupKapat()
@@ -381,6 +408,24 @@ function MushafSayfa({
           )
         }
 
+        // MEAL — âyetin altında meali (Ayarlar → Meal → Âyet meali: Altında)
+        if (grup.tip === "meal") {
+          const m = ayetMeal[grup.sure.id]?.[grup.ayetNo]
+          if (!m) return null
+          const ar = ayetRenk(grup.sure.id, grup.ayetNo)
+          return (
+            <div key={`meal-${grup.sure.id}-${grup.ayetNo}`} className="vk-ayet-meal-alt" style={{
+              direction: "ltr", textAlign: "left", width: "100%", boxSizing: "border-box",
+              fontFamily: "'SouvenirDemi', Georgia, serif", fontSize: `${Math.max(12, Math.round(fontSize * 0.56))}px`,
+              lineHeight: 1.6, color: ar || theme.textSecondary, whiteSpace: "pre-line",
+              margin: `${-fontSize * 0.05}px 0 ${fontSize * 0.45}px`, padding: `${fontSize * 0.2}px ${fontSize * 0.35}px`,
+              borderInlineStart: `2px solid ${ar || theme.ayetNoRengi || theme.accent}${ar ? "aa" : "55"}`, background: `${ar || theme.accent}${ar ? "0d" : "08"}`, borderRadius: "0 8px 8px 0",
+            }}>
+              <span style={{ fontWeight: 700, color: ar || theme.ayetNoRengi || theme.accent, marginRight: "6px", fontSize: "0.9em" }}>{grup.ayetNo}.</span>{m}
+            </div>
+          )
+        }
+
         // BLOCK: sure-sonu
         if (grup.tip === "block" && grup.eleman.tip === "sure-sonu") {
           return (
@@ -451,7 +496,11 @@ function MushafSayfa({
                     // data-kelime SARMALAYICI span → okuma alanı tık koruması kelimeyi tanısın
                     // (kelimeye dokununca bar durumu değişmesin). Ayrı attribute → sureGit'in
                     // [data-sure][data-ayet] hizalamasını ETKİLEMEZ. display:contents → düzeni bozmaz.
-                    <span key={el.kelime.id} data-kelime={kelimeEtkilesimli ? "1" : "0"} style={{ display: "contents" }}>
+                    <span key={el.kelime.id} data-kelime={kelimeEtkilesimli ? "1" : "0"}
+                      style={kelimeAlt
+                        // Kelime meali altında: Arapça + altında anlamı tek sütun (15 Kasım 2026)
+                        ? { display: "inline-flex", flexDirection: "column", alignItems: "center", verticalAlign: "top", maxWidth: "100%" }
+                        : { display: "contents" }}>
                       <MushafKelime
                         hifzAnahtar={`${el.sure.id}:${el.ayet.no}`}
                         hifzSira={kelimeSirasi.get(el.kelime.id) || 1}
@@ -470,7 +519,8 @@ function MushafSayfa({
                         aktifGorunum={okunanGorunum}
                         tecvidRenk={tecvidRenkleri?.get(el.kelime.id) || null}
                         harekeBoya={harekeBoya}
-                        kelimeRenk={kelimeRengi ? kelimeRengi(el.kelime.arabic) : null}
+                        kelimeRenk={(secimKume.has(String(el.kelime.id)) ? secimRengi.renk : null) || kelimeRenkleri.get(el.kelime.id) || null}
+                        okumaRengi={okumaRenkHaritasi?.get(el.kelime.id) || ayetRenk(el.sure.id, el.ayet.no)}
                         grupKonum={grup_?.konum || null}
                         grupVurgu={!!grup_ && hoverGrup === grup_.anahtar}
                         obekKonum={obek_?.konum || null}
@@ -484,6 +534,23 @@ function MushafSayfa({
                           onKelimeTikla?.(kelime, el.sure, el.ayet, e)
                         }}
                       />
+                      {kelimeAlt && (() => {
+                        // Birleşik kelimede (kelime-grup) anlam ilk üyenin altında bir kez
+                        const uy = kelimeGrup[el.kelime.id]?.uyeler
+                        const ham = uy && uy[0] !== el.kelime.id ? null : kelimeAnlam[el.kelime.id]
+                        const anlam = Array.isArray(ham) ? ham.filter(Boolean).join(" / ") : (ham || "")
+                        return (
+                          <span className="vk-kelime-anlam" dir="ltr" style={{
+                            display: "block", fontFamily: "'SouvenirDemi', Georgia, serif",
+                            fontSize: `${Math.max(9.5, Math.round(fontSize * 0.4 * 10) / 10)}px`, lineHeight: 1.2,
+                            color: okumaRenkHaritasi?.get(el.kelime.id) || ayetRenk(el.sure.id, el.ayet.no) || theme.textSecondary,
+                            textAlign: "center", whiteSpace: "normal", overflowWrap: "anywhere",
+                            maxWidth: `${Math.round(fontSize * 4.2)}px`, minHeight: "1.2em",
+                            marginTop: `${-fontSize * 0.42}px`, marginBottom: `${fontSize * 0.28}px`, padding: "0 2px",
+                            letterSpacing: 0, wordSpacing: "normal", userSelect: "none",
+                          }}>{anlam}</span>
+                        )
+                      })()}
                     </span>
                   )
                 }
@@ -579,7 +646,8 @@ function mushafSayfaEsit(a, b) {
     a.hizbBaslangic !== b.hizbBaslangic ||
     a.kitapModu !== b.kitapModu ||
     a.ayracSol !== b.ayracSol ||
-    a.kelimeEtkilesimli !== b.kelimeEtkilesimli
+    a.kelimeEtkilesimli !== b.kelimeEtkilesimli ||
+    a.mealAltinda !== b.mealAltinda
   ) return false
 
   // sayfaKayitlari her render'da YENİ dizi (filter) → referansla değil DEĞERLE karşılaştır
@@ -616,6 +684,14 @@ function mushafSayfaEsit(a, b) {
     const sureOf = (k) => (k ? Number(String(k).split(":")[0]) : null)
     if (sayfadaSureVar(b.elemanlar, sureOf(a.seciliKelime)) ||
         sayfadaSureVar(b.elemanlar, sureOf(b.seciliKelime))) return false
+  }
+
+  // Kelime/kalıp renklendirme seçimi → seçilen kelimelerin sûrelerini içeren sayfalar
+  const sA = a.secimRengi ? `${a.secimRengi.renk}|${a.secimRengi.ids}` : ""
+  const sB = b.secimRengi ? `${b.secimRengi.renk}|${b.secimRengi.ids}` : ""
+  if (sA !== sB) {
+    const sureler = new Set([a.secimRengi, b.secimRengi].flatMap(x => (x?.ids ? x.ids.split(",") : [])).map(k => Number(k.split(":")[0])))
+    for (const sn of sureler) if (sayfadaSureVar(b.elemanlar, sn)) return false
   }
 
   // Kayıt ayracı vurgusu → yalnız o ayracı içeren sayfa

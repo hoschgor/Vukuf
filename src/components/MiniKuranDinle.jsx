@@ -11,7 +11,7 @@
 
 import { useEffect, useState } from "react"
 import { useLocation, useNavigate } from "react-router-dom"
-import { Play, Pause, Undo2, ChevronDown, X, SkipForward, Loader2 } from "lucide-react"
+import { DonusSimgesi, KucultSimgesi, SonrakiSimgesi, DurdurSimgesi, AmblemDugmesi, AmblemIsareti } from "./CerceveliSimge"
 import { useApp } from "../AppContext"
 import { useKuranDinle, kuranDinleZamanlayici, kariBul, parcaAdi } from "../data/kuranDinle"
 import { useRadyo } from "../data/radyo"
@@ -29,8 +29,9 @@ export const DINLE_HAP_CSS = `@keyframes vk-kd-dalga{0%,100%{opacity:.2}50%{opac
 @keyframes vk-kd-don{to{transform:rotate(360deg)}}.vk-kd-don{animation:vk-kd-don 1s linear infinite}
 @media (prefers-reduced-motion: reduce){.vk-kd-d1,.vk-kd-d2{animation:none}}`
 
-/* Rahle üstünde açık mushaf + iki yanda ses dalgaları */
-export function DinleAmblemi({ ac, zemin, calar, boy = 34 }) {
+/* Rahle üstünde açık mushaf + iki yanda ses dalgaları.
+   isaret (15 Kasım 2026): "oynat" | "duraklat" → sağ sayfanın satırları yerine işaret (AmblemDugmesi) */
+export function DinleAmblemi({ ac, zemin, calar, boy = 34, isaret = null }) {
   const d = (s) => (calar ? s : undefined)
   return (
     <svg width={boy} height={boy} viewBox="-20 -20 40 40" aria-hidden="true" style={{ flexShrink: 0 }}>
@@ -39,8 +40,9 @@ export function DinleAmblemi({ ac, zemin, calar, boy = 34 }) {
       {/* açık mushaf */}
       <path d="M0 -3.5 C-3 -6 -6.5 -6.5 -9 -5.5 L-9 3.5 C-6.5 2.6 -3 3 0 5.2 Z" fill={`${ac}26`} stroke={ac} strokeWidth="1.2" strokeLinejoin="round" />
       <path d="M0 -3.5 C3 -6 6.5 -6.5 9 -5.5 L9 3.5 C6.5 2.6 3 3 0 5.2 Z" fill={`${ac}26`} stroke={ac} strokeWidth="1.2" strokeLinejoin="round" />
-      <path d="M-6.8 -2.6 C-5 -3 -3.2 -2.6 -2 -1.6 M-6.8 0 C-5 -0.4 -3.2 0 -2 1 M6.8 -2.6 C5 -3 3.2 -2.6 2 -1.6 M6.8 0 C5 -0.4 3.2 0 2 1"
+      <path d={`M-6.8 -2.6 C-5 -3 -3.2 -2.6 -2 -1.6 M-6.8 0 C-5 -0.4 -3.2 0 -2 1${isaret ? "" : " M6.8 -2.6 C5 -3 3.2 -2.6 2 -1.6 M6.8 0 C5 -0.4 3.2 0 2 1"}`}
         fill="none" stroke={ac} strokeOpacity="0.55" strokeWidth="0.8" strokeLinecap="round" />
+      <AmblemIsareti isaret={isaret} x={4.6} y={-1.2} b={5.6} ac={ac} />
       {/* rahle ayakları (çapraz) */}
       <path d="M-6.5 5.5 L5 12.5 M6.5 5.5 L-5 12.5" stroke={ac} strokeWidth="1.5" strokeLinecap="round" />
       {/* ses dalgaları */}
@@ -121,7 +123,11 @@ function DinleHapi({ dinle, kitapta }) {
             border: `1.5px dashed ${ac}`, borderRadius: "24px",
             boxShadow: k.surukleniyor ? "0 10px 28px rgba(0,0,0,0.32)" : "0 4px 16px rgba(0,0,0,0.22)",
           }}>
-            <DinleAmblemi ac={ac} zemin={theme.surface} calar={calar} boy={36} />
+            {/* ÇERÇEVELİ DÜĞMELER (15 Kasım 2026): baştaki amblem oynat/duraklat; geri dön ve küçült lâle, oynatma düğmeleri yıldız çerçeveli; çarpı yerine tamamen durdur — components/CerceveliSimge.jsx */}
+            <AmblemDugmesi calar={calar} yukleniyor={yukleniyor} ac={ac} etiket="Kur'an Dinle"
+              onClick={() => (calar || yukleniyor ? dinle.duraklat() : dinle.devam())}>
+              {({ isaret }) => <DinleAmblemi ac={ac} zemin={theme.surface} calar={calar} boy={36} isaret={isaret} />}
+            </AmblemDugmesi>
             <span style={{ display: "flex", flexDirection: "column", minWidth: 0, flex: 1, padding: "0 6px 0 4px", lineHeight: 1.15 }}>
               <span style={{ fontSize: "12.5px", fontWeight: 700, color: theme.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{kari?.ad}</span>
               <span style={{ display: "flex", alignItems: "center", gap: "5px", fontSize: "9.5px", letterSpacing: "0.08em", fontWeight: 700, color: theme.textSecondary, whiteSpace: "nowrap", minWidth: 0 }}>
@@ -130,23 +136,18 @@ function DinleHapi({ dinle, kitapta }) {
                 {uyku.bitis && <span style={{ fontSize: "10px" }}>· <UykuRozeti theme={theme} bitis={uyku.bitis} /></span>}
               </span>
             </span>
-            <button onClick={() => (calar || yukleniyor ? dinle.duraklat() : dinle.devam())}
-              aria-label={calar ? "Duraklat" : "Dinle"} title={calar ? "Duraklat" : "Dinle"} style={yuvarlak(true)}>
-              {yukleniyor ? <Loader2 size={15} className="vk-kd-don" /> : calar ? <Pause size={15} /> : <Play size={15} style={{ marginLeft: "2px" }} />}
-            </button>
             <button onClick={() => dinle.atla(1)} aria-label="Sonraki" title="Sonraki" style={yuvarlak(false)}>
-              <SkipForward size={15} />
+              <SonrakiSimgesi ac={ac} />
             </button>
-            <EkstraSesDugmesi theme={theme} stil={yuvarlak(false)} />
-            <button onClick={() => navigate("/ekstralar")} aria-label="Ekstralar'a git" title="Ekstralar'a git"
-              style={{ ...yuvarlak(false), color: ac, background: `${ac}14` }}>
-              <Undo2 size={15} />
+            <EkstraSesDugmesi theme={theme} stil={yuvarlak(false)} cerceve="yildiz" />
+            <button onClick={() => navigate("/ekstralar")} aria-label="Ekstralar'a git" title="Ekstralar'a git" style={{ ...yuvarlak(false), color: theme.text }}>
+              <DonusSimgesi bolum="dinle" ac={ac} />
             </button>
             <button onClick={() => setKucuk(true)} aria-label="Küçült" title="Küçült" style={yuvarlak(false)}>
-              <ChevronDown size={16} />
+              <KucultSimgesi ac={ac} />
             </button>
-            <button onClick={() => dinle.kapat()} aria-label="Kur'an Dinle'yi kapat" title="Kapat" style={yuvarlak(false)}>
-              <X size={15} />
+            <button onClick={() => dinle.kapat()} aria-label="Kur'an Dinle'yi durdur ve kapat" title="Durdur ve kapat" style={yuvarlak(false)}>
+              <DurdurSimgesi ac={ac} />
             </button>
           </div>
         )}

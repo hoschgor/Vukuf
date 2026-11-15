@@ -69,7 +69,7 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { ScrollText, BellRing, Table2, Radio, Compass, MapPin, Sparkles, Play, Pause, ExternalLink, RotateCcw, Navigation, Loader2, X, Clock, CalendarPlus, Moon, LocateFixed, ShieldCheck, Trash2, PowerOff, Pencil, Check, Eye, EyeOff, GripVertical, ListChecks, Headphones, Tv, ChevronRight, Library } from "lucide-react"
+import { ScrollText, BellRing, Table2, Radio, Compass, MapPin, Sparkles, ExternalLink, RotateCcw, Navigation, Loader2, Clock, CalendarPlus, Moon, LocateFixed, ShieldCheck, Trash2, PowerOff, Pencil, Check, Eye, EyeOff, GripVertical, ListChecks, Headphones, Tv, ChevronRight, Library } from "lucide-react"
 import { useApp } from "../AppContext"
 import { useRadyo, YAYINLAR, radyoZamanlayici } from "../data/radyo"
 import { useZamanlayici } from "../data/otomatikDurdurma"
@@ -85,6 +85,7 @@ import { GOZ_UZERINE_CSS } from "../components/gozUzerine"
 // Radyo satırları küçük radyo hapının görünümünde (12 Kasım 2026)
 import { RadyoAmblemi, RADYO_HAP_CSS } from "../components/MiniRadyo"
 import EkstraSesDugmesi from "../components/EkstraSesDugmesi"
+import { AmblemDugmesi, DurdurSimgesi } from "../components/CerceveliSimge"
 import { useEkstraDuzen, ekstraDuzenYaz, ekstraGizleDegis, ekstraSirala } from "../data/ekstraDuzen"
 import {
   VAKITLER, sehirleriGetir, ilceleriGetir, vakitleriGetir, secimOku, secimYaz, durumHesapla, kalanMetni,
@@ -254,14 +255,23 @@ function NamazVakitleri({ theme }) {
         <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
           {/* Cami + vakitler + tarih — Kitaplık kartıyla ortak (components/NamazVakitGorunumu.jsx) */}
           <NamazVakitGorunumu theme={theme} d={d} seciliVakit={seciliVakit} setSeciliVakit={setSeciliVakit} hava={hava}
-            ipucu={(seciliVakit || ipucuGorunur) ? (
-              <div style={{ fontSize: "11px", color: theme.textSecondary, textAlign: "center", marginTop: "-6px", minHeight: "16px" }}>
+            ipucu={
+              /* DURUM SATIRI (15 Kasım 2026) — kullanıcı: "saniye ile gizlediğimiz bilgi kısımları,
+                 kartın boyutunu değiştiriyor, bu da sayfanın kaymasına sebep oluyor". İpucu (3 sn),
+                 "cihazda saklanır" notu (3 sn daha) ve "Yaklaşan vakte dön" artık TEK, sabit
+                 yükseklikli satırı sırayla paylaşıyor; yazılar tek satır. Yazı sönse de satır
+                 yerinde kalır → kart boyu hiç değişmez, sayfa kaymaz. */
+              <div style={{ height: "20px", marginTop: "-6px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "11px", color: theme.textSecondary, overflow: "hidden" }}>
                 {seciliVakit
-                  ? <button onClick={() => setSeciliVakit(null)} style={{ background: "none", border: "none", padding: "2px 6px", color: theme.accent, fontFamily: "inherit", fontSize: "11.5px", fontWeight: 600, cursor: "pointer" }}>Yaklaşan vakte dön</button>
-                  : <span style={{ animation: "vk-ipucu-sol 3s ease forwards" }}>Bir vakte dokunulunca o vakte kalan ya da üzerinden geçen süre görünür.</span>}
+                  ? <button onClick={() => setSeciliVakit(null)} style={{ background: "none", border: "none", padding: "2px 6px", color: theme.accent, fontFamily: "inherit", fontSize: "11.5px", fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap" }}>Yaklaşan vakte dön</button>
+                  : ipucuGorunur
+                    ? <span key="ipucu" style={{ animation: "vk-ipucu-sol 3s ease forwards", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>Bir vakte dokunulunca kalan ya da geçen süre görünür.</span>
+                    : notGorunur
+                      ? <span key="not" style={{ animation: "vk-not-sol 3s ease forwards", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>Vakitler cihazda saklanır, internetsiz de görünür.</span>
+                      : null}
               </div>
-            ) : null} />
-          <style>{`@keyframes vk-ipucu-sol { 0%, 80% { opacity: 1 } 100% { opacity: 0 } }`}</style>
+            } />
+          <style>{`@keyframes vk-ipucu-sol { 0%, 80% { opacity: 1 } 100% { opacity: 0 } } @keyframes vk-not-sol { 0% { opacity: 0 } 12%, 80% { opacity: 1 } 100% { opacity: 0 } }`}</style>
           {/* İŞLEVLER — çekmece */}
           <div>
             <button onClick={() => setIslevlerAcik(v => !v)} aria-expanded={islevlerAcik}
@@ -319,12 +329,6 @@ function NamazVakitleri({ theme }) {
             </div>
           )}
           {islevlerAcik && tabloAcik && <AylikVakitler theme={theme} liste={liste} bugun={d.bugun} ramazanAyi={ramazanAyi} />}
-          {notGorunur && (
-            <div style={{ fontSize: "11px", color: theme.textSecondary, lineHeight: 1.5, textAlign: "center", animation: "vk-not-sol 6s ease forwards" }}>
-              Vakitler cihazda saklanır, internetsiz de görünür.
-            </div>
-          )}
-          <style>{`@keyframes vk-not-sol { 0%, 88% { opacity: 1 } 100% { opacity: 0 } }`}</style>
         </div>
       )}
     </Kart>
@@ -507,8 +511,11 @@ function Radyolar({ theme }) {
               border: bu ? `1.5px dashed ${ac}` : `1px solid ${theme.border}`,
               background: bu ? `linear-gradient(90deg, ${ac}12, ${theme.surface} 45%)` : "transparent",
             }}>
+              {/* Amblem oynat/duraklat (15 Kasım 2026 — Kur'ân oynatıcısıyla aynı dil; ayrı düğme kalktı) */}
               <span style={{ opacity: bu ? 1 : 0.75, display: "flex" }}>
-                <RadyoAmblemi ac={ac} zemin={theme.surface} calar={caliyor} boy={38} />
+                <AmblemDugmesi calar={caliyor} yukleniyor={yukleniyor} ac={ac} etiket={y.ad} onClick={() => dokun(y)}>
+                  {({ isaret }) => <RadyoAmblemi ac={ac} zemin={theme.surface} calar={caliyor} boy={38} isaret={isaret} />}
+                </AmblemDugmesi>
               </span>
               <div style={{ flex: 1, minWidth: 0, padding: "0 4px" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "14px", fontWeight: 600, color: theme.text }}>
@@ -524,15 +531,11 @@ function Radyolar({ theme }) {
                     : yukleniyor ? "Bağlanıyor…" : caliyor ? "Çalıyor" : bu && durum === "duraklatildi" ? "Duraklatıldı" : y.aciklama}
                 </div>
               </div>
-              <button onClick={() => dokun(y)} aria-label={caliyor ? `${y.ad} — duraklat` : `${y.ad} — dinle`}
-                title={caliyor ? "Duraklat" : "Dinle"} style={yuvarlak(true)}>
-                {yukleniyor ? <Loader2 size={16} className="vk-don" /> : caliyor ? <Pause size={16} /> : <Play size={16} style={{ marginLeft: "2px" }} />}
-              </button>
               {/* Ses düzeyi — Kur'an Dinle ile ortak (13 Kasım 2026) */}
-              {bu && <EkstraSesDugmesi theme={theme} stil={yuvarlak(false)} />}
+              {bu && <EkstraSesDugmesi theme={theme} stil={yuvarlak(false)} cerceve="yildiz" />}
               {bu && (
-                <button onClick={() => radyo.kapat()} aria-label={`${y.ad} — kapat`} title="Kapat" style={yuvarlak(false)}>
-                  <X size={15} />
+                <button onClick={() => radyo.kapat()} aria-label={`${y.ad} — durdur ve kapat`} title="Durdur ve kapat" style={yuvarlak(false)}>
+                  <DurdurSimgesi ac={ac} />
                 </button>
               )}
               <a href={y.site} target="_blank" rel="noopener noreferrer" aria-label={`${y.ad} resmî sitesi`} title="Resmî site"

@@ -400,6 +400,9 @@ export default function MushafKelime({
   etkilesimli = true,
   // Balonu açık kelime: etrafına kutu yerine YAZI RENGİ değişir (10 Kasım 2026)
   secili = false,
+  // Rastgele okuma rengi (Ayarlar → Meal → kelime anlamı altında + "Kelimeleri farklı renklendir",
+  // 15 Kasım 2026): yalnız yazının olağan rengi yerine geçer; tecvid ve renkli hareke üstünde kalır.
+  okumaRengi = null,
   // OKUNAN ÂYET GÖRÜNÜMÜ (11 Kasım 2026) — { arka: "yok"|"hafif"|"belirgin", altBant: "yok"|"bant"|"dal", harf }
   // arka: zemin tonu (%0 / %8 / %16) · altBant: kelime altında düz şerit ya da ince dal · harf: yazı vurgu renginde
   aktifGorunum = null,
@@ -614,7 +617,7 @@ export default function MushafKelime({
           color: secili ? theme.accent
             : kelimeBoyali ? kelimeRenk
             : (lafizkontrol || besmelekontrol) ? (theme.lugatHighlight || theme.accent)
-            : (aktif && aktifHarf) ? (aktifGorunum?.harfRengi || theme.accent) : theme.text,
+            : (aktif && aktifHarf) ? (aktifGorunum?.harfRengi || theme.accent) : (okumaRengi || theme.text),
           display: "inline",
           // `opacity: aktif ? 1 : 0.95` KALDIRILDI (28 Eylül 2026). 1'in altındaki
           // her opaklık bu metin kutusunu ayrı bir katmana alıyor; iPhone bu katmanı

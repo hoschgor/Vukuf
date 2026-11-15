@@ -152,11 +152,11 @@ export default function HarekeRenkAyarlari({ theme, arapcaStyle, onKelimeSec }) 
               padding: "7px 10px", borderRadius: "9px", border: "none", cursor: "pointer", fontFamily: "inherit",
               background: theme.accent, color: "#fff", fontSize: "12.5px", fontWeight: 600,
             }}>
-            <Pointer size={14} /> Kelime seç
+            <Pointer size={14} /> Kelime / kalıp seç
           </button>
         </div>
         <div style={{ fontSize: "10.5px", color: theme.textSecondary, lineHeight: 1.4, margin: "6px 2px 0" }}>
-          {ESLESMELER.find(e => e.id === eslesme)?.alt} — seçilen kelimeyle eşleşen her yer bütün mushafta bu renkte görünür.
+          {ESLESMELER.find(e => e.id === eslesme)?.alt} — seçilen kelimeyle eşleşen her yer bütün mushafta bu renkte görünür. Birden çok kelimeye sırayla dokunulup onaylanırsa kalıp, arka arkaya geçtiği yerlerde boyanır.
         </div>
         {kurallar.length > 0 && (
           <div style={{ display: "flex", flexDirection: "column", gap: "4px", marginTop: "8px" }}>
@@ -164,8 +164,8 @@ export default function HarekeRenkAyarlari({ theme, arapcaStyle, onKelimeSec }) 
               <div key={k.id} style={{ display: "flex", alignItems: "center", gap: "8px", padding: "3px 0" }}>
                 <RenkBenegi renk={k.renk} theme={theme} baslik="Kelime rengi" boy={22} onSec={(r) => kelimeRengiDegis(k.id, { renk: r })} />
                 <span style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "baseline", gap: "6px", overflow: "hidden" }}>
-                  <span style={{ fontFamily: arapcaStyle, fontSize: "17px", color: k.renk, direction: "rtl", whiteSpace: "nowrap" }}>{k.metin}</span>
-                  <span style={{ fontSize: "10px", color: theme.textSecondary, whiteSpace: "nowrap" }}>{ESLESMELER.find(e => e.id === k.eslesme)?.ad}</span>
+                  <span style={{ fontFamily: arapcaStyle, fontSize: "17px", color: k.renk, direction: "rtl", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", minWidth: 0 }}>{k.metin}</span>
+                  <span style={{ fontSize: "10px", color: theme.textSecondary, whiteSpace: "nowrap" }}>{k.parcalar ? "Kalıp · " : ""}{ESLESMELER.find(e => e.id === k.eslesme)?.ad}</span>
                 </span>
                 <button onClick={() => kelimeRengiSil(k.id)} title="Kaldır" aria-label="Renklendirmeyi kaldır"
                   style={{ display: "flex", padding: "3px", background: "none", border: "none", cursor: "pointer", color: theme.textSecondary }}>

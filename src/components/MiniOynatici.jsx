@@ -25,7 +25,7 @@
 
 import { useState, useEffect } from "react"
 import { useLocation, useNavigate } from "react-router-dom"
-import { SkipForward, BookOpen, ChevronDown, Square, Glasses } from "lucide-react"
+import { SonrakiSimgesi, DonusSimgesi, KucultSimgesi, DurdurSimgesi, OdakSimgesi } from "./CerceveliSimge"
 import { odakAc } from "../data/odak"
 import { useApp } from "../AppContext"
 import { useOynatici } from "../data/oynatici"
@@ -216,23 +216,23 @@ function MiniHap({ player, kitapta }) {
               </span>
             </span>
             <button onClick={() => player.sonrakiAyet()} aria-label="Sonraki âyet" title="Sonraki âyet" style={yuvarlak(false)}>
-              <SkipForward size={15} />
+              <SonrakiSimgesi ac={ac} />
             </button>
             {/* GÖZLÜK (4 Kasım 2026) — bu ekrandan ayrılmadan okunan âyetlere odaklan */}
             <button onClick={() => odakAc("kuran")} aria-label="Odak — okunan âyetler" title="Odak — okunan âyetleri göster" style={yuvarlak(false)}>
-              <Glasses size={16} />
+              <OdakSimgesi ac={ac} />
             </button>
-            <button onClick={okumayaDon} aria-label="Okumaya dön" title="Okumaya dön — çalınan âyete"
-              style={{ ...yuvarlak(false), color: ac, background: `${ac}14` }}>
-              <BookOpen size={15} />
+            {/* Okumaya dön ve küçült — lâle çerçeveli (15 Kasım 2026, components/CerceveliSimge.jsx) */}
+            <button onClick={okumayaDon} aria-label="Okumaya dön" title="Okumaya dön — çalınan âyete" style={{ ...yuvarlak(false), color: theme.text }}>
+              <DonusSimgesi bolum="kuran" ac={ac} />
             </button>
             <button onClick={() => setKucuk(true)} aria-label="Küçült" title="Küçült" style={yuvarlak(false)}>
-              <ChevronDown size={16} />
+              <KucultSimgesi ac={ac} />
             </button>
             {/* DURDUR — Kur'ân ekranındaki oynatıcının durdurma düğmesiyle aynı:
                 vurgu renginde dolu kare (6 Ekim 2026, kullanıcı isteği) */}
             <button onClick={() => player.durdur()} aria-label="Durdur ve kapat" title="Durdur ve kapat" style={yuvarlak(false)}>
-              <Square size={13} fill={ac} color={ac} />
+              <DurdurSimgesi ac={ac} />
             </button>
           </div>
         )}

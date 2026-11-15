@@ -16,10 +16,11 @@
    Yüzen pencere en az ~356×200 px: YouTube oynatıcısı 200×200'den küçük olmamalı.
    ═══════════════════════════════════════════════════════════════════════════ */
 
-import { useEffect, useLayoutEffect, useRef, useState } from "react"
+import { isValidElement, useEffect, useLayoutEffect, useRef, useState } from "react"
 import { createPortal } from "react-dom"
 import { useLocation, useNavigate } from "react-router-dom"
-import { X, Undo2, PictureInPicture2, GripHorizontal } from "lucide-react"
+import { PictureInPicture2, GripHorizontal } from "lucide-react"
+import { DonusSimgesi, DurdurSimgesi } from "./CerceveliSimge"
 import { useApp } from "../AppContext"
 import { useDiyanetTv, tvAdresi, pipDestekli } from "../data/diyanetTv"
 
@@ -133,7 +134,7 @@ function TvPencere({ tv }) {
         display: "flex", alignItems: "center", justifyContent: "center",
         background: vurgu ? `${ac}22` : "transparent", color: vurgu ? ac : theme.textSecondary,
       }}>
-      <Ikon size={15} />
+      {isValidElement(Ikon) ? Ikon : <Ikon size={15} />}
     </button>
   )
 
@@ -167,9 +168,10 @@ function TvPencere({ tv }) {
             </span>
           </span>
           <span style={{ flex: 1 }} />
-          {!ekstralarda && dugme("Ekstralar'a git", Undo2, () => navigate("/ekstralar"), true)}
+          {/* Geri dön lâle çerçeveli, kapatma "tamamen durdur" (15 Kasım 2026 — components/CerceveliSimge.jsx) */}
+          {!ekstralarda && dugme("Ekstralar'a git", <DonusSimgesi bolum="tv" ac={ac} boy={26} />, () => navigate("/ekstralar"))}
           {pipDestekli() && dugme("Ekran içinde ekran (pencere üstte kalır)", PictureInPicture2, () => tv.pipAc())}
-          {dugme("Yayını kapat", X, () => tv.kapat())}
+          {dugme("Yayını durdur ve kapat", <DurdurSimgesi ac={ac} boy={26} />, () => tv.kapat())}
         </div>
       )}
     </div>,

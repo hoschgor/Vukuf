@@ -14,7 +14,7 @@
 
 import { useEffect, useState } from "react"
 import { useLocation, useNavigate } from "react-router-dom"
-import { Play, Pause, Undo2, ChevronDown, X } from "lucide-react"
+import { DonusSimgesi, KucultSimgesi, DurdurSimgesi, AmblemDugmesi, AmblemIsareti } from "./CerceveliSimge"
 import { useApp } from "../AppContext"
 import { useRadyo, radyoZamanlayici } from "../data/radyo"
 import { useZamanlayici } from "../data/otomatikDurdurma"
@@ -34,7 +34,8 @@ export const RADYO_HAP_CSS = `@keyframes vk-radyo-dalga{0%,100%{opacity:.25}50%{
 @media (prefers-reduced-motion: reduce){.vk-radyo-d1,.vk-radyo-d2,.vk-radyo-d3,.vk-radyo-canli{animation:none}}`
 
 /* Yayın kulesi + iki yanda dalgalar */
-export function RadyoAmblemi({ ac, zemin, calar, boy = 34 }) {
+// isaret (15 Kasım 2026): "oynat" | "duraklat" → anten başındaki topun yerine işaret, amblemin İÇİNDE
+export function RadyoAmblemi({ ac, zemin, calar, boy = 34, isaret = null }) {
   const d = (s) => (calar ? s : undefined)
   return (
     <svg width={boy} height={boy} viewBox="-20 -20 40 40" aria-hidden="true" style={{ flexShrink: 0 }}>
@@ -43,6 +44,8 @@ export function RadyoAmblemi({ ac, zemin, calar, boy = 34 }) {
       {/* kule */}
       <path d="M0 -4 L-5 11 M0 -4 L5 11 M-3.3 6 H3.3 M-2 2 H2" stroke={ac} strokeWidth="1.5" strokeLinecap="round" fill="none" />
       <circle cx="0" cy="-5.5" r="2.2" fill={ac} />
+      {/* oynat/duraklat işareti antenin ÜSTÜNDE — anteni kapatmasın (15 Kasım 2026) */}
+      <AmblemIsareti isaret={isaret} x={0.5} y={-12.4} b={6.2} ac={ac} />
       {/* dalgalar */}
       {[[6, "vk-radyo-d1"], [9.5, "vk-radyo-d2"], [13, "vk-radyo-d3"]].map(([r, cls]) => (
         <g key={r} className={d(cls)} style={{ opacity: calar ? undefined : 0.45 }}>
@@ -121,7 +124,11 @@ function RadyoHapi({ radyo, kitapta }) {
             border: `1.5px dashed ${ac}`, borderRadius: "24px",
             boxShadow: k.surukleniyor ? "0 10px 28px rgba(0,0,0,0.32)" : "0 4px 16px rgba(0,0,0,0.22)",
           }}>
-            <RadyoAmblemi ac={ac} zemin={theme.surface} calar={calar} boy={36} />
+            {/* ÇERÇEVELİ DÜĞMELER (15 Kasım 2026): baştaki amblem oynat/duraklat; geri dön ve küçült lâle, oynatma düğmeleri yıldız çerçeveli; çarpı yerine tamamen durdur — components/CerceveliSimge.jsx */}
+            <AmblemDugmesi calar={calar} yukleniyor={durum === "yukleniyor"} ac={ac} etiket="Radyo"
+              onClick={() => (calar || durum === "yukleniyor" ? radyo.duraklat() : radyo.devam())}>
+              {({ isaret }) => <RadyoAmblemi ac={ac} zemin={theme.surface} calar={calar} boy={36} isaret={isaret} />}
+            </AmblemDugmesi>
             <span style={{ display: "flex", flexDirection: "column", minWidth: 0, flex: 1, padding: "0 6px 0 4px", lineHeight: 1.15 }}>
               <span style={{ fontSize: "12.5px", fontWeight: 700, color: theme.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{istasyon.kisa}</span>
               <span style={{ display: "flex", alignItems: "center", gap: "5px", fontSize: "9.5px", letterSpacing: "0.08em", fontWeight: 700, color: theme.textSecondary, whiteSpace: "nowrap" }}>
@@ -134,21 +141,16 @@ function RadyoHapi({ radyo, kitapta }) {
                 {uyku.bitis && <span style={{ fontSize: "10px" }}>· <UykuRozeti theme={theme} bitis={uyku.bitis} /></span>}
               </span>
             </span>
-            <button onClick={() => (calar || durum === "yukleniyor" ? radyo.duraklat() : radyo.devam())}
-              aria-label={calar ? "Duraklat" : "Dinle"} title={calar ? "Duraklat" : "Dinle"} style={yuvarlak(true)}>
-              {calar || durum === "yukleniyor" ? <Pause size={15} /> : <Play size={15} style={{ marginLeft: "2px" }} />}
-            </button>
             {/* Ses düzeyi — Kur'an Dinle ile ortak (13 Kasım 2026) */}
-            <EkstraSesDugmesi theme={theme} stil={yuvarlak(false)} />
-            <button onClick={() => navigate("/ekstralar")} aria-label="Ekstralar'a git" title="Ekstralar'a git"
-              style={{ ...yuvarlak(false), color: ac, background: `${ac}14` }}>
-              <Undo2 size={15} />
+            <EkstraSesDugmesi theme={theme} stil={yuvarlak(false)} cerceve="yildiz" />
+            <button onClick={() => navigate("/ekstralar")} aria-label="Ekstralar'a git" title="Ekstralar'a git" style={{ ...yuvarlak(false), color: theme.text }}>
+              <DonusSimgesi bolum="radyo" ac={ac} />
             </button>
             <button onClick={() => setKucuk(true)} aria-label="Küçült" title="Küçült" style={yuvarlak(false)}>
-              <ChevronDown size={16} />
+              <KucultSimgesi ac={ac} />
             </button>
-            <button onClick={() => radyo.kapat()} aria-label="Radyoyu kapat" title="Radyoyu kapat" style={yuvarlak(false)}>
-              <X size={15} />
+            <button onClick={() => radyo.kapat()} aria-label="Radyoyu durdur ve kapat" title="Durdur ve kapat" style={yuvarlak(false)}>
+              <DurdurSimgesi ac={ac} />
             </button>
           </div>
         )}

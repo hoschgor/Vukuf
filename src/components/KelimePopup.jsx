@@ -119,7 +119,8 @@ export default function KelimePopup({
   // Çekim etiketi YALNIZ fiillerde ve YALNIZ tam çıkarılmışsa gösterilir.
   // (Fiil olup şahıs bilgisi olmayan kayıtlarda `etiket` üretilmiyor —
   // yarım bilgi göstermektense hiç göstermemek evlâ.)
-  const sarfEtiket = sarf?.tur === "fiil" && sarf?.etiket ? sarf.etiket : null
+  // Çatı (edilgen) da eklenir — 15 Kasım 2026, Ayarlar → Meal → Morfoloji bilgisi
+  const sarfEtiket = sarf?.tur === "fiil" && sarf?.etiket ? `Fiil · ${sarf.etiket}${sarf.cati ? ` · ${sarf.cati}` : ""}` : null
 
   return (
     <>

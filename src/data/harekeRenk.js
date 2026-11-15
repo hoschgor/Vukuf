@@ -17,6 +17,12 @@
            tam      → harfleri aynı kelimeler (hareke farkı gözetilmez: ٱلْحَمْدُ = ٱلْحَمْدِ)
            harekeli → harfi harekesiyle aynı yazılan kelimeler
            iceren   → harfleri içinde bu kalıp geçen kelimeler (ör. ر ح م → رَحْمَة، ٱلرَّحِيمِ)
+           ÇOK KELİMELİ KALIP (15 Kasım 2026) — kullanıcı: "Kalıp seçmede de, birden fazla kelime
+           seçilip onay alsın, bu kalıp bitişik halde başka yerde varsa aynı renge boyasın."
+           Kuralda `parcalar: [arabic…]` (2+ kelime). Kalıp, kelimeler ARKA ARKAYA geldiğinde
+           eşleşir; her kelime kuralın eşleşme biçimiyle karşılaştırılır. "İçinde geçen"de ilk
+           kelime sonuyla, son kelime başıyla, aradakiler tam eşleşir (bitişik yazılış).
+           Mushaf sayfa sayfa çizildiği için sayfa sonundan ertesi sayfaya taşan kalıp boyanmaz.
    ═══════════════════════════════════════════════════════════════════════════ */
 
 import { useSyncExternalStore } from "react"
@@ -68,18 +74,25 @@ export function harfIskeleti(s) {
 const harekeliNorm = (s) => String(s || "").replace(/[ۖ-ۭ࣓-࣡ـ]/g, "").replace(/\s+/g, "")
 const kelimeDepo = depo(KELIME_ANAHTAR, [], (v) => (Array.isArray(v) ? v.filter(x => x && x.metin && x.renk) : []))
 export const useKelimeRenkleri = () => useSyncExternalStore(kelimeDepo.abone, kelimeDepo.al, kelimeDepo.al)
+/** metin: tek kelime (yazı) ya da kalıp (kelime dizisi) */
 export function kelimeRengiEkle(metin, renk, eslesme = "tam") {
-  const iskelet = harfIskeleti(metin)
-  if (!iskelet) return
-  const l = kelimeDepo.al().filter(x => !(x.iskelet === iskelet && x.eslesme === eslesme && (eslesme !== "harekeli" || harekeliNorm(x.metin) === harekeliNorm(metin))))
-  kelimeDepo.yaz([...l, { id: Date.now().toString(36), metin, iskelet, eslesme, renk }])
+  const dizi = (Array.isArray(metin) ? metin : [metin]).map(x => String(x || "").trim()).filter(x => harfIskeleti(x))
+  if (!dizi.length) return
+  const tek = dizi.length === 1
+  const iskelet = dizi.map(harfIskeleti).join(" ")
+  const hn = dizi.map(harekeliNorm).join(" ")
+  const ayni = (x) => x.iskelet === iskelet && x.eslesme === eslesme &&
+    (eslesme !== "harekeli" || (x.parcalar || [x.metin]).map(harekeliNorm).join(" ") === hn)
+  const l = kelimeDepo.al().filter(x => !ayni(x))
+  kelimeDepo.yaz([...l, { id: Date.now().toString(36), metin: dizi.join(" "), iskelet, eslesme, renk, ...(tek ? {} : { parcalar: dizi }) }])
 }
 export const kelimeRengiSil = (id) => kelimeDepo.yaz(kelimeDepo.al().filter(x => x.id !== id))
 export const kelimeRengiDegis = (id, yama) => kelimeDepo.yaz(kelimeDepo.al().map(x => (x.id === id ? { ...x, ...yama } : x)))
-/** Kural listesinden kelime → renk bulucu (sonra eklenen kural öncelikli) */
+/** Kural listesinden kelime → renk bulucu (yalnız TEK kelimelik kurallar; sonra eklenen öncelikli) */
 export function kelimeRengiBulucu(kurallar) {
-  if (!kurallar || !kurallar.length) return null
-  const ters = [...kurallar].reverse().map(k => ({ ...k, hn: harekeliNorm(k.metin) }))
+  const tekler = (kurallar || []).filter(k => !k.parcalar)
+  if (!tekler.length) return null
+  const ters = [...tekler].reverse().map(k => ({ ...k, hn: harekeliNorm(k.metin) }))
   const bellek = new Map()
   return (arabic) => {
     if (bellek.has(arabic)) return bellek.get(arabic)
@@ -93,4 +106,39 @@ export function kelimeRengiBulucu(kurallar) {
     bellek.set(arabic, r)
     return r
   }
+}
+
+/**
+ * Sayfadaki kelime dizisi için renk haritası: { id → renk }. Tek kelimelik ve çok kelimeli
+ * (kalıp) kuralların hepsi; bir kelimeye birden çok kural uyarsa sonra eklenen kazanır.
+ * dizi: [{ id, arabic }] — sayfadaki okuma sırasıyla.
+ */
+export function kelimeRenkHaritasi(kurallar, dizi) {
+  const m = new Map()
+  if (!kurallar || !kurallar.length || !dizi || !dizi.length) return m
+  const isk = dizi.map(k => harfIskeleti(k.arabic))
+  const hn = dizi.map(k => harekeliNorm(k.arabic))
+  const sira = new Array(dizi.length).fill(-1)
+  kurallar.forEach((k, ki) => {
+    const parca = k.parcalar || [k.metin]
+    const pIsk = parca.map(harfIskeleti), pHn = parca.map(harekeliNorm)
+    const n = parca.length
+    const uyar = (i, j) => {
+      if (k.eslesme === "harekeli") return hn[i] === pHn[j]
+      if (k.eslesme === "iceren") {
+        if (n === 1) return isk[i].includes(pIsk[0])
+        if (j === 0) return isk[i].endsWith(pIsk[0])
+        if (j === n - 1) return isk[i].startsWith(pIsk[j])
+        return isk[i] === pIsk[j]
+      }
+      return isk[i] === pIsk[j]
+    }
+    for (let i = 0; i + n <= dizi.length; i++) {
+      let tamam = true
+      for (let j = 0; j < n && tamam; j++) tamam = uyar(i + j, j)
+      if (tamam) for (let j = 0; j < n; j++) sira[i + j] = ki
+    }
+  })
+  sira.forEach((ki, i) => { if (ki >= 0) m.set(dizi[i].id, kurallar[ki].renk) })
+  return m
 }

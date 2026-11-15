@@ -18,7 +18,7 @@
 
 import { useState, useEffect, useSyncExternalStore } from "react"
 import { useLocation, useNavigate } from "react-router-dom"
-import { Play, Pause, BookOpen, Square, Loader2, ChevronDown, Glasses } from "lucide-react"
+import { DonusSimgesi, KucultSimgesi, AmblemDugmesi, DurdurSimgesi, AmblemIsareti, OdakSimgesi } from "./CerceveliSimge"
 import { odakAc } from "../data/odak"
 import { useApp } from "../AppContext"
 import { sesliOkuyucu, sesKilidiAc } from "../data/sesliOkuma"
@@ -67,7 +67,8 @@ export const KITAP_CSS = `@keyframes vukuf-sk-nabiz{0%{transform:scale(1);opacit
    • DURAKLATILMIŞKEN: hepsi durur; sağ sayfada satırlar yerine oynat üçgeni. */
 const SOL_SATIR = [-9, -3, 3].map(y => ({ x: -22, y }))
 const SAG_SATIR = [-9, -3, 3].map(y => ({ x: 5, y }))
-export function KitapAmblem({ ac, zemin, hal, boy = 40 }) {   // SesliOkumaKontrol küçük hâli de kullanıyor
+// isaret (15 Kasım 2026): "duraklat" → okurken ilk 10 sn sağ sayfada ❚❚ (AmblemDugmesi)
+export function KitapAmblem({ ac, zemin, hal, boy = 40, isaret = null }) {   // SesliOkumaKontrol küçük hâli de kullanıyor
   const okur = hal === "okuyor", hazir = hal === "hazirlaniyor"
   const tesbih = Array.from({ length: 16 }, (_, i) => {
     const a = (Math.PI / 8) * i
@@ -105,6 +106,7 @@ export function KitapAmblem({ ac, zemin, hal, boy = 40 }) {   // SesliOkumaKontr
         {SOL_SATIR.map((st, i) => satir(st, i, "sol"))}
         {hal === "duraklatildi"
           ? <path d="M9 -11 L20 -3.5 L9 4 Z" fill={ac} stroke={ac} strokeWidth="1.6" strokeLinejoin="round" />
+          : isaret === "duraklat" ? <AmblemIsareti isaret="duraklat" x={14.5} y={-3.5} b={14} ac={ac} />
           : SAG_SATIR.map((st, i) => satir(st, i, "sag"))}
       </g>
       </g>
@@ -188,16 +190,15 @@ function Hap({ d, kitapta }) {
         background: theme.surface, border: `1px solid ${ac}`, borderRadius: "24px",
         boxShadow: golge,
       }}>
-        <button
+        {/* Baştaki amblem oynat/duraklat (15 Kasım 2026 — Kur'ân hapındaki gibi): okurken dokununca
+            duraklar, durunca yine dokununca sürer. components/CerceveliSimge.jsx */}
+        <AmblemDugmesi calar={okuyor && !hazirlaniyor} yukleniyor={hazirlaniyor} ac={ac} etiket="Sesli okuma"
           onClick={() => {
             if (okuyor) sesliOkuyucu.duraklat()
             else { sesKilidiAc(); sesliOkuyucu.devam() }
-          }}
-          aria-label={okuyor ? "Duraklat" : "Devam et"} title={okuyor ? "Duraklat" : "Devam et"}
-          style={yuvarlak(true)}>
-          {hazirlaniyor ? <Loader2 size={15} style={{ animation: "sesliMiniDon .9s linear infinite" }} />
-            : okuyor ? <Pause size={15} /> : <Play size={15} />}
-        </button>
+          }}>
+          {({ isaret }) => <KitapAmblem ac={ac} zemin={theme.surface} hal={hal} boy={36} isaret={isaret} />}
+        </AmblemDugmesi>
         <span style={{ display: "flex", flexDirection: "column", minWidth: 0, flex: 1, padding: "0 8px 0 6px", lineHeight: 1.15 }}>
           <span style={{ fontSize: "12.5px", fontWeight: 700, color: theme.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
             {ad}
@@ -208,17 +209,16 @@ function Hap({ d, kitapta }) {
           </span>
         </span>
         <button onClick={() => odakAc("sesli")} aria-label="Odak — okunan cümleler" title="Odak — okunan cümleleri göster" style={yuvarlak(false)}>
-          <Glasses size={16} />
+          <OdakSimgesi ac={ac} />
         </button>
-        <button onClick={okumayaDon} aria-label="Okumaya dön" title="Okumaya dön — okunan yere"
-          style={{ ...yuvarlak(false), color: ac, background: `${ac}14` }}>
-          <BookOpen size={15} />
+        <button onClick={okumayaDon} aria-label="Okumaya dön" title="Okumaya dön — okunan yere" style={{ ...yuvarlak(false), color: theme.text }}>
+          <DonusSimgesi bolum="okuma" ac={ac} />
         </button>
         <button onClick={() => setKucuk(true)} aria-label="Küçült" title="Küçült" style={yuvarlak(false)}>
-          <ChevronDown size={16} />
+          <KucultSimgesi ac={ac} />
         </button>
         <button onClick={() => sesliOkuyucu.durdur()} aria-label="Sesli okumayı durdur" title="Durdur" style={yuvarlak(false)}>
-          <Square size={13} fill={ac} color={ac} />
+          <DurdurSimgesi ac={ac} />
         </button>
       </div>
       )}

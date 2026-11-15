@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState } from "react"
 import {
-  Square, SkipBack, SkipForward, Glasses, Gauge, RotateCcw, ChevronRight, ChevronLeft, Crosshair,
+  SkipBack, SkipForward, Glasses, Gauge, RotateCcw, ChevronRight, ChevronLeft, Crosshair,
   Volume2, Volume1, VolumeX, SlidersHorizontal, Timer,
 } from "lucide-react"
 import { SemseAmblem, NABIZ_CSS } from "./MiniOynatici"
@@ -81,6 +81,7 @@ import RenkSeciciPencere from "./RenkSeciciPencere"
 import { useOkunanGorunum, okunanGorunumYaz, OKUNAN_ARKALAR, OKUNAN_ALT_BANTLAR, OKUNAN_HARF_RENKLERI, okunanHarfRengi } from "../data/okunanGorunum"
 import { useMediaQuery } from "../data/hooks/useMediaQuery"
 import MushafPlayButton from "./MushafPlayButton"
+import { DurdurSimgesi } from "./CerceveliSimge"
 
 /* ── ÇEVİRİ (MEAL) ve İZLEME SİMGELERİ ───────────────────────────────────────
    lucide'da ikisinin de karşılığı yok: "Languages" Latin-Latin, "Maximize" ise
@@ -714,12 +715,13 @@ export default function PlayerBar({
           />
         </button>
 
+        {/* Tamamen durdur — tepelikli madalyon içinde çarpı (15 Kasım 2026, CerceveliSimge) */}
         <button 
           onClick={durdur} 
-          style={butonStil(false)} 
-          title="Durdur ve kapat"
+          style={{ ...butonStil(false), background: "transparent", color: theme.textSecondary }} 
+          title="Durdur ve kapat" aria-label="Durdur ve kapat"
         >
-          <Square size={isMobile ? 14 : 13} fill={theme.accent} />
+          <DurdurSimgesi ac={theme.accent} boy={isMobile ? 30 : 32} />
         </button>
         
         <button 

@@ -16,12 +16,14 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react"
 import { createPortal } from "react-dom"
 import { Volume1, Volume2, VolumeX } from "lucide-react"
+import { SesSimgesi } from "./CerceveliSimge"
 import { useEkstraSes, ekstraSesAyarla, ekstraSesSustur, sesDuzeyiYazilabilir } from "../data/ekstraSes"
 
 const PAY = 8
 const ARA = 8
 
-export default function EkstraSesDugmesi({ theme, stil, boy = 15 }) {
+// cerceve: "yildiz" vb. verilirse simge çerçeveli çizilir (15 Kasım 2026 — ortak düğme dili)
+export default function EkstraSesDugmesi({ theme, stil, boy = 15, cerceve = null, cerceveBoy = 30 }) {
   const ses = useEkstraSes()
   const [acik, setAcik] = useState(false)
   const [yer, setYer] = useState(null)
@@ -66,7 +68,7 @@ export default function EkstraSesDugmesi({ theme, stil, boy = 15 }) {
       <button ref={dugmeRef} onClick={() => setAcik(v => !v)} aria-expanded={acik}
         aria-label={ses === 0 ? "Ses (kısık)" : "Ses"} title={ses === 0 ? "Ses kısık" : "Ses"}
         style={{ ...stil, color: ses === 0 ? "#c0392b" : acik ? ac : stil?.color }}>
-        <Ikon size={boy} />
+        {cerceve ? <SesSimgesi ses={ses} ac={ac} boy={cerceveBoy} /> : <Ikon size={boy} />}
       </button>
       {acik && typeof document !== "undefined" && createPortal(
         <div ref={kutuRef} data-yuzen-pencere="" role="group" aria-label="Ses düzeyi"

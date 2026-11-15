@@ -29,6 +29,7 @@ import YuklemeEkrani from "../components/YuklemeEkrani"
 import IosSwitch from "../components/IosSwitch"
 import HarekeRenkAyarlari from "../components/HarekeRenkAyarlari"
 import { kelimeRengiEkle } from "../data/harekeRenk"
+import { useMealGorunum, mealGorunumYaz } from "../data/mealGorunum"
 import { useOrtaMenu, useOrtaBilgi, OrtaMenuCercevesi, OrtaIpucu, BilgiSeridi, BarKonumSecici, barKonumOku, barKonumYaz, ORTA_OLCEK, barEtiketle, OpaklikAyarlari, useOrtaOpaklik, yariSaydam } from "../components/OrtaMenu"
 import { AyarCekmecesi, AltCekmece, AltBaslik } from "../components/AyarCekmecesi"
 import PanelAyirac, { PanelAcilir, panelBolumeHizala } from "../components/PanelAyirac"
@@ -1126,8 +1127,26 @@ export default function KuranOkuma({ kitap }) {
   const [kayitKonumModu, setKayitKonumModu] = useState(false)
   // KELİME / KALIP RENKLENDİR (15 Kasım 2026): { eslesme, renk } — açıkken kelimeye dokunmak o
   // kelimeyi (ve bütün mushafta eşleşenleri) renklendirir; lügat açılmaz
-  const [kelimeRenkSec, setKelimeRenkSec] = useState(null)
+  const [kelimeRenkSec, setKelimeRenkSec] = useState(null)      // { eslesme, renk, secim: [{ id, arabic }] }
   const kelimeRenkSecRef = useRef(null); kelimeRenkSecRef.current = kelimeRenkSec
+  // Seçilen kelimeler mushaf sırasıyla (sûre:âyet:kelime) — kalıp böyle kurulur
+  const kelimeRenkSecimi = useMemo(() => {
+    if (!kelimeRenkSec) return []
+    const no = (id) => String(id).split(":").map(x => parseInt(x, 10) || 0)
+    return [...kelimeRenkSec.secim].sort((a, b) => {
+      const x = no(a.id), y = no(b.id)
+      for (let i = 0; i < 3; i++) if (x[i] !== y[i]) return x[i] - y[i]
+      return 0
+    })
+  }, [kelimeRenkSec])
+  const kelimeRenkSecimIds = kelimeRenkSec ? kelimeRenkSec.secim.map(x => x.id).join(",") : ""
+  const kelimeRenkSecimRengi = useMemo(() => (kelimeRenkSecimIds ? { renk: kelimeRenkSec.renk, ids: kelimeRenkSecimIds } : null),
+    [kelimeRenkSecimIds, kelimeRenkSec?.renk])   // eslint-disable-line react-hooks/exhaustive-deps
+  const kelimeRenkOnayla = () => {
+    if (!kelimeRenkSec || !kelimeRenkSecimi.length) return
+    kelimeRengiEkle(kelimeRenkSecimi.map(x => x.arabic), kelimeRenkSec.renk, kelimeRenkSec.eslesme)
+    setKelimeRenkSec(null)
+  }
   // YENİ KAYIT → "yerine koy" sorusu (19 Ekim 2026): seçilen konum bekler; kayıt varsa sorulur
   const [bekleyenKayit, setBekleyenKayit] = useState(null)   // { sayfa, scrollY }
   // "Yerine koy" sonrası 3 sn: "N sayfa okundu" / "N sayfa geri gelindi" (26 Ekim 2026)
@@ -1195,6 +1214,15 @@ export default function KuranOkuma({ kitap }) {
   /* HIFZ MODU — perdeleme mushafın ÜZERİNDE yürüyor (gerekçesi data/hifz.js'te).
      Mod kalıcı değil, ama kademe/zincir/tekrar tercihleri kalıcı. */
   const [hifzAcik, setHifzAcik] = useState(false)
+  /* MEALİN YERİ (15 Kasım 2026, data/mealGorunum.js) — "Altında" seçilen meal mushafta gösterilir.
+     Hıfz açıkken kelime anlamı çizilmez (perdenin cevabını vermesin). */
+  const mealGor = useMealGorunum()
+  const mealAltinda = `${kelimeMeali && mealGor.kelime === "altinda" && !hifzAcik ? "k" : ""}${ayetMeali && mealGor.ayet === "altinda" ? "a" : ""}${kelimeMeali && mealGor.kelime === "altinda" && !hifzAcik && mealGor.renkli ? `r${mealGor.tohum}` : ""}${ayetMeali && mealGor.ayet === "altinda" && mealGor.ayetRenkli ? `R${mealGor.ayetTohum}` : ""}`
+  /* KELİMEYE DOKUNMA (15 Kasım 2026) — anlam altında yazıyorken morfoloji de kapalıysa kelime
+     penceresi açılmaz (gösterecek yeni bir şey yok); kelime düz metin gibi davranır. */
+  const kelimeDokunAcik = kelimeMeali && !(mealGor.kelime === "altinda" && !mealGor.morfoloji)
+  const kelimeDokunAcikRef = useRef(kelimeDokunAcik); kelimeDokunAcikRef.current = kelimeDokunAcik
+  useEffect(() => { if (!kelimeDokunAcik) setPopup(p => (p?.tip === "kelime" ? null : p)) }, [kelimeDokunAcik])
   /* EZBER PLANI (30 Eylül 2026) — ayrıntısı data/hifz.js "EZBER PLANI"nda.
      hifzKapsam artık AYRI DURUM DEĞİL, ezber tercihinden türüyor: sûre →
      "sure", sayfa ve dönüş → "sayfa" (dönüşte sayfa, dönüş dizisinden gelir). */
@@ -3289,10 +3317,15 @@ function donuseGit(i) {
   }
   const kelimeTikla = useCallback((kelime, sure, ayet, e) => {
     // Kelime / kalıp renklendirme kipi: dokunulan kelime renklendirilir, başka hiçbir şey olmaz
+    // 15 Kasım 2026 — kullanıcı: "Kalıp seçmede de, birden fazla kelime seçilip onay alsın":
+    // dokunuş kelimeyi seçime ekler/çıkarır; renk alttaki şeritteki onayla uygulanır.
     if (kelimeRenkSecRef.current) {
-      const k = kelimeRenkSecRef.current
-      kelimeRengiEkle(kelime.arabic, k.renk, k.eslesme)
-      setKelimeRenkSec(null)
+      const id = kelime.id ? String(kelime.id) : `${sure?.id}:${ayet?.no}:${kelime.arabic}`
+      setKelimeRenkSec(k => {
+        if (!k) return k
+        const var_ = k.secim.some(x => x.id === id)
+        return { ...k, secim: var_ ? k.secim.filter(x => x.id !== id) : [...k.secim, { id, arabic: kelime.arabic }] }
+      })
       return
     }
     // Açık bir panel/pencere varken yapılan dokunuş onu KAPATIR, yeni pencere açmaz (5 Kasım 2026)
@@ -3349,7 +3382,7 @@ function donuseGit(i) {
       return
     }
     // Kelime meali kapalı (varsayılan): dokunuş bir şey açmaz
-    if (!kelimeMealiRef.current) return
+    if (!kelimeMealiRef.current || !kelimeDokunAcikRef.current) return
     sarfIste()
     // 1) ÖNCE konuma bağlı anlam (quran.com hizalaması). Doğru olan bu:
     //    sözlükteki "من → 710 anlam" gibi yığılmalar burada yaşanmaz, çünkü
@@ -4248,7 +4281,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
 
         {/* ── RENKLİ HAREKE + KELİME / KALIP RENKLENDİR (15 Kasım 2026) */}
         <HarekeRenkAyarlari theme={theme} arapcaStyle={aktifArapcaFont.style}
-          onKelimeSec={(eslesme, renk) => { setTemaAcik(false); setPopup(null); setKelimeRenkSec({ eslesme, renk }) }} />
+          onKelimeSec={(eslesme, renk) => { setTemaAcik(false); setPopup(null); setKelimeRenkSec({ eslesme, renk, secim: [] }) }} />
       </div>
     </>
   )
@@ -4404,25 +4437,82 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
 
         {/* MEAL — kelime ve âyet meali ayrı ayrı */}
         <AyarCekmecesi id="kuran-meal" baslik="Meal"
-          ozet={`Kelime ${kelimeMeali ? "açık" : "kapalı"} · Âyet ${ayetMeali ? "açık" : "kapalı"}`}
+          ozet={`Kelime ${kelimeMeali ? (mealGor.kelime === "altinda" ? "altında" : "açık") : "kapalı"} · Âyet ${ayetMeali ? (mealGor.ayet === "altinda" ? "altında" : "açık") : "kapalı"}`}
           theme={theme} olcek={barUiOlcegi} isMobile={isMobile}>
           <div>
             {[
-              { etiket: "Kelime meali", acik: kelimeMeali, degis: () => setKelimeMeali(v => !v),
-                aciklama: "Kelimeye dokununca anlamı gösterilir. Kapalıyken kelimeye dokunmak menüyü açar." },
-              { etiket: "Âyet meali", acik: ayetMeali, degis: () => setAyetMeali(v => !v),
-                aciklama: "Âyet numarasına dokununca açılan balonda meal yer alır." },
+              { id: "kelime", etiket: "Kelime meali", acik: kelimeMeali, degis: () => setKelimeMeali(v => !v),
+                aciklama: mealGor.kelime === "altinda" ? "Her kelimenin altında Türkçe anlamı yazar; dokununca ayrıntısı açılır." : "Kelimeye dokununca anlamı gösterilir. Kapalıyken kelimeye dokunmak menüyü açar." },
+              { id: "ayet", etiket: "Âyet meali", acik: ayetMeali, degis: () => setAyetMeali(v => !v),
+                aciklama: mealGor.ayet === "altinda" ? "Her âyetin altında meali yazar; âyetler sıra sıra gösterilir." : "Âyet numarasına dokununca açılan balonda meal yer alır." },
             ].map(m => (
-              <div key={m.etiket} onClick={m.degis} role="button" aria-pressed={m.acik} style={{
-                width: "100%", padding: "7px 4px", borderRadius: "8px", boxSizing: "border-box",
-                color: theme.text, cursor: "pointer",
-                display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px",
-              }}>
-                <span style={{ flex: 1, minWidth: 0 }}>
-                  <span style={{ display: "block", fontSize: `${ayarYazi}px` }}>{m.etiket}</span>
-                  <span style={{ display: "block", fontSize: `${ayarAlt}px`, color: theme.textSecondary, lineHeight: 1.35 }}>{m.aciklama}</span>
-                </span>
-                <IosSwitch acik={m.acik} theme={theme} boyut={0.82} />
+              <div key={m.etiket}>
+                <div onClick={m.degis} role="button" aria-pressed={m.acik} style={{
+                  width: "100%", padding: "7px 4px", borderRadius: "8px", boxSizing: "border-box",
+                  color: theme.text, cursor: "pointer",
+                  display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px",
+                }}>
+                  <span style={{ flex: 1, minWidth: 0 }}>
+                    <span style={{ display: "block", fontSize: `${ayarYazi}px` }}>{m.etiket}</span>
+                    <span style={{ display: "block", fontSize: `${ayarAlt}px`, color: theme.textSecondary, lineHeight: 1.35 }}>{m.aciklama}</span>
+                  </span>
+                  <IosSwitch acik={m.acik} theme={theme} boyut={0.82} />
+                </div>
+                {/* MEALİN YERİ (15 Kasım 2026) — meal açıkken altında: Altında / Gizli */}
+                {m.acik && (
+                  <div style={{ margin: "0 4px 6px 14px", paddingLeft: "10px", borderLeft: `2px solid ${theme.accent}44` }}>
+                    <div role="radiogroup" aria-label={`${m.etiket} — yeri`} style={{ display: "inline-flex", padding: "2px", borderRadius: "999px", border: `1px solid ${theme.border}`, gap: "2px", margin: "2px 0 4px" }}>
+                      {[["altinda", "Altında"], ["gizli", "Gizli"]].map(([d, ad]) => {
+                        const sec = mealGor[m.id] === d
+                        return (
+                          <button key={d} role="radio" aria-checked={sec} onClick={() => mealGorunumYaz({ [m.id]: d })}
+                            style={{
+                              padding: `${Math.round(4 * barUiOlcegi)}px ${Math.round(12 * barUiOlcegi)}px`, borderRadius: "999px", border: "none", cursor: "pointer",
+                              fontFamily: "inherit", fontSize: `${ayarAlt}px`, fontWeight: sec ? 700 : 500,
+                              background: sec ? theme.accent : "transparent", color: sec ? "#fff" : theme.text,
+                            }}>{ad}</button>
+                        )
+                      })}
+                    </div>
+                    {m.id === "kelime" && mealGor.kelime === "altinda" && (
+                      <div onClick={() => mealGorunumYaz({ renkli: !mealGor.renkli })} role="switch" aria-checked={mealGor.renkli}
+                        style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", padding: "5px 0", cursor: "pointer", color: theme.text }}>
+                        <span style={{ flex: 1, minWidth: 0 }}>
+                          <span style={{ display: "block", fontSize: `${ayarYazi - 1}px` }}>Kelimeleri farklı renklendir</span>
+                          <span style={{ display: "block", fontSize: `${ayarAlt}px`, color: theme.textSecondary, lineHeight: 1.35 }}>Kelime ve anlamı aynı renkte; renkler rastgele dağılır, her açılışta değişir</span>
+                        </span>
+                        <IosSwitch acik={mealGor.renkli} theme={theme} boyut={0.72} />
+                      </div>
+                    )}
+                    {m.id === "kelime" && (
+                      <div onClick={() => mealGorunumYaz({ morfoloji: !mealGor.morfoloji })} role="switch" aria-checked={mealGor.morfoloji}
+                        style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", padding: "5px 0", cursor: "pointer", color: theme.text }}>
+                        <span style={{ flex: 1, minWidth: 0 }}>
+                          <span style={{ display: "block", fontSize: `${ayarYazi - 1}px` }}>Morfoloji bilgisi</span>
+                          <span style={{ display: "block", fontSize: `${ayarAlt}px`, color: theme.textSecondary, lineHeight: 1.35 }}>
+                            {mealGor.kelime === "altinda"
+                              ? (mealGor.morfoloji ? "Kelimeye dokununca fiil çekimi (şahıs, sayı, cins, kip) gösterilir" : "Kapalı: kelime dokunma etkileşimi tamamen kapanır.")
+                              : "Kelime penceresinde fiil çekimi (şahıs, sayı, cins, kip) de gösterilir"}
+                          </span>
+                        </span>
+                        <IosSwitch acik={mealGor.morfoloji} theme={theme} boyut={0.72} />
+                      </div>
+                    )}
+                    {m.id === "ayet" && mealGor.ayet === "altinda" && (
+                      <div onClick={() => mealGorunumYaz({ ayetRenkli: !mealGor.ayetRenkli })} role="switch" aria-checked={mealGor.ayetRenkli}
+                        style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", padding: "5px 0", cursor: "pointer", color: theme.text }}>
+                        <span style={{ flex: 1, minWidth: 0 }}>
+                          <span style={{ display: "block", fontSize: `${ayarYazi - 1}px` }}>Âyetleri renklendir</span>
+                          <span style={{ display: "block", fontSize: `${ayarAlt}px`, color: theme.textSecondary, lineHeight: 1.35 }}>Her âyetin Arapçası ve meali aynı renkte; renkler rastgele dağılır, her açılışta değişir</span>
+                        </span>
+                        <IosSwitch acik={mealGor.ayetRenkli} theme={theme} boyut={0.72} />
+                      </div>
+                    )}
+                    {m.id === "kelime" && mealGor.kelime === "altinda" && hifzAcik && (
+                      <div style={{ fontSize: `${ayarAlt}px`, color: theme.textSecondary, lineHeight: 1.35, padding: "2px 0 4px" }}>Hıfz açıkken kelime anlamları gösterilmez.</div>
+                    )}
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -4999,7 +5089,8 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
           arapcaFont={aktifArapcaFont.style}
           // Fiil çekimi (şahıs/cins/sayı · kip). Tembel yüklendiği için ilk
           // tıklamada bir an null gelebilir; geldiğinde bu satır tazelenir.
-          sarf={popup.kelime?.id ? (sarfSozluk?.[popup.kelime.id] || null) : null}
+          // Ayarlar → Meal → Morfoloji bilgisi kapalıysa çekim satırı çıkmaz (15 Kasım 2026)
+          sarf={popup.kelime?.id && mealGor.morfoloji ? (sarfSozluk?.[popup.kelime.id] || null) : null}
           onKapat={() => setPopup(null)}
         />
       )}
@@ -5340,9 +5431,26 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
           border: `1.5px dashed ${kelimeRenkSec.renk}`, boxShadow: "0 6px 22px rgba(0,0,0,0.18)", zIndex: 499,
         }}>
           <span aria-hidden="true" style={{ width: "14px", height: "14px", borderRadius: "50%", background: kelimeRenkSec.renk, flexShrink: 0 }} />
-          <span style={{ fontSize: `${Math.round((isMobile ? 12 : 13) * barUiOlcegi)}px`, lineHeight: 1.25, minWidth: 0 }}>
-            Renklendirmek istediğiniz kelimeye dokunun
-          </span>
+          {kelimeRenkSecimi.length === 0 ? (
+            <span style={{ fontSize: `${Math.round((isMobile ? 12 : 13) * barUiOlcegi)}px`, lineHeight: 1.25, minWidth: 0 }}>
+              Kelimeye, kalıp için kelimelerine sırayla dokunun
+            </span>
+          ) : (
+            <span style={{ display: "flex", alignItems: "center", gap: "6px", minWidth: 0 }}>
+              <span dir="rtl" style={{ fontFamily: aktifArapcaFont.style, fontSize: `${Math.round(18 * Math.min(1.3, barUiOlcegi))}px`, color: kelimeRenkSec.renk, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: isMobile ? "46vw" : "360px", lineHeight: 1.3 }}>
+                {kelimeRenkSecimi.map(x => x.arabic).join(" ")}
+              </span>
+              <span style={{ fontSize: `${Math.round(11 * barUiOlcegi)}px`, color: theme.textSecondary, whiteSpace: "nowrap" }}>
+                {kelimeRenkSecimi.length > 1 ? `${kelimeRenkSecimi.length} kelime` : "1 kelime"}
+              </span>
+            </span>
+          )}
+          {kelimeRenkSecimi.length > 0 && (
+            <button onClick={(e) => { e.stopPropagation(); kelimeRenkOnayla() }} title="Renklendir" aria-label="Seçilen kelimeyi ya da kalıbı renklendir"
+              style={{ height: "32px", borderRadius: "999px", flexShrink: 0, padding: "0 12px", cursor: "pointer", display: "flex", alignItems: "center", gap: "5px", border: "none", background: theme.accent, color: "#fff", fontFamily: "inherit", fontSize: "12.5px", fontWeight: 600 }}>
+              <Check size={15} /> Onayla
+            </button>
+          )}
           <button onClick={(e) => { e.stopPropagation(); setKelimeRenkSec(null) }} title="Vazgeç" aria-label="Kelime renklendirmekten vazgeç"
             style={{ width: "32px", height: "32px", borderRadius: "50%", flexShrink: 0, padding: 0, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", border: "none", background: "transparent", color: theme.textSecondary }}>
             <X size={16} />
@@ -6256,8 +6364,10 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
                         sureTikla(sure, e)
                       }}
                       kayitKonumModu={kayitKonumModu}
-                      kelimeEtkilesimli={kelimeMeali || hifzAcik || !!kelimeRenkSec}
-                      seciliKelime={seciliKelime}
+                      kelimeEtkilesimli={kelimeDokunAcik || hifzAcik || !!kelimeRenkSec}
+                      seciliKelime={kelimeRenkSec ? null : seciliKelime}
+                      mealAltinda={mealAltinda}
+                      secimRengi={kelimeRenkSecimRengi}
                       sayfaKayitlari={kayitlar.filter(k => k.sayfa === sayfa.sayfaNo)}
                       onKayitTikla={(kayit) => {
                         if (window.confirm(`"${kayit.baslik}" kaydını silmek istiyor musun?`)) {
@@ -6336,8 +6446,10 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
                         onAyetTikla={ayetTikla}
                         onSureTikla={(sure, e) => { if (kayitKonumModu) return; sureTikla(sure, e) }}
                         kayitKonumModu={kayitKonumModu}
-                        kelimeEtkilesimli={kelimeMeali || hifzAcik || !!kelimeRenkSec}
-                        seciliKelime={seciliKelime}
+                        kelimeEtkilesimli={kelimeDokunAcik || hifzAcik || !!kelimeRenkSec}
+                        seciliKelime={kelimeRenkSec ? null : seciliKelime}
+                      mealAltinda={mealAltinda}
+                      secimRengi={kelimeRenkSecimRengi}
                         sayfaKayitlari={kayitlar.filter(k => k.sayfa === no)}
                         onKayitTikla={(kayit) => {
                           if (window.confirm(`"${kayit.baslik}" kaydını silmek istiyor musun?`)) {

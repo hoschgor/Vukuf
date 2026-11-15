@@ -11,6 +11,8 @@ import kelimeObek from "../data/kelime-obek.json"
 import { ayetTecvidOnbellek, TECVID_KURAL } from "../data/tecvid"
 import { useTecvidAyar, tecvidImza } from "../data/tecvidAyar"
 import { useOkunanGorunum, okunanHarfRengi } from "../data/okunanGorunum"
+import { useRenkliHareke, harekeRenkleri, useKelimeRenkleri, kelimeRengiBulucu } from "../data/harekeRenk"
+import { useHarekeFont, harekeFontKimligi } from "../data/harekeFont"
 import OkunanDalSusu from "./OkunanDalSusu"
 // GEÇİCİ — dönme teşhisi sayacı (ölçüm bitince silinecek)
 // import { SAYAC as DONME_SAYAC } from "../data/donmeTeshis"   // ⏸ dönme teşhisi (yorumda)
@@ -140,6 +142,25 @@ function MushafSayfa({
   const okunanGorunum = useMemo(
     () => ({ ...okunanGorunumHam, harfRengi: okunanHarfRengi(okunanGorunumHam.harfRenk, theme) }),
     [okunanGorunumHam, theme])
+  /* RENKLİ HAREKE + KELİME / KALIP RENKLERİ (15 Kasım 2026) — data/harekeRenk.js.
+     Hareke katmanları aynı yazı tipinin tarayıcıda üretilen kopyalarıyla çiziliyor
+     (data/harekeFont.js); kopyalar hazır değilse hiçbir şey değişmez. */
+  const harekeAyar = useRenkliHareke()
+  const harekeFontId = harekeFontKimligi(arapcaFont)
+  const harekeFont = useHarekeFont(harekeFontId, harekeAyar.acik && !!harekeFontId)
+  const harekeBoya = useMemo(() => {
+    if (!harekeAyar.acik || !harekeFont || harekeFont.durum !== "hazir") return null
+    const { ortak, gruplar } = harekeRenkleri(harekeAyar, theme)
+    const a = harekeFont.aileler
+    const farkli = harekeAyar.ozel && [...harekeFont.gruplar].some(g => gruplar[g] !== ortak)
+    const katmanlar = farkli
+      ? [...harekeFont.gruplar].map(g => [a[g], gruplar[g]])
+      : [[a.hepsi, ortak]]
+    return { taban: a.taban, katmanlar }
+  }, [harekeAyar, harekeFont, theme])
+  const kelimeKurallari = useKelimeRenkleri()
+  const kelimeRengi = useMemo(() => kelimeRengiBulucu(kelimeKurallari), [kelimeKurallari])
+
   const tImza = tecvidImza(tecvidAyar)
   const tecvidRenkleri = useMemo(() => {
     if (!tImza) return null
@@ -448,6 +469,8 @@ function MushafSayfa({
                         secili={seciliKume.has(el.kelime.id)}
                         aktifGorunum={okunanGorunum}
                         tecvidRenk={tecvidRenkleri?.get(el.kelime.id) || null}
+                        harekeBoya={harekeBoya}
+                        kelimeRenk={kelimeRengi ? kelimeRengi(el.kelime.arabic) : null}
                         grupKonum={grup_?.konum || null}
                         grupVurgu={!!grup_ && hoverGrup === grup_.anahtar}
                         obekKonum={obek_?.konum || null}

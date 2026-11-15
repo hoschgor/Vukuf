@@ -403,6 +403,12 @@ export default function MushafKelime({
   // OKUNAN ÂYET GÖRÜNÜMÜ (11 Kasım 2026) — { arka: "yok"|"hafif"|"belirgin", altBant: "yok"|"bant"|"dal", harf }
   // arka: zemin tonu (%0 / %8 / %16) · altBant: kelime altında düz şerit ya da ince dal · harf: yazı vurgu renginde
   aktifGorunum = null,
+  // RENKLİ HAREKE (15 Kasım 2026): { taban: aile, katmanlar: [[aile, renk]…] } — MushafSayfa verir.
+  // Taban metin, harekeleri boşaltılmış yazı tipi kopyasıyla; harekeler aynı metnin üstüne
+  // bindirilen kopyalarla (yalnız harekeleri dolu) kendi renklerinde çizilir (data/harekeFont.js).
+  harekeBoya = null,
+  // KELİME / KALIP RENGİ (15 Kasım 2026): eşleşen kelime bütünüyle bu renkte (data/harekeRenk.js)
+  kelimeRenk = null,
 }) {
   // DONME_SAYAC.kelime++   // ⏸ dönme teşhisi (yorumda)
   const [hover, setHover] = useState(false)
@@ -431,7 +437,12 @@ export default function MushafKelime({
   const { metin: temizArabic, ozeller } = ozelOkuyusAyikla(tecvidsizArabic)
   // Lafzatullah ve besmele kendi renginde kalır (renkli tecvid onları boyamaz)
   // Seçili kelime bütünüyle vurgu renginde görünsün diye o an tecvid boyaması da atlanır
-  const tecvidAktif = !!tecvidRenk && !lafizkontrol && !besmelekontrol && !secili
+  const kelimeBoyali = !!kelimeRenk && !secili
+  const tecvidAktif = !!tecvidRenk && !lafizkontrol && !besmelekontrol && !secili && !kelimeBoyali
+  const kufiMi = /kufi|kûfi/i.test(arapcaFont)
+  const harekeAktif = !!harekeBoya && !kelimeBoyali && !lafizkontrol && !besmelekontrol && !secili && !kufiMi
+  // Üst katmanların metni = akıştaki metin (konumlu çizilen vakıf/cim işaretleri hariç)
+  const harekeMetni = harekeAktif ? [...temizArabic].filter(c => !TUM_OZEL_CPS.has(c.codePointAt(0))).join("") : ""
   const tKarakter = tecvidAktif ? [...temizArabic] : null
   const tRenk = tecvidAktif ? harfRenkleri(temizArabic, tecvidRenk) : null
   const boya = (bas, son, anahtar) => boyaliParca(tKarakter, tRenk, bas, son, anahtar)
@@ -597,10 +608,11 @@ export default function MushafKelime({
       {/* Arapça metin */}
       <span
         style={{
-          fontFamily: arapcaFont,
+          fontFamily: harekeAktif ? `'${harekeBoya.taban}', ${arapcaFont}` : arapcaFont,
           fontSize: `${yaziBoyutu}px`,
           lineHeight: lineHeight,
           color: secili ? theme.accent
+            : kelimeBoyali ? kelimeRenk
             : (lafizkontrol || besmelekontrol) ? (theme.lugatHighlight || theme.accent)
             : (aktif && aktifHarf) ? (aktifGorunum?.harfRengi || theme.accent) : theme.text,
           display: "inline",
@@ -611,7 +623,9 @@ export default function MushafKelime({
           // kullanıcının tarif ettiği "âyet bitince silinme" birebir bu. %5'lik fark
           // gözle zaten seçilmiyordu.
           verticalAlign: "middle",
-          position: sade ? undefined : "relative",   // sade kelimede katmansız (yukarıdaki not)
+          position: (sade && !harekeAktif) ? undefined : "relative",   // sade kelimede katmansız (yukarıdaki not)
+          // Renkli harekede katmanlar bu kutunun üstüne bindirilir → satır kutusu ölçüsünde blok
+          ...(harekeAktif ? { display: "inline-block" } : null),
         }}
       >
         {(() => {
@@ -721,6 +735,12 @@ export default function MushafKelime({
             </span>
           )
         })()}
+        {harekeAktif && harekeBoya.katmanlar.map(([aile, renk], ki) => (
+          <span key={`hk-${ki}`} aria-hidden="true" style={{
+            position: "absolute", inset: 0, fontFamily: `'${aile}'`, color: renk,
+            whiteSpace: "nowrap", pointerEvents: "none", userSelect: "none",
+          }}>{harekeMetni}</span>
+        ))}
       </span>
     </>
   )

@@ -21,6 +21,9 @@
      Âyet   : https://<site>/?a=<sûre>:<âyet>
      Söz    : https://<site>/?t=<sıra>&m=<sözün ilk 6 kelimesi>   (Kısa Tefeül, 4 Kasım 2026)
      Hatim  : https://<site>/?hg=<davet>  ·  ?hd=<okudum bildirimi>   (grup hatmi, data/takip.js)
+     Dinle  : https://<site>/?d=<kâri>&dt=<cuz|sure|ayet>&dp=<parça>[&da=<âyet>][&ds=<saniye>][&dn=<kâri adı>]
+              (Ekstralar → Kur'an Dinle, 15 Kasım 2026). dn yalnız aramadan eklenen (way2) kâride:
+              alıcının listesinde yoksa o adla eklenir. ds "detaylı paylaşım"da seçilirse.
               Varınca Ekstralar → Namaz & Hatim takibi → Hatim açılır, kayıt orada işlenir.
               Sıra data/tefeul.json'daki yeri; liste değişirse varınca m ile yeniden bulunur.
    Kök adres seçildi çünkü: (1) sunucu her durumda index.html'i verir (derin yol 404
@@ -38,6 +41,10 @@
 import { kitaplar } from "./kitaplar"
 import { sureAdi } from "./sureAdlari"
 import { veriCoz, GELEN_ANAHTAR, SEKME_ANAHTAR } from "./takip"
+import { parcaAdi } from "./kuranDinle"
+
+export const DINLE_PAYLASIM_ANAHTAR = "vukuf-kuran-dinle-paylasim"
+export const dakikaSaniye = (sn) => { const t = Math.max(0, Math.floor(sn || 0)); const h = Math.floor(t / 3600), m = Math.floor((t % 3600) / 60), s = t % 60; return `${h ? `${h}:${String(m).padStart(2, "0")}` : m}:${String(s).padStart(2, "0")}` }
 
 export const PAYLASIM_DONUS = "paylasim"
 export const SOZ_PAYLASIM_ANAHTAR = "vukuf-soz-tefeul-paylasim"
@@ -77,6 +84,14 @@ export function kitapBaglantisi({ kitapId, sayfa, satir, metin, kelimeMi = false
 export function ayetBaglantisi({ sureNo, ayetNo }) {
   return `${kok()}?a=${sureNo}${ayetNo ? `:${ayetNo}` : ""}`
 }
+export function dinleBaglantisi({ kariId, kariAd, tur, parca, ayet, zaman, zamanli }) {
+  const p = new window.URLSearchParams()
+  p.set("d", String(kariId)); p.set("dt", tur); p.set("dp", String(parca))
+  if (tur === "ayet" && ayet != null) p.set("da", String(ayet))
+  if (zamanli && zaman > 0) p.set("ds", String(Math.floor(zaman)))
+  if (String(kariId).startsWith("way2:") && kariAd) p.set("dn", kariAd)
+  return `${kok()}?${p.toString()}`
+}
 export function sozBaglantisi({ index, metin }) {
   const p = new window.URLSearchParams()
   p.set("t", String(index))
@@ -93,6 +108,11 @@ export function paylasimMesaji(v) {
     const baglanti = ayetBaglantisi(v)
     const govde = `${ayetEtiketi(v.sureNo, v.ayetNo, v.sureAdi)} · Kur'ân-ı Kerîm`
     return { baglanti, govde, metin: `${govde}\n${baglanti}`, konu: govde }
+  }
+  if (v.tip === "dinle") {
+    const baglanti = dinleBaglantisi(v)
+    const govde = `${v.kariAd} · ${parcaAdi(v.tur, v.parca, v.ayet)}${v.zamanli && v.zaman > 0 ? ` · ${dakikaSaniye(v.zaman)}'den` : ""} · Kur'an Dinle`
+    return { baglanti, govde, metin: `${govde}\n${baglanti}`, konu: `${v.kariAd} · Kur'an Dinle` }
   }
   if (v.tip === "soz") {
     const baglanti = sozBaglantisi(v)
@@ -149,6 +169,19 @@ export function gelenPaylasim(arama = typeof window !== "undefined" ? window.loc
     const ayetNo = a >= 1 ? a : null
     return { tip: "ayet", sureNo: s, ayetNo, etiket: ayetEtiketi(s, ayetNo) }
   }
+  if (p.has("d")) {
+    const kariId = String(p.get("d") || "").trim()
+    const tur = p.get("dt")
+    if (!kariId || !["cuz", "sure", "ayet"].includes(tur)) return null
+    const dp = p.get("dp")
+    const parca = dp === "dua" ? "dua" : parseInt(dp, 10)
+    if (parca !== "dua" && !(parca >= 1 && parca <= (tur === "cuz" ? 30 : 114))) return null
+    const ayet = tur === "ayet" ? Math.max(0, parseInt(p.get("da"), 10) || 0) : null
+    const zaman = Math.max(0, parseInt(p.get("ds"), 10) || 0)
+    const ad = String(p.get("dn") || "").slice(0, 80)
+    return { tip: "dinle", kariId, tur, parca, ayet, zaman, ad,
+      etiket: `Kur'an Dinle · ${parcaAdi(tur, parca, ayet)}${zaman ? ` · ${dakikaSaniye(zaman)}'den` : ""}` }
+  }
   if (p.has("hg") || p.has("hd")) {
     const davet = p.has("hg")
     const veri = veriCoz(p.get(davet ? "hg" : "hd"))
@@ -188,6 +221,16 @@ export function paylasimiHazirla(h) {
       b.takip = true
       localStorage.setItem("vukuf-ekstralar-bolumler", JSON.stringify(b))
       localStorage.setItem(SEKME_ANAHTAR, JSON.stringify("hatim"))
+    } catch { /* yoksay */ }
+    return "/ekstralar"
+  }
+  if (h.tip === "dinle") {
+    // Kur'an Dinle kartı açılışta okur: kâriyi seçer, parçayı (saniyesiyle) başlatır
+    try {
+      localStorage.setItem(DINLE_PAYLASIM_ANAHTAR, JSON.stringify({ kariId: h.kariId, tur: h.tur, parca: h.parca, ayet: h.ayet, zaman: h.zaman, ad: h.ad }))
+      const b = JSON.parse(localStorage.getItem("vukuf-ekstralar-bolumler") || "{}") || {}
+      b["kuran-dinle"] = true
+      localStorage.setItem("vukuf-ekstralar-bolumler", JSON.stringify(b))
     } catch { /* yoksay */ }
     return "/ekstralar"
   }

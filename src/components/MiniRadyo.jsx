@@ -14,7 +14,7 @@
 
 import { useEffect, useState } from "react"
 import { useLocation, useNavigate } from "react-router-dom"
-import { Play, Pause, Compass, ChevronDown, X } from "lucide-react"
+import { Play, Pause, Undo2, ChevronDown, X } from "lucide-react"
 import { useApp } from "../AppContext"
 import { useRadyo, radyoZamanlayici } from "../data/radyo"
 import { useZamanlayici } from "../data/otomatikDurdurma"
@@ -142,7 +142,7 @@ function RadyoHapi({ radyo, kitapta }) {
             <EkstraSesDugmesi theme={theme} stil={yuvarlak(false)} />
             <button onClick={() => navigate("/ekstralar")} aria-label="Ekstralar'a git" title="Ekstralar'a git"
               style={{ ...yuvarlak(false), color: ac, background: `${ac}14` }}>
-              <Compass size={15} />
+              <Undo2 size={15} />
             </button>
             <button onClick={() => setKucuk(true)} aria-label="Küçült" title="Küçült" style={yuvarlak(false)}>
               <ChevronDown size={16} />

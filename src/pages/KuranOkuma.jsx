@@ -27,6 +27,8 @@ import SayfaFarkiBildirimi, { sayfaFarkiOlustur } from "../components/SayfaFarki
 import KelimePopup from "../components/KelimePopup"
 import YuklemeEkrani from "../components/YuklemeEkrani"
 import IosSwitch from "../components/IosSwitch"
+import HarekeRenkAyarlari from "../components/HarekeRenkAyarlari"
+import { kelimeRengiEkle } from "../data/harekeRenk"
 import { useOrtaMenu, useOrtaBilgi, OrtaMenuCercevesi, OrtaIpucu, BilgiSeridi, BarKonumSecici, barKonumOku, barKonumYaz, ORTA_OLCEK, barEtiketle, OpaklikAyarlari, useOrtaOpaklik, yariSaydam } from "../components/OrtaMenu"
 import { AyarCekmecesi, AltCekmece, AltBaslik } from "../components/AyarCekmecesi"
 import PanelAyirac, { PanelAcilir, panelBolumeHizala } from "../components/PanelAyirac"
@@ -1122,6 +1124,10 @@ export default function KuranOkuma({ kitap }) {
   const [sayfaGirdi, setSayfaGirdi] = useState("")
   const [sayfaGirdiAcik, setSayfaGirdiAcik] = useState(false)
   const [kayitKonumModu, setKayitKonumModu] = useState(false)
+  // KELİME / KALIP RENKLENDİR (15 Kasım 2026): { eslesme, renk } — açıkken kelimeye dokunmak o
+  // kelimeyi (ve bütün mushafta eşleşenleri) renklendirir; lügat açılmaz
+  const [kelimeRenkSec, setKelimeRenkSec] = useState(null)
+  const kelimeRenkSecRef = useRef(null); kelimeRenkSecRef.current = kelimeRenkSec
   // YENİ KAYIT → "yerine koy" sorusu (19 Ekim 2026): seçilen konum bekler; kayıt varsa sorulur
   const [bekleyenKayit, setBekleyenKayit] = useState(null)   // { sayfa, scrollY }
   // "Yerine koy" sonrası 3 sn: "N sayfa okundu" / "N sayfa geri gelindi" (26 Ekim 2026)
@@ -1877,7 +1883,7 @@ const cokSatir = wrapAktif && barYuksekligi > tekSatirYuksekligi * 1.0
     otoKaydiriyor: () => otomatikKaydirma && !duraklatildi,
     // Bir panel açıkken dokunma menüyü açmaz
     engelli: () => ayarlarAcik || aaAcik || temaAcik || ozelTemaPanelAcik || sayfaGitAcik || menuAcik
-      || kayitPaneliAcik || donguAyarAcik || bilgiAcik || !!gorselVeri || kayitKonumModu || izlemeModu || kariSecAcik
+      || kayitPaneliAcik || donguAyarAcik || bilgiAcik || !!gorselVeri || kayitKonumModu || izlemeModu || kariSecAcik || !!kelimeRenkSec
       // tek dokunma: açık kelime/âyet penceresi varken dokunuş onu kapatır, menüyü açmaz
       || popup !== null,
     // Kelime/âyet penceresinin İÇİ sayılmaz (saydam perdesi sayılır): pencere z-index 300
@@ -1893,7 +1899,7 @@ const cokSatir = wrapAktif && barYuksekligi > tekSatirYuksekligi * 1.0
     acilinca: () => setPopup(null),
     // Tema / özel tema paneli BİLEREK yok: menü açık kalsın, yeni tema menüde de görülsün
     kapatanlar: [ayarlarAcik, aaAcik, sayfaGitAcik, menuAcik, kayitPaneliAcik,
-      donguAyarAcik, bilgiAcik, !!gorselVeri, kayitKonumModu, izlemeModu, gorselModu, paylasModu, hifzAcik],
+      donguAyarAcik, bilgiAcik, !!gorselVeri, kayitKonumModu, izlemeModu, gorselModu, paylasModu, hifzAcik, !!kelimeRenkSec],
   })
 
   // ════════════════════════════════════════════════════════════════
@@ -3282,6 +3288,13 @@ function donuseGit(i) {
     setAaAcik(false); setTemaAcik(false); setAyarlarAcik(false); setDonguAyarAcik(false)
   }
   const kelimeTikla = useCallback((kelime, sure, ayet, e) => {
+    // Kelime / kalıp renklendirme kipi: dokunulan kelime renklendirilir, başka hiçbir şey olmaz
+    if (kelimeRenkSecRef.current) {
+      const k = kelimeRenkSecRef.current
+      kelimeRengiEkle(kelime.arabic, k.renk, k.eslesme)
+      setKelimeRenkSec(null)
+      return
+    }
     // Açık bir panel/pencere varken yapılan dokunuş onu KAPATIR, yeni pencere açmaz (5 Kasım 2026)
     if (pencereKapatmaDokunusu()) { panelleriKapatRef.current(); return }
     /* HIFZ MODU: kelime anlamı yerine İPUCU. Perdeli kelimeye dokununca yalnız
@@ -4232,6 +4245,10 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
             )}
           </div>
         </div>
+
+        {/* ── RENKLİ HAREKE + KELİME / KALIP RENKLENDİR (15 Kasım 2026) */}
+        <HarekeRenkAyarlari theme={theme} arapcaStyle={aktifArapcaFont.style}
+          onKelimeSec={(eslesme, renk) => { setTemaAcik(false); setPopup(null); setKelimeRenkSec({ eslesme, renk }) }} />
       </div>
     </>
   )
@@ -5310,6 +5327,29 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
         altBosluk={altBarDolu}
       />
 
+      {/* KELİME RENKLENDİRME ŞERİDİ (15 Kasım 2026) — kayıt şeridiyle aynı biçim */}
+      {kelimeRenkSec && (
+        <div role="status" style={{
+          position: "fixed", left: 0, right: 0, margin: "0 auto", width: "max-content",
+          bottom: barKonum === "ust" ? "auto" : `calc(${altBarDolu + 14}px + env(safe-area-inset-bottom))`,
+          top: barKonum === "ust" ? `calc(${(barGorunur ? barYuksekligi : 0) + 14}px + env(safe-area-inset-top))` : "auto",
+          display: "flex", alignItems: "center", gap: "8px",
+          padding: "6px 6px 6px 12px", borderRadius: "999px",
+          maxWidth: "calc(100vw - 24px)", boxSizing: "border-box",
+          background: theme.surface, color: theme.text,
+          border: `1.5px dashed ${kelimeRenkSec.renk}`, boxShadow: "0 6px 22px rgba(0,0,0,0.18)", zIndex: 499,
+        }}>
+          <span aria-hidden="true" style={{ width: "14px", height: "14px", borderRadius: "50%", background: kelimeRenkSec.renk, flexShrink: 0 }} />
+          <span style={{ fontSize: `${Math.round((isMobile ? 12 : 13) * barUiOlcegi)}px`, lineHeight: 1.25, minWidth: 0 }}>
+            Renklendirmek istediğiniz kelimeye dokunun
+          </span>
+          <button onClick={(e) => { e.stopPropagation(); setKelimeRenkSec(null) }} title="Vazgeç" aria-label="Kelime renklendirmekten vazgeç"
+            style={{ width: "32px", height: "32px", borderRadius: "50%", flexShrink: 0, padding: 0, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", border: "none", background: "transparent", color: theme.textSecondary }}>
+            <X size={16} />
+          </button>
+        </div>
+      )}
+
       {/* KAYIT KOYMA ŞERİDİ (14 Kasım 2026): altta, barın üstünde — açıklama + kayıt listesi
           düğmesi + vazgeç. Kullanıcı: "altta kayıt menüsü simgesi belirsin, bu simgeye basılırsa
           kayıt menüsü açılsın, çarpı butonuna basılırsa da kayıt alma kısmı kapansın". */}
@@ -6216,7 +6256,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
                         sureTikla(sure, e)
                       }}
                       kayitKonumModu={kayitKonumModu}
-                      kelimeEtkilesimli={kelimeMeali || hifzAcik}
+                      kelimeEtkilesimli={kelimeMeali || hifzAcik || !!kelimeRenkSec}
                       seciliKelime={seciliKelime}
                       sayfaKayitlari={kayitlar.filter(k => k.sayfa === sayfa.sayfaNo)}
                       onKayitTikla={(kayit) => {
@@ -6296,7 +6336,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
                         onAyetTikla={ayetTikla}
                         onSureTikla={(sure, e) => { if (kayitKonumModu) return; sureTikla(sure, e) }}
                         kayitKonumModu={kayitKonumModu}
-                        kelimeEtkilesimli={kelimeMeali || hifzAcik}
+                        kelimeEtkilesimli={kelimeMeali || hifzAcik || !!kelimeRenkSec}
                         seciliKelime={seciliKelime}
                         sayfaKayitlari={kayitlar.filter(k => k.sayfa === no)}
                         onKayitTikla={(kayit) => {

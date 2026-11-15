@@ -11,14 +11,16 @@
      { tip: "kitap", kitapId, kitapAdi, sayfa, satir, cumle, kelime }
      { tip: "ayet",  sureNo, ayetNo, sureAdi }          (ayetNo yoksa sûrenin tamamı)
      { tip: "soz",   index, metin, yazar, kaynak }      (Kısa Tefeül'deki söz)
+     { tip: "dinle", kariId, kariAd, tur, parca, ayet, zaman }   (Ekstralar → Kur'an Dinle, 15 Kasım 2026)
+       Detaylı paylaşım: "Dinlediğim yerden başlasın" seçilirse bağlantıya saniye eklenir.
    Mesaj ve bağlantı data/paylasim.js'te kuruluyor (biçim orada anlatıldı).
 
    Marka logoları çizilmedi: düğmeler genel simge + uygulamanın adı + tanıdık rengiyle.
    ═══════════════════════════════════════════════════════════════════════════ */
 
 import { useEffect, useMemo, useRef, useState } from "react"
-import { X, Link2, Copy, Check, Share2, MessageCircle, Send, ThumbsUp, AtSign, Mail, MessageSquare, BookOpen } from "lucide-react"
-import { paylasimMesaji, PAYLASIM_HEDEFLERI, panoyaKopyala } from "../data/paylasim"
+import { X, Link2, Copy, Check, Share2, MessageCircle, Send, ThumbsUp, AtSign, Mail, MessageSquare, BookOpen, Headphones, Timer } from "lucide-react"
+import { paylasimMesaji, PAYLASIM_HEDEFLERI, panoyaKopyala, dakikaSaniye } from "../data/paylasim"
 import { useCekKapat } from "../data/hooks/useCekKapat"
 
 // Önizlemede adres okunur biçimde (%C3%BC → ü); kopyalanan/gönderilen adres değişmez
@@ -28,6 +30,7 @@ const IKONLAR = { whatsapp: MessageCircle, telegram: Send, facebook: ThumbsUp, x
 export default function PaylasimPenceresi({ acik, veri, kapat, theme, isMobile }) {
   const ac = theme.accent
   const [secim, setSecim] = useState("cumle")
+  const [zamanli, setZamanli] = useState(false)       // Kur'an Dinle: dinlenen saniyeden başlasın
   const [bildirim, setBildirim] = useState("")
   /* AŞAĞI ÇEKİP KAPATMA (26 Ekim 2026) — ortak kanca data/hooks/useCekKapat.js:
      karar bırakma anında (yukarı doğru bırakılırsa açık kalır, belirgin aşağı
@@ -39,7 +42,7 @@ export default function PaylasimPenceresi({ acik, veri, kapat, theme, isMobile }
 
   useEffect(() => {
     if (!acik) return
-    setSecim("cumle"); setBildirim(""); ck.sifirla()
+    setSecim("cumle"); setZamanli(false); setBildirim(""); ck.sifirla()
     const tus = (e) => { if (e.key === "Escape") kapat() }
     window.addEventListener("keydown", tus)
     return () => { window.removeEventListener("keydown", tus); clearTimeout(bildirimZaman.current) }
@@ -47,7 +50,7 @@ export default function PaylasimPenceresi({ acik, veri, kapat, theme, isMobile }
   }, [acik, veri])
 
   const kelimeVar = veri?.tip === "kitap" && veri.kelime && veri.cumle && veri.kelime.trim() !== veri.cumle.trim()
-  const m = useMemo(() => paylasimMesaji(veri ? { ...veri, secim } : null), [veri, secim])
+  const m = useMemo(() => paylasimMesaji(veri ? { ...veri, secim, zamanli } : null), [veri, secim, zamanli])
   const sistemPaylasimi = typeof navigator !== "undefined" && typeof navigator.share === "function"
 
   if (!acik || !veri) return null
@@ -81,7 +84,8 @@ export default function PaylasimPenceresi({ acik, veri, kapat, theme, isMobile }
     }
   }
 
-  const baslik = veri.tip === "ayet" ? (veri.ayetNo ? "Âyeti paylaş" : "Sûreyi paylaş")
+  const baslik = veri.tip === "dinle" ? "Dinlenen kaydı paylaş"
+    : veri.tip === "ayet" ? (veri.ayetNo ? "Âyeti paylaş" : "Sûreyi paylaş")
     : veri.tip === "soz" ? "Sözü paylaş" : (secim === "kelime" && kelimeVar ? "Kelimeyi paylaş" : "Cümleyi paylaş")
 
   const hedefDugmesi = (key, ad, Ikon, renk, tikla) => (
@@ -151,9 +155,9 @@ export default function PaylasimPenceresi({ acik, veri, kapat, theme, isMobile }
             background: theme.background, border: `1px solid ${theme.border}`, borderRadius: "12px",
             padding: "12px 14px", marginBottom: "10px",
           }}>
-            {veri.tip === "ayet" ? (
+            {veri.tip === "ayet" || veri.tip === "dinle" ? (
               <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                <BookOpen size={18} color={ac} style={{ flexShrink: 0 }} />
+                {veri.tip === "dinle" ? <Headphones size={18} color={ac} style={{ flexShrink: 0 }} /> : <BookOpen size={18} color={ac} style={{ flexShrink: 0 }} />}
                 <span style={{ fontSize: "15px", fontWeight: 600 }}>{m.govde}</span>
               </div>
             ) : (
@@ -174,6 +178,29 @@ export default function PaylasimPenceresi({ acik, veri, kapat, theme, isMobile }
               direction: "ltr",
             }} title={m.baglanti}>{okunurAdres(m.baglanti)}</div>
           </div>
+
+          {/* DETAYLI PAYLAŞIM (Kur'an Dinle): dinlenen yerden başlasın */}
+          {veri.tip === "dinle" && veri.zaman > 0 && (
+            <div role="switch" aria-checked={zamanli} onClick={() => setZamanli(v => !v)}
+              style={{
+                display: "flex", alignItems: "center", gap: "10px", padding: "9px 12px", borderRadius: "11px", cursor: "pointer",
+                border: `1px solid ${zamanli ? ac : theme.border}`, background: zamanli ? `${ac}10` : theme.background, marginBottom: "10px",
+              }}>
+              <Timer size={16} color={zamanli ? ac : theme.textSecondary} style={{ flexShrink: 0 }} />
+              <span style={{ flex: 1, minWidth: 0, fontSize: "13px", lineHeight: 1.3 }}>
+                Dinlediğim yerden başlasın
+                <span style={{ display: "block", fontSize: "11.5px", color: theme.textSecondary }}>
+                  Bağlantıyı açan {dakikaSaniye(veri.zaman)}'den dinlemeye başlar
+                </span>
+              </span>
+              <span aria-hidden="true" style={{
+                width: "38px", height: "22px", borderRadius: "999px", position: "relative", flexShrink: 0,
+                background: zamanli ? ac : theme.border, transition: "background .2s ease",
+              }}>
+                <span style={{ position: "absolute", top: "3px", left: zamanli ? "19px" : "3px", width: "16px", height: "16px", borderRadius: "50%", background: "#fff", transition: "left .2s ease" }} />
+              </span>
+            </div>
+          )}
 
           {/* Cümle | Yalnız kelime */}
           {kelimeVar && (

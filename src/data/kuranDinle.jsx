@@ -529,19 +529,71 @@ export function useParcaListesi(kari, tur) {
   }, [k, tur, s, hata, tekrar])
 }
 
-// Sıradaki (ya da önceki) mevcut parça; yoksa null
-function komsuParca(kari, tur, no, yon) {
+// Kayıtta bu parça var mı (liste henüz bilinmiyorsa "var" sayılır)
+function parcaVarMi(kari, tur) {
   const k = kari?.kaynaklar?.[tur]
-  if (!k) return null
-  const sayi = parcaSayisi(tur)
+  if (!k) return () => false
   let harita = null
   if (k.tip === "arsiv") {
     const d = hazir.get(k.kimlik) || listeOku(k.kimlik)
     if (d) harita = arsivEslemi(k, d)
   }
   if (k.tip === "way2") harita = way2KapsamHemen(k)
-  const varMi = (n) => (!harita ? true : harita.has(n))
-  const duaVar = harita ? harita.has("dua") : !!k.dua
+  return (n) => (n === "dua" ? (harita ? harita.has("dua") : !!k.dua) : (!harita ? true : harita.has(n)))
+}
+
+/* ÇALMA LİSTESİ (15 Kasım 2026) — kullanıcı: "Sürekli çalma butonu altına playlist butonu
+   koyalım. Aktif edildikten sonra bir liste seçilebilsin, birden fazla sûre ya da cüz listeye
+   eklenebilsin, altta da kalanını sıraya göre ekle butonu olsun … Tekrar tıklanırsa liste
+   geri açılsın playlist'e ilave edilebilsin, bu sayede tam bir playlist oluşturulabilir."
+   "vukuf-kuran-dinle-calma-listesi" = { acik, sure: { parcalar, kalan }, cuz: { parcalar, kalan } }
+   Sûre ve cüz için ayrı liste. Sıra: seçilenler (seçiliş sırasıyla) + `kalan` açıksa listede
+   olmayan bütün parçalar doğal sırayla. Liste açıkken çalan parça listedeyse bitince
+   listedeki sıradaki (kayıtta olan) parça çalar; liste bitince durur. */
+const CALMA_LISTESI_ANAHTAR = "vukuf-kuran-dinle-calma-listesi"
+const LISTE_BOS = { acik: false, sure: { parcalar: [], kalan: false }, cuz: { parcalar: [], kalan: false } }
+function listeDuzelt(v) {
+  const t = (x) => ({ parcalar: Array.isArray(x?.parcalar) ? x.parcalar.filter(n => Number.isInteger(n) || n === "dua") : [], kalan: !!x?.kalan })
+  return { acik: !!v?.acik, sure: t(v?.sure), cuz: t(v?.cuz) }
+}
+let calmaListesi = (() => { try { return listeDuzelt(JSON.parse(localStorage.getItem(CALMA_LISTESI_ANAHTAR) || "null") || LISTE_BOS) } catch { return LISTE_BOS } })()
+const listeDinleyici = new Set()
+export function calmaListesiYaz(yama) {
+  calmaListesi = listeDuzelt({ ...calmaListesi, ...yama })
+  try { localStorage.setItem(CALMA_LISTESI_ANAHTAR, JSON.stringify(calmaListesi)) } catch { /* yoksay */ }
+  listeDinleyici.forEach(f => f())
+}
+export function useCalmaListesi() {
+  return useSyncExternalStore((f) => { listeDinleyici.add(f); return () => listeDinleyici.delete(f) }, () => calmaListesi, () => calmaListesi)
+}
+/** Listedeki çalış sırası (kalan dahil) */
+export function listeSirasi(tur, l = calmaListesi) {
+  const t = l[tur]
+  if (!t) return []
+  const sira = [...t.parcalar]
+  if (t.kalan) {
+    for (let n = 1; n <= parcaSayisi(tur); n++) if (!sira.includes(n)) sira.push(n)
+  }
+  return sira
+}
+// Çalan parça listedeyse listedeki komşu (kayıtta olan); liste dışıysa undefined
+function listeKomsusu(kari, tur, no, yon) {
+  if (!calmaListesi.acik || tur === "ayet") return undefined
+  const sira = listeSirasi(tur)
+  const i = sira.indexOf(no)
+  if (i < 0) return undefined
+  const varMi = parcaVarMi(kari, tur)
+  for (let j = i + yon; j >= 0 && j < sira.length; j += yon) if (varMi(sira[j])) return sira[j]
+  return null
+}
+
+// Sıradaki (ya da önceki) mevcut parça; yoksa null
+function komsuParca(kari, tur, no, yon) {
+  const k = kari?.kaynaklar?.[tur]
+  if (!k) return null
+  const sayi = parcaSayisi(tur)
+  const varMi = parcaVarMi(kari, tur)
+  const duaVar = varMi("dua")
   if (yon > 0) {
     if (no === "dua") return null
     for (let n = no + 1; n <= sayi; n++) if (varMi(n)) return n
@@ -748,7 +800,8 @@ export function KuranDinleSaglayici({ children }) {
     // Geri: parçanın başından 5 sn'den fazla geçildiyse önce başa sar
     const a = sesRef.current
     if (yon < 0 && a && a.currentTime > 5) { a.currentTime = 0; return }
-    const n = komsuParca(kari, c.tur, c.parca, yon)
+    const l = listeKomsusu(kari, c.tur, c.parca, yon)
+    const n = l !== undefined ? l : komsuParca(kari, c.tur, c.parca, yon)
     if (n != null) baslat({ kariId: c.kariId, tur: c.tur, parca: n })
   }, [baslat])
 
@@ -778,9 +831,16 @@ export function KuranDinleSaglayici({ children }) {
       // Âyet kipinde sûre içinde her zaman devam; sûre bitince sürekli çalma karar verir
       const y = sonrakiAyet(c.parca, c.ayet, surekliRef.current)
       if (y) { baslat({ kariId: c.kariId, tur: "ayet", ...y }); return }
-    } else if (surekliRef.current) {
-      const n = komsuParca(kariBul(c.kariId), c.tur, c.parca, 1)
-      if (n != null) { baslat({ kariId: c.kariId, tur: c.tur, parca: n }); return }
+    } else {
+      const kari = kariBul(c.kariId)
+      const l = listeKomsusu(kari, c.tur, c.parca, 1)
+      if (l !== undefined) {
+        // Çalma listesi: listedeki sıradaki parça; liste bitince durur
+        if (l != null) { baslat({ kariId: c.kariId, tur: c.tur, parca: l }); return }
+      } else if (surekliRef.current) {
+        const n = komsuParca(kari, c.tur, c.parca, 1)
+        if (n != null) { baslat({ kariId: c.kariId, tur: c.tur, parca: n }); return }
+      }
     }
     setDurum("bitti")
     sonKonumYaz({ ...c, zaman: 0 })

@@ -19,7 +19,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react"
 import { createPortal } from "react-dom"
 import { useLocation, useNavigate } from "react-router-dom"
-import { X, Compass, PictureInPicture2, GripHorizontal } from "lucide-react"
+import { X, Undo2, PictureInPicture2, GripHorizontal } from "lucide-react"
 import { useApp } from "../AppContext"
 import { useDiyanetTv, tvAdresi, pipDestekli } from "../data/diyanetTv"
 
@@ -167,7 +167,7 @@ function TvPencere({ tv }) {
             </span>
           </span>
           <span style={{ flex: 1 }} />
-          {!ekstralarda && dugme("Ekstralar'a git", Compass, () => navigate("/ekstralar"), true)}
+          {!ekstralarda && dugme("Ekstralar'a git", Undo2, () => navigate("/ekstralar"), true)}
           {pipDestekli() && dugme("Ekran içinde ekran (pencere üstte kalır)", PictureInPicture2, () => tv.pipAc())}
           {dugme("Yayını kapat", X, () => tv.kapat())}
         </div>

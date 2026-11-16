@@ -18,6 +18,7 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 import { useSyncExternalStore } from "react"
+import { ayDurumu } from "./gokHesabi"
 
 const API = "https://ezanvakti.emushaf.net"
 const TURKIYE = 2
@@ -201,17 +202,28 @@ const saatYaz = (ms, gmt = 3) => {
 const SINODIK = 29.530588853 * 86400000
 const YENI_AY = Date.UTC(2000, 0, 6, 18, 14)
 export const ayEvresi = (simdi = Date.now()) => (((simdi - YENI_AY) % SINODIK) + SINODIK) % SINODIK / SINODIK
-export function gokDurumu(d, simdi = Date.now()) {
+/* 16 Kasım 2026 — AY GERÇEK YERİNDE (data/gokHesabi.js): konum (enlem/boylam) verilirse ay,
+   o an ufkun üstündeyse gökteki yönüne ve yüksekliğine göre çizilir; aydınlık oranı ve
+   aydınlık kenarın görünen eğimi o yerden görüldüğü gibidir. Ay ufkun altındaysa çizilmez
+   (yeni ay günlerinde gece ay görünmez; gündüz gökteyse soluk çizilir). Konum henüz
+   bilinmiyorsa Türkiye'nin ortası (Ankara) alınır.
+   Dönen: { tur: "gunes"|"ay" (gündüz/gece), oran (güneşin yaydaki yeri), ay: null | { x, y, kesir, buyuyen, egim, gunduz } }
+   x 0..1 doğudan batıya, y 0..1 ufuktan tepeye. */
+export function gokDurumu(d, simdi = Date.now(), konum = null) {
   if (!d || !d.bugun) return null
   const b = d.bugun
   const dogus = vakitAni(b, b.Gunes), aksam = vakitAni(b, b.Aksam)
   const sinir = (x) => Math.min(1, Math.max(0, x))
-  if (simdi >= dogus && simdi < aksam) return { tur: "gunes", oran: sinir((simdi - dogus) / (aksam - dogus)) }
-  // Gece: akşamdan ertesi güneş doğuşuna (sabah ise dünkü akşamdan bugünkü doğuşa)
-  let bas, bit
-  if (simdi >= aksam) { bas = aksam; bit = d.yarin ? vakitAni(d.yarin, d.yarin.Gunes) : dogus + 86400000 }
-  else { bas = aksam - 86400000; bit = dogus }
-  return { tur: "ay", oran: sinir((simdi - bas) / (bit - bas)), evre: ayEvresi(simdi) }
+  const gunduz = simdi >= dogus && simdi < aksam
+  const k = konum && isFinite(konum.lat) && isFinite(konum.lng) ? konum : { lat: 39.93, lng: 32.86 }
+  const a = ayDurumu(simdi, k.lat, k.lng)
+  const ay = a.yukseklik > 0 ? {
+    x: sinir(0.5 + a.azimut / Math.PI),                 // azimut güneyden batıya: −90° doğu → 0, +90° batı → 1
+    y: sinir(a.yukseklik / (Math.PI / 3)),              // 0° ufuk … 60° ve üstü tepe
+    kesir: a.kesir, buyuyen: a.buyuyen, egim: a.egim, gunduz,
+  } : null
+  if (gunduz) return { tur: "gunes", oran: sinir((simdi - dogus) / (aksam - dogus)), ay }
+  return { tur: "ay", ay }
 }
 
 /* Günün üç kerahat aralığı (caminin solundaki liste için); `aktif` = şu an içinde */

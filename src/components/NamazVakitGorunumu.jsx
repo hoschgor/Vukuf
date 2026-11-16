@@ -38,8 +38,9 @@ export function SureYazisi({ ms }) {
  * @param setSeciliVakit
  * @param ipucu           ızgaranın altındaki satır (yoksa hiç çizilmez)
  * @param hava            { derece, tur, gunduz } — caminin göğünde (data/havaDurumu.js)
+ * @param konum           { lat, lng } — gökte ayın gerçek yeri, evresi ve eğimi için (kayitliKonum)
  */
-export default function NamazVakitGorunumu({ theme, d, seciliVakit, setSeciliVakit, ipucu = null, hava = null }) {
+export default function NamazVakitGorunumu({ theme, d, seciliVakit, setSeciliVakit, ipucu = null, hava = null, konum = null }) {
   const sonrakiKalan = d?.sonraki ? d.sonraki.an - Date.now() : null
   const ramazan = ramazanHedefi(d)
   const kerahat = d?.bugun ? kerahatDurumu(d.bugun) : null
@@ -51,7 +52,7 @@ export default function NamazVakitGorunumu({ theme, d, seciliVakit, setSeciliVak
         // Caminin solundaki gökyüzünde günün kerahat aralıkları; içindeysek sağda bildirim.
         // Ramazan'da (kerahat yokken) sağda sahur ve iftar saatleri.
         const araliklar = kerahatAraliklari(d.bugun)
-        const gok = gokDurumu(d)
+        const gok = gokDurumu(d, Date.now(), konum)   // konum: ayın gerçek yeri ve eğimi (16 Kasım 2026)
         const sol = (
           <>
             <span style={{ fontSize: "0.88em", fontWeight: 700, color: theme.textSecondary, marginBottom: "0.2em", lineHeight: 1.05 }}>Kerahat Vakitleri</span>

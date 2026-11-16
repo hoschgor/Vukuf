@@ -48,6 +48,15 @@ export const HAVA_ADLARI = {
   yagmur: "Yağmurlu", kar: "Karlı", firtina: "Gök gürültülü",
 }
 
+/** Kayıtlı konum (eşzamanlı): seçimdeki ya da hava için daha önce bulunan enlem/boylam; yoksa null.
+    Gök hesabı (data/gokHesabi.js — ayın yeri ve eğimi) bunu kullanır. */
+export function kayitliKonum(secim) {
+  if (!secim) return null
+  if (secim.lat != null && secim.lng != null) return { lat: secim.lat, lng: secim.lng }
+  const o = secim.ilceId ? oku(KONUM_ONEK + secim.ilceId) : null
+  return o && isFinite(o.lat) && isFinite(o.lng) ? o : null
+}
+
 async function konumBul(secim) {
   if (secim.lat != null && secim.lng != null) return { lat: secim.lat, lng: secim.lng }
   const a = KONUM_ONEK + secim.ilceId

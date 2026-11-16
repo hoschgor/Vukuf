@@ -94,7 +94,7 @@ import {
   useNamazKarti, namazKartiYaz,
 } from "../data/namazVakitleri"
 import NamazVakitGorunumu from "../components/NamazVakitGorunumu"
-import { useHavaDurumu } from "../data/havaDurumu"
+import { useHavaDurumu, kayitliKonum } from "../data/havaDurumu"
 
 // ── KIBLE ────────────────────────────────────────────────────────────────────
 const KABE = { lat: 21.422487, lng: 39.826206 }
@@ -254,7 +254,7 @@ function NamazVakitleri({ theme }) {
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
           {/* Cami + vakitler + tarih — Kitaplık kartıyla ortak (components/NamazVakitGorunumu.jsx) */}
-          <NamazVakitGorunumu theme={theme} d={d} seciliVakit={seciliVakit} setSeciliVakit={setSeciliVakit} hava={hava}
+          <NamazVakitGorunumu theme={theme} d={d} seciliVakit={seciliVakit} setSeciliVakit={setSeciliVakit} hava={hava} konum={kayitliKonum(secim)}
             ipucu={
               /* DURUM SATIRI (15 Kasım 2026) — kullanıcı: "saniye ile gizlediğimiz bilgi kısımları,
                  kartın boyutunu değiştiriyor, bu da sayfanın kaymasına sebep oluyor". İpucu (3 sn),

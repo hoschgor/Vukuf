@@ -310,13 +310,23 @@ export default function KuranDinleKarti({ theme }) {
   // ÇALMA LİSTESİ (15 Kasım 2026) — data/kuranDinle.jsx; sûre ve cüz için ayrı
   const cl = useCalmaListesi()
   const lt = tur === "ayet" ? null : cl[tur]
-  /* LİSTEYE EKLEME KİPİ (16 Kasım 2026) — kullanıcı: "Listeye ilave yapılacaksa, çalarken dahi
-     yapılabilsin, bunun için bir buton ekleyelim, butona basıldığında sure ya da liste aşağı doğru
-     tekrar açılabilsin." "Kalanını sıraya göre ekle" basılıyken de bu düğmeyle liste açılıp ekleme
-     yapılır; çalma sürer. */
-  const [ekleKipi, setEkleKipi] = useState(false)
-  useEffect(() => { setEkleKipi(false) }, [tur, cl.acik])
-  const secimKipi = cl.acik && !!lt && (!lt.kalan || ekleKipi)       // parçaya dokunmak listeye ekler/çıkarır
+  /* LİSTEYE EKLEME (16 Kasım 2026) — kullanıcı: "Listeye ekle butonunu kaldıralım, bunun yerine
+     yukarıdaki ok işareti açılırsa kısım bölümü açılacak ya, oradan ekleriz." Çalma listesi açıkken
+     KISIMLAR çekmecesinden dokunulan parça listeye eklenir/çıkar — çalarken ve "Kalanını sıraya göre
+     ekle" basılıyken de (çekmece açılınca). */
+  const secimKipi = cl.acik && !!lt       // parçaya dokunmak listeye ekler/çıkarır
+  /* SÜRÜKLEME İPUCU — "Sıra değiştirmek için çiplerin sürükleneceği bilgisini 5 sn erase ile verelim
+     ama kutu boyutunu bozmadan yapalım": başlıktaki "N parça" yazısının YERİNDE (tek satır) 5 sn
+     görünür, sonra soldan sağa silinerek "N parça"ya döner — panelin boyu değişmez. Liste ikinci
+     parçayı alınca (ya da panel açılınca) bir kez. */
+  const coklu = !!lt && lt.parcalar.length > 1
+  const [suruklemeIpucu, setSuruklemeIpucu] = useState(false)
+  useEffect(() => {
+    if (!cl.acik || !coklu) { setSuruklemeIpucu(false); return }
+    setSuruklemeIpucu(true)
+    const t = setTimeout(() => setSuruklemeIpucu(false), 5000)
+    return () => clearTimeout(t)
+  }, [cl.acik, coklu, tur])
   const listeyeDokun = (no) => {
     const l = lt.parcalar.includes(no) ? lt.parcalar.filter(x => x !== no) : [...lt.parcalar, no]
     calmaListesiYaz({ [tur]: { ...lt, parcalar: l } })
@@ -671,11 +681,16 @@ export default function KuranDinleKarti({ theme }) {
           <div style={{ marginTop: "10px", padding: "8px 10px", borderRadius: "12px", border: `1px solid ${ac}66`, background: `${ac}0a` }}>
             <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "6px" }}>
               <ListMusic size={15} color={ac} style={{ flexShrink: 0 }} />
-              <span style={{ flex: 1, minWidth: 0, fontSize: "12px", fontWeight: 600, color: theme.text }}>
+              <span style={{ flex: 1, minWidth: 0, fontSize: "12px", fontWeight: 600, color: theme.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                 Çalma listesi · {tur === "cuz" ? "Cüz" : "Sûre"}
-                <span style={{ fontWeight: 400, color: theme.textSecondary, marginLeft: "6px" }}>
-                  {sirasi.length ? `${sirasi.length} parça` : "boş"}
+                <span style={{ fontWeight: 400, color: theme.textSecondary, marginLeft: "6px", whiteSpace: "nowrap" }}>
+                  {suruklemeIpucu
+                    ? <span className="vk-cl-ipucu" style={{ color: ac }}>sıra için çipler sürüklenebilir</span>
+                    : (sirasi.length ? `${sirasi.length} parça` : "boş")}
                 </span>
+                <style>{`@keyframes vk-cl-sil { 0%, 82% { clip-path: inset(0 0 0 0) } 100% { clip-path: inset(0 0 0 100%) } }
+.vk-cl-ipucu { display: inline-block; animation: vk-cl-sil 5s linear forwards }
+@media (prefers-reduced-motion: reduce) { .vk-cl-ipucu { animation: none } }`}</style>
               </span>
               {lt.parcalar.length > 0 && (
                 <button onClick={() => calmaListesiYaz({ [tur]: { parcalar: [], kalan: false } })} title="Listeyi temizle" aria-label="Listeyi temizle"
@@ -686,7 +701,7 @@ export default function KuranDinleKarti({ theme }) {
             </div>
             {lt.parcalar.length === 0 ? (
               <div style={{ fontSize: "11px", color: theme.textSecondary, lineHeight: 1.45, marginBottom: "8px" }}>
-                {secimKipi ? `Listeye eklemek istediğiniz ${tur === "cuz" ? "cüzlere" : "sûrelere"} sırayla dokunabilirsiniz.` : "Henüz seçilen parça yok; \"Listeye ekle\" ile seçilebilir."}
+                {`Listeye eklemek istediğiniz ${tur === "cuz" ? "cüzlere" : "sûrelere"} KISIMLAR listesinden sırayla dokunabilirsiniz.`}
               </div>
             ) : (
               <div style={{ display: "flex", flexWrap: "wrap", gap: "4px", marginBottom: "8px" }}>
@@ -711,39 +726,15 @@ export default function KuranDinleKarti({ theme }) {
                 )}
               </div>
             )}
-            {lt.parcalar.length > 1 && (
-              <div style={{ fontSize: "10.5px", color: theme.textSecondary, margin: "-4px 0 8px" }}>Sırayı değiştirmek için çipler sürüklenebilir.</div>
-            )}
-            {ekleKipi && (
-              <div style={{ fontSize: "11px", color: ac, lineHeight: 1.4, margin: "-2px 0 8px" }}>
-                Yukarıdaki listeden {tur === "cuz" ? "cüzlere" : "sûrelere"} dokunarak ekleme yapılabilir; dinleme kesilmez.
-              </div>
-            )}
             <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
-              {/* LİSTEYE EKLE — çalarken de: listeyi aşağı doğru yeniden açar, dokunulan parça eklenir */}
-              <button onClick={() => {
-                const y = !ekleKipi
-                setEkleKipi(y)
-                if (y) { setListeAcik(true); setSureAramaAcik(false) }
-                else if (lt.kalan) setListeAcik(false)
-              }} aria-pressed={ekleKipi}
-                style={{
-                  flex: "1 1 120px", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px",
-                  padding: "7px 10px", borderRadius: "10px", cursor: "pointer", fontFamily: "inherit", fontSize: "12px", fontWeight: 600,
-                  border: `1.5px solid ${ekleKipi ? ac : theme.border}`, background: ekleKipi ? ac : "transparent",
-                  color: ekleKipi ? "#fff" : theme.text,
-                }}>
-                {ekleKipi ? <Check size={14} /> : <Plus size={14} />} {ekleKipi ? "Eklemeyi bitir" : "Listeye ekle"}
-              </button>
               {/* Kalanını sıraya göre ekle: basılıyken liste kapanır, düğme çerçeveli görünür;
                   yeniden basılınca liste açılır, ekleme sürer */}
               <button onClick={() => {
                 const k = !lt.kalan
                 calmaListesiYaz({ [tur]: { ...lt, kalan: k } })
                 setListeAcik(!k)
-                if (k) setEkleKipi(false)
               }} aria-pressed={lt.kalan}
-                title={lt.kalan ? "Listeye ekleme yapmak için yeniden açılabilir" : "Listede olmayan bütün parçalar doğal sırayla arkaya eklenir"}
+                title={lt.kalan ? "Kapatılırsa liste yeniden açılır; KISIMLAR okuyla da açılıp ekleme yapılabilir" : "Listede olmayan bütün parçalar doğal sırayla arkaya eklenir"}
                 style={{
                   flex: "1 1 170px", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px",
                   padding: "7px 10px", borderRadius: "10px", cursor: "pointer", fontFamily: "inherit", fontSize: "12px", fontWeight: 600,

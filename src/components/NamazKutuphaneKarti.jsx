@@ -34,7 +34,7 @@ import { useEffect, useState } from "react"
 import { Clock, ChevronDown } from "lucide-react"
 import NamazVakitGorunumu from "./NamazVakitGorunumu"
 import HavaSimgesi from "./HavaSimgesi"
-import { useHavaDurumu } from "../data/havaDurumu"
+import { useHavaDurumu, kayitliKonum } from "../data/havaDurumu"
 import {
   secimOku, vakitleriGetir, durumHesapla, useNamazKarti, KONUM_SILINDI, kalanMetni, ramazanHedefi, kerahatDurumu,
 } from "../data/namazVakitleri"
@@ -135,7 +135,7 @@ function Raf({ theme, isMobile, p, Direk, RafIci, direkEn, gorunum = "resimli", 
                 background: theme.surface, borderRadius: "6px", padding: isMobile ? "8px 8px 10px" : "10px 12px 12px",
                 boxShadow: `inset 0 0 0 1px ${p.oyma}, 0 2px 6px rgba(0,0,0,0.35)`,
               }}>
-                <NamazVakitGorunumu theme={theme} d={d} seciliVakit={seciliVakit} setSeciliVakit={setSeciliVakit} hava={hava} />
+                <NamazVakitGorunumu theme={theme} d={d} seciliVakit={seciliVakit} setSeciliVakit={setSeciliVakit} hava={hava} konum={kayitliKonum(secim)} />
               </div>
             </div>
           </div>

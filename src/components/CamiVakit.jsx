@@ -46,21 +46,25 @@ function Gunes({ x, y }) {
     </g>
   )
 }
-function Ay({ x, y, evre, t }) {
+/* AY (16 Kasım 2026) — kesir: aydınlık oranı (0 yeni ay … 1 dolunay); egim: aydınlık kenarın
+   görünen yönü, zenitten saat yönünün tersine (data/gokHesabi.js). Şekil aydınlık kenar SAĞDA
+   çizilir, sonra o yöne döndürülür: döndürme = −(90° + eğim). Gündüz gökteyse soluk. */
+function Ay({ x, y, kesir, egim, gunduz, t }) {
   const r = 7
-  const buyuyen = evre < 0.5
-  const q = buyuyen ? evre : 1 - evre               // 0 yeni ay … 0,5 dolunay
-  const rx = r * Math.abs(Math.cos(2 * Math.PI * q))
-  const sisk = q > 0.25                               // şişkin (yarımdan büyük) ay
+  const rx = r * Math.abs(1 - 2 * kesir)
+  const sisk = kesir > 0.5                            // şişkin (yarımdan büyük) ay
   const aydin = `M0 ${-r} A${r} ${r} 0 0 1 0 ${r} A${rx.toFixed(2)} ${r} 0 0 ${sisk ? 1 : 0} 0 ${-r} Z`
+  const don = -(90 + (egim * 180) / Math.PI)
   return (
-    <g transform={`translate(${x.toFixed(2)} ${y.toFixed(2)})`} aria-hidden="true">
-      <circle r="13" fill="#f3ead0" opacity="0.14" />
+    <g transform={`translate(${x.toFixed(2)} ${y.toFixed(2)})`} aria-hidden="true" opacity={gunduz ? 0.7 : 1}>
+      {!gunduz && <circle r="13" fill="#f3ead0" opacity="0.14" />}
       <circle r={r} fill={t.textSecondary} opacity="0.18" stroke={t.border} strokeWidth="0.6" />
-      {q > 0.01 && <path d={aydin} fill="#f3ead0" stroke="#cdbb86" strokeWidth="0.6" transform={buyuyen ? undefined : "scale(-1 1)"} />}
+      {kesir > 0.01 && <path d={aydin} fill="#f3ead0" stroke="#cdbb86" strokeWidth="0.6" transform={`rotate(${don.toFixed(1)})`} />}
     </g>
   )
 }
+/* Ayın gökteki yeri: x 0..1 doğu→batı, y 0..1 ufuk→tepe (güneşin yayıyla aynı çerçeve) */
+const ayNoktasi = (a) => ({ x: 34 + a.x * 232, y: -10 - 24 * a.y })
 const YILDIZLAR = [[58, -30], [92, -18], [126, -36], [178, -32], [214, -20], [246, -34], [270, -14], [40, -16]]
 
 /* HAVA (15 Kasım 2026) — kullanıcı: "Bu kartlara hava durumunu da ekleyelim … sadece derece
@@ -114,10 +118,8 @@ export default function CamiVakit({ theme, ust, buyuk, alt, sol = null, sag = nu
         {gok && gok.tur === "ay" && YILDIZLAR.map(([x, y], i) => (
           <circle key={i} cx={x} cy={y} r={i % 3 ? 0.8 : 1.1} fill={t.accent} opacity={0.35 + (i % 3) * 0.15} />
         ))}
-        {gok && (() => {
-          const n = yayNoktasi(gok.oran)
-          return gok.tur === "gunes" ? <Gunes x={n.x} y={n.y} /> : <Ay x={n.x} y={n.y} evre={gok.evre ?? 0.5} t={t} />
-        })()}
+        {gok && gok.tur === "gunes" && (() => { const n = yayNoktasi(gok.oran); return <Gunes x={n.x} y={n.y} /> })()}
+        {gok && gok.ay && (() => { const n = ayNoktasi(gok.ay); return <Ay x={n.x} y={n.y} kesir={gok.ay.kesir} egim={gok.ay.egim} gunduz={gok.ay.gunduz} t={t} /> })()}
         {/* HAVA — bulut ve yağış */}
         {hava && hava.tur && hava.tur !== "acik" && (
           <g transform={`translate(${HAVA_YER.x} ${HAVA_YER.y}) scale(${HAVA_YER.olcek})`}>

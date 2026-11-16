@@ -70,6 +70,7 @@ const Arama        = tembel(() => import("./pages/Arama"))
 const Hakkinda     = tembel(() => import("./pages/Hakkinda"))
 const KuranOkuma   = tembel(() => import("./pages/KuranOkuma"))
 const Gecmis       = tembel(() => import("./pages/Gecmis"))
+const Kayitlar     = tembel(() => import("./pages/Kayitlar"))   // 16 Kasım 2026 — bütün işaret/not/vurgular
 const Ekstralar    = tembel(() => import("./pages/Ekstralar"))
 
 /* Parça HİÇ yüklenemezse (çevrimdışı ve önbellekte yok, ya da yenileme de
@@ -300,6 +301,7 @@ export default function App() {
         <Route path="/tefeul" element={<Tefeul />} />
         <Route path="/okuma-tefeul" element={<OkumaTefeulu />} />
         <Route path="/gecmis" element={<Gecmis />} />
+        <Route path="/kayitlar" element={<Kayitlar />} />
         <Route path="/kitap/:id" element={<OkumaEkrani />} />
         <Route path="/ekstralar" element={<Ekstralar />} />
         <Route path="/hakkinda" element={<Hakkinda />} />

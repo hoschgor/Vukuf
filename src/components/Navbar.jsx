@@ -1,6 +1,6 @@
 import { useRef, useState } from "react"
 import { Link, useLocation } from "react-router-dom"
-import { BookOpen, Search, Shuffle, Menu, X, Palette, Info, Type, Sparkles, Settings, HardDrive, Brain, History, HelpCircle, Library, Compass } from "lucide-react"
+import { BookOpen, Search, Shuffle, Menu, X, Palette, Info, Type, Sparkles, Settings, HardDrive, Brain, History, HelpCircle, Library, Compass, Bookmark } from "lucide-react"
 import { useApp, ozelMi } from "../AppContext"
 import { useMediaQuery } from "../data/hooks/useMediaQuery"
 import IosSwitch from "./IosSwitch"
@@ -237,6 +237,8 @@ export default function Navbar() {
     { path: "/okuma-tefeul", label: "Okuma Tefeülü", icon: Shuffle },
     // Geçmiş yalnız ayarı açıkken (Ayarlar → Geçmiş)
     ...(gecmisAcik ? [{ path: "/gecmis", label: "Geçmiş", icon: History }] : []),
+    // Kayıtlar (16 Kasım 2026): Kur'ân ve eserlerdeki bütün işaret, not ve vurgular
+    { path: "/kayitlar", label: "Kayıtlar", icon: Bookmark },
     // Ekstralar (3 Kasım 2026): Diyanet radyoları, kıble pusulası, yakındaki camiler, zikirmatik
     { path: "/ekstralar", label: "Ekstralar", icon: Compass },
   ]

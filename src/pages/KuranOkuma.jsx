@@ -30,6 +30,8 @@ import IosSwitch from "../components/IosSwitch"
 import HarekeRenkAyarlari from "../components/HarekeRenkAyarlari"
 import { kelimeRengiEkle } from "../data/harekeRenk"
 import { useMealGorunum, mealGorunumYaz } from "../data/mealGorunum"
+import { useOtoKaydirma, useOtoKaydirmaHizi } from "../data/hooks/useOtoKaydirma"
+import KaydirmaMenusu from "../components/KaydirmaMenusu"
 import { useOrtaMenu, useOrtaBilgi, OrtaMenuCercevesi, OrtaIpucu, BilgiSeridi, BarKonumSecici, barKonumOku, barKonumYaz, ORTA_OLCEK, barEtiketle, OpaklikAyarlari, useOrtaOpaklik, yariSaydam } from "../components/OrtaMenu"
 import { AyarCekmecesi, AltCekmece, AltBaslik } from "../components/AyarCekmecesi"
 import PanelAyirac, { PanelAcilir, panelBolumeHizala } from "../components/PanelAyirac"
@@ -1599,7 +1601,8 @@ const maxWidth = useMemo(() =>
 
   // ── Otomatik kaydırma
   const [otomatikKaydirma, setOtomatikKaydirma] = useState(false)
-  const [kaydirmaHizi, setKaydirmaHizi] = useState(1)
+  const [kaydirmaHizi, setKaydirmaHizi] = useOtoKaydirmaHizi()   // 1–40, iki ekranda ortak (16 Kasım 2026)
+  const [kaydirmaMenu, setKaydirmaMenu] = useState(false)       // alttaki kaydırma menüsü
   const [duraklatildi, setDuraklatildi] = useState(false)
   const otomatikRef = useRef(null)
 
@@ -1699,37 +1702,16 @@ const maxWidth = useMemo(() =>
   // YENİ: requestAnimationFrame ile geçen SÜREYE göre kesirli ilerleme (px/sn). Her karede
   // ekran yenilemesiyle senkron, alt-piksel → tamamen pürüzsüz. Hız kademeleri geometrik
   // ilerler; 1 rahat okuma temposu, 10 hızlı tarama.
-  useEffect(() => {
-    if (!otomatikKaydirma || duraklatildi) return
-    const el = scrollRef.current
-    if (!el) return
-    // Hız ölçeği (px/sn). Eski eğri çok hızlıydı (10 → 193 px/sn ≈ saniyede 4+ satır).
-    // Yeni çapa noktaları: 1 → 6 (çok yavaş, teenni ile), 10 → ~18 (rahat okuma),
-    // 20 → ~61 px/sn (azamî okuma hızı, ~1,4 satır/sn). Kesirli bırakılır; birikimli
-    // ilerleme zaten alt-piksel çalıştığı için yuvarlamaya gerek yok.
-    // 1-10 bandı aynı; 10-20 bandı KULLANICI İSTEĞİYLE daha da yumuşatıldı.
-    // Çapa noktaları: 1 → 6, 10 → 18, 15 → ~25, 20 → ~36 px/sn (~0,8 satır/sn).
-    const kademe = Math.min(20, Math.max(1, kaydirmaHizi))
-    const pxSn = kademe <= 10
-      ? 6 * Math.pow(1.13, kademe - 1)
-      : 18 * Math.pow(1.0718, kademe - 10)
-    let raf = 0, sonT = 0
-    let hedef = el.scrollTop            // kesirli konum (tarayıcı scrollTop'u yuvarlarsa hassasiyet kaybolmasın)
-    const adim = (t) => {
-      if (!sonT) sonT = t
-      const dt = Math.min(64, t - sonT)  // sekme arka plana geçip dönerse dev sıçrama olmasın
-      sonT = t
-      // Kullanıcı elle kaydırdıysa (veya sayfa penceresi konumu düzelttiyse) senkronize ol
-      if (Math.abs(el.scrollTop - hedef) > 4) hedef = el.scrollTop
-      hedef += (pxSn * dt) / 1000
-      el.scrollTop = hedef
-      // Sona gelince kendiliğinden dursun
-      if (el.scrollTop + el.clientHeight >= el.scrollHeight - 1) { setOtomatikKaydirma(false); return }
-      raf = requestAnimationFrame(adim)
-    }
-    raf = requestAnimationFrame(adim)
-    return () => cancelAnimationFrame(raf)
-  }, [otomatikKaydirma, kaydirmaHizi, duraklatildi])
+  /* 16 Kasım 2026 — motor ortak dosyada (data/hooks/useOtoKaydirma.js; bu ekrandaki rAF motoru
+     oraya taşındı, hız 40'a çıktı): basılı tutma durdurur, elle kaydırma (yukarı da) zorlanmaz,
+     kısa dokunuş alttaki KAYDIRMA MENÜSÜNÜ açar/kapatır; çarpı modu kapatır. */
+  useOtoKaydirma({
+    elRef: scrollRef, acik: otomatikKaydirma, hiz: kaydirmaHizi,
+    onDokun: () => setKaydirmaMenu(v => !v),
+    onSon: () => setOtomatikKaydirma(false),
+    dokunEngel: () => kayitKonumModu || !!kelimeRenkSecRef.current,
+  })
+  useEffect(() => { setKaydirmaMenu(otomatikKaydirma) }, [otomatikKaydirma])
 
   // menuAcik useEffect — dışarı tıklayınca kapat
   useEffect(() => {
@@ -1908,9 +1890,9 @@ const cokSatir = wrapAktif && barYuksekligi > tekSatirYuksekligi * 1.0
   const ortaMenu = useOrtaMenu({
     aktif: ortaBar,
     // Otomatik kaydırma sürerken tek dokunuş menüyü açsın (kayma "akarken dokunma" sayılmasın)
-    otoKaydiriyor: () => otomatikKaydirma && !duraklatildi,
-    // Bir panel açıkken dokunma menüyü açmaz
-    engelli: () => ayarlarAcik || aaAcik || temaAcik || ozelTemaPanelAcik || sayfaGitAcik || menuAcik
+    otoKaydiriyor: () => otomatikKaydirma,
+    // Bir panel açıkken dokunma menüyü açmaz; otomatik kaydırmada dokunuş kaydırma menüsünü açar
+    engelli: () => otomatikKaydirma || ayarlarAcik || aaAcik || temaAcik || ozelTemaPanelAcik || sayfaGitAcik || menuAcik
       || kayitPaneliAcik || donguAyarAcik || bilgiAcik || !!gorselVeri || kayitKonumModu || izlemeModu || kariSecAcik || !!kelimeRenkSec
       // tek dokunma: açık kelime/âyet penceresi varken dokunuş onu kapatır, menüyü açmaz
       || popup !== null,
@@ -2031,13 +2013,9 @@ const cokSatir = wrapAktif && barYuksekligi > tekSatirYuksekligi * 1.0
   // DOKUNMA FONKSİYONLARI
   // ════════════════════════════════════════════════════════════════
 
-  function dokunusBasladi() {
-    setDuraklatildi(true)
-  }
-
-  function dokunusBitti() {
-    setDuraklatildi(false)
-  }
+  // (Basılı tutunca durma artık useOtoKaydirma'da — 16 Kasım 2026)
+  function dokunusBasladi() {}
+  function dokunusBitti() {}
 
   // Scroll event listener'ları
   useEffect(() => {
@@ -2536,7 +2514,7 @@ useEffect(() => {
     try { localStorage.removeItem("vukuf-kuran-hedef") } catch {}
     {
       const k = sonKonumRef.current
-      if (k && (k.sayfa > 1 || (k.oran || 0) > 0.02)) donusBirak("gecmis", h.sayfa, { ...k })
+      if (k && (k.sayfa > 1 || (k.oran || 0) > 0.02)) donusBirak(h.kaynak === "kayitlar" ? "kayitlar" : "gecmis", h.sayfa, { ...k })
     }
     const sayfa = Math.max(1, Math.min(toplamSayfa || h.sayfa, h.sayfa))
     setTimeout(() => {
@@ -2549,6 +2527,12 @@ useEffect(() => {
         else konumuGoster()
       }
       requestAnimationFrame(git)
+      // KAYITLAR'DAN (16 Kasım 2026): gidilen işaretin ayracı birkaç saniye vurgulanır
+      if (h.kayitId) {
+        if (odakAyracTimeoutRef.current) clearTimeout(odakAyracTimeoutRef.current)
+        setOdakAyrac(h.kayitId)
+        odakAyracTimeoutRef.current = setTimeout(() => { setOdakAyrac(null); odakAyracTimeoutRef.current = null }, 6000)
+      }
     }, 180)
   }
 }, [sayfaListesi.length])
@@ -2557,7 +2541,7 @@ useEffect(() => {
 useEffect(() => {
   try {
     const d = localStorage.getItem("vukuf-donus")
-    if (d === "arama" || d === "tefeul" || d === "gecmis" || d === "paylasim" || d === "takip") {
+    if (d === "arama" || d === "tefeul" || d === "gecmis" || d === "kayitlar" || d === "paylasim" || d === "takip") {
       setDonusTip(d)
       localStorage.removeItem("vukuf-donus")
     } else if (d === "okuma") {
@@ -4869,48 +4853,17 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
 
     {otoOynatGoster && sadeGorunur("otoOynat") && (
       <>
+        {/* 16 Kasım 2026: kapalıyken başlatır; açıkken kaydırma menüsünü açar (hız orada,
+            mod menüdeki çarpıyla kapanır) */}
         <button
-          onClick={() => setOtomatikKaydirma(!otomatikKaydirma)}
+          onClick={() => (otomatikKaydirma ? setKaydirmaMenu(v => !v) : setOtomatikKaydirma(true))}
           style={{ ...barButonStil(otomatikKaydirma), ...barOge("otoOynat") }}
-          title="Otomatik kaydırma"
+          title={otomatikKaydirma ? "Kaydırma menüsü" : "Otomatik kaydırma"}
         >
           {otomatikKaydirma
-            ? <Pause size={Math.round((isMobile ? 18 : 21) * barOlcegi)}  />
+            ? <ChevronsDown size={Math.round((isMobile ? 18 : 21) * barOlcegi)}  />
             : <Play size={Math.round((isMobile ? 18 : 21) * barOlcegi)}  />}
         </button>
-
-        {otomatikKaydirma && (
-          <div style={{
-            ...barOge("otoOynat"),
-            display: "flex",
-            alignItems: "center",
-            gap: "2px",
-            background: `${theme.accent}10`,
-            borderRadius: "6px",
-            padding: "2px 6px",
-          }}>
-            <button
-              onClick={() => setKaydirmaHizi(Math.max(1, kaydirmaHizi - 1))}
-              style={{ ...barButonStil(), padding: "2px" }}
-            >
-              <Minus size={Math.round((isMobile ? 18 : 21) * barOlcegi)} />
-            </button>
-            <span style={{
-              fontSize: `${Math.round((isMobile ? 18 : 21) * barOlcegi)}px`,
-              color: theme.textSecondary,
-              minWidth: "16px",
-              textAlign: "center",
-            }}>
-              {kaydirmaHizi}
-            </span>
-            <button
-              onClick={() => setKaydirmaHizi(Math.min(20, kaydirmaHizi + 1))}
-              style={{ ...barButonStil(), padding: "2px" }}
-            >
-              <Plus size={Math.round((isMobile ? 18 : 21) * barOlcegi)} />
-            </button>
-          </div>
-        )}
       </>
     )}
 
@@ -5016,12 +4969,12 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
       {barEtiketle(Bar, new Map(Object.entries({
         geri: "Geri", sureMenu: "Fihrist", kayit: "Kayıt", sayfaGit: "Sayfa", tekrar: "Tekrar", bilgi: "İşaretler",
         gorsel: "Görsel", paylas: "Paylaş", hifz: "Hıfz", yaziTipi: "Yazı",
-        // Kayarken düğme durdurur → adı da "Durdur" (11 Kasım 2026)
-        otoOynat: otomatikKaydirma ? "Durdur" : "Kaydır",
+        // Kayarken düğme kaydırma menüsünü açar (16 Kasım 2026; mod menüdeki çarpıyla kapanır)
+        otoOynat: otomatikKaydirma ? "Kaydırma" : "Kaydır",
         sadeMod: "Sade", tema: "Tema", ayarlar: "Ayarlar",
       }).map(([k, ad]) => [barOge(k).order, ad])), {
         theme, olcek: barOlcegi,
-        // Kayarken "Durdur" öne çıkar (12 Kasım 2026)
+        // Kayarken düğme öne çıkar (12 Kasım 2026)
         vurgulu: otomatikKaydirma ? [barOge("otoOynat").order] : [],
       })}
     </OrtaMenuCercevesi>
@@ -5417,6 +5370,11 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
         olcek={barUiOlcegi}
         altBosluk={altBarDolu}
       />
+
+      {/* KAYDIRMA MENÜSÜ (16 Kasım 2026) — otomatik kaydırma açıkken altta (bar/oynatıcı üstünde) */}
+      <KaydirmaMenusu acik={otomatikKaydirma && kaydirmaMenu} hiz={kaydirmaHizi} setHiz={setKaydirmaHizi}
+        onGizle={() => setKaydirmaMenu(false)} onModuKapat={() => setOtomatikKaydirma(false)}
+        theme={theme} olcek={barUiOlcegi} altPay={altBarDolu} />
 
       {/* KELİME RENKLENDİRME ŞERİDİ (15 Kasım 2026) — kayıt şeridiyle aynı biçim */}
       {kelimeRenkSec && (
@@ -6277,6 +6235,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
             dokunusBitti()
             dokunuyorRef.current = false   // parmak kalktı → bundan sonrası MOMENTUM: üstte mount YOK
             if (barKilitli) return
+            if (otomatikKaydirma) return   // dokunuş kaydırma menüsünü açar (useOtoKaydirma), bar değişmez
             // Eğer popup veya panel açık ise işlemi engelle
             if (popup || aaAcik || temaAcik || ozelTemaPanelAcik || menuAcikRef.current) {
               return
@@ -6845,14 +6804,15 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
             altPay={hapAltPay}
             ustPay={hapUstPay}
             ustuste={donusAcik && !hifzAcik && donusNoktalari.length > 0}
-            ikon={donusTip === "paylasim" ? Library : donusTip === "okuma" ? BookOpen : donusTip === "tefeul" ? Shuffle : donusTip === "gecmis" ? History : donusTip === "takip" ? ListChecks : Search}
-            baslik={donusTip === "paylasim" ? "Ana sayfaya dön" : donusTip === "okuma" ? "Okumaya dön" : donusTip === "tefeul" ? "Tefeüle dön" : donusTip === "gecmis" ? "Geçmiş'e dön" : donusTip === "takip" ? "Hatim takibine dön" : "Aramaya dön"}
-            alt={donusTip === "paylasim" ? "Kitaplığa" : donusTip === "okuma" ? (donusAd || "Kitaptaki yerinize") : donusTip === "tefeul" ? "Tefeül ekranına" : donusTip === "gecmis" ? "Geçmiş listesine" : donusTip === "takip" ? "Ekstralar" : "Arama sonuçlarına"}
+            ikon={donusTip === "paylasim" ? Library : donusTip === "okuma" ? BookOpen : donusTip === "tefeul" ? Shuffle : donusTip === "gecmis" ? History : donusTip === "kayitlar" ? Bookmark : donusTip === "takip" ? ListChecks : Search}
+            baslik={donusTip === "paylasim" ? "Ana sayfaya dön" : donusTip === "okuma" ? "Okumaya dön" : donusTip === "tefeul" ? "Tefeüle dön" : donusTip === "gecmis" ? "Geçmiş'e dön" : donusTip === "kayitlar" ? "Kayıtlar'a dön" : donusTip === "takip" ? "Hatim takibine dön" : "Aramaya dön"}
+            alt={donusTip === "paylasim" ? "Kitaplığa" : donusTip === "okuma" ? (donusAd || "Kitaptaki yerinize") : donusTip === "tefeul" ? "Tefeül ekranına" : donusTip === "gecmis" ? "Geçmiş listesine" : donusTip === "kayitlar" ? "Kayıt listesine" : donusTip === "takip" ? "Ekstralar" : "Arama sonuçlarına"}
             onGit={() => {
               if (donusTip === "paylasim") { navigate("/"); return }
               if (donusTip === "takip") { navigate("/ekstralar"); return }
               if (donusTip === "okuma") { navigate(donusYol || "/"); return }
               if (donusTip === "gecmis") { navigate("/gecmis"); return }
+              if (donusTip === "kayitlar") { navigate("/kayitlar"); return }
               try { localStorage.setItem(`vukuf-${donusTip}-devam`, "1") } catch {}
               // Tefeül: hangi tefeülden gelindiyse oraya (Söz Tefeülü'ndeki Kur'ân kartı → /tefeul)
               let tefeulYolu = "/okuma-tefeul"

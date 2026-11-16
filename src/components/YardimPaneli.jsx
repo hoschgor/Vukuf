@@ -274,9 +274,10 @@ const KONULAR = [
     ozet: "Sayfanın kendiliğinden ilerlemesi.",
     nerede: "Kur'ân-ı Kerîm → bardaki oynat simgesi",
     metin: [
-      "Oynat simgesi sayfayı kendiliğinden kaydırır; tekrar dokunulduğunda durur. Menülü düzende kaydırma sürerken menü tek dokunuşla açılır; \"Durdur\" düğmesi (ve varsa hız ayarı), bardaki sırası ne olursa olsun menünün en altında, vurgu renginde belirgin bir kapsül olarak durur. Kaydırma durunca düğme kısa bir canlandırmayla kendi sırasına döner. Kaydırma hızı, otomatik kaydırma açıkken Ayarlar → Okuma Düzeni bölümünden değiştirilebilir.",
+      "Oynat simgesi sayfayı kendiliğinden kaydırmaya başlatır (Kur'ân-ı Kerîm'de ve eserlerde aynı). Kaydırma sürerken ekrana kısa dokunmak alttaki kaydırma menüsünü açar ya da kapatır; menü bir süre dokunulmazsa kendiliğinden gizlenir. Menüde hız 1 ile 40 arasında sürgüyle sürüklenerek ya da rakam yazılarak seçilir; hız iki ekranda ortaktır ve hatırlanır. Menüdeki belirgin çarpı otomatik kaydırmayı kapatır. Bardaki (ya da menüdeki) kaydırma düğmesi kaydırma sürerken bu menüyü açar.",
+      "Ekrana basılı tutmak kaydırmayı durdurur, bırakınca sürer. Elle kaydırıldığında (yukarı da, aşağı da) otomatik kaydırma o hareket bitene kadar bekler; yukarı dönerken aşağı itmez. Sona gelince kaydırma kendiliğinden kapanır.",
     ],
-    anahtar: "kaydır otomatik akış hız",
+    anahtar: "kaydır otomatik akış hız kaydırma menüsü sürgü durdur çarpı",
   },
   {
     bolum: "kuran", ikon: Circle, baslik: "Sade mod",
@@ -332,7 +333,7 @@ const KONULAR = [
     metin: [
       "Bar üç biçimde kullanılabilir: Üst, Alt ve Menü. Başlangıçta Menü seçilidir.",
       "Menü seçiliyken bar ekranda durmaz; metne dokunulunca (bilgisayarda tıklanınca) ekranın ortasında tezhipli bir çerçeve içinde açılır. Düğmelerin altında kısa adları yazar; sûre menüsünü ya da içindekileri açan düğmenin adı \"Fihrist\"tir. Başka bir yere dokunulunca ya da bir panel açılınca kendiliğinden kapanır. Tema paneli açıldığında menü açık kalır, böylece yeni tema menüde de görülebilir.",
-      "Lügat kelimeleri, mushaftaki kelimeler ve âyet numaraları dokununca kendi pencerelerini açar; menü bunların dışındaki boş yere dokunularak açılır. Sayfa kayarken dokunmak yalnız kaydırmayı durdurur.",
+      "Lügat kelimeleri, mushaftaki kelimeler ve âyet numaraları dokununca kendi pencerelerini açar; menü bunların dışındaki boş yere dokunularak açılır. Otomatik kaydırma sürerken dokunmak kaydırma menüsünü açar; basılı tutmak kaydırmayı durdurur.",
       "Bazı telefonlarda metin seçilince altta tarayıcının arama çubuğu çıkıp alttaki barı örtebiliyor; Menü bu durumda da rahat kullanılabilsin diye ortada açılır.",
       "Bir bölüm seçiliyken metne dokunulursa seçim korunur: menünün başında \"Seçili\" olarak görünür ve görsel oluşturma gibi işlerde kullanılır. Yanındaki × ile bırakılabilir.",
       "Bilgi şeridindeki kısım adına dokunulunca o kısmın açıklaması açılır. Mushafta oynatıcı açıkken şerit oynatıcının üst kenarına yapışık bir sekme olarak durur; kitaplarda sesli okuma denetimi şeridin üstüne yerleşir. Ayarlar → Menü ve Bar → Opaklık bölümünden barın ya da menünün zemini (bar konumu ne olursa olsun) ve bilgi şeridinin opaklığı ayrı ayrı seçilebilir.",
@@ -652,6 +653,17 @@ const KONULAR = [
       "Söz Tefeülü'ndeki \"Paylaş\" düğmesi ekrandaki kartı okuma ekranlarındaki paylaşma penceresiyle paylaşır: sözde söz, söyleyeni ve kaynağı; âyette Kur'ân ekranındaki gibi âyetin yeri ve bağlantısı; sûrede sûrenin bağlantısı gider. Pencere kapatılınca aynı kart yerinde kalır. Söz bağlantısını açan kişi Söz Tefeülü'nde o sözü görür.",
     ],
     anahtar: "tefeül rastgele fal söz okuma kuran âyet sûre meal",
+  },
+  {
+    bolum: "arama", ikon: Bookmark, baslik: "Kayıtlar sayfası",
+    ozet: "Bütün işaret, not ve vurguları tek listede görmek.",
+    nerede: "Ana menü → Kayıtlar",
+    metin: [
+      "Kur'ân-ı Kerîm'de ve eserlerde kayıt menüsünden koyduğunuz işaretler, notlar ve vurgular burada kaynak kaynak (Kur'ân ve her eser ayrı) sayfa sırasıyla listelenir. Üstteki seçimle yalnız işaretler, notlar ya da vurgular gösterilebilir; arama kutusu ad, not metni, eser adı ve sayfa numarasında arar. Kaynak başlığına dokunulunca o grup kapanıp açılır.",
+      "Bir kayda dokununca oraya gidilir; Kur'ân işaretlerinde ayraç birkaç saniye vurgulanır. Okuma ekranının sağ altında \"Kayıtlar'a dön\" köprüsü belirir; ayrılınan okuma yeri de \"Geri dön\" listesine eklenir.",
+      "Kayıtlar okuma ekranlarındaki kayıt menüsünden eklenir, adlandırılır ve silinir; bu sayfa yalnız listeler.",
+    ],
+    anahtar: "kayıtlar işaret ayraç yer imi not vurgu liste git köprü",
   },
   {
     bolum: "arama", ikon: History, baslik: "Geçmiş",

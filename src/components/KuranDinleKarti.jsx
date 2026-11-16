@@ -94,6 +94,30 @@ function Ilerleme({ theme, dinle }) {
   )
 }
 
+/* ÇALMA LİSTESİ ÇİPİ (16 Kasım 2026) — kullanıcı: "Playlist içindeki parçalar sürüklenerek yer
+   değiştirebilsin". Çipin kendisi sürüklenir (dokunmatikte kısa basılı tutup); × listeden çıkarır. */
+function ListeCipi({ n, sira, ad, vr, theme, onSil }) {
+  const ac = theme.accent
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: String(n) })
+  return (
+    <span ref={setNodeRef} {...attributes} {...listeners} title="Sırasını değiştirmek için sürükleyin"
+      style={{
+        display: "inline-flex", alignItems: "center", gap: "4px", padding: "3px 4px 3px 8px", borderRadius: "999px",
+        border: `1px solid ${isDragging ? ac : theme.border}`, background: theme.surface, fontSize: "11.5px", color: theme.text,
+        opacity: vr ? 1 : 0.55, cursor: isDragging ? "grabbing" : "grab", touchAction: "manipulation", userSelect: "none",
+        transform: CSS.Transform.toString(transform), transition, position: "relative", zIndex: isDragging ? 5 : "auto",
+        boxShadow: isDragging ? "0 8px 20px rgba(0,0,0,0.2)" : "none",
+      }}>
+      <span style={{ color: ac, fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>{sira}</span> {ad}
+      <button onClick={onSil} onPointerDown={(e) => e.stopPropagation()}
+        aria-label={`${ad} listeden çıkarılsın`} title="Listeden çıkar"
+        style={{ display: "flex", padding: "1px", background: "none", border: "none", cursor: "pointer", color: theme.textSecondary }}>
+        <X size={12} />
+      </button>
+    </span>
+  )
+}
+
 /* KÂRİ ÇİPİ (14 Kasım 2026) — düzenleme kipinde sürüklenerek sıralanır (dnd-kit, ızgara);
    göz ile gizlenir; aramadan eklenen (kesik çizgili) × ile listeden çıkarılır. */
 function KariCipi({ k, sec, calarK, gizli, duzenle, theme, onSec, onGizle, onSil }) {
@@ -286,7 +310,13 @@ export default function KuranDinleKarti({ theme }) {
   // ÇALMA LİSTESİ (15 Kasım 2026) — data/kuranDinle.jsx; sûre ve cüz için ayrı
   const cl = useCalmaListesi()
   const lt = tur === "ayet" ? null : cl[tur]
-  const secimKipi = cl.acik && !!lt && !lt.kalan       // parçaya dokunmak listeye ekler/çıkarır
+  /* LİSTEYE EKLEME KİPİ (16 Kasım 2026) — kullanıcı: "Listeye ilave yapılacaksa, çalarken dahi
+     yapılabilsin, bunun için bir buton ekleyelim, butona basıldığında sure ya da liste aşağı doğru
+     tekrar açılabilsin." "Kalanını sıraya göre ekle" basılıyken de bu düğmeyle liste açılıp ekleme
+     yapılır; çalma sürer. */
+  const [ekleKipi, setEkleKipi] = useState(false)
+  useEffect(() => { setEkleKipi(false) }, [tur, cl.acik])
+  const secimKipi = cl.acik && !!lt && (!lt.kalan || ekleKipi)       // parçaya dokunmak listeye ekler/çıkarır
   const listeyeDokun = (no) => {
     const l = lt.parcalar.includes(no) ? lt.parcalar.filter(x => x !== no) : [...lt.parcalar, no]
     calmaListesiYaz({ [tur]: { ...lt, parcalar: l } })
@@ -656,24 +686,24 @@ export default function KuranDinleKarti({ theme }) {
             </div>
             {lt.parcalar.length === 0 ? (
               <div style={{ fontSize: "11px", color: theme.textSecondary, lineHeight: 1.45, marginBottom: "8px" }}>
-                {secimKipi ? `Listeye eklemek istediğiniz ${tur === "cuz" ? "cüzlere" : "sûrelere"} sırayla dokunabilirsiniz.` : "Henüz seçilen parça yok."}
+                {secimKipi ? `Listeye eklemek istediğiniz ${tur === "cuz" ? "cüzlere" : "sûrelere"} sırayla dokunabilirsiniz.` : "Henüz seçilen parça yok; \"Listeye ekle\" ile seçilebilir."}
               </div>
             ) : (
               <div style={{ display: "flex", flexWrap: "wrap", gap: "4px", marginBottom: "8px" }}>
-                {lt.parcalar.map((n, i) => (
-                  <span key={n} style={{
-                    display: "inline-flex", alignItems: "center", gap: "4px", padding: "3px 4px 3px 8px", borderRadius: "999px",
-                    border: `1px solid ${theme.border}`, background: theme.surface, fontSize: "11.5px", color: theme.text,
-                    opacity: varMi(n) ? 1 : 0.55,
-                  }}>
-                    <span style={{ color: ac, fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>{i + 1}</span> {ad(n)}
-                    <button onClick={() => calmaListesiYaz({ [tur]: { ...lt, parcalar: lt.parcalar.filter(x => x !== n) } })}
-                      aria-label={`${ad(n)} listeden çıkarılsın`} title="Listeden çıkar"
-                      style={{ display: "flex", padding: "1px", background: "none", border: "none", cursor: "pointer", color: theme.textSecondary }}>
-                      <X size={12} />
-                    </button>
-                  </span>
-                ))}
+                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={({ active, over }) => {
+                  if (!over || active.id === over.id) return
+                  const ids = lt.parcalar.map(String)
+                  const a = ids.indexOf(String(active.id)), b = ids.indexOf(String(over.id))
+                  if (a < 0 || b < 0) return
+                  calmaListesiYaz({ [tur]: { ...lt, parcalar: arrayMove(lt.parcalar, a, b) } })
+                }}>
+                  <SortableContext items={lt.parcalar.map(String)} strategy={rectSortingStrategy}>
+                    {lt.parcalar.map((n, i) => (
+                      <ListeCipi key={n} n={n} sira={i + 1} ad={ad(n)} vr={varMi(n)} theme={theme}
+                        onSil={() => calmaListesiYaz({ [tur]: { ...lt, parcalar: lt.parcalar.filter(x => x !== n) } })} />
+                    ))}
+                  </SortableContext>
+                </DndContext>
                 {lt.kalan && kalanSayi > 0 && (
                   <span style={{ display: "inline-flex", alignItems: "center", padding: "3px 8px", borderRadius: "999px", border: `1px dashed ${ac}`, fontSize: "11.5px", color: ac }}>
                     + kalan {kalanSayi} {tur === "cuz" ? "cüz" : "sûre"} sırayla
@@ -681,13 +711,37 @@ export default function KuranDinleKarti({ theme }) {
                 )}
               </div>
             )}
+            {lt.parcalar.length > 1 && (
+              <div style={{ fontSize: "10.5px", color: theme.textSecondary, margin: "-4px 0 8px" }}>Sırayı değiştirmek için çipler sürüklenebilir.</div>
+            )}
+            {ekleKipi && (
+              <div style={{ fontSize: "11px", color: ac, lineHeight: 1.4, margin: "-2px 0 8px" }}>
+                Yukarıdaki listeden {tur === "cuz" ? "cüzlere" : "sûrelere"} dokunarak ekleme yapılabilir; dinleme kesilmez.
+              </div>
+            )}
             <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+              {/* LİSTEYE EKLE — çalarken de: listeyi aşağı doğru yeniden açar, dokunulan parça eklenir */}
+              <button onClick={() => {
+                const y = !ekleKipi
+                setEkleKipi(y)
+                if (y) { setListeAcik(true); setSureAramaAcik(false) }
+                else if (lt.kalan) setListeAcik(false)
+              }} aria-pressed={ekleKipi}
+                style={{
+                  flex: "1 1 120px", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px",
+                  padding: "7px 10px", borderRadius: "10px", cursor: "pointer", fontFamily: "inherit", fontSize: "12px", fontWeight: 600,
+                  border: `1.5px solid ${ekleKipi ? ac : theme.border}`, background: ekleKipi ? ac : "transparent",
+                  color: ekleKipi ? "#fff" : theme.text,
+                }}>
+                {ekleKipi ? <Check size={14} /> : <Plus size={14} />} {ekleKipi ? "Eklemeyi bitir" : "Listeye ekle"}
+              </button>
               {/* Kalanını sıraya göre ekle: basılıyken liste kapanır, düğme çerçeveli görünür;
                   yeniden basılınca liste açılır, ekleme sürer */}
               <button onClick={() => {
                 const k = !lt.kalan
                 calmaListesiYaz({ [tur]: { ...lt, kalan: k } })
                 setListeAcik(!k)
+                if (k) setEkleKipi(false)
               }} aria-pressed={lt.kalan}
                 title={lt.kalan ? "Listeye ekleme yapmak için yeniden açılabilir" : "Listede olmayan bütün parçalar doğal sırayla arkaya eklenir"}
                 style={{

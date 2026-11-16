@@ -17,6 +17,11 @@
      son yazılan değerle karşılaştırılır.
    • KISA DOKUNUŞ (hareketsiz, < 300 ms) okuma ekranının kendi tıklama işini YAPMAZ (lügat, bar,
      menü açılmaz); onDokun çağrılır → ekran alttaki kaydırma menüsünü açar.
+   • ETKİLEŞİM (16 Kasım 2026, kullanıcı: "Otomatik kaydırma menüsüne 1 tane buton ekleyelim, buton
+     bir parmak simgesi olsun … kelime ya da ayet ya da ayet rozeti etkileşimini açıp kapatacak"):
+     `etkilesim` açıkken `etkilesimSecici`ye uyan öğeye dokunuş YAKALANMAZ — ekranın kendi işi
+     (kelime / âyet penceresi) çalışır, kayma durmaz, menü açılmaz; dokunulan öğe `hedefRef`e
+     yazılır (pencere onunla birlikte kayar — components/OtoPopupTakip.jsx). Kapalıyken eskisi gibi.
    • DURAKLATMA (16 Kasım 2026, kullanıcı: "Menü kapalıyken ve kaydırırken ortaya 1 kez dokunulursa
      … duraklatıp beklemeli"): `durdu` true iken kayma bekler; dokunuş yakalanmaya devam eder.
    ═══════════════════════════════════════════════════════════════════════════ */
@@ -54,9 +59,10 @@ export function useOtoKaydirmaHizi() {
  * onDokun(): kısa dokunuş (menüyü aç/kapat) · onSon(): sona gelindi
  * dokunEngel(): true dönerse dokunuş yakalanmaz (ör. vurgu kipi)
  */
-export function useOtoKaydirma({ elRef, acik, hiz, durdu = false, onDokun, onSon, dokunEngel }) {
+export function useOtoKaydirma({ elRef, acik, hiz, durdu = false, onDokun, onSon, dokunEngel, etkilesim = false, etkilesimSecici = null }) {
   const cb = useRef({})
-  cb.current = { onDokun, onSon, dokunEngel, durdu }
+  cb.current = { onDokun, onSon, dokunEngel, durdu, etkilesim, etkilesimSecici }
+  const hedefRef = useRef(null)           // etkileşimle açılan pencerenin bağlı olduğu öğe
   useEffect(() => {
     const el = elRef.current
     if (!acik || !el) return
@@ -90,6 +96,11 @@ export function useOtoKaydirma({ elRef, acik, hiz, durdu = false, onDokun, onSon
       if (!dokunusT || performance.now() - dokunusT > 600) return
       dokunusT = 0
       if (cb.current.dokunEngel && cb.current.dokunEngel()) return
+      // Etkileşim açık ve etkileşimli bir öğeye dokunulduysa: ekranın kendi işi çalışsın, kayma sürsün
+      if (cb.current.etkilesim && cb.current.etkilesimSecici) {
+        const h = e.target && e.target.closest ? e.target.closest(cb.current.etkilesimSecici) : null
+        if (h) { hedefRef.current = h; return }
+      }
       e.stopPropagation(); e.preventDefault()
       cb.current.onDokun && cb.current.onDokun()
     }
@@ -131,4 +142,13 @@ export function useOtoKaydirma({ elRef, acik, hiz, durdu = false, onDokun, onSon
       el.removeEventListener("click", onClick, true)
     }
   }, [acik, hiz, elRef])
+  return { hedefRef }
+}
+
+/** Kaydırmada kelime / âyet etkileşimi (parmak düğmesi) — cihazda saklanır, başta kapalı */
+const ETK_ANAHTAR = "vukuf-oto-etkilesim"
+export function useOtoEtkilesim() {
+  const [acik, setAcikD] = useState(() => { try { return localStorage.getItem(ETK_ANAHTAR) === "1" } catch { return false } })
+  const setAcik = (v) => setAcikD(e => { const y = typeof v === "function" ? v(e) : !!v; try { localStorage.setItem(ETK_ANAHTAR, y ? "1" : "0") } catch { /* yoksay */ } return y })
+  return [acik, setAcik]
 }

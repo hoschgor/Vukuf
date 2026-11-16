@@ -37,7 +37,8 @@ import { useOrtaMenu, useOrtaBilgi, OrtaMenuCercevesi, OrtaIpucu, BilgiSeridi, B
 import { AyarCekmecesi, AltCekmece, AltBaslik } from "../components/AyarCekmecesi"
 import DonusDugmesi, { KopruDugmesi, hapKonumlariniSifirla } from "../components/DonusDugmesi"
 import { History as GecmisIkon } from "lucide-react"
-import { useOtoKaydirma, useOtoKaydirmaHizi, OTO_EN_COK } from "../data/hooks/useOtoKaydirma"
+import { useOtoKaydirma, useOtoKaydirmaHizi, useOtoEtkilesim, OTO_EN_COK } from "../data/hooks/useOtoKaydirma"
+import OtoPopupTakip from "../components/OtoPopupTakip"
 import KaydirmaMenusu from "../components/KaydirmaMenusu"
 import { useOkumaGecmisi, OKUMA_HEDEF_ANAHTAR } from "../data/gecmis"
 import { useDonusAyari, donusAcikMi, noktalariOku, noktaEkle, noktayaDon, noktalariTemizle } from "../data/donusNoktalari"
@@ -1328,6 +1329,7 @@ const [paylasimNotu, setPaylasimNotu] = useState(null)   // bağlantıyla gelind
 const [kaydirmaHizi, setKaydirmaHizi]         = useOtoKaydirmaHizi()   // 1–40, iki ekranda ortak (16 Kasım 2026)
 const [kaydirmaMenu, setKaydirmaMenu]         = useState(false)       // alttaki kaydırma menüsü
 const [otoDurdu, setOtoDurdu]                 = useState(false)       // dokunuşla / menüden duraklatıldı
+const [otoEtkilesim, setOtoEtkilesim]         = useOtoEtkilesim()     // kayarken lügat/dipnot dokunuşu (parmak düğmesi)
 const [duraklatildi, setDuraklatildi]         = useState(false)
 
 // ── Bar
@@ -2118,9 +2120,12 @@ useEffect(() => {
    (hız sürgüsü + rakam, çarpı modu kapatır). Mod açılınca menü bir kez görünür. */
 /* Dokunuş (16 Kasım 2026, kullanıcı): menü açıkken → menü gizlenir, kayma sürer; menü kapalı ve
    kayarken → duraklar, menü (Devam düğmesiyle) açılır; duraklamışken menü kapalıysa → menü açılır. */
-useOtoKaydirma({
+const { hedefRef: otoHedefRef } = useOtoKaydirma({
   elRef: scrollRef, acik: otomatikKaydirma && !kitapModu, hiz: kaydirmaHizi, durdu: otoDurdu,
+  // Parmak düğmesi açıkken lügat kelimesi / dipnot dokunuşu kendi penceresini açar, kayma sürer
+  etkilesim: otoEtkilesim, etkilesimSecici: ".lugat-kelime, sup",
   onDokun: () => {
+    if (popup || dipnotPopup) { setPopup(null); setDipnotPopup(null); return }   // açık pencereyi kapat
     if (kaydirmaMenu) { setKaydirmaMenu(false); return }
     if (!otoDurdu) setOtoDurdu(true)
     setKaydirmaMenu(true)
@@ -4630,6 +4635,12 @@ return (
       altPay={barKonum === "alt" && barGorunur ? barYuk + 12 : 16 + seritPay}
     />
 
+    {/* Kayarken (parmak düğmesi açık) açılan pencere öğesiyle birlikte kayar (16 Kasım 2026) */}
+    <OtoPopupTakip etkin={otomatikKaydirma && otoEtkilesim && !!(popup || dipnotPopup) && !!otoHedefRef.current}
+      anahtar={popup ? `l-${popup.kelime}-${popup.x}-${popup.y}` : dipnotPopup ? `d-${dipnotPopup.x}-${dipnotPopup.y}` : ""}
+      hedefRef={otoHedefRef} alanRef={scrollRef}
+      ustSinir={() => (barKonum === "ust" && barGorunur ? barYuk : 0) + 8}
+      onDisari={() => { setPopup(null); setDipnotPopup(null) }}>
     {/* Dipnot popup */}
     {dipnotPopup && (
       <>
@@ -4716,6 +4727,7 @@ return (
         </div>
       </>
     )}
+    </OtoPopupTakip>
 
     {/* Ana içerik */}
     <div
@@ -5035,7 +5047,7 @@ return (
         çerçeveli görünüm, SAĞDA). Tıklama davranışı değişmedi. */}
     {/* KAYDIRMA MENÜSÜ (16 Kasım 2026) — otomatik kaydırma açıkken altta */}
     <KaydirmaMenusu acik={otomatikKaydirma && kaydirmaMenu && !kitapModu} hiz={kaydirmaHizi} setHiz={setKaydirmaHizi}
-      durdu={otoDurdu} setDurdu={setOtoDurdu} gizlemeMs={kaydirmaKisa ? 2500 : 6000}
+      durdu={otoDurdu} setDurdu={setOtoDurdu} etkilesim={otoEtkilesim} setEtkilesim={setOtoEtkilesim} gizlemeMs={kaydirmaKisa ? 2500 : 6000}
       onGizle={() => setKaydirmaMenu(false)} onModuKapat={() => setOtomatikKaydirma(false)}
       theme={theme} olcek={barUiOlcegi} altPay={(barKonum === "alt" && barGorunur ? barYuk : 0) + seritPay} />
 

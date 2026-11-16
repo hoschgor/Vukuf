@@ -30,7 +30,8 @@ import IosSwitch from "../components/IosSwitch"
 import HarekeRenkAyarlari from "../components/HarekeRenkAyarlari"
 import { kelimeRengiEkle } from "../data/harekeRenk"
 import { useMealGorunum, mealGorunumYaz } from "../data/mealGorunum"
-import { useOtoKaydirma, useOtoKaydirmaHizi } from "../data/hooks/useOtoKaydirma"
+import { useOtoKaydirma, useOtoKaydirmaHizi, useOtoEtkilesim } from "../data/hooks/useOtoKaydirma"
+import OtoPopupTakip from "../components/OtoPopupTakip"
 import KaydirmaMenusu from "../components/KaydirmaMenusu"
 import { useOrtaMenu, useOrtaBilgi, OrtaMenuCercevesi, OrtaIpucu, BilgiSeridi, BarKonumSecici, barKonumOku, barKonumYaz, ORTA_OLCEK, barEtiketle, OpaklikAyarlari, useOrtaOpaklik, yariSaydam } from "../components/OrtaMenu"
 import { AyarCekmecesi, AltCekmece, AltBaslik } from "../components/AyarCekmecesi"
@@ -1604,6 +1605,7 @@ const maxWidth = useMemo(() =>
   const [kaydirmaHizi, setKaydirmaHizi] = useOtoKaydirmaHizi()   // 1–40, iki ekranda ortak (16 Kasım 2026)
   const [kaydirmaMenu, setKaydirmaMenu] = useState(false)       // alttaki kaydırma menüsü
   const [otoDurdu, setOtoDurdu] = useState(false)               // dokunuşla / menüden duraklatıldı
+  const [otoEtkilesim, setOtoEtkilesim] = useOtoEtkilesim()     // kayarken kelime/âyet dokunuşu (parmak düğmesi)
   const [duraklatildi, setDuraklatildi] = useState(false)
   const otomatikRef = useRef(null)
 
@@ -1708,9 +1710,19 @@ const maxWidth = useMemo(() =>
      kısa dokunuş alttaki KAYDIRMA MENÜSÜNÜ açar/kapatır; çarpı modu kapatır. */
   /* Dokunuş (16 Kasım 2026, kullanıcı): menü açıkken → menü gizlenir, kayma sürer; menü kapalı ve
      kayarken → duraklar, menü (Devam düğmesiyle) açılır; duraklamışken menü kapalıysa → menü açılır. */
-  useOtoKaydirma({
+  /* Parmak düğmesi yalnız etkileşimli bir şey varken (16 Kasım 2026, kullanıcı: "KuranOkuma
+     bölümünde etkileşimi olan herhangi bir şey (kelime meali ve ayet meali kapalı ise) yoksa,
+     parmak butonu görünmesine gerek yok"): kelime dokunuşu açıksa kelimeler, âyet meali açıksa
+     âyet no / sûre başlığı geçer; ikisi de yoksa düğme görünmez, her dokunuş menüyü yönetir. */
+  const otoEtkSecici = [kelimeDokunAcik ? '[data-kelime="1"]' : null, ayetMeali ? "[data-sure][data-ayet], [data-sure-baslik]" : null].filter(Boolean).join(", ")
+  const otoEtkVar = !!otoEtkSecici
+  const otoEtkAcik = otoEtkilesim && otoEtkVar
+  const { hedefRef: otoHedefRef } = useOtoKaydirma({
     elRef: scrollRef, acik: otomatikKaydirma, hiz: kaydirmaHizi, durdu: otoDurdu,
+    // Parmak düğmesi açıkken kelime / âyet no / sûre başlığı dokunuşu kendi penceresini açar, kayma sürer
+    etkilesim: otoEtkAcik, etkilesimSecici: otoEtkSecici || null,
     onDokun: () => {
+      if (popup) { setPopup(null); return }          // açık pencere varsa dokunuş onu kapatır
       if (kaydirmaMenu) { setKaydirmaMenu(false); return }
       if (!otoDurdu) setOtoDurdu(true)
       setKaydirmaMenu(true)
@@ -5046,7 +5058,12 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
       {SayfaGitPopup}
 
 
-      {/* Popup'lar */}
+      {/* Popup'lar — kayarken (parmak düğmesi açık) açıldıysa öğesiyle birlikte kayar (16 Kasım 2026) */}
+      <OtoPopupTakip etkin={otomatikKaydirma && otoEtkAcik && !!popup && !!otoHedefRef.current}
+        anahtar={popup ? `${popup.tip}-${popup.konum?.ax}-${popup.konum?.ay}` : ""}
+        hedefRef={otoHedefRef} alanRef={scrollRef}
+        ustSinir={() => (barKonum === "ust" && barGorunur ? barYuksekligi : 0) + 8}
+        onDisari={() => setPopup(null)}>
       {popup?.tip === "kelime" && (
         <KelimePopup
           kelime={popup.kelime}
@@ -5078,6 +5095,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
           onKapat={() => setPopup(null)}
         />
       )}
+      </OtoPopupTakip>
 
       {/* GÖRSEL OLUŞTUR */}
       <GorselOlustur
@@ -5393,6 +5411,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
       <KaydirmaMenusu acik={otomatikKaydirma && kaydirmaMenu} hiz={kaydirmaHizi} setHiz={setKaydirmaHizi}
         durdu={otoDurdu} setDurdu={setOtoDurdu} gizlemeMs={kaydirmaKisa ? 2500 : 6000}
         onGizle={() => setKaydirmaMenu(false)} onModuKapat={() => setOtomatikKaydirma(false)}
+        etkilesim={otoEtkAcik} setEtkilesim={otoEtkVar ? setOtoEtkilesim : null}
         theme={theme} olcek={barUiOlcegi} altPay={altBarDolu} />
 
       {/* KELİME RENKLENDİRME ŞERİDİ (15 Kasım 2026) — kayıt şeridiyle aynı biçim */}

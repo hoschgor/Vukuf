@@ -14,7 +14,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import { createPortal } from "react-dom"
-import { X, Pause, Play } from "lucide-react"
+import { X, Pause, Play, Pointer, PointerOff } from "lucide-react"
 import { OTO_EN_AZ, OTO_EN_COK, otoHizSinirla } from "../data/hooks/useOtoKaydirma"
 
 const GIZLEME_MS = 6000
@@ -24,7 +24,7 @@ const GIZLEME_MS = 6000
  * altPay: alttaki bar vb. için boşluk (px) · olcek: arayüz ölçeği
  */
 // gizlemeMs: dokunulmazsa gizlenme süresi (başlangıçta kısa gösterim için ekran daha kısa verir)
-export default function KaydirmaMenusu({ acik, hiz, setHiz, durdu = false, setDurdu, onGizle, onModuKapat, theme, altPay = 0, olcek = 1, gizlemeMs = GIZLEME_MS }) {
+export default function KaydirmaMenusu({ acik, hiz, setHiz, durdu = false, setDurdu, etkilesim = false, setEtkilesim, onGizle, onModuKapat, theme, altPay = 0, olcek = 1, gizlemeMs = GIZLEME_MS }) {
   const ac = theme.accent
   const [yazi, setYazi] = useState(String(hiz))
   const odakRef = useRef(false)
@@ -93,6 +93,21 @@ export default function KaydirmaMenusu({ acik, hiz, setHiz, durdu = false, setDu
           fontFamily: "inherit", fontSize: px(15), fontWeight: 700, fontVariantNumeric: "tabular-nums",
           MozAppearance: "textfield",
         }} />
+      {/* ETKİLEŞİM (16 Kasım 2026) — kelime / âyet / rozet dokunuşu: açıkken pencere açılır (kayma
+          durmaz), kapalıyken dokunuş yalnız bu menüyü yönetir. Kapalıyken parmağın üstü çizili. */}
+      {setEtkilesim && (
+        <button onClick={() => setEtkilesim(!etkilesim)} aria-pressed={etkilesim}
+          aria-label={etkilesim ? "Kelime ve âyet dokunuşunu kapat" : "Kelime ve âyet dokunuşunu aç"}
+          title={etkilesim ? "Kelime / âyet dokunuşu açık" : "Kelime / âyet dokunuşu kapalı"}
+          style={{
+            width: px(38), height: px(38), borderRadius: "50%", flexShrink: 0, padding: 0, cursor: "pointer",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            border: `1.5px solid ${etkilesim ? ac : theme.border}`, background: etkilesim ? `${ac}22` : "transparent",
+            color: etkilesim ? ac : theme.textSecondary,
+          }}>
+          {etkilesim ? <Pointer size={Math.round(18 * olcek)} /> : <PointerOff size={Math.round(18 * olcek)} />}
+        </button>
+      )}
       {/* Modu kapat — belirgin */}
       <button onClick={() => onModuKapat && onModuKapat()} aria-label="Otomatik kaydırmayı kapat" title="Otomatik kaydırmayı kapat"
         style={{

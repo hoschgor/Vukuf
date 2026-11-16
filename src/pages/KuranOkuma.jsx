@@ -222,12 +222,27 @@ function bugunAnahtari() {
 // Hıfz: perde AÇILMADAN yalnız DİNLENEN perdeli kelime — ipucu kelime başına bir kez sayılsın
 const HIFZ_DINLENDI = "hifz-dinlendi"
 
+// 16 Kasım 2026 — dokunulan kelimenin / âyet rozetinin / sûre başlığının kutusu (ust, alt):
+// baloncuk kelimenin bir üst satırına yerleşir (useEkranIcinde). Kelime sarmalayıcısı
+// `display: contents` olduğundan boyu sıfırdır → ilk çocuğu ölçülür.
+function dokunulanKutu(e) {
+  try {
+    let el = e?.target?.closest?.('[data-kelime], [data-sure][data-ayet], [data-sure-baslik]') || e?.target
+    for (let i = 0; i < 4 && el; i++) {
+      const r = el.getBoundingClientRect()
+      if (r.width > 0 || r.height > 0) return r.height < window.innerHeight * 0.5 ? { ust: r.top, alt: r.bottom } : null
+      el = el.firstElementChild
+    }
+  } catch { /* yoksay */ }
+  return null
+}
+
 function popupKonum(e) {
   const x = Math.min(e.clientX, window.innerWidth - 310)
   const y = e.clientY + 12 + 220 > window.innerHeight
     ? e.clientY - 200
     : e.clientY + 12
-  return { x, y, ax: e.clientX, ay: e.clientY }
+  return { x, y, ax: e.clientX, ay: e.clientY, ...(dokunulanKutu(e) || {}) }
 }
 
 // ── ELİFSİZ YEDEK İNDEKS ───────────────────────────────────────────────────

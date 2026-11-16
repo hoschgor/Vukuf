@@ -1627,9 +1627,12 @@ useLayoutEffect(() => {
   const ustBar = (barKonum === "ust" && barGorunur) ? barYuk : 0
   const altSinir = vh - altBar - kenar, ustSinir = ustBar + kenar
   const r = popup.rect
+  // 16 Kasım 2026 — kullanıcı: "açılan popup ı kelimenin bir üst satırına alalım, okurken engel
+  // olmasını da engellemiş olacağız." Öncelik ÜSTTE (okunmuş satır örtülür), sığmazsa altta.
   let y
-  if (r.bottom + bosluk + ph <= altSinir) y = r.bottom + bosluk         // altta sığıyor
-  else y = Math.max(ustSinir, r.top - bosluk - ph)                      // üstte (sığmazsa en yakın üst)
+  if (r.top - bosluk - ph >= ustSinir) y = r.top - bosluk - ph          // üstte sığıyor
+  else if (r.bottom + bosluk + ph <= altSinir) y = r.bottom + bosluk    // altta sığıyor
+  else y = Math.max(ustSinir, Math.min(altSinir - ph, r.top - ph / 2))  // en yakın sığan yer
   let x = r.left + r.width / 2 - pw / 2                                 // yatayda kelime ortası
   x = Math.max(kenar, Math.min(x, vw - pw - kenar))                    // taşarsa en yakın sığan konum
   setPopup(p => (p && !p.yerlesti ? { ...p, x, y, yerlesti: true } : p))
@@ -2939,14 +2942,19 @@ function dipnotTikla(metin, e, etiket = "DİPNOT") {
      bağlanır (eskiden üst kenarı 260 px yukarı konuyordu; kısa metinde pencere — ör. menü
      modunda alttaki bilgi şeridinin kısım bilgisi — dokunulan yerden çok uzakta kalıyordu.
      5 Kasım 2026, kullanıcı: "çok alakasız bir yere gidiyor, kısım bilgisine yakın olmalı"). */
+  /* 16 Kasım 2026 — öncelik ÜSTTE ("kelimenin bir üst satırına"): pencerenin alt kenarı dipnot
+     işaretinin satırına oturur; üstte en az 120 px yer yoksa işaretin hemen altına açılır. */
   const H = window.innerHeight
-  if (gy + 12 + 260 > H) {
-    const kutu = e?.currentTarget?.getBoundingClientRect?.()
-    const ust = kutu && kutu.height && kutu.height < 120 ? kutu.top : gy
-    setDipnotPopup({ metin, x, y: null, alt: Math.max(10, H - ust + 8), maxH: Math.max(120, ust - 20), etiket })
+  const kutu = e?.currentTarget?.getBoundingClientRect?.()
+  const ust = kutu && kutu.height && kutu.height < 120 ? kutu.top : gy
+  const altK = kutu && kutu.height && kutu.height < 120 ? kutu.bottom : gy
+  const ustBarP = (barKonum === "ust" && barGorunur) ? barYuk : 0
+  const ustYer = ust - 6 - ustBarP - 8
+  if (ustYer >= 120 || gy + 12 + 260 > H) {
+    setDipnotPopup({ metin, x, y: null, alt: Math.max(10, H - ust + 6), maxH: Math.max(120, ustYer), etiket })
     return
   }
-  setDipnotPopup({ metin, x, y: gy + 12, etiket })
+  setDipnotPopup({ metin, x, y: altK + 6, etiket })
 }
 
 // Toplam sayılar
@@ -4637,7 +4645,7 @@ return (
 
     {/* Kayarken (parmak düğmesi açık) açılan pencere öğesiyle birlikte kayar (16 Kasım 2026) */}
     <OtoPopupTakip etkin={otomatikKaydirma && otoEtkilesim && !!(popup || dipnotPopup) && !!otoHedefRef.current}
-      anahtar={popup ? `l-${popup.kelime}-${popup.x}-${popup.y}` : dipnotPopup ? `d-${dipnotPopup.x}-${dipnotPopup.y}` : ""}
+      anahtar={popup ? `l-${popup.kelime}-${popup.x}-${popup.y}` : dipnotPopup ? `d-${dipnotPopup.x}-${dipnotPopup.y}-${dipnotPopup.alt}` : ""}
       hedefRef={otoHedefRef} alanRef={scrollRef}
       ustSinir={() => (barKonum === "ust" && barGorunur ? barYuk : 0) + 8}
       onDisari={() => { setPopup(null); setDipnotPopup(null) }}>

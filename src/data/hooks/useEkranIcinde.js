@@ -21,12 +21,18 @@
 
    `konum`: { x, y } eski biçim (sol üst tahmini) + varsa { ax, ay } — dokunulan
    noktanın KENDİSİ. ax/ay yoksa x/y dokunma noktası sayılır.
+   16 Kasım 2026 — kullanıcı: "açılan popup ı kelimenin bir üst satırına alalım, okurken engel
+   olmasını da engellemiş olacağız." `konum` { ust, alt } (dokunulan kelimenin / rozetin kutusu)
+   taşıyorsa öncelik ÜSTTE: baloncuğun alt kenarı kelimenin üst kenarına oturur (okunmuş satırı
+   örter, okunacak satırlar açık kalır); üstte yer yoksa kelimenin hemen ALTINA, ikisine de
+   sığmıyorsa en yakın yere. ust/alt yoksa (diğer kullananlar) eski sıra geçerli.
    ═══════════════════════════════════════════════════════════════════════════ */
 
 import { useLayoutEffect, useState } from "react"
 
 const PAY = 8          // ekran kenarından en az boşluk
 const ARA = 12         // dokunulan nokta ile baloncuk arası
+const ARA_KUTU = 6     // kelime kutusu ile baloncuk arası (ust/alt verildiğinde)
 
 // Güvenli alan payları env() ile yalnız CSS'ten okunabiliyor → gizli bir
 // ölçü kutusu bir kez kuruluyor, değerler her yerleşimde (dönmede değişir) okunuyor.
@@ -56,6 +62,8 @@ export function useEkranIcinde(ref, konum) {
   const y = konum ? konum.y : null
   const ax = konum && konum.ax != null ? konum.ax : x
   const ay = konum && konum.ay != null ? konum.ay : y
+  const kUst = konum && konum.ust != null ? konum.ust : null
+  const kAlt = konum && konum.alt != null ? konum.alt : null
 
   useLayoutEffect(() => {
     const el = ref.current
@@ -68,7 +76,13 @@ export function useEkranIcinde(ref, konum) {
       const solSinir = PAY + g.sol, sagSinir = W - PAY - g.sag
 
       let top
-      if (ay + ARA + r.height <= altSinir) top = ay + ARA                 // altına sığıyor
+      if (kUst != null && kAlt != null) {
+        // Kelimenin bir üst satırına (öncelik), sığmazsa hemen altına
+        if (kUst - ARA_KUTU - r.height >= ustSinir) top = kUst - ARA_KUTU - r.height
+        else if (kAlt + ARA_KUTU + r.height <= altSinir) top = kAlt + ARA_KUTU
+        else top = Math.max(ustSinir, Math.min(altSinir - r.height, kUst - r.height / 2))
+      }
+      else if (ay + ARA + r.height <= altSinir) top = ay + ARA                 // altına sığıyor
       else if (ay - ARA - r.height >= ustSinir) top = ay - ARA - r.height // üstüne sığıyor
       else {
         // İkisine de sığmıyor: dokunulan yere en yakın, ekranın içinde
@@ -88,7 +102,7 @@ export function useEkranIcinde(ref, konum) {
       try { ro && ro.disconnect() } catch { /* yoksay */ }
       window.removeEventListener("resize", yerlestir)
     }
-  }, [ref, x, y, ax, ay])
+  }, [ref, x, y, ax, ay, kUst, kAlt])
 
   return yer
 }

@@ -5,14 +5,16 @@
    16 Kasım 2026 — kullanıcı: "herhangi bir yere basıldığında … alt kısımda kaydırma menüsü
    açılsın, hız seçimi rakam girilerek ya da sürüklenebilen şekilde olsun … modu kapamak için,
    kaydırma menüsü üzerine çarpı işareti koyalım, rahat görülebilir olsun."
-   İçerik: hız sürgüsü (1–40, sürüklenir) + rakam kutusu (yazılarak) + belirgin çarpı (modu
+   İçerik: hız sürgüsü (1–70, sürüklenir) + rakam kutusu (yazılarak) + belirgin çarpı (modu
    kapatır). Bir süre dokunulmazsa kendiliğinden gizlenir; okuma alanına dokunmak da açar/kapatır.
    Kullanan: KuranOkuma, OkumaEkrani (motor: data/hooks/useOtoKaydirma.js).
+   16 Kasım 2026 (2) — soldaki süs yerine DURAKLAT / DEVAM düğmesi. Duraklatılmışken menü
+   kendiliğinden gizlenmez.
    ═══════════════════════════════════════════════════════════════════════════ */
 
 import { useEffect, useRef, useState } from "react"
 import { createPortal } from "react-dom"
-import { X, ChevronsDown } from "lucide-react"
+import { X, Pause, Play } from "lucide-react"
 import { OTO_EN_AZ, OTO_EN_COK, otoHizSinirla } from "../data/hooks/useOtoKaydirma"
 
 const GIZLEME_MS = 6000
@@ -21,22 +23,26 @@ const GIZLEME_MS = 6000
  * acik: menü görünür mü · hiz / setHiz · onGizle(): menüyü kapat · onModuKapat(): kaydırmayı bitir
  * altPay: alttaki bar vb. için boşluk (px) · olcek: arayüz ölçeği
  */
-export default function KaydirmaMenusu({ acik, hiz, setHiz, onGizle, onModuKapat, theme, altPay = 0, olcek = 1 }) {
+// gizlemeMs: dokunulmazsa gizlenme süresi (başlangıçta kısa gösterim için ekran daha kısa verir)
+export default function KaydirmaMenusu({ acik, hiz, setHiz, durdu = false, setDurdu, onGizle, onModuKapat, theme, altPay = 0, olcek = 1, gizlemeMs = GIZLEME_MS }) {
   const ac = theme.accent
   const [yazi, setYazi] = useState(String(hiz))
   const odakRef = useRef(false)
   useEffect(() => { if (!odakRef.current) setYazi(String(hiz)) }, [hiz])
   // Dokunulmazsa gizlen (yazarken / sürüklerken sayaç yenilenir)
   const zamanRef = useRef(null)
+  const etkRef = useRef(false)              // bu açılışta menüye dokunuldu mu
   const sayacYenile = () => {
     if (zamanRef.current) clearTimeout(zamanRef.current)
-    zamanRef.current = setTimeout(() => { if (!odakRef.current) onGizle && onGizle() }, GIZLEME_MS)
+    if (durdu) return                         // duraklatılmışken menü açık kalır
+    // Kullanıcı menüye dokunduysa her zaman olağan süre; dokunmadıysa ekranın verdiği (kısa) süre
+    zamanRef.current = setTimeout(() => { if (!odakRef.current) onGizle && onGizle() }, etkRef.current ? GIZLEME_MS : gizlemeMs)
   }
   useEffect(() => {
-    if (!acik) { if (zamanRef.current) clearTimeout(zamanRef.current); return }
+    if (!acik) { etkRef.current = false; if (zamanRef.current) clearTimeout(zamanRef.current); return }
     sayacYenile()
     return () => { if (zamanRef.current) clearTimeout(zamanRef.current) }
-  }, [acik]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [acik, durdu]) // eslint-disable-line react-hooks/exhaustive-deps
   if (!acik || typeof document === "undefined") return null
   const px = (n) => `${Math.round(n * olcek)}px`
   const yuzde = ((hiz - OTO_EN_AZ) / (OTO_EN_COK - OTO_EN_AZ)) * 100
@@ -44,7 +50,7 @@ export default function KaydirmaMenusu({ acik, hiz, setHiz, onGizle, onModuKapat
 
   return createPortal(
     <div role="dialog" aria-label="Otomatik kaydırma"
-      onPointerDown={(e) => { e.stopPropagation(); sayacYenile() }}
+      onPointerDown={(e) => { e.stopPropagation(); etkRef.current = true; sayacYenile() }}
       onClick={(e) => e.stopPropagation()}
       style={{
         position: "fixed", left: 0, right: 0, margin: "0 auto", zIndex: 480,
@@ -60,15 +66,24 @@ export default function KaydirmaMenusu({ acik, hiz, setHiz, onGizle, onModuKapat
 .vk-km-surgu::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--km-ac); border: 3px solid var(--km-zemin); box-shadow: 0 1px 4px rgba(0,0,0,.3) }
 .vk-km-sayi::-webkit-inner-spin-button, .vk-km-sayi::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0 }
 .vk-km-surgu::-moz-range-thumb { width: 18px; height: 18px; border-radius: 50%; background: var(--km-ac); border: 3px solid var(--km-zemin) }`}</style>
-      <ChevronsDown size={Math.round(18 * olcek)} color={ac} style={{ flexShrink: 0 }} aria-hidden="true" />
+      {/* DURAKLAT / DEVAM */}
+      <button onClick={() => setDurdu && setDurdu(!durdu)} aria-label={durdu ? "Kaydırmaya devam et" : "Kaydırmayı duraklat"} title={durdu ? "Devam et" : "Duraklat"}
+        style={{
+          width: px(38), height: px(38), borderRadius: "50%", flexShrink: 0, padding: 0, cursor: "pointer",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          border: `1.5px solid ${ac}`, background: durdu ? `${ac}22` : "transparent", color: ac,
+        }}>
+        {durdu ? <Play size={Math.round(18 * olcek)} fill={ac} style={{ marginLeft: "2px" }} /> : <Pause size={Math.round(18 * olcek)} fill={ac} />}
+      </button>
       <input type="range" className="vk-km-surgu" min={OTO_EN_AZ} max={OTO_EN_COK} step="1" value={hiz}
         aria-label="Kaydırma hızı" onChange={(e) => { setHiz(Number(e.target.value)); sayacYenile() }}
         style={{
           flex: 1, minWidth: 0, "--km-ac": ac, "--km-zemin": theme.surface,
           background: `linear-gradient(90deg, ${ac} ${yuzde}%, ${theme.border} ${yuzde}%)`,
         }} />
-      <input type="number" inputMode="numeric" className="vk-km-sayi" min={OTO_EN_AZ} max={OTO_EN_COK} value={yazi} aria-label="Kaydırma hızı (1–40)"
+      <input type="number" inputMode="numeric" className="vk-km-sayi" min={OTO_EN_AZ} max={OTO_EN_COK} value={yazi} aria-label={`Kaydırma hızı (1–${OTO_EN_COK})`}
         onFocus={(e) => { odakRef.current = true; e.target.select() }}
+        onPointerDown={() => { if (zamanRef.current) clearTimeout(zamanRef.current) }}
         onBlur={() => { odakRef.current = false; uygula(); sayacYenile() }}
         onChange={(e) => { setYazi(e.target.value.replace(/\D/g, "").slice(0, 2)); sayacYenile() }}
         onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur() }}

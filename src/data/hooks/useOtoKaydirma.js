@@ -17,21 +17,23 @@
      son yazılan değerle karşılaştırılır.
    • KISA DOKUNUŞ (hareketsiz, < 300 ms) okuma ekranının kendi tıklama işini YAPMAZ (lügat, bar,
      menü açılmaz); onDokun çağrılır → ekran alttaki kaydırma menüsünü açar.
+   • DURAKLATMA (16 Kasım 2026, kullanıcı: "Menü kapalıyken ve kaydırırken ortaya 1 kez dokunulursa
+     … duraklatıp beklemeli"): `durdu` true iken kayma bekler; dokunuş yakalanmaya devam eder.
    ═══════════════════════════════════════════════════════════════════════════ */
 
 import { useEffect, useRef, useState } from "react"
 
 export const OTO_EN_AZ = 1
-export const OTO_EN_COK = 40
+export const OTO_EN_COK = 70        // 16 Kasım 2026: "hızı maksimum 70'e ayarlayalım"
 const HIZ_ANAHTAR = "vukuf-oto-kaydirma-hizi"
 export const otoHizSinirla = (k) => Math.min(OTO_EN_COK, Math.max(OTO_EN_AZ, Math.round(Number(k) || 1)))
 
-/** Kademe → piksel/sn. 1 → 6, 10 → 18, 20 → ~36, 30 → ~59, 40 → ~95 */
+/** Kademe → piksel/sn. 1 → 6, 10 → 18, 20 → ~36, 30 → ~56, 40 → ~87, 55 → ~168, 70 → ~324 */
 export function otoHizPx(kademe) {
   const k = otoHizSinirla(kademe)
   if (k <= 10) return 6 * Math.pow(1.13, k - 1)
   if (k <= 20) return 18 * Math.pow(1.0718, k - 10)
-  return 36 * Math.pow(1.05, k - 20)
+  return 36 * Math.pow(1.045, k - 20)
 }
 
 /** Hız (iki ekranda ortak, cihazda saklanır) */
@@ -52,9 +54,9 @@ export function useOtoKaydirmaHizi() {
  * onDokun(): kısa dokunuş (menüyü aç/kapat) · onSon(): sona gelindi
  * dokunEngel(): true dönerse dokunuş yakalanmaz (ör. vurgu kipi)
  */
-export function useOtoKaydirma({ elRef, acik, hiz, onDokun, onSon, dokunEngel }) {
+export function useOtoKaydirma({ elRef, acik, hiz, durdu = false, onDokun, onSon, dokunEngel }) {
   const cb = useRef({})
-  cb.current = { onDokun, onSon, dokunEngel }
+  cb.current = { onDokun, onSon, dokunEngel, durdu }
   useEffect(() => {
     const el = elRef.current
     if (!acik || !el) return
@@ -77,7 +79,9 @@ export function useOtoKaydirma({ elRef, acik, hiz, onDokun, onSon, dokunEngel })
     }
     const onUp = () => {
       basili = false
-      kullaniciT = performance.now()          // bırakınca kısa bir soluk (savurma başlıyorsa onu bekle)
+      // Sürüklendiyse bırakınca kısa bir soluk (savurma başlıyorsa onu bekle); KISA DOKUNUŞTA soluk
+      // YOK — menüyü gizlemek için dokunmak kaymayı duraksatmasın (16 Kasım 2026)
+      if (hareket) kullaniciT = performance.now()
       if (bas && !hareket && performance.now() - bas.t < 300) dokunusT = performance.now()
       bas = null
     }
@@ -95,7 +99,9 @@ export function useOtoKaydirma({ elRef, acik, hiz, onDokun, onSon, dokunEngel })
       const dt = Math.min(64, t - sonT)
       sonT = t
       const simdi = performance.now()
-      if (basili || simdi - kullaniciT < 450) {
+      // Basılı tutma ancak 250 ms sonra (ya da parmak kayınca) durdurur → kısa dokunuşta kayma kesilmez
+      const tutuyor = basili && (hareket || (bas && simdi - bas.t > 250))
+      if (cb.current.durdu || tutuyor || simdi - kullaniciT < 450) {
         hedef = el.scrollTop                    // kullanıcı kaydırıyor / basılı tutuyor → bekle
       } else {
         if (Math.abs(el.scrollTop - hedef) > 4) hedef = el.scrollTop

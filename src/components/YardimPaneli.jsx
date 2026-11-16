@@ -274,7 +274,7 @@ const KONULAR = [
     ozet: "Sayfanın kendiliğinden ilerlemesi.",
     nerede: "Kur'ân-ı Kerîm → bardaki oynat simgesi",
     metin: [
-      "Oynat simgesi sayfayı kendiliğinden kaydırmaya başlatır (Kur'ân-ı Kerîm'de ve eserlerde aynı). Kaydırma sürerken ekrana kısa dokunmak alttaki kaydırma menüsünü açar ya da kapatır; menü bir süre dokunulmazsa kendiliğinden gizlenir. Menüde hız 1 ile 40 arasında sürgüyle sürüklenerek ya da rakam yazılarak seçilir; hız iki ekranda ortaktır ve hatırlanır. Menüdeki belirgin çarpı otomatik kaydırmayı kapatır. Bardaki (ya da menüdeki) kaydırma düğmesi kaydırma sürerken bu menüyü açar.",
+      "Oynat simgesi sayfayı kendiliğinden kaydırmaya başlatır (Kur'ân-ı Kerîm'de ve eserlerde aynı); orta menü kapanır, kayma hemen başlar; kaydırma menüsü birkaç saniye görünüp kendiliğinden gizlenir. Kaydırma sürerken ekrana bir kez dokunmak kaydırmayı duraklatır ve alttaki kaydırma menüsünü açar; menüdeki soldaki düğme o sırada \"Devam\" olur, dokununca kayma sürer ve düğme yeniden \"Duraklat\"a döner. Menü açıkken ekrana dokunmak menüyü gizler, kayma duraklamadan sürer. Kayarken menü bir süre dokunulmazsa kendiliğinden gizlenir; duraklatılmışken açık kalır. Menüde hız 1 ile 70 arasında sürgüyle sürüklenerek ya da rakam yazılarak seçilir; hız iki ekranda ortaktır ve hatırlanır. Menüdeki belirgin çarpı otomatik kaydırmayı kapatır. Bardaki (ya da menüdeki) kaydırma düğmesi kaydırma sürerken bu menüyü açar.",
       "Ekrana basılı tutmak kaydırmayı durdurur, bırakınca sürer. Elle kaydırıldığında (yukarı da, aşağı da) otomatik kaydırma o hareket bitene kadar bekler; yukarı dönerken aşağı itmez. Sona gelince kaydırma kendiliğinden kapanır.",
     ],
     anahtar: "kaydır otomatik akış hız kaydırma menüsü sürgü durdur çarpı",

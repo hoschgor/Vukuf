@@ -1603,6 +1603,7 @@ const maxWidth = useMemo(() =>
   const [otomatikKaydirma, setOtomatikKaydirma] = useState(false)
   const [kaydirmaHizi, setKaydirmaHizi] = useOtoKaydirmaHizi()   // 1–40, iki ekranda ortak (16 Kasım 2026)
   const [kaydirmaMenu, setKaydirmaMenu] = useState(false)       // alttaki kaydırma menüsü
+  const [otoDurdu, setOtoDurdu] = useState(false)               // dokunuşla / menüden duraklatıldı
   const [duraklatildi, setDuraklatildi] = useState(false)
   const otomatikRef = useRef(null)
 
@@ -1705,13 +1706,30 @@ const maxWidth = useMemo(() =>
   /* 16 Kasım 2026 — motor ortak dosyada (data/hooks/useOtoKaydirma.js; bu ekrandaki rAF motoru
      oraya taşındı, hız 40'a çıktı): basılı tutma durdurur, elle kaydırma (yukarı da) zorlanmaz,
      kısa dokunuş alttaki KAYDIRMA MENÜSÜNÜ açar/kapatır; çarpı modu kapatır. */
+  /* Dokunuş (16 Kasım 2026, kullanıcı): menü açıkken → menü gizlenir, kayma sürer; menü kapalı ve
+     kayarken → duraklar, menü (Devam düğmesiyle) açılır; duraklamışken menü kapalıysa → menü açılır. */
   useOtoKaydirma({
-    elRef: scrollRef, acik: otomatikKaydirma, hiz: kaydirmaHizi,
-    onDokun: () => setKaydirmaMenu(v => !v),
+    elRef: scrollRef, acik: otomatikKaydirma, hiz: kaydirmaHizi, durdu: otoDurdu,
+    onDokun: () => {
+      if (kaydirmaMenu) { setKaydirmaMenu(false); return }
+      if (!otoDurdu) setOtoDurdu(true)
+      setKaydirmaMenu(true)
+    },
     onSon: () => setOtomatikKaydirma(false),
     dokunEngel: () => kayitKonumModu || !!kelimeRenkSecRef.current,
   })
-  useEffect(() => { setKaydirmaMenu(otomatikKaydirma) }, [otomatikKaydirma])
+  // Başlatınca menü kapalı, kayma hemen başlar; kapatınca her şey sıfırlanır
+  // Başlatınca (16 Kasım 2026, kullanıcı: "orta menü kapanıp alt menü kısa süreliğine açık kalmalı"):
+  // orta menü kapanır, kayma hemen başlar, kaydırma menüsü kısa süre görünüp kendiliğinden gizlenir.
+  const [kaydirmaKisa, setKaydirmaKisa] = useState(false)
+  useEffect(() => {
+    setOtoDurdu(false)
+    if (otomatikKaydirma) {
+      try { ortaMenu && ortaMenu.hemenKapat && ortaMenu.hemenKapat() } catch { /* yoksay */ }
+      setKaydirmaKisa(true); setKaydirmaMenu(true)
+    } else setKaydirmaMenu(false)
+  }, [otomatikKaydirma]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (!kaydirmaMenu) setKaydirmaKisa(false) }, [kaydirmaMenu])
 
   // menuAcik useEffect — dışarı tıklayınca kapat
   useEffect(() => {
@@ -5373,6 +5391,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
 
       {/* KAYDIRMA MENÜSÜ (16 Kasım 2026) — otomatik kaydırma açıkken altta (bar/oynatıcı üstünde) */}
       <KaydirmaMenusu acik={otomatikKaydirma && kaydirmaMenu} hiz={kaydirmaHizi} setHiz={setKaydirmaHizi}
+        durdu={otoDurdu} setDurdu={setOtoDurdu} gizlemeMs={kaydirmaKisa ? 2500 : 6000}
         onGizle={() => setKaydirmaMenu(false)} onModuKapat={() => setOtomatikKaydirma(false)}
         theme={theme} olcek={barUiOlcegi} altPay={altBarDolu} />
 

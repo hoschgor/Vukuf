@@ -597,8 +597,9 @@ const KONULAR = [
     nerede: "Kitap → bardaki büyüteç",
     metin: [
       "Büyüteç simgesi eserin içinde arama yapar; sonuçlar çevresindeki cümleyle birlikte listelenir ve birine dokunulduğunda o yere gidilir.",
+      "Aramada büyük/küçük harf, şapka, tire, kesme ve noktalama işaretleri (virgül, nokta, noktalı virgül, iki nokta, soru, ünlem, tırnak, parantez) fark etmez: \"kalb ruh\" yazıldığında \"kalb, ruh\" da, \"lisan ı hal\" yazıldığında \"lisan-ı hâl\" de bulunur. Yazıldığı gibi aramak için yıldız (*) düğmesiyle birebir arama açılabilir.",
     ],
-    anahtar: "bul ara kelime metin içi",
+    anahtar: "bul ara kelime metin içi virgül nokta noktalama",
   },
   {
     bolum: "kitap", ikon: BookOpen, baslik: "Kitap modu (sayfa sayfa)",
@@ -630,9 +631,10 @@ const KONULAR = [
     nerede: "Ana menü → Arama",
     metin: [
       "Arama sayfası eserlerin ve Kur'ân'ın içinde kelime aramaya imkân verir. Kapsam seçiciyle aramanın hangi kitaplarda yapılacağı belirlenebilir.",
+      "Aramada büyük/küçük harf, şapka, tire, kesme ve noktalama işaretleri (virgül, nokta, noktalı virgül, iki nokta, soru, ünlem, tırnak, parantez) fark etmez: \"kalb ruh\" yazıldığında \"kalb, ruh\" da, \"lisan ı hal\" yazıldığında \"lisan-ı hâl\" de bulunur. Yazıldığı gibi aramak için yıldız (*) düğmesiyle birebir arama açılabilir.",
       "Bir sonuca dokunulduğunda o yere gidilir; okuma ekranında beliren \"Aramaya dön\" düğmesiyle sonuçlara geri dönülebilir.",
     ],
-    anahtar: "ara bul kelime kapsam sonuç",
+    anahtar: "ara bul kelime kapsam sonuç virgül nokta noktalama",
   },
   {
     bolum: "arama", ikon: Type, baslik: "Lügat sayfası",

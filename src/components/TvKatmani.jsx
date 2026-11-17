@@ -23,9 +23,10 @@ import { PictureInPicture2, GripHorizontal } from "lucide-react"
 import { DonusSimgesi, DurdurSimgesi } from "./CerceveliSimge"
 import { useApp } from "../AppContext"
 import { useDiyanetTv, tvAdresi, pipDestekli } from "../data/diyanetTv"
+import { useHapOlcegi } from "../data/arayuzOlcegi"
 
 const KONUM_ANAHTAR = "vukuf-diyanet-tv-konum"
-const SERIT = 32           // yüzen pencerenin üst şeridi (sürükleme + düğmeler)
+const SERIT_TABAN = 32     // yüzen pencerenin üst şeridi (sürükleme + düğmeler); Düğme boyutu ile ölçeklenir (17 Kasım 2026)
 const PAY = 8
 
 function konumOku() {
@@ -41,6 +42,8 @@ export default function TvKatmani() {
 
 function TvPencere({ tv }) {
   const { theme } = useApp()
+  const o = useHapOlcegi()                     // Ayarlar → Düğme boyutu (data/arayuzOlcegi.js)
+  const SERIT = Math.round(SERIT_TABAN * o)
   const location = useLocation()
   const navigate = useNavigate()
   const ac = theme.accent
@@ -130,11 +133,11 @@ function TvPencere({ tv }) {
   const dugme = (etiket, Ikon, tikla, vurgu) => (
     <button onClick={tikla} aria-label={etiket} title={etiket}
       style={{
-        width: "26px", height: "26px", borderRadius: "50%", border: "none", padding: 0, cursor: "pointer", flexShrink: 0,
+        width: `${Math.round(26 * o)}px`, height: `${Math.round(26 * o)}px`, borderRadius: "50%", border: "none", padding: 0, cursor: "pointer", flexShrink: 0,
         display: "flex", alignItems: "center", justifyContent: "center",
         background: vurgu ? `${ac}22` : "transparent", color: vurgu ? ac : theme.textSecondary,
       }}>
-      {isValidElement(Ikon) ? Ikon : <Ikon size={15} />}
+      {isValidElement(Ikon) ? Ikon : <Ikon size={Math.round(15 * o)} />}
     </button>
   )
 
@@ -160,18 +163,18 @@ function TvPencere({ tv }) {
             background: `linear-gradient(90deg, ${ac}14, ${theme.surface} 55%)`,
             cursor: canli ? "grabbing" : "grab", touchAction: "none", userSelect: "none", WebkitUserSelect: "none",
           }}>
-          <GripHorizontal size={15} color={theme.textSecondary} style={{ flexShrink: 0 }} />
-          <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", fontSize: "11.5px", fontWeight: 700, color: theme.text, minWidth: 0, whiteSpace: "nowrap", overflow: "hidden" }}>
+          <GripHorizontal size={Math.round(15 * o)} color={theme.textSecondary} style={{ flexShrink: 0 }} />
+          <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", fontSize: `${(11.5 * o).toFixed(1)}px`, fontWeight: 700, color: theme.text, minWidth: 0, whiteSpace: "nowrap", overflow: "hidden" }}>
             Diyanet TV
-            <span style={{ display: "inline-flex", alignItems: "center", gap: "3px", fontSize: "9px", letterSpacing: "0.08em", color: "#d64545" }}>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: "3px", fontSize: `${(9 * o).toFixed(1)}px`, letterSpacing: "0.08em", color: "#d64545" }}>
               <span style={{ width: "5px", height: "5px", borderRadius: "50%", background: "#d64545" }} /> CANLI
             </span>
           </span>
           <span style={{ flex: 1 }} />
           {/* Geri dön lâle çerçeveli, kapatma "tamamen durdur" (15 Kasım 2026 — components/CerceveliSimge.jsx) */}
-          {!ekstralarda && dugme("Ekstralar'a git", <DonusSimgesi bolum="tv" ac={ac} boy={26} />, () => navigate("/ekstralar"))}
+          {!ekstralarda && dugme("Ekstralar'a git", <DonusSimgesi bolum="tv" ac={ac} boy={Math.round(26 * o)} />, () => navigate("/ekstralar"))}
           {pipDestekli() && dugme("Ekran içinde ekran (pencere üstte kalır)", PictureInPicture2, () => tv.pipAc())}
-          {dugme("Yayını durdur ve kapat", <DurdurSimgesi ac={ac} boy={26} />, () => tv.kapat())}
+          {dugme("Yayını durdur ve kapat", <DurdurSimgesi ac={ac} boy={Math.round(26 * o)} />, () => tv.kapat())}
         </div>
       )}
     </div>,

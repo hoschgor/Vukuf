@@ -1,12 +1,14 @@
 import { useRef, useState } from "react"
 import { Link, useLocation } from "react-router-dom"
-import { BookOpen, Search, Shuffle, Menu, X, Palette, Info, Type, Sparkles, Settings, HardDrive, Brain, History, HelpCircle, Library, Compass, Bookmark } from "lucide-react"
+import { BookOpen, Search, Shuffle, Menu, X, Palette, Info, Type, Sparkles, Settings, HardDrive, Brain, History, HelpCircle, Library, Compass, Bookmark, Maximize2 } from "lucide-react"
 import { useApp, ozelMi } from "../AppContext"
 import { useMediaQuery } from "../data/hooks/useMediaQuery"
 import IosSwitch from "./IosSwitch"
 import AltSayfa from "./AltSayfa"
 import VeriAyarlari from "./VeriAyarlari"
 import Katlanir from "./Katlanir"
+import DugmeBoyutuAyari from "./DugmeBoyutuAyari"
+import { useHapOlcegi, useOlcekAyari } from "../data/arayuzOlcegi"
 import { saatSeridiOku, saatSeridiYaz } from "../data/saatSeridi"
 import TemaSecici, { TemaOnizlemesi } from "./TemaSecici"
 import { ypDegisken } from "./yatayDuzen"
@@ -94,6 +96,10 @@ export default function Navbar() {
   const { theme, currentTheme, customTheme, ozelTemaKaydet, tonModu } = useApp()
   const location = useLocation()
   const isMobile = useMediaQuery("(max-width: 768px)")
+  // Düğme boyutu (17 Kasım 2026): üst çubuk düğmeleri yüzen düğmelerle birlikte büyür; çubuğun
+  // yüksekliği (42 px) bozulmasın diye en çok %130
+  const dO = Math.min(1.3, useHapOlcegi())
+  const hapAyar = useOlcekAyari("hap"), barAyar = useOlcekAyari("bar")
   const [menuAcik, setMenuAcik] = useState(false)
   const [ayarlarAcik, setAyarlarAcik] = useState(false)
   // YARDIM (8 Ekim 2026) — ayarların yanındaki (?) düğmesi; kullanım rehberi (YardimPaneli.jsx)
@@ -309,9 +315,10 @@ export default function Navbar() {
         <div style={{ flex: 1, display: "flex", alignItems: "center" }}>
         <button
           onClick={() => { setMenuAcik(!menuAcik); setAyarlarAcik(false); setYardimAcik(false) }}
-          style={{ color: theme.textSecondary, padding: "6px", borderRadius: "8px", display: "flex", alignItems: "center" }}
+          aria-label={menuAcik ? "Menüyü kapat" : "Menü"}
+          style={{ color: theme.textSecondary, padding: `${Math.round(6 * dO)}px`, borderRadius: "8px", display: "flex", alignItems: "center" }}
         >
-          {menuAcik ? <X size={20} /> : <Menu size={20} />}
+          {menuAcik ? <X size={Math.round(20 * dO)} /> : <Menu size={Math.round(20 * dO)} />}
         </button>
         </div>
 
@@ -328,14 +335,14 @@ export default function Navbar() {
           aria-label="Yardım"
           style={{
             color: yardimAcik ? theme.accent : theme.textSecondary,
-            padding: "6px",
+            padding: `${Math.round(6 * dO)}px`,
             borderRadius: "8px",
             display: "flex",
             alignItems: "center",
             background: yardimAcik ? `${theme.accent}15` : "transparent",
           }}
         >
-          <HelpCircle size={18} />
+          <HelpCircle size={Math.round(18 * dO)} />
         </button>
         {/* TEK AYARLAR DÜĞMESİ — eski Sparkles + Palette ikilisinin yerine */}
         <button
@@ -344,14 +351,14 @@ export default function Navbar() {
           aria-label="Ayarlar"
           style={{
             color: ayarlarAcik ? theme.accent : theme.textSecondary,
-            padding: "6px",
+            padding: `${Math.round(6 * dO)}px`,
             borderRadius: "8px",
             display: "flex",
             alignItems: "center",
             background: ayarlarAcik ? `${theme.accent}15` : "transparent",
           }}
         >
-          <Settings size={18} />
+          <Settings size={Math.round(18 * dO)} />
         </button>
         </div>
       </nav>
@@ -561,6 +568,15 @@ export default function Navbar() {
               tek tek açılıp kapatılabilir.
             </div>
             <OkumaModuSecici theme={theme} deger={okumaModu} onSec={(m) => { okumaModuYaz(m); setOkumaModu(m) }} />
+          </Katlanir>
+
+          {/* ── DÜĞME BOYUTU — 17 Kasım 2026 (data/arayuzOlcegi.js) ───── */}
+          <Katlanir
+            theme={theme} ikon={Maximize2} baslik="Düğme boyutu"
+            ozet={`Yüzen ${hapAyar.oto ? "otomatik" : `%${Math.round(hapAyar.deger * 100)}`} · Bar ${barAyar.oto ? "otomatik" : `%${Math.round(barAyar.deger * 100)}`}`}
+            {...kapak("dugmeBoyutu")}
+          >
+            <DugmeBoyutuAyari theme={theme} />
           </Katlanir>
 
           {/* ── GEÇMİŞ ────────────────────────────────────────────────── */}

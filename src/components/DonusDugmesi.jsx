@@ -53,6 +53,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react"
 import { guvenliAlan } from "../data/hooks/useEkranIcinde"
 import { CornerUpLeft, ChevronUp, ChevronDown, X, Search, List, Bookmark, Hash, BookOpen } from "lucide-react"
 import { KAYNAK_ADI } from "../data/donusNoktalari"
+import { useHapOlcegi, zoomDurumu } from "../data/arayuzOlcegi"
 // donusNoktalari.js'e dokunmadan eklenen kaynak adları (18 Ekim 2026: paylaşılan bağlantı)
 const EK_KAYNAK_ADI = { paylasim: "Paylaşılan bağlantı" }
 
@@ -201,6 +202,14 @@ function ataletBaslat(el, hiz) {   // hiz: px/ms, kaydırma yönünde
 export function useHapKonumu({ ad, yan, altta, altPay = 0, ustPay = 0, ek = 0, kaydirGecir = false }) {
   const ref = useRef(null)
   const [boyut, setBoyut] = useState({ w: 0, h: 0 })
+  /* DÜĞME BOYUTU (17 Kasım 2026, Ayarlar → Düğme boyutu; data/arayuzOlcegi.js): hap CSS zoom
+     ile büyür/küçülür. Konum (left/top) ekran pikseliyle hesaplanır → zoom'a bölünerek yazılır;
+     boyut ekrandaki gerçek boy olarak tutulur (eski WebKit zoom'unda ölçü ölçekle çarpılır). */
+  const olcekAyar = useHapOlcegi()
+  const zb = zoomDurumu()
+  const z = zb.var ? olcekAyar : 1
+  const zRef = useRef(z); zRef.current = z
+  const olcRef = useRef(null)
   // Ekran ölçüsü HER ÇİZİMDE pencereden okunur (bkz. aşağıdaki "dönme" notu);
   // bu sayaç yalnız yeniden çizdirmek için.
   const [, setEkranSurum] = useState(0)
@@ -217,14 +226,19 @@ export function useHapKonumu({ ad, yan, altta, altPay = 0, ustPay = 0, ek = 0, k
     if (!el) return
     const olc = () => {
       const r = el.getBoundingClientRect()
-      setBoyut(b => (Math.abs(b.w - r.width) > 0.5 || Math.abs(b.h - r.height) > 0.5 ? { w: r.width, h: r.height } : b))
+      const c = zoomDurumu().gorsel ? 1 : zRef.current
+      const w = r.width * c, h = r.height * c
+      setBoyut(b => (Math.abs(b.w - w) > 0.5 || Math.abs(b.h - h) > 0.5 ? { w, h } : b))
     }
+    olcRef.current = olc
     olc()
     let ro = null
     try { ro = new ResizeObserver(olc); ro.observe(el) } catch { ro = null }
     const t = requestAnimationFrame(() => setGecis(true))
     return () => { try { ro && ro.disconnect() } catch { /* yoksay */ }; cancelAnimationFrame(t) }
   }, [])
+  // Ölçek değişince yeniden ölç (ResizeObserver zoom değişimini her tarayıcıda bildirmeyebilir)
+  useLayoutEffect(() => { olcRef.current && olcRef.current() }, [z])
   /* ★ DÖNME (4 Ekim 2026, kullanıcı: "yatay moda çevrilince butonlar yatayda
      belirli sınırda sürüklenebiliyor"). Ekran ölçüsü bir duruma (state)
      yazılıyor ve yalnız `resize`ta tazeleniyordu; iOS dönmede `resize`ı
@@ -385,13 +399,16 @@ export function useHapKonumu({ ad, yan, altta, altPay = 0, ustPay = 0, ek = 0, k
     },
   }
   const stil = {
-    position: "fixed", left: `${Math.round(x)}px`, top: `${Math.round(y)}px`,
+    position: "fixed", left: `${Math.round(x) / z}px`, top: `${Math.round(y) / z}px`,
+    ...(z !== 1 ? { zoom: z } : {}),
     touchAction: "none", userSelect: "none", WebkitUserSelect: "none",
     cursor: canli ? "grabbing" : undefined,
     transition: canli || !gecis ? "none" : "left .22s ease, top .22s ease",
   }
   // Liste nereye açılsın: hap ekranın alt yarısındaysa YUKARI, sol yarısındaysa sola yaslı
-  return { ref, stil, olaylar, surukleniyor: !!canli, yukari: y + boyut.h / 2 > vh / 2, solda: x + boyut.w / 2 < vw / 2 }
+  // ekranEn(pay): zoom'lu hap içinde "ekran eni − pay" (vw zoom'la büyüyebilir → piksel verilir)
+  const ekranEn = (pay = 28) => `${Math.max(120, Math.floor((vw - pay) / z))}px`
+  return { ref, stil, olaylar, surukleniyor: !!canli, yukari: y + boyut.h / 2 > vh / 2, solda: x + boyut.w / 2 < vw / 2, olcek: z, ekranEn }
 }
 
 /* Ortak hap kabuğu: yüzey zemin, vurgu çerçeve, yumuşak gölge */
@@ -431,7 +448,7 @@ export function KopruDugmesi({ theme, ikon: Ikon = CornerUpLeft, baslik, alt, on
   return (
     <div ref={k.ref} className="vukuf-hap" {...k.olaylar} style={{
       ...k.stil, zIndex: k.surukleniyor ? 125 : 120,
-      "--hap-kay": altta ? "8px" : "-8px", maxWidth: "min(260px, calc(100vw - 28px))",
+      "--hap-kay": altta ? "8px" : "-8px", maxWidth: `min(260px, ${k.ekranEn()})`,
       ...hapKabuk(theme),
       boxShadow: k.surukleniyor ? "0 10px 28px rgba(0,0,0,0.32)" : hapKabuk(theme).boxShadow,
     }}>
@@ -481,7 +498,7 @@ function DonusHapi({ theme, noktalar, onGit, onTemizle, altta, altPay, ustPay, l
         // Liste açıkken / sürüklenirken köprü hapının da üstünde kalsın
         zIndex: listeAcik || k.surukleniyor ? 122 : 120,
         "--hap-kay": altta ? "8px" : "-8px",
-        maxWidth: "min(330px, calc(100vw - 28px))",
+        maxWidth: `min(330px, ${k.ekranEn()})`,
       }}>
         {/* HAP */}
         <div style={{ ...hapKabuk(theme), boxShadow: k.surukleniyor ? "0 10px 28px rgba(0,0,0,0.32)" : hapKabuk(theme).boxShadow }}>
@@ -519,7 +536,7 @@ function DonusHapi({ theme, noktalar, onGit, onTemizle, altta, altPay, ustPay, l
             ...(k.yukari ? { bottom: "calc(100% + 6px)" } : { top: "calc(100% + 6px)" }),
             ...(k.solda ? { left: 0 } : { right: 0 }),
             touchAction: "pan-y",
-            width: "min(300px, calc(100vw - 28px))", maxHeight: "min(52vh, 360px)", overflowY: "auto",
+            width: `min(300px, ${k.ekranEn()})`, maxHeight: `min(${Math.round(window.innerHeight * 0.52 / k.olcek)}px, 360px)`, overflowY: "auto",
             background: theme.surface, border: `1px solid ${theme.border}`, borderRadius: "14px",
             boxShadow: "0 8px 28px rgba(0,0,0,0.25)", padding: "6px",
           }}>

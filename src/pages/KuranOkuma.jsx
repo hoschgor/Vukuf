@@ -32,6 +32,7 @@ import { kelimeRengiEkle } from "../data/harekeRenk"
 import { useMealGorunum, mealGorunumYaz } from "../data/mealGorunum"
 import { useOtoKaydirma, useOtoKaydirmaHizi, useOtoEtkilesim } from "../data/hooks/useOtoKaydirma"
 import OtoPopupTakip from "../components/OtoPopupTakip"
+import { useBarOlcegi } from "../data/arayuzOlcegi"
 import KaydirmaMenusu from "../components/KaydirmaMenusu"
 import { useOrtaMenu, useOrtaBilgi, OrtaMenuCercevesi, OrtaIpucu, BilgiSeridi, BarKonumSecici, barKonumOku, barKonumYaz, ORTA_OLCEK, barEtiketle, OpaklikAyarlari, useOrtaOpaklik, yariSaydam } from "../components/OrtaMenu"
 import { AyarCekmecesi, AltCekmece, AltBaslik } from "../components/AyarCekmecesi"
@@ -1846,13 +1847,9 @@ useLayoutEffect(() => {
 useEffect(() => { if (player.durum === "kapali") setPlayerYuk(0) }, [player.durum])
 
 
-const [barUiOlcegi, setBarUiOlcegi] = useState(() =>
-  parseFloat(localStorage.getItem("vukuf-bar-ui-olcegi") || "1")
-)
-
-useEffect(() => {
-  localStorage.setItem("vukuf-bar-ui-olcegi", String(barUiOlcegi))
-}, [barUiOlcegi])
+// Arayüz ölçeği ortak depoda (17 Kasım 2026, data/arayuzOlcegi.js): Ayarlar → Düğme boyutu'ndan
+// da değişir, eser ekranıyla aynı değer; geniş ekranda (web) otomatik değer daha büyük.
+const [barUiOlcegi, setBarUiOlcegi] = useBarOlcegi()
 
 // Bir bar öğesi sade modda görünür mü? (sade değilse hep görünür; sade modda sadeGizli'ye bağlı)
 const sadeGorunur = (key) => !(sadeMode && sadeGizli[key])
@@ -4572,7 +4569,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
                   <span style={{ color: theme.accent, fontWeight: "bold" }}>{Math.round(barUiOlcegi * 100)}%</span>
                 </div>
                 <input
-                  type="range" min="0.8" max="1.6" step="0.1"
+                  type="range" min="0.8" max="1.6" step="0.05"
                   value={barUiOlcegi}
                   aria-label="Arayüz boyutu"
                   onChange={e => setBarUiOlcegi(parseFloat(e.target.value))}

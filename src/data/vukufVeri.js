@@ -173,7 +173,7 @@ export const KATEGORILER = [
       // Fontlar
       "vukuf-fontlar", "vukuf-kuran-arapca-font", "vukuf-arapca-elle",
       // Bar
-      "vukuf-bar-konum", "vukuf-bar-gorunur", "vukuf-bar-sade", "vukuf-bar-ui-olcegi",
+      "vukuf-bar-konum", "vukuf-bar-gorunur", "vukuf-bar-sade", "vukuf-bar-ui-olcegi", "vukuf-hap-olcegi",
       "vukuf-buton-sirasi", "vukuf-buton-taraf",
       "vukuf-okuma-buton-sirasi", "vukuf-okuma-buton-taraf",
       "vukuf-otomatik-gizleme", "vukuf-gizleme-suresi",

@@ -39,6 +39,7 @@ import DonusDugmesi, { KopruDugmesi, hapKonumlariniSifirla } from "../components
 import { History as GecmisIkon } from "lucide-react"
 import { useOtoKaydirma, useOtoKaydirmaHizi, useOtoEtkilesim, OTO_EN_COK } from "../data/hooks/useOtoKaydirma"
 import OtoPopupTakip from "../components/OtoPopupTakip"
+import { useBarOlcegi } from "../data/arayuzOlcegi"
 import KaydirmaMenusu from "../components/KaydirmaMenusu"
 import { useOkumaGecmisi, OKUMA_HEDEF_ANAHTAR } from "../data/gecmis"
 import { useDonusAyari, donusAcikMi, noktalariOku, noktaEkle, noktayaDon, noktalariTemizle } from "../data/donusNoktalari"
@@ -1384,7 +1385,8 @@ const { menu: barOpak } = useOrtaOpaklik()
 const ortaSerit = ortaBar && ortaBilgi
 const [seritYuk, setSeritYuk] = useState(0)           // şeridin ekran altından kapladığı yer
 const seritPay = ortaSerit ? seritYuk : 0
-const [barUiOlcegi, setBarUiOlcegi] = useState(() => parseFloat(localStorage.getItem("vukuf-bar-ui-olcegi") || "1"))
+// Ortak depo (17 Kasım 2026, data/arayuzOlcegi.js) — Ayarlar → Düğme boyutu ile de değişir
+const [barUiOlcegi, setBarUiOlcegi] = useBarOlcegi()
 const [bilgiOlcegi, setBilgiOlcegi] = useState(() => parseFloat(localStorage.getItem("vukuf-bilgi-olcegi") || "1"))
 // Menü/panel açıkken arka sayfa HİÇ kaymasın; onun yerine panel kısa bir sarsıntı yapsın
 usePanelKilidi()
@@ -2352,7 +2354,6 @@ useEffect(() => {
 useEffect(() => { localStorage.setItem("vukuf-otomatik-gizleme", String(otomatikGizleme)) }, [otomatikGizleme])
 useEffect(() => { localStorage.setItem("vukuf-gizleme-suresi", gizlemeSuresi) }, [gizlemeSuresi])
 useEffect(() => { localStorage.setItem("vukuf-sade-mode", sadeMode) }, [sadeMode])
-useEffect(() => { localStorage.setItem("vukuf-bar-ui-olcegi", String(barUiOlcegi)) }, [barUiOlcegi])
 useEffect(() => { localStorage.setItem("vukuf-bilgi-olcegi", String(bilgiOlcegi)) }, [bilgiOlcegi])
 useEffect(() => { localStorage.setItem("vukuf-sayfa-gosterim", sayfaGosterim) }, [sayfaGosterim])
 useEffect(() => { localStorage.setItem("vukuf-arapca-renk", arapcaRenk || "") }, [arapcaRenk])
@@ -3617,7 +3618,7 @@ const AyarlarPanel = ayarlarAcik && (
                 <span>Arayüz</span>
                 <span style={{ color: theme.accent, fontWeight: "bold" }}>{Math.round(barUiOlcegi * 100)}%</span>
               </div>
-              <input type="range" min="0.8" max="1.3" step="0.05" value={barUiOlcegi}
+              <input type="range" min="0.8" max="1.6" step="0.05" value={barUiOlcegi}
                 aria-label="Arayüz boyutu"
                 onChange={e => setBarUiOlcegi(parseFloat(e.target.value))}
                 style={{ width: "100%", accentColor: theme.accent }}

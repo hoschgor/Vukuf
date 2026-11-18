@@ -142,13 +142,18 @@ export async function onbellegiTemizle() {
 /* Toplu ön yükleme — servis işçisine adres listesi gönderir, ilerlemeyi
  *  `onIlerleme({tamam, hata, toplam})` ile bildirir. Dönen fonksiyon dinleyiciyi
  *  kaldırır. İndirme İŞÇİDE yürüyor: sayfa kapansa bile sürer. */
-export function onYukle(adresler, onIlerleme) {
+// zorla (18 Kasım 2026): true → önbellekte olanlar da yeniden indirilir ("Yeniden indir");
+// false → işçi zaten inmiş dosyaları atlar (yarıda kalan indirme kaldığı yerden sürer).
+export function onYukle(adresler, onIlerleme, zorla = false) {
   if (!destekVar() || !navigator.serviceWorker.controller) return () => {}
+  // Her indirmenin kimliği var: işçi kuyruktaki başka bir indirmenin bildirimini de yayınlıyor,
+  // yalnız bu indirmeninki dinlenir. (Kimliksiz bildirim = eski sürüm işçi → eskisi gibi kabul.)
+  const kimlik = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
   const dinle = (e) => {
     const d = e.data || {}
-    if (d.tip === "ON_YUKLE_ILERLEME") onIlerleme?.(d)
+    if (d.tip === "ON_YUKLE_ILERLEME" && (!d.kimlik || d.kimlik === kimlik)) onIlerleme?.(d)
   }
   navigator.serviceWorker.addEventListener("message", dinle)
-  navigator.serviceWorker.controller.postMessage({ tip: "ON_YUKLE", adresler })
+  navigator.serviceWorker.controller.postMessage({ tip: "ON_YUKLE", adresler, zorla, kimlik })
   return () => navigator.serviceWorker.removeEventListener("message", dinle)
 }

@@ -35,7 +35,7 @@
      de çalışır ama eski varlıklar önbellekte birikir.
    ═══════════════════════════════════════════════════════════════════════════ */
 
-const SURUM = "19-11-2026-1"
+const SURUM = "19-11-2026-2"
 
 const KABUK = `vukuf-kabuk-${SURUM}`
 const VARLIK = `vukuf-varlik-${SURUM}`
@@ -375,37 +375,95 @@ self.addEventListener("message", (olay) => {
     if (olay.ports && olay.ports[0]) olay.ports[0].postMessage({ surum: SURUM })
     return
   }
-  // Toplu indirme (sonraki adım) buradan yürütülecek.
+  /* TOPLU İNDİRME — GÜVENLİ SÜRÜM (18 Kasım 2026, kullanıcı: "Kitap indirme işlemi yaparken fazla
+     hızlı indiği ya da farklı bir sebeple uygulama çöküp yeniden başlıyor, daha güvenli bir yol
+     bulmalıyız.")
+     • TEK KUYRUK: ikinci bir ON_YUKLE yeni bir döngü başlatmaz, kuyruğa eklenir (iki döngü aynı
+       anda ağı ve belleği zorlamaz).
+     • ÖNCEDEN İNMİŞ DOSYA ATLANIR (zorla: false): yarıda kalan indirme yeniden başlatılınca
+       baştan inmez, kaldığı yerden sürer. Varlık `keys()` ile bakılır — gövde okunmaz
+       (WebKit'te match() gövdeyi belleğe alır).
+     • GÖVDE KOPYALANMAZ: put(a, y) — eskiden y.clone() ile okunmayan kopya bellekte tamponlanıyordu.
+     • DOSYALAR ARASI SOLUK (60 ms) ve SEYREK BİLDİRİM (en çok ~400 ms'de bir + son): sayfa her
+       dosyada yeniden çizilip önbelleği taramıyor. Bildirim, inen dosyaların boyunu da taşıyor
+       (boyutlar: { adres: bayt }) → sayfa önbelleği taramadan sayacı günceller. */
   if (veri.tip === "ON_YUKLE" && Array.isArray(veri.adresler)) {
-    olay.waitUntil((async () => {
-      const kVeri = await caches.open(VERI)
-      const kSes = await caches.open(SES)
-      let tamam = 0, hata = 0
-      // Sunucuda OLMAYAN adresler ayrı bildiriliyor: sayfa bunları sayaçtan
-      // düşüyor. Yoksa hiç inemeyecek bir dosya sayacı sonsuza dek eksik tutar
-      // (içindekiler dosyası her kitapta yok).
-      const yok = []
-      for (const a of veri.adresler) {
-        try {
-          const ses = sesMi(a)
-          // Dış kaynaktan CORS'lu indirme: `mode: "cors"` açıkça isteniyor ki
-          // yanıt "opaque" değil "cors" olsun ve içeriği doğrulanabilsin.
-          const y = await fetch(a, ses ? { mode: "cors", cache: "no-cache" } : { cache: "no-cache" })
-          if (!ses && sunucudaYok(a, y)) {
-            yok.push(a); hata++
-            // Eski sürüm işçi SPA'nın index.html'ini bu adresle saklamış olabilir;
-            // o bayat kayıt da temizleniyor ki sayaç onu "hazır" saymasın.
-            await kVeri.delete(a, { ignoreVary: true })
-          }
-          else {
-            const uygun = ses ? saklanabilirSes(y) : saklanabilir(y)
-            if (uygun) { await (ses ? kSes : kVeri).put(a, y.clone()); tamam++ } else hata++
-          }
-        } catch { hata++ }
-        // Her dosyada ilerleme bildir — arayüz çubuğu bunu dinleyecek.
-        const hepsi = await self.clients.matchAll()
-        hepsi.forEach(c => c.postMessage({ tip: "ON_YUKLE_ILERLEME", tamam, hata, yok, toplam: veri.adresler.length }))
-      }
-    })())
+    // kimlik: sayfanın hangi indirmeyi dinlediği (kuyruktaki işlerin bildirimleri karışmasın)
+    const is = { adresler: veri.adresler.slice(), zorla: !!veri.zorla, kimlik: veri.kimlik || null }
+    onYukleKuyruk.push(is)
+    if (!onYukleSuruyor) {
+      onYukleSuruyor = onYukleYurut().finally(() => { onYukleSuruyor = null })
+    }
+    olay.waitUntil(onYukleSuruyor)
   }
 })
+
+const onYukleKuyruk = []
+let onYukleSuruyor = null
+const ON_YUKLE_SOLUK = 60          // ms — dosyalar arası
+const ON_YUKLE_BILDIRIM = 400      // ms — en sık ilerleme bildirimi
+const uyu = (ms) => new Promise(r => setTimeout(r, ms))
+
+async function onYukleYurut() {
+  const kVeri = await caches.open(VERI)
+  const kSes = await caches.open(SES)
+  while (onYukleKuyruk.length) {
+    const is = onYukleKuyruk.shift()
+    const toplam = is.adresler.length
+    let tamam = 0, hata = 0
+    // Sunucuda OLMAYAN adresler ayrı bildiriliyor: sayfa bunları sayaçtan
+    // düşüyor. Yoksa hiç inemeyecek bir dosya sayacı sonsuza dek eksik tutar
+    // (içindekiler dosyası her kitapta yok).
+    const yok = []
+    let boyutlar = {}
+    let sonBildirim = 0
+    const bildir = async (son) => {
+      const simdi = Date.now()
+      if (!son && simdi - sonBildirim < ON_YUKLE_BILDIRIM) return
+      sonBildirim = simdi
+      const b = boyutlar; boyutlar = {}
+      try {
+        const hepsi = await self.clients.matchAll()
+        hepsi.forEach(c => c.postMessage({ tip: "ON_YUKLE_ILERLEME", kimlik: is.kimlik, tamam, hata, yok, toplam, boyutlar: b }))
+      } catch { /* yoksay */ }
+    }
+    // Önbellekte zaten olanlar (yalnız adresler — gövde okunmaz)
+    let mevcut = new Set()
+    if (!is.zorla) {
+      try {
+        const [a, b] = await Promise.all([kVeri.keys(), kSes.keys()])
+        mevcut = new Set([...a, ...b].map(r => r.url))
+      } catch { mevcut = new Set() }
+    }
+    for (const a of is.adresler) {
+      try {
+        const ses = sesMi(a)
+        let tam = a
+        try { tam = new URL(a, self.location.href).href } catch { /* yoksay */ }
+        if (mevcut.has(tam)) { tamam++; await bildir(false); continue }
+        // Dış kaynaktan CORS'lu indirme: `mode: "cors"` açıkça isteniyor ki
+        // yanıt "opaque" değil "cors" olsun ve içeriği doğrulanabilsin.
+        const y = await fetch(a, ses ? { mode: "cors", cache: "no-cache" } : { cache: "no-cache" })
+        if (!ses && sunucudaYok(a, y)) {
+          yok.push(a); hata++
+          // Eski sürüm işçi SPA'nın index.html'ini bu adresle saklamış olabilir;
+          // o bayat kayıt da temizleniyor ki sayaç onu "hazır" saymasın.
+          await kVeri.delete(a, { ignoreVary: true })
+          try { await y.body?.cancel() } catch { /* yoksay */ }
+        }
+        else {
+          const uygun = ses ? saklanabilirSes(y) : saklanabilir(y)
+          if (uygun) {
+            const bayt = Number(y.headers.get("content-length") || 0)
+            await (ses ? kSes : kVeri).put(a, y)
+            boyutlar[a] = bayt
+            tamam++
+          } else { hata++; try { await y.body?.cancel() } catch { /* yoksay */ } }
+        }
+      } catch { hata++ }
+      await bildir(false)
+      await uyu(ON_YUKLE_SOLUK)
+    }
+    await bildir(true)
+  }
+}

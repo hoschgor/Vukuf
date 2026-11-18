@@ -143,6 +143,25 @@ function yokYaz(kume) {
   try { localStorage.setItem(YOK_ANAHTAR, JSON.stringify([...kume])) } catch { /* kota */ }
 }
 
+/* İNDİRİLEN DOSYA BOYUTLARI (18 Kasım 2026, kullanıcı: "Kitap indirme işlemi yaparken fazla hızlı
+   indiği ya da farklı bir sebeple uygulama çöküp yeniden başlıyor"). Sayaç eskiden HER ilerleme
+   bildiriminde bütün önbelleği `match()` ile tarıyordu; iPhone'da (WebKit) match() dosyanın
+   gövdesini de belleğe alıyor → indirme sürerken onlarca MB üst üste okunup sayfa çöküyordu.
+   ŞİMDİ: hangi dosyanın inmiş olduğu `keys()` ile (gövdesiz) bulunuyor, boyutlar burada tutuluyor
+   (işçi her inen dosyanın boyunu bildiriyor). Kayıtta boyu olmayan eski dosyalar bir kez, sırayla
+   ölçülüp buraya yazılıyor. -1 = adreste HTML (SPA yönlendirmesi) saklanmış, dosya yok sayılır. */
+const BOYUT_ANAHTAR = "vukuf-cevrimdisi-boyut"
+function boyutOku() {
+  try { const o = JSON.parse(localStorage.getItem(BOYUT_ANAHTAR) || "{}"); return o && typeof o === "object" ? o : {} }
+  catch { return {} }
+}
+function boyutEkle(yeni) {
+  if (!yeni || !Object.keys(yeni).length) return
+  try { localStorage.setItem(BOYUT_ANAHTAR, JSON.stringify({ ...boyutOku(), ...yeni })) } catch { /* kota */ }
+}
+const IZLEME_SURE = 2500       // ms — indirme sürerken sayacın en sık tazelenmesi
+const SESSIZLIK_SURE = 45000   // ms — işçiden bu kadar ses gelmezse indirme durmuş sayılır
+
 // Eksik dosyayı satırda adıyla göstermek için: "/bolumler/x-icindekiler.json" → "içindekiler"
 function dosyaEtiketi(u) {
   const ad = decodeURI(String(u).split("/").pop() || "")
@@ -414,6 +433,11 @@ export default function VeriAyarlari({ theme }) {
   const sayilan = useMemo(() => adresler.filter(u => !yok.has(u)), [adresler, yok])
   const [durum, setDurum] = useState(null)      // { hazir, bayt, kitapDurum: Map }
   const [indirme, setIndirme] = useState(null)  // { tamam, hata, toplam }
+  // İndirme sürerken sayaç/satırlar en çok IZLEME_SURE'de bir tazelenir (her dosyada değil)
+  const [olcumTik, setOlcumTik] = useState(0)
+  const sonOlcumRef = useRef(0)
+  const sessizlikRef = useRef(null)
+  useEffect(() => () => { if (sessizlikRef.current) clearTimeout(sessizlikRef.current) }, [])
   const [listeAcik, setListeAcik] = useState(false)
   const [arama, setArama] = useState("")
 
@@ -449,13 +473,30 @@ export default function VeriAyarlari({ theme }) {
     ;(async () => {
       try {
         const k = await caches.open("vukuf-veri")
+        // Önbellekte olan adresler — yalnız anahtarlar, gövde okunmaz (18 Kasım 2026)
+        const varlar = new Set()
+        for (const r of await k.keys()) {
+          try { varlar.add(new URL(r.url).pathname) } catch { /* yoksay */ }
+          try { varlar.add(decodeURI(new URL(r.url).pathname)) } catch { /* yoksay */ }
+        }
+        if (iptal) return
+        const boyutlar = boyutOku()
+        const yeniBoyut = {}
         const olc = async (u) => {
+          let yol = u
+          try { yol = new URL(u, location.href).pathname } catch { /* yoksay */ }
+          if (!varlar.has(yol) && !varlar.has(u)) return null
+          const kayit = boyutlar[u]
+          if (typeof kayit === "number") return kayit < 0 ? null : kayit
+          // Boyu bilinmeyen eski dosya: bir kez ölç, kaydet (sırayla, iptal edilebilir)
           const y = await k.match(u, { ignoreVary: true })
           if (!y) return null
           // Veri adresine saklanmış HTML = SPA yönlendirmesinin index.html'i;
           // dosya aslında YOK. Hazır sayılmıyor (işçi indirmede bunu siliyor).
-          if ((y.headers.get("content-type") || "").toLowerCase().includes("text/html")) return null
-          return Number(y.headers.get("content-length") || 0)
+          if ((y.headers.get("content-type") || "").toLowerCase().includes("text/html")) { yeniBoyut[u] = -1; return null }
+          const b = Number(y.headers.get("content-length") || 0)
+          yeniBoyut[u] = b
+          return b
         }
         /* ⚠ ESKİ HATA — SAYAÇ İLE LİSTE FARKLI ŞEYLER SAYIYORDU.
            Sayaç DOSYA sayıyordu (fontlar + Kur'ân'ın üç dosyası + her kitabın
@@ -466,7 +507,11 @@ export default function VeriAyarlari({ theme }) {
            ŞİMDİ: her dosya bir kez ölçülüyor; sayaç da satırlar da BU TEK
            ölçümden türüyor, yani biri eksik derken öbürü hazır diyemez. */
         const dosya = new Map()                 // adres → bayt | null (yok)
-        for (const u of adresler) dosya.set(u, await olc(u))
+        for (const u of adresler) {
+          if (iptal) { boyutEkle(yeniBoyut); return }    // daha yeni bir tarama başladı
+          dosya.set(u, await olc(u))
+        }
+        boyutEkle(yeniBoyut)
         let hazir = 0, bayt = 0
         for (const u of sayilan) {
           const b = dosya.get(u)
@@ -495,9 +540,10 @@ export default function VeriAyarlari({ theme }) {
       } catch { if (!iptal) setDurum(null) }
     })()
     return () => { iptal = true }
-  }, [kitaplar, adresler, sayilan, yok, tazele, indirme])
+  }, [kitaplar, adresler, sayilan, yok, tazele, olcumTik])
 
-  function indirBasla(hedefler, ad) {
+  // zorla: önbellekte olanları da yeniden indir ("Yeniden indir"); yoksa inmiş dosyalar atlanır
+  function indirBasla(hedefler, ad, zorla = false) {
     if (!destekVar() || !navigator.serviceWorker.controller) {
       bilgiVer("kotu", "Çevrimdışı etkin değil; indirme yapılamıyor.")
       return
@@ -510,9 +556,25 @@ export default function VeriAyarlari({ theme }) {
     setYok(new Set(sinanacak))
     setIndirme({ tamam: 0, hata: 0, toplam: hedefler.length, ad })
     // İndirme SERVİS İŞÇİSİNDE yürüyor: panel kapansa bile sürüyor.
+    // SESSİZLİK BEKÇİSİ: telefon işçiyi durdurursa (arka plan, bellek) bitiş bildirimi hiç gelmez;
+    // çubuk sonsuza dek dolu kalmasın — inen dosyalar sayılır, kalanlar için yeniden dokunulur.
+    const bekci = () => {
+      if (sessizlikRef.current) clearTimeout(sessizlikRef.current)
+      sessizlikRef.current = setTimeout(() => {
+        birak()
+        setIndirme(null); setTazele(x => x + 1)
+        bilgiVer("kotu", `${ad}: indirme yarıda kaldı. İnen dosyalar saklandı; kalanlar için yeniden dokunulabilir, kaldığı yerden sürer.`)
+      }, SESSIZLIK_SURE)
+    }
+    bekci()
     const birak = onYukle(hedefler, (d) => {
-      setIndirme({ ...d, ad })
+      bekci()
+      boyutEkle(d.boyutlar)
+      setIndirme({ tamam: d.tamam, hata: d.hata, toplam: d.toplam, ad })
+      const simdi = Date.now()
+      if (simdi - sonOlcumRef.current > IZLEME_SURE) { sonOlcumRef.current = simdi; setOlcumTik(x => x + 1) }
       if (d.tamam + d.hata >= d.toplam) {
+        if (sessizlikRef.current) { clearTimeout(sessizlikRef.current); sessizlikRef.current = null }
         birak()
         // İşçi 404 alan adresleri `yok` dizisinde bildiriyor (eski sürüm
         // işçide alan yoksa boş dizi — davranış eskisi gibi kalır).
@@ -529,7 +591,7 @@ export default function VeriAyarlari({ theme }) {
           (baskaHata > 0 ? `, ${baskaHata} dosya alınamadı — bağlantıyı kontrol edip tekrar deneyin` : "") +
           ".")
       }
-    })
+    }, zorla)
   }
 
   // ── SESLER ───────────────────────────────────────────────────────────────
@@ -556,7 +618,7 @@ export default function VeriAyarlari({ theme }) {
     let iptal = false
     sesAnahtarlari().then(x => { if (!iptal) setSesVarlar(x) })
     return () => { iptal = true }
-  }, [acikBolum, tazele, indirme])
+  }, [acikBolum, tazele, olcumTik])
 
   const sureler = useMemo(() => (mushaf ? sureListesi(mushaf) : []), [mushaf])
   const cuzler = useMemo(() => (mushaf ? cuzListesi(mushaf) : []), [mushaf])
@@ -989,7 +1051,7 @@ export default function VeriAyarlari({ theme }) {
         ) : (
           <>
             <button
-              onClick={() => indirBasla(adresler, "Tümü")}
+              onClick={() => indirBasla(adresler, "Tümü", !!(durum && durum.hazir >= sayilan.length))}
               disabled={!cevrimdisi?.destek}
               style={{
                 width: "100%", marginTop: "10px",
@@ -1060,7 +1122,7 @@ export default function VeriAyarlari({ theme }) {
                   return (
                     <button
                       onClick={() => indirBasla(hedef, `${eksik.length} eser`)}
-                      disabled={!cevrimdisi?.destek}
+                      disabled={!cevrimdisi?.destek || Boolean(indirme)}
                       style={{
                         width: "100%", marginTop: "8px", padding: "10px 12px",
                         display: "flex", alignItems: "center", justifyContent: "center", gap: "6px",
@@ -1128,7 +1190,7 @@ export default function VeriAyarlari({ theme }) {
                         ) : kismen ? (
                           <button
                             onClick={() => indirBasla(d.eksik, kt.ad)}
-                            disabled={!cevrimdisi?.destek}
+                            disabled={!cevrimdisi?.destek || Boolean(indirme)}
                             style={{
                               flexShrink: 0, display: "flex", alignItems: "center", gap: "5px",
                               padding: "6px 10px", borderRadius: "8px",
@@ -1140,7 +1202,7 @@ export default function VeriAyarlari({ theme }) {
                         ) : (
                           <button
                             onClick={() => indirBasla(kt.adresler, kt.ad)}
-                            disabled={!cevrimdisi?.destek}
+                            disabled={!cevrimdisi?.destek || Boolean(indirme)}
                             style={{
                               flexShrink: 0, display: "flex", alignItems: "center", gap: "5px",
                               padding: "6px 10px", borderRadius: "8px",

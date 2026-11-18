@@ -387,7 +387,7 @@ const KONULAR = [
       "Kitap okuma ekranında bardaki kulaklık simgesine dokunulduğunda eser, ekranda bulunulan yerden itibaren sesli okunmaya başlar ve küçük bir sesli okuma denetimi açılır. Okunan cümle metinde işaretlenir; sayfa da okumayı takip eder.",
       "Denetimde önceki ve sonraki cümle, duraklatma ve kapatma düğmeleri bulunur. Denetim, solundaki tutamaktan sürüklenerek ekranda istenen yere taşınabilir.",
       "Hedef simgesi (Okunacak cümleyi seç) seçildikten sonra metinde bir kelimeye dokunulduğunda okuma o kelimenin cümlesinden itibaren devam eder.",
-      "Sayfa elle kaydırıldığında takip bir süreliğine bırakılır. Gözlük simgesi (Okunan yere hizala) ekranı yeniden okunan cümleye getirir; başka bir sayfaya geçilmişse okunan sayfaya dönülür.",
+      "Takip açıkken okunan cümle ekranın rahat bölgesinden çıktığında sayfa onu yeniden göz hizasına getirir; uzun bir cümlede okuma ilerledikçe de takip sürer. Sayfa elle kaydırıldığında takip bırakılır; ekrana 5 saniye dokunulmazsa ve okunan cümle ekranda değilse takip kendiliğinden döner ve cümle yeniden ortalanır. Gözlük simgesi (Okunan yere hizala) bunu beklemeden yapar; başka bir sayfaya geçilmişse okunan sayfaya dönülür. Ekranın başka bir yerinde kalınmak istenirse sesli okuma ayarlarındaki takip kapatılabilir.",
     ],
     anahtar: "ses dinle oynat durdur sonraki önceki sesli okuma kitap oku cümle seç hedef gözlük hizala takip kulaklık",
   },
@@ -809,6 +809,7 @@ const KONULAR = [
     metin: [
       "Vukuf, tarayıcının \"Ana ekrana ekle\" seçeneğiyle telefona uygulama gibi kurulabilir.",
       "Bir kez açılan bölümler internet olmadan da çalışır. Yeni bir sürüm hazır olduğunda ekranda kısa bir bilgi gösterilir.",
+      "Kitaplar ve sesler Ayarlar → Veriler → Kitapları indir bölümünden önceden indirilebilir. İndirme arka planda, dosyalar tek tek ve aralıklı inecek şekilde yürür; panel kapatılabilir. Yarıda kalırsa (bağlantı kopması, telefonun uygulamayı arka planda durdurması) inen dosyalar saklanır ve yeniden dokunulduğunda indirme kaldığı yerden sürer. \"Yeniden indir\" ise hepsini baştan indirir.",
     ],
     anahtar: "pwa uygulama kur ana ekran çevrimdışı internetsiz offline güncelleme",
   },

@@ -124,6 +124,8 @@ function dokunulanYer(x, y, hedef) {
   return { sayfa, satir, ofset, duz }
 }
 
+const TAKIP_BEKLE = 5000     // ms — elle kaydırmadan sonra takip bu kadar dokunulmazsa kendiliğinden döner
+
 export default function SesliOkumaKontrol({
   acik, kapat, theme, isMobile, olcek = 1, kitapId, kitapMetni,
   baslangicAl, scrollEl, onSayfayaGit, altPay = 16, kitapAdi = "",
@@ -190,14 +192,42 @@ export default function SesliOkumaKontrol({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [acik, kitapId])
 
-  // Elle kaydırma: takip askıya (bkz. yukarı)
+  /* SÜREKLİ TAKİP (19 Kasım 2026, kullanıcı: "OkumaEkranı üzerindeki sürekli takip modunda sorun
+     var. Sürekli takip modu aktif olduğunda cümle ekrandan çıktığında şuanki gibi ortalaması
+     gerekiyor.")
+     • Elle kaydırma artık GERÇEK kaydırmayla anlaşılıyor: parmak en az 24 px kaymalı (dokunuştaki
+       titreme takibi sessizce askıya alıyordu → cümle ekrandan çıkıp gidiyordu) ya da teker.
+     • Askıdayken okuyucu TAKİP_BEKLE kadar ekrana dokunmazsa ve okunan cümle ekranda değilse
+       takip kendiliğinden döner: okunan yere gidilir, cümle yine göz hizasına alınır. Cümle
+       ekrandaysa yalnız askı kalkar.
+     • Takip açıkken okunan cümle (uzun cümlede okuma ilerledikçe, düzen değişince) rahat
+       bandın dışına kayarsa saniyede bir yapılan denetim onu yeniden hizalar — yalnız yeni
+       cümleye geçişte değil.
+     Takip anahtarı ("Okunan yeri takip et") kapatılırsa hiçbiri çalışmaz. */
+  const elleSonRef = useRef(0)            // son elle kaydırma anı
+  const bizKaydirdikRef = useRef(0)       // takibin kendi son kaydırması (kendi kaydırmamızla yarışmasın)
   useEffect(() => {
     const el = scrollEl?.()
     if (!acik || !el) return
-    const elle = () => { if (!ayrildiRef.current) ayrilmaYaz(true) }
-    el.addEventListener("wheel", elle, { passive: true })
-    el.addEventListener("touchmove", elle, { passive: true })
-    return () => { el.removeEventListener("wheel", elle); el.removeEventListener("touchmove", elle) }
+    let basY = null, sonDokunus = 0
+    const isaretle = () => { elleSonRef.current = Date.now(); if (!ayrildiRef.current) ayrilmaYaz(true) }
+    const teker = (e) => { if (Math.abs(e.deltaY || 0) > 2) isaretle() }
+    const bas = (e) => { basY = e.touches && e.touches[0] ? e.touches[0].clientY : null; sonDokunus = Date.now() }
+    const kay = (e) => {
+      sonDokunus = Date.now()
+      const y = e.touches && e.touches[0] ? e.touches[0].clientY : null
+      if (basY != null && y != null && Math.abs(y - basY) > 24) isaretle()
+    }
+    // Parmak kalktıktan sonra savurma sürerken de "elle" sayılır (bekleme süresi ondan sonra başlar)
+    const kaydi = () => { if (ayrildiRef.current && Date.now() - sonDokunus < 1500) elleSonRef.current = Date.now() }
+    el.addEventListener("wheel", teker, { passive: true })
+    el.addEventListener("touchstart", bas, { passive: true })
+    el.addEventListener("touchmove", kay, { passive: true })
+    el.addEventListener("scroll", kaydi, { passive: true })
+    return () => {
+      el.removeEventListener("wheel", teker); el.removeEventListener("touchstart", bas)
+      el.removeEventListener("touchmove", kay); el.removeEventListener("scroll", kaydi)
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [acik])
 
@@ -338,6 +368,7 @@ export default function SesliOkumaKontrol({
           if (!ayrildiRef.current) {
             const ust = kr.top + kr.height * 0.12, alt = kr.top + kr.height * 0.68
             if (er.top < ust || er.bottom > alt) {
+              bizKaydirdikRef.current = Date.now()
               kap.scrollBy({ top: er.top - (kr.top + kr.height * 0.3), behavior: "smooth" })
             }
           }
@@ -372,6 +403,7 @@ export default function SesliOkumaKontrol({
       const er = hedefRef.current?.()
       if (!er) return false
       const kr = kap.getBoundingClientRect()
+      bizKaydirdikRef.current = Date.now()
       kap.scrollBy({ top: er.top - (kr.top + kr.height * 0.3), behavior: "smooth" })
       return true
     }
@@ -381,6 +413,41 @@ export default function SesliOkumaKontrol({
     onSayfayaGit?.(b.sayfa, b.satir)
     setTimeout(() => setTazele(t => t + 1), 350)
   }
+
+  // SÜREKLİ TAKİP denetimi (bkz. yukarıdaki not) — saniyede bir
+  const hizalaRef = useRef(hizala); hizalaRef.current = hizala
+  const durumRef = useRef(d); durumRef.current = d
+  useEffect(() => {
+    if (!acik || !ayar.takip) return
+    const t = setInterval(() => {
+      const dd = durumRef.current
+      if (secimRef.current || !dd.birim || (dd.durum !== "okuyor" && dd.durum !== "hazirlaniyor")) return
+      const kap = scrollEl?.()
+      if (!kap || document.hidden) return
+      const simdi = Date.now()
+      if (simdi - bizKaydirdikRef.current < 1500) return          // kendi kaydırmamız sürüyor
+      const er = hedefRef.current?.()
+      const kr = kap.getBoundingClientRect()
+      const gorunur = !!er && er.bottom > kr.top + 8 && er.top < kr.bottom - 8
+      if (ayrildiRef.current) {
+        if (simdi - elleSonRef.current < TAKIP_BEKLE) return       // okuyucu hâlâ geziniyor
+        if (gorunur) { ayrilmaYaz(false); return }                 // okunan yer zaten ekranda
+        bizKaydirdikRef.current = simdi
+        hizalaRef.current()                                        // ekran dışında → okunan yere dön, hizala
+        return
+      }
+      if (!er) return
+      const ust = kr.top + kr.height * 0.12, alt = kr.top + kr.height * 0.68
+      if (er.top < ust || er.bottom > alt) {
+        const fark = er.top - (kr.top + kr.height * 0.3)
+        if (Math.abs(fark) < 12) return                            // zaten göz hizasında (uzun cümle)
+        bizKaydirdikRef.current = simdi
+        kap.scrollBy({ top: fark, behavior: "smooth" })
+      }
+    }, 1000)
+    return () => clearInterval(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [acik, ayar.takip])
 
   /* HIZ (17 Ekim 2026, kullanıcı: "PlayerBar'daki hızlandırma düğmesi mantığında"): düğme küçük
      bir kutu açar — kaydırıcı (0,5–2×), değer, 1×'e dönüş. Varsayılandan farklıysa düğmede

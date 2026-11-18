@@ -32,6 +32,7 @@ import { kelimeRengiEkle } from "../data/harekeRenk"
 import { useMealGorunum, mealGorunumYaz } from "../data/mealGorunum"
 import { useOtoKaydirma, useOtoKaydirmaHizi, useOtoEtkilesim } from "../data/hooks/useOtoKaydirma"
 import OtoPopupTakip from "../components/OtoPopupTakip"
+import { useEkranUyanik } from "../data/ekranUyanik"
 import { useBarOlcegi } from "../data/arayuzOlcegi"
 import KaydirmaMenusu from "../components/KaydirmaMenusu"
 import { useOrtaMenu, useOrtaBilgi, OrtaMenuCercevesi, OrtaIpucu, BilgiSeridi, BarKonumSecici, barKonumOku, barKonumYaz, ORTA_OLCEK, barEtiketle, OpaklikAyarlari, useOrtaOpaklik, yariSaydam } from "../components/OrtaMenu"
@@ -3678,6 +3679,9 @@ function donuseGit(i) {
   const odakDurumu = useOdak()
   const [odakTakip, setOdakTakip] = useState(() => odakDurumu.surekli)
   const [odakAskida, setOdakAskida] = useState(false)
+  // Ekran kilitlenmesin: otomatik kaydırma açıkken ve âyet takibi (gözlük) çalarken
+  useEkranUyanik("kuran-oto-kaydirma", otomatikKaydirma)
+  useEkranUyanik("kuran-takip", odakTakip && player.durum === "caliyor")
   const odakDurdurRef = useRef(() => {})
   useEffect(() => { if (odakDurumu.surekli) { setOdakTakip(true); setOdakAskida(false) } }, [odakDurumu.surekli])
   const odakHizala = useCallback((zorla) => {
@@ -5493,10 +5497,18 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
           }}>
             <Bookmark size={Math.round(15 * barUiOlcegi)} color={theme.accent} style={{ flexShrink: 0 }} />
             <span style={{ fontSize: `${yz}px`, lineHeight: 1.25, minWidth: 0 }}>Kayıt koymak istediğiniz satıra dokunun</span>
+            {/* Kayıt menüsü: dolu vurgu renginde, yazılı — şeritteki öbür öğelerden ayırt edilsin */}
+            <span aria-hidden="true" style={{ width: "1px", alignSelf: "stretch", margin: "4px 0", background: `${theme.accent}55`, flexShrink: 0 }} />
             <button onClick={(e) => { e.stopPropagation(); setKayitKonumModu(false); setKayitPaneliAcik(true) }}
               title="Kayıt menüsü" aria-label="Kayıt menüsü"
-              style={{ ...yuvarlak, background: `${theme.accent}18`, color: theme.accent }}>
-              <List size={Math.round(16 * Math.min(1.3, barUiOlcegi))} />
+              style={{
+                flexShrink: 0, display: "flex", alignItems: "center", gap: "5px", cursor: "pointer", fontFamily: "inherit",
+                height: `${Math.round(34 * Math.min(1.3, barUiOlcegi))}px`, padding: `0 ${Math.round(12 * Math.min(1.3, barUiOlcegi))}px 0 ${Math.round(10 * Math.min(1.3, barUiOlcegi))}px`,
+                borderRadius: "999px", border: "none", background: theme.accent, color: "#fff",
+                fontSize: `${Math.round((isMobile ? 12 : 13) * barUiOlcegi)}px`, fontWeight: 700, boxShadow: `0 2px 8px ${theme.accent}55`,
+              }}>
+              <List strokeWidth={2.4} size={Math.round(16 * Math.min(1.3, barUiOlcegi))} />
+              Kayıtlar
             </button>
             <button onClick={(e) => { e.stopPropagation(); setKayitKonumModu(false) }}
               title="Vazgeç" aria-label="Kayıt koymaktan vazgeç"

@@ -39,6 +39,7 @@ import DonusDugmesi, { KopruDugmesi, hapKonumlariniSifirla } from "../components
 import { History as GecmisIkon } from "lucide-react"
 import { useOtoKaydirma, useOtoKaydirmaHizi, useOtoEtkilesim, OTO_EN_COK } from "../data/hooks/useOtoKaydirma"
 import OtoPopupTakip from "../components/OtoPopupTakip"
+import { useEkranUyanik } from "../data/ekranUyanik"
 import { useBarOlcegi } from "../data/arayuzOlcegi"
 import KaydirmaMenusu from "../components/KaydirmaMenusu"
 import { useOkumaGecmisi, OKUMA_HEDEF_ANAHTAR } from "../data/gecmis"
@@ -1306,6 +1307,7 @@ const maxSayfaGuncelle = (n) => { if (n > maxSayfaRef.current) { maxSayfaRef.cur
 // ── Otomatik kaydırma
 const otomatikRef = useRef(null)
 const [otomatikKaydirma, setOtomatikKaydirma] = useState(false)
+useEkranUyanik("eser-oto-kaydirma", otomatikKaydirma)   // kayarken ekran kilitlenmesin
 // SESLİ OKUMA (15 Ekim 2026) — Web Speech API; denetim: components/SesliOkumaKontrol.jsx
 // "Devamlı okuma" ile süren okuma bu kitabınsa denetim açık gelir ve okumaya bağlanır (17 Ekim 2026)
 const [sesliAcik, setSesliAcik] = useState(() => {
@@ -4568,10 +4570,18 @@ return (
         }}>
           <Bookmark size={Math.round(15 * barUiOlcegi)} color={theme.accent} style={{ flexShrink: 0 }} />
           <span style={{ fontSize: `${yz}px`, lineHeight: 1.25, minWidth: 0 }}>İşaret koymak istediğiniz yere dokunun</span>
+          {/* Kayıt menüsü: dolu vurgu renginde, yazılı — şeritteki öbür öğelerden ayırt edilsin */}
+          <span aria-hidden="true" style={{ width: "1px", alignSelf: "stretch", margin: "4px 0", background: `${theme.accent}55`, flexShrink: 0 }} />
           <button onClick={(e) => { e.stopPropagation(); setKayitKonumModu(false); setKayitSekme("isaretler"); setKayitAcik(true) }}
             title="Kayıt menüsü" aria-label="Kayıt menüsü"
-            style={{ ...yuvarlak, background: `${theme.accent}18`, color: theme.accent }}>
-            <List size={ik} />
+            style={{
+              flexShrink: 0, display: "flex", alignItems: "center", gap: "5px", cursor: "pointer", fontFamily: "inherit",
+              height: `${Math.round(34 * Math.min(1.3, barUiOlcegi))}px`, padding: `0 ${Math.round(12 * Math.min(1.3, barUiOlcegi))}px 0 ${Math.round(10 * Math.min(1.3, barUiOlcegi))}px`,
+              borderRadius: "999px", border: "none", background: theme.accent, color: "#fff",
+              fontSize: `${Math.round((isMobile ? 12 : 13) * barUiOlcegi)}px`, fontWeight: 700, boxShadow: `0 2px 8px ${theme.accent}55`,
+            }}>
+            <List strokeWidth={2.4} size={ik} />
+            Kayıtlar
           </button>
           <button onClick={(e) => { e.stopPropagation(); setKayitKonumModu(false) }}
             title="Vazgeç" aria-label="İşaret koymaktan vazgeç"

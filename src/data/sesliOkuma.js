@@ -36,6 +36,7 @@
        isteğe bağlı indirilir) ya da cihazın Arapça sesi (ayar.arSes: "kerim" | "cihaz").
    ═══════════════════════════════════════════════════════════════════════════ */
 
+import { ekranUyanikIste } from "./ekranUyanik"
 import { sureAdi } from "./sureAdlari"
 import { mp3Url, KARILAR, sesKaynagiAta, VARSAYILAN_KARI } from "./hooks/useAudioPlayer"
 
@@ -501,7 +502,7 @@ function motorKur() {
   let birimler = [], sira = 0, kitap = null, ayar = ayarOku()
   let sayfalar = [], sonSayfaIdx = -1, secenek = null
   let sesTr = null, sesAr = null
-  let konusma = null, bekci = 0, nesil = 0, kilit = null
+  let konusma = null, bekci = 0, nesil = 0
   let vs = null                                    // data/vukufSes.js (yalnız Vukuf sesi seçiliyse yüklenir)
   let sentezler = new Map()                        // birim sırası → Promise<{pcm, ornekleme, sure}> (önden hazırlık)
   let sentezNesli = 0                              // sentezler sıfırlanınca artar → eski istekler atlanır
@@ -547,18 +548,8 @@ function motorKur() {
   }
   const ondenHazirla = (i) => { for (let k = 1; k <= ONDEN; k++) sentezAl(i + k) }
 
-  const ekranAcik = async (acik) => {
-    try {
-      if (acik && !kilit && navigator.wakeLock) kilit = await navigator.wakeLock.request("screen")
-      if (!acik && kilit) { await kilit.release(); kilit = null }
-    } catch { kilit = null }
-  }
-  // Sekme geri gelince kilit yeniden istenir (gizlenince tarayıcı bırakıyor)
-  if (typeof document !== "undefined") {
-    document.addEventListener("visibilitychange", () => {
-      if (document.visibilityState === "visible" && durum.durum === "okuyor") { kilit = null; ekranAcik(true) }
-    })
-  }
+  // Ekran uyanık tutma ortak modülde (data/ekranUyanik.js)
+  const ekranAcik = (acik) => ekranUyanikIste("sesli-okuma", acik)
 
   // Okunacak birim kalmadıysa sıradaki sayfanın birimleri eklenir
   /* SAYFA ARASINDA BÖLÜNEN CÜMLE (19 Ekim 2026, kullanıcı: "yeni sayfaya geçtiğinde cümle

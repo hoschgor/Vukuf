@@ -136,12 +136,8 @@ export default function SesliOkumaKontrol({
   const [ayar, setAyar] = useState(() => ayarOku())
   const [ayarAcik, setAyarAcik] = useState(false)
   const [sesler, setSesler] = useState({ tr: [], ar: [] })
-  /* TAKİP (17 Ekim 2026, kullanıcı: "farklı bir sayfadayken yer seçme düğmesine basınca sayfa
-     okunan yere geçiyor, geçmemeli"; "takip sayfayı odaklamıyor, altına geçiyor"; "gözlük
-     düğmesiyle, farklı sayfadaysak okumayı hizalayabilmeliyiz").
-     Elle kaydırınca takip ASKIYA alınır (eskiden 5 sn sonra kendiliğinden geri dönüyordu).
-     Okunan yer yeniden görünür alana girerse ya da 👓 düğmesine basılırsa takip sürer.
-     Kaydırma hedefi artık okunan CÜMLE (uzun paragrafta paragrafın başı değil). */
+  /* TAKİP: hedef okunan cümle. Elle kaydırınca takip askıya alınır; okunan yer görünür alana
+     girerse ya da gözlüğe dokunulursa sürer. */
   const ayrildiRef = useRef(false)
   const [ayrildi, setAyrildi] = useState(false)
   const ayrilmaYaz = (v) => { ayrildiRef.current = v; setAyrildi(v) }
@@ -192,18 +188,15 @@ export default function SesliOkumaKontrol({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [acik, kitapId])
 
-  /* SÜREKLİ TAKİP (19 Kasım 2026, kullanıcı: "OkumaEkranı üzerindeki sürekli takip modunda sorun
-     var. Sürekli takip modu aktif olduğunda cümle ekrandan çıktığında şuanki gibi ortalaması
-     gerekiyor.")
-     • Elle kaydırma artık GERÇEK kaydırmayla anlaşılıyor: parmak en az 24 px kaymalı (dokunuştaki
-       titreme takibi sessizce askıya alıyordu → cümle ekrandan çıkıp gidiyordu) ya da teker.
-     • Askıdayken okuyucu TAKİP_BEKLE kadar ekrana dokunmazsa ve okunan cümle ekranda değilse
-       takip kendiliğinden döner: okunan yere gidilir, cümle yine göz hizasına alınır. Cümle
-       ekrandaysa yalnız askı kalkar.
-     • Takip açıkken okunan cümle (uzun cümlede okuma ilerledikçe, düzen değişince) rahat
-       bandın dışına kayarsa saniyede bir yapılan denetim onu yeniden hizalar — yalnız yeni
-       cümleye geçişte değil.
-     Takip anahtarı ("Okunan yeri takip et") kapatılırsa hiçbiri çalışmaz. */
+  /* SÜREKLİ TAKİP (19 Kasım 2026)
+     • Elle kaydırma: parmak en az 24 px kayarsa ya da teker dönerse sayılır (dokunuş titremesi sayılmaz).
+     • Askıdayken TAKIP_BEKLE boyunca dokunulmazsa ve okunan cümle ekranda değilse takip döner.
+     • Saniyede bir denetim: cümle rahat bandın dışına kayarsa yeniden hizalanır.
+     • Gözlük sürekli kipte takibi kilitler / bırakır; bırakılınca hiçbir kendiliğinden kaydırma olmaz.
+     Serbest kipte (ayar.takip kapalı) bunların hiçbiri çalışmaz; gözlük bir kez odaklar. */
+  const birakildiRef = useRef(false)      // sürekli kipte gözlükle bırakıldı
+  const [birakildi, setBirakildi] = useState(false)
+  const birakYaz = (v) => { birakildiRef.current = v; setBirakildi(v) }
   const tekSeferRef = useRef(false)       // serbest modda gözlük: sayfa çizilince BİR KEZ hizala
   const elleSonRef = useRef(0)            // son elle kaydırma anı
   const bizKaydirdikRef = useRef(0)       // takibin kendi son kaydırması (kendi kaydırmamızla yarışmasın)
@@ -324,7 +317,7 @@ export default function SesliOkumaKontrol({
       const els = nolar.map(s => document.querySelector(`[data-satir="${b.sayfa}-${s}"]`)).filter(Boolean)
       if (!els.length) {
         // Sayfa henüz çizilmedi → (takip sürüyorsa) oraya git, sonra yeniden dene
-        if (deneme === 0 && ayar.takip && !ayrildiRef.current && !secimRef.current) onSayfayaGit?.(b.sayfa, b.satir)
+        if (deneme === 0 && ayar.takip && !birakildiRef.current && !ayrildiRef.current && !secimRef.current) onSayfayaGit?.(b.sayfa, b.satir)
         if (deneme++ < 20) zaman = setTimeout(uygula, 150)
         return
       }
@@ -369,7 +362,7 @@ export default function SesliOkumaKontrol({
           bizKaydirdikRef.current = Date.now()
           kap.scrollBy({ top: er.top - (kr.top + kr.height * 0.3), behavior: "smooth" })
         }
-      } else if (ayar.takip && kap && !secimRef.current) {
+      } else if (ayar.takip && !birakildiRef.current && kap && !secimRef.current) {
         const kr = kap.getBoundingClientRect(), er = hedefRef.current()
         if (er) {
           const gorunur = er.bottom > kr.top + 8 && er.top < kr.bottom - 8
@@ -402,7 +395,7 @@ export default function SesliOkumaKontrol({
   // Bitti → kısa süre sonra kendiliğinden kapanmaz; düğme "baştan değil, kaldığı yerden" yeniden başlatır
   const ayarDegis = (parca) => { setAyar(a => ({ ...a, ...parca })); sesliOkuyucu.ayarlariYenile(parca) }
 
-  // 👓 OKUNAN YERE HİZALA: takip yeniden başlar; sayfa çizili değilse önce oraya gidilir
+  // Okunan yere hizala; sayfa çizili değilse önce oraya gidilir
   const hizala = () => {
     ayrilmaYaz(false)
     const b = d.birim
@@ -418,21 +411,27 @@ export default function SesliOkumaKontrol({
     }
     const satirVar = document.querySelector(`[data-satir="${b.sayfa}-${b.satir}"]`)
     if (satirVar && kaydir()) return
-    // Sayfa çizili değil: oraya git, sonra vurguyu yeniden uygula → cümleye bir kez hizalanır
-    // (otomatik takipte de serbest modda da)
+    // Sayfa çizili değil: oraya git; çizilince cümleye bir kez hizalanır
     tekSeferRef.current = true
     onSayfayaGit?.(b.sayfa, b.satir)
     setTimeout(() => setTazele(t => t + 1), 350)
   }
 
-  // SÜREKLİ TAKİP denetimi (bkz. yukarıdaki not) — saniyede bir
+  // Gözlük: serbest kipte bir kez odaklar; sürekli kipte takibi kilitler / bırakır
+  const takipKilitli = !!ayar.takip && !birakildi && !ayrildi
+  const gozluk = () => {
+    if (!ayar.takip) { hizala(); return }
+    if (takipKilitli) { birakYaz(true); return }
+    birakYaz(false); hizala()
+  }
+  // Sürekli takip denetimi — saniyede bir
   const hizalaRef = useRef(hizala); hizalaRef.current = hizala
   const durumRef = useRef(d); durumRef.current = d
   useEffect(() => {
     if (!acik || !ayar.takip) return
     const t = setInterval(() => {
       const dd = durumRef.current
-      if (secimRef.current || !dd.birim || (dd.durum !== "okuyor" && dd.durum !== "hazirlaniyor")) return
+      if (secimRef.current || birakildiRef.current || !dd.birim || (dd.durum !== "okuyor" && dd.durum !== "hazirlaniyor")) return
       const kap = scrollEl?.()
       if (!kap || document.hidden) return
       const simdi = Date.now()
@@ -750,6 +749,34 @@ export default function SesliOkumaKontrol({
         background: vurgu ? ac : "transparent", color: vurgu ? "#fff" : theme.text,
       }}>{icerik}</button>
   )
+  // Sürekli takip anahtarı (dinleme kutusunda, Devamlı okumanın altında). Kapalı = serbest kip.
+  const takipAnahtari = () => (
+    <div role="switch" aria-checked={!!ayar.takip}
+      onClick={() => {
+        const yeni = !ayar.takip
+        ayarDegis({ takip: yeni }); birakYaz(false)
+        if (yeni) setTimeout(() => hizalaRef.current && hizalaRef.current(), 60)
+      }}
+      title={ayar.takip ? "Sürekli takip açık" : "Serbest kip — gözlük bir kez odaklar"}
+      style={{ display: "flex", alignItems: "center", gap: "8px", padding: "5px 0", cursor: "pointer" }}>
+      <Glasses size={16} color={ayar.takip ? ac : theme.textSecondary} style={{ flexShrink: 0 }} />
+      <span style={{ flex: 1, minWidth: 0, fontSize: "12px", lineHeight: 1.25 }}>
+        Sürekli takip
+        <span style={{ display: "block", fontSize: "10px", color: theme.textSecondary }}>
+          {ayar.takip ? "Okunan cümle takip edilir; gözlük takibi kilitler / bırakır" : "Serbest kip: gözlük bir kez odaklar"}
+        </span>
+      </span>
+      <span aria-hidden="true" style={{
+        width: "30px", height: "18px", borderRadius: "999px", flexShrink: 0, position: "relative",
+        background: ayar.takip ? ac : `${theme.textSecondary}44`, transition: "background .15s ease",
+      }}>
+        <span style={{
+          position: "absolute", top: "2px", left: ayar.takip ? "14px" : "2px", width: "14px", height: "14px",
+          borderRadius: "50%", background: "#fff", transition: "left .15s ease", boxShadow: "0 1px 2px rgba(0,0,0,0.25)",
+        }} />
+      </span>
+    </div>
+  )
   const cip = (secili, etiket, onClick, kapali) => (
     <button key={etiket} onClick={kapali ? undefined : onClick} disabled={kapali}
       style={{
@@ -943,38 +970,6 @@ export default function SesliOkumaKontrol({
             <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginTop: "12px" }}>
               {cip(ayar.isaret, ayar.isaret ? "İşaret sesi açık" : "İşaret sesi kapalı", () => ayarDegis({ isaret: !ayar.isaret }))}
             </div>
-            {/* TAKİP KİPİ (19 Kasım 2026, kullanıcı: "gözlük butonunu hem serbest modda (gözlük butonuna
-                tıklandığında 1 kez odaklayacak şekilde), hem de otomatik takip modunda kullanabilmemiz
-                gerek … switch açıkken otomatik mod açılır, kapalıyken serbest mod kalır.")
-                Açık: okunan cümle takip edilir, ekrandan çıkınca yeniden göz hizasına alınır.
-                Kapalı (serbest): sayfa kendiliğinden kımıldamaz; gözlük okunan yere BİR KEZ odaklar. */}
-            <div role="switch" aria-checked={!!ayar.takip}
-              onClick={() => {
-                const yeni = !ayar.takip
-                ayarDegis({ takip: yeni })
-                if (yeni) setTimeout(() => hizalaRef.current && hizalaRef.current(), 60)   // otomatiğe geçince hemen okunan yere
-              }}
-              title={ayar.takip ? "Otomatik takip açık — okunan cümle takip edilir" : "Serbest mod — gözlükle bir kez odaklanır"}
-              style={{ display: "flex", alignItems: "center", gap: "8px", padding: "10px 0 2px", cursor: "pointer" }}>
-              <Glasses size={16} color={ayar.takip ? ac : theme.textSecondary} style={{ flexShrink: 0 }} />
-              <span style={{ flex: 1, minWidth: 0, fontSize: "12px", lineHeight: 1.25, color: theme.text }}>
-                Otomatik takip
-                <span style={{ display: "block", fontSize: "10px", color: theme.textSecondary }}>
-                  {ayar.takip
-                    ? "Açık: okunan cümle takip edilir, ekrandan çıkınca yeniden ortalanır."
-                    : "Kapalı (serbest mod): sayfa kımıldamaz; gözlüğe dokununca okunan yere bir kez odaklanır."}
-                </span>
-              </span>
-              <span aria-hidden="true" style={{
-                width: "30px", height: "18px", borderRadius: "999px", flexShrink: 0, position: "relative",
-                background: ayar.takip ? ac : `${theme.textSecondary}44`, transition: "background .15s ease",
-              }}>
-                <span style={{
-                  position: "absolute", top: "2px", left: ayar.takip ? "14px" : "2px", width: "14px", height: "14px",
-                  borderRadius: "50%", background: "#fff", transition: "left .15s ease", boxShadow: "0 1px 2px rgba(0,0,0,0.25)",
-                }} />
-              </span>
-            </div>
           </div>
         )}
 
@@ -1037,6 +1032,8 @@ export default function SesliOkumaKontrol({
                 }} />
               </span>
             </div>
+            <div style={{ height: "1px", background: theme.border, opacity: 0.6 }} />
+            {takipAnahtari()}
             <div style={{ height: "1px", background: theme.border, opacity: 0.6 }} />
             {/* OTOMATİK DURDURMA — seçilen süre sonunda sesli okuma durur (ekrandan çıkılsa da) */}
             <OtomatikDurdurmaSecici theme={theme} uyku={uyku} aciklama="Seçilen süre sonunda sesli okuma durur" />
@@ -1134,9 +1131,9 @@ export default function SesliOkumaKontrol({
             {dugme(<Crosshair size={Math.round(16 * olcek)} />, () => {
               sesKilidiAc(); setAyarAcik(false); setHizAcik(false); setSecim(v => !v)
             }, secim ? "Cümle seçimini kapat" : "Okunacak cümleyi seç", secim)}
-            {dugme(<Glasses size={Math.round(16 * olcek)} />, hizala,
-              !ayar.takip ? "Okunan yere odaklan (serbest mod)" : ayrildi ? "Okunan yere dön (takip askıda)" : "Okunan yere hizala (otomatik takip)",
-              ayar.takip && ayrildi && (okuyor || hazirlaniyor))}
+            {dugme(<Glasses size={Math.round(16 * olcek)} />, gozluk,
+              !ayar.takip ? "Okunan yere odaklan" : takipKilitli ? "Takibi bırak" : "Takibi kilitle — okunan yere dön",
+              takipKilitli)}
             {dugme(<Settings2 size={Math.round(16 * olcek)} />, () => { setSecim(false); setHizAcik(false); setAyarAcik(v => !v) }, "Sesli okuma ayarları", ayarAcik)}
           </>}
           {dugme(<X size={Math.round(17 * olcek)} />, kapatVeDurdur, "Sesli okumayı kapat")}

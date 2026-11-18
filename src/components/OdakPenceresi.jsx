@@ -8,7 +8,7 @@
    yavaşça ama güzel bir denge ile takip edecek."
 
    Uygulama kökünde (App.jsx) durur; okuma Kur'ân / kitap ekranının DIŞINDA sürerken
-   küçük oynatıcıdaki gözlükle açılır (ya da "Sürekli odak" açıksa kendiliğinden).
+   küçük oynatıcıdaki gözlükle açılır (ya da oynatıcı ayarında "Görünür" seçiliyse kendiliğinden).
      • KUR'ÂN — çalan sûrenin bütün âyetleri: Arapça (âyet rozetiyle) ve meal; ikisi ayrı
        ayrı açılıp kapanır. Okunan âyet tam renkte, ötekiler soluk.
      • SESLİ OKUMA — okunan cümle ve çevresi (kitabın sayfa metninden).
@@ -29,7 +29,7 @@ import { sesliOkuyucu, sesKilidiAc } from "../data/sesliOkuma"
 import { sureAdi } from "../data/sureAdlari"
 import AyetRozeti from "./AyetRozeti"
 import {
-  useOdak, odakAc, odakKapat, surekliAyarla, hizayaGetir, odakBandi, mushafYukle, mealYukle, ayetMetni,
+  useOdak, odakAc, odakKapat, disaridaAyarla, hizayaGetir, odakBandi, mushafYukle, mealYukle, ayetMetni,
   BOYUT_ANAHTAR, GORUNUM_ANAHTAR,
 } from "../data/odak"
 
@@ -52,12 +52,12 @@ export default function OdakPenceresi() {
   useEffect(() => { if (!kuranSuruyor) kapatildi.current.kuran = false }, [kuranSuruyor])
   useEffect(() => { if (!sesliSuruyor) kapatildi.current.sesli = false }, [sesliSuruyor])
 
-  // Sürekli odak: okuma ekran dışında sürüyorsa kendiliğinden aç
+  // Ekran dışında "Görünür" seçiliyse (kaynak başına, odak.disarida) okuma ekran dışında sürerken kendiliğinden aç
   useEffect(() => {
-    if (!odak.surekli || odak.acik) return
-    if (kuranSuruyor && !kuranEkrani && !kapatildi.current.kuran) odakAc("kuran")
-    else if (sesliSuruyor && !d.kontrolAcik && !kapatildi.current.sesli) odakAc("sesli")
-  }, [odak.surekli, odak.acik, kuranSuruyor, kuranEkrani, sesliSuruyor, d.kontrolAcik])
+    if (odak.acik) return
+    if (odak.disarida.kuran && kuranSuruyor && !kuranEkrani && !kapatildi.current.kuran) odakAc("kuran")
+    else if (odak.disarida.sesli && sesliSuruyor && !d.kontrolAcik && !kapatildi.current.sesli) odakAc("sesli")
+  }, [odak.disarida, odak.acik, kuranSuruyor, kuranEkrani, sesliSuruyor, d.kontrolAcik])
 
   // Kaynak bitti / okuma ekranına dönüldü → kapan
   const gorunur = odak.acik && (odak.kaynak === "kuran" ? kuranSuruyor && !kuranEkrani : sesliSuruyor && !d.kontrolAcik)
@@ -73,8 +73,8 @@ export default function OdakPenceresi() {
 
   if (!gorunur) return null
   return odak.kaynak === "kuran"
-    ? <KuranOdak player={player} surekli={odak.surekli} kapat={kapat} />
-    : <SesliOdak d={d} surekli={odak.surekli} kapat={kapat} />
+    ? <KuranOdak player={player} surekli={odak.disarida.kuran} pinDegis={() => disaridaAyarla("kuran", !odak.disarida.kuran)} kapat={kapat} />
+    : <SesliOdak d={d} surekli={odak.disarida.sesli} pinDegis={() => disaridaAyarla("sesli", !odak.disarida.sesli)} kapat={kapat} />
 }
 
 // ── TAKİP ────────────────────────────────────────────────────────────────────
@@ -112,7 +112,7 @@ function useTakip(kapRef, aktifAnahtar, hazir) {
 }
 
 // ── KABUK ────────────────────────────────────────────────────────────────────
-function Kabuk({ baslik, alt, surekli, kapat, kapRef, askida, takibeDon, calar, hazirlaniyor, onceki, oynat, sonraki, araclar, children }) {
+function Kabuk({ baslik, alt, surekli, pinDegis, kapat, kapRef, askida, takibeDon, calar, hazirlaniyor, onceki, oynat, sonraki, araclar, children }) {
   const { theme } = useApp()
   const ac = theme.accent
   const [boyutIdx, setBoyutIdx] = useState(() => Math.min(BOYUTLAR.length - 1, Math.max(0, okuJSON(BOYUT_ANAHTAR, 1))))
@@ -141,9 +141,9 @@ function Kabuk({ baslik, alt, surekli, kapat, kapRef, askida, takibeDon, calar, 
         {araclar}
         <button onClick={() => { const y = (boyutIdx + 1) % BOYUTLAR.length; setBoyutIdx(y); yazJSON(BOYUT_ANAHTAR, y) }}
           aria-label="Yazı boyutu" title="Yazı boyutu" style={kucukDugme(false)}><Type size={17} /></button>
-        <button onClick={() => surekliAyarla(!surekli)} aria-pressed={surekli}
-          aria-label={surekli ? "Sürekli odak açık" : "Sürekli odak kapalı"}
-          title={surekli ? "Sürekli odak açık — okuma ekran dışında sürdükçe bu pencere kendiliğinden açılır" : "Sürekli odak: okuma ekran dışında sürdükçe bu pencere kendiliğinden açılsın"}
+        <button onClick={pinDegis} aria-pressed={surekli}
+          aria-label={surekli ? "Ekran dışında görünür" : "Ekran dışında gizli"}
+          title={surekli ? "Görünür — okuma ekran dışında sürdükçe bu pencere kendiliğinden açılır" : "Gizli — pencere kendiliğinden açılmaz, yalnız ses sürer"}
           style={kucukDugme(surekli)}>{surekli ? <Pin size={17} /> : <PinOff size={17} />}</button>
         <button onClick={kapat} aria-label="Odağı kapat" title="Kapat" style={kucukDugme(false)}><X size={19} /></button>
       </div>
@@ -196,7 +196,7 @@ function Oge({ anahtar, aktif, gecti, children }) {
 }
 
 // ── KUR'ÂN ───────────────────────────────────────────────────────────────────
-function KuranOdak({ player, surekli, kapat }) {
+function KuranOdak({ player, surekli, pinDegis, kapat }) {
   const { theme } = useApp()
   const ac = theme.accent
   const kapRef = useRef(null)
@@ -238,7 +238,7 @@ function KuranOdak({ player, surekli, kapat }) {
   return (
     <Kabuk baslik={sureNo ? `${sureAdi(sureNo)} Sûresi` : "Kur'ân-ı Kerîm"}
       alt={[besmele ? "Besmele" : a ? `${a.ayetNo}. âyet${ayetSayisi ? ` / ${ayetSayisi}` : ""}` : null, calar ? kari : "Duraklatıldı"].filter(Boolean).join(" · ")}
-      surekli={surekli} kapat={kapat} kapRef={kapRef} askida={askida} takibeDon={takibeDon}
+      surekli={surekli} pinDegis={pinDegis} kapat={kapat} kapRef={kapRef} askida={askida} takibeDon={takibeDon}
       calar={calar} onceki={() => player.oncekiAyet()} sonraki={() => player.sonrakiAyet()}
       oynat={() => (calar ? player.duraklat() : player.devamEt())}
       araclar={<span style={{ display: "flex", gap: "4px" }}>{secip("arapca", "Arapça")}{secip("meal", "Meal")}</span>}>
@@ -292,7 +292,7 @@ function birimYazisi(b) {
   const ek = (b.ek || []).map(e => e.goster).filter(Boolean).join(" ")
   return { metin: [b.goster || b.soyle || "", ek].filter(Boolean).join(" "), tur: b.tip === "baslik" ? "baslik" : "metin" }
 }
-function SesliOdak({ d, surekli, kapat }) {
+function SesliOdak({ d, surekli, pinDegis, kapat }) {
   const { theme } = useApp()
   const ac = theme.accent
   const kapRef = useRef(null)
@@ -309,7 +309,7 @@ function SesliOdak({ d, surekli, kapat }) {
   return (
     <Kabuk baslik={bilgi.kitapAdi || "Sesli okuma"}
       alt={[d.birim?.sayfa ? `s. ${d.birim.sayfa}` : null, okuyor ? "Sesli okuma" : hazirlaniyor ? "Hazırlanıyor…" : "Duraklatıldı"].filter(Boolean).join(" · ")}
-      surekli={surekli} kapat={kapat} kapRef={kapRef} askida={askida} takibeDon={takibeDon}
+      surekli={surekli} pinDegis={pinDegis} kapat={kapat} kapRef={kapRef} askida={askida} takibeDon={takibeDon}
       calar={okuyor && !hazirlaniyor} hazirlaniyor={hazirlaniyor}
       onceki={() => sesliOkuyucu.geri()} sonraki={() => sesliOkuyucu.ileri()}
       oynat={() => { if (okuyor) sesliOkuyucu.duraklat(); else { sesKilidiAc(); sesliOkuyucu.devam() } }}>

@@ -10,9 +10,10 @@
    • ODAK PENCERESİ (components/OdakPenceresi.jsx) — öbür ekranlarda küçük oynatıcıdaki
      gözlükle açılır; Kur'ân'da çalan sûrenin âyetleri (Arapça + meal), sesli okumada
      okunan cümleler. Okunan öğe sakin bir kaydırmayla göz hizasına gelir.
-   • SÜREKLİ ODAK ("vukuf-odak-surekli") — açıksa: Kur'ân ekranında mushaf çalan âyeti
-     kendiliğinden takip eder; öbür ekranlarda okuma sürerken odak penceresi
-     kendiliğinden açık kalır (kapatılırsa o okuma boyunca yeniden açılmaz).
+   • SÜREKLİ ODAK ("vukuf-odak-surekli") — açıksa Kur'ân ekranında mushaf çalan âyeti
+     kendiliğinden takip eder.
+   • EKRAN DIŞINDA (disarida, kaynak başına) — açıksa öbür ekranlarda okuma sürerken odak
+     penceresi kendiliğinden açılır (kapatılırsa o okuma boyunca yeniden açılmaz).
    • yumusakKaydir — tarayıcının "smooth" kaydırması kısa ve sert; burada süre mesafeye
      göre uzar (0,8–1,8 sn), yavaş başlayıp yavaş biten bir eğriyle ilerler; kullanıcı
      dokunursa/kaydırırsa hemen bırakır. "Hareketi azalt" açıksa anında konumlanır.
@@ -62,7 +63,16 @@ export function odakBandi(konum = KONUM_VARSAYILAN) {
   return { oran: konum, bolge: [konum - 0.14, Math.min(0.8, konum + 0.24)] }
 }
 
-let durum = { acik: false, kaynak: null, surekli: okuSurekli(), konum: okuKonum() }
+/* EKRAN DIŞINDA (19 Kasım 2026): devamlı oynatma/okuma sürerken başka ekranda odak penceresi
+   kendiliğinden açılsın mı — kaynak başına; varsayılan gizli (yalnız ses sürer). */
+const DISARIDA_ANAHTAR = { kuran: "vukuf-odak-disarida-kuran", sesli: "vukuf-odak-disarida-sesli" }
+const okuDisarida = () => {
+  const o = {}
+  for (const [k, a] of Object.entries(DISARIDA_ANAHTAR)) { try { o[k] = localStorage.getItem(a) === "1" } catch { o[k] = false } }
+  return o
+}
+
+let durum = { acik: false, kaynak: null, surekli: okuSurekli(), konum: okuKonum(), disarida: okuDisarida() }
 const dinleyiciler = new Set()
 const yay = (p) => { durum = { ...durum, ...p }; dinleyiciler.forEach(f => f()) }
 const abone = (f) => { dinleyiciler.add(f); return () => dinleyiciler.delete(f) }
@@ -71,6 +81,10 @@ const al = () => durum
 export function useOdak() { return useSyncExternalStore(abone, al, al) }
 export function odakAc(kaynak) { yay({ acik: true, kaynak }) }
 export function odakKapat() { yay({ acik: false }) }
+export function disaridaAyarla(kaynak, v) {
+  try { localStorage.setItem(DISARIDA_ANAHTAR[kaynak], v ? "1" : "0") } catch { /* yoksay */ }
+  yay({ disarida: { ...durum.disarida, [kaynak]: !!v } })
+}
 export function surekliAyarla(v) {
   try { localStorage.setItem(SUREKLI_ANAHTAR, v ? "1" : "0") } catch { /* yoksay */ }
   yay({ surekli: !!v })

@@ -1,8 +1,7 @@
 import { useRef, useEffect, useState } from "react"
 import {
   SkipBack, SkipForward, Glasses, Gauge, RotateCcw, ChevronRight, ChevronLeft, Crosshair,
-  Volume2, Volume1, VolumeX, SlidersHorizontal, Timer,
-} from "lucide-react"
+  Volume2, Volume1, VolumeX, SlidersHorizontal, Timer, Eye, EyeOff } from "lucide-react"
 import { SemseAmblem, NABIZ_CSS } from "./MiniOynatici"
 import { useHapKonumu } from "./DonusDugmesi"
 
@@ -49,7 +48,7 @@ function KuranKucuk({ theme, calar, barKonum, altPay, ustPay, ac: acFn }) {
 }
 import { KARILAR } from "../data/hooks/useAudioPlayer"
 import { useArkaCalma, useOtomatikDurdurma, UYKU_SURELERI } from "../data/oynatici"
-import { useOdak, surekliAyarla } from "../data/odak"
+import { useOdak, surekliAyarla, disaridaAyarla } from "../data/odak"
 import OtomatikDurdurmaSecici from "./OtomatikDurdurmaSecici"
 import OdakKonumAyari from "./OdakKonumAyari"
 
@@ -406,9 +405,9 @@ export default function PlayerBar({
             </div>
           )}
           <div style={{ height: "1px", background: theme.border, opacity: 0.6, margin: "0 2px" }} />
-          {/* SÜREKLİ ODAK — mushaf okunan âyeti takip eder; öbür ekranlarda odak penceresi açık kalır */}
+          {/* SÜREKLİ ODAK — mushaf okunan âyeti takip eder */}
           <div role="switch" aria-checked={odakDurumu.surekli} onClick={() => surekliAyarla(!odakDurumu.surekli)}
-            title="Kur'ân ekranında okunan âyet hep takip edilsin; ekrandan çıkınca okunan âyetler odak penceresinde görünsün"
+            title="Kur'ân ekranında okunan âyet hep takip edilsin"
             style={{ ...satirStil, cursor: "pointer" }}>
             <span style={{ ...ikonDugme, cursor: "pointer" }}><Glasses size={16} color={odakDurumu.surekli ? theme.accent : theme.textSecondary} /></span>
             <span style={{ flex: 1, minWidth: 0, fontSize: "12px", color: theme.text, lineHeight: 1.25 }}>
@@ -447,6 +446,34 @@ export default function PlayerBar({
               }} />
             </span>
           </div>
+          {/* EKRAN DIŞINDA — devamlı oynatmada başka ekranda âyetler görünsün mü (varsayılan gizli) */}
+          {arkaCalma && (() => {
+            const gor = !!odakDurumu.disarida?.kuran
+            return (<>
+              <div style={{ height: "1px", background: theme.border, opacity: 0.6, margin: "0 2px" }} />
+              <div role="switch" aria-checked={gor} onClick={() => disaridaAyarla("kuran", !gor)}
+                title={gor ? "Görünür: başka ekranda okunan âyetler sırayla gösterilir" : "Gizli: başka ekranda yalnız ses sürer"}
+                style={{ ...satirStil, cursor: "pointer" }}>
+                <span style={{ ...ikonDugme, cursor: "pointer" }}>{gor ? <Eye size={16} color={theme.accent} /> : <EyeOff size={16} color={theme.textSecondary} />}</span>
+                <span style={{ flex: 1, minWidth: 0, fontSize: "12px", color: theme.text, lineHeight: 1.25 }}>
+                  {gor ? "Görünür" : "Gizli"}
+                  <span style={{ display: "block", fontSize: "10px", color: theme.textSecondary }}>
+                    {gor ? "Başka ekranda âyetler sırayla görünür" : "Başka ekranda yalnız ses sürer"}
+                  </span>
+                </span>
+                <span aria-hidden="true" style={{
+                  width: "30px", height: "18px", borderRadius: "999px", flexShrink: 0, position: "relative",
+                  background: gor ? theme.accent : `${theme.textSecondary}44`, transition: "background .15s ease",
+                }}>
+                  <span style={{
+                    position: "absolute", top: "2px", left: gor ? "14px" : "2px",
+                    width: "14px", height: "14px", borderRadius: "50%", background: "#fff",
+                    boxShadow: "0 1px 3px rgba(0,0,0,0.25)", transition: "left .15s ease",
+                  }} />
+                </span>
+              </div>
+            </>)
+          })()}
           <div style={{ height: "1px", background: theme.border, opacity: 0.6, margin: "0 2px" }} />
           {/* OTOMATİK DURDURMA — seçilen (ya da özel) süre sonunda oynatıcı kapanır; ortak seçici */}
           <OtomatikDurdurmaSecici anahtarli theme={theme} uyku={uyku} girinti={24}

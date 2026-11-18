@@ -20,12 +20,13 @@
    Metin motoru: data/sesliOkuma.js
    ═══════════════════════════════════════════════════════════════════════════ */
 
+import { useOdak, disaridaAyarla } from "../data/odak"
 import { useEffect, useRef, useState, useSyncExternalStore } from "react"
 import { KitapAmblem, KITAP_CSS, sesliZamanlayici } from "./SesliMiniHap"
 import OtomatikDurdurmaSecici from "./OtomatikDurdurmaSecici"
 import { useZamanlayici } from "../data/otomatikDurdurma"
 import { useHapKonumu } from "./DonusDugmesi"
-import { SkipBack, SkipForward, Play, Pause, X, Settings2, Crosshair, Loader2, GripVertical, Glasses, Gauge, RotateCcw, SlidersHorizontal, Volume1, Volume2, VolumeX, Headphones, Timer } from "lucide-react"
+import { SkipBack, SkipForward, Play, Pause, X, Settings2, Crosshair, Loader2, GripVertical, Glasses, Gauge, RotateCcw, SlidersHorizontal, Volume1, Volume2, VolumeX, Headphones, Timer, Eye, EyeOff } from "lucide-react"
 import {
   sesliOkuyucu, sesliDestekVar, ayarOku, sesleriAl, turkceSesler, arapcaSesler, enIyiSes, konumOku,
   sesCinsiyeti, sesKilidiAc, kariSec, KARILAR,
@@ -130,6 +131,7 @@ export default function SesliOkumaKontrol({
   arapcaKapali = false,      // Evrad ve Ezkâr: Arapça yapay sesle okunmaz (16 Ekim 2026, kullanıcı)
 }) {
   const d = useSesliDurum()
+  const odakDurumu = useOdak()
   const uyku = useZamanlayici(sesliZamanlayici)          // otomatik durdurma (4 Kasım 2026)
   const [ayar, setAyar] = useState(() => ayarOku())
   const [ayarAcik, setAyarAcik] = useState(false)
@@ -987,6 +989,33 @@ export default function SesliOkumaKontrol({
                 }} />
               </span>
             </div>
+            {/* EKRAN DIŞINDA — devamlı okumada başka ekranda cümleler görünsün mü (varsayılan gizli) */}
+            {ayar.devamli && (() => {
+              const gor = !!odakDurumu.disarida?.sesli
+              return (<>
+                <div style={{ height: "1px", background: theme.border, opacity: 0.6 }} />
+                <div role="switch" aria-checked={gor} onClick={() => disaridaAyarla("sesli", !gor)}
+                  title={gor ? "Görünür: başka ekranda okunan cümleler sırayla gösterilir" : "Gizli: başka ekranda yalnız ses sürer"}
+                  style={{ display: "flex", alignItems: "center", gap: "8px", padding: "5px 0", cursor: "pointer" }}>
+                  {gor ? <Eye size={16} color={ac} style={{ flexShrink: 0 }} /> : <EyeOff size={16} color={theme.textSecondary} style={{ flexShrink: 0 }} />}
+                  <span style={{ flex: 1, minWidth: 0, fontSize: "12px", lineHeight: 1.25 }}>
+                    {gor ? "Görünür" : "Gizli"}
+                    <span style={{ display: "block", fontSize: "10px", color: theme.textSecondary }}>
+                      {gor ? "Başka ekranda cümleler sırayla görünür" : "Başka ekranda yalnız ses sürer"}
+                    </span>
+                  </span>
+                  <span aria-hidden="true" style={{
+                    width: "30px", height: "18px", borderRadius: "999px", flexShrink: 0, position: "relative",
+                    background: gor ? ac : `${theme.textSecondary}44`, transition: "background .15s ease",
+                  }}>
+                    <span style={{
+                      position: "absolute", top: "2px", left: gor ? "14px" : "2px", width: "14px", height: "14px",
+                      borderRadius: "50%", background: "#fff", transition: "left .15s ease", boxShadow: "0 1px 2px rgba(0,0,0,0.25)",
+                    }} />
+                  </span>
+                </div>
+              </>)
+            })()}
             <div style={{ height: "1px", background: theme.border, opacity: 0.6 }} />
             {/* OTOMATİK DURDURMA — seçilen süre sonunda sesli okuma durur (ekrandan çıkılsa da) */}
             <OtomatikDurdurmaSecici theme={theme} uyku={uyku} aciklama="Seçilen süre sonunda sesli okuma durur" />

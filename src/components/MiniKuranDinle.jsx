@@ -117,8 +117,8 @@ function DinleHapi({ dinle, kitapta }) {
           </button>
         ) : (
           <div style={{
-            display: "flex", alignItems: "center", gap: "4px", padding: "4px 4px 4px 5px",
-            maxWidth: "min(380px, calc(100vw - 20px))",
+            display: "flex", alignItems: "center", gap: "4px", padding: "4px 4px 4px 5px", flexWrap: "wrap", rowGap: "4px", boxSizing: "border-box",
+            maxWidth: `min(380px, ${k.ekranEn(20)})`,
             background: `linear-gradient(90deg, ${ac}12, ${theme.surface} 45%)`, backgroundColor: theme.surface,
             border: `1.5px dashed ${ac}`, borderRadius: "24px",
             boxShadow: k.surukleniyor ? "0 10px 28px rgba(0,0,0,0.32)" : "0 4px 16px rgba(0,0,0,0.22)",
@@ -128,7 +128,7 @@ function DinleHapi({ dinle, kitapta }) {
               onClick={() => (calar || yukleniyor ? dinle.duraklat() : dinle.devam())}>
               {({ isaret }) => <DinleAmblemi ac={ac} zemin={theme.surface} calar={calar} boy={36} isaret={isaret} />}
             </AmblemDugmesi>
-            <span style={{ display: "flex", flexDirection: "column", minWidth: 0, flex: 1, padding: "0 6px 0 4px", lineHeight: 1.15 }}>
+            <span style={{ display: "flex", flexDirection: "column", minWidth: 0, flex: "1 1 110px", padding: "0 6px 0 4px", lineHeight: 1.15 }}>
               <span style={{ fontSize: "12.5px", fontWeight: 700, color: theme.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{kari?.ad}</span>
               <span style={{ display: "flex", alignItems: "center", gap: "5px", fontSize: "9.5px", letterSpacing: "0.08em", fontWeight: 700, color: theme.textSecondary, whiteSpace: "nowrap", minWidth: 0 }}>
                 EKSTRALAR
@@ -136,6 +136,9 @@ function DinleHapi({ dinle, kitapta }) {
                 {uyku.bitis && <span style={{ fontSize: "10px" }}>· <UykuRozeti theme={theme} bitis={uyku.bitis} /></span>}
               </span>
             </span>
+{/* DÜĞME GRUBU (18 Kasım 2026, kullanıcı: "Buton boyutları ekranın dışına çıkarsa satır olarak artabilir"): hap
+                ekrana sığmazsa düğmeler alt satıra iner (ortalı), başlık üst satırı doldurur */}
+            <div style={{ display: "flex", alignItems: "center", gap: "4px", flexWrap: "wrap", justifyContent: "center", margin: "0 auto", maxWidth: "100%" }}>
             <button onClick={() => dinle.atla(1)} aria-label="Sonraki" title="Sonraki" style={yuvarlak(false)}>
               <SonrakiSimgesi ac={ac} />
             </button>
@@ -149,6 +152,7 @@ function DinleHapi({ dinle, kitapta }) {
             <button onClick={() => dinle.kapat()} aria-label="Kur'an Dinle'yi durdur ve kapat" title="Durdur ve kapat" style={yuvarlak(false)}>
               <DurdurSimgesi ac={ac} />
             </button>
+            </div>
           </div>
         )}
       </div>

@@ -369,7 +369,7 @@ const KONULAR = [
     metin: [
       "Sûre menüsü, arama, sayfaya gitme ya da bir kayıtla başka bir yere geçildiğinde ekranda küçük bir \"Geri dön\" düğmesi belirir; dokunulduğunda önceki yere dönülür. Birden fazla nokta varsa yanındaki sayıyla liste açılır.",
       "Düğme sürüklenerek istenen yere taşınabilir; yerler \"Düğme konumlarını sıfırla\" ile eski hâline getirilebilir.",
-      "Düğmelerin boyutu Ayarlar → Düğme boyutu bölümünden değiştirilebilir: \"Yüzen düğmeler\" oynatıcı haplarını, küçük hâllerini, Geri dön ve köprü düğmelerini, Diyanet TV şeridini ve en üstteki menü düğmelerini; \"Okuma barı ve menüsü\" okuma ekranlarının barını ve menüsünü büyütür ya da küçültür. \"Otomatik\"te bilgisayarda daha büyük, telefonda normal boyut kullanılır.",
+      "Düğmelerin boyutu Ayarlar → Düğme boyutu bölümünden değiştirilebilir: \"Yüzen düğmeler\" oynatıcı haplarını, küçük hâllerini, Geri dön ve köprü düğmelerini, Diyanet TV şeridini ve en üstteki menü düğmelerini; \"Okuma barı ve menüsü\" okuma ekranlarının barını ve menüsünü büyütür ya da küçültür. \"Otomatik\"te bilgisayarda daha büyük, telefonda normal boyut kullanılır. Büyütülen oynatıcı hapı ya da kaydırma menüsü ekrana sığmazsa düğmeler alt satıra iner; ekrandan taşmaz.",
     ],
     anahtar: "geri dön önceki yer köprü aramaya dön",
   },

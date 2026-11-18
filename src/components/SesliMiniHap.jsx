@@ -185,8 +185,8 @@ function Hap({ d, kitapta }) {
         </button>
       ) : (
       <div style={{
-        display: "flex", alignItems: "center", gap: "2px", padding: "4px",
-        maxWidth: "min(340px, calc(100vw - 20px))",
+        display: "flex", alignItems: "center", gap: "2px", padding: "4px", flexWrap: "wrap", rowGap: "4px", boxSizing: "border-box",
+        maxWidth: `min(340px, ${k.ekranEn(20)})`,
         background: theme.surface, border: `1px solid ${ac}`, borderRadius: "24px",
         boxShadow: golge,
       }}>
@@ -199,7 +199,7 @@ function Hap({ d, kitapta }) {
           }}>
           {({ isaret }) => <KitapAmblem ac={ac} zemin={theme.surface} hal={hal} boy={36} isaret={isaret} />}
         </AmblemDugmesi>
-        <span style={{ display: "flex", flexDirection: "column", minWidth: 0, flex: 1, padding: "0 8px 0 6px", lineHeight: 1.15 }}>
+        <span style={{ display: "flex", flexDirection: "column", minWidth: 0, flex: "1 1 110px", padding: "0 8px 0 6px", lineHeight: 1.15 }}>
           <span style={{ fontSize: "12.5px", fontWeight: 700, color: theme.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
             {ad}
           </span>
@@ -208,6 +208,9 @@ function Hap({ d, kitapta }) {
             {uyku.bitis && <> · <UykuRozeti theme={theme} bitis={uyku.bitis} /></>}
           </span>
         </span>
+{/* DÜĞME GRUBU (18 Kasım 2026, kullanıcı: "Buton boyutları ekranın dışına çıkarsa satır olarak artabilir"): hap
+            ekrana sığmazsa düğmeler alt satıra iner (ortalı), başlık üst satırı doldurur */}
+        <div style={{ display: "flex", alignItems: "center", gap: "2px", flexWrap: "wrap", justifyContent: "center", margin: "0 auto", maxWidth: "100%" }}>
         <button onClick={() => odakAc("sesli")} aria-label="Odak — okunan cümleler" title="Odak — okunan cümleleri göster" style={yuvarlak(false)}>
           <OdakSimgesi ac={ac} />
         </button>
@@ -220,6 +223,7 @@ function Hap({ d, kitapta }) {
         <button onClick={() => sesliOkuyucu.durdur()} aria-label="Sesli okumayı durdur" title="Durdur" style={yuvarlak(false)}>
           <DurdurSimgesi ac={ac} />
         </button>
+        </div>
       </div>
       )}
       <style>{`@keyframes sesliMiniDon { to { transform: rotate(360deg) } }`}</style>

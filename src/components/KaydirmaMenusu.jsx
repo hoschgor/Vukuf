@@ -47,6 +47,12 @@ export default function KaydirmaMenusu({ acik, hiz, setHiz, durdu = false, setDu
   const px = (n) => `${Math.round(n * olcek)}px`
   const yuzde = ((hiz - OTO_EN_AZ) / (OTO_EN_COK - OTO_EN_AZ)) * 100
   const uygula = () => { const v = otoHizSinirla(yazi); setHiz(v); setYazi(String(v)) }
+  /* İKİ SATIR (18 Kasım 2026, kullanıcı: "Buton boyutları ekranın dışına çıkarsa satır olarak
+     artabilir şekilde ayarlayalım"): büyük arayüz ölçeğinde düğmeler ve rakam kutusu sığıp sürgüye
+     rahat bir yer kalmıyorsa sürgü alt satıra, tam genişliğe iner. */
+  const en = Math.min(440 * olcek, (typeof window !== "undefined" ? window.innerWidth : 440) - 24)
+  const gerek = ((setEtkilesim ? 3 : 2) * 38 + 48 + 22 + (setEtkilesim ? 4 : 3) * 10) * olcek + 140
+  const iki = en < gerek
 
   return createPortal(
     <div role="dialog" aria-label="Otomatik kaydırma"
@@ -56,8 +62,8 @@ export default function KaydirmaMenusu({ acik, hiz, setHiz, durdu = false, setDu
         position: "fixed", left: 0, right: 0, margin: "0 auto", zIndex: 480,
         bottom: `calc(${altPay + 12}px + env(safe-area-inset-bottom))`,
         width: `min(${Math.round(440 * olcek)}px, calc(100vw - 24px))`, boxSizing: "border-box",
-        display: "flex", alignItems: "center", gap: px(10),
-        padding: `${px(8)} ${px(8)} ${px(8)} ${px(14)}`, borderRadius: "999px",
+        display: "flex", alignItems: "center", gap: px(10), flexWrap: iki ? "wrap" : "nowrap", rowGap: px(8),
+        padding: `${px(8)} ${px(8)} ${px(iki ? 12 : 8)} ${px(iki ? 8 : 14)}`, borderRadius: iki ? px(24) : "999px",
         background: theme.surface, color: theme.text, border: `1.5px solid ${ac}`,
         boxShadow: "0 8px 26px rgba(0,0,0,0.22)", animation: "vk-km-gir .18s ease-out",
       }}>
@@ -78,7 +84,7 @@ export default function KaydirmaMenusu({ acik, hiz, setHiz, durdu = false, setDu
       <input type="range" className="vk-km-surgu" min={OTO_EN_AZ} max={OTO_EN_COK} step="1" value={hiz}
         aria-label="Kaydırma hızı" onChange={(e) => { setHiz(Number(e.target.value)); sayacYenile() }}
         style={{
-          flex: 1, minWidth: 0, "--km-ac": ac, "--km-zemin": theme.surface,
+          ...(iki ? { order: 10, flex: "1 1 100%", margin: `0 ${px(6)}` } : { flex: 1 }), minWidth: 0, "--km-ac": ac, "--km-zemin": theme.surface,
           background: `linear-gradient(90deg, ${ac} ${yuzde}%, ${theme.border} ${yuzde}%)`,
         }} />
       <input type="number" inputMode="numeric" className="vk-km-sayi" min={OTO_EN_AZ} max={OTO_EN_COK} value={yazi} aria-label={`Kaydırma hızı (1–${OTO_EN_COK})`}
@@ -88,7 +94,7 @@ export default function KaydirmaMenusu({ acik, hiz, setHiz, durdu = false, setDu
         onChange={(e) => { setYazi(e.target.value.replace(/\D/g, "").slice(0, 2)); sayacYenile() }}
         onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur() }}
         style={{
-          width: px(48), flexShrink: 0, textAlign: "center", padding: `${px(5)} ${px(2)}`, borderRadius: px(9),
+          width: px(48), flexShrink: 0, textAlign: "center", ...(iki ? { marginLeft: "auto" } : {}), padding: `${px(5)} ${px(2)}`, borderRadius: px(9),
           border: `1px solid ${theme.border}`, background: theme.background, color: theme.text,
           fontFamily: "inherit", fontSize: px(15), fontWeight: 700, fontVariantNumeric: "tabular-nums",
           MozAppearance: "textfield",

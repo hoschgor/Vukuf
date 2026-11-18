@@ -194,8 +194,8 @@ function MiniHap({ player, kitapta }) {
         ) : (
           /* AÇIK — sade hap */
           <div style={{
-            display: "flex", alignItems: "center", gap: "2px", padding: "4px",
-            maxWidth: "min(360px, calc(100vw - 20px))",
+            display: "flex", alignItems: "center", gap: "2px", padding: "4px", flexWrap: "wrap", rowGap: "4px", boxSizing: "border-box",
+            maxWidth: `min(360px, ${k.ekranEn(20)})`,
             background: theme.surface, border: `1px solid ${ac}`, borderRadius: "24px",
             boxShadow: k.surukleniyor ? "0 10px 28px rgba(0,0,0,0.32)" : "0 4px 16px rgba(0,0,0,0.22)",
           }}>
@@ -209,12 +209,15 @@ function MiniHap({ player, kitapta }) {
               }}>
               <MushafPlayButton ac={ac} playing={calar} size={36} />
             </button>
-            <span style={{ display: "flex", flexDirection: "column", minWidth: 0, flex: 1, padding: "0 8px 0 6px", lineHeight: 1.15 }}>
+            <span style={{ display: "flex", flexDirection: "column", minWidth: 0, flex: "1 1 110px", padding: "0 8px 0 6px", lineHeight: 1.15 }}>
               <span style={{ fontSize: "12.5px", fontWeight: 700, color: theme.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{baslik}</span>
               <span style={{ fontSize: "10.5px", color: theme.textSecondary, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                 {calar ? kari : "Duraklatıldı"}
               </span>
             </span>
+{/* DÜĞME GRUBU (18 Kasım 2026, kullanıcı: "Buton boyutları ekranın dışına çıkarsa satır olarak artabilir"): hap
+                ekrana sığmazsa düğmeler alt satıra iner (ortalı), başlık üst satırı doldurur */}
+            <div style={{ display: "flex", alignItems: "center", gap: "2px", flexWrap: "wrap", justifyContent: "center", margin: "0 auto", maxWidth: "100%" }}>
             <button onClick={() => player.sonrakiAyet()} aria-label="Sonraki âyet" title="Sonraki âyet" style={yuvarlak(false)}>
               <SonrakiSimgesi ac={ac} />
             </button>
@@ -234,6 +237,7 @@ function MiniHap({ player, kitapta }) {
             <button onClick={() => player.durdur()} aria-label="Durdur ve kapat" title="Durdur ve kapat" style={yuvarlak(false)}>
               <DurdurSimgesi ac={ac} />
             </button>
+            </div>
           </div>
         )}
       </div>

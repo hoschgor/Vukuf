@@ -177,6 +177,8 @@ export default function SureBasligi({ sure, theme, onTikla, player, vurgulu = fa
         height={resimIcin ? 110 : undefined}
         viewBox="0 0 580 110"
         preserveAspectRatio="xMidYMid meet"
+        // Satır içi svg alt boşluk (taban çizgisi payı) bırakıyordu: vurgu sırasında besmeleyle arası açılıyordu
+        style={resimIcin ? undefined : { display: "block", width: "100%", height: "auto" }}
       >
         
         {/* ========================================================= */}

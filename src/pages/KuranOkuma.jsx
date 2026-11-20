@@ -5704,7 +5704,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
                     : <ChevronRight size={Math.round((isMobile ? 18 : 21) * barUiOlcegi)} />}
                 </button>
                 <button
-                  onClick={() => { donusBirak("icindekiler", cuz.baslangic); sayfayaGit(cuz.baslangic) }}
+                  onClick={() => { donusBirak("icindekiler", cuz.baslangic); sayfayaGit(cuz.baslangic); setMenuAcik(false); setMenuArama(""); setAcikCuz(null) }}
                   style={{
                     flex: 1,
                     display: "flex",
@@ -5743,7 +5743,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
                   {hizbSayfalari(cuz.no).map(h => (
                     <button
                       key={h.hizb}
-                      onClick={() => { donusBirak("icindekiler", h.sayfa); sayfayaGit(h.sayfa) }}
+                      onClick={() => { donusBirak("icindekiler", h.sayfa); sayfayaGit(h.sayfa); setMenuAcik(false); setMenuArama(""); setAcikCuz(null) }}
                       style={{
                         flex: 1,
                         height: "28px",

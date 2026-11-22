@@ -100,6 +100,14 @@ export default function NamazHatimTakibi({ theme }) {
   const [hatim, setHatim] = useKayit(T.HATIM_ANAHTAR, T.oku(T.HATIM_ANAHTAR, null))
   const [gruplar, setGruplar] = useKayit(T.GRUP_ANAHTAR, T.oku(T.GRUP_ANAHTAR, []))
   const [davetler, setDavetler] = useKayit(T.DAVET_ANAHTAR, T.oku(T.DAVET_ANAHTAR, []))
+  // Paylaşım bağlantısıyla gelindiyse bölüme kaydır
+  const capaRef = useRef(null)
+  useEffect(() => {
+    if (!gelenMesajlar.length) return
+    const t = setTimeout(() => { try { capaRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }) } catch { /* yoksay */ } }, 350)
+    return () => clearTimeout(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Uygulama açıkken başka bir bağlantı gelirse (aynı sayfada) yeniden işle
   useEffect(() => {
@@ -137,6 +145,7 @@ export default function NamazHatimTakibi({ theme }) {
   const SEKMELER = [["gunluk", "Günlük"], ["kaza", "Kaza"], ["hatim", "Hatim"]]
   return (
     <Kart theme={theme} Ikon={ListChecks} baslik="Namaz & Hatim Takibi" alt="Günlük namazlar, kaza ve hatim planı" bolum={bolum} ozet={ozet}>
+      <span ref={capaRef} aria-hidden="true" style={{ display: "block", scrollMarginTop: "90px" }} />
       <div role="tablist" style={{ display: "flex", gap: "4px", padding: "3px", borderRadius: "11px", border: `1px solid ${theme.border}`, background: theme.background, marginBottom: "12px" }}>
         {SEKMELER.map(([id, ad]) => (
           <button key={id} role="tab" aria-selected={sekme === id} onClick={() => setSekme(id)}
@@ -257,18 +266,27 @@ function Gunluk({ theme, gunluk, setGunluk, setKaza }) {
 // ── KAZA ─────────────────────────────────────────────────────────────────────
 function Kaza({ theme, kaza, setKaza }) {
   const [topluGun, setTopluGun] = useState("")
+  // Özel düzenleme: seçilen vakitlere toplu ekleme / çıkarma
+  const [secili, setSecili] = useState(() => T.NAMAZLAR.map(n => n.k))
+  const secimDegis = (k) => setSecili(l => (l.includes(k) ? l.filter(x => x !== k) : [...l, k]))
+  const hepsiSecili = secili.length === T.NAMAZLAR.length
   const toplam = Object.values(kaza.kalan).reduce((a, b) => a + (b || 0), 0)
   const ayarla = (k, d, kilindi = false) => setKaza(o => {
     const simdi = o.kalan[k] || 0
     if (d < 0 && simdi <= 0) return o
     return { ...o, kalan: { ...o.kalan, [k]: Math.max(0, simdi + d) }, kilinan: (o.kilinan || 0) + (kilindi ? 1 : 0) }
   })
-  const topluEkle = () => {
+  const topluUygula = (yon) => {
     const n = Math.max(0, Math.min(36500, parseInt(topluGun, 10) || 0))
-    if (!n) return
-    setKaza(o => { const kalan = { ...o.kalan }; T.NAMAZLAR.forEach(x => { kalan[x.k] = (kalan[x.k] || 0) + n }); return { ...o, kalan } })
+    if (!n || !secili.length) return
+    setKaza(o => {
+      const kalan = { ...o.kalan }
+      secili.forEach(k => { kalan[k] = Math.max(0, (kalan[k] || 0) + yon * n) })
+      return { ...o, kalan }
+    })
     setTopluGun("")
   }
+  const topluHazir = parseInt(topluGun, 10) > 0 && secili.length > 0
   return (
     <div>
       <div style={{ display: "flex", gap: "8px", marginBottom: "10px" }}>
@@ -297,17 +315,31 @@ function Kaza({ theme, kaza, setKaza }) {
           </div>
         ))}
       </div>
-      <div style={altBaslik(theme)}>TOPLU EKLEME</div>
+      <div style={altBaslik(theme)}>ÖZEL DÜZENLEME</div>
+      <div role="group" aria-label="Vakitler" style={{ display: "flex", gap: "4px", flexWrap: "wrap", marginBottom: "8px" }}>
+        <button onClick={() => setSecili(hepsiSecili ? [] : T.NAMAZLAR.map(n => n.k))} aria-pressed={hepsiSecili}
+          style={{ ...kucukDugme(theme, hepsiSecili), padding: "4px 9px", fontSize: "12px" }}>Tümü</button>
+        {T.NAMAZLAR.map(n => {
+          const a = secili.includes(n.k)
+          return (
+            <button key={n.k} onClick={() => secimDegis(n.k)} aria-pressed={a}
+              style={{ ...kucukDugme(theme, a), padding: "4px 9px", fontSize: "12px" }}>{a && <Check size={11} />}{n.ad}</button>
+          )
+        })}
+      </div>
       <div style={{ display: "flex", gap: "6px", alignItems: "center", flexWrap: "wrap" }}>
-        <input type="number" inputMode="numeric" min="1" value={topluGun} onChange={e => setTopluGun(e.target.value)} placeholder="Gün sayısı"
-          aria-label="Gün sayısı"
-          style={{ width: "110px", padding: "7px 9px", borderRadius: "9px", border: `1px solid ${theme.border}`, background: theme.background, color: theme.text, fontFamily: "inherit", fontSize: "13px" }} />
-        <button onClick={topluEkle} disabled={!(parseInt(topluGun, 10) > 0)} style={{ ...kucukDugme(theme), opacity: parseInt(topluGun, 10) > 0 ? 1 : 0.5 }}>
-          Her vakte ekle
+        <input type="number" inputMode="numeric" min="1" value={topluGun} onChange={e => setTopluGun(e.target.value)} placeholder="Sayı"
+          aria-label="Eklenecek ya da çıkarılacak sayı"
+          style={{ width: "96px", padding: "7px 9px", borderRadius: "9px", border: `1px solid ${theme.border}`, background: theme.background, color: theme.text, fontFamily: "inherit", fontSize: "13px" }} />
+        <button onClick={() => topluUygula(1)} disabled={!topluHazir} style={{ ...kucukDugme(theme, true), opacity: topluHazir ? 1 : 0.5 }}>
+          <Plus size={13} /> Ekle
+        </button>
+        <button onClick={() => topluUygula(-1)} disabled={!topluHazir} style={{ ...kucukDugme(theme), opacity: topluHazir ? 1 : 0.5 }}>
+          <Minus size={13} /> Çıkar
         </button>
       </div>
       <div style={{ fontSize: "11px", color: theme.textSecondary, marginTop: "6px", lineHeight: 1.5 }}>
-        Girilen gün sayısı beş vakte ve vitire ayrı ayrı eklenir. "Kıldım" kalan sayıyı bir düşürür ve kılınanlara ekler; − ve + yalnız düzeltme içindir.
+        Girilen sayı seçilen her vakte ayrı ayrı eklenir ya da çıkarılır (gün sayısı girilirse o kadar günün kazası olur). Çıkarma düzeltme içindir, kılınanlara eklenmez. "Kıldım" kalan sayıyı bir düşürür ve kılınanlara ekler.
       </div>
       <div style={{ marginTop: "10px" }}>
         <OnayDugmesi theme={theme} tikla={() => setKaza({ ...T.BOS_KAZA, kalan: { ...T.BOS_KAZA.kalan } })} stil={{ fontSize: "12px", padding: "6px 10px" }}>
@@ -572,6 +604,10 @@ function YeniGrup({ theme, kur, vazgec }) {
 const KISI_RENKLERI = ["#c0843a", "#3a7bc0", "#2e9e5b", "#a0479b", "#c0392b", "#3aa6a6", "#7a6a2e", "#5b5bc4"]
 function GrupDetay({ theme, grup, guncelle, sil, kapat, paylas, kopyala }) {
   const [duzenle, setDuzenle] = useState(false)
+  // Paylaşım: toplu (herkes tek mesajda) ya da kişisel (belirlenen mesaj + kişinin cüzleri)
+  const [paylasimTur, setPaylasimTur] = useState("toplu")
+  const [mesajAcik, setMesajAcik] = useState(false)
+  const kisiMesaji = (k) => T.kisiselMesaj(grup, k)
   const okunan = grup.okunan || {}
   const toplam = grup.dagitim.length
   const okunanSayisi = Object.keys(okunan).filter(k => okunan[k]).length
@@ -599,6 +635,49 @@ function GrupDetay({ theme, grup, guncelle, sil, kapat, paylas, kopyala }) {
         {grup.hatimSayisi > 1 && <div style={{ fontSize: "11.5px", color: theme.textSecondary, marginTop: "4px" }}>{grup.hatimSayisi} hatim · {toplam} cüz</div>}
       </div>
 
+      <div style={altBaslik(theme)}>PAYLAŞ</div>
+      <div style={kutu(theme)}>
+        <div role="radiogroup" aria-label="Paylaşım türü" style={{ display: "flex", gap: "3px", padding: "2px", borderRadius: "9px", border: `1px solid ${theme.border}`, marginBottom: "8px" }}>
+          {[["toplu", "Toplu"], ["kisisel", "Kişisel"]].map(([id, ad]) => (
+            <button key={id} role="radio" aria-checked={paylasimTur === id} onClick={() => setPaylasimTur(id)}
+              style={{
+                flex: 1, padding: "6px", borderRadius: "7px", border: "none", cursor: "pointer", fontFamily: "inherit", fontSize: "12.5px",
+                fontWeight: paylasimTur === id ? 700 : 500, background: paylasimTur === id ? theme.accent : "transparent", color: paylasimTur === id ? "#fff" : theme.text,
+              }}>{ad}</button>
+          ))}
+        </div>
+        {paylasimTur === "toplu" ? (
+          <>
+            <div style={{ fontSize: "11.5px", color: theme.textSecondary, lineHeight: 1.5, marginBottom: "8px" }}>
+              Tek mesajda herkesin adı, cüzleri ve kendi bağlantısı yer alır; grup sohbetine gönderilebilir.
+            </div>
+            <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+              <button onClick={() => paylas(T.topluMesaj(grup))} style={kucukDugme(theme, true)}><Share2 size={13} /> Toplu paylaş</button>
+              <button onClick={() => kopyala(T.topluMesaj(grup))} style={kucukDugme(theme)}><Copy size={13} /> Kopyala</button>
+            </div>
+          </>
+        ) : (
+          <>
+            <div style={{ fontSize: "11.5px", color: theme.textSecondary, lineHeight: 1.5, marginBottom: "6px" }}>
+              Her kişiye bu mesaj, kendi cüz sırası ve bağlantısıyla gönderilir; kişilerin yanındaki paylaş düğmesi bunu kullanır.
+            </div>
+            {mesajAcik ? (
+              <textarea value={grup.mesaj ?? T.VARSAYILAN_KISISEL_MESAJ} onChange={e => { const v = e.target.value; guncelle(g => ({ ...g, mesaj: v })) }}
+                rows={4} aria-label="Kişisel paylaşım mesajı"
+                style={{ width: "100%", boxSizing: "border-box", padding: "8px 10px", borderRadius: "9px", border: `1px solid ${theme.border}`, background: theme.surface, color: theme.text, fontFamily: "inherit", fontSize: "12.5px", lineHeight: 1.45, resize: "vertical" }} />
+            ) : (
+              <div style={{ fontSize: "12.5px", color: theme.text, lineHeight: 1.45, whiteSpace: "pre-wrap", padding: "6px 0" }}>{grup.mesaj ?? T.VARSAYILAN_KISISEL_MESAJ}</div>
+            )}
+            <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginTop: "6px" }}>
+              <button onClick={() => setMesajAcik(v => !v)} style={kucukDugme(theme, mesajAcik)}>{mesajAcik ? <><Check size={13} /> Mesaj tamam</> : <><Pencil size={13} /> Mesajı düzenle</>}</button>
+              {grup.mesaj != null && grup.mesaj !== T.VARSAYILAN_KISISEL_MESAJ && (
+                <button onClick={() => guncelle(g => { const y = { ...g }; delete y.mesaj; return y })} style={kucukDugme(theme)}>Varsayılana dön</button>
+              )}
+            </div>
+          </>
+        )}
+      </div>
+
       <div style={altBaslik(theme)}>KİŞİLER</div>
       {grup.kisiler.map((ad, k) => {
         const cuzler = []
@@ -610,9 +689,9 @@ function GrupDetay({ theme, grup, guncelle, sil, kapat, paylas, kopyala }) {
               <span style={{ width: "10px", height: "10px", borderRadius: "50%", background: renk(k), flexShrink: 0 }} />
               <span style={{ flex: 1, minWidth: 0, fontSize: "13.5px", fontWeight: 600, color: theme.text }}>{ad}</span>
               <span style={{ fontSize: "11.5px", color: theme.textSecondary }}>{okunanlar}/{cuzler.length}</span>
-              <button onClick={() => paylas(T.davetMesaji(grup, k))} disabled={!cuzler.length} aria-label={`${ad} için davet bağlantısını paylaş`} title="Davet bağlantısını paylaş"
+              <button onClick={() => paylas(kisiMesaji(k))} disabled={!cuzler.length} aria-label={`${ad} için kişisel mesajı paylaş`} title="Kişisel paylaşım"
                 style={{ ...kucukDugme(theme), padding: "4px 7px" }}><Share2 size={13} /></button>
-              <button onClick={() => kopyala(T.davetMesaji(grup, k))} disabled={!cuzler.length} aria-label={`${ad} için mesajı kopyala`} title="Mesajı kopyala"
+              <button onClick={() => kopyala(kisiMesaji(k))} disabled={!cuzler.length} aria-label={`${ad} için mesajı kopyala`} title="Mesajı kopyala"
                 style={{ ...kucukDugme(theme), padding: "4px 7px" }}><Copy size={13} /></button>
             </div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: "4px", marginTop: "6px" }}>

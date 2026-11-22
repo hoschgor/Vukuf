@@ -132,6 +132,29 @@ export function davetMesaji(grup, kisiIdx) {
     baglanti,
   ].join("\n")
 }
+/* Kişisel paylaşım: belirlenen mesaj + kişinin cüzleri + kendi bağlantısı */
+export const VARSAYILAN_KISISEL_MESAJ = "Hatim programımıza katılımınız için teşekkür ederiz. Size düşen cüzler aşağıdadır; bağlantıdan cüzlerinizi açıp okuduğunuzda işaretleyebilirsiniz."
+export function kisiselMesaj(grup, kisiIdx, mesaj = grup.mesaj) {
+  const { baglanti, cuzler } = davetBaglantisi(grup, kisiIdx)
+  return [
+    (mesaj || VARSAYILAN_KISISEL_MESAJ).trim(),
+    "",
+    `“${grup.ad}” · ${tarihYazi(grup.bas, false)} – ${tarihYazi(grup.bitis)}`,
+    `${grup.kisiler[kisiIdx]}: ${cuzlerYazi(cuzler, grup.hatimSayisi)}`,
+    baglanti,
+  ].join("\n")
+}
+/* Toplu paylaşım: her kişi için ad soyad – cüzler ve kendi bağlantısı (cüzü olmayan yazılmaz) */
+export function topluMesaj(grup) {
+  const satirlar = [`“${grup.ad}” hatim programı · ${tarihYazi(grup.bas, false)} – ${tarihYazi(grup.bitis)}`, ""]
+  grup.kisiler.forEach((ad, k) => {
+    const { baglanti, cuzler } = davetBaglantisi(grup, k)
+    if (!cuzler.length) return
+    satirlar.push(`${ad} – ${cuzlerYazi(cuzler, grup.hatimSayisi)}`, baglanti, "")
+  })
+  satirlar.push("Herkes kendi adının altındaki bağlantıyı açarak cüzlerini görebilir ve okuduğunda işaretleyebilir.")
+  return satirlar.join("\n")
+}
 export function bildirimMesaji(davet, okunanlar) {
   const n = davet.n || 1
   return [

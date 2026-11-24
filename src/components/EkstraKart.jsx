@@ -90,6 +90,33 @@ export function Kart({ theme, Ikon, baslik, alt, ozet, bolum, children }) {
       }} />
     </>
   )
+  /* KAPALI KART (24 Kasım 2026): yan menü satırı gibi sade — çerçevesiz, düz simge, başlık ve
+     kısa özet, sade ok. Süslü görünüm (pafta, şemse, çiçek dalı) yalnız açık kartta. */
+  if (acilir && !acik) {
+    return (
+      <section style={{ margin: "0 0 2px" }}>
+        <h2 style={{ margin: 0, fontSize: "inherit", fontWeight: "inherit" }}>
+          <button onClick={bolum[1]} aria-expanded={false} className="vk-kart-satir"
+            style={{
+              width: "100%", display: "flex", alignItems: "center", gap: "16px", padding: "9px 10px", margin: 0,
+              background: "none", border: "none", borderRadius: "10px", cursor: "pointer", textAlign: "left",
+              fontFamily: "inherit", color: theme.text, "--vk-satir-zemin": `${theme.text}0d`,
+            }}>
+            <Ikon size={22} strokeWidth={1.8} color={theme.text} style={{ flexShrink: 0 }} />
+            <span style={{ minWidth: 0, flex: 1, display: "block" }}>
+              <span style={{ display: "block", fontSize: "15px", fontWeight: 500, color: theme.text }}>{baslik}</span>
+              {altMetin && (
+                <span style={{ display: "block", fontSize: "11.5px", color: theme.textSecondary, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", marginTop: "1px" }}>{altMetin}</span>
+              )}
+            </span>
+            <ChevronDown size={18} color={theme.textSecondary} aria-hidden="true" style={{ flexShrink: 0 }} />
+          </button>
+        </h2>
+        <style>{`.vk-kart-satir:hover, .vk-kart-satir:focus-visible { background: var(--vk-satir-zemin) !important; outline: none }`}</style>
+      </section>
+    )
+  }
+
   const baslikStil = {
     position: "relative", overflow: "hidden", width: "100%", display: "flex", alignItems: "center", padding: 0, margin: 0,
     minHeight: "62px", borderRadius: "11px", textAlign: "left", fontFamily: "inherit", color: "inherit",
@@ -98,7 +125,7 @@ export function Kart({ theme, Ikon, baslik, alt, ozet, bolum, children }) {
   return (
     <section style={{
       background: theme.surface, border: `1px solid ${dolu ? ac : theme.border}`, borderRadius: "14px",
-      padding: "3px", marginBottom: acik ? "14px" : "10px",
+      padding: "3px", margin: acilir ? "8px 0 12px" : "0 0 14px",
       boxShadow: `inset 0 0 0 1px ${theme.surface}, inset 0 0 0 2px ${ac}2e, 0 2px 10px rgba(0,0,0,0.06)`,
     }}>
       {acilir ? (

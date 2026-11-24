@@ -24,6 +24,7 @@
    anlatılabilsin diye (Oynatıcı, Ses ve hız, Devamlı okuma kartları).
    ═══════════════════════════════════════════════════════════════════════════ */
 
+import { Kart } from "./EkstraKart"
 import { useMemo, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import {
@@ -815,39 +816,12 @@ const KONULAR = [
   },
 ]
 
+// Konu kartı Ekstralar'daki ortak kartı kullanır: kapalıyken sade satır, açıkken süslü başlık
 function KonuKarti({ konu, acik, onAc, theme, bolumAdi }) {
   const Ikon = konu.ikon || BookOpen
   return (
-    <div style={{
-      border: `1px solid ${acik ? theme.accent + "66" : theme.border}`,
-      borderRadius: "14px", background: acik ? `${theme.accent}0d` : theme.background,
-      overflow: "hidden", transition: "border-color 0.2s, background 0.2s",
-    }}>
-      <button
-        onClick={onAc}
-        aria-expanded={acik}
-        style={{
-          width: "100%", display: "flex", alignItems: "center", gap: "12px", padding: "12px 14px",
-          background: "none", border: "none", cursor: "pointer", textAlign: "left", color: theme.text,
-        }}
-      >
-        <span style={{
-          width: "36px", height: "36px", borderRadius: "10px", flexShrink: 0,
-          display: "flex", alignItems: "center", justifyContent: "center",
-          background: `${theme.accent}18`, color: theme.accent,
-        }}>
-          <Ikon size={18} />
-        </span>
-        <span style={{ flex: 1, minWidth: 0 }}>
-          <span style={{ display: "block", fontSize: "15px", fontWeight: 600, lineHeight: 1.3 }}>{konu.baslik}</span>
-          <span style={{ display: "block", fontSize: "12.5px", color: theme.textSecondary, marginTop: "2px", lineHeight: 1.35 }}>
-            {bolumAdi ? <span style={{ color: theme.accent }}>{bolumAdi} · </span> : null}{konu.ozet}
-          </span>
-        </span>
-        <ChevronDown size={17} color={theme.textSecondary} style={{ flexShrink: 0, transform: acik ? "rotate(180deg)" : "none", transition: "transform 0.25s" }} />
-      </button>
-      {acik && (
-        <div style={{ padding: "0 14px 14px 62px" }}>
+    <Kart theme={theme} Ikon={Ikon} baslik={konu.baslik} alt={bolumAdi ? `${bolumAdi} · ${konu.ozet}` : konu.ozet} bolum={[acik, onAc]}>
+        <div>
           {konu.nerede && (
             <div style={{
               display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "12px",
@@ -870,8 +844,7 @@ function KonuKarti({ konu, acik, onAc, theme, bolumAdi }) {
             </div>
           )))}
         </div>
-      )}
-    </div>
+    </Kart>
   )
 }
 
@@ -953,7 +926,7 @@ export default function YardimPaneli({ kapat, theme }) {
           Bu kelimeyle eşleşen bir konu bulunamadı.<br />Farklı bir kelimeyle aramak sonuç verebilir.
         </div>
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+        <div style={{ display: "flex", flexDirection: "column" }}>
           {liste.map((k, i) => {
             const anahtar = `${k.bolum}-${k.baslik}`
             const baslikGoster = gruplu && (i === 0 || liste[i - 1].bolum !== k.bolum)

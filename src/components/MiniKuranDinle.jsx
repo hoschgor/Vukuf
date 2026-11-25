@@ -9,11 +9,11 @@
    anda çalmaz; radyo başlayınca Kur'an Dinle duraklar, kaldığı yer saklanır).
    ═══════════════════════════════════════════════════════════════════════════ */
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useSyncExternalStore } from "react"
 import { useLocation, useNavigate } from "react-router-dom"
 import { DonusSimgesi, KucultSimgesi, SonrakiSimgesi, DurdurSimgesi, AmblemDugmesi, AmblemIsareti } from "./CerceveliSimge"
 import { useApp } from "../AppContext"
-import { useKuranDinle, kuranDinleZamanlayici, kariBul, parcaAdi } from "../data/kuranDinle"
+import { useKuranDinle, kuranDinleZamanlayici, kariBul, parcaAdi, useDinleZamani } from "../data/kuranDinle"
 import { useRadyo } from "../data/radyo"
 import { useZamanlayici } from "../data/otomatikDurdurma"
 import { UykuRozeti } from "./OtomatikDurdurmaSecici"
@@ -22,6 +22,42 @@ import { useEkstraDuzen } from "../data/ekstraDuzen"
 import EkstraSesDugmesi from "./EkstraSesDugmesi"
 
 const KUCUK_ANAHTAR = "vukuf-mini-kuran-dinle-kucuk"
+
+/* HAPTA İLERLEME (25 Kasım 2026): açıkken başka sayfadaki hapta çalan parçanın ilerlemesi
+   görünür — açık hapta altta ince çizgi, küçük hâlde düğmenin çevresinde halka. Ayar
+   Ekstralar → Kur'an Dinle kartında; varsayılan kapalı. */
+const ILERLEME_ANAHTAR = "vukuf-kuran-dinle-hap-ilerleme"
+const ilerlemeDinleyici = new Set()
+const ilerlemeOku = () => { try { return localStorage.getItem(ILERLEME_ANAHTAR) === "1" } catch { return false } }
+export function hapIlerlemeYaz(v) {
+  try { localStorage.setItem(ILERLEME_ANAHTAR, v ? "1" : "0") } catch { /* yoksay */ }
+  ilerlemeDinleyici.forEach(f => f())
+}
+export function useHapIlerleme() {
+  return useSyncExternalStore((f) => { ilerlemeDinleyici.add(f); return () => ilerlemeDinleyici.delete(f) }, ilerlemeOku, () => false)
+}
+// Yalnız bu küçük parçalar saniyede birkaç kez yeniden çizilir (hapın tamamı değil)
+function IlerlemeCizgisi({ ac }) {
+  const z = useDinleZamani()
+  const oran = z.toplam > 0 ? Math.min(1, z.su / z.toplam) : 0
+  return (
+    <span aria-hidden="true" style={{ position: "absolute", left: "18px", right: "18px", bottom: "2px", height: "2.5px", borderRadius: "2px", background: `${ac}2e`, overflow: "hidden", pointerEvents: "none" }}>
+      <span style={{ display: "block", height: "100%", width: `${(oran * 100).toFixed(2)}%`, background: ac, borderRadius: "2px", transition: "width .3s linear" }} />
+    </span>
+  )
+}
+function IlerlemeHalkasi({ ac, boy = 46 }) {
+  const z = useDinleZamani()
+  const oran = z.toplam > 0 ? Math.min(1, z.su / z.toplam) : 0
+  const r = boy / 2 - 1.5, cevre = 2 * Math.PI * r
+  return (
+    <svg aria-hidden="true" width={boy} height={boy} viewBox={`0 0 ${boy} ${boy}`} style={{ position: "absolute", inset: 0, pointerEvents: "none", transform: "rotate(-90deg)" }}>
+      <circle cx={boy / 2} cy={boy / 2} r={r} fill="none" stroke={`${ac}33`} strokeWidth="2.5" />
+      <circle cx={boy / 2} cy={boy / 2} r={r} fill="none" stroke={ac} strokeWidth="2.5" strokeLinecap="round"
+        strokeDasharray={cevre} strokeDashoffset={cevre * (1 - oran)} style={{ transition: "stroke-dashoffset .3s linear" }} />
+    </svg>
+  )
+}
 // Ekstralar → Kur'an Dinle kartındaki çalar da aynı amblemi/canlandırmayı kullanıyor
 export const DINLE_HAP_CSS = `@keyframes vk-kd-dalga{0%,100%{opacity:.2}50%{opacity:1}}
 .vk-kd-d1{animation:vk-kd-dalga 1.6s ease-in-out infinite}
@@ -92,6 +128,8 @@ function DinleHapi({ dinle, kitapta }) {
   const calar = durum === "caliyor"
   const yukleniyor = durum === "yukleniyor"
   const parca = parcaAdi(calan.tur, calan.parca, calan.ayet)
+  const ilerlemeAcik = useHapIlerleme()
+  const ilerlemeGoster = ilerlemeAcik && calan.tur !== "ayet"
   const alt = durum === "hata" ? "Açılamadı" : yukleniyor ? "Yükleniyor…" : durum === "bitti" ? "Bitti" : calar ? parca : `Duraklatıldı · ${parca}`
   const yuvarlak = (vurgu) => ({
     width: "32px", height: "32px", borderRadius: "50%", flexShrink: 0, padding: 0,
@@ -110,14 +148,15 @@ function DinleHapi({ dinle, kitapta }) {
             style={{
               position: "relative", width: "46px", height: "46px", borderRadius: "50%", padding: 0, cursor: "pointer",
               display: "flex", alignItems: "center", justifyContent: "center",
-              background: theme.surface, border: `1.5px dashed ${ac}`,
+              background: theme.surface, border: ilerlemeGoster ? "none" : `1.5px dashed ${ac}`,
               boxShadow: k.surukleniyor ? "0 10px 28px rgba(0,0,0,0.32)" : "0 4px 16px rgba(0,0,0,0.22)",
             }}>
+            {ilerlemeGoster && <IlerlemeHalkasi ac={ac} />}
             <DinleAmblemi ac={ac} zemin={theme.surface} calar={calar} boy={38} />
           </button>
         ) : (
           <div style={{
-            display: "flex", alignItems: "center", gap: "4px", padding: "4px 4px 4px 5px", flexWrap: "wrap", rowGap: "4px", boxSizing: "border-box",
+            position: "relative", display: "flex", alignItems: "center", gap: "4px", padding: "4px 4px 4px 5px", flexWrap: "wrap", rowGap: "4px", boxSizing: "border-box",
             maxWidth: `min(380px, ${k.ekranEn(20)})`,
             background: `linear-gradient(90deg, ${ac}12, ${theme.surface} 45%)`, backgroundColor: theme.surface,
             border: `1.5px dashed ${ac}`, borderRadius: "24px",
@@ -153,6 +192,7 @@ function DinleHapi({ dinle, kitapta }) {
               <DurdurSimgesi ac={ac} />
             </button>
             </div>
+            {ilerlemeGoster && <IlerlemeCizgisi ac={ac} />}
           </div>
         )}
       </div>

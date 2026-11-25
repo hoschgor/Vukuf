@@ -18,7 +18,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react"
 import { createPortal } from "react-dom"
-import { Headphones, Play, Pause, X, Loader2, ExternalLink, Repeat, RotateCcw, History, Search, Pencil, Check, Eye, EyeOff, ChevronDown, ChevronUp, Plus, ChevronLeft, Share2, ListMusic, ListPlus, Trash2 } from "lucide-react"
+import { Headphones, Play, Pause, X, Loader2, ExternalLink, Repeat, RotateCcw, History, Search, Pencil, Check, Eye, EyeOff, ChevronDown, ChevronUp, Plus, ChevronLeft, Share2, ListMusic, ListPlus, Trash2, Hourglass } from "lucide-react"
 import { DndContext, closestCenter, KeyboardSensor, MouseSensor, TouchSensor, useSensor, useSensors } from "@dnd-kit/core"
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, rectSortingStrategy } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
@@ -38,7 +38,7 @@ import { OncekiSimgesi, SonrakiSimgesi, OnSaniyeSimgesi, DurdurSimgesi, AmblemDu
 import { DINLE_PAYLASIM_ANAHTAR } from "../data/paylasim"
 import { useMediaQuery } from "../data/hooks/useMediaQuery"
 // Çalar paneli küçük hapla aynı görünüm (12 Kasım 2026): rahle amblemi + yuvarlak düğmeler
-import { DinleAmblemi, DINLE_HAP_CSS } from "./MiniKuranDinle"
+import { DinleAmblemi, DINLE_HAP_CSS, useHapIlerleme, hapIlerlemeYaz } from "./MiniKuranDinle"
 import EkstraSesDugmesi from "./EkstraSesDugmesi"
 
 const KARI_ANAHTAR = "vukuf-kuran-dinle-kari"
@@ -251,6 +251,7 @@ function KariArama({ theme, onSec, onKapat, listede }) {
 
 export default function KuranDinleKarti({ theme }) {
   const dinle = useKuranDinle()
+  const hapIlerleme = useHapIlerleme()
   const bolum = useBolum("kuran-dinle")
   const ac = theme.accent
   const [kariId, setKariIdD] = useState(() => (kariBul(oku(KARI_ANAHTAR, null)) ? oku(KARI_ANAHTAR, null) : KARILER[0].id))
@@ -827,6 +828,18 @@ export default function KuranDinleKarti({ theme }) {
             </span>
           </span>
           <IosSwitch acik={!!dinle?.surekli} theme={theme} boyut={0.72} />
+        </div>
+        {/* Başka sayfadaki hapta ilerleme (çizgi / küçük hâlde halka) */}
+        <div role="switch" aria-checked={hapIlerleme} onClick={() => hapIlerlemeYaz(!hapIlerleme)}
+          style={{ display: "flex", alignItems: "center", gap: "8px", padding: "7px 0", cursor: "pointer", borderBottom: `1px solid ${theme.border}` }}>
+          <Hourglass size={16} color={hapIlerleme ? ac : theme.textSecondary} style={{ flexShrink: 0 }} />
+          <span style={{ flex: 1, minWidth: 0, fontSize: "12px", color: theme.text, lineHeight: 1.25 }}>
+            Hapta ilerleme
+            <span style={{ display: "block", fontSize: "10px", color: theme.textSecondary }}>
+              {hapIlerleme ? "Başka sayfadaki küçük oynatıcıda ilerleme görünür (küçültülünce halka)" : "Başka sayfadaki küçük oynatıcıda ilerleme gösterilmez"}
+            </span>
+          </span>
+          <IosSwitch acik={hapIlerleme} theme={theme} boyut={0.72} />
         </div>
         <div role="switch" aria-checked={cl.acik} aria-disabled={tur === "ayet"}
           onClick={() => { if (tur === "ayet") return; const a = !cl.acik; calmaListesiYaz({ acik: a }); if (a) { setListeAcik(!(lt && lt.kalan)); setSureAramaAcik(false) } }}

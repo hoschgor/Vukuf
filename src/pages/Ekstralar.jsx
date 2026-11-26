@@ -215,7 +215,7 @@ function NamazVakitleri({ theme }) {
   }
 
   return (
-    <Kart theme={theme} Ikon={Clock} baslik="Namaz Vakitleri" bolum={bolum} ozet={ozet}
+    <Kart theme={theme} Ikon={Clock} sus="cami" baslik="Namaz Vakitleri" bolum={bolum} ozet={ozet}
       alt={secim ? `${secim.ilceAdi}${secim.sehirAdi && secim.sehirAdi !== secim.ilceAdi ? " · " + secim.sehirAdi : ""}` : "Diyanet aylık vakitleri"}>
       {seciyor ? (
         <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
@@ -390,7 +390,7 @@ function CumaHutbesi({ theme }) {
   const tarih = `${cuma.getDate()} ${AY_ADLARI[cuma.getMonth()]}`
   const ozet = kalan === 0 ? "Bugün Cuma" : kalan === 1 ? `Yarın Cuma · ${tarih}` : `Cuma'ya ${kalan} gün · ${tarih}`
   return (
-    <Kart theme={theme} Ikon={ScrollText} baslik="Cuma Hutbesi" alt="Diyanet'in haftalık hutbesi" bolum={bolum} ozet={ozet}>
+    <Kart theme={theme} Ikon={ScrollText} sus="minber" baslik="Cuma Hutbesi" alt="Diyanet'in haftalık hutbesi" bolum={bolum} ozet={ozet}>
       <div style={{ fontSize: "12.5px", color: theme.text, lineHeight: 1.55 }}>
         {kalan === 0 ? <strong style={{ color: theme.accent }}>Bugün Cuma. </strong> : <>Bu haftanın Cuma'sı: <strong>{tarih}</strong>. </>}
         Diyanet her hafta Cuma hutbesini metni ve sesli hâliyle yayımlar; hutbeler resmî sayfada okunabilir ve dinlenebilir.
@@ -419,7 +419,7 @@ function DiniGunler({ theme }) {
   const ilk = gunler[0]
   const ozet = ilk ? `${ilk.ad} · ${ilk.kalanGun === 0 ? "bugün" : ilk.kalanGun === 1 ? "yarın" : `${ilk.kalanGun} gün sonra`}` : undefined
   return (
-    <Kart theme={theme} Ikon={Moon} baslik="Kandiller ve Mübarek Günler" alt="Diyanet dinî günler takvimi" bolum={bolum} ozet={ozet}>
+    <Kart theme={theme} Ikon={Moon} sus="kandil" baslik="Kandiller ve Mübarek Günler" alt="Diyanet dinî günler takvimi" bolum={bolum} ozet={ozet}>
       {gunler.length === 0 ? (
         <div style={{ fontSize: "12.5px", color: theme.textSecondary }}>Takvimdeki günler geride kaldı; yeni yılın takvimi eklenince burada görünecek.</div>
       ) : (
@@ -482,7 +482,7 @@ function Radyolar({ theme }) {
   }
 
   return (
-    <Kart theme={theme} Ikon={Radio} baslik="Diyanet Radyoları" alt="Canlı yayın" bolum={bolum} ozet={ozet}>
+    <Kart theme={theme} Ikon={Radio} sus="anten" baslik="Diyanet Radyoları" alt="Canlı yayın" bolum={bolum} ozet={ozet}>
       {!hlsVar && (
         <div style={{ fontSize: "12.5px", color: theme.textSecondary, lineHeight: 1.5, marginBottom: "10px" }}>
           Bu tarayıcı canlı yayın biçimini doğrudan çalamayabilir. Çalmazsa yayının yanındaki bağlantıdan resmî sitede dinleyebilirsiniz; telefonda çoğunlukla sorunsuz çalar.
@@ -648,7 +648,7 @@ function KiblePusulasi({ theme }) {
   const kadranDon = yon != null ? -yon : 0
   const yesil = "#2e9e5b"
   return (
-    <Kart theme={theme} Ikon={Compass} baslik="Kıble Pusulası" alt="Konumunuza göre Kâbe yönü" bolum={bolum}
+    <Kart theme={theme} Ikon={Compass} sus="kabe" baslik="Kıble Pusulası" alt="Konumunuza göre Kâbe yönü" bolum={bolum}
       ozet={kible != null ? `Kıble ${Math.round(kible)}° (${yonAdi(kible)})` : undefined}>
       {durum !== "hazir" ? (
         <div style={{ textAlign: "center", padding: "6px 0 4px" }}>
@@ -757,7 +757,7 @@ function KonumIzni({ theme }) {
   return (
     <Kart theme={theme} Ikon={ShieldCheck} baslik="Konum izni" alt={izinMetni} bolum={bolum}>
       <div style={{ fontSize: "12.5px", color: theme.text, lineHeight: 1.55 }}>
-        Konum yalnız "Konumumdan bul", "Kıbleyi bul" ya da camiler düğmesine dokunulduğunda bir kez okunur; arka planda takip edilmez ve koordinatlar uygulamada saklanmaz. İl/ilçe bulunurken konum OpenStreetMap'e, camiler açılırken harita uygulamasına iletilir; saklanan yalnız seçilen il/ilçedir.
+        Konum yalnız ilgili düğmeye dokunulduğunda bir kez okunur, arka planda takip edilmez.
         İzin istendiğinde <strong>"Bir kez izin ver"</strong> seçilirse izin saklanmaz, her kullanımda yeniden sorulur.
       </div>
       <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginTop: "10px" }}>
@@ -805,7 +805,7 @@ function YakinCamiler({ theme }) {
     window.open(url, "_blank", "noopener")
   }
   return (
-    <Kart theme={theme} Ikon={MapPin} baslik="Yakındaki Camiler" alt="Harita uygulamasında açılır" bolum={bolum}>
+    <Kart theme={theme} Ikon={MapPin} sus="pusula" baslik="Yakındaki Camiler" alt="Harita uygulamasında açılır" bolum={bolum}>
       <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
         <button onClick={() => ac("google")} disabled={durum === "konum"} style={dugmeStil(theme, true)}>
           {durum === "konum" ? <Loader2 size={15} className="vk-don" /> : <MapPin size={15} />} Google Haritalar
@@ -843,7 +843,7 @@ function Zikirmatik({ theme }) {
   const yuzde = z.hedef > 0 ? z.sayi / z.hedef : 0
   const C = 2 * Math.PI * 64
   return (
-    <Kart theme={theme} Ikon={Sparkles} baslik="Zikirmatik" alt="Dokundukça sayar; hedefe gelince titreşir" bolum={bolum}
+    <Kart theme={theme} Ikon={Sparkles} sus="tesbih" baslik="Zikirmatik" alt="Dokundukça sayar; hedefe gelince titreşir" bolum={bolum}
       ozet={z.sayi || z.tur ? `${z.sayi}${z.hedef ? ` / ${z.hedef}` : ""}${z.tur ? ` · ${z.tur} tur` : ""}` : undefined}>
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "12px" }}>
         <button onClick={say} aria-label={`Say (${z.sayi})`} style={{

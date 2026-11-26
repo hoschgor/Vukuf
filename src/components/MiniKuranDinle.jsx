@@ -23,18 +23,18 @@ import EkstraSesDugmesi from "./EkstraSesDugmesi"
 
 const KUCUK_ANAHTAR = "vukuf-mini-kuran-dinle-kucuk"
 
-/* HAPTA İLERLEME (25 Kasım 2026): açıkken başka sayfadaki hapta çalan parçanın ilerlemesi
-   görünür — açık hapta altta ince çizgi, küçük hâlde düğmenin çevresinde halka. Ayar
-   Ekstralar → Kur'an Dinle kartında; varsayılan kapalı. */
+/* İLERLEME GÖRÜNÜMÜ: açıkken başka sayfadaki hapta çalan parçanın ilerlemesi görünür — açık
+   hapta altta ince çizgi, küçük hâlde düğmenin çevresinde halka. Ayar Ekstralar → Kur'an Dinle
+   kartında; varsayılan açık (yalnız "0" kaydı kapatır). */
 const ILERLEME_ANAHTAR = "vukuf-kuran-dinle-hap-ilerleme"
 const ilerlemeDinleyici = new Set()
-const ilerlemeOku = () => { try { return localStorage.getItem(ILERLEME_ANAHTAR) === "1" } catch { return false } }
+const ilerlemeOku = () => { try { return localStorage.getItem(ILERLEME_ANAHTAR) !== "0" } catch { return true } }
 export function hapIlerlemeYaz(v) {
   try { localStorage.setItem(ILERLEME_ANAHTAR, v ? "1" : "0") } catch { /* yoksay */ }
   ilerlemeDinleyici.forEach(f => f())
 }
 export function useHapIlerleme() {
-  return useSyncExternalStore((f) => { ilerlemeDinleyici.add(f); return () => ilerlemeDinleyici.delete(f) }, ilerlemeOku, () => false)
+  return useSyncExternalStore((f) => { ilerlemeDinleyici.add(f); return () => ilerlemeDinleyici.delete(f) }, ilerlemeOku, () => true)
 }
 // Yalnız bu küçük parçalar saniyede birkaç kez yeniden çizilir (hapın tamamı değil)
 function IlerlemeCizgisi({ ac }) {

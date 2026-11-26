@@ -55,7 +55,28 @@
 import { useEffect, useState } from "react"
 
 // ── ÇERÇEVE KAYDI — 32×32 birim; `merkez`: işaretin ortası, `oran`: işaretin boya oranı ──
+/* ÇARKIFELEK — sekiz yapraklı gül: dalgalı dış kenar + iç halka. Hap düğmeleri (26 Kasım 2026). */
+const CARK_YOL = (() => {
+  const n = 8, rv = 12.6, rl = 6.4, cx = 16, cy = 16
+  const nokta = (i) => { const a = ((i + 0.5) * 2 * Math.PI) / n - Math.PI / 2; return [cx + rv * Math.cos(a), cy + rv * Math.sin(a)] }
+  let d = ""
+  for (let i = 0; i < n; i++) {
+    const [x1, y1] = nokta(i - 1), [x2, y2] = nokta(i)
+    d += (i ? " " : `M${x1.toFixed(2)} ${y1.toFixed(2)} `) + `A${rl} ${rl} 0 0 1 ${x2.toFixed(2)} ${y2.toFixed(2)}`
+  }
+  return d + " Z"
+})()
+
 export const CERCEVELER = {
+  carkifelek: {
+    merkez: { x: 16, y: 16 }, kutu: 10.6,
+    ciz: (ac, sw) => (
+      <>
+        <path d={CARK_YOL} fill={`${ac}18`} stroke={ac} strokeWidth={sw} strokeLinejoin="round" />
+        <circle cx="16" cy="16" r="9.9" fill="none" stroke={ac} strokeWidth={sw * 0.55} opacity="0.6" />
+      </>
+    ),
+  },
   /* ŞEMSE — sekiz köşe; tek dış çizgi, açık zemin. Ortak ve varsayılan çerçeve. */
   semse: {
     merkez: { x: 16, y: 16 }, kutu: 11,
@@ -173,19 +194,21 @@ export default function CerceveliSimge({ cerceve = "semse", glif, Ikon, ac = "cu
 // ── HAZIR TÜREVLER ───────────────────────────────────────────────────────────
 /** Geri dön: bolum "radyo" | "dinle" | "kuran" | "okuma" | "tv" → o bölümün minik simgesi */
 const BOLUM_GLIF = { radyo: "anten", dinle: "rahle", kuran: "tezhip", okuma: "sayfa", tv: "tv" }
-export const DonusSimgesi = ({ bolum, ...p }) => <CerceveliSimge cerceve="semse" glif={BOLUM_GLIF[bolum] || "donus"} {...p} />
-export const KucultSimgesi = (p) => <CerceveliSimge cerceve="semse" glif="kucult" {...p} />
-export const OkumayaDonSimgesi = (p) => <CerceveliSimge cerceve="semse" glif="kitap" {...p} />
+// Hap / çalar düğmelerinin çerçevesi (26 Kasım 2026: şemse göz yorduğu için çarkıfelek)
+export const HAP_CERCEVE = "carkifelek"
+export const DonusSimgesi = ({ bolum, ...p }) => <CerceveliSimge cerceve={HAP_CERCEVE} glif={BOLUM_GLIF[bolum] || "donus"} {...p} />
+export const KucultSimgesi = (p) => <CerceveliSimge cerceve={HAP_CERCEVE} glif="kucult" {...p} />
+export const OkumayaDonSimgesi = (p) => <CerceveliSimge cerceve={HAP_CERCEVE} glif="kitap" {...p} />
 /** Odak (gözlük) — Kur'ân ve sesli okuma haplarında okunan yerlere odaklanma */
-export const OdakSimgesi = (p) => <CerceveliSimge cerceve="semse" glif="gozluk" {...p} />
-export const OncekiSimgesi = (p) => <CerceveliSimge cerceve="semse" glif="onceki" {...p} />
-export const SonrakiSimgesi = (p) => <CerceveliSimge cerceve="semse" glif="sonraki" {...p} />
+export const OdakSimgesi = (p) => <CerceveliSimge cerceve={HAP_CERCEVE} glif="gozluk" {...p} />
+export const OncekiSimgesi = (p) => <CerceveliSimge cerceve={HAP_CERCEVE} glif="onceki" {...p} />
+export const SonrakiSimgesi = (p) => <CerceveliSimge cerceve={HAP_CERCEVE} glif="sonraki" {...p} />
 /** ±10 sn: yon -1 geri, 1 ileri */
-export const OnSaniyeSimgesi = ({ yon = 1, ...p }) => <CerceveliSimge cerceve="semse" glif={yon < 0 ? "geri10" : "ileri10"} {...p} />
+export const OnSaniyeSimgesi = ({ yon = 1, ...p }) => <CerceveliSimge cerceve={HAP_CERCEVE} glif={yon < 0 ? "geri10" : "ileri10"} {...p} />
 /** Ses düzeyine göre: 0 kısık, <0.5 az, üstü tam */
-export const SesSimgesi = ({ ses = 1, ...p }) => <CerceveliSimge cerceve="semse" glif={ses === 0 ? "ses0" : ses < 0.5 ? "ses1" : "ses2"} {...p} />
+export const SesSimgesi = ({ ses = 1, ...p }) => <CerceveliSimge cerceve={HAP_CERCEVE} glif={ses === 0 ? "ses0" : ses < 0.5 ? "ses1" : "ses2"} {...p} />
 /** Bölümü kapatan "tamamen durdur" — şemse içinde çarpı */
-export const DurdurSimgesi = (p) => <CerceveliSimge cerceve="semse" glif="carpi" {...p} />
+export const DurdurSimgesi = (p) => <CerceveliSimge cerceve={HAP_CERCEVE} glif="carpi" {...p} />
 
 /* AMBLEM DÜĞMESİ — hapın ve çaların başındaki bölüme özel hareketli amblem (Kur'ân'da
    mushaf düğmesi gibi) oynat/duraklat düğmesi olur: çalarken dokununca duraklatır, hareket

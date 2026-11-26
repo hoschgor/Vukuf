@@ -144,7 +144,7 @@ export default function NamazHatimTakibi({ theme }) {
 
   const SEKMELER = [["gunluk", "Günlük"], ["kaza", "Kaza"], ["hatim", "Hatim"]]
   return (
-    <Kart theme={theme} Ikon={ListChecks} baslik="Namaz & Hatim Takibi" alt="Günlük namazlar, kaza ve hatim planı" bolum={bolum} ozet={ozet}>
+    <Kart theme={theme} Ikon={ListChecks} sus="seccade" baslik="Namaz & Hatim Takibi" alt="Günlük namazlar, kaza ve hatim planı" bolum={bolum} ozet={ozet}>
       <span ref={capaRef} aria-hidden="true" style={{ display: "block", scrollMarginTop: "90px" }} />
       <div role="tablist" style={{ display: "flex", gap: "4px", padding: "3px", borderRadius: "11px", border: `1px solid ${theme.border}`, background: theme.background, marginBottom: "12px" }}>
         {SEKMELER.map(([id, ad]) => (

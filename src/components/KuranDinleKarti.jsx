@@ -18,7 +18,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react"
 import { createPortal } from "react-dom"
-import { Headphones, Play, Pause, X, Loader2, ExternalLink, Repeat, RotateCcw, History, Search, Pencil, Check, Eye, EyeOff, ChevronDown, ChevronUp, Plus, ChevronLeft, Share2, ListMusic, ListPlus, Trash2, Hourglass } from "lucide-react"
+import { Headphones, Play, Pause, X, Loader2, ExternalLink, Repeat, RotateCcw, History, Search, Pencil, Check, Eye, EyeOff, ChevronDown, ChevronUp, Plus, ChevronLeft, Share2, ListMusic, ListPlus, Trash2, Hourglass, Settings2 } from "lucide-react"
 import { DndContext, closestCenter, KeyboardSensor, MouseSensor, TouchSensor, useSensor, useSensors } from "@dnd-kit/core"
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, rectSortingStrategy } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
@@ -249,9 +249,13 @@ function KariArama({ theme, onSec, onKapat, listede }) {
   )
 }
 
+const AYARLAR_ANAHTAR = "vukuf-kuran-dinle-ayarlar-acik"
+
 export default function KuranDinleKarti({ theme }) {
   const dinle = useKuranDinle()
   const hapIlerleme = useHapIlerleme()
+  const [ayarlarAcik, setAyarlarAcik] = useState(() => { try { return localStorage.getItem(AYARLAR_ANAHTAR) !== "0" } catch { return true } })
+  const ayarlarAcikYaz = (v) => { setAyarlarAcik(v); try { localStorage.setItem(AYARLAR_ANAHTAR, v ? "1" : "0") } catch { /* yoksay */ } }
   const bolum = useBolum("kuran-dinle")
   const ac = theme.accent
   const [kariId, setKariIdD] = useState(() => (kariBul(oku(KARI_ANAHTAR, null)) ? oku(KARI_ANAHTAR, null) : KARILER[0].id))
@@ -434,7 +438,7 @@ export default function KuranDinleKarti({ theme }) {
 
   return (
     <div ref={kartRef} style={{ scrollMarginTop: "70px" }}>
-    <Kart theme={theme} Ikon={Headphones} baslik="Kur'an Dinle" alt="Hafızlardan cüz, sûre ve âyet kayıtları" bolum={bolum} ozet={ozet}>
+    <Kart theme={theme} Ikon={Headphones} sus="rahle" baslik="Kur'an Dinle" alt="Hafızlardan cüz, sûre ve âyet kayıtları" bolum={bolum} ozet={ozet}>
       {/* KÂRİ (14 Kasım 2026) — sağda: çekmece (aç/kapat), arama, düzenle. Kayıtlı ve aramadan
           eklenen kâriler TEK listede; düzenleme kipinde sürüklenerek sıralanır, gözle gizlenir,
           eklenenler × ile çıkarılır. Çekmece kapalıyken yalnız seçili kâri görünür. */}
@@ -816,8 +820,38 @@ export default function KuranDinleKarti({ theme }) {
         </div>
       )}
 
-      {/* AYARLAR — sürekli çalma, otomatik kapanma */}
-      <div style={{ marginTop: "10px", padding: "4px 10px", borderRadius: "11px", border: `1px solid ${theme.border}` }}>
+      {/* AYARLAR — başlığa dokununca katlanır (seçim cihazda saklanır) */}
+      <div style={{ marginTop: "10px", borderRadius: "11px", border: `1px solid ${theme.border}` }}>
+        <button onClick={() => ayarlarAcikYaz(!ayarlarAcik)} aria-expanded={ayarlarAcik}
+          style={{
+            width: "100%", display: "flex", alignItems: "center", gap: "8px", padding: "9px 10px", margin: 0,
+            background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", textAlign: "left", color: theme.text,
+            borderBottom: ayarlarAcik ? `1px solid ${theme.border}` : "none",
+          }}>
+          <Settings2 size={16} color={theme.textSecondary} style={{ flexShrink: 0 }} />
+          <span style={{ flex: 1, minWidth: 0, fontSize: "12.5px", fontWeight: 600, lineHeight: 1.25 }}>
+            Dinleme ayarları
+            {!ayarlarAcik && (
+              <span style={{ display: "block", fontSize: "10px", fontWeight: 400, color: theme.textSecondary, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                {[hapIlerleme && "İlerleme görünümü", dinle?.surekli && "Sürekli çalma", cl.acik && tur !== "ayet" && "Çalma listesi"].filter(Boolean).join(" · ") || "Tümü kapalı"}
+              </span>
+            )}
+          </span>
+          <ChevronDown size={16} color={theme.textSecondary} style={{ flexShrink: 0, transition: "transform .2s", transform: ayarlarAcik ? "rotate(180deg)" : "none" }} />
+        </button>
+        {ayarlarAcik && <div style={{ padding: "0 10px 4px" }}>
+        {/* İlerleme görünümü: başka sayfadaki hapta çizgi, küçük hâlde halka */}
+        <div role="switch" aria-checked={hapIlerleme} onClick={() => hapIlerlemeYaz(!hapIlerleme)}
+          style={{ display: "flex", alignItems: "center", gap: "8px", padding: "7px 0", cursor: "pointer", borderBottom: `1px solid ${theme.border}` }}>
+          <Hourglass size={16} color={hapIlerleme ? ac : theme.textSecondary} style={{ flexShrink: 0 }} />
+          <span style={{ flex: 1, minWidth: 0, fontSize: "12px", color: theme.text, lineHeight: 1.25 }}>
+            İlerleme görünümü
+            <span style={{ display: "block", fontSize: "10px", color: theme.textSecondary }}>
+              {hapIlerleme ? "Başka sayfadaki küçük oynatıcıda ilerleme görünür (küçültülünce halka)" : "Başka sayfadaki küçük oynatıcıda ilerleme gösterilmez"}
+            </span>
+          </span>
+          <IosSwitch acik={hapIlerleme} theme={theme} boyut={0.72} />
+        </div>
         <div role="switch" aria-checked={!!dinle?.surekli} onClick={() => dinle && dinle.setSurekli(!dinle.surekli)}
           style={{ display: "flex", alignItems: "center", gap: "8px", padding: "7px 0", cursor: "pointer", borderBottom: `1px solid ${theme.border}` }}>
           <Repeat size={16} color={dinle?.surekli ? ac : theme.textSecondary} style={{ flexShrink: 0 }} />
@@ -828,18 +862,6 @@ export default function KuranDinleKarti({ theme }) {
             </span>
           </span>
           <IosSwitch acik={!!dinle?.surekli} theme={theme} boyut={0.72} />
-        </div>
-        {/* Başka sayfadaki hapta ilerleme (çizgi / küçük hâlde halka) */}
-        <div role="switch" aria-checked={hapIlerleme} onClick={() => hapIlerlemeYaz(!hapIlerleme)}
-          style={{ display: "flex", alignItems: "center", gap: "8px", padding: "7px 0", cursor: "pointer", borderBottom: `1px solid ${theme.border}` }}>
-          <Hourglass size={16} color={hapIlerleme ? ac : theme.textSecondary} style={{ flexShrink: 0 }} />
-          <span style={{ flex: 1, minWidth: 0, fontSize: "12px", color: theme.text, lineHeight: 1.25 }}>
-            Hapta ilerleme
-            <span style={{ display: "block", fontSize: "10px", color: theme.textSecondary }}>
-              {hapIlerleme ? "Başka sayfadaki küçük oynatıcıda ilerleme görünür (küçültülünce halka)" : "Başka sayfadaki küçük oynatıcıda ilerleme gösterilmez"}
-            </span>
-          </span>
-          <IosSwitch acik={hapIlerleme} theme={theme} boyut={0.72} />
         </div>
         <div role="switch" aria-checked={cl.acik} aria-disabled={tur === "ayet"}
           onClick={() => { if (tur === "ayet") return; const a = !cl.acik; calmaListesiYaz({ acik: a }); if (a) { setListeAcik(!(lt && lt.kalan)); setSureAramaAcik(false) } }}
@@ -859,6 +881,7 @@ export default function KuranDinleKarti({ theme }) {
           <OtomatikDurdurmaSecici anahtarli theme={theme} uyku={dinle.uyku} baslik="Otomatik kapanma" eylem="kapanacak"
             aciklama="Seçilen süre sonunda dinleme durur; kaldığınız yer saklanır" />
         )}
+        </div>}
       </div>
       {/* Kart içi taşma/dönüşüm pencereyi kırpmasın diye gövdeye */}
       {paylasVeri && createPortal(

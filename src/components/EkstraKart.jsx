@@ -10,6 +10,7 @@ import { useCallback, useState } from "react"
 import { ChevronDown } from "lucide-react"
 import CerceveliSimge from "./CerceveliSimge"
 import { CICEK_DALI } from "../data/cicekDali"
+import BolumSilueti from "./BolumSilueti"
 
 // ── AÇILIR BÖLÜMLER ──────────────────────────────────────────────────────────
 // Hangi kartın açık olduğu cihazda saklanır; başlangıçta yalnız Namaz Vakitleri açık.
@@ -42,7 +43,8 @@ const acikMi = (hex) => {
 }
 const rumiSerit = (renk) => `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='6' height='12' viewBox='0 0 6 12'><path d='M3 1.5 L5.5 6 L3 10.5 L0.5 6 Z' fill='${renk}'/></svg>`)}")`
 
-export function Kart({ theme, Ikon, baslik, alt, ozet, bolum, children }) {
+// sus: açık başlığın sağındaki bölüm silüeti (components/BolumSilueti.jsx); verilmezse çiçek dalı
+export function Kart({ theme, Ikon, baslik, alt, ozet, bolum, sus, children }) {
   const acilir = !!bolum
   const acik = acilir ? bolum[0] : true
   const altMetin = acik ? alt : (ozet ?? alt)
@@ -81,13 +83,19 @@ export function Kart({ theme, Ikon, baslik, alt, ozet, bolum, children }) {
           <ChevronDown size={15} color={dolu ? yaziRengi : ac} style={{ transition: "transform .2s ease", transform: acik ? "rotate(180deg)" : "none" }} />
         </span>
       )}
+      {sus ? (
+        <span aria-hidden="true" style={{ position: "absolute", right: "4px", bottom: "0", pointerEvents: "none" }}>
+          <BolumSilueti ad={sus} renk={dolu ? yaziRengi : ac} yukseklik={50} enGenis={56} opaklik={dolu ? 0.24 : 0.16} />
+        </span>
+      ) : (<>
       {/* Çiçek dalı — sağ köşede, kartın içinde */}
-      <span aria-hidden="true" style={{
-        position: "absolute", right: "-14px", bottom: "-6px", width: "84px", height: "84px", pointerEvents: "none",
-        background: dolu ? yaziRengi : ac, opacity: dolu ? 0.42 : 0.38,
-        WebkitMaskImage: `url(${CICEK_DALI})`, maskImage: `url(${CICEK_DALI})`,
-        WebkitMaskSize: "contain", maskSize: "contain", WebkitMaskRepeat: "no-repeat", maskRepeat: "no-repeat",
-      }} />
+        <span aria-hidden="true" style={{
+          position: "absolute", right: "-14px", bottom: "-6px", width: "84px", height: "84px", pointerEvents: "none",
+          background: dolu ? yaziRengi : ac, opacity: dolu ? 0.42 : 0.38,
+          WebkitMaskImage: `url(${CICEK_DALI})`, maskImage: `url(${CICEK_DALI})`,
+          WebkitMaskSize: "contain", maskSize: "contain", WebkitMaskRepeat: "no-repeat", maskRepeat: "no-repeat",
+        }} />
+      </>)}
     </>
   )
   /* KAPALI KART (24 Kasım 2026): yan menü satırı gibi sade — çerçevesiz, düz simge, başlık ve

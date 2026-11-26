@@ -41,7 +41,7 @@ export default function DiyanetTvKarti({ theme }) {
   if (!tv) return null
 
   return (
-    <Kart theme={theme} Ikon={Tv} baslik="Diyanet TV" alt="Canlı yayın" bolum={bolum} ozet={ozet}>
+    <Kart theme={theme} Ikon={Tv} sus="tv" baslik="Diyanet TV" alt="Canlı yayın" bolum={bolum} ozet={ozet}>
       <div ref={yuvaRef} style={{
         position: "relative", width: "100%", aspectRatio: "16 / 9", borderRadius: "12px", overflow: "hidden",
         background: "#0b0b0b", border: `1px solid ${theme.border}`,

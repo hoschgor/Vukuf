@@ -707,10 +707,10 @@ const KONULAR = [
       "Listeden cüze, sûreye ya da âyete dokunulunca çalmaya başlar; çalan parçaya yeniden dokunulunca duraklar. Kayıtta bulunmayan tek tek cüz ya da sûreler de aynı belirteçle kapalıdır. Âyet kipinde sûre seçilip başlanacak âyete dokunulur; sûre başında besmele okunur.",
       "Sürekli çalma açıkken parça bitince sıradaki cüz ya da sûre çalar (kayıtta olmayanlar atlanır); âyet kipinde sûre bitince sıradaki sûreye geçilir. Otomatik kapanma anahtarı açılınca süre seçilebilir; süre dolunca dinleme durur.",
       "Çalma listesi: Sürekli çalmanın altındaki anahtar açılınca listedeki cüz ya da sûrelere dokunmak onları sırayla listeye ekler (dokunulan parçada sıra numarası görünür, yeniden dokunulunca çıkar). Sûre ve cüz için ayrı liste tutulur; âyet kipinde kullanılmaz. Listenin altındaki \"Kalanını sıraya göre ekle\" düğmesi, seçilmeyen bütün parçaları doğal sırasıyla arkaya ekler; bu sırada liste kapanır ve düğme çerçeveli görünür. Düğmeye yeniden dokunulunca liste açılır, ekleme sürdürülebilir. \"Listeyi çal\" ilk parçadan başlatır; parça bitince listedeki sıradaki çalar, liste bitince dinleme durur. Önceki/sonraki düğmeleri de liste sırasıyla ilerler. Listedeki çipler sürüklenerek sıralanabilir (dokunmatikte kısa basılı tutup). Listeye ekleme dinleme sürerken de yapılabilir: KISIMLAR satırındaki okla liste açılır, dokunulan parçalar listeye eklenir (\"Kalanını sıraya göre ekle\" basılıyken de). Liste ikinci parçayı alınca başlıkta 5 saniye \"sıra için çipler sürüklenebilir\" yazar.",
-      "Hapta ilerleme anahtarı açıkken başka bir sayfadaki küçük Kur'an Dinle oynatıcısında çalan parçanın ilerlemesi görünür: açık hâlde altta ince bir çizgi, küçültülünce düğmenin çevresinde bir halka. Kapalıyken oynatıcı eskisi gibidir.",
+      "Ayarlar \"Dinleme ayarları\" başlığı altında toplanır; başlığa dokunulunca katlanır, kapalıyken açık olan ayarlar başlığın altında kısaca yazar. İlk sıradaki İlerleme görünümü (varsayılan açık) başka bir sayfadaki küçük Kur'an Dinle oynatıcısında çalan parçanın ilerlemesini gösterir: açık hâlde altta ince bir çizgi, küçültülünce düğmenin çevresinde bir halka.",
       "Çalardaki ok düğmesi ek düğmeleri açar: 10 saniye geri, 10 saniye ileri, ses düzeyi ve paylaş. Paylaşılan bağlantı kârinin adını ve cüz, sûre ya da âyeti taşır; açan kişide Kur'an Dinle'de aynı kayıt hazır olur. Kayıt bir süre dinlendiyse paylaşma penceresindeki \"Dinlediğim yerden başlasın\" seçeneğiyle bağlantıya o saniye de eklenir.",
       "Kaldığınız yer saklanır: kart kapalıyken başlığında, açıkken listenin altında \"Kaldığınız yer\" görünür; uzun cüz kayıtlarında dakikasıyla birlikte. \"Devam\" ile oradan sürer.",
-      "Dinleme sayfadan çıkınca da sürer; diğer ekranlarda rahle amblemli küçük bir hap görünür (baştaki amblem duraklatır ve devam ettirir; sonraki, ses, rahle simgesiyle Ekstralar'a dön, çizgiyle küçült, çarpıyla durdurup kapat — hepsi şemse çerçeveli). Kur'ân oynatıcısı ya da radyo başlarsa Kur'an Dinle duraklar; Kur'an Dinle başlarsa ötekiler susar. Kilit ekranındaki ve kulaklıktaki düğmeler de çalan kaydı yönetir.",
+      "Dinleme sayfadan çıkınca da sürer; diğer ekranlarda rahle amblemli küçük bir hap görünür (baştaki amblem duraklatır ve devam ettirir; sonraki, ses, rahle simgesiyle Ekstralar'a dön, çizgiyle küçült, çarpıyla durdurup kapat — hepsi çarkıfelek çerçeveli). Kur'ân oynatıcısı ya da radyo başlarsa Kur'an Dinle duraklar; Kur'an Dinle başlarsa ötekiler susar. Kilit ekranındaki ve kulaklıktaki düğmeler de çalan kaydı yönetir.",
       "Başka bir kâri dinlemek için KÂRİ başlığının sağındaki büyüteç düğmesine dokunulur ve ad yazılır (ör. Alafasy, Minshawi). way2quran.com'daki kâriler arasında arama yapılır; sonuçtaki \"Ekle\" (birden çok rivayeti olan kâride rivayetin adı) düğmesiyle kâri listeye eklenir ve sûre sûre dinlenebilir. Eklenen kâriler kesik çizgili çiple ayırt edilir; zaten listede olanlar \"Listede\" diye görünür.",
       "Kalem düğmesi kâri listesini düzenleme kipine alır: çipler sürüklenerek sıralanır (dokunmatikte kısa basılı tutup), göz simgesiyle istenen kâri (kayıtlı olanlar da) gizlenir ya da yeniden gösterilir, aramadan eklenenler çarpı ile listeden çıkarılır. Onay işaretiyle düzenleme biter.",
       "Liste kalabalıklaşırsa başlığın sağındaki ok düğmesiyle çekmece kapatılır: yalnız seçili kâri görünür, yanındaki \"… kâri daha\" çipi ya da ok düğmesi listeyi yeniden açar.",
@@ -817,11 +817,14 @@ const KONULAR = [
   },
 ]
 
-// Konu kartı Ekstralar'daki ortak kartı kullanır: kapalıyken sade satır, açıkken süslü başlık
+// Konu kartı Ekstralar'daki ortak kartı kullanır: kapalıyken sade satır, açıkken süslü başlık.
+// Açık başlığın sağında bölüme uygun silüet (Ayarlar'da çiçek dalı).
+// Yalnız konuyla doğrudan ilgili bölümlerde silüet; diğerlerinde lâle (çiçek dalı)
+const BOLUM_SILUETI = { kitaplik: "kitap", kuran: "mushaf", dinleme: "rahle", kitap: "kitap" }
 function KonuKarti({ konu, acik, onAc, theme, bolumAdi }) {
   const Ikon = konu.ikon || BookOpen
   return (
-    <Kart theme={theme} Ikon={Ikon} baslik={konu.baslik} alt={bolumAdi ? `${bolumAdi} · ${konu.ozet}` : konu.ozet} bolum={[acik, onAc]}>
+    <Kart theme={theme} Ikon={Ikon} sus={BOLUM_SILUETI[konu.bolum]} baslik={konu.baslik} alt={bolumAdi ? `${bolumAdi} · ${konu.ozet}` : konu.ozet} bolum={[acik, onAc]}>
         <div>
           {konu.nerede && (
             <div style={{

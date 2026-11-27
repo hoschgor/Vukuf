@@ -8,7 +8,7 @@
 //   altBant: "yok" | "bant" | "dal"         — kelimelerin altında düz şerit ya da ince dal
 //   rozetDal: âyet sonu rozetinin üstünde/altında yapraklı dallar (isteğe bağlı, başta açık)
 //   harf:    okunan âyetin harfleri vurgu renginde
-//   hareket: rozet dalları hafifçe salınsın (yalnız transform)
+//   hareket: rozet dalları ve alttaki dal hafifçe salınsın
 //   harfRenk: harflerin rengi (12 Kasım 2026, kullanıcı: "Harfleri renklendir kısmında
 //            kullanıcı farklı renk seçebilsin") — "tema" (vurgu rengi), "lugat", "rozet"
 //            (temanın kendi renkleri, tema değişince onlar da değişir) ya da sabit "#rrggbb"

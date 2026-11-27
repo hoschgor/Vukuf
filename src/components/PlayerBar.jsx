@@ -953,7 +953,8 @@ function OkunanPaneli({ theme, geri, satirStil, ikonDugme }) {
       {g.harf && <HarfRenkSecici theme={theme} deger={g.harfRenk} />}
       {anahtar(g.rozetDal, (v) => okunanGorunumYaz({ rozetDal: v }), "Rozet dalı", "Âyet sonu rozetinin üstünde ve altında yapraklı dallar")}
       {anahtar(g.hareket, (v) => okunanGorunumYaz({ hareket: v }), "Dallar hafifçe salınsın",
-        g.rozetDal ? "Akıcılık düşerse kapatılabilir" : "Rozet dalı açıkken", !g.rozetDal)}
+        (g.rozetDal || g.altBant === "dal") ? "Rozet dalı ve alttaki dal; akıcılık düşerse kapatılabilir" : "Rozet dalı ya da alt bant Dal açıkken",
+        !(g.rozetDal || g.altBant === "dal"))}
     </>
   )
 }

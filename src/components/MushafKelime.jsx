@@ -294,6 +294,12 @@ function boyaliParca(karakterler, renkler, bas, son, anahtar) {
   return dugum
 }
 
+// Cihazda "hareketi azalt" açıksa dal sallanmaz
+const AZ_HAREKET = (() => {
+  try { return typeof window !== "undefined" && !!window.matchMedia?.("(prefers-reduced-motion: reduce)").matches }
+  catch { return false }
+})()
+
 // Fareyle gerçekten üzerine gelinebilen cihaz mı? Dokunmatikte "hover" dokunuştan sonra
 // takılı kalıp kelimenin etrafında kutu bırakıyordu; orada üzerine gelme vurgusu çizilmez.
 const UZERINE_GELME = (() => {
@@ -476,8 +482,10 @@ export default function MushafKelime({
   //   dal  → yapraklı, çiçekli sarmaşık (data/okunanDal.js; çeşit âyete göre) · bant → ince düz şerit
   const dalCesit = (() => { const [su, ay] = String(kelime.id).split(":").map(Number); return ((su || 0) * 7 + (ay || 0)) % DAL_CESIT })()
   const dalBoy = Math.max(9, Math.round(yaziBoyutu * DAL_BOY))
+  // Renk rozet dalıyla aynı (âyet no rengi); "Dallar hafifçe salınsın" bu dalı da sallar
+  const dalSalinim = aktifGorunum?.hareket !== false && !AZ_HAREKET
   const altKatman = aktifAltBant === "dal"
-    ? `url("${dalSeridi(theme.accent, theme.background, theme.text, dalCesit)}") ${-dalX}px bottom / ${Math.round(dalBoy * DAL_ORAN)}px ${dalBoy}px repeat-x`
+    ? `url("${dalSeridi(theme.ayetNoRengi || theme.accent, theme.background, theme.text, dalCesit, dalSalinim)}") ${-dalX}px bottom / ${Math.round(dalBoy * DAL_ORAN)}px ${dalBoy}px repeat-x`
     : aktifAltBant === "bant"
       ? `linear-gradient(color-mix(in srgb, ${theme.accent} 55%, ${theme.background}), color-mix(in srgb, ${theme.accent} 55%, ${theme.background})) left bottom / 100% ${Math.max(2, Math.round(yaziBoyutu * 0.09))}px no-repeat`
       : null

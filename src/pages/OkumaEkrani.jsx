@@ -1471,7 +1471,7 @@ useEffect(() => {
 // bayrak yerine tek durum: hangisi açıksa o. (Mushaf panelinde de aynı kural.)
 const [acikBolum, setAcikBolum] = useState(null)   // null | "boyut" | "font"  (eski açılır bölümler — artık sekme)
 // Yazı paneli SEKMESİ (açılır bölümlerin yerine) — son açılan hatırlanıyor
-const [aaSekme, setAaSekme] = useState(() => sekmeOku("vukuf-okuma-aa-sekme", "boyut", ["boyut", "aralik", "font", "sayfa"]))
+const [aaSekme, setAaSekme] = useState(() => sekmeOku("vukuf-okuma-aa-sekme", "boyut", ["boyut", "aralik", "font", "sayfa", "renk"]))
 const aaSekmeSec = (id) => { setAaSekme(id); sekmeYaz("vukuf-okuma-aa-sekme", id) }
 const yaziTipiBtnRef = useRef(null)
 const yaziTipiListeRef = useRef(null)
@@ -3095,6 +3095,57 @@ const panelStil = (konum = "center", en = 620) => ({
 // AA PANELİ
 // ════════════════════════════════════════════════════════════════
 
+// ÖZEL RENKLENDİRME — Tema panelinde çekmece, Yazı tercihlerinde "Renklendirme" sekmesi (ortak içerik)
+const renklendirmeIcerik = () => (
+  <>
+    {/* RENKLER (5 Kasım 2026) — yazı, Arapça ve lügat rengi artık ÖZEL TEMAYA işlenir
+        (AppContext.temaRenkYaz): hazır temadaysa 1. özel tema o temadan kurulup seçilir,
+        özel temadaysa o düzenlenir; soru sorulmaz. Eski "üstüne binen" tercihler
+        (arapcaRenk / lugatRenkOzel) ilk değişiklikte temizlenir. */}
+    {/* Yazı rengi */}
+    <div className="yp-renk">
+      <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px" }}>YAZI RENGİ</div>
+      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+        <input type="color" value={theme.text}
+          onChange={e => temaRenkYaz("text", e.target.value)}
+          style={{ width: "40px", height: "28px", border: `1px solid ${theme.border}`, borderRadius: "6px", background: theme.background, cursor: "pointer", padding: "2px" }} />
+        <span style={{ flex: 1, fontSize: "12px", color: theme.text }}>Okunan metin</span>
+        {ozelMi(currentTheme) && theme.text !== temaTabanRengi("text") && (
+          <button onClick={() => temaRenkYaz("text", temaTabanRengi("text"))} title="Temaya sıfırla" style={{ fontSize: "11px", color: theme.textSecondary, background: "none", border: "none", cursor: "pointer" }}>Sıfırla</button>
+        )}
+      </div>
+    </div>
+
+    {/* Arapça harf rengi */}
+    <div className="yp-renk" style={{ marginTop: "10px" }}>
+      <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px" }}>ARAPÇA HARF RENGİ</div>
+      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+        <input type="color" value={arapcaRenk || theme.arabicHighlight}
+          onChange={e => { setArapcaRenk(""); temaRenkYaz("arabicHighlight", e.target.value) }}
+          style={{ width: "40px", height: "28px", border: `1px solid ${theme.border}`, borderRadius: "6px", background: theme.background, cursor: "pointer", padding: "2px" }} />
+        <span style={{ flex: 1, fontSize: "12px", color: arapcaRenk || theme.arabicHighlight }}>بِسْمِ اللّٰه · Bismillâh</span>
+        {(arapcaRenk || (ozelMi(currentTheme) && theme.arabicHighlight !== temaTabanRengi("arabicHighlight"))) && (
+          <button onClick={() => { setArapcaRenk(""); if (ozelMi(currentTheme)) temaRenkYaz("arabicHighlight", temaTabanRengi("arabicHighlight")) }} title="Temaya sıfırla" style={{ fontSize: "11px", color: theme.textSecondary, background: "none", border: "none", cursor: "pointer" }}>Sıfırla</button>
+        )}
+      </div>
+    </div>
+
+    {/* Lügat (Latin) kelime rengi */}
+    <div className="yp-renk" style={{ marginTop: "10px" }}>
+      <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px" }}>LÜGAT RENGİ</div>
+      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+        <input type="color" value={lugatRenkOzel || theme.lugatHighlight}
+          onChange={e => { setLugatRenkOzel(""); temaRenkYaz("lugatHighlight", e.target.value) }}
+          style={{ width: "40px", height: "28px", border: `1px solid ${theme.border}`, borderRadius: "6px", background: theme.background, cursor: "pointer", padding: "2px" }} />
+        <span style={{ flex: 1, fontSize: "12px", color: lugatRenkOzel || theme.lugatHighlight }}>nasihat · hakikat</span>
+        {(lugatRenkOzel || (ozelMi(currentTheme) && theme.lugatHighlight !== temaTabanRengi("lugatHighlight"))) && (
+          <button onClick={() => { setLugatRenkOzel(""); if (ozelMi(currentTheme)) temaRenkYaz("lugatHighlight", temaTabanRengi("lugatHighlight")) }} title="Temaya sıfırla" style={{ fontSize: "11px", color: theme.textSecondary, background: "none", border: "none", cursor: "pointer" }}>Sıfırla</button>
+        )}
+      </div>
+    </div>
+  </>
+)
+
 const AaPanel = aaAcik && (
   <>
     <div onClick={() => setAaAcik(false)} style={{ position: "fixed", inset: 0, zIndex: 95 }} />
@@ -3206,11 +3257,13 @@ const AaPanel = aaAcik && (
         theme={theme}
         secili={aaSekme}
         onSec={aaSekmeSec}
+        esnek
         sekmeler={[
           { id: "boyut", etiket: "Boyut", Ikon: Type },
           { id: "aralik", etiket: "Aralık", Ikon: MoveVertical },
           { id: "font", etiket: "Yazı tipi", Ikon: Feather },
           { id: "sayfa", etiket: "Sayfa", Ikon: UnfoldHorizontal },
+          { id: "renk", etiket: "Renklendirme", Ikon: Palette },
         ]}
       />
       {/* İçerik alanı sabit en az yükseklikte — sekme değişince panel boyu zıplamasın */}
@@ -3298,6 +3351,8 @@ const AaPanel = aaAcik && (
         <IosSwitch acik={kenarBosluk} theme={theme} boyut={0.82} />
       </div>
       </>)}
+
+      {aaSekme === "renk" && renklendirmeIcerik()}
       </div>
     </div>
   </>
@@ -3500,50 +3555,11 @@ const TemaPanel = temaAcik && (
         onSec={() => {}}
       />
 
-      {/* RENKLER (5 Kasım 2026) — yazı, Arapça ve lügat rengi artık ÖZEL TEMAYA işlenir
-          (AppContext.temaRenkYaz): hazır temadaysa 1. özel tema o temadan kurulup seçilir,
-          özel temadaysa o düzenlenir; soru sorulmaz. Eski "üstüne binen" tercihler
-          (arapcaRenk / lugatRenkOzel) ilk değişiklikte temizlenir. */}
-      {/* Yazı rengi */}
-      <div className="yp-renk" style={{ borderTop: `1px solid ${theme.border}`, marginTop: "10px", paddingTop: "10px" }}>
-        <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px" }}>YAZI RENGİ</div>
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <input type="color" value={theme.text}
-            onChange={e => temaRenkYaz("text", e.target.value)}
-            style={{ width: "40px", height: "28px", border: `1px solid ${theme.border}`, borderRadius: "6px", background: theme.background, cursor: "pointer", padding: "2px" }} />
-          <span style={{ flex: 1, fontSize: "12px", color: theme.text }}>Okunan metin</span>
-          {ozelMi(currentTheme) && theme.text !== temaTabanRengi("text") && (
-            <button onClick={() => temaRenkYaz("text", temaTabanRengi("text"))} title="Temaya sıfırla" style={{ fontSize: "11px", color: theme.textSecondary, background: "none", border: "none", cursor: "pointer" }}>Sıfırla</button>
-          )}
-        </div>
-      </div>
-
-      {/* Arapça harf rengi */}
-      <div className="yp-renk" style={{ marginTop: "10px" }}>
-        <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px" }}>ARAPÇA HARF RENGİ</div>
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <input type="color" value={arapcaRenk || theme.arabicHighlight}
-            onChange={e => { setArapcaRenk(""); temaRenkYaz("arabicHighlight", e.target.value) }}
-            style={{ width: "40px", height: "28px", border: `1px solid ${theme.border}`, borderRadius: "6px", background: theme.background, cursor: "pointer", padding: "2px" }} />
-          <span style={{ flex: 1, fontSize: "12px", color: arapcaRenk || theme.arabicHighlight }}>بِسْمِ اللّٰه · Bismillâh</span>
-          {(arapcaRenk || (ozelMi(currentTheme) && theme.arabicHighlight !== temaTabanRengi("arabicHighlight"))) && (
-            <button onClick={() => { setArapcaRenk(""); if (ozelMi(currentTheme)) temaRenkYaz("arabicHighlight", temaTabanRengi("arabicHighlight")) }} title="Temaya sıfırla" style={{ fontSize: "11px", color: theme.textSecondary, background: "none", border: "none", cursor: "pointer" }}>Sıfırla</button>
-          )}
-        </div>
-      </div>
-
-      {/* Lügat (Latin) kelime rengi */}
-      <div className="yp-renk" style={{ marginTop: "10px" }}>
-        <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px" }}>LÜGAT RENGİ</div>
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <input type="color" value={lugatRenkOzel || theme.lugatHighlight}
-            onChange={e => { setLugatRenkOzel(""); temaRenkYaz("lugatHighlight", e.target.value) }}
-            style={{ width: "40px", height: "28px", border: `1px solid ${theme.border}`, borderRadius: "6px", background: theme.background, cursor: "pointer", padding: "2px" }} />
-          <span style={{ flex: 1, fontSize: "12px", color: lugatRenkOzel || theme.lugatHighlight }}>nasihat · hakikat</span>
-          {(lugatRenkOzel || (ozelMi(currentTheme) && theme.lugatHighlight !== temaTabanRengi("lugatHighlight"))) && (
-            <button onClick={() => { setLugatRenkOzel(""); if (ozelMi(currentTheme)) temaRenkYaz("lugatHighlight", temaTabanRengi("lugatHighlight")) }} title="Temaya sıfırla" style={{ fontSize: "11px", color: theme.textSecondary, background: "none", border: "none", cursor: "pointer" }}>Sıfırla</button>
-          )}
-        </div>
+      {/* ÖZEL RENKLENDİRME çekmecesi: yazı, Arapça harf ve lügat rengi */}
+      <div className="yp-tam" style={{ borderTop: `1px solid ${theme.border}`, marginTop: "10px", paddingTop: "10px" }}>
+        <AyarCekmecesi id="eser-ozel-renklendirme" baslik="Özel Renklendirme" theme={theme} isMobile={isMobile}>
+          <div>{renklendirmeIcerik()}</div>
+        </AyarCekmecesi>
       </div>
     </div>
   </>

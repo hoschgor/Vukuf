@@ -16,7 +16,8 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 // sinif: dışarıdan sınıf (ör. yatay telefon düzeni için "yp-aa-ilk")
-export function SekmeCubugu({ theme, sekmeler, secili, onSec, sinif }) {
+// esnek: sekme genişliği etiketine göre (uzun etiketler kesilmesin)
+export function SekmeCubugu({ theme, sekmeler, secili, onSec, sinif, esnek = false }) {
   return (
     <div role="tablist" className={sinif} style={{
       display: "flex", gap: "3px", padding: "3px", borderRadius: "11px",
@@ -32,7 +33,7 @@ export function SekmeCubugu({ theme, sekmeler, secili, onSec, sinif }) {
             aria-selected={sec}
             onClick={() => onSec(id)}
             style={{
-              flex: 1, minWidth: 0,
+              flex: esnek ? "1 1 auto" : 1, minWidth: 0,
               display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "2px",
               padding: "6px 2px", borderRadius: "8px", cursor: "pointer",
               fontSize: "10.5px", fontWeight: sec ? 600 : 400, fontFamily: "inherit",

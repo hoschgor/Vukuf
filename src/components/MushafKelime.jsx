@@ -1,4 +1,5 @@
-import { useState } from "react"
+import { useLayoutEffect, useRef, useState } from "react"
+import { dalSeridi, DAL_BOY, DAL_ORAN, DAL_CESIT } from "../data/okunanDal"
 import { BIRLESIK_TECVID } from "../data/tecvid"
 // GEÇİCİ — dönme teşhisi sayacı (ölçüm bitince silinecek)
 // import { SAYAC as DONME_SAYAC } from "../data/donmeTeshis"   // ⏸ dönme teşhisi (yorumda)
@@ -293,22 +294,6 @@ function boyaliParca(karakterler, renkler, bas, son, anahtar) {
   return dugum
 }
 
-// Okunan âyetin "Dallı" zemini için ince dal şeridi (renge göre bir kez üretilir)
-const dalSeridiBellek = new Map()
-function dalSeridi(renk) {
-  let v = dalSeridiBellek.get(renk)
-  if (!v) {
-    const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 8' preserveAspectRatio='none'>`
-      + `<path d='M0 5 Q10 1.5 20 5 T40 5' fill='none' stroke='${renk}' stroke-opacity='.7' stroke-width='.9'/>`
-      + `<path d='M9 3.6 q3 -3.4 7 -1.4 q-3.4 2.4 -7 1.4z' fill='${renk}' fill-opacity='.75'/>`
-      + `<path d='M29 6.4 q3 2.2 7 0.6 q-3.4 -2 -7 -0.6z' fill='${renk}' fill-opacity='.75'/>`
-      + `</svg>`
-    v = `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`
-    dalSeridiBellek.set(renk, v)
-  }
-  return v
-}
-
 // Fareyle gerçekten üzerine gelinebilen cihaz mı? Dokunmatikte "hover" dokunuştan sonra
 // takılı kalıp kelimenin etrafında kutu bırakıyordu; orada üzerine gelme vurgusu çizilmez.
 const UZERINE_GELME = (() => {
@@ -415,6 +400,19 @@ export default function MushafKelime({
 }) {
   // DONME_SAYAC.kelime++   // ⏸ dönme teşhisi (yorumda)
   const [hover, setHover] = useState(false)
+  // Dal şeridi kelimenin satırdaki yerine göre kaydırılır → kelimeden kelimeye kesilmez
+  const kokRef = useRef(null)
+  const [dalX, setDalX] = useState(0)
+  const dalAcik = aktif && aktifGorunum?.altBant === "dal" && !kayitKonumModu
+  useLayoutEffect(() => {
+    if (!dalAcik) return
+    const olc = () => { const el = kokRef.current; if (el) { const x = Math.round(el.offsetLeft); setDalX(v => (v === x ? v : x)) } }
+    olc()
+    let iptal = false
+    try { document.fonts?.ready?.then(() => { if (!iptal) olc() }) } catch { /* yoksay */ }
+    window.addEventListener("resize", olc)
+    return () => { iptal = true; window.removeEventListener("resize", olc) }
+  }, [dalAcik, yaziBoyutu, harfAraligi, lineHeight, arapcaFont])
   const lafizkontrol = lafzatullahMi(kelime.arabic)
   const besmelekontrol = besmeleMi(kelime.id)
   const hasUpperIndicator = kelime.vakif || kelime.secde
@@ -475,9 +473,11 @@ export default function MushafKelime({
   const aktifYuzde = aktifArkaTipi === "yok" ? 0 : aktifArkaTipi === "belirgin" ? 16 : 8
   const aktifZemin = aktifYuzde ? `color-mix(in srgb, ${theme.accent} ${aktifYuzde}%, ${theme.background})` : null
   // Alt bant katmanı (statik — hareket yok, sayfa düzenine dokunmaz):
-  //   dal  → tekrar eden ince dal resmi · bant → kelimenin altında ince düz şerit
+  //   dal  → yapraklı, çiçekli sarmaşık (data/okunanDal.js; çeşit âyete göre) · bant → ince düz şerit
+  const dalCesit = (() => { const [su, ay] = String(kelime.id).split(":").map(Number); return ((su || 0) * 7 + (ay || 0)) % DAL_CESIT })()
+  const dalBoy = Math.max(9, Math.round(yaziBoyutu * DAL_BOY))
   const altKatman = aktifAltBant === "dal"
-    ? `url("${dalSeridi(theme.accent)}") left bottom / ${Math.round(yaziBoyutu * 2)}px ${Math.max(5, Math.round(yaziBoyutu * 0.3))}px repeat-x`
+    ? `url("${dalSeridi(theme.accent, theme.background, theme.text, dalCesit)}") ${-dalX}px bottom / ${Math.round(dalBoy * DAL_ORAN)}px ${dalBoy}px repeat-x`
     : aktifAltBant === "bant"
       ? `linear-gradient(color-mix(in srgb, ${theme.accent} 55%, ${theme.background}), color-mix(in srgb, ${theme.accent} 55%, ${theme.background})) left bottom / 100% ${Math.max(2, Math.round(yaziBoyutu * 0.09))}px no-repeat`
       : null
@@ -750,6 +750,7 @@ export default function MushafKelime({
 
   return (
     <span
+      ref={kokRef}
       className="mushaf-kelime"
       data-hifz={hifzAnahtar || undefined}
       data-hs={hifzAnahtar ? hifzSira : undefined}

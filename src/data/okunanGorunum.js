@@ -51,7 +51,7 @@ export const OKUNAN_ARKALAR = [
 export const OKUNAN_ALT_BANTLAR = [
   { id: "yok",  ad: "Yok",  aciklama: "Kelimelerin altında bir şey yok" },
   { id: "bant", ad: "Bant", aciklama: "Kelimelerin altında ince düz şerit" },
-  { id: "dal",  ad: "Dal",  aciklama: "Kelimelerin altında ince dal şeridi" },
+  { id: "dal",  ad: "Dal",  aciklama: "Kelimelerin altında yapraklı, çiçekli sarmaşık" },
 ]
 
 // Önceki kayıt biçimleri → yeni alanlar

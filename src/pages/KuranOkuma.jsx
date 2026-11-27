@@ -1554,7 +1554,7 @@ const maxWidth = useMemo(() =>
   // indiriyor. İki ayrı bayrak yerine tek bir durum: hangisi açıksa o.
   const [acikBolum, setAcikBolum] = useState(null)   // null | "boyut" | "font"  (eski açılır bölümler — artık sekme)
   // Yazı paneli SEKMESİ (açılır bölümlerin yerine) — son açılan hatırlanıyor
-  const [aaSekme, setAaSekme] = useState(() => sekmeOku("vukuf-kuran-aa-sekme", "boyut", ["boyut", "font", "sayfa"]))
+  const [aaSekme, setAaSekme] = useState(() => sekmeOku("vukuf-kuran-aa-sekme", "boyut", ["boyut", "font", "sayfa", "renk"]))
   const aaSekmeSec = (id) => { setAaSekme(id); sekmeYaz("vukuf-kuran-aa-sekme", id) }
   const yaziTipiBtnRef = useRef(null)
   const yaziTipiListeRef = useRef(null)
@@ -4087,6 +4087,62 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
   // AA PANELİ
   // ════════════════════════════════════════════════════════════════
 
+  // ÖZEL RENKLENDİRME — Tema panelinde çekmece, Yazı tercihlerinde "Renklendirme" sekmesi (ortak içerik)
+  const renklendirmeIcerik = (kapat) => (
+    <>
+      {/* ── YAZI RENGİ — seçili temanın metin rengini ezer, temayı değiştirmez */}
+      <div className="yp-renk">
+        <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px" }}>YAZI RENGİ</div>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          {/* 5 Kasım 2026: renk artık ÖZEL TEMAYA işlenir (AppContext.temaRenkYaz) — hazır
+              temadaysa 1. özel tema o temadan kurulup seçilir; özel temadaysa o düzenlenir.
+              Eski "üstüne binen" tercih (yaziRengi) varsa ilk değişiklikte temizlenir. */}
+          <input
+            type="color"
+            value={hexGuvenli(yaziRengi || temaTaban.text)}
+            onChange={e => { setYaziRengi(""); temaRenkYaz("text", e.target.value) }}
+            style={{ width: "40px", height: "28px", border: `1px solid ${theme.border}`, borderRadius: "6px", background: theme.background, cursor: "pointer", padding: "2px", flexShrink: 0 }}
+          />
+          <span style={{
+            flex: 1, minWidth: 0, fontSize: "15px", color: theme.text,
+            fontFamily: aktifArapcaFont.style, direction: "rtl",
+            whiteSpace: "nowrap", overflow: "hidden", textOverflow: "clip",
+          }}>بِسْمِ ٱللَّهِ</span>
+          {(yaziRengi || (ozelMi(currentTheme) && temaTaban.text !== temaTabanRengi("text"))) && (
+            <button onClick={() => { setYaziRengi(""); if (ozelMi(currentTheme)) temaRenkYaz("text", temaTabanRengi("text")) }} title="Temaya sıfırla"
+              style={{ fontSize: "11px", color: theme.textSecondary, background: "none", border: "none", cursor: "pointer", flexShrink: 0 }}>Sıfırla</button>
+          )}
+        </div>
+      </div>
+
+      {/* ── ÂYET NO RENGİ — rozet rakamı ve âyet numarası vurguları */}
+      <div className="yp-renk" style={{ marginTop: "10px" }}>
+        <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px" }}>ÂYET NO RENGİ</div>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <input
+            type="color"
+            value={hexGuvenli(ayetNoRengi || temaTaban.ayetNoRengi || temaTaban.accent)}
+            onChange={e => { setAyetNoRengi(""); temaRenkYaz("ayetNoRengi", e.target.value) }}
+            style={{ width: "40px", height: "28px", border: `1px solid ${theme.border}`, borderRadius: "6px", background: theme.background, cursor: "pointer", padding: "2px", flexShrink: 0 }}
+          />
+          {/* Önizleme, okuma ekranındaki ROZETİN TA KENDİSİ olmalı — ham ﴿﴾
+              karakterleri farklı görünür ve yönü bidi'ye göre değişir. */}
+          <span style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center" }}>
+            <AyetRozeti theme={theme} sayi={255} size={26} ac={theme.ayetNoRengi || theme.accent} />
+          </span>
+          {(ayetNoRengi || (ozelMi(currentTheme) && temaTaban.ayetNoRengi !== temaTabanRengi("ayetNoRengi"))) && (
+            <button onClick={() => { setAyetNoRengi(""); if (ozelMi(currentTheme)) temaRenkYaz("ayetNoRengi", temaTabanRengi("ayetNoRengi")) }} title="Temaya sıfırla"
+              style={{ fontSize: "11px", color: theme.textSecondary, background: "none", border: "none", cursor: "pointer", flexShrink: 0 }}>Sıfırla</button>
+          )}
+        </div>
+      </div>
+
+      {/* ── RENKLİ HAREKE + KELİME / KALIP RENKLENDİR (15 Kasım 2026) */}
+      <HarekeRenkAyarlari theme={theme} arapcaStyle={aktifArapcaFont.style}
+        onKelimeSec={(eslesme, renk) => { kapat(); setPopup(null); setKelimeRenkSec({ eslesme, renk, secim: [] }) }} />
+    </>
+  )
+
  const AaPanel = aaAcik && (
     <>
       <div onClick={() => setAaAcik(false)} style={{ position: "fixed", inset: 0, zIndex: 195 }} />
@@ -4139,10 +4195,12 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
           theme={theme}
           secili={aaSekme}
           onSec={aaSekmeSec}
+          esnek
           sekmeler={[
             { id: "boyut", etiket: "Boyut · Aralık", Ikon: Type },
             { id: "font", etiket: "Yazı tipi", Ikon: Feather },
             { id: "sayfa", etiket: "Sayfa", Ikon: UnfoldHorizontal },
+            { id: "renk", etiket: "Renklendirme", Ikon: Palette },
           ]}
         />
         {/* İçerik alanı sabit en az yükseklikte — sekme değişince panel boyu zıplamasın */}
@@ -4231,6 +4289,8 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
           <IosSwitch acik={kenarBosluk} theme={theme} boyut={0.82} />
         </div>
         </>)}
+
+        {aaSekme === "renk" && renklendirmeIcerik(() => setAaAcik(false))}
         </div>
         </div>
 
@@ -4264,56 +4324,12 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
           onSec={() => {}}
         />
 
-        {/* ── YAZI RENGİ — seçili temanın metin rengini ezer, temayı değiştirmez */}
-        <div className="yp-renk" style={{ borderTop: `1px solid ${theme.border}`, marginTop: "10px", paddingTop: "10px" }}>
-          <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px" }}>YAZI RENGİ</div>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            {/* 5 Kasım 2026: renk artık ÖZEL TEMAYA işlenir (AppContext.temaRenkYaz) — hazır
-                temadaysa 1. özel tema o temadan kurulup seçilir; özel temadaysa o düzenlenir.
-                Eski "üstüne binen" tercih (yaziRengi) varsa ilk değişiklikte temizlenir. */}
-            <input
-              type="color"
-              value={hexGuvenli(yaziRengi || temaTaban.text)}
-              onChange={e => { setYaziRengi(""); temaRenkYaz("text", e.target.value) }}
-              style={{ width: "40px", height: "28px", border: `1px solid ${theme.border}`, borderRadius: "6px", background: theme.background, cursor: "pointer", padding: "2px", flexShrink: 0 }}
-            />
-            <span style={{
-              flex: 1, minWidth: 0, fontSize: "15px", color: theme.text,
-              fontFamily: aktifArapcaFont.style, direction: "rtl",
-              whiteSpace: "nowrap", overflow: "hidden", textOverflow: "clip",
-            }}>بِسْمِ ٱللَّهِ</span>
-            {(yaziRengi || (ozelMi(currentTheme) && temaTaban.text !== temaTabanRengi("text"))) && (
-              <button onClick={() => { setYaziRengi(""); if (ozelMi(currentTheme)) temaRenkYaz("text", temaTabanRengi("text")) }} title="Temaya sıfırla"
-                style={{ fontSize: "11px", color: theme.textSecondary, background: "none", border: "none", cursor: "pointer", flexShrink: 0 }}>Sıfırla</button>
-            )}
-          </div>
+        {/* ── ÖZEL RENKLENDİRME çekmecesi: yazı / âyet no rengi, renkli hareke, kelime renklendirme */}
+        <div className="yp-tam" style={{ borderTop: `1px solid ${theme.border}`, marginTop: "10px", paddingTop: "10px" }}>
+          <AyarCekmecesi id="kuran-ozel-renklendirme" baslik="Özel Renklendirme" theme={theme} isMobile={isMobile}>
+            <div>{renklendirmeIcerik(() => setTemaAcik(false))}</div>
+          </AyarCekmecesi>
         </div>
-
-        {/* ── ÂYET NO RENGİ — rozet rakamı ve âyet numarası vurguları */}
-        <div className="yp-renk" style={{ marginTop: "10px" }}>
-          <div style={{ fontSize: "11px", color: theme.textSecondary, marginBottom: "8px", letterSpacing: "1px" }}>ÂYET NO RENGİ</div>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <input
-              type="color"
-              value={hexGuvenli(ayetNoRengi || temaTaban.ayetNoRengi || temaTaban.accent)}
-              onChange={e => { setAyetNoRengi(""); temaRenkYaz("ayetNoRengi", e.target.value) }}
-              style={{ width: "40px", height: "28px", border: `1px solid ${theme.border}`, borderRadius: "6px", background: theme.background, cursor: "pointer", padding: "2px", flexShrink: 0 }}
-            />
-            {/* Önizleme, okuma ekranındaki ROZETİN TA KENDİSİ olmalı — ham ﴿﴾
-                karakterleri farklı görünür ve yönü bidi'ye göre değişir. */}
-            <span style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center" }}>
-              <AyetRozeti theme={theme} sayi={255} size={26} ac={theme.ayetNoRengi || theme.accent} />
-            </span>
-            {(ayetNoRengi || (ozelMi(currentTheme) && temaTaban.ayetNoRengi !== temaTabanRengi("ayetNoRengi"))) && (
-              <button onClick={() => { setAyetNoRengi(""); if (ozelMi(currentTheme)) temaRenkYaz("ayetNoRengi", temaTabanRengi("ayetNoRengi")) }} title="Temaya sıfırla"
-                style={{ fontSize: "11px", color: theme.textSecondary, background: "none", border: "none", cursor: "pointer", flexShrink: 0 }}>Sıfırla</button>
-            )}
-          </div>
-        </div>
-
-        {/* ── RENKLİ HAREKE + KELİME / KALIP RENKLENDİR (15 Kasım 2026) */}
-        <HarekeRenkAyarlari theme={theme} arapcaStyle={aktifArapcaFont.style}
-          onKelimeSec={(eslesme, renk) => { setTemaAcik(false); setPopup(null); setKelimeRenkSec({ eslesme, renk, secim: [] }) }} />
       </div>
     </>
   )

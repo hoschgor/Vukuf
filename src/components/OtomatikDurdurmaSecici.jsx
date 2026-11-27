@@ -8,11 +8,16 @@
    ÖZEL SÜRE (4 Kasım 2026, kullanıcı: "otomatik [durdurma] kısımları için özel süre
    ayarlanabilsin") — "Özel" çipi küçük bir dakika kutusu açar (1–600 dk); seçilen özel
    süre çipte "Özel · 25 dk" diye görünür. Kur'ân oynatıcısı, radyo ve sesli okuma ortak.
+   Son girilen özel süre cihazda saklanır (tüm oynatıcılarda ortak): "Özel"e ilk dokunuş o
+   süreyi doğrudan kurar, özel süre seçiliyken dokunmak süreyi değiştirme kutusunu açar.
    ═══════════════════════════════════════════════════════════════════════════ */
 
 import { useState } from "react"
 import { Moon, Check } from "lucide-react"
 import { UYKU_SURELERI, kalanDakika } from "../data/otomatikDurdurma"
+
+const OZEL_ANAHTAR = "vukuf-otomatik-durdurma-ozel"
+const ozelSonOku = () => { try { const n = parseInt(localStorage.getItem(OZEL_ANAHTAR), 10); return n > 0 ? n : null } catch { return null } }
 
 /* ANAHTARLI KİP (11 Kasım 2026 — kullanıcı: "otomatik durdurma kısmı açık kapalı switch olsun,
    switch açıkken süre seçenekleri görünsün"). `anahtarli` verilince başlığın sağında anahtar
@@ -30,11 +35,20 @@ export default function OtomatikDurdurmaSecici({ theme, uyku, baslik = "Otomatik
   const ac = theme.accent
   const ozelSecili = !!uyku.dk && !UYKU_SURELERI.includes(uyku.dk)
   const [ozelAcik, setOzelAcik] = useState(false)
-  const [ozelDk, setOzelDk] = useState(() => (ozelSecili ? String(uyku.dk) : ""))
+  const [ozelSon, setOzelSon] = useState(ozelSonOku)
+  const [ozelDk, setOzelDk] = useState(() => (ozelSecili ? String(uyku.dk) : ozelSon ? String(ozelSon) : ""))
   const ozelKur = () => {
     const n = Math.max(1, Math.min(600, parseInt(ozelDk, 10) || 0))
     if (!parseInt(ozelDk, 10)) return
-    uyku.kur(n); setOzelAcik(false)
+    uyku.kur(n); setOzelAcik(false); setOzelSon(n)
+    try { localStorage.setItem(OZEL_ANAHTAR, String(n)) } catch { /* yoksay */ }
+  }
+  // Kayıtlı süre varsa ilk dokunuş onu kurar; özel süre seçiliyken (ya da kayıt yokken) kutu açılır
+  const ozelDokun = () => {
+    const son = ozelSonOku() || ozelSon
+    if (!ozelSecili && !ozelAcik && son) { uyku.kur(son); setOzelDk(String(son)); return }
+    setOzelDk(ozelSecili ? String(uyku.dk) : son ? String(son) : "")
+    setOzelAcik(v => !v)
   }
   const cip = (sec) => ({
     padding: "3px 8px", borderRadius: "999px", fontSize: "11px", fontFamily: "inherit",
@@ -75,8 +89,9 @@ export default function OtomatikDurdurmaSecici({ theme, uyku, baslik = "Otomatik
             </button>
           )
         })}
-        <button onClick={(e) => { e.stopPropagation(); setOzelAcik(v => !v) }} aria-pressed={ozelSecili} aria-expanded={ozelAcik} style={cip(ozelSecili)}>
-          {ozelSecili ? `Özel · ${uyku.dk} dk` : "Özel"}
+        <button onClick={(e) => { e.stopPropagation(); ozelDokun() }} aria-pressed={ozelSecili} aria-expanded={ozelAcik}
+          title={ozelSecili ? "Süreyi değiştir" : ozelSon ? `${ozelSon} dk kurulur` : "Süre yazılabilir"} style={cip(ozelSecili)}>
+          {ozelSecili ? `Özel · ${uyku.dk} dk` : ozelSon ? `Özel · ${ozelSon} dk` : "Özel"}
         </button>
       </div>}
       {acik && ozelAcik && (

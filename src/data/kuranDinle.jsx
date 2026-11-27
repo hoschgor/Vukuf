@@ -26,7 +26,8 @@
    Kur'ân oynatıcısı ya da radyo başlarsa Kur'an Dinle duraklar; Kur'an Dinle başlarsa
    Kur'ân oynatıcısı duraklar, radyo kapanır — iki ses üst üste binmez.
    KALDIĞI YER cihazda saklanır ("vukuf-kuran-dinle-son"): uzun cüz kayıtlarında
-   dakikasıyla birlikte; kart "Kaldığınız yerden devam" önerir.
+   dakikasıyla birlikte; kart "Kaldığınız yerden devam" önerir. Oturum oturum geçmiş:
+   "vukuf-kuran-dinle-gecmis" (Son dinlenenler çekmecesi).
    ═══════════════════════════════════════════════════════════════════════════ */
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react"
@@ -629,7 +630,52 @@ export function sonKonumOku() {
 }
 function sonKonumYaz(v) {
   try { localStorage.setItem(SON_ANAHTAR, JSON.stringify({ ...v, t: Date.now() })) } catch { /* yoksay */ }
+  gecmisGuncelle(v)
 }
+
+/* SON DİNLENENLER: her dinleme oturumu ayrı satır (oturum kimliği baslat'ta verilir; sürekli
+   çalma, sonraki/önceki ve "Devam" aynı oturumu sürdürür). Bir parça yanlışlıkla baştan
+   başlatılırsa eski satır yerinde kalır; yeni oturum onu geçince (aynı parça, daha ileri)
+   eskisi silinir. Saklanan (sakli) satırlar sınıra ve silinmeye girmez. */
+const GECMIS_ANAHTAR = "vukuf-kuran-dinle-gecmis"
+const GECMIS_SINIR = 20
+const gecmisDinleyici = new Set()
+let gecmis = (() => {
+  try {
+    const l = JSON.parse(localStorage.getItem(GECMIS_ANAHTAR) || "null")
+    if (Array.isArray(l)) return l.filter(x => x && x.oturum && x.tur && x.parca != null)
+    const s = JSON.parse(localStorage.getItem(SON_ANAHTAR) || "null")   // ilk açılış: eski "kaldığınız yer"
+    if (s && s.kariId && s.tur && s.parca != null) return [{ ...s, oturum: s.oturum || "eski", t: s.t || Date.now() }]
+  } catch { /* yoksay */ }
+  return []
+})()
+function gecmisYay(l) {
+  gecmis = l
+  try { localStorage.setItem(GECMIS_ANAHTAR, JSON.stringify(l)) } catch { /* yoksay */ }
+  gecmisDinleyici.forEach(f => f())
+}
+const ilerleme = (x) => (x.bitti ? Infinity : x.tur === "ayet" ? (x.ayet || 0) : (x.zaman || 0))
+function gecmisGuncelle(v) {
+  if (!v || !v.oturum) return
+  const eski = gecmis.find(x => x.oturum === v.oturum)
+  const y = {
+    oturum: v.oturum, kariId: v.kariId, tur: v.tur, parca: v.parca, ayet: v.ayet ?? null,
+    zaman: v.zaman || 0, t: Date.now(), ...(v.bitti ? { bitti: true } : {}), ...(eski && eski.sakli ? { sakli: true } : {}),
+  }
+  let l = [y, ...gecmis.filter(x => x.oturum !== y.oturum)]
+  l = l.filter(x => x === y || x.sakli ||
+    !(x.kariId === y.kariId && x.tur === y.tur && x.parca === y.parca && ilerleme(x) <= ilerleme(y)))
+  let n = 0
+  l = l.filter(x => x.sakli || ++n <= GECMIS_SINIR)
+  gecmisYay(l)
+}
+export function useDinleGecmisi() {
+  return useSyncExternalStore((f) => { gecmisDinleyici.add(f); return () => gecmisDinleyici.delete(f) }, () => gecmis, () => gecmis)
+}
+export function gecmisSakla(oturum, sakli) { gecmisYay(gecmis.map(x => (x.oturum === oturum ? { ...x, sakli: !!sakli } : x))) }
+export function gecmisSil(oturum) { gecmisYay(gecmis.filter(x => x.oturum !== oturum)) }
+export function gecmisTemizle() { gecmisYay(gecmis.filter(x => x.sakli)) }
+const yeniOturum = () => `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`
 
 // Çalma süresi ayrı bir depoda: saniyede birkaç kez değişir, yalnız ilerleme çubuğu dinler
 let zaman = { su: 0, toplam: 0 }
@@ -667,10 +713,18 @@ export function KuranDinleSaglayici({ children }) {
   const sonYazRef = useRef(0)
   const arayuzRef = useRef(null)                       // disSes kaydı (kilit ekranı düğmeleri)
 
+  // Devam edilen konuma ses henüz varmadıysa (yükleniyor, eski kaynağın pause'u) kayıt o konumda
+  // kalır; aksi hâlde kaldığı yer 0'a düşüyordu. Bir kez varınca normal kayda dönülür.
+  const beklenenRef = useRef(0)
   const konumSakla = useCallback(() => {
     const c = calanRef.current, a = sesRef.current
     if (!c) return
-    sonKonumYaz({ ...c, zaman: c.tur === "ayet" || !a ? 0 : Math.floor(a.currentTime || 0) })
+    let z = c.tur === "ayet" || !a ? 0 : Math.floor(a.currentTime || 0)
+    if (beklenenRef.current > 0 && c.tur !== "ayet") {
+      if (z >= beklenenRef.current - 3) beklenenRef.current = 0
+      else z = beklenenRef.current
+    }
+    sonKonumYaz({ ...c, zaman: z })
   }, [])
 
   const ses = useCallback(() => {
@@ -762,8 +816,9 @@ export function KuranDinleSaglayici({ children }) {
   const baslat = useCallback((istek) => {
     const kari = kariBul(istek.kariId)
     if (!kari || !kari.kaynaklar[istek.tur]) return
-    const c = { kariId: kari.id, tur: istek.tur, parca: istek.parca, ayet: istek.tur === "ayet" ? (istek.ayet ?? 1) : null }
+    const c = { kariId: kari.id, tur: istek.tur, parca: istek.parca, ayet: istek.tur === "ayet" ? (istek.ayet ?? 1) : null, oturum: istek.oturum || yeniOturum() }
     const jeton = ++jetonRef.current
+    beklenenRef.current = istek.zaman > 0 ? Math.floor(istek.zaman) : 0
     digerleriSustur()
     setCalan(c); calanRef.current = c
     setDurum("yukleniyor")
@@ -794,7 +849,7 @@ export function KuranDinleSaglayici({ children }) {
     const kari = kariBul(c.kariId)
     if (c.tur === "ayet") {
       const y = yon > 0 ? sonrakiAyet(c.parca, c.ayet, true) : oncekiAyet(c.parca, c.ayet)
-      if (y) baslat({ kariId: c.kariId, tur: "ayet", ...y })
+      if (y) baslat({ kariId: c.kariId, tur: "ayet", ...y, oturum: c.oturum })
       return
     }
     // Geri: parçanın başından 5 sn'den fazla geçildiyse önce başa sar
@@ -802,7 +857,7 @@ export function KuranDinleSaglayici({ children }) {
     if (yon < 0 && a && a.currentTime > 5) { a.currentTime = 0; return }
     const l = listeKomsusu(kari, c.tur, c.parca, yon)
     const n = l !== undefined ? l : komsuParca(kari, c.tur, c.parca, yon)
-    if (n != null) baslat({ kariId: c.kariId, tur: c.tur, parca: n })
+    if (n != null) baslat({ kariId: c.kariId, tur: c.tur, parca: n, oturum: c.oturum })
   }, [baslat])
 
   const kapat = useCallback(() => {
@@ -830,20 +885,20 @@ export function KuranDinleSaglayici({ children }) {
     if (c.tur === "ayet") {
       // Âyet kipinde sûre içinde her zaman devam; sûre bitince sürekli çalma karar verir
       const y = sonrakiAyet(c.parca, c.ayet, surekliRef.current)
-      if (y) { baslat({ kariId: c.kariId, tur: "ayet", ...y }); return }
+      if (y) { baslat({ kariId: c.kariId, tur: "ayet", ...y, oturum: c.oturum }); return }
     } else {
       const kari = kariBul(c.kariId)
       const l = listeKomsusu(kari, c.tur, c.parca, 1)
       if (l !== undefined) {
         // Çalma listesi: listedeki sıradaki parça; liste bitince durur
-        if (l != null) { baslat({ kariId: c.kariId, tur: c.tur, parca: l }); return }
+        if (l != null) { baslat({ kariId: c.kariId, tur: c.tur, parca: l, oturum: c.oturum }); return }
       } else if (surekliRef.current) {
         const n = komsuParca(kari, c.tur, c.parca, 1)
-        if (n != null) { baslat({ kariId: c.kariId, tur: c.tur, parca: n }); return }
+        if (n != null) { baslat({ kariId: c.kariId, tur: c.tur, parca: n, oturum: c.oturum }); return }
       }
     }
     setDurum("bitti")
-    sonKonumYaz({ ...c, zaman: 0 })
+    sonKonumYaz({ ...c, zaman: 0, bitti: true })
   }
 
   const setSurekli = useCallback((v) => {

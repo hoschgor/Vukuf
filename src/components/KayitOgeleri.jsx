@@ -12,8 +12,9 @@
    • KayitSatiri    : rozet (sayfa) + ad + tarih; normalde yalnız "git" oku. Düzenlemede kalem
                       (satır içinde ad değiştirme) ve sil (1. dokunuş "Sil?" kırmızı hap, 3 sn
                       içinde 2. dokunuş siler) yumuşakça belirir; git oku gizlenir.
-   • YerineKoySorusu: yeni konum seçilince — "Yeni kayıt olarak ekle" ya da listeden seçilen
-                      kaydın "yerine koy" (ad korunur, konum yenilenir). En son kullanılan seçili.
+   • YerineKoySorusu: yeni konum seçilince — önce kayıt adı (boş kutu; boş bırakılırsa sayfa
+                      adı verilir), sonra "Yeni kayıt olarak ekle" ya da listeden seçilen kaydın
+                      "yerine koy" (ad korunur, konum yenilenir). Hiç kayıt yoksa yalnız ad + Kaydet.
    ═══════════════════════════════════════════════════════════════════════════ */
 
 import { useEffect, useRef, useState } from "react"
@@ -143,12 +144,17 @@ export function KayitSatiri({ kayit, theme, duzenle, etiket, aktif = false, onGi
   )
 }
 
-/* Yeni konum seçildi → yeni kayıt mı, bir kaydın yerine mi? */
+/* Yeni konum seçildi → ad sorulur; yeni kayıt mı, bir kaydın yerine mi?
+   onYeni(ad): ad boşsa çağıran sayfa adını verir. */
 export function YerineKoySorusu({ acik, yeniEtiket, kayitlar = [], etiket, theme, isMobile, onYeni, onYerine, onVazgec }) {
   const ac = theme.accent
   const [secili, setSecili] = useState(null)
+  const [ad, setAd] = useState("")
+  const ilk = !kayitlar.length
+  const yeniEkle = () => onYeni?.(ad.trim())
   useEffect(() => {
     if (!acik) return
+    setAd("")
     const enSon = kayitlar.slice().sort((a, b) => kayitZamani(b) - kayitZamani(a))[0]
     setSecili(enSon ? enSon.id : null)
     const tus = (e) => { if (e.key === "Escape") onVazgec?.() }
@@ -189,14 +195,27 @@ export function YerineKoySorusu({ acik, yeniEtiket, kayitlar = [], etiket, theme
           </button>
         </div>
 
-        <button onClick={onYeni} style={{
-          display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", margin: "10px 0 14px",
+        <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: theme.textSecondary, margin: "10px 2px 5px" }} htmlFor="vk-kayit-adi">
+          Kayıt adı
+        </label>
+        <input id="vk-kayit-adi" value={ad} onChange={e => setAd(e.target.value)} autoFocus={ilk}
+          onKeyDown={e => { if (e.key === "Enter") yeniEkle() }}
+          placeholder="Örnek: “Aile Hatmi”"
+          style={{
+            width: "100%", boxSizing: "border-box", padding: "9px 11px", borderRadius: "10px",
+            border: `1px solid ${ad ? ac : theme.border}`, background: theme.background, color: theme.text,
+            fontSize: "16px", fontFamily: "inherit", outline: "none",
+          }} />
+
+        <button onClick={yeniEkle} style={{
+          display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", margin: ilk ? "12px 0 2px" : "10px 0 14px",
           padding: "11px 12px", borderRadius: "12px", border: "none", background: ac, color: "#fff",
           fontSize: "14px", fontWeight: 600, fontFamily: "inherit", cursor: "pointer",
         }}>
-          <Plus size={16} /> Yeni kayıt olarak ekle
+          {ilk ? <><Check size={16} /> Kaydet</> : <><Plus size={16} /> Yeni kayıt olarak ekle</>}
         </button>
 
+        {!ilk && <>
         <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "12px", fontWeight: 700, color: theme.textSecondary, margin: "0 2px 6px", letterSpacing: ".02em" }}>
           <RefreshCw size={13} /> YA DA BİR KAYDIN YERİNE
         </div>
@@ -231,6 +250,7 @@ export function YerineKoySorusu({ acik, yeniEtiket, kayitlar = [], etiket, theme
           }}>
           <RefreshCw size={15} /> {secKayit ? `“${secKayit.baslik}” kaydının yerine koy` : "Yerine koy"}
         </button>
+        </>}
       </div>
     </div>
   )

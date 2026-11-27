@@ -13,12 +13,13 @@
    • Parçaya dokunulunca çalar; çalan parçaya yeniden dokunulunca duraklar/sürer.
    • Sürekli çalma (anahtar): parça bitince sıradaki. Otomatik kapanma (anahtar + süre).
    • Kaldığınız yer: son dinlenen parça (uzun kayıtlarda dakikasıyla) — "Devam" ile sürer.
+     Önceki oturumlar "Son dinlenenler" çekmecesinde; saklanabilir ya da silinebilir.
    Ses uygulama kökünde (data/kuranDinle.jsx); sayfadan çıkınca küçük hap görünür.
    ═══════════════════════════════════════════════════════════════════════════ */
 
 import { useEffect, useMemo, useRef, useState } from "react"
 import { createPortal } from "react-dom"
-import { Headphones, Play, Pause, X, Loader2, ExternalLink, Repeat, RotateCcw, History, Search, Pencil, Check, Eye, EyeOff, ChevronDown, ChevronUp, Plus, ChevronLeft, Share2, ListMusic, ListPlus, Trash2, Hourglass, Settings2 } from "lucide-react"
+import { Headphones, Play, Pause, X, Loader2, ExternalLink, Repeat, RotateCcw, History, Search, Pencil, Check, Eye, EyeOff, ChevronDown, ChevronUp, Plus, ChevronLeft, Share2, ListMusic, ListPlus, Trash2, Hourglass, Settings2, Bookmark } from "lucide-react"
 import { DndContext, closestCenter, KeyboardSensor, MouseSensor, TouchSensor, useSensor, useSensors } from "@dnd-kit/core"
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, rectSortingStrategy } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
@@ -28,7 +29,8 @@ import OtomatikDurdurmaSecici from "./OtomatikDurdurmaSecici"
 import { sureAdi, SURE_ADLARI } from "../data/sureAdlari"
 import {
   useKuranDinle, KARILER, TURLER, AYET_SAYILARI, kariBul, kaynakBilgisi, parcaAdi,
-  useParcaListesi, useDinleZamani, sureYazisi, sonKonumOku,
+  useParcaListesi, useDinleZamani, sureYazisi,
+  useDinleGecmisi, gecmisSakla, gecmisSil, gecmisTemizle,
   useEkKariler, ekKariEkle, ekKariSil, way2Dizin, way2Ara, rivayetAdi, sureAra,
   useKariDuzen, kariDuzenYaz, kariGizleDegis, kariSirala,
   useCalmaListesi, calmaListesiYaz, listeSirasi,
@@ -96,6 +98,66 @@ function Ilerleme({ theme, dinle }) {
 
 /* ÇALMA LİSTESİ ÇİPİ (16 Kasım 2026) — kullanıcı: "Playlist içindeki parçalar sürüklenerek yer
    değiştirebilsin". Çipin kendisi sürüklenir (dokunmatikte kısa basılı tutup); × listeden çıkarır. */
+// "Bugün 14:20" / "Dün 09:05" / "3 gün önce" / "12 Kasım"
+function neZaman(t) {
+  if (!t) return ""
+  const d = new Date(t), b = new Date()
+  const gun = Math.round((new Date(b.getFullYear(), b.getMonth(), b.getDate()) - new Date(d.getFullYear(), d.getMonth(), d.getDate())) / 864e5)
+  const saat = d.toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" })
+  return gun <= 0 ? `Bugün ${saat}` : gun === 1 ? `Dün ${saat}` : gun < 7 ? `${gun} gün önce` : d.toLocaleDateString("tr-TR", { day: "numeric", month: "long" })
+}
+const gecmisKonumu = (g) => [parcaAdi(g.tur, g.parca, g.ayet), g.bitti ? "dinlendi" : g.zaman > 0 ? sureYazisi(g.zaman) : ""].filter(Boolean).join(" · ")
+
+/* SON DİNLENENLER çekmecesi: saklananlar üstte; satırdan devam, sakla/çıkar, sil */
+const GECMIS_ACIK_ANAHTAR = "vukuf-kuran-dinle-gecmis-acik"
+function SonDinlenenler({ theme, satirlar, onDevam }) {
+  const ac = theme.accent
+  const [acik, setAcik] = useState(() => { try { return localStorage.getItem(GECMIS_ACIK_ANAHTAR) === "1" } catch { return false } })
+  const acikYaz = (v) => { setAcik(v); try { localStorage.setItem(GECMIS_ACIK_ANAHTAR, v ? "1" : "0") } catch { /* yoksay */ } }
+  if (!satirlar.length) return null
+  const sakli = satirlar.filter(g => g.sakli), diger = satirlar.filter(g => !g.sakli)
+  const kucuk = { width: "30px", height: "30px", borderRadius: "50%", flexShrink: 0, padding: 0, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", border: "none", background: "transparent" }
+  const satir = (g) => (
+    <div key={g.oturum} style={{ display: "flex", alignItems: "center", gap: "6px", padding: "6px 0", borderTop: `1px solid ${theme.border}` }}>
+      <button onClick={() => onDevam(g)} aria-label={`${kariBul(g.kariId)?.ad}, ${gecmisKonumu(g)} — dinle`} title={g.bitti ? "Baştan dinle" : "Buradan devam"}
+        style={{ ...kucuk, border: `1px solid ${ac}66`, color: ac }}><Play size={13} fill={ac} /></button>
+      <span style={{ flex: 1, minWidth: 0, lineHeight: 1.25 }}>
+        <span style={{ display: "block", fontSize: "12px", color: theme.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{kariBul(g.kariId)?.ad} · {gecmisKonumu(g)}</span>
+        <span style={{ display: "block", fontSize: "10px", color: theme.textSecondary }}>{neZaman(g.t)}</span>
+      </span>
+      <button onClick={() => gecmisSakla(g.oturum, !g.sakli)} aria-pressed={!!g.sakli} aria-label={g.sakli ? "Saklananlardan çıkar" : "Sakla"} title={g.sakli ? "Saklananlardan çıkar" : "Sakla (silinmez)"}
+        style={{ ...kucuk, color: g.sakli ? ac : theme.textSecondary }}><Bookmark size={15} fill={g.sakli ? ac : "none"} /></button>
+      <button onClick={() => gecmisSil(g.oturum)} aria-label="Sil" title="Sil" style={{ ...kucuk, color: theme.textSecondary }}><Trash2 size={14} /></button>
+    </div>
+  )
+  const grupBaslik = (y) => <div style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.06em", color: theme.textSecondary, padding: "8px 0 4px" }}>{y}</div>
+  return (
+    <div style={{ marginTop: "10px", borderRadius: "11px", border: `1px solid ${theme.border}` }}>
+      <button onClick={() => acikYaz(!acik)} aria-expanded={acik}
+        style={{ width: "100%", display: "flex", alignItems: "center", gap: "8px", padding: "9px 10px", margin: 0, background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", textAlign: "left", color: theme.text }}>
+        <History size={16} color={theme.textSecondary} style={{ flexShrink: 0 }} />
+        <span style={{ flex: 1, minWidth: 0, fontSize: "12.5px", fontWeight: 600 }}>
+          Son dinlenenler
+          <span style={{ fontWeight: 400, color: theme.textSecondary }}> · {satirlar.length}{sakli.length ? ` (${sakli.length} saklı)` : ""}</span>
+        </span>
+        <ChevronDown size={16} color={theme.textSecondary} style={{ flexShrink: 0, transition: "transform .2s", transform: acik ? "rotate(180deg)" : "none" }} />
+      </button>
+      {acik && (
+        <div style={{ padding: "0 10px 6px" }}>
+          {sakli.length > 0 && <>{grupBaslik("SAKLANANLAR")}{sakli.map(satir)}</>}
+          {diger.length > 0 && <>{sakli.length > 0 && grupBaslik("DİĞERLERİ")}{diger.map(satir)}</>}
+          {diger.length > 1 && (
+            <button onClick={gecmisTemizle}
+              style={{ display: "block", margin: "6px auto 2px", padding: "5px 12px", borderRadius: "999px", border: `1px solid ${theme.border}`, background: "transparent", color: theme.textSecondary, fontSize: "11px", fontFamily: "inherit", cursor: "pointer" }}>
+              Saklanmayanları temizle
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
 function ListeCipi({ n, sira, ad, vr, theme, onSil }) {
   const ac = theme.accent
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: String(n) })
@@ -368,8 +430,11 @@ export default function KuranDinleKarti({ theme }) {
   const [ayetSure, setAyetSure] = useState(() => (calan && calan.tur === "ayet" ? calan.parca : 1))
   useEffect(() => { if (buKari && calan.tur === "ayet") setAyetSure(calan.parca) }, [buKari, calan?.parca])   // eslint-disable-line react-hooks/exhaustive-deps
 
-  const [son, setSon] = useState(() => sonKonumOku())
-  useEffect(() => { if (!calan) setSon(sonKonumOku()) }, [calan, durum])
+  // Kaldığınız yer = en son oturum; geri kalanlar Son dinlenenler çekmecesinde
+  const gecmis = useDinleGecmisi()
+  const gecerliGecmis = useMemo(() => gecmis.filter(g => kariBul(g.kariId)), [gecmis, ekKariler])   // eslint-disable-line react-hooks/exhaustive-deps
+  const son = calan ? null : gecerliGecmis[0] || null
+  const cekmeceSatirlari = gecerliGecmis.filter(g => (calan ? g.oturum !== calan.oturum : g !== son))
 
   const calarDurum = durum === "caliyor" || durum === "yukleniyor"
   const ozet = calan
@@ -384,11 +449,12 @@ export default function KuranDinleKarti({ theme }) {
     if (tur === "ayet") dinle.baslat({ kariId: kari.id, tur, parca, ayet: ayet === 1 && besmeleli(parca) ? 0 : ayet })
     else dinle.baslat({ kariId: kari.id, tur, parca })
   }
-  const devamEt = () => {
-    if (!son || !dinle) return
-    setKari(son.kariId)
-    setTurlar(t => { const y = { ...t, [son.kariId]: son.tur }; yaz(TUR_ANAHTAR, y); return y })
-    dinle.baslat(son)
+  // Geçmişteki bir oturumu sürdürür (aynı oturum kimliğiyle → satırı güncellenir)
+  const devamEt = (g = son) => {
+    if (!g || !dinle) return
+    setKari(g.kariId)
+    setTurlar(t => { const y = { ...t, [g.kariId]: g.tur }; yaz(TUR_ANAHTAR, y); return y })
+    dinle.baslat({ kariId: g.kariId, tur: g.tur, parca: g.parca, ayet: g.ayet, zaman: g.bitti ? 0 : g.zaman || 0, oturum: g.oturum })
   }
 
   const kaynak = kaynakBilgisi(kari.kaynaklar[tur])
@@ -764,10 +830,14 @@ export default function KuranDinleKarti({ theme }) {
           <span style={{ flex: 1, minWidth: 0, fontSize: "12.5px", color: theme.text, lineHeight: 1.3 }}>
             Kaldığınız yer
             <span style={{ display: "block", fontSize: "11.5px", color: theme.textSecondary, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-              {kariBul(son.kariId)?.ad} · {parcaAdi(son.tur, son.parca, son.ayet)}{son.zaman > 0 ? ` · ${sureYazisi(son.zaman)}` : ""}
+              {kariBul(son.kariId)?.ad} · {gecmisKonumu(son)}
             </span>
           </span>
-          <button onClick={devamEt} style={{ ...dugmeStil(theme, true), padding: "7px 12px", fontSize: "12.5px" }}><Play size={13} /> Devam</button>
+          <button onClick={() => gecmisSakla(son.oturum, !son.sakli)} aria-pressed={!!son.sakli} aria-label={son.sakli ? "Saklananlardan çıkar" : "Sakla"} title={son.sakli ? "Saklananlardan çıkar" : "Sakla (silinmez)"}
+            style={{ width: "30px", height: "30px", borderRadius: "50%", flexShrink: 0, padding: 0, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", border: "none", background: "transparent", color: son.sakli ? ac : theme.textSecondary }}>
+            <Bookmark size={15} fill={son.sakli ? ac : "none"} />
+          </button>
+          <button onClick={() => devamEt()} style={{ ...dugmeStil(theme, true), padding: "7px 12px", fontSize: "12.5px" }}><Play size={13} /> {son.bitti ? "Baştan" : "Devam"}</button>
         </div>
       )}
 
@@ -819,6 +889,8 @@ export default function KuranDinleKarti({ theme }) {
           {calan.tur !== "ayet" && <div style={{ padding: "0 8px" }}><Ilerleme theme={theme} dinle={dinle} /></div>}
         </div>
       )}
+
+      <SonDinlenenler theme={theme} satirlar={cekmeceSatirlari} onDevam={devamEt} />
 
       {/* AYARLAR — başlığa dokununca katlanır (seçim cihazda saklanır) */}
       <div style={{ marginTop: "10px", borderRadius: "11px", border: `1px solid ${theme.border}` }}>

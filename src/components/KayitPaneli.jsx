@@ -25,7 +25,7 @@ export default function KayitPaneli({
   const mevcutKayit = kayitlar?.find(k => k.sayfa === mevcutSayfa)
 
   function yeniBaslat() {
-    setBaslik(`Sayfa ${mevcutSayfa}`)
+    setBaslik("")
     setMod("yeni")
   }
 
@@ -36,8 +36,7 @@ export default function KayitPaneli({
   }
 
   function kayitOlustur() {
-    if (!baslik.trim()) return
-    onKayitEkle?.(baslik.trim()) // ← onKayitEkle'yi çağır
+    onKayitEkle?.(baslik.trim() || `Sayfa ${mevcutSayfa}`)
     setMod("liste")
   }
 
@@ -172,7 +171,7 @@ export default function KayitPaneli({
                   value={baslik}
                   onChange={e => setBaslik(e.target.value)}
                   onKeyDown={e => e.key === "Enter" && (mod === "yeni" ? kayitOlustur() : kayitDegistir())}
-                  placeholder="Kayıt adı..."
+                  placeholder={mod === "yeni" ? "Örnek: “Aile Hatmi”" : "Kayıt adı..."}
                   autoFocus
                 />
                 <div style={{ display: "flex", gap: "8px" }}>

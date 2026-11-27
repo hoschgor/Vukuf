@@ -1553,8 +1553,10 @@ const [tamGenislik, setTamGenislik] = useState(() => localStorage.getItem("vukuf
 const [kenarBosluk, setKenarBosluk] = useState(() => localStorage.getItem("vukuf-okuma-kenar-bosluk") === "true")
 useEffect(() => { localStorage.setItem("vukuf-okuma-tam-genislik", String(tamGenislik)) }, [tamGenislik])
 useEffect(() => { localStorage.setItem("vukuf-okuma-kenar-bosluk", String(kenarBosluk)) }, [kenarBosluk])
-const tamGenislikDegis = () => setTamGenislik(v => { const y = !v; if (y) setKenarBosluk(false); return y })
-const kenarBoslukDegis = () => setKenarBosluk(v => { const y = !v; if (y) setTamGenislik(false); return y })
+// Genişlik değişince metin yeniden sarılır: üstteki satır önceden yakalanır, değişimden sonra
+// yazı boyutundaki gibi aynı yere geri çekilir (okunan sayfa değişmez).
+const tamGenislikDegis = () => { fontAnkorRef.current = ustSatirYakala(); setTamGenislik(v => { const y = !v; if (y) setKenarBosluk(false); return y }) }
+const kenarBoslukDegis = () => { fontAnkorRef.current = ustSatirYakala(); setKenarBosluk(v => { const y = !v; if (y) setTamGenislik(false); return y }) }
 const [butonSirasi, setButonSirasi] = useState(() => {
   try {
     const k = JSON.parse(localStorage.getItem("vukuf-okuma-buton-sirasi") || "null")
@@ -1972,7 +1974,7 @@ useLayoutEffect(() => {
   let iptal = false
   try { document.fonts && document.fonts.ready && document.fonts.ready.then(() => { if (!iptal) ustSatirGeriYukle(ank) }) } catch {}
   return () => { cancelAnimationFrame(rafId); clearTimeout(t1); clearTimeout(t2); iptal = true }
-}, [yaziBoyutu, satirAraligi, harfAraligi, kelimeAraligi, hizalama, arapBoyutu, baslikBoyutu, fontSecimler])
+}, [yaziBoyutu, satirAraligi, harfAraligi, kelimeAraligi, hizalama, arapBoyutu, baslikBoyutu, fontSecimler, tamGenislik, kenarBosluk])
 
 // ── Son okuma konumu: çıkışta kaydet, açılışta geri dön (sistemi yormadan)
 const konumKaydet = useCallback(() => {
@@ -2909,9 +2911,8 @@ function kayitKonumSec(e) {
   }
   if (secilenSayfa == null) secilenSayfa = mevcutSayfa
   setKayitKonumModu(false)
-  // İşaret varsa "yeni mi, bir işaretin yerine mi?" sorulur (YerineKoySorusu)
-  if (kayitlar.length) { setBekleyenKayit({ sayfa: secilenSayfa, oran }); return }
-  kayitEkle(secilenSayfa, oran, `Sayfa ${secilenSayfa}`)
+  // Ad sorulur; işaret varsa "yeni mi, bir işaretin yerine mi?" de (YerineKoySorusu)
+  setBekleyenKayit({ sayfa: secilenSayfa, oran })
 }
 
 function fontSecimDegistir(grupId, fontId) {
@@ -4544,7 +4545,7 @@ return (
       etiket={(k) => `s. ${k.sayfa}`}
       theme={theme} isMobile={isMobile}
       onVazgec={() => setBekleyenKayit(null)}
-      onYeni={() => { const b = bekleyenKayit; setBekleyenKayit(null); if (b) kayitEkle(b.sayfa, b.oran, `Sayfa ${b.sayfa}`) }}
+      onYeni={(ad) => { const b = bekleyenKayit; setBekleyenKayit(null); if (b) kayitEkle(b.sayfa, b.oran, ad || `Sayfa ${b.sayfa}`) }}
       onYerine={(kid) => { const b = bekleyenKayit; setBekleyenKayit(null); if (b) kayitYerineKoy(kid, b.sayfa, b.oran) }}
     />
     {/* KAYIT KOYMA ŞERİDİ (14 Kasım 2026) — Kur'ân ekranındakiyle aynı: altta (bar üstteyse üstte)
@@ -4934,8 +4935,7 @@ return (
           const sf = kitapMetni[i - 1]
           if (!sf) return true
           setKayitKonumModu(false)
-          if (kayitlar.length) { setBekleyenKayit({ sayfa: sf.sayfa, oran }); return true }
-          kayitEkle(sf.sayfa, oran, `Sayfa ${sf.sayfa}`)
+          setBekleyenKayit({ sayfa: sf.sayfa, oran })
           return true
         }}
         sayfaCiz={(i, { w, h, taraf }) => {

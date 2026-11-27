@@ -1395,8 +1395,10 @@ export default function KuranOkuma({ kitap }) {
   const [kenarBosluk, setKenarBosluk] = useState(() => localStorage.getItem("vukuf-kenar-bosluk") === "true")
   useEffect(() => { localStorage.setItem("vukuf-kenar-bosluk", String(kenarBosluk)) }, [kenarBosluk])
   // İkisi aynı anda açık olamaz (biri kenar boşluğunu kaldırır, diğeri ekler)
-  const tamGenislikDegis = () => setTamGenislik(v => { const y = !v; if (y) setKenarBosluk(false); return y })
-  const kenarBoslukDegis = () => setKenarBosluk(v => { const y = !v; if (y) setTamGenislik(false); return y })
+  // Genişlik değişince metin yeniden sarılır: üstteki satır önceden yakalanır, değişimden sonra
+  // yazı boyutundaki gibi aynı yere geri çekilir (okunan sayfa değişmez).
+  const tamGenislikDegis = () => { fontAnkorRef.current = ustSatirYakala(); setTamGenislik(v => { const y = !v; if (y) setKenarBosluk(false); return y }) }
+  const kenarBoslukDegis = () => { fontAnkorRef.current = ustSatirYakala(); setKenarBosluk(v => { const y = !v; if (y) setTamGenislik(false); return y }) }
   const [harfAraligi, setHarfAraligi] = useState(() =>
     parseFloat(localStorage.getItem("vukuf-harf-araligi") || "0")
   )
@@ -2145,7 +2147,7 @@ const cokSatir = wrapAktif && barYuksekligi > tekSatirYuksekligi * 1.0
     })
     t = setTimeout(() => ustSatirGeriYukle(ank), 80)   // reflow geç oturursa son bir düzeltme
     return () => { cancelAnimationFrame(r1); cancelAnimationFrame(r2); clearTimeout(t) }
-  }, [yaziBoyutu, satirAraligi, harfAraligi, arapcaFontId])
+  }, [yaziBoyutu, satirAraligi, harfAraligi, arapcaFontId, tamGenislik, kenarBosluk])
 
   const mevcutSureBilgisi = useMemo(() => {
     if (!sayfaMap?.size) return null
@@ -5386,11 +5388,11 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
         etiket={(k) => `s. ${k.sayfa}`}
         theme={theme} isMobile={isMobile}
         onVazgec={() => setBekleyenKayit(null)}
-        onYeni={() => {
+        onYeni={(ad) => {
           const b = bekleyenKayit
           setBekleyenKayit(null)
           if (!b) return
-          const yeniKayit = { id: Date.now().toString(), sayfa: b.sayfa, scrollY: b.scrollY, baslik: `Sayfa ${b.sayfa}`, olusturma: Date.now() }
+          const yeniKayit = { id: Date.now().toString(), sayfa: b.sayfa, scrollY: b.scrollY, baslik: ad || `Sayfa ${b.sayfa}`, olusturma: Date.now() }
           setKayitlar(prev => { const y = [...prev, yeniKayit]; localStorage.setItem("vukuf-kayitlar", JSON.stringify(y)); return y })
         }}
         onYerine={(id) => {
@@ -6240,10 +6242,8 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
               // kayitEkle mevcutSayfa'yı kullanır → önce onu ayarla, sonra ekle
               setMevcutSayfa(hedefNo)
               setKayitKonumModu(false)
-              // Kayıt varsa "yeni mi, bir kaydın yerine mi?" sorulur (YerineKoySorusu)
-              if (kayitlar.length) { setBekleyenKayit({ sayfa: hedefNo, scrollY: oran }); return }
-              const yeniKayit = { id: Date.now().toString(), sayfa: hedefNo, scrollY: oran, baslik: `Sayfa ${hedefNo}`, olusturma: Date.now() }
-              setKayitlar(prev => { const y = [...prev, yeniKayit]; localStorage.setItem("vukuf-kayitlar", JSON.stringify(y)); return y })
+              // Ad sorulur; kayıt varsa "yeni mi, bir kaydın yerine mi?" de (YerineKoySorusu)
+              setBekleyenKayit({ sayfa: hedefNo, scrollY: oran })
               return
             }
             if (window.innerWidth <= 768) return
@@ -6431,9 +6431,7 @@ const menuIcerikPadding = { paddingTop: 0, paddingBottom: 0 }
               // Kayıt koyma: kaydırmalı düzendeki tıklamayla aynı kayıt (sayfa + sayfa içi oran)
               setMevcutSayfa(no)
               setKayitKonumModu(false)
-              if (kayitlar.length) { setBekleyenKayit({ sayfa: no, scrollY: oran }); return true }
-              const yeniKayit = { id: Date.now().toString(), sayfa: no, scrollY: oran, baslik: `Sayfa ${no}`, olusturma: Date.now() }
-              setKayitlar(prev => { const y = [...prev, yeniKayit]; localStorage.setItem("vukuf-kayitlar", JSON.stringify(y)); return y })
+              setBekleyenKayit({ sayfa: no, scrollY: oran })
               return true
             }}
             sayfaCiz={(no, { w, h, taraf }) => {

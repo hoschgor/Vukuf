@@ -5,7 +5,7 @@
    10 Ekim 2026. Açılıştaki giriş ekranında (App.jsx, girisVar) rozeti çevreleyen
    mushaf sayfası çerçevesi. Sayfa geçişindeki "yükleniyor" ekranında KULLANILMAZ
    (her geçişte süslü ekran yorucu olur).
-   • Cetvel: ekran kenarından içeride çift ince çizgi (dış belirgin, iç soluk).
+   • Cetvel çizgileri kaldırıldı (27 Kasım 2026); dallar cetvelin görünmez yerinde durur.
    • Köşebent: her köşede rozetteki dilin çeyreği — köşede düğüm, köşeden içeri
      bakan kafesli badem, iki kenar boyunca kıvrılan hilal demetleri.
    • Açılış: çizgiler köşelerden uzayarak çizilir, köşebentler ardından belirir.
@@ -194,8 +194,35 @@ function dalUret(t, R) {
    birleşiyor ve dalların sınır kutuları kenarlarda koyu, lekeli dikey şeritler
    olarak görünüyordu (kullanıcı ekran görüntüsü). Tek boyalı şekillerde görüntü
    aynı, ama ara katman oluşmuyor. */
+/* GENİŞ EKRAN (masaüstü, yatay telefon): DALLAR telefonun dik ekranına göre dizildi. Kenar
+   uzadıkça aynı dizi kenar boyunca tekrarlanır (tohumu değişerek, her tekrar farklı) →
+   dallar ekranın tamamını çevreler. Köşebent payı en çok ~100 px. Dik telefonda tekrar
+   sayısı 1 → çizim eskisiyle aynı. */
+const KOSE_PAY_EN_COK = 100
+const REF_KULLANILAN = { yatay: 212, dikey: 640 }   // dik telefonda köşebent dışında kalan kenar (px)
+function kenaraYay(R) {
+  const liste = []
+  for (const t of DALLAR) {
+    const dikey = t.kenar === "sol" || t.kenar === "sag"
+    const L = dikey ? R.y1 - R.y0 : R.x1 - R.x0
+    const m = dikey ? 0.1 : 0.21
+    const M = Math.min(m * L, KOSE_PAY_EN_COK), U = L - 2 * M
+    const k = Math.max(1, Math.round(U / REF_KULLANILAN[dikey ? "dikey" : "yatay"]))
+    const u0 = (t.bas - m) / (1 - 2 * m), u1 = (t.bit - m) / (1 - 2 * m)
+    for (let j = 0; j < k; j++) {
+      liste.push({
+        ...t,
+        bas: (M + ((j + u0) / k) * U) / L,
+        bit: (M + ((j + u1) / k) * U) / L,
+        tohum: t.tohum + j * 131,
+        cicek: j % 2 === 0 ? !!t.cicek : !t.cicek && j % 4 === 1,
+      })
+    }
+  }
+  return liste
+}
 function Dallar({ R, canli = true }) {
-  const dallar = useMemo(() => (R ? DALLAR.map(t => dalUret(t, R)) : []), [R])
+  const dallar = useMemo(() => (R ? kenaraYay(R).map(t => dalUret(t, R)) : []), [R])
   if (!R) return null
   return (
     <svg aria-hidden="true" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", overflow: "visible", animation: canli ? "vkDalBelir 1.4s ease 0.9s both" : "none" }}>
@@ -271,7 +298,6 @@ function Kosebent({ uid, konum, canli = true }) {
    yükleme ekranı art arda gelebiliyor; animasyon her birinde baştan başlasa
    çerçeve yanıp sönerdi, bu yüzden orada çizim/belirme yok. */
 export default function GirisCercevesi({ ac = "currentColor", dallar = true, canli = true }) {
-  const an = (a) => (canli ? a : "none")
   const uid = useId().replace(/:/g, "")
   // Cetvelin gerçek yeri (güvenli alan dahil) → dallar onun üstüne kurulur
   const kokRef = useRef(null), cetvelRef = useRef(null)
@@ -317,19 +343,14 @@ export default function GirisCercevesi({ ac = "currentColor", dallar = true, can
   return (
     <div ref={kokRef} aria-hidden="true" style={{ position: "absolute", inset: 0, color: ac, pointerEvents: "none" }}>
       <style>{`
-        @keyframes vkCetvelCiz { from { clip-path: inset(0 50% 0 50%); } to { clip-path: inset(0 0 0 0); } }
-        @keyframes vkCetvelCizD { from { clip-path: inset(50% 0 50% 0); } to { clip-path: inset(0 0 0 0); } }
         @keyframes vkKoseBelir { from { opacity: 0; transform-origin: 10px 10px; } to { opacity: 1; } }
         @keyframes vkDalBelir { from { opacity: 0; } to { opacity: 1; } }
         @media (prefers-reduced-motion: reduce) { .vk-cetvel { animation: none !important; } }
       `}</style>
       {/* ölçü için görünmez dış cetvel kutusu (dallar buna göre) */}
       <div ref={cetvelRef} style={{ ...cizgi(0, 0, 0), border: "none" }} />
-      {/* dış cetvel: yatay kenarlar ortadan köşelere, dikeyler ardından */}
-      <div className="vk-cetvel" style={{ ...cizgi(0, 1.2, 0.75), borderLeft: "none", borderRight: "none", animation: an("vkCetvelCiz 0.7s cubic-bezier(.22,.61,.36,1) both") }} />
-      <div className="vk-cetvel" style={{ ...cizgi(0, 1.2, 0.75), borderTop: "none", borderBottom: "none", animation: an("vkCetvelCizD 0.7s cubic-bezier(.22,.61,.36,1) 0.1s both") }} />
-      {/* iç cetvel (soluk) */}
-      <div className="vk-cetvel" style={{ ...cizgi(5, 0.6, 0.38), animation: an("vkCetvelCiz 0.8s ease 0.2s both") }} />
+      {/* Cetvel çizgileri kaldırıldı: dallar ve köşebentler çizgisiz daha sade duruyor.
+          Görünmez kutu yalnız dalların yerini ölçmek için. */}
       {dallar && <Dallar R={R} canli={canli} />}
       {["su", "sau", "sa", "saa"].map(k => <Kosebent key={k} uid={`${uid}${k}`} konum={k} canli={canli} />)}
     </div>
